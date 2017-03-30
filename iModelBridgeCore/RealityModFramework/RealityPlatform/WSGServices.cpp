@@ -310,7 +310,17 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     
     m_requestHeader.clear();
 
+    EncodeId();
+
     m_validRequestString = true;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+void WSGURL::EncodeId() const
+    {
+    m_id = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
 //-------------------------------------------------------------------------------------

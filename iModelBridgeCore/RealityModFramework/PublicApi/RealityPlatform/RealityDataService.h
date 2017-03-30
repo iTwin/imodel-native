@@ -50,7 +50,8 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
 protected:
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override; 
+    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
     };
 
 //=====================================================================================
@@ -267,6 +268,7 @@ public:
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
 
     mutable AzureHandshake*             m_handshakeRequest;
 
@@ -429,6 +431,7 @@ public:
 protected:
     REALITYDATAPLATFORM_EXPORT void _PrepareBaseRequestString() const;
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;

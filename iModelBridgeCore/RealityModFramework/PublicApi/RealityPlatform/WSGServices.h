@@ -154,8 +154,6 @@ public:
         BeAssert(m_validRequestString);
         BeAssert(m_httpRequestString.size() != 0);
 
-        m_httpRequestString.ReplaceAll(" ","%20");
-
         return m_httpRequestString;
         };
 
@@ -186,6 +184,9 @@ public:
     WSGURL& operator=(WSGURL const & object);
 
 protected:
+    //! Function to url encode the id, depending on which server is receiving it
+    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const;
+
     void SetServerName(Utf8String serverName);
     void SetPluginName(Utf8String pluginName);
     void SetVersion(Utf8String version);

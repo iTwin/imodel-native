@@ -60,8 +60,6 @@ struct RealityDataFileTransfer : public RealityDataUrl
             m_requestWithToken = m_httpRequestString;
             m_requestWithToken.append(m_azureToken);
 
-            m_requestWithToken.ReplaceAll(" ", "%20");
-
             return m_requestWithToken;
         };
 
@@ -85,7 +83,12 @@ struct RealityDataFileTransfer : public RealityDataUrl
         size_t                  m_index;
     protected:
 
-        Utf8String              m_fileUrl;
+        REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override
+            {
+            m_fileUrl = BeStringUtilities::UriEncode(m_fileUrl.c_str());
+            }
+
+        mutable Utf8String              m_fileUrl;
         Utf8String              m_filename;
 
         BeFile                  m_fileStream;
@@ -163,8 +166,6 @@ public:
                 m_requestWithToken.append("&comp=blocklist");
                 }
             }
-
-        m_requestWithToken.ReplaceAll(" ", "%20");
 
         return m_requestWithToken;
         };
@@ -271,6 +272,12 @@ Utf8StringCR RealityDataUrl::GetVersion() const { return RealityDataService::Get
 Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetSchemaName(); }
 
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
+
+void RealityDataUrl::EncodeId() const 
+    {
+    m_id.ReplaceAll("/", "~2F");
+    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
@@ -407,6 +414,20 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         m_httpRequestString.append("/Document/");
         m_httpRequestString.append(m_id);
         m_httpRequestString.append("/$file");
+        }
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataDocumentContentByIdRequest::EncodeId() const
+    {
+    if(m_AzureRedirected)
+        m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    else
+        {
+        m_id.ReplaceAll("/", "~2F");
+        m_id = BeStringUtilities::UriEncode(m_id.c_str());
         }
     }
 
@@ -691,17 +712,35 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter; }
+void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) 
+    { 
+    m_filter = BeStringUtilities::UriEncode(filter.c_str()); 
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetQuery(Utf8StringCR query) { m_query = query; }
+void RealityDataPagedRequest::SetQuery(Utf8StringCR query) 
+    { 
+    m_query = BeStringUtilities::UriEncode(query.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetProject(Utf8StringCR project) { m_project = project; }
+void RealityDataPagedRequest::SetProject(Utf8StringCR project) 
+    { 
+    m_project = BeStringUtilities::UriEncode(project.c_str());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataPagedRequest::EncodeId() const
+    {
+    m_id.ReplaceAll("/", "~2F");
+    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -965,11 +1004,14 @@ RealityDataServiceTransfer::~RealityDataServiceTransfer()
 void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
-    Utf8String addon = "/";
+    Utf8String addon = "";
+    if(!m_fileUrl.StartsWith("/"))
+        addon.append("/");
+
+    EncodeId();
     addon.append(m_fileUrl);
     addon.append("?");
-    addon.ReplaceAll("//","/"); //this covers whether the user input the directory as 
-                                // C:/Directory or C:/Directory/
+
     m_httpRequestString.append(addon);
     m_validRequestString = true;
 
@@ -1074,10 +1116,10 @@ void RealityDataFileDownload::Retry()
 //=====================================================================================
 void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     {
+    EncodeId();
     m_httpRequestString = m_azureServer;
     m_httpRequestString.append(m_fileUrl);
     m_httpRequestString.append("?");
-    m_httpRequestString.ReplaceAll("//", "/"); 
     m_validRequestString = true;
 
     m_requestHeader.clear();
