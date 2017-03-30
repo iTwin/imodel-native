@@ -161,7 +161,8 @@ public:
     (
     bvector<DPoint3d> const &xyz,         //!< [in] original polygon
     bvector<DPoint3d> &xyzIn,             //!< [out] inside part
-    bvector<DPoint3d> &xyzOut             //!< [out] outside part
+    bvector<DPoint3d> &xyzOut,             //!< [out] outside part
+    DRange1d &altitudeRange                 //!< [out] min and max altitude values.
     ) const;
 
 
@@ -178,5 +179,7 @@ public:
         );
 
     };
+
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

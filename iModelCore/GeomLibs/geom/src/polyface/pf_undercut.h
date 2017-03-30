@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_undercut.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,7 +68,7 @@ TaggedPolygonVectorR surfaceBbelowA
                     if (xyzAClip.size () > 0)
                         {
                         counts.Record(4);
-                        DPoint3dOps::Compress (xyzAClip, pointTolerance);
+                        DPoint3dOps::CompressCyclic (xyzAClip, pointTolerance);
                         surfaceAaboveB.push_back (TaggedPolygon (xyzAClip));
                         xyzWork.clear ();
                         // project in reverse order to plane of B
@@ -142,6 +142,253 @@ PolyfaceHeaderPtr &undercutPolyface
         undercutPolyface = result[0];
     }
 
+/*---------------------------------------------------------------------------------**//**
+        ShardHealer bodies
++----------------------------------------------------------------------*/
+static const int s_nullIndex = -1;
+
+ShardHealer::ShardHealer ()
+    {
+    m_graph = vu_newVuSet (0);
+    vu_setDefaultUserData1 (m_graph, -1, false, false);
+    }
+ShardHealer::~ShardHealer ()
+    {
+    vu_freeVuSet (m_graph);
+    }
+
+void ShardHealer::SetOriginalXYZ (bvector<DPoint3d> const &xyz)
+    {
+    m_originalXYZ = xyz;
+    m_vertexTolerance = DPoint3dOps::LargestCoordinate (xyz) * Angle::SmallAngle ();
+    }
+
+int ShardHealer::FindOriginalIndex (DPoint3dCR xyz)
+    {
+    size_t closestIndex;
+    double d;
+    if (DPoint3dOps::ClosestPointXY (m_originalXYZ, nullptr, xyz, closestIndex, d)
+        && d <= m_vertexTolerance)
+        {
+        return (int)closestIndex;
+        }
+    return -1;
+    }
+
+bool ShardHealer::SwapExteriorMasksToNullFaces (VuMask exteriorMask)
+    {
+    //vu_printFaceLabels (m_graph, "Before swap");
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        VuP nodeB = vu_fsucc (nodeA);
+        VuP nodeC = vu_fsucc (nodeB);
+        if (nodeB != nodeA && nodeC == nodeA)
+            {
+            VuP nodeA1 = vu_edgeMate (nodeA);
+            VuP nodeB1 = vu_edgeMate (nodeB);
+            if (vu_getMask (nodeA1, exteriorMask)
+                && vu_getMask (nodeB1, exteriorMask)
+                && !vu_getMask (nodeA, exteriorMask)
+                && !vu_getMask (nodeB, exteriorMask)
+                )
+                {
+                VuP nodeA2 = vu_fsucc (nodeA1);
+                VuP nodeB2 = vu_fsucc (nodeB1);
+                vu_vertexTwist (m_graph, nodeB, nodeA1); // yank far end of A 
+                vu_vertexTwist (m_graph, nodeA, nodeA2); // yank A
+                vu_vertexTwist (m_graph, nodeA, nodeB1);    // reinsert on the other side
+                vu_vertexTwist (m_graph, nodeA1, nodeB2);    // reinsert on the other side
+      //          vu_printFaceLabels (m_graph, "Before after swap");
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeB, m_graph)
+    return true;
+    }
+
+bool ShardHealer::SetupInteriorFaceNumbers (VuMask exteriorMask)
+    {
+
+    m_faceClusters.clear ();
+    // confirm that all exterior masks match ..
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        VuP nodeB = vu_fsucc (nodeA);
+        if (vu_getMask (nodeA, VU_EXTERIOR_EDGE) != vu_getMask (nodeB, VU_EXTERIOR_EDGE))
+            return false;
+        }
+    END_VU_SET_LOOP (nodeB, m_graph)
+
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        vu_setUserData1 (nodeA, s_nullIndex);
+        }
+    END_VU_SET_LOOP (nodeB, m_graph)
+
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        if (!vu_getMask (nodeA, exteriorMask))
+            {
+            // enter this as a new face
+            size_t clusterIndex = UnionFind::NewClusterIndex (m_faceClusters);
+            if (vu_getUserData1 (nodeA) == s_nullIndex)
+                {
+                VU_FACE_LOOP (nodeB, nodeA)
+                    vu_setUserData1 (nodeB, (ptrdiff_t)clusterIndex);
+                END_VU_FACE_LOOP (nodeB, nodeA)
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeB, m_graph)
+    return true;
+    }
+
+size_t ShardHealer::MergeFacesAcrossNullFaces
+(
+VuMask exteriorMask,
+VuMask mergeMask        // apply to all 4 edges of deletable pair
+)
+    {
+    size_t numMerge = 0;
+    vu_clearMaskInSet (m_graph, mergeMask);
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        ptrdiff_t clusterA = vu_getUserData1 (nodeA);
+        if (clusterA != s_nullIndex
+            && !vu_getMask (nodeA, exteriorMask)
+            )
+            {
+            VuP nodeB = vu_edgeMate (nodeA);
+            VuP nodeC = vu_fsucc (nodeB);
+            VuP nodeD = vu_edgeMate (nodeC);
+            if (vu_getMask (nodeB, exteriorMask)
+                && vu_getMask (nodeC, exteriorMask)
+                && vu_fsucc (nodeC) == nodeB
+                && !vu_getMask (nodeD, exteriorMask)
+                )
+                {
+                ptrdiff_t clusterD = vu_getUserData1 (nodeD);
+                if (clusterD != s_nullIndex)
+                    {
+                    size_t parentA = UnionFind::FindClusterRoot (m_faceClusters, (size_t)clusterA);
+                    size_t parentD = UnionFind::FindClusterRoot (m_faceClusters, (size_t)clusterD);
+                    if (parentA != parentD)
+                        {
+                        // the parents are distinct faces.
+                        // merge them and mark the edges:
+                        UnionFind::MergeClusters (m_faceClusters, parentA, parentD);
+                        numMerge++;
+                        vu_setMask (nodeA, mergeMask);
+                        vu_setMask (nodeB, mergeMask);
+                        vu_setMask (nodeC, mergeMask);
+                        vu_setMask (nodeD, mergeMask);
+                        }
+                    }
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeA, m_graph)
+    return numMerge;
+    }
+
+void ShardHealer::AnnotateSuccessorIfTurnOrOriginal (VuP nodeA, VuMask mask)
+    {
+    VuP nodeB = vu_fsucc (nodeA);
+    DPoint3d xyzB;
+    vu_getDPoint3d (&xyzB, nodeB);
+    DVec3d vectorAB, vectorBC;
+    vu_getDPoint3dDXY (&vectorAB, nodeA);
+    vu_getDPoint3dDXY (&vectorBC, nodeB);
+    vu_setMask (nodeB, mask);
+    if (vectorAB.IsParallelTo (vectorBC))
+        {
+        if (FindOriginalIndex (xyzB) < 0)
+            vu_clrMask (nodeB, mask);
+        }
+    }
+
+bool ShardHealer::HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> &originalXYZ)
+    {
+    SetOriginalXYZ (originalXYZ);
+    vu_reinitializeVuSet (m_graph);
+    for (auto &shard : shards)
+        {
+        size_t n = shard.size ();
+        m_loopIndex.clear ();
+        m_loopXYZ.clear ();
+        for (size_t i = 0; i < n; i++)
+            {
+            int originalIndex = FindOriginalIndex (shard[i]);
+            m_loopIndex.push_back (originalIndex);
+            m_loopXYZ.push_back (shard[i]);
+            }
+        double area = PolygonOps::AreaXY (shard);
+        DPoint3d xyz0 = m_loopXYZ.front ();
+        m_loopIndex .push_back (m_loopIndex[0]);
+        m_loopXYZ.push_back (xyz0);
+
+        for (size_t iA = 0; iA < n; iA++)
+            {
+            size_t iB = iA + 1; // safe to wrap !!!
+            VuP nodeA, nodeB;
+            vu_makePair (m_graph, &nodeA, &nodeB);
+            vu_setDPoint3d (nodeA, &m_loopXYZ[iA]);
+            vu_setDPoint3d (nodeB, &m_loopXYZ[iB]);
+            vu_setUserDataPAsInt (nodeA, (int)m_loopIndex[iA]);
+            vu_setUserDataPAsInt (nodeB, (int)m_loopIndex[iB]);
+            if (area > 0)
+                {
+                vu_setMask (nodeA, VU_BOUNDARY_EDGE); 
+                vu_setMask (nodeB, VU_BOUNDARY_EDGE | VU_EXTERIOR_EDGE);
+                }
+            else
+                {
+                vu_setMask (nodeA, VU_BOUNDARY_EDGE | VU_EXTERIOR_EDGE);
+                vu_setMask (nodeB, VU_BOUNDARY_EDGE); 
+                }
+            }
+        }
+    vu_mergeOrUnionLoops (m_graph, VUUNION_UNION);
+    if (!SwapExteriorMasksToNullFaces (VU_EXTERIOR_EDGE))
+        return false;
+    if (!SetupInteriorFaceNumbers (VU_EXTERIOR_EDGE))
+        return false;
+    if (MergeFacesAcrossNullFaces (VU_EXTERIOR_EDGE, VU_RULE_EDGE) > 0)
+        {
+        // boom -- delete the edges.
+        vu_freeMarkedEdges (m_graph, VU_RULE_EDGE);
+        shards.ClearToCache ();
+        vu_clearMaskInSet (m_graph, VU_RULE_EDGE);
+        VU_SET_LOOP (nodeA, m_graph)
+            {
+            if (!vu_getMask (nodeA, VU_EXTERIOR_EDGE) && !vu_getMask (nodeA, VU_RULE_EDGE))
+                {
+                // put VU_AT_VERTEX on (a) any node with a turn and (b) any original node
+                VU_FACE_LOOP (nodeB, nodeA)
+                    {
+                    AnnotateSuccessorIfTurnOrOriginal (nodeB, VU_AT_VERTEX);
+                    }
+                END_VU_FACE_LOOP (nodeB, nodeA)
+                m_loopXYZ.clear ();
+                vu_setMaskAroundFace (nodeA, VU_RULE_EDGE);
+                VU_FACE_LOOP (nodeB, nodeA)
+                    {
+                    if (vu_getMask (nodeB, VU_AT_VERTEX))
+                        {
+                        DPoint3d xyz;
+                        vu_getDPoint3d (&xyz, nodeB);
+                        m_loopXYZ.push_back (xyz);
+                        }
+                    }
+                END_VU_FACE_LOOP (nodeB, nodeA)
+                shards.PushCopy (m_loopXYZ);
+                }
+            }
+        END_VU_SET_LOOP (nodeA, m_graph)
+        }
+
+    return true;
+    }
 
 struct ClipperData
 {
@@ -152,6 +399,7 @@ ClipPlaneSet m_clipChain;       //  non convex !!!
 ClipperData (){}
 
 };
+
 void PolygonVectorOps::PunchByPlaneSets
 (
 PolyfaceQueryCR mesh,
@@ -191,6 +439,8 @@ TaggedPolygonVector* debugPolygons
     //size_t numFacet = meshPolygons.size ();
     //size_t numPunch = punchPolygons.size ();
     double pointTolerance = DoubleOps::SmallCoordinateRelTol () * meshRange.LargestCoordinateXY ();
+    static double s_planeToleranceFactor = 0.01;
+    double planeTolerance = s_planeToleranceFactor * pointTolerance;    // tighter tolerance for on plane decision
     // cache ranges for all the facets ....
 
     // cache clip plane sets for all the clippers ...
@@ -261,7 +511,7 @@ TaggedPolygonVector* debugPolygons
     auto visitor = PolyfaceVisitor::Attach (mesh);
     bvector<DPoint3d> &visitorPoints = visitor->Point ();
     static size_t s_minOutside = 0;     // normally allow everything through.   set to 2 in debugger to trap strange cases
-
+    ShardHealer healer;
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {
         meshToPunch.Multiply (visitorPoints, visitorPoints);
@@ -306,10 +556,12 @@ TaggedPolygonVector* debugPolygons
                         currentShard,
                         shards[shard1],
                         xyzWork1, xyzWork2,
-                        false);
+                        false,
+                        planeTolerance
+                        );
                     if (currentShard.size () > 2)
                         {
-                        DPoint3dOps::Compress (currentShard, pointTolerance);
+                        DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
                         if (currentShard.size () > 2)
                             insideShards.PushCopy (currentShard);
                         }
@@ -343,7 +595,9 @@ TaggedPolygonVector* debugPolygons
                             currentShard,
                             shards[shard1],
                             xyzWork1, xyzWork2,
-                            false);
+                            false,
+                            planeTolerance
+                            );
 
                         if (debugPolygons != nullptr)
                             {
@@ -355,7 +609,7 @@ TaggedPolygonVector* debugPolygons
 
                         if (currentShard.size () > 2)
                             {
-                            DPoint3dOps::Compress (currentShard, pointTolerance);
+                            DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
                             if (currentShard.size () > 2)
                                 insideShards.PushCopy (currentShard);
                             }
@@ -369,7 +623,7 @@ TaggedPolygonVector* debugPolygons
         size_t numOutside = 0;  // To become the number of nontrivial outside shards
         for (auto &shard : shards[shard0])
             {
-            DPoint3dOps::Compress (shard, pointTolerance);
+            DPoint3dOps::CompressCyclic (shard, pointTolerance);
             if (shard.size () > 2)
                 numOutside++;
             }
@@ -382,10 +636,12 @@ TaggedPolygonVector* debugPolygons
                 {
                 if (numInside == 0)
                     {
+                    // clip planes sliced through, but only artificially.   Original facet is unchanged.
                     AddPolygonCapture (*outsidePolygons, visitorPoints, 2);
                     }
                 else
                     {
+                    healer.HealShards (shards[shard0], visitorPoints);
                     for (auto &shard : shards[shard0])
                         {
                         if (shard.size () > 2)
@@ -403,6 +659,8 @@ TaggedPolygonVector* debugPolygons
                 }
             else
                 {
+                if (insideShards.size () > 0)
+                    healer.HealShards (insideShards, visitorPoints);
                 for (auto &shard : insideShards)
                     {
                     if (shard.size () > 2)

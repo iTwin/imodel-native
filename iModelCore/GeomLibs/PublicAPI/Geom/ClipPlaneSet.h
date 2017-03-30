@@ -194,9 +194,10 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
     bvector<DPoint3d> &inside,      //!< [out] clipped polygon (inside the convex set)
     BVectorCache<DPoint3d> &outside,      //!< [out] clipped polygons (outside the convex set)
-    bvector<DPoint3d> &work1,            //!< [in] work1
-    bvector<DPoint3d> &work2,            //!< [in] work2
-    bool clearOutside = true             //!< [in] clearOutside
+    bvector<DPoint3d> &work1,       //!< [in,out] work vector for efficient reuse over multiple calls
+    bvector<DPoint3d> &work2,       //!< [in,out] work vector for efficient reuse over multiple calls
+    bool clearOutside = true,        //!< [in] true to clear the outside data.
+    double distanceTolerance = 0.0  //!< [in] if nonzero, polygons within this distance of interior planes are classified as entirely "in"
     ) const;
     }; // ConvexClipPlaneSet
 

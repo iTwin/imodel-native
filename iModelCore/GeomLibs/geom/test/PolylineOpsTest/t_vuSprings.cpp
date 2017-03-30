@@ -1,4 +1,5 @@
 #include "testHarness.h"
+#include "SampleGeometry.h"
 
 typedef VuSpringModel<uint64_t> BCSSpringModel;
 
@@ -511,21 +512,13 @@ TEST(Vu,CreateDelauney)
     {
     double dy = 50.0;
     bvector<DPoint3d> points;
-    bvector<DEllipse3d> arcs 
-        {
-        DEllipse3d::From (0,0,0,    10,0,0,  0,10,0,   0, Angle::TwoPi ()),
-        DEllipse3d::From (5,4,0,    11,0,0,  0,3,0,   0, Angle::TwoPi ()),
-        DEllipse3d::From (1,3,0,   6,6,0,   -2,-3,0,  0, Angle::Pi ()),
-        DEllipse3d::From (-2,1,0,   4,6,0,   -2,-3,0,  0, Angle::DegreesToRadians (75.0)),
-        DEllipse3d::From (4,-1,0,   1,2,0,   -2,3,0,  0, Angle::DegreesToRadians (355.0))
-        };
 
     bvector<size_t> edgeCount {7,9,12, 6, 11};
 
-    for (size_t i = 0; i < arcs.size (); i++)
+    for (size_t i = 0; i < s_arcSamples.size (); i++)
         {
         SaveAndRestoreCheckTransform shifter (80.0,0,0);
-        AddPoints (points, arcs[i], i< edgeCount.size () ? edgeCount[i] : 9);
+        AddPoints (points, s_arcSamples[i], i < edgeCount.size () ? edgeCount[i] : 9);
         Check::SaveTransformed (points);
         PolyfaceHeaderPtr delauney, voronoi;
         if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
@@ -609,4 +602,86 @@ TEST(Vu,IncircleFlipProblem)
         }
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
+    }
+
+bool DoClips (
+bvector<DPoint3d> const &stationPoints, //!< [in] nominal room centers
+bvector<DPoint3d> const &wallPoints,    //!< [in] (single) wall polygon
+PolyfaceHeaderPtr &delauney,            //!<  [in] delauney triangulation of room centers
+PolyfaceHeaderPtr &voronoi,             //!< [in] voronoi regions
+PolyfaceHeaderPtr &voronoiInsideWalls   //!< [in] voronoi regions clipped to wall 
+)
+    {
+    auto clipper = PolyfaceHeader::CreateVariableSizeIndexed ();
+    clipper->AddPolygon (wallPoints);
+    delauney = nullptr;
+    voronoi = nullptr;
+    voronoiInsideWalls = nullptr;
+    if (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (stationPoints, delauney, voronoi))
+        {
+        PolyfaceHeaderPtr outside;
+        PolyfaceHeader::ComputePunchXYByPlaneSets (*clipper, *voronoi, &voronoiInsideWalls, &outside);
+        return true;
+        }
+    return true;
+    }
+
+void DoClips (bvector<DPoint3d> const &clipPoints)
+    {
+    bvector<DPoint3d> points;
+    bvector<size_t> edgeCount {7,9,12, 6, 11};
+    double dyMax = 10.0;
+    SaveAndRestoreCheckTransform shifterY;
+    auto baseTransformA = Check::GetTransform ();
+
+    for (size_t i = 0; i < s_arcSamples.size (); i++)
+        {
+        SaveAndRestoreCheckTransform shifterX;
+
+        auto baseTransformB = Check::GetTransform ();
+        AddPoints (points, s_arcSamples[i], i < edgeCount.size () ? edgeCount[i] : 9);
+        PolyfaceHeaderPtr delauney, voronoi, voronoiInside;
+        DRange3d rangeA = DRange3d::From (points);
+        double dy = rangeA.YLength ();
+        double dx = rangeA.XLength ();
+        if (DoClips (points, clipPoints, delauney, voronoi, voronoiInside))
+            {
+            DRange3d rangeB = voronoi->PointRange ();
+            dx = 1.5 * rangeB.XLength ();
+            dy = 1.1 * rangeB.YLength ();
+            Check::SaveTransformedMarkers (points, 0.1);
+            Check::Shift (0,dy,0);
+            Check::SaveTransformed (clipPoints);
+            Check::SaveTransformed (*delauney);
+            Check::SaveTransformed (*voronoi);
+            Check::Shift (0, dy, 0);
+            Check::SaveTransformed (*voronoiInside);
+            Check::SaveTransformedMarkers (points, 0.1);
+            }
+        else
+            {
+            Check::SaveTransformed (points);
+            }
+        dyMax = DoubleOps::Max (dyMax, 3.0 * dy);
+        shifterX.SetShift (2.0 * dx, 0, 0);
+        }
+    shifterY.SetShift (0, dyMax, 0);
+    }
+TEST(Vu,CreateClippedVornoi)
+    {
+
+
+    DEllipse3d clipArc = DEllipse3d::From (
+                18,0,0,
+                -4,0,0,
+                0,20,0,
+                Angle::DegreesToRadians (-35),
+                Angle::DegreesToRadians (70)
+                );
+    DoClips (CreateOffsetStrip (clipArc, 18.0, 22.0, 7));
+    auto clipT = CreateT (20, 20, 4,6, 4, 5);
+    DPoint3dOps::Add (clipT, DVec3d::From (-10,-10, 0));
+    DoClips (clipT);
+
+    Check::ClearGeometry ("Vu.CreateClippedVornoi");
     }

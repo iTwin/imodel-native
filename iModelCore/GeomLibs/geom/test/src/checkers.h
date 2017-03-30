@@ -385,6 +385,9 @@ static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint3d> const &data);
+
+static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize);
+
 static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
 static void SaveTransformed (bvector<DSegment3d> const &data);
@@ -478,6 +481,10 @@ void DoShift ()
     Check::SetTransform (m_baseTransform);
     Check::Shift (m_finalShift.x, m_finalShift.y, m_finalShift.z);
     m_baseTransform = Check::GetTransform ();
+    }
+void SetShift (double dx, double dy, double dz)
+    {
+    m_finalShift.Init (dx, dy, dz);
     }
 ~SaveAndRestoreCheckTransform ()
     {

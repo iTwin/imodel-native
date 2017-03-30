@@ -274,3 +274,72 @@ double ybase     //!< [in] y height for base line
         }
     }
 
+ bvector<DEllipse3d> s_arcSamples
+        {
+        DEllipse3d::From (0,0,0,    10,0,0,  0,10,0,   0, Angle::TwoPi ()),
+        DEllipse3d::From (5,4,0,    11,0,0,  0,3,0,   0, Angle::TwoPi ()),
+        DEllipse3d::From (1,3,0,   6,6,0,   -2,-3,0,  0, Angle::Pi ()),
+        DEllipse3d::From (-2,1,0,   4,6,0,   -2,-3,0,  0, Angle::DegreesToRadians (75.0)),
+        DEllipse3d::From (4,-1,0,   1,2,0,   -2,3,0,  0, Angle::DegreesToRadians (355.0))
+        };
+
+bvector<DPoint3d> CreateOffsetStrip (DEllipse3dCR arc, double offset0, double offset1, size_t numStroke, bool close)
+    {
+    bvector<DPoint3d> points;
+    bvector<DVec3d> perps;
+    if (numStroke < 1)
+        numStroke = 1;
+    double df = 1.0 / numStroke;
+    DVec3d derivative2;
+    for (size_t i = 0; i <= numStroke; i++)
+        {
+        double f = i * df;
+        double offsetDistance = DoubleOps::Interpolate (offset0, f, offset1);
+        DPoint3d xyz;
+        DVec3d tangent, perp;
+        arc.FractionParameterToDerivatives (xyz, tangent, derivative2, i * df);
+        points.push_back (xyz);
+        perp.UnitPerpendicularXY (tangent);
+        perps.push_back (offsetDistance * perp);
+        }
+    for (auto i = points.size (); i-- > 0;)
+        {
+        points.push_back (points[i] + perps[i]);
+        }
+    return points;
+    }
+bvector<DPoint3d> CreateT (
+double dxTotal, //!< [in] total width of range box
+double dyTotal, //!< [in] total height of range box
+double dxLeft,  //!< [in] x distance under the left bar
+double dxRight, //!< [in] x distance under the right bar
+double dyLeft,  //!< [in] vertical width of left bar (measured from top down
+double dyRight,      //!< [in] vertical width of right bar (measuredFrom top down)
+bool close
+)
+    {
+    double dx = dxTotal - dxLeft - dxRight;
+    double x = dxLeft;
+    double y = 0.0;
+    bvector<DPoint3d> points;
+ 
+    points.push_back (DPoint3d::From (x,y));
+    auto xyz0 = points.front ();
+    x += dx;
+    points.push_back (DPoint3d::From (x,y));
+    y += dyTotal - dyRight;
+    points.push_back (DPoint3d::From (x,y));
+    x = dxTotal;
+    points.push_back (DPoint3d::From (x,y));
+    y = dyTotal;
+    points.push_back (DPoint3d::From (x,y));
+    x = 0.0;
+    points.push_back (DPoint3d::From (x,y));
+    y -= dyLeft;
+    points.push_back (DPoint3d::From (x,y));
+    x += dxLeft;
+    points.push_back (DPoint3d::From (x,y));
+    if (close)
+        points.push_back (xyz0);
+    return points;
+    }

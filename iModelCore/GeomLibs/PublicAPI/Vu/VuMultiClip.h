@@ -361,4 +361,47 @@ bool selectBelow = true,
 bool selectOn    = false,
 bool selectAbove = true
 );
+
+
+//! context for (repeated) merging of shards with (a) simple edge sharing and (b) possible mid-edge artificial nodes.
+//! Each call to HealShards builds up VU graph, fusses away interior edges (being careful to retain bridges for wraparound faces), and returns the composite faces.
+struct ShardHealer
+{
+private:
+VuSetP m_graph;
+bvector<int> m_loopIndex;  // work vector
+bvector<DPoint3d> m_loopXYZ;
+double m_vertexTolerance;
+bvector<size_t> m_faceClusters;
+bvector<DPoint3d> m_originalXYZ;
+public:
+GEOMDLLIMPEXP ShardHealer::ShardHealer ();
+GEOMDLLIMPEXP ShardHealer::~ShardHealer ();
+
+private:
+void SetOriginalXYZ (bvector<DPoint3d> const &originalXYZ);
+// linear search for point in data array.
+int FindOriginalIndex (DPoint3dCR xyz);
+
+// find null faces whose mates are marked exterior.
+// swap at both ends to make the exterior masks be on the null face
+bool SwapExteriorMasksToNullFaces (VuMask exteriorMask);
+// set or clear mask at successor of nodeA:
+// set if there is a sharp turn or it is an original vertex
+// clear otherwise (i.e. it is a split of an original edge
+void AnnotateSuccessorIfTurnOrOriginal (VuP nodeA, VuMask mask);
+bool SetupInteriorFaceNumbers (VuMask exteriorMask);
+// find null face pairs that separate faces. mark with merge mask if the faces can be safely merged.
+// return the merge count.
+size_t MergeFacesAcrossNullFaces
+(
+VuMask exteriorMask,
+VuMask mergeMask        // apply to all 4 edges of deletable pair
+);
+
+
+public:
+GEOMDLLIMPEXP bool HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> &originalXYZ);
+};
+
 END_BENTLEY_GEOMETRY_NAMESPACE

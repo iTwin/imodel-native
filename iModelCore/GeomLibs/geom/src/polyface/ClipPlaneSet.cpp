@@ -583,6 +583,7 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> &points
         {
         DVec3d edgeVector = DVec3d::FromStartEnd (points[i0], points[i0 + 1]);
         DVec3d perp = DVec3d::FromCCWPerpendicularXY (edgeVector);
+        perp.z = 0.0;
         if (!leftIsInside)
             perp.Negate ();
         if (perp.Normalize ())
@@ -597,6 +598,25 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
     return FromSweptPolygon (points, n, direction, nullptr);
     }
 
+static DPoint3d LexicalXYZSelectLow (DPoint3dCR point0, DPoint3dCR point1)
+    {
+    if (point0.x < point1.x)
+        return point0;
+    if (point1.x < point0.x)
+        return point1;
+
+    if (point0.y < point1.y)
+        return point0;
+    if (point1.y < point0.y)
+        return point1;
+
+    if (point0.z < point1.z)
+        return point0;
+    if (point1.z < point0.z)
+        return point1;
+    return point0;
+    }
+	
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2017
 +--------------------------------------------------------------------------------------*/
@@ -708,7 +728,9 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
                 DVec3d edgeVector = DVec3d::FromStartEnd (xyz0, xyz1);
                 DVec3d inwardNormal = DVec3d::FromCrossProduct (sweepDirection, edgeVector);
                 inwardNormal.Normalize();
-                double distance = inwardNormal.DotProduct (xyz0.x, xyz0.y, xyz0.z);
+
+                DPoint3d xyzOrigin = LexicalXYZSelectLow (xyz0, xyz1);
+                double distance = inwardNormal.DotProduct (xyzOrigin.x, xyzOrigin.y, xyzOrigin.z);
                 bool isOriginalEdge = (vu_getMask (currVertex, VU_BOUNDARY_EDGE) != 0);
                 convexSet.push_back (ClipPlane (inwardNormal, distance, !isOriginalEdge));
                 }
@@ -785,7 +807,8 @@ bvector<DPoint3d> &inside,      //!< [out] clipped polygon (inside the convex se
 BVectorCache<DPoint3d> &outside,      //!< [out] clipped polygons (outside the convex set)
 bvector<DPoint3d> &work1,
 bvector<DPoint3d> &work2,           //!< [out] work vector -- copy of input.
-bool clearOutside
+bool clearOutside,
+double distanceTolerance
 ) const
     {
 #ifdef CheckAreaXY
@@ -797,21 +820,37 @@ bool clearOutside
     if (clearOutside)
         outside.ClearToCache ();
     size_t outsideCount0 = outside.size ();
+    DRange1d altitudeRange;
     for (auto &plane : *this)
         {
         if (work1.empty())
             break;
         outside.PushFromCache ();
-        plane.ConvexPolygonSplitInsideOutside (work1, inside, outside.back ());
+        plane.ConvexPolygonSplitInsideOutside (work1, inside, outside.back (), altitudeRange);
 #ifdef CheckAreaXY
 Check ( PolygonOps::AreaXY (work1),
         PolygonOps::AreaXY (inside) + PolygonOps::AreaXY (outside.back ())
         );
         area1 += PolygonOps::AreaXY (outside.back ());
 #endif
-        inside.swap (work1);
-        if (outside.back ().empty ())
+        if (altitudeRange.low >= -distanceTolerance && altitudeRange.low <= 0.0)
+            {
+            // leave unclipped IN
             outside.PopToCache();
+            }
+        else if (altitudeRange.high < distanceTolerance && altitudeRange.high >= 0.0)
+            {
+            // leave unclipped OUT
+            inside.clear ();
+            outside.back ().clear ();
+            outside.back ().swap (work1);
+            }
+        else
+            {
+            inside.swap (work1);
+            if (outside.back ().empty ())
+                outside.PopToCache();
+            }
         }
 
 #ifdef CheckAreaXY

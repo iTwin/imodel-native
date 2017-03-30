@@ -286,6 +286,7 @@ template void       VectorOps<T>::AppendInterpolated (bvector<T> &dest, T const 
 template void       VectorOps<T>::InterpolateAll (bvector<T> &dest, bvector <T> const &dataA, double f, bvector <T> const &dataB); \
 template T *        VectorOps<T>::MallocAndCopy (bvector<T> &source); \
 template void       VectorOps<T>::Compress (bvector<T> &data, double tolerance); \
+template void       VectorOps<T>::CompressCyclic (bvector<T> &data, double tolerance); \
 template void       VectorOps<T>::Compress (bvector<T> const &source, bvector<T> &dest, double tolerance); \
 template void       VectorOps<T>::Reverse (bvector<T>& xyz); \
 template double     VectorOps<T>::LargestCoordinate (bvector<T> const &data); \
@@ -804,6 +805,18 @@ void VectorOps<T>::Compress (bvector<T> const &source, bvector<T> &dest, double 
                 dest.push_back (xyzB);
             xyzA = xyzB;
             }
+        }
+    }
+
+template <typename T>
+void VectorOps<T>::CompressCyclic (bvector<T> &data, double tolerance)
+    {
+    Compress (data, tolerance);
+    T point0 = data.front ();
+    for (size_t k = data.size (); --k > 0;)
+        {
+        if (!AlmostEqual (point0, data[k]), tolerance)
+            break;
         }
     }
 
