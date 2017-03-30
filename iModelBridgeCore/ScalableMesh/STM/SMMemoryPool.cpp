@@ -260,7 +260,7 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
 
     size_t binId = id / s_binSize;
     size_t itemId = id % s_binSize;
-    assert(binId < m_nbBins);
+    assert(binId < m_nbBins); 
 
     std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
@@ -268,7 +268,9 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType,smId))
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();
-        memItemPtr = 0;
+        //Ensure the replaced item is not saved to file.
+        memItemPtr->SetDirty(false);
+        memItemPtr = 0;        
         m_memPoolItems[binId][itemId] = poolItem;
         m_currentPoolSizeInBytes += m_memPoolItems[binId][itemId]->GetSize();
         m_lastAccessTime[binId][itemId] = clock();

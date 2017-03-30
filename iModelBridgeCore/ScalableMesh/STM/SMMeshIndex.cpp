@@ -11,6 +11,8 @@ USING_NAMESPACE_IMAGEPP
 #include "SMMeshIndex.hpp"
 #include "ScalableMeshQuery.h"
 
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 //template class SMPointIndex<DPoint3d, ISMStore::Extent3d64f>;
