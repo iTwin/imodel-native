@@ -576,6 +576,9 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
 
         if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
             return ERROR;
+
+        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
+            return ERROR;
         }
     else if (ecProperty.GetIsArray())
         {
@@ -589,9 +592,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
                 return ERROR;
 
             if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *arrayProp->GetAsPrimitiveArrayProperty()))
-                return ERROR;
-
-            if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, *arrayProp->GetAsPrimitiveArrayProperty()))
                 return ERROR;
             }
         else
@@ -610,6 +610,10 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
         if (BE_SQLITE_OK != stmt->BindInt(arrayMaxIndex, (int) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
+
+        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
+            return ERROR;
+
         }
     else if (ecProperty.GetIsNavigation())
         {
@@ -803,23 +807,7 @@ BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int pa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, PrimitiveECPropertyCR prop)
-    {
-    if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
-        return SUCCESS;
-
-    KindOfQuantityCP koq = prop.GetKindOfQuantity();
-    if (SUCCESS != ImportKindOfQuantity(*koq))
-        return ERROR;
-
-    BeAssert(koq->HasId());
-    return stmt.BindId(paramIndex, koq->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    06/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, PrimitiveArrayECPropertyCR prop)
+BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
     if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
         return SUCCESS;

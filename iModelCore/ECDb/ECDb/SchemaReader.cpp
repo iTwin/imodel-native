@@ -936,7 +936,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (!stmt->IsColumnNull(koqIdIx))
                     rowInfo.m_koqId = stmt->GetValueId<KindOfQuantityId>(koqIdIx);
 
-                if (rowInfo.m_koqId.IsValid() && kind != PropertyKind::Primitive && kind != PropertyKind::PrimitiveArray)
+                if (rowInfo.m_koqId.IsValid() && kind == PropertyKind::Navigation)
                     {
                     BeAssert(false && "KindOfQuantityId must only be set for primitive or primitive array props");
                     return ERROR;
@@ -1023,15 +1023,6 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                         return ERROR;
                     }
 
-                if (rowInfo.m_koqId.IsValid())
-                    {
-                    KindOfQuantityP koq = nullptr;
-                    if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
-                        return ERROR;
-
-                    primProp->SetKindOfQuantity(koq);
-                    }
-
                 prop = primProp;
                 break;
                 }
@@ -1073,15 +1064,6 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     {
                     if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
-                    }
-
-                if (rowInfo.m_koqId.IsValid())
-                    {
-                    KindOfQuantityP koq = nullptr;
-                    if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
-                        return ERROR;
-
-                    arrayProp->SetKindOfQuantity(koq);
                     }
 
                 arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
@@ -1152,6 +1134,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
         if (!rowInfo.m_displayLabel.empty())
             prop->SetDisplayLabel(rowInfo.m_displayLabel);
 
+        if (rowInfo.m_koqId.IsValid())
+            {
+            KindOfQuantityP koq = nullptr;
+            if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
+                return ERROR;
+
+            prop->SetKindOfQuantity(koq);
+            }
+
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
             return ERROR;
 
@@ -1159,7 +1150,6 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
         // custom attributes are loaded)
         if (prop->IsCalculated())
             prop->GetCalculatedPropertySpecification();
-
         }
 
     return SUCCESS;
