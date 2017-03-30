@@ -294,7 +294,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         DataSourceURL m_url;
         bvector<uint8_t> m_rawHeaders;
         unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
-        static unordered_map<uint64_t, SMNodeGroup::Ptr> s_downloadedGroups;
+        static map<uint64_t, SMNodeGroup::Ptr> s_downloadedGroups;
         map<uint32_t, Json::Value*>* m_nodeHeaders;
         //map<uint64_t, SMNodeGroup::Ptr> m_tileTreeChildrenGroups;
         SMNodeGroup::Ptr m_ParentGroup;

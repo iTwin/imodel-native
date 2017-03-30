@@ -20,7 +20,7 @@ size_t s_max_group_size = 256 << 10; // 256 KB
 uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
-unordered_map<uint64_t, SMNodeGroup::Ptr> SMNodeGroup::s_downloadedGroups;
+map<uint64_t, SMNodeGroup::Ptr> SMNodeGroup::s_downloadedGroups;
 mutex SMNodeGroup::s_mutex;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)

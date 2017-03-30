@@ -1028,18 +1028,21 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     if (rootNodePtr == nullptr) return;
     PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
-	int64_t nbObjects = 0;
-	int64_t nbNodes = 0;
-	EstimateMeanNbPointsPerNode(nbObjects, nbNodes, rootNodePtr);
+    if (rootNodePtr->GetMinResolution() == 0)
+        {
+        int64_t nbObjects = 0;
+        int64_t nbNodes = 0;
+        EstimateMeanNbPointsPerNode(nbObjects, nbNodes, rootNodePtr);
 
-	if (nbNodes > 0)
-		{
-		s_minScreenPixelCorrectionFactor = ((double)nbObjects / nbNodes) / rootNodePtr->GetSplitTreshold();
-		}
-	else
-		{
-		s_minScreenPixelCorrectionFactor = 1.0;
-		}
+        if (nbNodes > 0)
+            {
+            s_minScreenPixelCorrectionFactor = ((double)nbObjects / nbNodes) / rootNodePtr->GetSplitTreshold();
+            }
+        else
+            {
+            s_minScreenPixelCorrectionFactor = 1.0;
+            }
+        }
     }
 
 ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
