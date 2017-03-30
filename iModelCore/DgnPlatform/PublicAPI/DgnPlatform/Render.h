@@ -753,6 +753,13 @@ enum class FillDisplay //!< Whether a closed region should be drawn for wirefram
     Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
 };
 
+enum class BackgroundFill
+{
+    None    = 0, //!< single color fill uses the fill color and line color to draw either a solid or outline fill
+    Solid   = 1, //!< single color fill uses the view's background color to draw a solid fill
+    Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
+};
+
 enum class DgnGeometryClass
 {
     Primary      = 0,
@@ -856,13 +863,12 @@ private:
         bool m_weight:1;
         bool m_style:1;
         bool m_material:1;
-        bool m_fill:1;   // If not set, fill is an opaque fill that matches sub-category appearance color...
-        bool m_bgFill:1; // When set, fill is an opaque fill that matches current view background color...
+        bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
         AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
     AppearanceOverrides m_appearanceOverrides; //!< flags for parameters that override SubCategory::Appearance.
-    bool m_resolved = false;  //!< whether Resolve has established SubCategory::Appearance/effective values.
+    bool m_resolved = false; //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
     DgnMaterialId m_materialId; //!< render material Id.
@@ -870,13 +876,14 @@ private:
     int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
     uint32_t m_weight = 0;
     ColorDef m_lineColor;
-    ColorDef m_fillColor;  //!< fill color (applicable only if filled)
+    ColorDef m_fillColor; //!< fill color (applicable only if filled)
+    BackgroundFill m_backgroundFill = BackgroundFill::None; //!< support for fill using the view's background color.
     FillDisplay m_fillDisplay = FillDisplay::Never; //!< whether or not the element should be displayed filled
     double m_elmTransparency = 0; //!< transparency, 1.0 == completely transparent.
     double m_netElmTransparency = 0; //!< net transparency for element/category.
     double m_fillTransparency = 0;  //!< fill transparency, 1.0 == completely transparent.
     double m_netFillTransparency = 0; //!< net transparency for fill/category.
-    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary;   //!< geometry class
+    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary; //!< geometry class
     LineStyleInfoPtr m_styleInfo; //!< line style id plus modifiers.
     GradientSymbPtr m_gradient; //!< gradient fill settings.
     PatternParamsPtr m_pattern; //!< area pattern settings.
@@ -896,8 +903,8 @@ public:
     void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo; if (styleInfo) m_resolved = false;}
     void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
     void SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
-    void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_appearanceOverrides.m_bgFill = false; m_fillColor = color;}
-    void SetFillColorToViewBackground() {m_appearanceOverrides.m_fill = false; m_appearanceOverrides.m_bgFill = true;} // FillDisplay::Blanking creates an opaque view background fill...
+    void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_fillColor = color; m_backgroundFill = BackgroundFill::None;}
+    void SetFillColorFromViewBackground(bool outline=false) {m_appearanceOverrides.m_fill = true; m_backgroundFill = outline ? BackgroundFill::Outline : BackgroundFill::Solid; m_resolved = false;}
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
     void SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;} // NOTE: Sets BOTH element and fill transparency...
@@ -917,14 +924,13 @@ public:
     void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
     void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
     void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
-    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = m_appearanceOverrides.m_bgFill = false;}
+    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = false;}
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
     bool IsMaterialFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_material;}
-    bool IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill && !m_appearanceOverrides.m_bgFill;}
-    bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
+    bool IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill;}
     //! @endcond
 
     //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
@@ -943,10 +949,13 @@ public:
     ColorDef GetLineColor() const {BeAssert(m_appearanceOverrides.m_color || m_resolved); return m_lineColor;}
 
     //! Get element fill color
-    ColorDef GetFillColor() const {BeAssert(m_appearanceOverrides.m_fill || m_resolved); return m_fillColor;}
+    ColorDef GetFillColor() const {BeAssert((m_appearanceOverrides.m_fill && BackgroundFill::None == m_backgroundFill) || m_resolved); return m_fillColor;}
 
     //! Get fill display setting
     FillDisplay GetFillDisplay() const {return m_fillDisplay;}
+
+    //! Get solid fill color type setting
+    bool IsFillColorFromViewBackground(bool* outline=nullptr) const {if (outline) *outline = BackgroundFill::Outline == m_backgroundFill; return BackgroundFill::None != m_backgroundFill;}
 
     //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
     GradientSymbCP GetGradient() const {return m_gradient.get();}
