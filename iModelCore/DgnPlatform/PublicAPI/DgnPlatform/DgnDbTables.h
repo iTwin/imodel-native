@@ -35,6 +35,7 @@
 #define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
 #define BIS_CLASS_DisplayStyle              "DisplayStyle"
+#define BIS_CLASS_DisplayStyle2d            "DisplayStyle2d"
 #define BIS_CLASS_DisplayStyle3d            "DisplayStyle3d"
 #define BIS_CLASS_Document                  "Document"
 #define BIS_CLASS_DocumentListModel         "DocumentListModel"

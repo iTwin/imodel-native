@@ -1005,7 +1005,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
         for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        auto style = new DisplayStyle(*m_db, "");
+        auto style = new DisplayStyle2d(*m_db, "");
         auto flags = style->GetViewFlags();
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
         style->SetViewFlags(flags);

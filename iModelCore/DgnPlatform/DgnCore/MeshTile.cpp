@@ -1107,18 +1107,19 @@ struct PrimitiveTileGeometry : TileGeometry
 {
 private:
     IGeometryPtr        m_geometry;
+    bool                m_curvesAsWire;
 
-    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
+    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, bool curvesAsWire, DgnDbR db)
+        : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry), m_curvesAsWire(curvesAsWire) { }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
 public:
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, bool curvesAsWire, DgnDbR db)
         {
-        return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, isCurved, db);
+        return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, isCurved, curvesAsWire, db);
         }
 };
 
@@ -1394,9 +1395,9 @@ TileGeometryPtr TileGeometry::Create(TextStringR textString, TransformCR transfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, bool isCurved, bool curvesAsWire, DgnDbR db)
     {
-    return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, isCurved, db);
+    return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, isCurved, curvesAsWire, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,7 +1424,6 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
     {
     PolyfaceHeaderPtr polyface = m_geometry->GetAsPolyfaceHeader();
     
-
     if (polyface.IsValid())
         {
         if (!HasTexture())
@@ -1443,7 +1443,7 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
     ISolidPrimitivePtr  solidPrimitive = curveVector.IsNull() ? m_geometry->GetAsISolidPrimitive() : nullptr;
     MSBsplineSurfacePtr bsplineSurface = solidPrimitive.IsNull() && curveVector.IsNull() ? m_geometry->GetAsMSBsplineSurface() : nullptr;
 
-    if (curveVector.IsValid())
+    if (curveVector.IsValid() && !m_curvesAsWire)
         polyfaceBuilder->AddRegion(*curveVector);
     else if (solidPrimitive.IsValid())
         polyfaceBuilder->AddSolidPrimitive(*solidPrimitive);
@@ -1469,7 +1469,7 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
     T_TileStrokes       tileStrokes;
 
-    if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
+    if (curveVector.IsValid() && (m_curvesAsWire || !curveVector->IsAnyRegionType()))
         {
         bvector<bvector<DPoint3d>>  strokePoints;
 
@@ -1702,9 +1702,18 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
-    DgnModelPtr     modelPtr(&model);
-    auto            pCollector = &collector;
-    auto            generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    DgnModelPtr         modelPtr(&model);
+    auto                pCollector = &collector;
+    auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    GeometricModelCP    geometricModel = model.ToGeometricModel();
+    
+    if (nullptr != geometricModel)
+        {
+        double              rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+        static double       s_minDiagonalToleranceRatio = 1.0E-5;   // Done allow leaf tolerance to be less than this factor times range diagonal.
+
+        leafTolerance = std::min(leafTolerance, rangeDiagonal * s_minDiagonalToleranceRatio);
+        }
 
     if (nullptr != generateMeshTiles)
         {
@@ -2136,7 +2145,7 @@ private:
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
-    bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
+    bool ProcessGeometry(IGeometryR geometry, bool isCurved, bool curvesAsWire, SimplifyGraphic& gf);
 
     IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
 
@@ -2425,7 +2434,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, bool curvesAsWire, SimplifyGraphic& gf)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -2436,7 +2445,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     
     TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
-    AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, curvesAsWire, m_dgndb));
     return true;
     }
 
@@ -2448,12 +2457,14 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;
 
-    if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
+    bool    curvesAsWire = m_is2d && !filled;       // If in a drawing or sheet, honor the filled status.  In MicroStation we also do this for wireframe in 3D.
+
+    if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive() && !curvesAsWire)
         return false;   // process as facets.
 
     CurveVectorPtr clone = curves.Clone();
     IGeometryPtr geom = IGeometry::Create(clone);
-    return ProcessGeometry(*geom, false, gf);
+    return ProcessGeometry(*geom, true, curvesAsWire, gf);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2479,7 +2490,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     if (!thisTileRange.IsContained(m_tileRange))
         {
         IGeometryPtr geom = IGeometry::Create(clone);
-        return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+        return ProcessGeometry(*geom, hasCurvedFaceOrEdge, false, gf);
         }
 
     
@@ -2491,7 +2502,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
         IGeometryPtr        geom = IGeometry::Create(clone);
         TileGeometryList    geometryList;
 
-        geometryList.push_back(TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, prim.HasCurvedFaceOrEdge(), m_dgndb));
+        geometryList.push_back(TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, prim.HasCurvedFaceOrEdge(), false, m_dgndb));
         
         m_solidPrimitiveParts.Insert(key, tileGeomPart = TileGeomPart::Create(range, geometryList));
         }
@@ -2511,7 +2522,7 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
     IGeometryPtr geom = IGeometry::Create(clone);
 
     bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
-    return ProcessGeometry(*geom, isCurved, gf);
+    return ProcessGeometry(*geom, isCurved, false, gf);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2549,7 +2560,7 @@ void TileGeometryProcessor::FlushPolyfaceCache ()
         DRange3d range = m_polyfaceCache->GetClientMeshR().PointRange();
 
         IGeometryPtr geom = IGeometry::Create(m_polyfaceCache->GetClientMeshPtr());
-        AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, *m_polyfaceCacheDisplay, false, m_dgndb));
+        AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, *m_polyfaceCacheDisplay, false, false, m_dgndb));
 
         m_polyfaceCache = nullptr;
         m_polyfaceCacheDisplay = nullptr;
