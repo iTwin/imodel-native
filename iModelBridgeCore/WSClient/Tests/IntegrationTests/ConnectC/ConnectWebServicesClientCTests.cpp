@@ -32,6 +32,43 @@ void ConnectWebServicesClientCTests::TearDown ()
     }
 
 
+CallStatus CreateDummyTestProject_v4(CWSCCHANDLE apiHandle)
+        {
+        BeGuid guid(true);
+        WString guidstr;
+        BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
+        WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+        WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+        WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
+        WString OrgId = L"1001389117";
+        bool Active = true;
+        WString Industry = L"8";
+        WString AssetType = L"11";
+        WString Location = L"Huntsville";
+        double lat = 48.1231232;
+        double lon = -25.12315411;
+        bool LocationIsUsingLatLong = false;
+        bool isRbacEnabled = true;
+        return ConnectWebServicesClientC_CreateProject_V4(apiHandle,
+                                                UltimateRefId.c_str(),
+                                                &isRbacEnabled,                              
+                                                Name.c_str(),
+                                                Number.c_str (),
+                                                Industry.c_str (),
+                                                AssetType.c_str (),
+                                                nullptr,
+                                                Location.c_str (),
+                                                &lat,
+                                                &lon,
+                                                &LocationIsUsingLatLong,
+                                                nullptr,
+                                                nullptr,
+                                                0,
+                                                nullptr,
+                                                nullptr);
+        }
+
+
 TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will fail.
@@ -1088,41 +1125,8 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
         );
     ASSERT_TRUE (api != nullptr);
 
-    BeGuid guid(true);
-    WString guidstr;
-    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
-    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
-    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
-    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
-    WString OrgId = L"1001389117";
-    bool Active = true;
-    WString Industry = L"8";
-    WString AssetType = L"11";
-    WString Location = L"Huntsville";
-    double lat = 48.1231232;
-    double lon = -25.12315411;
-    bool LocationIsUsingLatLong = false;
-    bool isRbacEnabled = true;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
-                                            UltimateRefId.c_str(),
-                                            &isRbacEnabled,                              
-                                            Name.c_str(),
-                                            Number.c_str (),
-                                            Industry.c_str (),
-                                            AssetType.c_str (),
-                                            nullptr,
-                                            Location.c_str (),
-                                            &lat,
-                                            &lon,
-                                            &LocationIsUsingLatLong,
-                                            nullptr,
-                                            nullptr,
-                                            0,
-                                            nullptr,
-                                            nullptr);
-
+    CallStatus status = CreateDummyTestProject_v4(api);    
     ASSERT_TRUE (status == SUCCESS);
-
     
     Utf8String instanceId;
     ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
@@ -1157,10 +1161,81 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
+#ifdef NOT_NOW
+
+    TEST_F (ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
     {
+    //set up a project and share to test with
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
+        m_applicationName.c_str (),
+        m_applicationVersion.c_str (),
+        m_applicationGuid.c_str (),
+        m_ccProductId.c_str (),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
+        );
+    ASSERT_TRUE (api != nullptr);
+    
+    CallStatus status = CreateDummyTestProject_v4(api);    
+    ASSERT_TRUE (status == SUCCESS);
+    
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
+
+    //create the project share storage area
+    WString wProjectInstanceId;
+    BeStringUtilities::Utf8ToWChar(wProjectInstanceId, instanceId.c_str());
+    
+    status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId.c_str());    
+    EXPECT_TRUE(status == SUCCESS);
+
+    //test folder ops
+    WString folderName = L"FolderA";
+    WPrintfString folderDescription(L"Description for %s", folderName);
+    WString contentType = L"Folder";
+    bool isRootFolder = false;
+    bool issAutomatedPublishingFolder = false;
+    int64_t folderSize = 0;
+    status = ConnectWebServicesClientC_CreateFolder
+        (
+        api,
+        folderName.c_str(),
+        contentType.c_str(),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &isRootFolder,
+        &folderSize,
+        folderDescription.c_str(),
+        nullptr,
+        nullptr
+        );
+    ASSERT_TRUE (status == SUCCESS);
+
+    //get the folder id.
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
+
+    //read the folder
+    WString wFolderInstanceId;
+    BeStringUtilities::Utf8ToWChar(wFolderInstanceId, instanceId.c_str());
+    
+    CWSCCDATABUFHANDLE folderBuffer;    
+    status = ConnectWebServicesClientC_ReadFolder (api, wFolderInstanceId.c_str(), &folderBuffer);
+    ASSERT_TRUE (status == SUCCESS);    
     }
 
+#endif
 //#endif
 
     
