@@ -375,8 +375,8 @@ double m_vertexTolerance;
 bvector<size_t> m_faceClusters;
 bvector<DPoint3d> m_originalXYZ;
 public:
-GEOMDLLIMPEXP ShardHealer::ShardHealer ();
-GEOMDLLIMPEXP ShardHealer::~ShardHealer ();
+GEOMDLLIMPEXP ShardHealer ();
+GEOMDLLIMPEXP ~ShardHealer ();
 
 private:
 void SetOriginalXYZ (bvector<DPoint3d> const &originalXYZ);

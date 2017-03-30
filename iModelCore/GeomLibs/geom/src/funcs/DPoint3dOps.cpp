@@ -815,7 +815,7 @@ void VectorOps<T>::CompressCyclic (bvector<T> &data, double tolerance)
     T point0 = data.front ();
     for (size_t k = data.size (); --k > 0;)
         {
-        if (!AlmostEqual (point0, data[k]), tolerance)
+        if (!AlmostEqual (point0, data[k], tolerance))
             break;
         }
     }
