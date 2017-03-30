@@ -118,6 +118,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
+        virtual void SaveProjectFiles() override;
+
         virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;

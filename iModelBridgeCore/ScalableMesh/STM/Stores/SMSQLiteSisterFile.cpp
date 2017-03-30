@@ -167,6 +167,24 @@ bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     return true;
     }
 
+void SMSQLiteSisterFile::SaveSisterFiles()
+    {
+    if (m_smFeatureSQLiteFile.IsValid())
+        { 
+        m_smFeatureSQLiteFile->Save();
+        }
+
+    if (m_smClipSQLiteFile.IsValid())
+        {
+        m_smClipSQLiteFile->Save();
+        }
+
+    if (m_smClipDefinitionSQLiteFile.IsValid())
+        {
+        m_smClipDefinitionSQLiteFile->Save();
+        }        
+    }
+
 bool SMSQLiteSisterFile::IsProjectFilesPathSet()
     {
     return !m_projectFilesPath.empty();

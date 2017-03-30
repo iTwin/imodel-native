@@ -45,7 +45,7 @@ SMSQLiteFile::~SMSQLiteFile()
     m_database = nullptr;
     }
 
-void SMSQLiteFile::CommitAll()
+void SMSQLiteFile::Save()
     {
     if (m_database != nullptr) m_database->SaveChanges();
     }
@@ -56,7 +56,6 @@ bool SMSQLiteFile::Close()
     m_database->CloseDb();
     return true;
     }
-
 
 const SchemaVersion s_listOfReleasedSchemas[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
 const size_t s_numberOfReleasedSchemas = 3;

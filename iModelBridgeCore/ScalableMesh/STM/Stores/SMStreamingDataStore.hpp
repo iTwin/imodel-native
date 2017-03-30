@@ -1022,6 +1022,11 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFil
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
+    {
+    __super::SaveSisterFiles();
+    }
+
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
