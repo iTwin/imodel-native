@@ -2707,6 +2707,8 @@ struct  InstanceXmlReader
                     return propertyStatus;
                 }
 
+            MemoryECInstanceBaseP memory = ecInstance->GetAsMemoryECInstanceP();
+            memory->_SetAllPropertiesCalculated(true);
             return InstanceReadStatus::Success;
             }
 

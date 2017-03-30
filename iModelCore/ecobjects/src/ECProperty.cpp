@@ -371,11 +371,11 @@ ECObjectsStatus ECProperty::SetDisplayLabel (Utf8StringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsReadOnly () const
     {
-    CalculatedPropertySpecificationCP calcSpec;
+    //CalculatedPropertySpecificationCP calcSpec;
     if (m_readOnly)
         return true;
-    else if (GetIsPrimitive() && NULL != (calcSpec = GetAsPrimitiveProperty()->GetCalculatedPropertySpecification()))
-        return calcSpec->IsReadOnly();
+    //else if (GetIsPrimitive() && NULL != (calcSpec = GetAsPrimitiveProperty()->GetCalculatedPropertySpecification()))
+    //    return calcSpec->IsReadOnly();
     else
         return false;
     }

@@ -522,15 +522,6 @@ TEST_F (CalculatedPropertyTests, SettingACalculatedPropertyUpdatesThePropertiesF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad.Zaighum                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (CalculatedPropertyTests, CalculatedPropertiesWithNoParserRegExAreReadOnly)
-    {
-    IECInstancePtr instance = CreateTestCase ("S", "S1", 1, "<Could not be calculated>", NULL);
-    ASSERT_EQ (true, instance->IsPropertyReadOnly ("S"));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad.Zaighum                10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CalculatedPropertyTests, UseLastValidValueInsteadOfFailure)
     {
     IECInstancePtr instance = CreateTestCase ("S", "this.S1 & \"-\" & this.S2", OPTION_UseLastValid, "<Could not be calculated>");
