@@ -256,7 +256,7 @@ WCharCP projectGuid
     CallStatus status = ConnectWebServicesClientC_ReadFolder(api, projectGuid, &folderBuffer);
     if (status == SUCCESS && folderBuffer != nullptr)
         {
-        return SUCCESS;
+        return ERROR_ALREADY_EXISTS;
         }
 
     Json::Value instance;
