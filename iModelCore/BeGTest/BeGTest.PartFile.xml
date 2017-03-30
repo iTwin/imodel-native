@@ -56,6 +56,8 @@
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
 
+        <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
+
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
@@ -63,11 +65,14 @@
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
         <ProductDirectory Name="cpprestsdkAssemblies" Deliver="false"/>
         <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
-        <ProductDirectory Name="PlantDomainSchemasDir" Deliver="false"/>
         <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
         <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
         <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
         
+		<ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData"/>
+        <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
+		<ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
+        <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
