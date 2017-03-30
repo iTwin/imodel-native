@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectAuthenticationHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -107,9 +107,9 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
         }
 
     if (IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
-        previousAttempt.GetAttemptNumber() > 1)
+        previousAttempt.GetAttemptNumber() > 0)
         {
-        // Used new token and it did not work
+        // Used token and it did not work
         return true;
         }
 
