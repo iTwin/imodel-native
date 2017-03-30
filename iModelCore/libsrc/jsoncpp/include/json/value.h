@@ -22,6 +22,8 @@
 #include <Bentley/bmap.h>
 #include <cmath>
 
+#define BE_JSON_NAME(__val__) static constexpr Json::StaticString json_##__val__() {return Json::StaticString(#__val__);}
+
 BEGIN_BENTLEY_NAMESPACE
 
 typedef Json::Value& JsonValueR;
