@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/SchemaLocalizationTests.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -188,6 +188,7 @@ TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplemental)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    ASSERT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->IsSupplemented());
     
     VerifyLocalized(testSchema, PK);
@@ -206,6 +207,7 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    ASSERT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, GB);
 
@@ -228,6 +230,7 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    ASSERT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
@@ -253,6 +256,7 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    ASSERT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, PK);
 
