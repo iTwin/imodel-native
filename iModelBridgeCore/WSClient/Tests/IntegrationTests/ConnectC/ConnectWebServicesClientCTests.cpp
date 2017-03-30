@@ -519,11 +519,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
 
     ASSERT_TRUE (status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wInstanceId;
-    wInstanceId.AssignUtf8 (instanceId);
+    wInstanceId.AssignUtf8 (instanceId.c_str());
     CWSCCDATABUFHANDLE project;
     status = ConnectWebServicesClientC_ReadProject_V4 (api, wInstanceId.c_str(), &project);
     EXPECT_TRUE (status == SUCCESS);
@@ -638,11 +639,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
 
     ASSERT_TRUE (status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wInstanceId;
-    wInstanceId.AssignUtf8 (instanceId);
+    wInstanceId.AssignUtf8 (instanceId.c_str());
     CWSCCDATABUFHANDLE project;
     status = ConnectWebServicesClientC_ReadProject_V4 (api, wInstanceId.c_str(), &project);
     EXPECT_TRUE (status == SUCCESS);
@@ -721,9 +723,6 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
     //                                                                 OrganizationGuid.c_str (),
     //                                                                 Name.c_str ());
     //ASSERT_TRUE (status == SUCCESS);
-
-    //auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    //ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
     WString wInstanceId = L"d3d7c3a8-10f1-4078-b686-cb24f4dca997"; //BentleyCONNECTQA3
     CWSCCDATABUFHANDLE organization;
@@ -811,11 +810,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
 
     ASSERT_TRUE (status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wInstanceId;
-    wInstanceId.AssignUtf8 (instanceId);
+    wInstanceId.AssignUtf8 (instanceId.c_str());
     
     status = ConnectWebServicesClientC_CreateProjectFavorite_V4(api, 
                                             wInstanceId.c_str());
@@ -911,11 +911,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
                                             nullptr);
     ASSERT_TRUE (status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wProjectInstanceId;
-    wProjectInstanceId.AssignUtf8 (instanceId);
+    wProjectInstanceId.AssignUtf8 (instanceId.c_str());
 
     /************************************************************************************//**
     * \brief Create a new projectmru
@@ -931,11 +932,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
                                                         nullptr);
     ASSERT_TRUE(status == SUCCESS);
 
-    instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wProjectMRUInstanceId;
-    wProjectMRUInstanceId.AssignUtf8 (instanceId);
+    wProjectMRUInstanceId.AssignUtf8 (instanceId.c_str());
 
     CWSCCDATABUFHANDLE projectMRU;
     status = ConnectWebServicesClientC_ReadProjectMRU (api, wProjectMRUInstanceId.c_str (), &projectMRU);
@@ -1031,11 +1033,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
                                             nullptr);
     ASSERT_TRUE (status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
 
     WString wProjectInstanceId;
-    wProjectInstanceId.AssignUtf8 (instanceId);
+    wProjectInstanceId.AssignUtf8 (instanceId.c_str());
 
     /************************************************************************************//**
     * \brief Create a new projectmru
@@ -1085,10 +1088,53 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
         );
     ASSERT_TRUE (api != nullptr);
 
+    BeGuid guid(true);
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
+    WString OrgId = L"1001389117";
+    bool Active = true;
+    WString Industry = L"8";
+    WString AssetType = L"11";
+    WString Location = L"Huntsville";
+    double lat = 48.1231232;
+    double lon = -25.12315411;
+    bool LocationIsUsingLatLong = false;
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
+                                            UltimateRefId.c_str(),
+                                            &isRbacEnabled,                              
+                                            Name.c_str(),
+                                            Number.c_str (),
+                                            Industry.c_str (),
+                                            AssetType.c_str (),
+                                            nullptr,
+                                            Location.c_str (),
+                                            &lat,
+                                            &lon,
+                                            &LocationIsUsingLatLong,
+                                            nullptr,
+                                            nullptr,
+                                            0,
+                                            nullptr,
+                                            nullptr);
+
+    ASSERT_TRUE (status == SUCCESS);
+
+    
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId.c_str()));
+
     //get a project instance id
-    WCharP wProjectInstanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    WString wProjectInstanceId;
+    BeStringUtilities::Utf8ToWChar(wProjectInstanceId, instanceId.c_str());
+    
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject_V4 (api, wProjectInstanceId, &project);
+    status = ConnectWebServicesClientC_ReadProject_V4 (api, wProjectInstanceId.c_str(), &project);
+    EXPECT_TRUE (status == SUCCESS);
 
     wchar_t stringBuf[4096];
     status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_V4_BUFF_NAME, 0, 4096, stringBuf);
@@ -1096,13 +1142,15 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
 
     const WString RootFolderName = L""; //documentation says "" for root.
     WPrintfString RootFolderDescription(L"My Root Folder for Project %s", stringBuf);
-
-    int64_t folderSize = 0;
-    bool isRootFolder;
-    bool isAutomatedPublishingFolder;
     
-    status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId);    
+    status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId.c_str());    
     EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wProjectInstanceId.c_str ());
+    ASSERT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_FreeApi (api);
+    ASSERT_TRUE (status == SUCCESS);
     }
 
 TEST_F (ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)

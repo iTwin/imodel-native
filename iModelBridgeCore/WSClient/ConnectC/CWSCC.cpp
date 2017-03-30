@@ -251,6 +251,14 @@ WCharCP projectGuid
         return INVALID_PARAMETER;
         }
     
+    //does the root folder already exists, then just return the information
+    CWSCCDATABUFHANDLE folderBuffer;
+    CallStatus status = ConnectWebServicesClientC_ReadFolder(api, projectGuid, &folderBuffer);
+    if (status == SUCCESS && folderBuffer != nullptr)
+        {
+        return SUCCESS;
+        }
+
     Json::Value instance;
     instance["schemaName"] = "ProjectShare";
     instance["className"] = "Folder";
@@ -320,13 +328,14 @@ CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle)
+CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle, Utf8String& instanceId)
     {
     if (NULL == apiHandle)
-        return "apiHandle passed into ConnectWebServicesClientC_GetLastCreatedObjectInstanceId is NULL.";
+        return INVALID_PARAMETER;
+
     LPCWSCC api = (LPCWSCC) apiHandle;
-    auto str = api->GetLastCreatedObjectInstanceId ();
-    return str;
+    api->GetLastCreatedObjectInstanceId (instanceId);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -666,13 +675,16 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId ()
+void ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId (Utf8String& instanceId)
     {
     Json::Value json;
     m_lastCreatedObjectResponse.GetJson(json);
-
     if (json["changedInstance"]["instanceAfterChange"]["instanceId"].isString())
-        return json["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+        {
+        auto instanceJson = json["changedInstance"]["instanceAfterChange"]["instanceId"];                
+        instanceId.assign(instanceJson.asCString());
+        return;
+        }        
 
-    return "";
+    instanceId.assign("");
     }
