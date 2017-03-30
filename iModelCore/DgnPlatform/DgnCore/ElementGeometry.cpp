@@ -3279,6 +3279,25 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsFillVisible(ViewContextR context, Render::GeometryParamsCR geomParams)
+    {
+    // NEEDSWORK Mesh tiles...will want to control fill with shader so that turning it on/off doesn't invalidate tiles...
+    switch (geomParams.GetFillDisplay())
+        {
+        case FillDisplay::Never:
+            return false;
+
+        case FillDisplay::ByView:
+            return context.GetViewFlags().ShowFill();
+
+        default:
+            return true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
@@ -3451,7 +3470,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
                             }
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3483,7 +3502,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddShape2d(nPts, pts, DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -3515,7 +3534,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3542,7 +3561,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
+                        currGraphic->AddShape(nPts, pts, DrawHelper::IsFillVisible(context, geomParams));
                         break;
                     }
                 break;
@@ -3573,7 +3592,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3591,14 +3610,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (FB::BoundaryType_Closed != boundary)
                         currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, true, DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
                     currGraphic->AddArc(arc, false, false);
                 else
-                    currGraphic->AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
+                    currGraphic->AddArc(arc, true, DrawHelper::IsFillVisible(context, geomParams));
                 break;
                 }
 
@@ -3684,7 +3703,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3699,11 +3718,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3725,7 +3744,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
+                currGraphic->AddPolyface(meshData, DrawHelper::IsFillVisible(context, geomParams));
                 break;
                 };
 
