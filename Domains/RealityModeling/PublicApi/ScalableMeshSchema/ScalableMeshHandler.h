@@ -229,6 +229,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
 
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation);
+
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
 

@@ -1401,13 +1401,7 @@ void ScalableMeshModel::CloseFile()
 * @bsimethod                                    Simon.Normand                   03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
-    {
-    if (!m_tryOpen || !GetPath().IsEmpty())
-        {
-        BeAssert(!"We can only reload a file which we have failed to open");
-        return ERROR;
-        }
-
+    {    
     if (!BeFileName::DoesPathExist(newFilename))
         return ERROR;
     
@@ -1415,6 +1409,7 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
     OpenFile(newFilename, GetDgnDb());
+    m_tryOpen = true;
 
     Update();
 
@@ -1422,6 +1417,51 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ScalableMeshModel::UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation)
+    {
+    assert(m_tryOpen == true);
+
+    if (m_smPtr == nullptr)
+        return ERROR;
+
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
+    
+    bvector<uint64_t> coverageIds;
+    m_smPtr->GetCoverageIds(coverageIds);
+
+    for (auto& pMeshModel : allScalableMeshes)
+        {        
+        BeFileName coveragePath = oldLocation;
+        coveragePath.AppendString(m_basePath.GetFileNameAndExtension().c_str());
+
+         //m_basePath;
+        //coveragePath.AppendString(L"_terrain");
+        ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
+        if (this == pScalableMesh)
+            continue;
+
+        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
+            {            
+            for (uint64_t coverageId : coverageIds)
+                {
+                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
+                    {                    
+                    BeFileName newFileName(newLocation); 
+                    newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
+                    pScalableMesh->CloseFile();
+                    pScalableMesh->UpdateFilename(newFileName);                                                            
+                    }
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -1627,7 +1667,6 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
                         AddTerrainRegion(coverageId, pScalableMesh, regionData);
                     }
                 }
-
             }
 
         if (nullptr != context.GetViewport())
