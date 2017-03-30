@@ -7,6 +7,7 @@
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECDbExpressionSymbolProvider.h"
+#include <Formatting/Formatting.h>
 #include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -515,11 +516,10 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int displayLabelColIx = 2;
     const int descriptionColIx = 3;
     const int persUnitColIx = 4;
-    const int persPrecColIx = 5;
-    const int defaultPresUnitColIx = 6;
-    const int altPresUnitColIx = 7;
+    const int relErrorColIx = 5;
+    const int presUnitColIx = 6;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -538,10 +538,9 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
     BeAssert(!stmt->IsColumnNull(persUnitColIx));
-    Utf8CP persUnit = stmt->GetValueText(persUnitColIx);
-    uint32_t persPrec = (uint32_t) stmt->GetValueInt(persPrecColIx);
-    Utf8CP defaultPresUnit = stmt->IsColumnNull(defaultPresUnitColIx) ? nullptr : stmt->GetValueText(defaultPresUnitColIx);
-    Utf8CP altPresUnits = stmt->IsColumnNull(altPresUnitColIx) ? nullptr : stmt->GetValueText(altPresUnitColIx);
+    Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
+    const double relError = stmt->GetValueDouble(relErrorColIx);
+    Utf8CP presUnitsStr = stmt->IsColumnNull(presUnitColIx) ? nullptr : stmt->GetValueText(presUnitColIx);
     
     koq = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateKindOfQuantity(koq, koqName))
@@ -553,15 +552,15 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
         koq->SetDisplayLabel(displayLabel);
 
     koq->SetDescription(description);
-    koq->SetPersistenceUnit(persUnit);
-    koq->SetPrecision(persPrec);
 
-    if (!Utf8String::IsNullOrEmpty(defaultPresUnit))
-        koq->SetDefaultPresentationUnit(defaultPresUnit);
+    BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
+    koq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr));
+    BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+    koq->SetRelativeError(relError);
 
-    if (!Utf8String::IsNullOrEmpty(altPresUnits))
+    if (!Utf8String::IsNullOrEmpty(presUnitsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(*koq, altPresUnits))
+        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, presUnitsStr))
             return ERROR;
         }
 

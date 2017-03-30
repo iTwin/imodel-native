@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <Formatting/Formatting.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -219,17 +220,23 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaName
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum)
     {
-    Json::Value enumValuesJson(Json::arrayValue);
     BeAssert(ecEnum.GetEnumeratorCount() > 0);
+    rapidjson::Document enumValuesJson(rapidjson::kArrayType);
+    rapidjson::MemoryPoolAllocator<>& jsonAllocator = enumValuesJson.GetAllocator();
+
     for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
         {
-        Json::Value enumValueJson(Json::objectValue);
+        rapidjson::Value enumValueJson(rapidjson::kObjectType);
 
-        Json::Value val;
         if (enumValue->IsInteger())
-            enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue] = Json::Value(enumValue->GetInteger());
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_IntValue, rapidjson::Value(enumValue->GetInteger()).Move(), jsonAllocator);
         else if (enumValue->IsString())
-            enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue] = Json::Value(enumValue->GetString().c_str());
+            {
+            Utf8StringCR enumValueStr = enumValue->GetString();
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_StringValue,
+                                    rapidjson::Value(enumValueStr.c_str(), (rapidjson::SizeType) enumValueStr.size(), jsonAllocator).Move(), 
+                                    jsonAllocator);
+            }
         else
             {
             BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
@@ -237,13 +244,21 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
             }
 
         if (!enumValue->GetInvariantDisplayLabel().empty())
-            enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel] = Json::Value(enumValue->GetInvariantDisplayLabel().c_str());
+            {
+            Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
+                                    rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
+                                    jsonAllocator);
 
-        enumValuesJson.append(enumValueJson);
+            }
+
+        enumValuesJson.PushBack(enumValueJson.Move(), jsonAllocator);
         }
 
-    Json::FastWriter writer;
-    jsonStr = writer.write(enumValuesJson);
+    rapidjson::StringBuffer jsonStrBuf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
+    enumValuesJson.Accept(writer);
+    jsonStr.assign(jsonStrBuf.GetString());
     return SUCCESS;
     }
 
@@ -253,35 +268,34 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumerationR ecEnum, Utf8CP jsonStr)
     {
-    Json::Value enumValuesJson;
-    Json::Reader reader;
-    if (!reader.Parse(jsonStr, enumValuesJson, false))
+    rapidjson::Document enumValuesJson;
+    if (enumValuesJson.Parse<0>(jsonStr).HasParseError())
         {
         BeAssert(false && "Could not parse ECEnumeration values JSON string.");
         return ERROR;
         }
 
-    BeAssert(enumValuesJson.isArray());
+    BeAssert(enumValuesJson.IsArray());
 
-    for (JsonValueCR enumValueJson : enumValuesJson)
+    for (rapidjson::Value const& enumValueJson : enumValuesJson.GetArray())
         {
-        BeAssert(enumValueJson.isObject());
-        BeAssert(enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue));
+        BeAssert(enumValueJson.IsObject());
+        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue));
 
         ECEnumeratorP enumValue = nullptr;
 
-        if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue))
+        if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue))
             {
-            JsonValueCR intVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
-            BeAssert(intVal.isInt());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, intVal.asInt()))
+            rapidjson::Value const& intVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
+            BeAssert(intVal.IsInt());
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, intVal.GetInt()))
                 return ERROR;
             }
-        else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue))
+        else if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue))
             {
-            JsonValueCR stringVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
-            BeAssert(stringVal.isString());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, stringVal.asCString()))
+            rapidjson::Value const& stringVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
+            BeAssert(stringVal.IsString());
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, stringVal.GetString()))
                 return ERROR;
             }
         else
@@ -290,9 +304,9 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
             return ERROR;
             }
 
-        if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
+        if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
             {
-            Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].asCString();
+            Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].GetString();
             enumValue->SetDisplayLabel(displayLabel);
             }
         }
@@ -303,17 +317,26 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
     {
-    Json::Value altPresUnitsJson(Json::arrayValue);
-    BeAssert(!koq.GetAlternativePresentationUnitList().empty());
-    for (Utf8StringCR altUnit : koq.GetAlternativePresentationUnitList())
+    BeAssert(!koq.GetPresentationUnitList().empty());
+    rapidjson::Document presUnitsJson(rapidjson::kArrayType);
+    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presUnitsJson.GetAllocator();
+
+    for (Formatting::FormatUnitSet const& presUnit : koq.GetPresentationUnitList())
         {
-        altPresUnitsJson.append(Json::Value(altUnit.c_str()));
+        if (presUnit.HasProblem())
+            return ERROR;
+
+        Utf8String presUnitStr = presUnit.ToText(false);
+        BeAssert(!presUnitStr.empty());
+        presUnitsJson.PushBack(rapidjson::Value(presUnitStr.c_str(), (rapidjson::SizeType) presUnitStr.size(), jsonAllocator).Move(), jsonAllocator);
         }
 
-    Json::FastWriter writer;
-    jsonStr = writer.write(altPresUnitsJson);
+    rapidjson::StringBuffer jsonStrBuf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
+    presUnitsJson.Accept(writer);
+    jsonStr.assign(jsonStrBuf.GetString());
     return SUCCESS;
     }
 
@@ -321,22 +344,22 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
     {
-    Json::Value altPresUnitsJson;
-    Json::Reader reader;
-    if (!reader.Parse(jsonStr, altPresUnitsJson, false))
+    rapidjson::Document presUnitsJson;
+    if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
         {
-        BeAssert(false && "Could not parse KindOfQuantity AlternativePresentationUnits values JSON string.");
+        BeAssert(false && "Could not parse KindOfQuantity PresentationUnits values JSON string.");
         return ERROR;
         }
 
-    BeAssert(altPresUnitsJson.isArray());
+    BeAssert(presUnitsJson.IsArray());
 
-    for (JsonValueCR altPresUnitJson : altPresUnitsJson)
+    for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
-        BeAssert(altPresUnitJson.isString());
-        koq.GetAlternativePresentationUnitListR().push_back(altPresUnitJson.asCString());
+        BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
+        koq.GetPresentationUnitListR().push_back(Formatting::FormatUnitSet(presUnitJson.GetString()));
+        BeAssert(!koq.GetPresentationUnitList().back().HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
         }
 
     return SUCCESS;
