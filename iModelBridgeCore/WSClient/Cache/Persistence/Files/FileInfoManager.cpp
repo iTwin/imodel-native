@@ -175,8 +175,9 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
         BeAssert(false);
         return ERROR;
         }
+    int64_t accessTimeMs = static_cast<int64_t>(accessTime) * 1000;
     DateTime lastAccessDate;
-    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTime * 1000))
+    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTimeMs))
         {
         BeAssert(false);
         return ERROR;
