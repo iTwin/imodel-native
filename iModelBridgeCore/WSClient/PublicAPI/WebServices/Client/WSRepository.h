@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSRepository.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,5 +40,8 @@ struct WSRepository
         WSCLIENT_EXPORT void SetDescription(Utf8String description);
         WSCLIENT_EXPORT void SetPluginId(Utf8String type);
     };
+
+typedef const WSRepository& WSRepositoryCR;
+typedef WSRepository& WSRepositoryR;
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
