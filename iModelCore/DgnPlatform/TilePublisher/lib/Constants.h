@@ -316,7 +316,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                         {
                         float   miter  = dist / dotP;
             
-                        delta = bisector * miter; // max(miter, - 5.0 * dist);
+                        delta = bisector * max(miter, - 5.0 * dist);
                         }
                     else
                         {
