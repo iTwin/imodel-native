@@ -95,22 +95,6 @@ bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              08/2016
-//---------------------------------------------------------------------------------------
-void DgnDbCodeTemplateSetResultInfo::AddCodeTemplate(const DgnDbCodeTemplate codeTemplate)
-    {
-    m_codeTemplates.insert(codeTemplate);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              08/2016
-//---------------------------------------------------------------------------------------
-const DgnDbCodeTemplateSet& DgnDbCodeTemplateSetResultInfo::GetTemplates() const
-    {
-    return m_codeTemplates;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
 const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes; }
@@ -1201,11 +1185,11 @@ bool                            queryOnly = false
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus GenerateValuePattern(CodeSpecCPtr codeSpec, Utf8StringR valuePattern)
+DgnDbStatus GenerateValuePattern(CodeSpec codeSpec, Utf8StringR valuePattern, uint32_t& startIndex, uint32_t& incrementBy)
     {
     valuePattern = "";
     Utf8String placeholder;
-    for (CodeFragmentSpecCR fragmentSpec : codeSpec->GetFragmentSpecs())
+    for (CodeFragmentSpecCR fragmentSpec : codeSpec.GetFragmentSpecs())
         {
         switch (fragmentSpec.GetType())
             {
@@ -1213,6 +1197,9 @@ DgnDbStatus GenerateValuePattern(CodeSpecCPtr codeSpec, Utf8StringR valuePattern
                 valuePattern.append(fragmentSpec.GetFixedString());
                 break;
             case CodeFragmentSpec::Type::Sequence:
+                startIndex = fragmentSpec.GetStartNumber();
+                incrementBy = fragmentSpec.GetNumberGap();
+
                 placeholder = Utf8String(fragmentSpec.GetMinChars(), '#');
                 valuePattern.append(placeholder);
                 break;
@@ -1259,30 +1246,27 @@ int                          incrementBy
 //---------------------------------------------------------------------------------------
 DgnDbStatus SetCodeTemplatesJsonRequestToChangeSet
 (
-    const CodeSpecPtrSet            templates,
-    const DgnDbCodeTemplate::Type   templateType,
-    WSChangeset&                    changeset,
-    const WSChangeset::ChangeState& changeState,
-    int                             startIndex = -1,
-    int                             incrementBy = -1
+CodeSpecCR                      codeSpec,
+const DgnDbCodeTemplate::Type   templateType,
+WSChangeset&                    changeset,
+const WSChangeset::ChangeState& changeState
 )
     {
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::CodeTemplate, "");
 
-    for (auto& codeSpec : templates)
-        {
-        Json::Value codeJson;
+    Json::Value codeJson;
+    Utf8String valuePattern;
+    uint32_t startIndex, incrementBy;
 
-        Utf8String valuePattern;
-        auto status = GenerateValuePattern(codeSpec, valuePattern);
-        if (DgnDbStatus::Success != status)
-            return status;
+    auto status = GenerateValuePattern(codeSpec, valuePattern, startIndex, incrementBy);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-        status = CreateCodeTemplateJson(codeJson, valuePattern, *codeSpec, templateType, startIndex, incrementBy);
-        if (DgnDbStatus::Success != status)
-            return status;
-        changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
-        }
+    status = CreateCodeTemplateJson(codeJson, valuePattern, codeSpec, templateType, startIndex, incrementBy);
+    if (DgnDbStatus::Success != status)
+        return status;
+    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
+
     return DgnDbStatus::Success;
     }
 
@@ -2078,9 +2062,9 @@ Json::Value GetChangedInstances(Utf8String response)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumIndex
+DgnDbServerCodeTemplateTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumIndex
 (
-CodeSpecPtrSet codeTemplates,
+CodeSpecCR codeSpec,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -2089,40 +2073,37 @@ ICancellationTokenPtr cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
-    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
+    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateSetResult>(DgnDbServerCodeTemplateSetResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
+        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
 
     auto requestString = changeset->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
-    return ExecutionManager::ExecuteWithRetry<DgnDbCodeTemplateSetResultInfo>([=]()
+    return ExecutionManager::ExecuteWithRetry<DgnDbCodeTemplate>([=]()
         {
-        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateResult>
             ([=](const WSChangesetResult& result)
             {
             if (result.IsSuccess())
                 {
-                DgnDbCodeTemplateSetResultInfo templates;
                 Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
-            
-                for (auto& value : ptr)
+                
+                auto json = ToRapidJson(*ptr.begin());
+                DgnDbCodeTemplate        codeTemplate;
+                if (!GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                     {
-                    auto json = ToRapidJson(value);
-                    DgnDbCodeTemplate        codeTemplate;
-                    if (GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
-                        {
-                        templates.AddCodeTemplate(codeTemplate);
-                        }
-                    //NEEDSWORK: log an error
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
+                    return DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::InvalidPropertiesValues);
                     }
+
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return DgnDbServerCodeTemplateSetResult::Success(templates);
+                return DgnDbServerCodeTemplateResult::Success(codeTemplate);
                 }
             else
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+                return DgnDbServerCodeTemplateResult::Error(result.GetError());
                 }
             });
         });
@@ -2131,96 +2112,50 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailableInternal
+DgnDbServerCodeTemplateTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable
 (
-std::shared_ptr<WSChangeset> changeset,
-int startIndex, 
-int incrementBy, 
+CodeSpecCR codeSpec, 
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodeNextAvailableInternal";
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodeNextAvailable";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    
+
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
+    if (DgnDbStatus::Success != status)
+        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
+
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return ExecutionManager::ExecuteWithRetry<DgnDbCodeTemplateSetResultInfo>([=]()
+    return ExecutionManager::ExecuteWithRetry<DgnDbCodeTemplate>([=]()
         {
-        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateResult>
             ([=](const WSChangesetResult& result)
             {
             if (result.IsSuccess())
                 {
-                DgnDbCodeTemplateSetResultInfo templates;
                 Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
+                auto json = ToRapidJson(*ptr.begin());
 
-                for (auto& value : ptr)
+                DgnDbCodeTemplate        codeTemplate;
+                if (!GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                     {
-                    auto json = ToRapidJson(value);
-                    DgnDbCodeTemplate        codeTemplate;
-                    if (GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
-                        {
-                        templates.AddCodeTemplate(codeTemplate);
-                        }
-                    //NEEDSWORK: log an error
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
+                    return DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::InvalidPropertiesValues);
                     }
+
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return DgnDbServerCodeTemplateSetResult::Success(templates);
+                return DgnDbServerCodeTemplateResult::Success(codeTemplate);
                 }
             else
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+                return DgnDbServerCodeTemplateResult::Error(result.GetError());
                 }
             });
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable
-(
-CodeSpecPtrSet codeTemplates, 
-int startIndex, 
-int incrementBy, 
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-
-    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created, startIndex, incrementBy);
-    if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateSetResult>(DgnDbServerCodeTemplateSetResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
-
-    return QueryCodeNextAvailableInternal(changeset, startIndex, incrementBy, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable
-(
-Utf8StringCR mask,
-CodeSpecCR codeSpec,
-int startIndex, 
-int incrementBy,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::CodeTemplate, "");
-
-    DgnDbStatus status;
-    Json::Value codeJson;
-
-    status = CreateCodeTemplateJson(codeJson, mask, codeSpec, DgnDbCodeTemplate::Type::NextAvailable, startIndex, incrementBy);
-    if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateSetResult>(DgnDbServerCodeTemplateSetResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
-    
-    changeset->AddInstance(codeObject, WSChangeset::ChangeState::Created, std::make_shared<Json::Value>(codeJson));
-    return QueryCodeNextAvailableInternal(changeset, startIndex, incrementBy, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2234,7 +2169,6 @@ AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::CreateBriefcaseIns
     briefcaseIdJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
     return m_wsRepositoryClient->SendCreateObjectRequest(briefcaseIdJson, BeFileName(), nullptr, cancellationToken);
     }
-
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
