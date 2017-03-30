@@ -10,6 +10,11 @@ LightThreadPool::LightThreadPool()
     m_nbThreads = std::max((int)1, (int)std::thread::hardware_concurrency() - 2);
     m_threads = new std::thread[m_nbThreads];
     m_areThreadsBusy = new std::atomic<bool>[m_nbThreads];                    
+
+    for (size_t threadInd = 0; threadInd < m_nbThreads; threadInd++)        
+        { 
+        m_areThreadsBusy[threadInd] = false;        
+        }
     }
 
 LightThreadPool::~LightThreadPool()
