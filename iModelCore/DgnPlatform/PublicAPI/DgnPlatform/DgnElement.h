@@ -1069,8 +1069,8 @@ public:
 private:
     template<class T> void CallAppData(T const& caller) const;
     Utf8String ToJsonPropString() const;
-    static constexpr Utf8CP str_UserProps() {return "UserProps";}
-    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[Json::StaticString(str_UserProps())];}
+    BE_JSON_NAME(UserProps)
+    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[json_UserProps()];}
 
 protected:
     //! @private
@@ -1705,7 +1705,7 @@ public:
     //! Remove a set of Json Properties on this element
     void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.RemoveMember(nameSpace);}
 
-    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(Json::StaticString(str_UserProps())).GetMember(nameSpace);}
+    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(json_UserProps()).GetMember(nameSpace);}
 
     void SetUserProperties(Utf8CP nameSpace, JsonValueCR value) {GetUserPropsR().GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
 
@@ -2742,7 +2742,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationContentElement);
     friend struct dgn_ElementHandler::Definition;
 
-    static Utf8CP str_IsPrivate() {return "IsPrivate";}
+    BE_PROP_NAME(IsPrivate)
 
     bool m_isPrivate = false;
 

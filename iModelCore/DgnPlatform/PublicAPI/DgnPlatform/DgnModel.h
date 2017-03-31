@@ -916,7 +916,7 @@ protected:
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT void AddLights(Render::LightListR, Render::TargetR) const;
+    DGNPLATFORM_EXPORT void AddLights(Render::SceneLightsR, Render::TargetR) const;
 };
 
 //=======================================================================================

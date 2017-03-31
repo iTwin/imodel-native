@@ -1674,36 +1674,15 @@ DEFINE_REF_COUNTED_PTR(Light)
 //! A list of Render::Lights
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct LightList : RefCounted<NonCopyableClass>
+struct SceneLights : RefCounted<NonCopyableClass>
 {
+    double m_fstop = 0.0; //!< must be between -3 and +3
     bvector<LightPtr> m_list;
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/17
-//=======================================================================================
-struct SceneLights : LightList
-{
-    struct Brightness
-    {
-        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
-        double m_maxLum = 0.0;
-        double m_fstop = 0.0; //!< must be between -3 and +3
-        bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
-
-        BE_JSON_NAME(avgLum);
-        BE_JSON_NAME(maxLum);
-        BE_JSON_NAME(fstop);
-        Json::Value ToJson() const;
-        void FromJson(JsonValueCR val);
-    };
-
-    Brightness m_brightness;
-};
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneLights)
 DEFINE_REF_COUNTED_PTR(SceneLights)
+
 
 //=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
