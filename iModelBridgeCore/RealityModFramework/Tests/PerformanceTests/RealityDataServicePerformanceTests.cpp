@@ -17,10 +17,20 @@
 #include <iomanip>
 #include <sstream>  
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "RealityDataServicePerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+
+
+static void silentErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
+    {
+    }
+
+
+
 
 static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
@@ -34,19 +44,10 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
 
 static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
-    char progressString[1024];
-    sprintf(progressString, "upload percent : %f\r", repoProgress * 100.0);
-    std::cout << progressString ;
-	
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
-    char progressString[1024];
-    sprintf(progressString, "percentage of files downloaded : %f\r", repoProgress * 100.0);
-    std::cout << progressString;
-	
-//DMxx    RealityDataConsole::DisplayInfo (Utf8PrintfString("percentage of files downloaded : %f\r", repoProgress * 100.0)); //, RealityDataConsole::Tip);
     }
 
 
@@ -63,6 +64,9 @@ int main(int argc, char* argv[])
         console.Run(argv[1]);
     else
         console.Usage();
+
+    //std::cout << "Press any key to continue" << std::endl;
+    //getch();
     }
 
 //-------------------------------------------------------------------------------------
@@ -144,6 +148,21 @@ RealityDataServicePerformanceTests::~RealityDataServicePerformanceTests()
 void RealityDataServicePerformanceTests::Run(Utf8String serverName)
     {
     bool relationshipCreated = false;
+
+    RealityDataService::SetErrorCallback(silentErrorCallback);
+
+    // This first call has for purpose to wake up the service in case it has fallen asleep.
+    ConfigureServerTest(serverName, true);
+
+    //// Clean existing entry in case program previously failed.
+    //DeleteRealityDataTest(true);
+
+    //// This sleep is require in case the deleting did occur ... the Azure container becomes unusable for a moment then
+    //// sleep(5000);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(25000));
+
+
+
     if (SUCCESS == ConfigureServerTest(serverName))
         {
         if (SUCCESS == CreateRealityDataTest())
@@ -157,13 +176,11 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName)
                 {
                 DownloadTest();
 
-                NavigationTest();
-
                 InformationExtractionTest();
 
                 ListTest();
 
-                InformationManagementTest();
+                UpdateTest();
                 }
 
             if (relationshipCreated)
@@ -173,6 +190,9 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName)
 
             // This test must be called if creation was sucessful
             DeleteRealityDataTest();
+
+            EnterpriseStatTest();
+
             }
         }
     }
@@ -192,17 +212,25 @@ void RealityDataServicePerformanceTests::Usage()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String serverName)
+StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String serverName, bool silent)
     {
     bool verifyCertificate = false;
 
-    DisplayInfo("WSG Request handshake test: ", DisplayOption::Info);
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
 
     m_server = WSGServer(serverName, verifyCertificate);
     RawServerResponse response;
 
     Utf8String version = m_server.GetVersion(response);
     if (version.size() == 0)
+        return ERROR;
+
+    if (response != OK)
         return ERROR;
 
     Utf8String repo = "S3MXECPlugin--Server";
@@ -215,7 +243,9 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
         return ERROR;
         }
     
-    
+    if (response != OK)
+        return ERROR;
+
     // Make sure repository S3MX is part of the list
     bool foundS3MXPlugIn = false;
 
@@ -229,8 +259,12 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
         DisplayInfo("Server does not contain S3MXECPlugin--Server repository\n", DisplayOption::Error);
         return ERROR;
         }
-        
+
+
     bvector<Utf8String> schemaNames = m_server.GetSchemaNames(repo, response);
+
+    if (response != OK)
+        return ERROR;
 
     if (schemaNames.size() == 0)
         {
@@ -253,6 +287,19 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
 
     RealityDataService::SetServerComponents(serverName, version, repo, schema);
     m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
+
+   
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (!silent)
+        {
+        if (SUCCESS != response.status)
+            std::cout << "Handshake Test: Failure no: " << response.status << std::endl;
+        else
+            std::cout << "Handshake Test : " << (endTime - startTime) / 1000.0 << std::endl;
+        }
 
     return SUCCESS;
     }
@@ -326,6 +373,12 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
     {
     RawServerResponse response;
 
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
     // Upload file
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, m_newRealityData->GetName());
@@ -339,12 +392,16 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
     upload.SetProgressCallBack(uploadProgressFunc);
     upload.SetProgressStep(0.1);
     upload.OnlyReportErrors(true);
-    TransferReport* tReport = upload.Perform();
-    Utf8String report;
-    tReport->ToXml(report);
-    DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
-    DisplayInfo(report);
-     
+    const TransferReport& tReport = upload.Perform();
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (tReport.results.size() != 0)
+        std::cout << "Upload Test error: file failed to upload" << std::endl;
+    else
+        std::cout << "Upload Test: " << ((endTime - startTime) / 1000.0) << std::endl;
 
     return SUCCESS;
     }
@@ -356,6 +413,11 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
 StatusInt RealityDataServicePerformanceTests::DownloadTest()
     {
     RawServerResponse response;
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Create a temporary file
     char fileNameBuffer[1025];
@@ -371,30 +433,22 @@ StatusInt RealityDataServicePerformanceTests::DownloadTest()
     download.SetProgressCallBack(downloadProgressFunc);
     download.SetProgressStep(0.1);
     download.OnlyReportErrors(true);
-    TransferReport* tReport = download.Perform();
-    Utf8String report;
-    tReport->ToXml(report);
-    DisplayInfo ("If any files failed to download, they will be listed here: \n");
-    DisplayInfo (Utf8PrintfString("%s\n", report));
+    const TransferReport& tReport = download.Perform();
 
 
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (tReport.results.size() != 0)
+        std::cout << "Download Test error: file failed to download" << std::endl;
+    else
+        std::cout << "Download Test: " << (endTime - startTime) / 1000.0 << std::endl;
 
     return SUCCESS;
     }
 
-//-------------------------------------------------------------------------------------
-// This will traverse the navigation node interface a few times and report the 
-// time taken.
-// @bsimethod                          Alain.Robert                            03/2017
-//-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::NavigationTest()
-    {
-    RawServerResponse response;
 
-    // To BE DONE!
-    
-    return SUCCESS;
-    }
 
 //-------------------------------------------------------------------------------------
 // This test will extract information about the reality data, folders and documents
@@ -426,9 +480,9 @@ StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
 
     // Report
     if (OK != response.status)
-        std::cout << "Information Extraction Test: Failure no: " << response.status;
+        std::cout << "Information Extraction Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Information Extraction Test: " << (endTime - startTime) / 1000.0;
+        std::cout << "Information Extraction Test: " << (endTime - startTime) / 1000.0 << std::endl;
     
     return (StatusInt)response.status;
     }
@@ -439,10 +493,37 @@ StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::InformationManagementTest()
+StatusInt RealityDataServicePerformanceTests::UpdateTest()
     {
-    // TO BE DONE
-    return SUCCESS;
+    // Modify the reality data
+    m_newRealityData->SetMetadataURL("");
+    m_newRealityData->SetGroup("TestGroup-1");
+    m_newRealityData->SetDescription("No text anymore");
+
+    // Update on server
+    RawServerResponse response;
+
+    RealityDataChangeRequest changeRequest(*m_newRealityData); 
+    
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataService::Request(changeRequest, response);
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "Change Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "Change Test: " << (endTime - startTime) / 1000.0 << std::endl;
+  
+    return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
@@ -461,18 +542,16 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-#if (0)
     RealityDataService::Request(myRequest, response);
-#endif
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
     if (OK != response.status)
-        std::cout << "Relationship deletion Test: Failure no: " << response.status;
+        std::cout << "Relationship deletion Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Relationship deletion Test: " << (endTime - startTime) / 1000.0;
+        std::cout << "Relationship deletion Test: " << (endTime - startTime) / 1000.0 << std::endl;
     
     return (StatusInt)response.status;
     }
@@ -481,7 +560,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
+StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(bool silent)
     {
     RawServerResponse response;
   
@@ -500,11 +579,14 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
-    if (OK != response.status)
-        std::cout << "Deletion Test: Failure no: " << response.status;
-    else
-        std::cout << "Deletion Test: " << (endTime - startTime) / 1000.0;
-    
+    if (!silent)
+        {
+        if (OK != response.status)
+            std::cout << "Deletion Test: Failure no: " << response.status << std::endl;
+        else
+            std::cout << "Deletion Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        }
+
     return (StatusInt)response.status;    
     }
 
@@ -514,24 +596,26 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::ListTest()
     {
-    RawServerResponse response;
 
-    Utf8String nodeString;
-    bvector<Utf8String> nodeStrings;
-#if (0)
-    m_serverNodes = NodeNavigator::GetInstance().GetRootNodes(m_server, RealityDataService::GetRepoName());
+    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
-    for (NavNode node : m_serverNodes)
-        {
-        nodeString = node.GetLabel();
-        if(node.GetClassName() == "Folder")
-            nodeString.append("/");
-        nodeStrings.push_back(nodeString);
+    bvector<Utf8String> properties = bvector<Utf8String>();
+    properties.push_back(RealityDataFilterCreator::FilterByName("ONLY"));
+
+    enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+
+    RawServerResponse enterpriseResponse = RawServerResponse();
+    enterpriseResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    bvector<RealityDataPtr> partialVec;
+
+    while(enterpriseResponse.status == RequestStatus::OK)
+        {//When LASTPAGE has been added, loop will exit
+        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
+        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
         }
 
-    PrintResults(nodeStrings);
-#endif
-    return response.status;
+    return SUCCESS;
     }
 
 
@@ -545,87 +629,29 @@ StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest()
     RealityDataEnterpriseStatRequest ptt("");
     uint64_t NbRealityData;
     uint64_t TotalSizeKB;
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
     RealityDataService::Request(ptt, &NbRealityData, &TotalSizeKB, response);
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "Enterprise stats Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "Enterprise stats Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
 
     return (StatusInt)response.status;
     }
 
-
-#if (0)
-//-------------------------------------------------------------------------------------
-// @bsimethod                          Alain.Robert                            03/2017
-//-------------------------------------------------------------------------------------
-void RealityDataServicePerformanceTests::Details()
-    {
-    if (m_currentNode == nullptr)
-        {
-        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
-        return;
-        }
-    Utf8String className = m_currentNode->node.GetClassName();
-    RequestStatus status;
-    if (className == "Document")
-        {
-        RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(m_currentNode->node.GetInstanceId());
-        RealityDataDocumentPtr document = RealityDataService::Request(documentReq, status);
-
-        if(document == nullptr)
-            {
-            DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
-            return;
-            }
-
-        DisplayInfo (Utf8PrintfString(" Document       : %s\n", document->GetName()));
-        DisplayInfo (Utf8PrintfString(" Container name : %s\n", document->GetContainerName()));
-        DisplayInfo (Utf8PrintfString(" Id             : %s\n", document->GetId()));
-        DisplayInfo (Utf8PrintfString(" Folder Id      : %s\n", document->GetFolderId()));
-        DisplayInfo (Utf8PrintfString(" Access Url     : %s\n", document->GetAccessUrl()));
-        DisplayInfo (Utf8PrintfString(" RealityData Id : %s\n", document->GetRealityDataId()));
-        DisplayInfo (Utf8PrintfString(" ContentType    : %s\n", document->GetContentType()));
-        DisplayInfo (Utf8PrintfString(" Size           : %lu\n", document->GetSize()));
-        }
-    else if (className == "Folder")
-        {
-        RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(m_currentNode->node.GetInstanceId());
-        RealityDataFolderPtr folder = RealityDataService::Request(folderReq, status);
-
-        if (folder == nullptr)
-            {
-            DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
-            return;
-            }
-
-        DisplayInfo (Utf8PrintfString("Folder         : %s\n", folder->GetName()));
-        DisplayInfo (Utf8PrintfString("Parent folder  : %s\n", folder->GetParentId()));
-        DisplayInfo (Utf8PrintfString("RealityData Id : %s\n", folder->GetRealityDataId()));
-        }
-    else if (className == "RealityData")
-        {
-        RealityDataByIdRequest idReq = RealityDataByIdRequest(m_currentNode->node.GetInstanceId());
-        RealityDataPtr entity = RealityDataService::Request(idReq, status);
-
-        if (entity == nullptr)
-            {
-            DisplayInfo ("There was an error retrieving information for this item\n", DisplayOption::Error);
-            return;
-            }
-
-        DisplayInfo (Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
-        DisplayInfo (Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
-        DisplayInfo (Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
-        DisplayInfo (Utf8PrintfString(" Dataset            : %s\n", entity->GetDataset()));
-        DisplayInfo (Utf8PrintfString(" Description        : %s\n", entity->GetDescription()));
-        DisplayInfo (Utf8PrintfString(" Root document      : %s\n", entity->GetRootDocument()));
-        DisplayInfo (Utf8PrintfString(" Size (kb)          : %lu", entity->GetIdentifier()));
-        DisplayInfo (Utf8PrintfString(" Classification     : %s\n", entity->GetClassificationTag()));
-        DisplayInfo (Utf8PrintfString(" Type               : %s\n", entity->GetRealityDataType()));
-        DisplayInfo (Utf8PrintfString(" Accuracy (m)       : %f", entity->GetAccuracyValue()));
-        DisplayInfo (Utf8PrintfString(" Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
-        DisplayInfo (Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
-        }
-    }
-
-#endif
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017

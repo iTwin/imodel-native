@@ -561,6 +561,7 @@ protected:
 struct RealityDataChangeRequest : public RealityDataUrl
     {
     REALITYDATAPLATFORM_EXPORT RealityDataChangeRequest(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataChangeRequest(RealityDataCR realityData);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -569,9 +570,15 @@ protected:
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to delete an existing reality data in the reality data service.
 //=====================================================================================
-struct RealityDataDelete : public RealityDataByIdRequest
+struct RealityDataDelete : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) : RealityDataByIdRequest(realityDataId) { m_requestType = HttpRequestType::DELETE_Request; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) { m_validRequestString = false; m_id = realityDataId; m_requestType = HttpRequestType::DELETE_Request; }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDelete(){}
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataDelete() {}
     };
 
 //=====================================================================================
@@ -641,7 +648,7 @@ struct TransferReport
             delete result;
         }
 
-    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report);
+    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
 
 //=====================================================================================
@@ -682,7 +689,8 @@ struct RealityDataServiceTransfer : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceTransfer_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
 
     //! Start the upload progress for all links.
-    REALITYDATAPLATFORM_EXPORT virtual TransferReport* Perform();
+    //! Returns a reference to the internal transfer report structure.
+    REALITYDATAPLATFORM_EXPORT virtual const TransferReport& Perform();
 
     REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
 
@@ -903,6 +911,9 @@ public:
     //! Returns the RealityData object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(const RealityDataByIdRequest& request, RawServerResponse& rawResponse);
 
+    //! Deletes a RealityData object
+    REALITYDATAPLATFORM_EXPORT static void Request(const RealityDataDelete& request, RawServerResponse& rawResponse);
+
     //! Returns a RealityDataDocument or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse);
 
@@ -941,8 +952,11 @@ public:
     //! Returns a RealityDataFolder or null if an error occured
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataCreateRequest& request, RawServerResponse& rawResponse);
 
-    //! Returns a RealityDataFolder or null if an error occured
+    //! Creates a relationship between reality data and project
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipCreateRequest& request, RawServerResponse& rawResponse);
+
+    //! Deletes a relationship between reality data and project
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipDelete& request, RawServerResponse& rawResponse);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically

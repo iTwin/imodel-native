@@ -37,16 +37,15 @@ public:
 
     void Run(Utf8String serverName);
     void Usage();
-    StatusInt ConfigureServerTest(Utf8String serverName);
+    StatusInt ConfigureServerTest(Utf8String serverName, bool silent = false);
     StatusInt CreateRealityDataTest();
     StatusInt CreateRelationshipToProject();
     StatusInt UploadTest();
     StatusInt DownloadTest();
-    StatusInt NavigationTest();
     StatusInt InformationExtractionTest();
-    StatusInt InformationManagementTest();
+    StatusInt UpdateTest();
     StatusInt DeleteRelationship();
-    StatusInt DeleteRealityDataTest();
+    StatusInt DeleteRealityDataTest(bool silent = false);
     StatusInt ListTest();
     StatusInt EnterpriseStatTest();
 

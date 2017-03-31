@@ -694,9 +694,9 @@ void RealityDataConsole::Download()
         download.SetProgressCallBack(downloadProgressFunc);
         download.SetProgressStep(0.1);
         download.OnlyReportErrors(true);
-        TransferReport* tReport = download.Perform();
+        const TransferReport& tReport = download.Perform();
         Utf8String report;
-        tReport->ToXml(report);
+        tReport.ToXml(report);
         DisplayInfo ("If any files failed to download, they will be listed here: \n");
         DisplayInfo (Utf8PrintfString("%s\n", report));
         }
@@ -757,9 +757,9 @@ void RealityDataConsole::Upload()
         upload.SetProgressCallBack(uploadProgressFunc);
         upload.SetProgressStep(0.1);
         upload.OnlyReportErrors(true);
-        TransferReport* tReport = upload.Perform();
+        const TransferReport& tReport = upload.Perform();
         Utf8String report;
-        tReport->ToXml(report);
+        tReport.ToXml(report);
         DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
         DisplayInfo(report);
         }
