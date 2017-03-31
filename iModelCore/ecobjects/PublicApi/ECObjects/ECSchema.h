@@ -16,6 +16,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/BeFileName.h>
+#include <Formatting/Formatting.h>
 
 #define DEFAULT_VERSION_READ       1
 #define DEFAULT_VERSION_WRITE      0
@@ -1780,24 +1781,25 @@ struct KindOfQuantity : NonCopyableClass
         mutable Utf8String m_fullName; //cached nsprefix:name representation
         ECValidatedName m_validatedName; //wraps name and displaylabel
         Utf8String m_description;
-        //! Unit used for persisting the information
-        Utf8String m_persistenceUnit;
-        //! Precision
-        uint32_t m_persistencePrecision;
-        //! Unit used for presenting the information
-        Utf8String m_defaultPresentationUnit;
-        //! list of alternative presentation Units
-        bvector<Utf8String> m_alternativePresentationUnitList;
+
+        //! Unit used for persistence and formatting if value is every shown in persistence unit
+        Formatting::FormatUnitSet m_persistenceFUS;
+        //! Absolute Error divided by the measured value.
+        double m_relativeError;
+        //! Units which can be used for presentation.  First FSU is default.
+        bvector<Formatting::FormatUnitSet> m_presentationFUS;
+
         mutable KindOfQuantityId m_kindOfQuantityId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
-        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistencePrecision(0) {};
+        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistenceFUS("invalid"), m_relativeError(1.0) {};
 
         ~KindOfQuantity() {};
 
         // schemas index KindOfQuantity by name so publicly name can not be reset
         void SetName(Utf8CP name);
+        bool Verify() const;
 
         SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
         SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
@@ -1846,26 +1848,30 @@ struct KindOfQuantity : NonCopyableClass
 
         //! Sets the Unit of measurement used for persisting the information
         //! @param[in]  value  The new value to apply
-        void SetPersistenceUnit(Utf8CP value) { m_persistenceUnit = value; }
+        //! @returns true if the persistence FormatUnitSet is valid, false if not
+        bool SetPersistenceUnit(Formatting::FormatUnitSet value) { m_persistenceFUS = value; return !m_persistenceFUS.HasProblem(); }
         //! Gets the Unit of measurement used for persisting the information
-        Utf8StringCR GetPersistenceUnit() const { return m_persistenceUnit; };
+        Formatting::FormatUnitSetCR GetPersistenceUnit() const { return m_persistenceFUS; };
 
         //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
         //! @param[in]  value  The new value to apply
-        void SetPrecision(uint32_t value) { m_persistencePrecision = value; }
+        void SetRelativeError(double value) { m_relativeError = value; }
         //! Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
-        uint32_t GetPrecision() const { return m_persistencePrecision; };
+        double GetRelativeError() const { return m_relativeError; };
         
         //! Sets the default presentation Unit of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDefaultPresentationUnit(Utf8CP value) { m_defaultPresentationUnit = value; }
+        //! @return true if the presentation FormatUnitSet is valid, false if not.
+        bool SetDefaultPresentationUnit(Formatting::FormatUnitSet value) { m_presentationFUS.insert(m_presentationFUS.begin(), value); return !value.HasProblem(); }
         //! Gets the default presentation Unit of this KindOfQuantity.
-        Utf8StringCR GetDefaultPresentationUnit() const { return m_defaultPresentationUnit; };
+        Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
 
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
-        bvector<Utf8String> const& GetAlternativePresentationUnitList() const { return m_alternativePresentationUnitList; };
+        bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
-        bvector<Utf8String>& GetAlternativePresentationUnitListR() { return m_alternativePresentationUnitList; };
+        bvector<Formatting::FormatUnitSet>& GetPresentationUnitListR() { return m_presentationFUS; }
+        //! Returns true if one or more presentation units exist
+        bool HasPresentationUnits() const { return m_presentationFUS.size() > 0; }
 
         //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
         KindOfQuantityId    GetId() const { BeAssert(HasId()); return m_kindOfQuantityId; }

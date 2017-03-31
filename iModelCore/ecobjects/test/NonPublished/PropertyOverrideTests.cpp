@@ -524,16 +524,19 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     ecSchema->CreateKindOfQuantity(temperature, "Temperature");
 
     // Phenomenon Length
+    feet->SetPersistenceUnit("MM");
     feet->SetDefaultPresentationUnit("FT");
-    feet->SetPrecision(10);
+    feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
+    inch->SetPersistenceUnit("MM");
     inch->SetDefaultPresentationUnit("IN");
-    inch->SetPrecision(5);
+    inch->SetRelativeError(10e-4);
     
     // Phenomenon Temperature
+    temperature->SetPersistenceUnit("CELSIUS");
     temperature->SetDefaultPresentationUnit("FAHRENHEIT");
-    temperature->SetPrecision(10);
+    temperature->SetRelativeError(10e-3);
 
     // Test PrimitiveECProperty
     a->CreatePrimitiveProperty(primProp, "PrimProp");

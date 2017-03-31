@@ -19,6 +19,34 @@ void KindOfQuantity::SetName(Utf8CP name)
     m_fullName = GetSchema().GetName() + ":" + GetName();
     }
 
+//TODO: add string representation for FUS once we can call ToText on invalid FUS.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                03/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool KindOfQuantity::Verify() const
+    {
+    bool isValid = true;
+    if (m_persistenceFUS.HasProblem())
+        {
+        LOG.errorv("Validation Error - KindOfQuantity '%s' persistence FormatUnitSet has a problem: %s",
+                   GetFullName(), Formatting::Utils::FormatProblemDescription(m_persistenceFUS.GetProblemCode()));
+        isValid = false;
+        }
+    
+    for (Formatting::FormatUnitSetCR presFUS : m_presentationFUS)
+        {
+        if (!presFUS.HasProblem())
+            continue;
+
+        LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet has a problem: %s",
+                   GetFullName(), Formatting::Utils::FormatProblemDescription(m_persistenceFUS.GetProblemCode()));
+        isValid = false;
+        }
+
+    return isValid;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -120,28 +148,25 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     if (!displayLabel.empty())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 
-    auto& persistenceUnit = GetPersistenceUnit();
-    if(!persistenceUnit.empty())
-        xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnit.c_str());
+    Utf8String persistenceUnitString = GetPersistenceUnit().ToText(false);
+    xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
-    auto precision = GetPrecision();
-    if (precision != 0)
-        xmlWriter.WriteAttribute(PRECISION_ATTRIBUTE, precision);
+    double relError = GetRelativeError();
+    xmlWriter.WriteAttribute(RELATIVE_ERROR_ATTRIBUTE, relError);
 
-    auto& presentationUnit = GetDefaultPresentationUnit();
-    if (!presentationUnit.empty())
-        xmlWriter.WriteAttribute(DEFAULT_PRESENTATION_UNIT_ATTRIBUTE, presentationUnit.c_str());
-
-    bvector<Utf8String> const& altPresUnits = GetAlternativePresentationUnitList();
-    if (altPresUnits.size() > 0)
+    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    if (presentationUnits.size() > 0)
         {
-        if(altPresUnits.size() == 1)
-            xmlWriter.WriteAttribute(ALT_PRESENTATION_UNITS_ATTRIBUTE, altPresUnits[0].c_str());
-        else
+        Utf8String presentationUnitString;
+        bool first = true;
+        for(Formatting::FormatUnitSetCR fus : presentationUnits)
             {
-            Utf8String altPresUnitsJoined = BeStringUtilities::Join(altPresUnits, ";");
-            xmlWriter.WriteAttribute(ALT_PRESENTATION_UNITS_ATTRIBUTE, altPresUnitsJoined.c_str());
+            if (!first)
+                presentationUnitString += ";";
+            presentationUnitString += fus.ToText(false);
+            first = false;
             }
+        xmlWriter.WriteAttribute(PRESENTATION_UNITS_ATTRIBUTE, presentationUnitString.c_str());
         }
     
     //WriteCustomAttributes (xmlWriter);
@@ -176,33 +201,40 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         SetDisplayLabel(value.c_str());
         }
     
-    // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE))
         {
         LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), PERSISTENCE_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    SetPersistenceUnit(value.c_str());
+    Formatting::FormatUnitSet persistenceFUS(value.c_str());
+    if (persistenceFUS.HasProblem())
+        LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema is invalid.",
+                     value.c_str(), kindOfQuantityNode.GetName(), Formatting::Utils::FormatProblemDescription(persistenceFUS.GetProblemCode()));
+    SetPersistenceUnit(persistenceFUS);
 
-    uint32_t precision;
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeUInt32Value(precision, PRECISION_ATTRIBUTE))
+    double relError;
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, RELATIVE_ERROR_ATTRIBUTE))
         {
-        SetPrecision(precision);
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), RELATIVE_ERROR_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
         }
+    SetRelativeError(relError);
 
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DEFAULT_PRESENTATION_UNIT_ATTRIBUTE))
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         {
-        SetDefaultPresentationUnit(value.c_str());
-        }
-
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, ALT_PRESENTATION_UNITS_ATTRIBUTE))
-        {
-        bvector<Utf8String> altPresUnits;
-        BeStringUtilities::Split(value.c_str(), ";", altPresUnits);
-        if (altPresUnits.size() >= 1)
+        bvector<Utf8String> presentationUnits;
+        BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
+        for(auto const& presUnit : presentationUnits)
             {
-            GetAlternativePresentationUnitListR().assign(altPresUnits.begin(), altPresUnits.end());
+            Formatting::FormatUnitSet presFUS(presUnit.c_str());
+            if (presFUS.HasProblem())
+                {
+                LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Skipping FormatUnitSet.",
+                             presUnit.c_str(), kindOfQuantityNode.GetName(), Formatting::Utils::FormatProblemDescription(presFUS.GetProblemCode()));
+                continue;
+                }
+            m_presentationFUS.push_back(presFUS);
             }
         }
     return SchemaReadStatus::Success;

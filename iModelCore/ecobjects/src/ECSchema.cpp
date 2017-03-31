@@ -576,6 +576,12 @@ bool ECSchema::Validate(bool resolveIssues)
             isValid = false;
         }
 
+    for (KindOfQuantityP koq : GetKindOfQuantities())
+        {
+        if (!koq->Verify())
+            isValid = false;
+        }
+
     if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
         {
         for (ECClassP ecClass : GetClasses())
@@ -619,7 +625,7 @@ ECClassP ECSchema::GetClassP (Utf8CP name)
     if ( classIterator != m_classMap.end() )
         return classIterator->second;
     else
-        return NULL;
+        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1052,9 +1058,9 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP & targetKOQ, KindOf
 
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
 
-    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit().c_str());
-    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit().c_str());
-    targetKOQ->SetPrecision(sourceKOQ.GetPrecision());
+    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit());
+    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit());
+    targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
     return ECObjectsStatus::Success;
     }

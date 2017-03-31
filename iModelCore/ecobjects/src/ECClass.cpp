@@ -2397,7 +2397,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     if (!IsMixin())
         return nullptr;
 
-    IECInstancePtr caInstance = GetCustomAttribute("CoreCustomAttributes", "IsMixin");
+    IECInstancePtr caInstance = GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
     if (!caInstance.IsValid())
         return nullptr;
 

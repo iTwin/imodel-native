@@ -27,16 +27,7 @@
     <ClCompile Include="NonPublished\PresentationRulesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\StringEncodingTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\UnitsTestBase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\UnitsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\ECExpressionTests.cpp">
@@ -74,11 +65,5 @@
     <ClInclude Include="ECObjectsTestPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NonPublished\UnitsTestBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="NonPublishedTests.mke" />
   </ItemGroup>
 </Project>

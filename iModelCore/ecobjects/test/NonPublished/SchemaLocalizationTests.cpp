@@ -390,6 +390,7 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchemaEC3)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 2, 0, 0);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_EQ(true, testSchema.IsValid()) << "Failed to load 'House' schema from disk";
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
@@ -397,7 +398,7 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchemaEC3)
     Utf8String     schemaXml;
     EXPECT_EQ(SchemaWriteStatus::Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
-    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext)) << "Failed to copy schema";
     EXPECT_FALSE(copyTestSchema->IsSupplemented());
     VerifyNotLocalized(copyTestSchema); //Fails on IOS, TODO: Debug
     }

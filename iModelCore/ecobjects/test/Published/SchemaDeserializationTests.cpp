@@ -901,11 +901,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("DESC");
     kindOfQuantity->SetDisplayLabel("DL");
-    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
-    kindOfQuantity->SetPrecision(10);
-    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
-    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
-    altPresUnits.push_back("INCH");
+    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetRelativeError(10e-3);
+    kindOfQuantity->SetDefaultPresentationUnit("FT");
+    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
+    altPresUnits.push_back("IN");
     altPresUnits.push_back("MILLIINCH");
 
     ECEntityClassP entityClass;
@@ -923,7 +923,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
     ECSchemaPtr deserializedSchema;
     auto schemaContext = ECSchemaReadContext::CreateContext();
     auto status3 = ECSchema::ReadFromXmlString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status3);
+    ASSERT_EQ(SchemaReadStatus::Success, status3);
 
     EXPECT_EQ(1, deserializedSchema->GetKindOfQuantityCount());
     KindOfQuantityCP deserializedKindOfQuantity;
@@ -931,14 +931,14 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
     ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
     EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
     EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
-    EXPECT_STREQ("CENTIMETRE", deserializedKindOfQuantity->GetPersistenceUnit().c_str());
-    EXPECT_EQ(10, deserializedKindOfQuantity->GetPrecision());
+    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    EXPECT_STREQ("FOOT", deserializedKindOfQuantity->GetDefaultPresentationUnit().c_str());
-    auto& resultAltUnits = deserializedKindOfQuantity->GetAlternativePresentationUnitList();
-    EXPECT_EQ(2, resultAltUnits.size());
-    EXPECT_STREQ("INCH", resultAltUnits[0].c_str());
-    EXPECT_STREQ("MILLIINCH", resultAltUnits[1].c_str());
+    EXPECT_STREQ("FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName());
+    auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationUnitList();
+    EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
+    EXPECT_STREQ("IN", resultAltUnits[1].GetUnit()->GetName());
+    EXPECT_STREQ("MILLIINCH", resultAltUnits[2].GetUnit()->GetName());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
@@ -1255,7 +1255,7 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
 
     KindOfQuantityP koq;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    koq->SetPersistenceUnit("FEET");
+    koq->SetPersistenceUnit("FT(real)");
     prop->SetKindOfQuantity(koq);
 
     Utf8String schemaXML;
@@ -1265,7 +1265,7 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
 
     ECSchemaPtr refSchema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML.c_str(), *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
 
     ECClassCP entityClassDup = refSchema->GetClassCP("Class");
     ASSERT_NE(entityClassDup, nullptr);
@@ -1275,7 +1275,7 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     auto resultKindOfQuantity = property->GetKindOfQuantity();
     ASSERT_NE(resultKindOfQuantity, nullptr);
     EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
-    EXPECT_STREQ("FEET", resultKindOfQuantity->GetPersistenceUnit().c_str());
+    EXPECT_STREQ("FT(DefaultReal)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
     }
 
 
@@ -1841,8 +1841,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStru
         "       <ECProperty propertyName='S_P' typeName='string' />"
         "   </ECStructClass>"
         "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
-        "       displayLabel='best quantity of all times' persistenceUnit='CENTIMETRE' precision='10' "
-        "       defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;MILLIINCH'/>"
+        "       displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3' "
+        "       presentationUnits='FT;IN;MILLIINCH'/>"
         "</ECSchema>";
 
     ECSchemaPtr schema;
@@ -1883,8 +1883,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
         "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />"
         "   </ECEntityClass>"
         "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
-        "       displayLabel='best quantity of all times' persistenceUnit='CENTIMETRE' precision='10' "
-        "       defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;MILLIINCH'/>"
+        "       displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3' "
+        "       presentationUnits='FT;INCH;MILLIINCH'/>"
         "</ECSchema>";
 
     ECSchemaPtr schema;

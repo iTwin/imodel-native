@@ -760,11 +760,11 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECObjectsStatus status;
     if (nullptr != newKOQ)
         {
-        if (!newKOQ->GetPersistenceUnit().Equals(newUnit->GetName()))
+        if (!Units::Unit::AreEqual(newKOQ->GetPersistenceUnit().GetUnit(), newUnit))
             {
             Utf8String fullName = schema.GetFullSchemaName();
             LOG.infov("Found property %s:%s.%s with KindOfQuantity '%s' and unit '%s' but the KindOfQuantity defines the unit '%s'.  Looking for alternate KindOFQuantity",
-                        fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName.c_str(), newUnit->GetName(), newKOQ->GetPersistenceUnit().c_str());
+                        fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName.c_str(), newUnit->GetName(), newKOQ->GetPersistenceUnit().GetUnit()->GetName());
 
             Utf8PrintfString newKoqString("%s_%s", newKOQName.c_str(), newUnit->GetName());
             ECValidatedName validatedKoqName;
@@ -778,7 +778,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                                validatedKoqName.GetName().c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
                     return status;
                     }
-                newKOQ->SetPersistenceUnit(newUnit->GetName());
+                newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+                newKOQ->SetRelativeError(1e-4);
                 }
             }
         }
@@ -790,7 +791,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                        newKOQName.c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
             return status;
             }
-        newKOQ->SetPersistenceUnit(newUnit->GetName());
+        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+        newKOQ->SetRelativeError(1e-4);
         }
 
 
@@ -798,7 +800,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        if (Utf8String::IsNullOrEmpty(newKOQ->GetDefaultPresentationUnit().c_str()))
+        if (!newKOQ->HasPresentationUnits())
             {
             Units::UnitCP newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
             if (nullptr == newUnit)
@@ -807,7 +809,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
                 }
             else
-                newKOQ->SetDefaultPresentationUnit(newDisplayUnit->GetName());
+                newKOQ->SetDefaultPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newDisplayUnit->GetName()));
             }
         }
 

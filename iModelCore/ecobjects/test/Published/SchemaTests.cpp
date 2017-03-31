@@ -711,11 +711,11 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
-    kindOfQuantity->SetPrecision(10);
-    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
-    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
-    altPresUnits.push_back("INCH");
+    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetRelativeError(10e-3);
+    kindOfQuantity->SetDefaultPresentationUnit("FT");
+    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
+    altPresUnits.push_back("IN");
     altPresUnits.push_back("MILLIINCH");
 
     WString fullSchemaName;
@@ -766,21 +766,21 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
-    kindOfQuantity->SetPrecision(10);
-    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
-    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
-    altPresUnits.push_back("INCH");
+    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetRelativeError(10e-3);
+    kindOfQuantity->SetDefaultPresentationUnit("FT");
+    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
+    altPresUnits.push_back("IN");
     altPresUnits.push_back("MILLIINCH");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
     kindOfQuantity2->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity2->SetPersistenceUnit("CENTIMETRE");
-    kindOfQuantity2->SetPrecision(5);
-    kindOfQuantity2->SetDefaultPresentationUnit("FOOT");
-    auto& altPresUnits2 = kindOfQuantity->GetAlternativePresentationUnitListR();
-    altPresUnits2.push_back("INCH");
+    kindOfQuantity2->SetPersistenceUnit("CM");
+    kindOfQuantity2->SetRelativeError(10e-4);
+    kindOfQuantity2->SetDefaultPresentationUnit("FT");
+    auto& altPresUnits2 = kindOfQuantity->GetPresentationUnitListR();
+    altPresUnits2.push_back("IN");
     altPresUnits2.push_back("MILLIINCH");
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
@@ -2050,8 +2050,8 @@ TEST_F(SchemaTest, DeleteKOQ)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
-        "                    displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
-        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='10e-3'"
+        "                    presentationUnits='FT;INCH;YARD' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
         "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'

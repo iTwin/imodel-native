@@ -198,7 +198,7 @@ void ValidateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                     convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
                 ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
 
-                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().c_str())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
+                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
                 }
             }
         }

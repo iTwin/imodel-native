@@ -73,9 +73,8 @@
 #define     MAXIMUM_LENGTH_ATTRIBUTE            "MaximumLength"
 #define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
 #define     PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
-#define     DEFAULT_PRESENTATION_UNIT_ATTRIBUTE "defaultPresentationUnit"
-#define     ALT_PRESENTATION_UNITS_ATTRIBUTE    "alternativePresentationUnits"
-#define     PRECISION_ATTRIBUTE                 "precision"
+#define     PRESENTATION_UNITS_ATTRIBUTE        "presentationUnits"
+#define     RELATIVE_ERROR_ATTRIBUTE            "relativeError"
 
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"

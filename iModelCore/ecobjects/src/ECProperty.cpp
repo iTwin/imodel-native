@@ -568,37 +568,26 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     return SchemaReadStatus::Success;
     }
 
-bool isKindOfQuantityCompatible(ECPropertyCR ecProp, KindOfQuantityCP compareKOQ)
+bool isKindOfQuantityCompatible(ECPropertyCR ecProp, ECPropertyCP baseProp, KindOfQuantityCP compareKOQ)
     {
-    if (nullptr == compareKOQ)
+    if (nullptr == compareKOQ || nullptr == baseProp)
         return true;
 
-    ECPropertyCP baseProp = ecProp.GetBaseProperty();
-    if (nullptr == baseProp)
-        return true;
-
-    KindOfQuantityCP baseKOQ;
-    if (baseProp->GetIsPrimitive())
-        baseKOQ = baseProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-    else
-        baseKOQ = baseProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-
+    KindOfQuantityCP baseKOQ = baseProp->GetKindOfQuantity();
     if (nullptr == baseKOQ)
         return true;
 
-    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
-
-    Units::UnitCP baseUnit = unitRegistry.LookupUnit(baseKOQ->GetDefaultPresentationUnit().c_str());
-    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP baseUnit = baseKOQ->GetPersistenceUnit().GetUnit();
+    Units::UnitCP compareUnit = compareKOQ->GetPersistenceUnit().GetUnit();
 
     if (nullptr == baseUnit || nullptr == compareUnit)
         return true;
 
-    if (!baseUnit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+    if (!Units::Unit::AreEqual(baseUnit, compareUnit))
         {
-        LOG.errorv("The ECProperty %s:%s has a base property %s:%s with KindOfQuantity %s of Phenomenon %s which differs from the Phenomenon %s of the provided KindOfQuantity %s.",
-                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetPhenomenon()->GetName(),
-                   compareUnit->GetPhenomenon()->GetName(), compareKOQ->GetFullName().c_str());
+        LOG.errorv("The ECProperty '%s:%s' has a base property '%s:%s' with KindOfQuantity '%s' with persistence unit '%s' which differs from the persistence unit '%s' of the provided KindOfQuantity '%s'.",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetName(),
+                   compareUnit->GetName(), compareKOQ->GetFullName().c_str());
         return false;
         }
 
@@ -629,7 +618,7 @@ KindOfQuantityCP ECProperty::GetKindOfQuantity() const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
     {
-    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+    if (!isKindOfQuantityCompatible(*this, this->GetBaseProperty(), kindOfQuantity))
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
     m_kindOfQuantity = kindOfQuantity;
@@ -779,46 +768,6 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
 
-// Used by PrimitiveECProperty and PrimitiveArrayECProperty for _CanOverride methods
-bool phenomenonsEqual(ECPropertyCR ecProp, ECPropertyCR compareProp)
-    {
-    if (!(ecProp.GetIsPrimitive() || ecProp.GetIsPrimitiveArray()) || !(compareProp.GetIsPrimitive() || compareProp.GetIsPrimitiveArray()))
-        return false;
-
-    KindOfQuantityCP koq;
-    KindOfQuantityCP compareKOQ;
-    if (ecProp.GetIsPrimitive())
-        koq = ecProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
-    else
-        koq = ecProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-
-    if (compareProp.GetIsPrimitive())
-        compareKOQ = compareProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
-    else
-        compareKOQ = compareProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-
-    if (nullptr == koq || nullptr == compareKOQ)
-        return true;
-
-    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
-
-    Units::UnitCP unit = unitRegistry.LookupUnit(koq->GetDefaultPresentationUnit().c_str());
-    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
-
-    if (nullptr == unit || nullptr == compareUnit)
-        return true;
-
-    if (!unit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
-        {
-        LOG.errorv("The ECProperty %s:%s has KindOfQuantity %s that is of Phenomenon %s which differs from the Phenomenon %s of KindOfQuantity %s on ECProperty %s:%s",
-                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), koq->GetFullName().c_str(), unit->GetPhenomenon()->GetName(), compareUnit->GetPhenomenon()->GetName(),
-                   compareKOQ->GetFullName().c_str(), compareProp.GetClass().GetFullName(), compareProp.GetName().c_str());
-        return false;
-        }
-
-    return true;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -851,7 +800,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return phenomenonsEqual(*this, baseProperty);;
+    return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1104,7 +1053,7 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1374,7 +1323,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return phenomenonsEqual(*this, baseProperty);
+    return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1556,7 +1505,7 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
 
 //---------------------------------------------------------------------------------------

@@ -9,8 +9,5 @@ NavigationECPropertyTests.InstanceWithNavProp_String
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-UnitsTest.Formatting    # Fails on Android
-UnitsTest.Conversions   # Takes WAY too long to run every time
-
 MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
