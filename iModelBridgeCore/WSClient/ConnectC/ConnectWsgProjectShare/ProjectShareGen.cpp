@@ -324,6 +324,11 @@ WCharCP fileId
     }
 
 /*---------------------------------------------------------------------------------**//**
+/* TODO: Need to remove. Results in following error because it is not allowed:
+*         {"errorId":"NotSupported",
+*          "errorMessage":"The Query accross multiple projects is not supported.",
+*          "errorDescription":null}
+*    
 * @bsimethod                                                                    03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_ReadFolderList

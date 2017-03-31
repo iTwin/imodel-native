@@ -236,6 +236,73 @@ WCharCP ProjectGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebSServiceClientC_CreateRootProjectShareStorage
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectGuid
+)
+    {
+    VERIFY_API
+    
+    if (projectGuid == nullptr)
+        {
+        api->SetStatusMessage ("projectGuid is invalid in ConnectWebSServiceClientC_CreateRootProjectShareStorage.");
+        api->SetStatusDescription ("You must specify a projectGuid to create the Project Share Storage instance.");
+        return INVALID_PARAMETER;
+        }
+    
+    //does the root folder already exists, then just return the information
+    CWSCCDATABUFHANDLE folderBuffer;
+    CallStatus status = ConnectWebServicesClientC_ReadFolder(api, projectGuid, &folderBuffer);
+    if (status == SUCCESS && folderBuffer != nullptr)
+        {
+        return ERROR_ALREADY_EXISTS;
+        }
+
+    Json::Value instance;
+    instance["schemaName"] = "ProjectShare";
+    instance["className"] = "Folder";
+    instance["InstanceId"] = Utf8String(projectGuid);
+
+    Json::Value propertiesJson;
+    propertiesJson["FolderName"] = "";
+    propertiesJson["ContentType"] = "Folder";
+    propertiesJson["RootFolder"] = true;
+    if (propertiesJson.size() == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("There were not any valid Folder properties passed in.");
+        return INVALID_PARAMETER;
+        }
+
+    instance["properties"] = propertiesJson;
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+
+    Utf8String connectwsgprojectshareUrl = UrlProvider::Urls::ConnectWsgProjectShare.Get();
+    if (api->m_repositoryClients.find(connectwsgprojectshareUrl + "BentleyCONNECT--Main") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgprojectshareUrl,
+            "BentleyCONNECT--Main"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgprojectshareUrl + "BentleyCONNECT--Main")->second;
+    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebSServiceClientC_CreateRootProjectShareStorage completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle)
     {
     if (NULL == apiHandle)
@@ -260,13 +327,14 @@ CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle)
+CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle, Utf8String& instanceId)
     {
     if (NULL == apiHandle)
-        return "apiHandle passed into ConnectWebServicesClientC_GetLastCreatedObjectInstanceId is NULL.";
+        return INVALID_PARAMETER;
+
     LPCWSCC api = (LPCWSCC) apiHandle;
-    auto str = api->GetLastCreatedObjectInstanceId ();
-    return str;
+    api->GetLastCreatedObjectInstanceId (instanceId);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -606,13 +674,16 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId ()
+void ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId (Utf8String& instanceId)
     {
     Json::Value json;
     m_lastCreatedObjectResponse.GetJson(json);
-
     if (json["changedInstance"]["instanceAfterChange"]["instanceId"].isString())
-        return json["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+        {
+        auto instanceJson = json["changedInstance"]["instanceAfterChange"]["instanceId"];                
+        instanceId.assign(instanceJson.asCString());
+        return;
+        }        
 
-    return "";
+    instanceId.assign("");
     }
