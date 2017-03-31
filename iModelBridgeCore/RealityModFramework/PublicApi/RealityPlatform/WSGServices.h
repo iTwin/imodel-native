@@ -64,6 +64,9 @@ public:
 
     RawServerResponse():responseCode(-1), curlCode(ServerType::WSG), status(RequestStatus::UNSENT),
     header(Utf8String()), body(Utf8String()){}
+
+    RequestStatus ValidateResponse();
+    RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
     };
 
 //=====================================================================================

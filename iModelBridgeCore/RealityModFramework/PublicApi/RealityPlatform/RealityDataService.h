@@ -942,10 +942,10 @@ public:
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse PagedBasicRequest(const RealityDataPagedRequest* request, Utf8String keyword = "instances");
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse PagedBasicRequest(const RealityDataPagedRequest* request, Utf8StringCR keyword = "instances");
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const RealityDataUrl* request, Utf8String keyword = "instances");
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const RealityDataUrl* request, Utf8StringCR keyword = "instances");
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse);

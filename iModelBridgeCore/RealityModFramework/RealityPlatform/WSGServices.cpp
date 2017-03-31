@@ -40,6 +40,26 @@ static size_t WriteData(void *contents, size_t size, size_t nmemb, BeFile *strea
     return bytesRead;
     }
 
+RequestStatus RawServerResponse::ValidateResponse()
+    {
+    if ((curlCode != CURLE_OK) || (responseCode > 399))
+        status = RequestStatus::BADREQ;
+    else
+        status = RequestStatus::OK;
+
+    return status;
+    }
+
+RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword)
+    {
+    if ((curlCode != CURLE_OK) || (responseCode > 399) || !Json::Reader::Parse(body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword))
+        status = RequestStatus::BADREQ;
+    else
+        status = RequestStatus::OK;
+
+    return status;
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Francis Boily         	    02/2017
 //-------------------------------------------------------------------------------------
@@ -443,7 +463,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
 
     delete navRoot;
     Json::Value instances(Json::objectValue);
-    if((responseObject.curlCode != CURLE_OK) || !Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+    if(responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVector; 
 
     for (auto instance : instances["instances"])
@@ -486,7 +506,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 
     delete navNode;
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || !Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVector;
 
     for (auto instance : instances["instances"])
@@ -675,7 +695,7 @@ bvector<Utf8String> WSGServer::GetPlugins(RawServerResponse& responseObject) con
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
 
     for (auto instance : instances["instances"])
@@ -701,7 +721,7 @@ Utf8String WSGServer::GetVersion(RawServerResponse& responseObject) const
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
-    if (responseObject.curlCode != CURLE_OK)
+    if (responseObject.ValidateResponse() != RequestStatus::OK)
         return "";
 
     const char* charstring = responseObject.header.c_str();
@@ -740,7 +760,7 @@ bvector<Utf8String> WSGServer::GetRepositories(RawServerResponse& responseObject
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
     
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -777,7 +797,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -815,7 +835,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if(responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
 
     for(auto instance : instances["instances"])
