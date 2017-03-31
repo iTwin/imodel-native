@@ -56,6 +56,7 @@ struct PerPropertyFlagsHolder
     uint32_t *                perPropertyFlags;
     };
 
+struct InstanceXmlReader;
 /*=================================================================================**//**
 * ECN::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates.
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that
@@ -66,6 +67,7 @@ struct PerPropertyFlagsHolder
 struct MemoryECInstanceBase : ECDBuffer
 {
 friend struct IECInstance;
+friend struct InstanceXmlReader;
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     Byte *                  m_data;
