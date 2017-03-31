@@ -212,10 +212,13 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
             {
             SubqueryRefExp const& subQueryRef = classRefExp.GetAs<SubqueryRefExp>();
             DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
-            BeAssert(derivedPropertyRef != nullptr && "Should not be nullptr as the classRefExp was found in the first place by checking that the property exists");
+            if (derivedPropertyRef == nullptr)
+                {
+                BeAssert(derivedPropertyRef != nullptr && "Should not be nullptr as the classRefExp was found in the first place by checking that the property exists");
+                return ERROR;
+                }
 
-            if (derivedPropertyRef != nullptr)
-                SetPropertyRef(*derivedPropertyRef);
+            SetPropertyRef(*derivedPropertyRef);
 
             //1. Select statement must have a ECClass define it. 
             //2. ECClass must have classMap info for this to work
@@ -258,28 +261,33 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
 PropertyMap const& PropertyNameExp::GetPropertyMap() const
     {
     BeAssert(GetClassRefExp() != nullptr);
-    if (GetClassRefExp()->GetType() == Exp::Type::ClassName)
+    PropertyMap const* propertyMap = nullptr;
+    switch (GetClassRefExp()->GetType())
         {
-        ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
-        PropertyMap const* propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
-        if (propertyMap == nullptr)
+            case Exp::Type::ClassName:
             {
-            BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+            ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
+            propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
+            break;
             }
-        return *propertyMap;
+
+            case Exp::Type::SubqueryRef:
+            {
+            PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+            BeAssert(propertyRef != nullptr);
+            DerivedPropertyExp const& referencedDerivedPropertyRef = propertyRef->LinkedTo();
+            BeAssert(referencedDerivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+            propertyMap = &referencedDerivedPropertyRef.GetExpression()->GetAs<PropertyNameExp>().GetPropertyMap();
+            break;
+            }
+
+            default:
+                BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
+                break;
         }
 
-    if (GetClassRefExp()->GetType() == Exp::Type::SubqueryRef)
-        {
-        PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
-        BeAssert(propertyRef != nullptr);
-        DerivedPropertyExp const& derivedPropertyRef = propertyRef->LinkedTo();
-        if (derivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName)
-            return derivedPropertyRef.GetExpression()->GetAs<PropertyNameExp>().GetPropertyMap();
-        }
-
-    BeAssert(false && "Case not handled");
-    return *((PropertyMap const*) (nullptr));
+    BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+    return *propertyMap;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -349,10 +357,10 @@ PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAn
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List const& snippets)
+BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List const& snippets) const
     {
     m_nativeSqlSnippets.clear();
-    m_isConverted = false;
+    m_wasToNativeSqlCalled = false;
     Utf8String alias = m_linkedTo.GetColumnAlias();
     if (alias.empty())
         alias = m_linkedTo.GetNestedAlias();
@@ -364,7 +372,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
             {
             m_nativeSqlSnippets.front().Clear();
             m_nativeSqlSnippets.front().AppendEscaped(alias.c_str());
-            m_isConverted = true;
+            m_wasToNativeSqlCalled = true;
             }
         else
             {
@@ -378,10 +386,10 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
                 snippet.AppendEscaped(postfix.c_str());
                 }
 
-            m_isConverted = true;
+            m_wasToNativeSqlCalled = true;
             }
         }
 
-    return m_isConverted ? SUCCESS : ERROR;
+    return m_wasToNativeSqlCalled ? SUCCESS : ERROR;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

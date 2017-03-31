@@ -31,8 +31,7 @@ struct SchemaWriter final : NonCopyableClass
 
         BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
         BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
-        BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
-        BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
+        BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ECPropertyCR);
 
         BentleyStatus InsertSchemaEntry(ECN::ECSchemaCR);
         BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);

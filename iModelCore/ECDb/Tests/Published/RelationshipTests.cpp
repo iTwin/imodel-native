@@ -165,6 +165,61 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>", false, "ForeignKey mapping can only have a CA when the mapping strategy is set to NotMapped."));
 
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECEntityClass typeName='A'>"
+            "        <ECProperty propertyName='Price' typeName='double'/>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B'>"
+            "        <ECProperty propertyName='Name' typeName='string'/>"
+            "    </ECEntityClass>"
+            "    <ECRelationshipClass typeName='Rel' modifier='None' strength='referencing' >"
+            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='A'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='B'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "     </ECRelationshipClass>"
+            "    <ECRelationshipClass typeName='Rel1' modifier='None' strength='referencing' >"
+            "    <BaseClass>Rel</BaseClass>"
+            "    <ECCustomAttributes>"
+            "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='As'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='Bs'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "     </ECRelationshipClass>"
+            "</ECSchema>", false, "ForeignKeyConstraint CA on child RelationshipClass is not supported. Only the root class can have it."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+            "    <ECCustomAttributes>"
+            "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "RelationshipClass has violating CA LinkTableRelationshipMap and ForeignKeyConstraint"));
+
     AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
     }
 

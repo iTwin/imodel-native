@@ -151,7 +151,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
     ECPropertyCP prop = columnInfo.GetProperty();
     BeAssert(prop != nullptr && "TODO: ECInstanceECSqlSelectAdapter expects that GetColumnInfo().GetProperty is never null. This is not the case for prim arrays. Please double-check the code.");
 
-    if (columnInfo.IsGeneratedProperty() || prop->IsCalculated()) // WIP_ECSQL: is this true? do we need to set for last calculated and other scenarios?
+    if (columnInfo.IsGeneratedProperty())
         return SUCCESS;
 
     Utf8String accessString;

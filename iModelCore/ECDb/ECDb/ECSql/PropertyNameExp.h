@@ -23,27 +23,28 @@ struct PropertyNameExp final : ValueExp
         {
         private:
             DerivedPropertyExp const& m_linkedTo;
-            NativeSqlBuilder::List m_nativeSqlSnippets;
-            bool m_isConverted;
+            mutable NativeSqlBuilder::List m_nativeSqlSnippets;
+            mutable bool m_wasToNativeSqlCalled = false;
+
         public:
-            explicit PropertyRef(DerivedPropertyExp const& endPoint) :m_linkedTo(endPoint), m_isConverted(false) {}
+            explicit PropertyRef(DerivedPropertyExp const& endPoint) :m_linkedTo(endPoint) {}
 
             DerivedPropertyExp const& LinkedTo() const { return m_linkedTo; }
-
-            NativeSqlBuilder::List const& GetOutSnippets() const { return m_nativeSqlSnippets; }
-
             DerivedPropertyExp const& GetEndPointDerivedProperty() const;
             PropertyNameExp const* GetEndPointPropertyNameIfAny() const;
-            bool IsConverted() const { return m_isConverted; }
-            BentleyStatus ToNativeSql(NativeSqlBuilder::List const& snippets);
+
+            bool WasToNativeSqlCalled() const { return m_wasToNativeSqlCalled; }
+            NativeSqlBuilder::List const& GetNativeSql() const { return m_nativeSqlSnippets; }
+            BentleyStatus ToNativeSql(NativeSqlBuilder::List const&) const;
         };
     private:
         PropertyPath m_propertyPath;
         std::unique_ptr<PropertyRef> m_propertyRef;
 
         Utf8String m_classAlias;
-        RangeClassRefExp const* m_classRefExp;
-        ECSqlSystemPropertyInfo const* m_sysPropInfo; //will never be null, but cannot declare as ref as it is set after construction
+        RangeClassRefExp const* m_classRefExp = nullptr;
+        ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr; //will never be null, but cannot declare as ref as it is set after construction
+
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 

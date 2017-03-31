@@ -743,6 +743,120 @@ TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetMixin)
+    {
+    ECDbR ecdb = SetupECDb("getmixin.ecdb",
+                           SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                          <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                          <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                          <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                            <ECEntityClass typeName="Model">
+                                                    <ECProperty propertyName="Name" typeName="string" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="IIsGeometric" modifier="Abstract">
+                                                <ECCustomAttributes>
+                                                <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                                    <AppliesToEntityClass>Element</AppliesToEntityClass>
+                                                </IsMixin>"
+                                                </ECCustomAttributes>
+                                                <ECProperty propertyName="Is2d" typeName="boolean"/>
+                                                <ECProperty propertyName="SupportedGeometryType" typeName="string" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="Element">
+                                                    <ECCustomAttributes>
+                                                    <ClassMap xmlns="ECDbMap.02.00">
+                                                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                    </ClassMap>
+                                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                                                    </ECCustomAttributes>
+                                                    <ECProperty propertyName="Code" typeName="string" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="Element2d">
+                                                <BaseClass>Element</BaseClass>
+                                                <BaseClass>IIsGeometric</BaseClass>
+                                                <ECProperty propertyName="Origin2d" typeName="Point2d" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="Element3d">
+                                                <BaseClass>Element</BaseClass>
+                                                <BaseClass>IIsGeometric</BaseClass>
+                                                <ECProperty propertyName="Origin3d" typeName="Point3d" />
+                                            </ECEntityClass>
+                                            <ECRelationshipClass typeName="ModelHasElements" strength="Referencing" modifier="None">
+                                                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Model">
+                                                  <Class class="Model" />
+                                                </Source>
+                                                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="Element">
+                                                    <Class class="Element" />
+                                                </Target>
+                                            </ECRelationshipClass>
+                                            <ECRelationshipClass typeName="ModelHasGeometricElements" strength="Referencing" modifier="Sealed">
+                                                <BaseClass>ModelHasElements</BaseClass>
+                                                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Model">
+                                                  <Class class="Model" />
+                                                </Source>
+                                                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="GeometricElement">
+                                                    <Class class="IIsGeometric" />
+                                                </Target>
+                                            </ECRelationshipClass>
+                                          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+    ecdb.SaveChanges();
+    ecdb.ClearECDbCache();
+
+    //get in-memory schema without loading anything into it, so that we can track what gets loaded implicitly
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("TestSchema", false);
+    ASSERT_EQ(0, schema->GetClassCount());
+    //load mixin as first class and make sure the applies to class is loaded implicitly
+    ECClassCP mixinRaw = ecdb.Schemas().GetClass("TestSchema", "IIsGeometric");
+    ASSERT_TRUE(mixinRaw != nullptr && mixinRaw->IsEntityClass());
+    ASSERT_EQ(2, schema->GetClassCount()) << "Mixin class is loaded and its applies to class";
+    ASSERT_TRUE(schema->GetClassCP("IIsGeometric") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Element") != nullptr);
+
+    ECEntityClassCP mixin = mixinRaw->GetEntityClassCP();
+    ASSERT_TRUE(mixin->IsMixin());
+    ECEntityClassCP appliesToClass = mixin->GetAppliesToClass();
+    ASSERT_TRUE(appliesToClass != nullptr);
+    ASSERT_STREQ("Element", appliesToClass->GetName().c_str());
+
+    //now get relationship classes
+    ecdb.ClearECDbCache();
+    schema = ecdb.Schemas().GetSchema("TestSchema", false);
+    ASSERT_EQ(0, schema->GetClassCount());
+
+    ECClassCP baseRelRaw = ecdb.Schemas().GetClass("TestSchema", "ModelHasElements");
+    ASSERT_TRUE(baseRelRaw != nullptr && baseRelRaw->IsRelationshipClass());
+    ASSERT_EQ(3, schema->GetClassCount()) << "Rel base class is loaded and its constraint classes";
+    ASSERT_TRUE(schema->GetClassCP("ModelHasElements") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Model") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Element") != nullptr);
+
+    ECClassCP subRelRaw = ecdb.Schemas().GetClass("TestSchema", "ModelHasGeometricElements");
+    ASSERT_TRUE(subRelRaw != nullptr && subRelRaw->IsRelationshipClass());
+    ASSERT_EQ(5, schema->GetClassCount()) << "Rel base class is loaded and its constraint classes";
+    ASSERT_TRUE(schema->GetClassCP("ModelHasGeometricElements") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("IIsGeometric") != nullptr);
+
+    //now get relationship sub class before anything else
+    ecdb.ClearECDbCache();
+    schema = ecdb.Schemas().GetSchema("TestSchema", false);
+    ASSERT_EQ(0, schema->GetClassCount());
+
+    subRelRaw = ecdb.Schemas().GetClass("TestSchema", "ModelHasGeometricElements");
+    ASSERT_TRUE(subRelRaw != nullptr && subRelRaw->IsRelationshipClass());
+    ASSERT_EQ(5, schema->GetClassCount()) << "Rel base class is loaded and its constraint classes";
+    ASSERT_TRUE(schema->GetClassCP("ModelHasElements") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("ModelHasGeometricElements") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Model") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("IIsGeometric") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Element") != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetEnumeration)
