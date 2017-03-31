@@ -4958,6 +4958,10 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
         case GeometryStreamIO::OpCode::Image:
             allowSolidFill = true;
             break;
+
+        case GeometryStreamIO::OpCode::GeometryPartInstance:
+            allowSolidFill = allowAreaFill = allowLineStyle = true; // Can't reject anything...
+            break;
         }
 
     bool hasInvalidAreaFill  = false;
