@@ -168,6 +168,7 @@ void BimConsole::Setup()
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());
 
+    AddCommand(std::make_shared<SchemaStatsCommand>());
     AddCommand(std::make_shared<ValidateCommand>());
 
     AddCommand(std::make_shared<DebugCommand>());
