@@ -83,9 +83,9 @@ int main(int argc, char *argv[])
         download.SetProgressCallBack(progressFunc);
         download.SetProgressStep(0.5);
         download.OnlyReportErrors(true);
-        TransferReport* tReport = download.Perform();
+        const TransferReport& tReport = download.Perform();
         Utf8String report;
-        tReport->ToXml(report);
+        tReport.ToXml(report);
         std::cout << std::endl << "if any files failed to download, they will be listed here: " << std::endl;
         std::cout << report << std::endl;
         }

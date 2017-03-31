@@ -178,6 +178,7 @@ void CurlConstructor::RefreshToken()
 //-------------------------------------------------------------------------------------
 void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
+    response.clear();
     response.curlCode = ServerType::WSG;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
     }
@@ -187,6 +188,7 @@ void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& res
 //-------------------------------------------------------------------------------------
 void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
+    response.clear();
     response.curlCode = ServerType::Azure;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
     }
@@ -289,6 +291,12 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
         response = RawServerResponse();
         return _PerformRequest(wsgRequest, response, verifyPeer, file, false);
         }
+
+    if (response.curlCode != CURLE_OK)
+        response.status = BADREQ; // Default error ... may be modified by caller based on curlCode
+    else
+        response.status = OK;
+
     }
 
 //-------------------------------------------------------------------------------------

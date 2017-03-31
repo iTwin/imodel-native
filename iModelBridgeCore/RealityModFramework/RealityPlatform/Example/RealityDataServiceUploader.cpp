@@ -89,11 +89,11 @@ int main(int argc, char *argv[])
         upload->SetProgressStep(0.05);
         upload->OnlyReportErrors(true);
         time_t time = std::time(nullptr);
-        TransferReport* ur = upload->Perform();
+        const TransferReport& ur = upload->Perform();
         time_t time2 = std::time(nullptr);
         time2 -= time;
         Utf8String report;
-        ur->ToXml(report);
+        ur.ToXml(report);
         std::cout << report << std::endl;
         std::cout << time2 << " Sec" << std::endl;
         }
