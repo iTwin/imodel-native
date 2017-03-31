@@ -479,7 +479,7 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <KindOfQuantity typeName="MyKoq" precision="1" persistenceUnit="FT" />
+                    <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT" />
                     <ECStructClass typeName="TestStruct" >
                        <ECProperty propertyName="Name" typeName="string"/>
                     </ECStructClass>
@@ -504,7 +504,7 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
 
     std::vector<SchemaItem> invalidSchemas {
         SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <KindOfQuantity typeName="MyKoq" precision="1" persistenceUnit="FT" />
+                    <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string"/>
                     </ECEntityClass>
