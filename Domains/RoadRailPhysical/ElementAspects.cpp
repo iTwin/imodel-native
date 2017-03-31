@@ -65,8 +65,8 @@ DgnDbStatus StatusAspect::_LoadProperties(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
-    auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE Element.Id = ?;");
+    auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE Element.Id = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindInt(1, static_cast<int>(m_status));
