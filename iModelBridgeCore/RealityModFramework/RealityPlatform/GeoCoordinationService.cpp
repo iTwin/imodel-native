@@ -46,6 +46,17 @@ static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
     return polygon;
     }
 
+static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, BeFile* fileStream)
+    {
+    uint32_t bytesRead = 0;
+    
+    BeFileStatus status = fileStream->Read(buffer, &bytesRead, (uint32_t)(size * count));
+    if (status != BeFileStatus::Success)
+        return 0;
+
+    return bytesRead;
+    }
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
@@ -322,6 +333,21 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
+DownloadReportUploadRequest::DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report)
+    : m_downloadReport(report)
+    {
+    m_validRequestString = false; 
+    m_id = identifier; 
+    m_requestType = HttpRequestType::PUT_Request;
+    
+    Utf8String fileFromRoot = report.GetNameUtf8();
+
+    report.GetFileSize(m_fileSize);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
 void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = GeoCoordinationService::GetServerName();
@@ -500,11 +526,14 @@ Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& requ
 void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse)
     {    
     WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
-    char outfile[1024] = "";
-    strcpy(outfile, filename.GetNameUtf8().c_str());
-    FILE* file = fopen(outfile, "wb");
+    BeFile file;
+    if(file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
+        {
+        s_errorCallback("PreparedPackageRequest failed to create file at provided location", rawResponse);
+        return;
+        }
 
-    WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), file);
+    WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &file);
 
     rawResponse.status = RequestStatus::OK;
     if (rawResponse.curlCode != CURLE_OK)
@@ -519,9 +548,43 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse)
+void GeoCoordinationService::Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse)
     {
+    BeFile fileStream;
+    BeFileStatus status = fileStream.Open(request.GetFileName(), BeFileAccess::Read);
+    if(status != BeFileStatus::Success)
+        {
+        s_errorCallback("DownloadReport File not found", rawResponse);
+        return;
+        }
 
+    auto curl = WSGRequest::GetInstance().PrepareRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &fileStream);
+
+    if (rawResponse.curlCode == CURLcode::CURLE_FAILED_INIT)
+        {
+        s_errorCallback("Curl init failed for DownloadReportUploadRequest", rawResponse);
+        return;
+        }
+
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION, CurlReadDataCallback);
+    curl_easy_setopt(curl, CURLOPT_READDATA, &fileStream);
+
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, request.GetMessageSize());
+
+    rawResponse.curlCode = (int)curl_easy_perform(curl);
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(rawResponse.responseCode));
+    curl_easy_cleanup(curl);
+
+    if (rawResponse.curlCode == CURLE_OK)
+        rawResponse.status = RequestStatus::OK;
+    else
+        {
+        rawResponse.status = RequestStatus::BADREQ;
+        s_errorCallback("Error Uploading DownloadReport", rawResponse);
+        }
     }
 
 //=====================================================================================

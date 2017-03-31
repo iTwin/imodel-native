@@ -629,7 +629,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
-}
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1530,7 +1530,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
         {
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 0L);
-        /*if (!m_proxyUrl.empty())
+        if (!m_proxyUrl.empty())
             {
             curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
             curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
@@ -1538,7 +1538,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
                 {
                 curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
                 }
-            }*/
+            }
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
@@ -2030,7 +2030,7 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
