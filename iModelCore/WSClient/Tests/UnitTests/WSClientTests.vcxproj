@@ -84,6 +84,7 @@
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectTokenProvider.h" />
     <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
