@@ -1,4 +1,4 @@
-#include "testharness.h"
+#include "testHarness.h"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    02/17
