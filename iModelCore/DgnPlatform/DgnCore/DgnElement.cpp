@@ -336,7 +336,7 @@ Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
 void DefinitionElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(prop_IsPrivate()), IsPrivate());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -349,7 +349,7 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(prop_IsPrivate()));
 
     return DgnDbStatus::Success;
     }
@@ -4150,7 +4150,7 @@ void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& 
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
+    params.RegisterPropertyAccessors(layout, DefinitionElement::prop_IsPrivate(), 
         [](ECValueR value, DgnElementCR el)
             {
             DefinitionElementCR def = (DefinitionElementCR)el;

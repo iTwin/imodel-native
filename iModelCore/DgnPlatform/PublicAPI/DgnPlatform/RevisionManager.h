@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 #include "TxnManager.h"
-#include <BeSqlite/BeLzma.h>
+#include <BeSQLite/BeLzma.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

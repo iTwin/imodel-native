@@ -68,6 +68,30 @@ private:
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
 public:
+    BE_JSON_NAME(acs);
+    BE_JSON_NAME(grid);
+    BE_JSON_NAME(hidEdges);
+    BE_JSON_NAME(clipVol);
+    BE_JSON_NAME(noConstruct);
+    BE_JSON_NAME(noDim);
+    BE_JSON_NAME(noFill);
+    BE_JSON_NAME(noCameraLights);
+    BE_JSON_NAME(noSourceLights);
+    BE_JSON_NAME(noSolarLight);
+    BE_JSON_NAME(noMaterial);
+    BE_JSON_NAME(noPattern);
+    BE_JSON_NAME(noStyle);
+    BE_JSON_NAME(noText);
+    BE_JSON_NAME(noTexture);
+    BE_JSON_NAME(noTransp);
+    BE_JSON_NAME(noWeight);
+    BE_JSON_NAME(renderMode);
+    BE_JSON_NAME(shadows);
+    BE_JSON_NAME(visEdges);
+    BE_JSON_NAME(hlMatColors);
+    BE_JSON_NAME(monochrome);
+    BE_JSON_NAME(edgeMask);
+
     ViewFlags()
         {
         m_text = 1;
@@ -1593,6 +1617,7 @@ struct FrustumPlanes
     Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
     bool Intersects(FrustumCR box) const {return Contained::Outside != Contains(box);}
     bool ContainsPoint(DPoint3dCR pt, double tolerance=1.0e-8) const {return Contained::Outside != Contains(&pt, 1, tolerance);}
+
     DGNPLATFORM_EXPORT Contained Contains(DPoint3dCP, int nPts, double tolerance=1.0e-8) const;
     DGNPLATFORM_EXPORT bool IntersectsRay(DPoint3dCR origin, DVec3dCR direction);
 };
@@ -1611,6 +1636,11 @@ struct HiddenLineParams
         Style(bool ovrColor, ColorDef color, GraphicParams::LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
         bool operator==(Style const& rhs) const {return m_ovrColor==rhs.m_ovrColor && m_color==rhs.m_color && m_pattern==rhs.m_pattern && m_width==rhs.m_width;}
         bool operator!=(Style const& rhs) const {return !(*this==rhs);}
+
+        BE_JSON_NAME(width);
+        BE_JSON_NAME(ovrColor);
+        BE_JSON_NAME(color);
+        BE_JSON_NAME(pattern);
         Json::Value ToJson() const;
         void FromJson(JsonValueCR);
     };
@@ -1621,6 +1651,10 @@ struct HiddenLineParams
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
     bool operator!=(HiddenLineParams const& rhs) const {return !(*this==rhs);}
+
+    BE_JSON_NAME(hidden);
+    BE_JSON_NAME(visible);
+    BE_JSON_NAME(transThreshold);
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static HiddenLineParams FromJson(JsonValueCR);
 };
@@ -1638,32 +1672,15 @@ DEFINE_REF_COUNTED_PTR(Light)
 //! A list of Render::Lights
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct LightList : RefCounted<NonCopyableClass>
+struct SceneLights : RefCounted<NonCopyableClass>
 {
+    double m_fstop = 0.0; //!< must be between -3 and +3
     bvector<LightPtr> m_list;
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/17
-//=======================================================================================
-struct SceneLights : LightList
-{
-    struct Brightness
-    {
-        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
-        double m_maxLum = 0.0;
-        double m_fstop = 0.0; //!< must be between -3 and +3
-        bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
-        Json::Value ToJson() const;
-        void FromJson(JsonValueCR val);
-    };
-
-    Brightness m_brightness;
-};
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneLights)
 DEFINE_REF_COUNTED_PTR(SceneLights)
+
 
 //=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying

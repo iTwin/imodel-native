@@ -9,66 +9,37 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
-namespace StyleJson
-{
-    static constexpr Utf8CP str_Acs()            {return "acs";}
-    static constexpr Utf8CP str_Grid()           {return "grid";}
-    static constexpr Utf8CP str_HiddenEdges()    {return "hidEdges";}
-    static constexpr Utf8CP str_ClipVolume()     {return "clipVol";}
-    static constexpr Utf8CP str_NoConstruction() {return "noConstruct";}
-    static constexpr Utf8CP str_NoDimension()    {return "noDim";}
-    static constexpr Utf8CP str_NoFill()         {return "noFill";}
-    static constexpr Utf8CP str_NoCameraLight()  {return "noCameraLights";}
-    static constexpr Utf8CP str_NoSourceLight()  {return "noSourceLights";}
-    static constexpr Utf8CP str_NoSolarLight()   {return "noSolarLight";}
-    static constexpr Utf8CP str_NoMaterial()     {return "noMaterial";}
-    static constexpr Utf8CP str_NoPattern()      {return "noPattern";}
-    static constexpr Utf8CP str_NoStyle()        {return "noStyle";}
-    static constexpr Utf8CP str_NoText()         {return "noText";}
-    static constexpr Utf8CP str_NoTexture()      {return "noTexture";}
-    static constexpr Utf8CP str_NoTransparency() {return "noTransp";}
-    static constexpr Utf8CP str_NoWeight()       {return "noWeight";}
-    static constexpr Utf8CP str_RenderMode()     {return "renderMode";}
-    static constexpr Utf8CP str_Shadows()        {return "shadows";}
-    static constexpr Utf8CP str_VisibleEdges()   {return "visEdges";}
-    static constexpr Utf8CP str_HlineMatColors() {return "hlMatColors";}
-    static constexpr Utf8CP str_Monochrome()     {return "monochrome";}
-    static constexpr Utf8CP str_EdgeMask()       {return "edgeMask";}
-};
-
-using namespace StyleJson;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::FromJson(JsonValueCR val)
     {
     memset(this, 0, sizeof(*this));
-    m_constructions = !val[str_NoConstruction()].asBool();
-    m_text = !val[str_NoText()].asBool();
-    m_dimensions = !val[str_NoDimension()].asBool();
-    m_patterns = !val[str_NoPattern()].asBool();
-    m_weights = !val[str_NoWeight()].asBool();
-    m_styles = !val[str_NoStyle()].asBool();
-    m_transparency = !val[str_NoTransparency()].asBool();
-    m_fill = !val[str_NoFill()].asBool();
-    m_grid = val[str_Grid()].asBool();
-    m_acsTriad = val[str_Acs()].asBool();
-    m_textures = !val[str_NoTexture()].asBool();
-    m_materials = !val[str_NoMaterial()].asBool();
-    m_cameraLights = !val[str_NoCameraLight()].asBool();
-    m_sourceLights = !val[str_NoSourceLight()].asBool();
-    m_solarLight = !val[str_NoSolarLight()].asBool();
-    m_visibleEdges = val[str_VisibleEdges()].asBool();
-    m_hiddenEdges = val[str_HiddenEdges()].asBool();
-    m_shadows = val[str_Shadows()].asBool();
-    m_noClipVolume = !val[str_ClipVolume()].asBool();
-    m_monochrome = val[str_Monochrome()].asBool();
-    m_edgeMask = val[str_EdgeMask()].asUInt();
-    m_hLineMaterialColors = val[str_HlineMatColors()].asBool();
+    m_constructions = !val[json_noConstruct()].asBool();
+    m_text = !val[json_noText()].asBool();
+    m_dimensions = !val[json_noDim()].asBool();
+    m_patterns = !val[json_noPattern()].asBool();
+    m_weights = !val[json_noWeight()].asBool();
+    m_styles = !val[json_noStyle()].asBool();
+    m_transparency = !val[json_noTransp()].asBool();
+    m_fill = !val[json_noFill()].asBool();
+    m_grid = val[json_grid()].asBool();
+    m_acsTriad = val[json_acs()].asBool();
+    m_textures = !val[json_noTexture()].asBool();
+    m_materials = !val[json_noMaterial()].asBool();
+    m_cameraLights = !val[json_noCameraLights()].asBool();
+    m_sourceLights = !val[json_noSourceLights()].asBool();
+    m_solarLight = !val[json_noSolarLight()].asBool();
+    m_visibleEdges = val[json_visEdges()].asBool();
+    m_hiddenEdges = val[json_hidEdges()].asBool();
+    m_shadows = val[json_shadows()].asBool();
+    m_noClipVolume = !val[json_clipVol()].asBool();
+    m_monochrome = val[json_monochrome()].asBool();
+    m_edgeMask = val[json_edgeMask()].asUInt();
+    m_hLineMaterialColors = val[json_hlMatColors()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
-    uint32_t renderModeValue = val[str_RenderMode()].asUInt();
+    uint32_t renderModeValue = val[json_renderMode()].asUInt();
 
     if (renderModeValue < (uint32_t)RenderMode::HiddenLine)
         m_renderMode = RenderMode::Wireframe;
@@ -84,31 +55,30 @@ void ViewFlags::FromJson(JsonValueCR val)
 Json::Value ViewFlags::ToJson() const
     {
     Json::Value val;
-    if (!m_constructions) val[Json::StaticString(str_NoConstruction())] = true;
-    if (!m_text) val[Json::StaticString(str_NoText())] = true;
-    if (!m_dimensions) val[Json::StaticString(str_NoDimension())] = true;
-    if (!m_patterns) val[Json::StaticString(str_NoPattern())] = true;
-    if (!m_weights) val[Json::StaticString(str_NoWeight())] = true;
-    if (!m_styles) val[Json::StaticString(str_NoStyle())] = true;
-    if (!m_transparency) val[Json::StaticString(str_NoTransparency())] = true;
-    if (!m_fill) val[Json::StaticString(str_NoFill())] = true;
-    if (m_grid) val[Json::StaticString(str_Grid())] = true;
-    if (m_acsTriad) val[Json::StaticString(str_Acs())] = true;
-    if (!m_textures) val[Json::StaticString(str_NoTexture())] = true;
-    if (!m_materials) val[Json::StaticString(str_NoMaterial())] = true;
-    if (!m_cameraLights) val[Json::StaticString(str_NoCameraLight())] = true;
-    if (!m_sourceLights) val[Json::StaticString(str_NoSourceLight())] = true;
-    if (!m_solarLight) val[Json::StaticString(str_NoSolarLight())] = true;
-    if (m_visibleEdges) val[Json::StaticString(str_VisibleEdges())] = true;
-    if (m_hiddenEdges) val[Json::StaticString(str_HiddenEdges())] = true;
-    if (m_shadows) val[Json::StaticString(str_Shadows())] = true;
-    if (!m_noClipVolume) val[Json::StaticString(str_ClipVolume())] = true;
-    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
-    if (m_monochrome) val[Json::StaticString(str_Monochrome())] = true;
-    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
-    if (m_edgeMask!=0) val[Json::StaticString(str_EdgeMask())] = m_edgeMask;
+    if (!m_constructions) val[json_noConstruct()] = true;
+    if (!m_text) val[json_noText()] = true;
+    if (!m_dimensions) val[json_noDim()] = true;
+    if (!m_patterns) val[json_noPattern()] = true;
+    if (!m_weights) val[json_noWeight()] = true;
+    if (!m_styles) val[json_noStyle()] = true;
+    if (!m_transparency) val[json_noTransp()] = true;
+    if (!m_fill) val[json_noFill()] = true;
+    if (m_grid) val[json_grid()] = true;
+    if (m_acsTriad) val[json_acs()] = true;
+    if (!m_textures) val[json_noTexture()] = true;
+    if (!m_materials) val[json_noMaterial()] = true;
+    if (!m_cameraLights) val[json_noCameraLights()] = true;
+    if (!m_sourceLights) val[json_noSourceLights()] = true;
+    if (!m_solarLight) val[json_noSolarLight()] = true;
+    if (m_visibleEdges) val[json_visEdges()] = true;
+    if (m_hiddenEdges) val[json_hidEdges()] = true;
+    if (m_shadows) val[json_shadows()] = true;
+    if (!m_noClipVolume) val[json_clipVol()] = true;
+    if (m_hLineMaterialColors) val[json_hlMatColors()] = true;
+    if (m_monochrome) val[json_monochrome()] = true;
+    if (m_edgeMask!=0) val[json_edgeMask()] = m_edgeMask;
 
-    val[Json::StaticString(str_RenderMode())] = (uint8_t) m_renderMode;
+    val[json_renderMode()] = (uint8_t) m_renderMode;
     return val;
     }
 
