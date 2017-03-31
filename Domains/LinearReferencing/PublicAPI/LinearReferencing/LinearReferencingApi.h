@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/LinearReferencingApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -62,6 +62,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 #define BLR_SCHEMA_NAME                             "LinearReferencing"
 #define BLR_SCHEMA_FILE                             L"LinearReferencing.01.00.00.ecschema.xml"
 #define BLR_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
+#define BLR_SCHEMA_PATH                             BLR_SCHEMA_LOCATION BLR_SCHEMA_FILE
 #define BLR_SCHEMA(name)                            BLR_SCHEMA_NAME "." name
 #define BLR_SCHEMA_CODE(name)                       BLR_SCHEMA_NAME "_" name
 
@@ -71,6 +72,8 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BLR_CLASS_ILinearElement                                    "ILinearElement"
 #define BLR_CLASS_ILinearlyLocated                                  "ILinearlyLocated"
+#define BLR_CLASS_ILinearlyLocatedAttribution                       "ILinearlyLocatedAttribution"
+#define BLR_CLASS_ILinearlyLocatedElement                           "ILinearlyLocatedElement"
 #define BLR_CLASS_LinearlyReferencedAtLocation                      "LinearlyReferencedAtLocation"
 #define BLR_CLASS_LinearlyReferencedFromToLocation                  "LinearlyReferencedFromToLocation"
 #define BLR_CLASS_LinearlyReferencedLocation                        "LinearlyReferencedLocation"
@@ -98,8 +101,8 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(__name__) \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); } \
-    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); } \
+    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); }
 
 
 //-----------------------------------------------------------------------------------------

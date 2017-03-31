@@ -90,7 +90,11 @@ bvector<LinearlyReferencedLocationId> ILinearlyLocated::QueryLinearlyReferencedL
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedLocationCP ILinearlyLocated::GetLinearlyReferencedLocation(LinearlyReferencedLocationId id) const
     {
-    return const_cast<ILinearlyLocatedP>(this)->GetLinearlyReferencedLocationP(id);
+    LinearlyReferencedLocationCP retVal = GetLinearlyReferencedAtLocation(id);
+    if (!retVal)
+        retVal = GetLinearlyReferencedFromToLocation(id);
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,7 +114,8 @@ LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(Lin
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedAtLocationCP ILinearlyLocated::GetLinearlyReferencedAtLocation(LinearlyReferencedLocationId id) const
     {
-    return const_cast<ILinearlyLocatedP>(this)->GetLinearlyReferencedAtLocationP(id);
+    return dynamic_cast<LinearlyReferencedAtLocationCP>(
+        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +137,8 @@ LinearlyReferencedAtLocationP ILinearlyLocated::GetLinearlyReferencedAtLocationP
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedFromToLocationCP ILinearlyLocated::GetLinearlyReferencedFromToLocation(LinearlyReferencedLocationId id) const
     {
-    return const_cast<ILinearlyLocatedP>(this)->GetLinearlyReferencedFromToLocationP(id);
+    return dynamic_cast<LinearlyReferencedFromToLocationCP>(
+        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id));
     }
 
 /*---------------------------------------------------------------------------------**//**

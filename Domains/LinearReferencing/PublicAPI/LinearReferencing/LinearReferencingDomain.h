@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/LinearReferencingDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,6 +21,9 @@ DOMAIN_DECLARE_MEMBERS(LinearReferencingDomain, LINEARREFERENCING_EXPORT)
 
 public:
     LinearReferencingDomain();
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return BLR_SCHEMA_PATH; }
 }; // LinearReferencingDomain
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

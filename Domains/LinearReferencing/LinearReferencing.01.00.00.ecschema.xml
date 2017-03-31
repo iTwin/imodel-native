@@ -69,19 +69,19 @@
         </ECNavigationProperty-->
         <ECProperty propertyName="ILinearElement" typeName="long" />
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true">
+    <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N entities linearly located along 1 linear-element">
             <Class class="ILinearElement"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
     <ECEntityClass typeName="ILinearlyLocatedAttribution" description="Interface to be mixed-in by Element-subclasses representing properties that apply to only a portion of a Linear-Element-Source." modifier="Abstract">
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:InformationContentElement</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -89,7 +89,7 @@
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:GeometricElement</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -102,25 +102,26 @@
         <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
         <!--ECNavigationProperty propertyName="LinearlyLocatedElement" relationshipName="IReferentRefersToILinearlyLocatedElement" direction="forward"/-->
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="IReferentRefersToILinearlyLocatedElement" strength="referencing">
-        <Source multiplicity="(0..1)" polymorphic="true">
+    <ECRelationshipClass typeName="IReferentRefersToILinearlyLocatedElement" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N IReferents">
             <Class class="IReferent"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="may refer to 1 ILinearlyLocatedElement">
             <Class class="ILinearlyLocatedElement"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
     <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="ILinearlyLocatedOwnsLocations" strength="embedding">
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsLocations" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true">
             <Class class="ILinearlyLocated"/>
         </Source>
         <Target multiplicity="(0..*)" polymorphic="true">
             <Class class="LinearlyReferencedLocation"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
     <ECStructClass typeName="DistanceExpression">
         <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="OFFSET"/>
