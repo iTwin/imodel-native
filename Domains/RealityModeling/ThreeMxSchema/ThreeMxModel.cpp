@@ -291,9 +291,9 @@ void ThreeMxModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
     }
 
-static constexpr Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
-static constexpr Utf8CP JSON_LOCATION() {return "Location";}
-static constexpr Utf8CP JSON_CLIP() {return "Clip";}
+BE_JSON_NAME(SceneFile)
+BE_JSON_NAME(Location)
+BE_JSON_NAME(Clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -301,12 +301,12 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
 
-    val[Json::StaticString(JSON_SCENE_FILE())] = m_sceneFile;
+    val[Json::StaticString(json_SceneFile())] = m_sceneFile;
     if (!m_location.IsIdentity())
-        JsonUtils::TransformToJson(val[Json::StaticString(JSON_LOCATION())], m_location);
+        JsonUtils::TransformToJson(val[json_Location()], m_location);
 
     if (m_clip.IsValid())
-        val[Json::StaticString(JSON_CLIP())] = m_clip->ToJson();
+        val[json_Clip()] = m_clip->ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,15 +315,15 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
 void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
     {
     T_Super::_ReadJsonProperties(val);
-    m_sceneFile = val[JSON_SCENE_FILE()].asString();
+    m_sceneFile = val[json_SceneFile()].asString();
 
-    if (val.isMember(JSON_LOCATION()))
-        JsonUtils::TransformFromJson(m_location, val[JSON_LOCATION()]);
+    if (val.isMember(json_Location()))
+        JsonUtils::TransformFromJson(m_location, val[json_Location()]);
     else
         m_location.InitIdentity();
 
-    if (val.isMember(JSON_CLIP()))
-        m_clip = ClipVector::FromJson(val[JSON_CLIP()]);
+    if (val.isMember(json_Clip()))
+        m_clip = ClipVector::FromJson(val[json_Clip()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
