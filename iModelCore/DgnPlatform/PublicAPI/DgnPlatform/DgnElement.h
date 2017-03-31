@@ -788,16 +788,19 @@ public:
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
         //! @note The caller will call _UpdateProperties immediately after calling this method.
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an insert statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must override this method to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare a delete statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to update the instance properties.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an update statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to load properties from the Db.
@@ -836,6 +839,7 @@ public:
     //!     * _UpdateProperties
     //!     * _LoadProperties
     //! @see UniqueAspect
+    //! @note If you override _UpdateProperties, use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an update statement, and pass @a writeToken as the second argument
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     //! @note A domain that defines a subclass of MultiAspect may also define a subclass of dgn_AspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
