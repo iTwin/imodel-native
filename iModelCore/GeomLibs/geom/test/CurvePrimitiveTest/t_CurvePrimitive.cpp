@@ -1971,3 +1971,100 @@ TEST (CurvePrimitive, CloneTransformed)
     Check::Near (cv1->Length (), cv2->Length (), "length after 3d, 4d deep clone with transform");
     }
 
+TEST(CPLineString, ReverseCurve) 
+    {
+    bvector<DPoint3d> points {
+        DPoint3d::From(0,0,0),
+        DPoint3d::From (1,2,4),
+        DPoint3d::From (1,2,0),
+        DPoint3d::From (1,5,1),
+        };
+    bvector<DPoint3d> pointsSet2 {
+        DPoint3d::From (1,5,1),
+        DPoint3d::From (1,2,0),
+        DPoint3d::From (1,2,4),
+        DPoint3d::From (0,0,0),
+        };
+    auto cp = ICurvePrimitive::CreateLineString (points);
+    auto cpReq = ICurvePrimitive::CreateLineString (pointsSet2);
+    Check::SaveTransformed(*cp);
+    cp->ReverseCurvesInPlace();
+    Check::Shift(10, 0, 0);
+    Check::SaveTransformed(*cp);
+    Check::Shift(20, 0, 0);
+    Check::SaveTransformed(*cpReq);
+    Check::ClearGeometry ("CPLineString.ReverseCurve");
+    }
+
+
+TEST(CPLineString, CheckShapes)
+    {
+    auto cShapeLine = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0,0,0), DPoint3d::From(5,5,5)));
+    DEllipse3d ellipse = DEllipse3d::FromXYMajorMinor (0.0, 0.0, 0.0, 4.0, 3.0, 2, 3, 3);
+    auto cShapeArc = ICurvePrimitive::CreateArc(ellipse);
+    auto cShapeRectangle = ICurvePrimitive::CreateRectangle(4, 0, 8, 8, 3);
+    DPoint3d points[] = { DPoint3d::From(0,0,1), DPoint3d::From(0,3,3), DPoint3d::From(3,0,4), DPoint3d::From(5,3,0) };
+    auto cShapePointString = ICurvePrimitive::CreatePointString(points, 4);
+
+    Check::SaveTransformed(*cShapePointString);
+    auto cpShapeLine2 = cShapeLine->Clone();
+    Check::Shift(2, 0, 0);
+    Check::SaveTransformed(*cShapeLine);
+    Check::Shift(5, 0, 0);
+    Check::SaveTransformed(*cShapeLine);
+    Check::Shift(20, 0, 0);
+    Check::SaveTransformed(*cShapeArc);
+    Check::Shift(20, 0, 0);
+    Check::SaveTransformed(*cShapeRectangle);
+    Check::ClearGeometry("CPLineString.CheckShapes");
+    }
+
+TEST(CPLineString, SameStructure)
+    {
+    DPoint3d points[5] = { DPoint3d::From(1,0,0),
+                           DPoint3d::From(2,2,0),
+                           DPoint3d::From(2,2,4),
+                           DPoint3d::From(2,2,6),
+                           DPoint3d::From(6,6,6) };
+    auto cShapePointString = ICurvePrimitive::CreatePointString(points, 5);
+    auto cShapePointStringCloned = cShapePointString->Clone();
+    cShapePointStringCloned->TransformInPlace(Transform::From(DPoint3d::From(10, 0, 0)));
+    Check::True(cShapePointString->IsSameStructure(*cShapePointStringCloned));
+    Check::False(cShapePointString->IsSameStructureAndGeometry(*cShapePointStringCloned));
+    }
+
+TEST(CPLineString, LineLineStringClone)
+    {
+    DPoint3d points[5] = {  DPoint3d::From(1,0,0),
+                            DPoint3d::From(2,2,0),
+                            DPoint3d::From(2,2,4),
+                            DPoint3d::From(2,2,6),
+                            DPoint3d::From(6,6,6) };
+    auto cShapeLineString = ICurvePrimitive::CreateLineString(points, 5);
+    bvector<DPoint3d> *pointsCopy = cShapeLineString->GetLineStringP();
+    auto cShapeLineStringCopy = ICurvePrimitive::CreateLineString(*pointsCopy);
+    Check::True(cShapeLineStringCopy->IsSameStructureAndGeometry(*cShapeLineString->Clone()));
+    }
+
+TEST(DSpiral2d, SpiralTest) 
+    {
+    DPoint3d startPoint {10,0,0};
+    Transform placement = Transform::From (startPoint);
+    double rA = 1000;
+    double rB =  500;
+    //double dAB = 100;
+
+    double bearing0 = Angle::DegreesToRadians (45);
+    double bearing1 = Angle::DegreesToRadians (65);
+    auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius
+    (
+        DSpiral2dBase::TransitionType_Clothoid,
+        bearing0, rA, bearing1, rB,
+        placement, 0,1
+    );
+    Check::SaveTransformed(*spiral);
+    Check::ClearGeometry("DSpiral2d.SpiralTest");
+
+    Check::True(spiral->IsFractionSpace());
+   
+    }
