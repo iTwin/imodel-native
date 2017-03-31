@@ -267,8 +267,7 @@ WCharCP projectGuid
     Json::Value propertiesJson;
     propertiesJson["FolderName"] = "";
     propertiesJson["ContentType"] = "Folder";
-    bool isRootFolder = true;
-    propertiesJson["RootFolder"] = &isRootFolder;
+    propertiesJson["RootFolder"] = true;
     if (propertiesJson.size() == 0)
         {
         api->SetStatusMessage("Invalid parameter passed to function");
