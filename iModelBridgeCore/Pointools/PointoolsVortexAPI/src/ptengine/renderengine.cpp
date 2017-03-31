@@ -1,37 +1,17 @@
 /*system stuff						*/ 
-#include <pt/trace.h>
-
+#include <pt/trace.h>
 /*gl Headers						*/ 
-#include <gl/glew.h>
-
+#include <gl/glew.h>
 //#include <ptgl/glExtensions.h> <-- now replaced by glew
-#include <pt/timestamp.h>
-
+#include <pt/timestamp.h>
 /*ptgl headers						*/ 
-#include <ptgl/glViewSetup.h>
-#include <ptgl/glEffects.h>
-#include <ptgl/glText.h>
-#include <ptgl/glClipBox.h>
-#include <ptgl/glVertexProgram.h>
-#include <ptedit/edit.h>
-
+#include <ptgl/glViewSetup.h>#include <ptgl/glEffects.h>#include <ptgl/gltext.h>#include <ptgl/glClipBox.h>#include <ptgl/glVertexProgram.h>#include <ptedit/edit.h>
 /*other stuff						*/ 
-#include <ptappdll/ptapp.h>
-#include <pt/project.h>
-#include <bmg/bmgdll.h>
-
+#include <ptappdll/ptapp.h>#include <pt/project.h>#include <bmg/bmgdll.h>
 /*points engine headers				*/
-#include <ptcloud2/gradient.h>
-#include <ptengine/renderEngine.h>
-#include <ptengine/pointsScene.h>
-#include <ptengine/pointspager.h>
-#include <ptengine/PointsFilter.h>
-#include <ptengine/userchannels.h>
-#include <ptengine/engine.h>
-
+#include <ptcloud2/gradient.h>#include <ptengine/renderengine.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/pointsfilter.h>#include <ptengine/userChannels.h>#include <ptengine/engine.h>
 /* std lib							*/ 
-#include <iostream>
-
+#include <iostream>
 //#define MANUAL_DRAW_TEST
 
 using namespace pointsengine;

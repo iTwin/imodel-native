@@ -1,16 +1,6 @@
 #pragma once
-#include <ptedit/editState.h>
-#include <pt/boundingbox.h>
-
-#include <ptengine/pointsscene.h>
-#include <ptengine/engine.h>
-#include <ptengine/clipManager.h>
-#include <ptcloud2/voxel.h>
-#include <ptedit/editApply.h>
-#include <ptedit/isolationFilter.h>
-#include <pt/datatree.h>
-#include <pt/rect.h>
-
+#include <ptedit/editstate.h>#include <pt/boundingbox.h>
+#include <ptengine/pointsScene.h>#include <ptengine/engine.h>#include <ptengine/clipManager.h>#include <ptcloud2/voxel.h>#include <ptedit/editapply.h>#include <ptedit/isolationFilter.h>#include <pt/datatree.h>#include <pt/rect.h>
 
 namespace ptedit
 {

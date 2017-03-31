@@ -13,17 +13,9 @@
 #define CMDPIPE_API IMPORT_ATTRIBUTE
 #endif
 
-#include <Loki/AssocVector.h>
-#include <map>
-#include <vector>
-
-#include <ptcmdppe/interact.h>
-#include <pt/typedefs.h>
-
-#include <ptcmdppe/eventdefs.h>
-#include <ptmodm/module.h>
-#include <pt/parametermap.h>
-
+#include <loki/AssocVector.h>#include <map>#include <vector>
+#include <ptcmdppe/interact.h>#include <pt/typedefs.h>
+#include <ptcmdppe/eventdefs.h>#include <ptmodm/module.h>#include <pt/parametermap.h>
 #define CP_CMD_UNKNOWN		0
 #define CP_CMD_FOUND		1
 #define CP_CMD_BADCONTEXT	2

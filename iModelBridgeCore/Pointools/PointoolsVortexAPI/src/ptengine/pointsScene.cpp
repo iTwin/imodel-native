@@ -1,20 +1,11 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
 
-
-#include <pt/project.h>
-
-#include <ptengine/pointsScene.h>
-#include <ptengine/pointsPager.h>
-#include <ptengine/engine.h>
-
-#include <pt/timestamp.h>
-
-#include <ptengine/VoxelLODRemoveVisitor.h>
-
-#include <stdio.h>
-
-#include <algorithm>
-
+#include <pt/project.h>
+#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/engine.h>
+#include <pt/timestamp.h>
+#include <ptengine/VoxelLODRemoveVisitor.h>
+#include <stdio.h>
+#include <algorithm>
 using namespace pointsengine;
 
 #define LIST_REFRESH_ITERATIONS 5

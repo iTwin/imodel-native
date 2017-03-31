@@ -1,7 +1,5 @@
 #pragma once
-#include <pt/viewparams.h>
-#include <ptcloud2/voxel.h>
-
+#include <pt/ViewParams.h>#include <ptcloud2/voxel.h>
 namespace ProjArea
 {
 

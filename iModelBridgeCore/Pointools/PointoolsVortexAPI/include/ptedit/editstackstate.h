@@ -8,21 +8,11 @@
 /*----------------------------------------------------------*/ 
 #pragma once
 
-#include <set>
-#include <loki/assocvector.h>
-
-#include <ptfs/filepath.h>
-#include <ptfs/iohelper.h>
-
-#include <ptcloud2/Voxel.h>
-#include <ptcloud2/PointCloud.h>
-
-#include <ptengine/ptengine_api.h>
-#include <ptengine/module.h>
-
-#include <ptedit/editStack.h>
-#include <pt/datatree.h>
-
+#include <set>#include <loki/AssocVector.h>
+#include <ptfs/filepath.h>#include <ptfs/iohelper.h>
+#include <ptcloud2/voxel.h>#include <ptcloud2/pointcloud.h>
+#include <ptengine/ptengine_api.h>#include <ptengine/module.h>
+#include <ptedit/editstack.h>#include <pt/datatree.h>
 namespace ptedit
 {
 #define EditStateMapType Loki::AssocVector

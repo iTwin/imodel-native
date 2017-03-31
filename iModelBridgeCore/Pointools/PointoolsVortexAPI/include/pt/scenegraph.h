@@ -9,23 +9,10 @@
 #ifndef POINTOOLS_SCENEGRAPH_H
 #define POINTOOLS_SCENEGRAPH_H
 
-#include <pt/classes.h>
-
-#include <pt/variant.h>
-#include <pt/BoundingBox.h>
-#include <pt/BoundingSphere.h>
-#include <pt/DisplayInfo.h>
-#include <pt/Transform.h>
-#include <pt/ObjectBounds.h>
-#include <pt/Flags.h>
-#include <pt/Guid.h>
-
-#include <ptfs/filepath.h>
-
-#include <set>
-#include <map>
-#include <string>
-
+#include <pt/classes.h>
+#include <pt/variant.h>#include <pt/boundingbox.h>#include <pt/boundingsphere.h>#include <pt/DisplayInfo.h>#include <pt/transform.h>#include <pt/objectbounds.h>#include <pt/flags.h>#include <pt/guid.h>
+#include <ptfs/filepath.h>
+#include <set>#include <map>#include <string>
 namespace pt
 {
 

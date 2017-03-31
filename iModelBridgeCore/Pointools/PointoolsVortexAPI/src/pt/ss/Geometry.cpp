@@ -5,12 +5,8 @@
 /*																			*/ 
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include <pt/Geometry.h>
-#include <pt/memrw.h>
-#include <pt/ptmath.h>
-
-#include <gl/gl.h>
-
+#include <pt/geometry.h>#include <pt/memrw.h>#include <pt/ptmath.h>
+#include <gl/gl.h>
 using namespace pt;
 
 #define MAX_BOUND_VALUE 5000

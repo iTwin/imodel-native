@@ -8,19 +8,11 @@
 #ifndef POINTOOLS_FILEIO_WIN32
 #define POINTOOLS_FILEIO_WIN32
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <ptds/ptwin32_api.h>
-#include <pt/ptmath.h>
-
-#include <stdio.h>
-
-#include <pt/unicodeconversion.h>
-
-#include <ptds/DataSourceManager.h>
-
-#include <ptds/ptds.h>
-
+#include <sys/stat.h>#include <sys/types.h>#include <ptds/ptwin32_api.h>#include <pt/ptmath.h>
+#include <stdio.h>
+#include <pt/UnicodeConversion.h>
+#include <ptds/DataSourceManager.h>
+#include <ptds/ptds.h>
 namespace ptds
 {
 

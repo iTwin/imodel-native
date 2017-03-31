@@ -5,23 +5,12 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
 
-
-#include <GL/gl.h>
-#include <GL/glu.h>
-
-#include <wildmagic/math/Wm5Matrix3.h>
-#include <wildmagic/math/Wm5Quaternion.h>
-#include <math/matrix_math.h>
-#include <ptgl/glCamera.h>
-
-#include <math/geom.h>
-#include <pt/Rect.h>
-#include <pt/trace.h>
-
-#include <pt/datatree.h>
-
+#include <GL/gl.h>#include <GL/glu.h>
+#include <wildmagic/math/Wm5Matrix3.h>#include <wildmagic/math/Wm5Quaternion.h>#include <math/matrix_math.h>#include <ptgl/glCamera.h>
+#include <math/geom.h>#include <pt/rect.h>#include <pt/trace.h>
+#include <pt/datatree.h>
 using namespace pt;
 using namespace ptgl;
  

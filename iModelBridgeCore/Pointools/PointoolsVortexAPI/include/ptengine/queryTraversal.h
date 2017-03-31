@@ -1,10 +1,5 @@
 #pragma once
-#include <ptcloud2/pointCloud.h>
-#include <ptcloud2/scene.h>
-#include <ptengine/pointsvisitor.h>
-#include <ptengine/queryDensity.h>
-#include <mutex>
-
+#include <ptcloud2/pointcloud.h>#include <ptcloud2/scene.h>#include <ptengine/pointsvisitor.h>#include <ptengine/queryDensity.h>#include <mutex>
 namespace pointsengine
 {
 	class QueryTraversal

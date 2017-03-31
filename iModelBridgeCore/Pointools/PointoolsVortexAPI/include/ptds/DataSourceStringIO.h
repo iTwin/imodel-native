@@ -1,8 +1,6 @@
 #pragma once
 
-#include <pt/ptstring.h>
-#include <ptds/dataSource.h>
-
+#include <pt/ptstring.h>#include <ptds/DataSource.h>
 namespace ptds
 {
 

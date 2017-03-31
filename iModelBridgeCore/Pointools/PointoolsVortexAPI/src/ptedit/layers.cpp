@@ -1,7 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/editNodeDef.h>
-#include <ptedit/pointVisitors.h>
-namespace ptedit
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/editNodeDef.h>#include <ptedit/pointvisitors.h>namespace ptedit
 {
 //
 // Copy to Layer

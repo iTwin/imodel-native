@@ -1,13 +1,6 @@
 #pragma once
 
-#include <ptcloud2/Voxel.h>
-#include <ptengine/pointsScene.h>
-#include <ptengine/pointspager.h>
-#include <ptengine/globalpagerdata.h>
-#include <ptengine/StreamDataSource.h>
-#include <ptengine/StreamManagerDataSourceSet.h>
-#include <ptengine/StreamHost.h>
-
+#include <ptcloud2/voxel.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/globalpagerdata.h>#include <ptengine/StreamDataSource.h>#include <ptengine/StreamManagerDataSourceSet.h>#include <ptengine/StreamHost.h>
 #define	STREAM_MANAGER_RACE_LIMIT_SECONDS	1
 
 

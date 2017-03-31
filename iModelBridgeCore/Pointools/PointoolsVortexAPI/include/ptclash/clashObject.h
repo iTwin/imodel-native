@@ -1,9 +1,5 @@
 #pragma once
-#include <ptclash/clashTree.h>
-#include <pt/ObjectRef.h>
-#include <Vortex/IClashObject.h>
-#include <fastDelegate/fastDelegate.h>
-
+#include <ptclash/clashTree.h>#include <pt/ObjectRef.h>#include <Vortex/IClashObject.h>#include <FastDelegate/fastdelegate.h>
 
 namespace pt
 {

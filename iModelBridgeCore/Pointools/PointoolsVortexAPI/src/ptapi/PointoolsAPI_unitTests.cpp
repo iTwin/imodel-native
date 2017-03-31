@@ -1,13 +1,5 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptapi/pointoolsVortexAPI.h>
-#include <pt/viewparams.h>
-#include <pt/geomtypes.h>
-#include <ptgl/glviewstore.h>
-#include <iostream>
-#include <math/matrix_math.h>
-
-#include <gl/glu.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptapi/PointoolsVortexAPI.h>#include <pt/ViewParams.h>#include <pt/geomtypes.h>#include <ptgl/glviewstore.h>#include <iostream>#include <math/matrix_math.h>
+#include <gl/glu.h>
 #define DIVIDER std::cout << "-----------------------------------" << std::endl;
 
 using namespace pt;

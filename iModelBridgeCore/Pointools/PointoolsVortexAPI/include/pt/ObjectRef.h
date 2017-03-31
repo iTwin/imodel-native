@@ -1,7 +1,5 @@
 #pragma once
-#include <pt/sceneGraph.h>
-#include <pt/Guid.h>
-
+#include <pt/scenegraph.h>#include <pt/guid.h>
 namespace pt
 {
 	namespace datatree	{	class Branch;	}

@@ -8,12 +8,8 @@
 
 #pragma once
 
-#include <pt/boundingbox.h>
-#include <ptedit/edit.h>
-
-#include <math/matrix_math.h>
-#include <fastdelegate/fastdelegate.h>
-
+#include <pt/boundingbox.h>#include <ptedit/edit.h>
+#include <math/matrix_math.h>#include <FastDelegate/fastdelegate.h>
 
 namespace ptedit
 {

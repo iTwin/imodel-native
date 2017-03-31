@@ -1,42 +1,18 @@
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 #define POINTOOLS_API_BUILD_DLL
 
-#include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsAPI_handle.h>
-
-#include <ptengine/PointsScene.h>
-#include <ptengine/PointsPager.h>
-#include <ptengine/PointsExchanger.h>
-#include <ptengine/VisibilityEngine.h>
-#include <ptengine/pointLayers.h>
-#include <ptengine/userChannels.h>
-#include <ptengine/renderContext.h>
-#include <ptengine/engine.h>
-#include <ptengine/queryScene.h>
-#include <ptengine/clipManager.h>
-
-#include <ptedit/edit.h>
- 
-#include <diagnostics/diagnostics.h>
-
-#include <ptcloud2/bitvoxelgrid.h>
-#include <ptcloud2/pod.h>
-
+#include <ptapi/PointoolsVortexAPI.h>#include <ptapi/PointoolsAPI_handle.h>
+#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/pointsexchanger.h>#include <ptengine/visibilityengine.h>#include <ptengine/pointLayers.h>#include <ptengine/userChannels.h>#include <ptengine/renderContext.h>#include <ptengine/engine.h>#include <ptengine/queryScene.h>#include <ptengine/clipManager.h>
+#include <ptedit/edit.h> 
+#include <diagnostics/diagnostics.h>
+#include <ptcloud2/bitVoxelGrid.h>#include <ptcloud2/pod.h>
 #ifdef HAVE_OPENGL
-#include <ptgl/glcamera.h>
-#include <ptgl/gltext.h>
-#endif
+#include <ptgl/glCamera.h>#include <ptgl/gltext.h>#endif
 
-#include <pt/project.h>
-#include <pt/timer.h>
-
-#include <math/matrix_math.h>
-
-#include <ptengine/StreamManager.h>
-
-#include <pt/trace.h>
-
+#include <pt/project.h>#include <pt/timer.h>
+#include <math/matrix_math.h>
+#include <ptengine/StreamManager.h>
+#include <pt/trace.h>
 using namespace pt;
 using namespace pcloud;
 using namespace pointsengine;

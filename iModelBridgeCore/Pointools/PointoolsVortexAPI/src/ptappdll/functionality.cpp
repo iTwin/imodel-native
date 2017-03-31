@@ -1,8 +1,5 @@
-#include <pt/ParameterMap.h>
-#include <ptappdll/functionality.h>
-
-#include <map>
-
+#include <pt/parametermap.h>#include <ptappdll/functionality.h>
+#include <map>
 using namespace ptapp;
 
 namespace ptapp

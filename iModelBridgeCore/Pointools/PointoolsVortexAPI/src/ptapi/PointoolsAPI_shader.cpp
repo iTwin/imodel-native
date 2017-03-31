@@ -1,16 +1,8 @@
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 #define POINTOOLS_API_BUILD_DLL
-#include <ptapi/PointoolsVortexAPI.h>
-
-#include <ptengine/PointsFilter.h>
-#include <ptengine/RenderEngine.h>
-#include <ptengine/RenderSettings.h>
-#include <ptengine/RenderContext.h>
-#include <ptengine/engine.h>
-
-#include <pt/timestamp.h>
-
+#include <ptapi/PointoolsVortexAPI.h>
+#include <ptengine/pointsfilter.h>#include <ptengine/renderengine.h>#include <ptengine/renderSettings.h>#include <ptengine/renderContext.h>#include <ptengine/engine.h>
+#include <pt/timestamp.h>
 
 using namespace pt;
 using namespace pointsengine;

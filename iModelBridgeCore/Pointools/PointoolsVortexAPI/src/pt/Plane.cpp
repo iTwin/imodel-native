@@ -6,11 +6,7 @@
 /*  Last Updated 16 Feb 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include <pt/Plane.h>
-#include <Mgc/MgcCore3d.pkg>
-#include <Mgc/MgcIntersection3d.pkg>
-#include <Mgc/MgcMath.h>
-
+#include <pt/plane.h>#include <Mgc/MgcCore3d.pkg>#include <Mgc/MgcIntersection3d.pkg>#include <Mgc/MgcMath.h>
 #define MGCVEC(a) *reinterpret_cast<Mgc::Vector3*>((void*)&a)
 #define PTVEC(a) *reinterpret_cast<pt::vector3*>((void*)&a)
 

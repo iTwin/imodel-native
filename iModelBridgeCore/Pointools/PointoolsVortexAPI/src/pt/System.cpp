@@ -20,57 +20,28 @@
   @feb 07 - unicode support added by Faraz Ravi
  */
 
-#include "PointoolsVortexAPIInternal.h"
-#include <pt/System.h>
-#include <pt/debug.h>
-#include <pt/pterror.h>
-#include <pt/units.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <pt/System.h>#include <pt/Debug.h>#include <pt/pterror.h>#include <pt/units.h>
 #ifdef NEEDS_WORK_VORTEX_DGNDB 
 static bool isPow2(int num) { return ((num & -num) == num); }
 static int iMin(int x, int y) { return x < y ? x : y; }
 static int iMax(int x, int y) { return x > y ? x : y; }
 
 #ifdef __INTEL_COMPILER
-#include <mathimf.h> //not platform independant
-#else
-#include <math.h>
-#endif
+#include <mathimf.h> //not platform independant#else
+#include <math.h>#endif
 
 #define RealTime double
 
 #ifdef _WIN32
 
-    #include <conio.h>
-    #include <sys/timeb.h>
-
+    #include <conio.h>    #include <sys/timeb.h>
 #elif defined(__linux__) 
 
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <errno.h>
-    #include <sys/types.h>
-    #include <sys/select.h>
-    #include <termios.h>
-    #include <stropts.h>
-    #include <unistd.h>
-    #include <sys/ioctl.h>
-    #include <sys/time.h>
-
+    #include <stdlib.h>    #include <stdio.h>    #include <errno.h>    #include <sys/types.h>    #include <sys/select.h>    #include <termios.h>    #include <stropts.h>    #include <unistd.h>    #include <sys/ioctl.h>    #include <sys/time.h>
 #elif defined(__APPLE__)
 
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <errno.h>
-    #include <sys/types.h>
-    #include <sys/select.h>
-    #include <termios.h>
-    #include <unistd.h>
-    #include <sys/time.h>
-
-    #include <sstream>
-    #include <CoreServices/CoreServices.h>
-#endif
+    #include <stdlib.h>    #include <stdio.h>    #include <errno.h>    #include <sys/types.h>    #include <sys/select.h>    #include <termios.h>    #include <unistd.h>    #include <sys/time.h>
+    #include <sstream>    #include <CoreServices/CoreServices.h>#endif
 
 #endif
 

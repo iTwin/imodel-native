@@ -4,16 +4,9 @@
 /*																			*/ 
 /*  Last Updated 14 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
 
-
-#include <ptcmdppe/CommandPipe.h>
-#include <ptcmdppe/CmdOutput.h>
-#include <pt/trace.h>
-#include <fltk/cursor.h>
-#include <stack>
-#include <vector>
-
+#include <ptcmdppe/commandpipe.h>#include <ptcmdppe/cmdoutput.h>#include <pt/trace.h>#include <fltk/cursor.h>#include <stack>#include <vector>
 
 #define SUBOP_NONE		0
 #define SUBOP_ACTOR		1

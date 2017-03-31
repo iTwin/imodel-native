@@ -1,9 +1,5 @@
 #pragma once
-#include <ptcloud2/Node.h>
-#include <ptengine/VoxelLODSet.h>
-#include <ptcloud2/scene.h>
-#include <ptengine/PointsVisitor.h>
-
+#include <ptcloud2/node.h>#include <ptengine/VoxelLODSet.h>#include <ptcloud2/scene.h>#include <ptengine/pointsvisitor.h>
 namespace pointsengine
 {
 

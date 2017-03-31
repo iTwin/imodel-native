@@ -1,24 +1,9 @@
-#include "PointoolsVortexAPIInternal.h"
-
-#include <ptcloud2/Voxel.h>
-
-#include <ptengine/VisibilityEngine.h>
-#include <ptengine/pointsPager.h>
-#include <ptengine/PointsScene.h>
-#include <ptengine/PointsFilter.h>
-#include <ptengine/engine.h>
-#include <ptengine/clipManager.h>
-#include <pt/timer.h>
-
-#include <ptgl/glFrustum.h>
-#include <pt/debugassert.h>
-
-#include <pt/project.h>
-#include <pt/trace.h>
-
-#include <ptengine/projAreaApproximation.h>
-#include <diagnostics/diagnostics.h>
-
+#include "PointoolsVortexAPIInternal.h"
+#include <ptcloud2/voxel.h>
+#include <ptengine/visibilityengine.h>#include <ptengine/pointspager.h>#include <ptengine/pointsScene.h>#include <ptengine/pointsfilter.h>#include <ptengine/engine.h>#include <ptengine/clipManager.h>#include <pt/timer.h>
+#include <ptgl/glfrustum.h>#include <pt/debugassert.h>
+#include <pt/project.h>#include <pt/trace.h>
+#include <ptengine/projAreaApproximation.h>#include <diagnostics/diagnostics.h>
 using namespace pointsengine;
 using namespace pt;
 

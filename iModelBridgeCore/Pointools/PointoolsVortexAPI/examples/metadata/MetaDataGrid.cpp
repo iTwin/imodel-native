@@ -5,10 +5,7 @@
 // Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 //
 //----------------------------------------------------------------------------
-#include "stdafx.h"
-#include "MetaDataGrid.h"
-#include "Resource.h"
-
+#include "stdafx.h"#include "MetaDataGrid.h"#include "resource.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE

@@ -1,7 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/pointVisitors.h>
-#include <pt/project.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/pointvisitors.h>#include <pt/project.h>
 namespace ptedit {
 
 //

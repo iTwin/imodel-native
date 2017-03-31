@@ -1,16 +1,8 @@
 
-#include <iostream>
-#include <pt/scenegraph.h>
-#include <ptengine/pointsSelect.h>
-#include <ptengine/pointsscene.h>
-
-#include <ptcloud2/pointcloud.h>
-#include <boost/thread.hpp>
-
-#include <ptcmdppe/cmdstate.h>
-
-#include <pt/trace.h>
-
+#include <iostream>#include <pt/scenegraph.h>#include <ptengine/pointsSelect.h>#include <ptengine/pointsScene.h>
+#include <ptcloud2/pointcloud.h>#include <boost/thread.hpp>
+#include <ptcmdppe/cmdstate.h>
+#include <pt/trace.h>
 #define _VERBOSE	1
 
 #undef PTTRACE

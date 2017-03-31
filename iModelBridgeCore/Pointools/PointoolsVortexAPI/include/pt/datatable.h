@@ -9,14 +9,9 @@
 #ifndef COMMONCLASSES_DATATABLE_DEFINITION
 #define COMMONCLASSES_DATATABLE_DEFINITION
 
-#include <pt/classes.h>
-#include <pt/geomtypes.h>
-#include <pt/ptstring.h>
-
-#include <Loki/AssocVector.h>
-
-#include <string>
-
+#include <pt/classes.h>#include <pt/geomtypes.h>#include <pt/ptstring.h>
+#include <loki/AssocVector.h>
+#include <string>
 namespace pt
 {
 	typedef std::string DTID;

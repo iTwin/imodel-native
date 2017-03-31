@@ -7,12 +7,9 @@
 #pragma once
 
 #ifdef _WIN32
-    #include <crtdbg.h>
-#endif
+    #include <crtdbg.h>#endif
 
-#include <pt/debugPrintf.h>
-#include <pt/debugAssert.h>
-
+#include <pt/debugprintf.h>#include <pt/debugassert.h>
 namespace pt {
     
 /**

@@ -47,14 +47,7 @@ This example demonstrates the layer based editing capabilities of Vortex
 ****************************************************************************/
 
 // functionality provided by tool classes
-#include "..\include\NavigationTool.h"	// camera navigation
-#include "..\include\FileTool.h"		// file open/close
-#include "..\include\ShaderTool.h"		// shading options
-#include "..\snapping\snaptest.h"		// editing features
-#include "..\include\editTool.h"
-#include "SubObjectsTool.h"
-#include "..\include\CloudVisibilityTool.h"
-
+#include "..\include\NavigationTool.h"	// camera navigation#include "..\include\FileTool.h"		// file open/close#include "..\include\ShaderTool.h"		// shading options#include "..\snapping\snaptest.h"		// editing features#include "..\include\editTool.h"#include "subobjectstool.h"#include "..\include\CloudVisibilityTool.h"
 // Main Entry Point
 int main(int argc, char* argv[])
 {

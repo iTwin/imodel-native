@@ -1,22 +1,7 @@
-#include "stdafx.h"
-#include <commdlg.h>
-
-#include "appFramework.h"
-#include "graph.h"
-
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <time.h>
-
-#include <ptappdll/ptapp.h>
-#include <pt/unicodeconversion.h>
-#include <ptfs/filepath.h>
-#include <ptlang/language.h>
-#include <registry/registry_value.h>
-#include <pt/utf.h>
-
+#include "stdafx.h"#include <commdlg.h>
+#include "appFramework.h"#include "graph.h"
+#include <string>#include <vector>#include <iostream>#include <fstream>#include <time.h>
+#include <ptappdll/ptapp.h>#include <pt/UnicodeConversion.h>#include <ptfs/filepath.h>#include <ptlang/language.h>#include <registry/registry_value.h>#include <pt/utf.h>
 using namespace ptui;
 
 App::App()

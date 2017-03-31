@@ -1,34 +1,18 @@
-#include "stdafx.h"
-
+#include "stdafx.h"
 /*  Make the class name into a global variable  */ 
 char szClassName[ ] = "Pointools Vortex Monitor";
 
-#include <ptappdll/ptapp.h>
-#include "appFramework.h"
-
-#include <ptui/ptScrollWin.h>
-
-#include <pt/unicodeconversion.h>
-#include <ptfs/filepath.h>
-
-#include <iostream>
-#include <ctype.h>
-#include <string.h>
-#include <conio.h>
-#include <time.h>
-
-#include <diagnostics/diagnostics.h>
-
+#include <ptappdll/ptapp.h>#include "appFramework.h"
+#include <ptui/ptScrollWin.h>
+#include <pt/UnicodeConversion.h>#include <ptfs/filepath.h>
+#include <iostream>#include <ctype.h>#include <string.h>#include <conio.h>#include <time.h>
+#include <diagnostics/diagnostics.h>
 
 // Interprocess support for PCG licenses
 #define BOOST_DATE_TIME_NO_LIB
-#include <boost/interprocess/ipc/message_queue.hpp>
-
-#include <pt/utf.h> 
-#include <ptui/ptgrid.h>
-
-#include <fstream>
-
+#include <boost/interprocess/ipc/message_queue.hpp>
+#include <pt/utf.h> #include <ptui/ptgrid.h>
+#include <fstream>
 pt::Timer::TimeMs		g_startTime = 0;
 int				g_lastQueryRow = 1;
 int				g_lastLoadRow = 1;

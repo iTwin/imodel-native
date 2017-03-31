@@ -1,12 +1,8 @@
 #pragma once
 
-#include <pt/unicodeconversion.h>
-#include <pt/ptmath.h>
-#include <Bentley/BeFileName.h>
-
+#include <pt/UnicodeConversion.h>#include <pt/ptmath.h>#include <Bentley/BeFileName.h>
 #ifndef NO_DATA_SOURCE_SERVER
-#include <PTRMI/Array.h>
-#endif
+#include <PTRMI/Array.h>#endif
 
 /*-----------------------------------------------------------------------*/
 /* FilePath class														 */

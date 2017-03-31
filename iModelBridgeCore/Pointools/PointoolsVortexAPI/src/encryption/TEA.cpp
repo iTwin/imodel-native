@@ -1,10 +1,6 @@
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 //TEA.cpp
-#include <encryption/TEA.h>
-#include <encryption/SHA.h>
-#include <encryption/DoubleBuffering.h>
-
+#include <encryption/TEA.h>#include <encryption/SHA.H>#include <encryption/DoubleBuffering.h>
 using namespace std;
 
 //Null chain

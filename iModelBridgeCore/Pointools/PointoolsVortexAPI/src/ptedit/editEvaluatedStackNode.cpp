@@ -1,7 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/editEvaluatedStackNode.h>
-#include <ptedit/editStackState.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/editevaluatedstacknode.h>#include <ptedit/editstackstate.h>
 using namespace ptedit;
 
 		

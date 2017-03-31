@@ -1,10 +1,5 @@
 #pragma once
-#include <pt/boundsTree.h>
-#include <pt/ObjectRef.h>
-#include <ptfs/FilePath.h>
-#include <ptfs/iohelper.h>
-#include <Vortex/IClashTree.h>
-
+#include <pt/boundsTree.h>#include <pt/ObjectRef.h>#include <ptfs/filepath.h>#include <ptfs/iohelper.h>#include <Vortex/IClashTree.h>
 
 namespace pt
 {

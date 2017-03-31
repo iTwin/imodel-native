@@ -10,11 +10,7 @@
 #ifndef COMMONCLASSES_PARAMETERMAP_DEFINITION
 #define COMMONCLASSES_PARAMETERMAP_DEFINITION
 
-#include <pt/variant.h>
-#include <Loki/AssocVector.h>
-#include <vector>
-#include <set>
-
+#include <pt/variant.h>#include <loki/AssocVector.h>#include <vector>#include <set>
 namespace pt
 {
 #define PARAMETER_MAP_TYPE Loki::AssocVector

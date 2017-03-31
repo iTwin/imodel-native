@@ -7,27 +7,12 @@
 /* Written by Faraz Ravi												*/ 
 /*----------------------------------------------------------------------*/ 
 
-#include "PointoolsVortexAPIInternal.h"
-#include <assert.h>
-#include <stack>
-
-#include <ptcloud2/voxel.h>
-#include <ptcloud2/pointcloud.h>
-#include <pt/project.h>
-#include <ptcloud2/bitVoxelGrid.h>
-#include <ptcloud2/octreeIndexing.h>
-
-#include <ptds/DataSourceReadSet.h>
-
-#include <ptapi/PointoolsVortexAPI.h>
-
-#include <ptengine/VoxelLODSet.h>
-
-#include <ptengine/pointsscene.h>
-#include <ptengine/pointspager.h>
-#include <ptengine/globalpagerdata.h>
-#include <random>
-
+#include "PointoolsVortexAPIInternal.h"#include <assert.h>#include <stack>
+#include <ptcloud2/voxel.h>#include <ptcloud2/pointcloud.h>#include <pt/project.h>#include <ptcloud2/bitVoxelGrid.h>#include <ptcloud2/octreeIndexing.h>
+#include <ptds/DataSourceReadSet.h>
+#include <ptapi/PointoolsVortexAPI.h>
+#include <ptengine/VoxelLODSet.h>
+#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/globalpagerdata.h>#include <random>
 #ifndef POINTOOLS_POD_API
 extern pointsengine::GlobalPagerData pp;
 #else
@@ -35,9 +20,7 @@ pointsengine::GlobalPagerData pp;
 #endif
 
 
-#include <stdio.h>
-#include <math.h>
-
+#include <stdio.h>#include <math.h>
 
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))

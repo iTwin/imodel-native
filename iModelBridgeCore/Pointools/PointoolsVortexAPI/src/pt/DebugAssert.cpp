@@ -11,17 +11,10 @@
   @feb 07 - unicode support added by Faraz Ravi
  */
 
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 #ifdef NEEDS_WORK_VORTEX_DGNDB
 
-#include <pt/ptUnicode.h>
-#include <pt/debugAssert.h>
-#include <pt/format.h>
-#include <pt/prompt.h>
-#include <pt/debugPrintf.h>
-#include <pt/Log.h>
-
+#include <pt/ptUnicode.h>#include <pt/debugassert.h>#include <pt/format.h>#include <pt/prompt.h>#include <pt/debugprintf.h>#include <pt/Log.h>
 using namespace std;
 
 namespace pt { namespace _internal {

@@ -1,16 +1,9 @@
 
 #pragma once
 
-#include <PTRMI/ManagerInfo.h>
-#include <PTRMI/HostAddress.h>
-#include <PTRMI/Name.h>
-#include <PTRMI/Status.h>
-#include <PTRMI/Message.h>
-
-#include <set>
-
-#include <pt/TimeStamp.h>
-
+#include <PTRMI/ManagerInfo.h>#include <PTRMI/HostAddress.h>#include <PTRMI/Name.h>#include <PTRMI/Status.h>#include <PTRMI/Message.h>
+#include <set>
+#include <pt/timestamp.h>
 
 namespace PTRMI
 {

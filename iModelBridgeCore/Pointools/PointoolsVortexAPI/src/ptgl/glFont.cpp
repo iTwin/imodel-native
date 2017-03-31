@@ -4,19 +4,12 @@
 //See glfont.html for terms of use
 //May 14, 2002
 //*******************************************************************
-#include "PointoolsVortexAPIInternal.h"
-
-#include <GL/gl.h>
-
-#include <string>
-#include <utility>
-#include <iostream>
-#include <fstream>
-
+#include "PointoolsVortexAPIInternal.h"
+#include <GL/gl.h>
+#include <string>#include <utility>#include <iostream>#include <fstream>
 using namespace std;
 
-#include <ptgl/glFont.h>
-
+#include <ptgl/glfont.h>
 using namespace ptgl;
 
 //*******************************************************************

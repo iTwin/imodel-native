@@ -1,22 +1,9 @@
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 #define POINTOOLS_API_BUILD_DLL
-#include <pt/timer.h>
-#include <ptapi/PointoolsVortexAPI.h>
-#include <math/matrix_math.h>
-#include <ptengine/PointsScene.h>
-#include <ptengine/PointsPager.h>
-#include <pt/viewparams.h>
-#include <ptengine/engine.h>
-#include <ptengine/renderContext.h>
- 
-#include <diagnostics/diagnostics.h>
-
-#include <utility/ptstr.h>
-#include <ptcloud2/pod.h>
-
-#include <pt/trace.h>
-
+#include <pt/timer.h>#include <ptapi/PointoolsVortexAPI.h>#include <math/matrix_math.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <pt/ViewParams.h>#include <ptengine/engine.h>#include <ptengine/renderContext.h> 
+#include <diagnostics/diagnostics.h>
+#include <utility/ptstr.h>#include <ptcloud2/pod.h>
+#include <pt/trace.h>
 using namespace pointsengine;
 
 RenderContext			*g_currentRenderContext=0;

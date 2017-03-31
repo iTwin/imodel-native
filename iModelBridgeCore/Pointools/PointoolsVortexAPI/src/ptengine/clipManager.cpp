@@ -5,14 +5,7 @@
 // Copyright (c) 2014 Bentley Systems, Incorporated. All rights reserved.
 //
 //----------------------------------------------------------------------------
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/clipPlane.h>
-#include <ptengine/clipManager.h>
-#include <ptapi/PointoolsVortexAPI.h>
-#include <ptedit/isolationFilter.h>
-#include <assert.h>
-#include <fastdelegate/fastdelegate.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptengine/clipPlane.h>#include <ptengine/clipManager.h>#include <ptapi/PointoolsVortexAPI.h>#include <ptedit/isolationFilter.h>#include <assert.h>#include <FastDelegate/fastdelegate.h>
 namespace pointsengine
 {
 

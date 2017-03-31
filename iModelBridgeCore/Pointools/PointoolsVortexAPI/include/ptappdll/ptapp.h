@@ -5,8 +5,7 @@
 /*  Last Updated 30 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include <ptmodm/ModulesManager.h>
-
+#include <ptmodm/modulesManager.h>
 namespace pt {class ParameterMap; }
 
 namespace ptapp

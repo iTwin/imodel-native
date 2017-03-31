@@ -9,14 +9,8 @@
 #ifndef POINTOOLS_VISIBILITY_DETERMINATION_ENGINE
 #define POINTOOLS_VISIBILITY_DETERMINATION_ENGINE 1
 
-#include <ptengine/ptengine_api.h>
-#include <pt/boundingbox.h>
-#include <pt/viewparams.h>
-
-#include <ptengine/pointsscene.h>
-#include <ptgl/glfrustum.h>
-#include <ptengine/module.h>
-
+#include <ptengine/ptengine_api.h>#include <pt/boundingbox.h>#include <pt/ViewParams.h>
+#include <ptengine/pointsScene.h>#include <ptgl/glfrustum.h>#include <ptengine/module.h>
 namespace pointsengine
 {
 

@@ -7,10 +7,7 @@
  @edited  2004-01-03
 */
 
-#include "PointoolsVortexAPIInternal.h"
-#include <pt/format.h>
-#include <pt/ptunicode.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <pt/format.h>#include <pt/ptUnicode.h>
 // If your platform does not have vsnprintf, you can find a
 // implementation at http://www.ijs.si/software/snprintf/
 

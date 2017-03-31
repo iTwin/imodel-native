@@ -1,14 +1,6 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
 
-
-#include <ptengine/PointsScene.h>
-#include <ptengine/PointsPager.h>
-#include <ptengine/RenderEngine.h>
-#include <ptengine/VisibilityEngine.h>
-#include <ptengine/PointsFilter.h>
-#include <ptengine/pointLayers.h>
-#include <ptengine/engine.h>
-
+#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/visibilityengine.h>#include <ptengine/pointsfilter.h>#include <ptengine/pointLayers.h>#include <ptengine/engine.h>
 using namespace pointsengine;
 
 namespace ___pntsengine

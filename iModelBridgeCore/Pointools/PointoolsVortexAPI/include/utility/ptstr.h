@@ -1,11 +1,7 @@
 #ifndef POINTOOLS_SAFE_STRING_FUNCTIONS
 #define POINTOOLS_SAFE_STRING_FUNCTIONS
 
-#include <assert.h>
-#include <wchar.h>
-#include <pt/unicodeconversion.h>
-#include <pt/debugAssert.h>
-
+#include <assert.h>#include <wchar.h>#include <pt/UnicodeConversion.h>#include <pt/debugassert.h>
 #define PT_DESCRIPTOR_SIZE 64
 #define PT_PATH_SIZE 260
 

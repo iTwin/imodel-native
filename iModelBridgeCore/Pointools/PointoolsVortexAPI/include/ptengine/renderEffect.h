@@ -1,12 +1,7 @@
 #pragma once
 
-#include <pt/typedefs.h>
-
-#include <ptengine/rendersettings.h>
-#include <ptengine/renderPointsBuffer.h>
-#include <ptengine/renderEnvironment.h>
-#include <ptengine/renderResourceManager.h>
-
+#include <pt/typedefs.h>
+#include <ptengine/renderSettings.h>#include <ptengine/renderPointsBuffer.h>#include <ptengine/renderEnvironment.h>#include <ptengine/renderResourceManager.h>
 namespace ptgl
 {
 	class Shader;

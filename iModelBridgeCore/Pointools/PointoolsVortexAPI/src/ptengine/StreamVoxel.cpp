@@ -1,10 +1,6 @@
-#include "PointoolsVortexAPIInternal.h"
-
-#include <ptengine/StreamVoxel.h>
-#include <ptcloud2/Voxel.h>
-
-#include <ptengine/StreamDataSource.h>
-
+#include "PointoolsVortexAPIInternal.h"
+#include <ptengine/StreamVoxel.h>#include <ptcloud2/voxel.h>
+#include <ptengine/StreamDataSource.h>
 
 namespace pointsengine
 {

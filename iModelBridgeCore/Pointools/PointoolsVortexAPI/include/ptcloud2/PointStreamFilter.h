@@ -25,14 +25,9 @@
 // ***************************************************************************************
 
 // C
-#include <vector>
-
+#include <vector>
 // Local
-#include <ptcloud2/indexstream.h>
-#include <ptcloud2/SpatialPartitionGraph.h>
-#include <pt/boundingbox.h>
-#include <math/matrix_math.h>
-
+#include <ptcloud2/indexstream.h>#include <ptcloud2/spatialPartitionGraph.h>#include <pt/boundingbox.h>#include <math/matrix_math.h>
 namespace pcloud
 {
 

@@ -4,15 +4,10 @@
 /*																			*/
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/
 /*--------------------------------------------------------------------------*/
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
 
-
-#include <ptgl/glViewport.h>
-#include <math/matrix_math.h>
-
-#include <ptgl/gldraw.h>
-#include <pt/project.h>
-
+#include <ptgl/glViewport.h>#include <math/matrix_math.h>
+#include <ptgl/glDraw.h>#include <pt/project.h>
 #define _VIEWPORT_VERSION 4
 
 #ifndef _PI
@@ -23,8 +18,7 @@ using namespace pt;
 using namespace ptgl;
 
 #define COUTTRACER
-#include <pt/trace.h>
-
+#include <pt/trace.h>
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////

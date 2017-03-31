@@ -1,20 +1,9 @@
 #pragma once
 
-#include <ptengine/pointsScene.h>
-
-#include <ptengine/renderEffect.h>
-#include <ptengine/renderSettings.h>
-#include <ptengine/renderFrameData.h>
-#include <ptengine/renderVoxelBuffer.h>
-#include <ptengine/renderPointsMethod.h>
-#include <ptengine/renderMethodGLVertexArray.h>
-#include <ptengine/renderPipelineGLFixed.h>
-#include <ptcloud2/gradient.h>
-
-#include <Loki/AssocVector.h>
-
-#include <pt/timestamp.h>
-
+#include <ptengine/pointsScene.h>
+#include <ptengine/renderEffect.h>#include <ptengine/renderSettings.h>#include <ptengine/renderFrameData.h>#include <ptengine/renderVoxelBuffer.h>#include <ptengine/renderPointsMethod.h>#include <ptengine/renderMethodGLVertexArray.h>#include <ptengine/renderPipelineGLFixed.h>#include <ptcloud2/gradient.h>
+#include <loki/AssocVector.h>
+#include <pt/timestamp.h>
 namespace pointsengine
 {
 /** Renders points to the current graphics context */

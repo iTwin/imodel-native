@@ -1,9 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/userchannels.h>
-#include <ptengine/pointsScene.h>
-#include <ptengine/renderengine.h>
-#include <ptengine/engine.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptengine/userChannels.h>#include <ptengine/pointsScene.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>
 using namespace pcloud;
 using namespace pointsengine;
 

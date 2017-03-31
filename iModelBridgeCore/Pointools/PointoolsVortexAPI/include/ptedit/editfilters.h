@@ -1,9 +1,6 @@
 #pragma once
 
-#include <ptedit/editNodeDef.h>
-#include <ptedit/pointVisitors.h>
-#include <ptengine/userChannels.h>
-
+#include <ptedit/editNodeDef.h>#include <ptedit/pointvisitors.h>#include <ptengine/userChannels.h>
 namespace ptedit
 {
 	struct FilterOpClearAll : public EditNodeDef

@@ -8,18 +8,9 @@
 #ifndef POINTOOLS_CAMERA_INTERFACE
 #define POINTOOLS_CAMERA_INTERFACE
 
-#include <stack>
-
-#include <pt/geomTypes.h>
-#include <ptgl/glFrustum.h>
-#include <ptgl/glViewstore.h>
-#include <ptgl/glArcball.h>
-#include <ptgl/glLight.h>
-#include <pt/BoundingBox.h>
-
-#include <pt/Rect.h>
-#include <ptgl/ptgl.h>
-
+#include <stack>
+#include <pt/geomtypes.h>#include <ptgl/glfrustum.h>#include <ptgl/glviewstore.h>#include <ptgl/glArcball.h>#include <ptgl/glLight.h>#include <pt/boundingbox.h>
+#include <pt/rect.h>#include <ptgl/ptgl.h>
 namespace pt { namespace datatree { class Branch; } }
 
 namespace ptgl

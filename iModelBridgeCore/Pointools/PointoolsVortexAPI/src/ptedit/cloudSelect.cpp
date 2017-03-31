@@ -1,7 +1,5 @@
 
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/cloudSelect.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/cloudselect.h>
 
 using namespace pointsengine;
 

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <ptcloud2/Voxel.h>
-#include <PTRMI/DataBuffer.h>
-
+#include <ptcloud2/voxel.h>#include <PTRMI/DataBuffer.h>
 using namespace pcloud;
 using namespace ptds;
 

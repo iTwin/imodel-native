@@ -5,15 +5,8 @@
 /*  Last Updated 26 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/
 
-#include <pttool/Tool.h>
-#include <ptcmdppe/CommandPipe.h>
-#include <ptvpm/Viewports.h>
-#include <ptcmdppe/interact.h>
-#include <pt/trace.h>
-#include <ptappdll/ptapp.h>
-
-#include <pt/debugassert.h>
-
+#include <pttool/tool.h>#include <ptcmdppe/commandpipe.h>#include <ptvpm/Viewports.h>#include <ptcmdppe/interact.h>#include <pt/trace.h>#include <ptappdll/ptapp.h>
+#include <pt/debugassert.h>
 using namespace ptapp;
 using namespace pt;
 

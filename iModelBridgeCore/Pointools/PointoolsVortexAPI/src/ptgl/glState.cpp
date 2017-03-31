@@ -1,12 +1,7 @@
-#include "PointoolsVortexAPIInternal.h"
-
-#include <ptgl/glstate.h>
-
-#include <iostream>
-
-#include <loki/assocvector.h>
-#include <map>
-
+#include "PointoolsVortexAPIInternal.h"
+#include <ptgl/glstate.h>
+#include <iostream>
+#include <loki/AssocVector.h>#include <map>
 /*this doesn't deal with different GL contexts*/ 
 using namespace ptgl;
 namespace ptgl

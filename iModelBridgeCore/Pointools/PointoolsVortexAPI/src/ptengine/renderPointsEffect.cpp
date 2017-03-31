@@ -1,12 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptgl/glState.h>
-#include <ptengine/renderPointsEffect.h>
-#include <ptengine/renderFrameData.h>
-#include <ptengine/renderContext.h>
-#include <ptengine/renderShaderUniforms.h>
-#include <ptengine/pointLayers.h>
-#include <ptgl/glShader.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptgl/glstate.h>#include <ptengine/renderPointsEffect.h>#include <ptengine/renderFrameData.h>#include <ptengine/renderContext.h>#include <ptengine/renderShaderUniforms.h>#include <ptengine/pointLayers.h>#include <ptgl/glShader.h>
 using namespace pointsengine;
 
 /*****************************************************************************/

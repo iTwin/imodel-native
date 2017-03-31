@@ -1,11 +1,8 @@
 #ifndef POINTOOLS_POINTSENGINE_SINGLETONS
 #define POINTOOLS_POINTSENGINE_SINGLETONS
 
-#include <Loki/Singleton.h>
-
-#include <ptengine/VisibilityEngine.h>
-#include <ptengine/ptengine_api.h>
-
+#include <loki/Singleton.h>
+#include <ptengine/visibilityengine.h>#include <ptengine/ptengine_api.h>
 namespace pointsengine
 {
 	class PointsScene;

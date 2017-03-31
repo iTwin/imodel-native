@@ -1,11 +1,5 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/editStackState.h>
-#include <ptengine/pointsVisitor.h>
-#include <ptengine/pointsScene.h>
-#include <ptengine/engine.h>
-
-#include <queue>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/editstackstate.h>#include <ptengine/pointsvisitor.h>#include <ptengine/pointsScene.h>#include <ptengine/engine.h>
+#include <queue>
 #ifndef PT_NULL_FILE_POS
 #define PT_NULL_FILE_POS 0xFFFFFFFFFFFFFFFF
 #endif

@@ -1,6 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptedit/pointVisitors.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptedit/pointvisitors.h>
 namespace ptedit
 {
 ConsolidateVisitor::ConsolidateVisitor( bool alllayers, bool flagState)

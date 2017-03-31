@@ -1,13 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <pt/trace.h>
-#include <pt/ptmath.h>
-#include <pt/unicodeconversion.h>
-#include <ptcloud2/pod.h>
-#include <assert.h>
-#include <map>
-#include <string>
-#include <iostream>
-
+#include "PointoolsVortexAPIInternal.h"#include <pt/trace.h>#include <pt/ptmath.h>#include <pt/UnicodeConversion.h>#include <ptcloud2/pod.h>#include <assert.h>#include <map>#include <string>#include <iostream>
 using namespace pcloud;
 using namespace ptds;
 

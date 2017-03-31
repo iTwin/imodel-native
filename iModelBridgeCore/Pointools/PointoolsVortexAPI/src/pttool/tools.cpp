@@ -5,24 +5,13 @@
 /*  Last Updated 28 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include <pt/typedefs.h>
-#include <pttool/Tool.h>
-#include <pttool/Tools.h>
-
-#include <shlwapi.h>
-#include "cxr_inc.h"
-
-#include <boost/date_time/gregorian/gregorian.hpp>
-
+#include <pt/typedefs.h>#include <pttool/tool.h>#include <pttool/tools.h>
+#include <shlwapi.h>#include "cxr_inc.h"
+#include <boost/date_time/gregorian/gregorian.hpp>
 //#import "ClientProtectorCOM.dll" no_namespace 
 
-#include <ptui/ptWindow.h>
-#include <ptui/ptGrid.h>
-#include <ptui/ptMessage.h>
-
-#include <ptcmdppe/commandpipe.h>
-#include <ptui/ptuiprefs.h>
-
+#include <ptui/ptWindow.h>#include <ptui/ptGrid.h>#include <ptui/ptMessage.h>
+#include <ptcmdppe/commandpipe.h>#include <ptui/ptuiprefs.h>
 #define LIC_TRUE_NON_EXPIRY			100
 #define LIC_TRUE_EXPIRY				101
 #define LIC_TRUE_CODE_ACTIVATED		102
@@ -55,8 +44,7 @@ typedef const char*	(*GETDESC)(void);
 #define FUNC2			GETDESC		
 #define FUNC2IDENTIFIER	const char* getDescription
 
-#include <ptapp/pluginsmanager.h>
-
+#include <ptapp/pluginsmanager.h>
 static ptapp::PluginsManager s_plugins("getPTToolDescriptor");
 //ICoClientProtectorPtr entrysys;
 

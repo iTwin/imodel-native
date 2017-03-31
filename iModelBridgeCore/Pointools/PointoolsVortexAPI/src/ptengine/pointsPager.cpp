@@ -1,33 +1,19 @@
-#include "PointoolsVortexAPIInternal.h"
-
+#include "PointoolsVortexAPIInternal.h"
 #undef _VERBOSE
 
 #ifdef _VERBOSE
 #define COUT_TRACE
 #endif
 
-#include <ptcloud2/Voxel.h>
-
-#include <ptfs/filepath.h>
-#include <ptcloud2/pod.h>
-
-#include <ptengine/pointspager.h>
-#include <ptengine/pointsscene.h>
-#include <ptengine/pointsfilter.h>
-
-#include <pt/timestamp.h>
-#include <ptengine/engine.h>
-#include <ptcmdppe/cmdstate.h>
-
-#include <pt/trace.h>
-
-#include <ptengine/globalpagerdata.h>
-
-#include <ptengine/StreamManager.h>
-
+#include <ptcloud2/voxel.h>
+#include <ptfs/filepath.h>#include <ptcloud2/pod.h>
+#include <ptengine/pointspager.h>#include <ptengine/pointsScene.h>#include <ptengine/pointsfilter.h>
+#include <pt/timestamp.h>#include <ptengine/engine.h>#include <ptcmdppe/cmdstate.h>
+#include <pt/trace.h>
+#include <ptengine/globalpagerdata.h>
+#include <ptengine/StreamManager.h>
 #ifdef NEEDS_WORK_VORTEX_DGNDB
-#include <PTRMI/Manager.h>
-#endif
+#include <PTRMI/Manager.h>#endif
 
 
 #define REQUEST_RANGE 64
@@ -35,8 +21,7 @@
 #define	POINTS_PAGER_SLEEP	250		// Sleep 0.25 seconds between running pager thread. This limits racing and gives more CPU time to main application threads
 
 
-#include <pt/trace.h>
-
+#include <pt/trace.h>
 #define		PAGER_THREAD 0
 #define		_MEMAVAL (int64_t)(mem.dwAvailVirtual - ((1.0-pp.capacity) * mem.dwTotalVirtual))
 

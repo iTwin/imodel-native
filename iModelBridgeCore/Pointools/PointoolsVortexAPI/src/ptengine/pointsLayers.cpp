@@ -1,6 +1,4 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/pointlayers.h>
-
+#include "PointoolsVortexAPIInternal.h"#include <ptengine/pointLayers.h>
 using namespace pointsengine;
 
 static pt::String null("");

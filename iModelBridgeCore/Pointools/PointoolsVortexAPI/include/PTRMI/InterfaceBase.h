@@ -1,9 +1,6 @@
 #pragma once 
 
-#include <PTRMI/GUID.h>
-#include <PTRMI/Name.h>
-#include <PT/TimeStamp.h>
-
+#include <PTRMI/GUID.h>#include <PTRMI/Name.h>#include <pt/timestamp.h>
 
 namespace PTRMI
 {
