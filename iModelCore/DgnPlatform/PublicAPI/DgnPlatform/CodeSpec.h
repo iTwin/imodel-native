@@ -172,7 +172,6 @@ public:
         Repository = 1,
         Model = 2,
         ParentElement = 3,
-        // WIP: ArbitraryElement = 4 (identified by relationship)
     };
 
 private:
@@ -277,6 +276,7 @@ public:
     bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
 
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;

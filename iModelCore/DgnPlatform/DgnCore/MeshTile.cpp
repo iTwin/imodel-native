@@ -409,6 +409,11 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
         else
             {
             m_color = graphicParams->GetFillColor().GetValue(); 
+            if (nullptr != graphicParams->GetGradientSymb())
+                {
+                m_gradient = GradientSymb::Create();
+                m_gradient->CopyFrom(*graphicParams->GetGradientSymb());
+                }
             }
         }
     }
@@ -426,6 +431,12 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
 
     if (m_linePixels != rhs.m_linePixels)
         return m_linePixels != rhs.m_linePixels;
+    
+    if (m_gradient.get() != rhs.m_gradient.get())
+        {
+        if (!m_gradient.IsValid() || !rhs.m_gradient.IsValid() || ! (*m_gradient == *rhs.m_gradient))
+            return m_gradient.get() != rhs.m_gradient.get();  // I don't think is it necessary to do a real less than comparison if both valid but not equal??
+        }
 
     if (m_color != rhs.m_color)
         {
@@ -471,12 +482,29 @@ ImageSource TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTextureImagePtr TileTextureImage::Create(GradientSymbCR gradient)
+    {
+    static const size_t     s_size = 256;
+
+    return TileTextureImage::Create(Render::ImageSource (gradient.GetImage(s_size, s_size), Render::ImageSource::Format::Png));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileDisplayParams::ResolveTextureImage(DgnDbR db) const
     {
     if (m_textureImage.IsValid())
         return;
+
+    if (m_gradient.IsValid())
+        {
+        m_textureImage = TileTextureImage::Create(*m_gradient);
+        return;
+        }
 
     ImageSource renderImage  = TileTextureImage::Load(*this, db);
 
@@ -1067,7 +1095,7 @@ TileNodePList TileNode::GetTiles()
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
-    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.QueryTexture(db).IsValid())
+    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.HasTexture(db))
     {
     }
 
@@ -2954,7 +2982,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             {
             TileDisplayParamsCPtr   displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
-            bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+            bool                    hasTexture = displayParams.IsValid() && displayParams->HasTexture(db);  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -3151,6 +3179,11 @@ TileDisplayParamsCPtr TileDisplayParams::Clone() const
     clone->m_textureImage = m_textureImage;
     clone->m_linePixels = m_linePixels;
     clone->m_isColorFromBackground = m_isColorFromBackground;
+    if (m_gradient.IsValid())
+        {
+        clone->m_gradient = GradientSymb::Create();
+        clone->m_gradient->CopyFrom(*m_gradient);
+        }
     return clone;
     }
 

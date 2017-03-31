@@ -88,7 +88,7 @@ TEST_F(ExampleTestGroup, Test1)
         DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), rootSeedInfo.physicalPartitionName.c_str());
         ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
         ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, rootSeedInfo.categoryName)).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(*db, rootSeedInfo.viewName).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(db->GetDictionaryModel(), rootSeedInfo.viewName).IsValid());
         DgnCode examplePartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), EXAMPLE_MODEL_NAME);
         ASSERT_FALSE(db->Models().QuerySubModelId(examplePartitionCode).IsValid()) << "Root seed file does not have this group's special setup";
         }
@@ -101,7 +101,7 @@ TEST_F(ExampleTestGroup, Test1)
         DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
         ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
         ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName)).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(*db, s_seedFileInfo.viewName).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(db->GetDictionaryModel(), s_seedFileInfo.viewName).IsValid());
         DgnCode examplePartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), EXAMPLE_MODEL_NAME);
         ASSERT_TRUE(db->Models().QuerySubModelId(examplePartitionCode).IsValid()) << "Group seed file has special setup";
         }
