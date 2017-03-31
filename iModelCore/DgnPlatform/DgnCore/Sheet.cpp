@@ -482,11 +482,11 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
 
-    auto& def = view->GetViewDefinition();
+    auto& def = view->GetViewDefinitionR();
     auto& style = def.GetDisplayStyle();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    style.SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+    style.SetBackgroundColor(sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor());
 
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)

@@ -329,7 +329,7 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
 
     ViewControllerPtr viewController = spatialView->LoadViewController();
 
-    auto camera = viewController->GetViewDefinition().ToView3dP();
+    auto camera = viewController->GetViewDefinitionR().ToView3dP();
     if (nullptr != camera)
         camera->TurnCameraOff();
 
@@ -412,7 +412,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
-    auto camera = viewController->GetViewDefinition().ToView3dP();
+    auto camera = viewController->GetViewDefinitionR().ToView3dP();
     if (nullptr != camera)
         viewport.SynchWithViewController(false); 
 
@@ -471,7 +471,7 @@ void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nul
     DRange3d volumeRange;
     GetRange (volumeRange);
 
-    viewport.GetViewController().GetViewDefinition().LookAtVolume(volumeRange, aspectRatio, margin);
+    viewport.GetViewControllerR().GetViewDefinitionR().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
 END_BENTLEY_DGN_NAMESPACE

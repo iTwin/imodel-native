@@ -473,7 +473,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     DPoint3d origin = viewDef.GetOrigin();
     DVec3d   delta  = viewDef.GetExtents();
     m_rotMatrix     = viewDef.GetRotation();
@@ -697,7 +697,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
@@ -753,7 +753,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
@@ -1044,7 +1044,7 @@ ColorDef DgnViewport::GetBackgroundColor() const
     if (!m_viewController.IsValid())
         return ColorDef::Black();
 
-    ColorDef bgColor = m_viewController->GetViewDefinition().GetDisplayStyle().GetBackgroundColor();
+    ColorDef bgColor = m_viewController->GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
     if (ColorDef::Black() == bgColor && GetRenderTarget()->_WantInvertBlackBackground())

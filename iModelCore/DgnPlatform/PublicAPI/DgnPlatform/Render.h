@@ -193,7 +193,9 @@ private:
         kMaterials,
         kVisibleEdges,
         kHiddenEdges,
-        kIgnoreLighting,
+        kSourceLights,
+        kCameraLights,
+        kSolarLight,
         kShadows,
         kClipVolume,
         kConstructions,
@@ -224,7 +226,9 @@ public:
     void SetShowFill(bool val) { m_values.SetShowFill(val); SetPresent(kFill); }
     void SetShowTextures(bool val) { m_values.SetShowTextures(val); SetPresent(kTextures); }
     void SetShowMaterials(bool val) { m_values.SetShowMaterials(val); SetPresent(kMaterials); }
-    void SetIgnoreLighting(bool val) { m_values.SetIgnoreLighting(val); SetPresent(kIgnoreLighting); }
+    void SetShowSourceLights(bool val) { m_values.SetShowSourceLights(val); SetPresent(kSourceLights); }
+    void SetShowCameraLights(bool val) { m_values.SetShowCameraLights(val); SetPresent(kCameraLights); }
+    void SetShowSolarLight(bool val) { m_values.SetShowSolarLight(val); SetPresent(kSolarLight); }
     void SetShowVisibleEdges(bool val) { m_values.SetShowVisibleEdges(val); SetPresent(kVisibleEdges); }
     void SetShowHiddenEdges(bool val) { m_values.SetShowHiddenEdges(val); SetPresent(kHiddenEdges); }
     void SetShowShadows(bool val) { m_values.SetShowShadows(val); SetPresent(kShadows); }

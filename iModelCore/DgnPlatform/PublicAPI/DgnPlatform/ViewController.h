@@ -286,6 +286,9 @@ public:
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 
+    //! Set the ViewFlags for the DisplayStyle of this view
+    DGNPLATFORM_EXPORT void SetViewFlags(Render::ViewFlags viewFlags);
+
     //! Gets the DgnViewId of the ViewDefinition of this view.
     DgnViewId GetViewId() const {return m_definition->GetViewId();}
 
@@ -293,6 +296,9 @@ public:
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
+
+    //! Set the CategorySelector for this view.
+    void SetCategorySelector(CategorySelectorR selector) { m_definition->SetCategorySelector(selector); SetFeatureSymbologyDirty(); }
 
     //! Gets the Auxiliary Coordinate System for this view.
     AuxCoordSystemCR GetAuxCoordinateSystem() const {return *m_auxCoordSys;}
@@ -308,6 +314,12 @@ public:
     //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
     DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetDisplayStyle().GetSubCategoryAppearance(id);}
+
+    //! Override the appearance of a SubCategory for this view's DisplayStyle
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
+
+    //! Drop the override of the appearance of a SubCategory from this view's DisplayStyle
+    DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
 
     //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
@@ -348,7 +360,9 @@ public:
     DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* obj) const;
     StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
 
-    ViewDefinitionR GetViewDefinition() const {return *m_definition;}
+    //! Do not make any changes to the view definition which would affect visibility or appearance of elements, subcategories, categories, or geometry classes.
+    ViewDefinitionR GetViewDefinitionR() {return *m_definition;}
+    ViewDefinitionCR GetViewDefinition() const {return *m_definition;}
 
     //! @name Active Volume
     //! @{
@@ -402,6 +416,7 @@ protected:
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
 public:
+    void SetDisplayStyle(DisplayStyle3dR style) { GetViewDefinition3dR().SetDisplayStyle3d(style); SetViewFlags(style.GetViewFlags()); }
     
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
@@ -614,10 +629,13 @@ protected:
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
 public:
-    ViewDefinition2dR GetViewDefinition2d() const {return static_cast<ViewDefinition2dR>(*m_definition);}
+    ViewDefinition2dR GetViewDefinition2dR() {return static_cast<ViewDefinition2dR>(*m_definition);}
+    ViewDefinition2dCR GetViewDefinition2d() const {return static_cast<ViewDefinition2dCR>(*m_definition);}
 
     DgnModelId GetViewedModelId() const {return GetViewDefinition2d().GetBaseModelId();}
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
+
+    void SetDisplayStyle(DisplayStyle2dR style) { GetViewDefinition2dR().SetDisplayStyle2d(style); SetViewFlags(style.GetViewFlags()); }
 };
 
 //=======================================================================================

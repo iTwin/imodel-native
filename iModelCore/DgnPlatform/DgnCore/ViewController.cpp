@@ -108,7 +108,9 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kFill)) base.SetShowFill(m_values.ShowFill());
     if (IsPresent(kTextures)) base.SetShowTextures(m_values.ShowTextures());
     if (IsPresent(kMaterials)) base.SetShowMaterials(m_values.ShowMaterials());
-    if (IsPresent(kIgnoreLighting)) base.SetIgnoreLighting(m_values.IgnoreLighting());
+    if (IsPresent(kSolarLight)) base.SetShowSolarLight(m_values.ShowSolarLight());
+    if (IsPresent(kCameraLights)) base.SetShowCameraLights(m_values.ShowCameraLights());
+    if (IsPresent(kSourceLights)) base.SetShowSourceLights(m_values.ShowSourceLights());
     if (IsPresent(kVisibleEdges)) base.SetShowVisibleEdges(m_values.ShowVisibleEdges());
     if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
     if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
@@ -126,7 +128,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
-    GetViewDefinition().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
+    GetViewDefinitionR().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
     SetFeatureSymbologyDirty();
     _OnCategoryChange(onOff);
     }
@@ -388,7 +390,7 @@ bool SpatialViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, G
     if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
-    auto& camera = *GetViewDefinition().ToView3dP();
+    auto& camera = *GetViewDefinitionR().ToView3dP();
     if (!camera.IsCameraOn())
         {
         // If there's no perspective, just center the current location in the view.
@@ -1007,6 +1009,6 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
         return DgnDbStatus::WrongModel;
         }
 
-    GetViewDefinition().LookAtVolume(model->QueryModelRange());
+    GetViewDefinitionR().LookAtVolume(model->QueryModelRange());
     return DgnDbStatus::Success;
     }

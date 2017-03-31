@@ -277,10 +277,10 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
 
-    auto& controller = vp.GetViewController();
+    auto& controller = vp.GetViewControllerR();
     m_activeVolume = controller.GetActiveVolume();
 
-    auto& def = controller.GetViewDefinition();
+    auto& def = controller.GetViewDefinitionR();
     auto& style = def.GetDisplayStyle();
     m_bgColor   = style.GetBackgroundColor();
     m_monoColor = style.GetMonochromeColor();

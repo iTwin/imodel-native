@@ -237,6 +237,7 @@ void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusiv
     RequestAbort(true);
     m_noQuery = exclusive;
     m_special.m_always = newSet; // NB: copies values
+    SetFeatureSymbologyDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,6 +248,7 @@ void ViewController::ClearAlwaysDrawn()
     RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
+    SetFeatureSymbologyDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,6 +258,7 @@ void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
+    SetFeatureSymbologyDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,6 +268,40 @@ void ViewController::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
+    SetFeatureSymbologyDirty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::SetViewFlags(Render::ViewFlags newFlags)
+    {
+    auto oldFlags = GetViewFlags();
+    bool dirty = oldFlags.ShowConstructions() != newFlags.ShowConstructions()
+              || oldFlags.ShowDimensions() != newFlags.ShowDimensions()
+              || oldFlags.ShowPatterns() != newFlags.ShowPatterns();
+    if (dirty)
+        SetFeatureSymbologyDirty();
+
+    m_definition->GetDisplayStyle().SetViewFlags(newFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
+    {
+    m_definition->GetDisplayStyle().DropSubCategoryOverride(id);
+    SetFeatureSymbologyDirty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
+    {
+    m_definition->GetDisplayStyle().OverrideSubCategory(id, ovr);
+    SetFeatureSymbologyDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -370,9 +407,6 @@ void SpatialViewController::_PickTerrain(PickContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr SpatialViewController::GetLights() const
@@ -404,6 +438,9 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
         }
 
     return m_lights;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Visit all of the elements in a SpatialViewController. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

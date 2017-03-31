@@ -158,7 +158,7 @@ StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());
-    m_monochromeColor = m_viewport->GetViewController().GetViewDefinition().GetDisplayStyle().GetMonochromeColor();
+    m_monochromeColor = m_viewport->GetViewControllerR().GetViewDefinitionR().GetDisplayStyle().GetMonochromeColor();
 
     return _InitContextForView();
     }
@@ -1036,7 +1036,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 
     if (nullptr != vp)
         {
-        appearance = vp->GetViewController().GetViewDefinition().GetDisplayStyle().GetSubCategoryAppearance(m_subCategoryId);
+        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {

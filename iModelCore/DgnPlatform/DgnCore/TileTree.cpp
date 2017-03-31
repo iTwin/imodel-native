@@ -976,7 +976,9 @@ ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
     flags.SetShowTextures(true);
     flags.SetShowVisibleEdges(false);
     flags.SetShowShadows(false);
-    flags.SetIgnoreLighting(true);
+    flags.SetShowCameraLights(false);
+    flags.SetShowSourceLights(false);
+    flags.SetShowSolarLight(false);
 
     return flags;
     }

@@ -2257,7 +2257,6 @@ void DisplayMetricsHandler::RecordCreateSceneComplete(double seconds, ViewContro
         
     handler->_RecordMeasurement("CreateSceneComplete", measurement);
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2017
@@ -2270,6 +2269,7 @@ bool DisplayMetricsHandler::HandleForceHealImmediate(DgnViewportP vp, UpdatePlan
 
     return handler->_HandleForceHealImmediate(vp, plan);
     }
+#endif
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
