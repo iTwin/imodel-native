@@ -9,6 +9,8 @@
 #include "UnitsPCH.h"
 #include "SymbolicExpression.h"
 
+using namespace std;
+
 USING_NAMESPACE_BENTLEY_UNITS
 
 UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset) :

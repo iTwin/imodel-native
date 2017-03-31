@@ -9,6 +9,8 @@
 #include "UnitsPCH.h"
 #include "StandardNames.h"
 
+using namespace std;
+
 USING_NAMESPACE_BENTLEY_UNITS
 
 UnitRegistry * UnitRegistry::s_instance = nullptr;
