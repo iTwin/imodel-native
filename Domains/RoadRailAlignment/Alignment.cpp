@@ -86,20 +86,22 @@ AlignmentVerticalCPtr Alignment::QueryMainVertical() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, AlignmentVerticalCR vertical)
     {
-    auto stmtDelPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?;");
+    auto stmtDelPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtDelPtr.IsValid());
 
-    auto stmtInsPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " (SourceECInstanceId, TargetECInstanceId) VALUES (?,?);");
-    BeAssert(stmtInsPtr.IsValid());
-
     stmtDelPtr->BindId(1, alignment.GetElementId());
-    if (DbResult::BE_SQLITE_DONE != stmtDelPtr->Step())
-        return DgnDbStatus::WriteError;
-
-    stmtInsPtr->BindId(1, alignment.GetElementId());
-    stmtInsPtr->BindId(2, vertical.GetElementId());
-    if (DbResult::BE_SQLITE_DONE != stmtInsPtr->Step())
-        return DgnDbStatus::WriteError;    
+    if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
+        {
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteNonNavigationRelationship(
+            ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
+            return DgnDbStatus::BadElement;
+        }
+     
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertNonNavigationRelationship(insKey,
+        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToMainVertical)->GetRelationshipClassCP(),
+        ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
 
     return DgnDbStatus::Success;
     }
