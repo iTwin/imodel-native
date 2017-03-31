@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="LinearReferencing" alias="lr" version="01.00.00" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M"/>
-    <KindOfQuantity typeName="OFFSET" displayLabel="OFFSET" persistenceUnit="M"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
+    <KindOfQuantity typeName="OFFSET" displayLabel="OFFSET" persistenceUnit="M" relativeError="1e-2" />
     <ECEntityClass typeName="ILinearElement" description="Interface to be mixed-in by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
