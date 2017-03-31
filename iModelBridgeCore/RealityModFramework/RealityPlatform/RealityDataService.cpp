@@ -312,6 +312,16 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
+void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/RealityData/");
+    m_httpRequestString.append(m_id);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
@@ -894,6 +904,35 @@ RealityDataCreateRequest::RealityDataCreateRequest(Utf8String realityDataId, Utf
     }
 
 //=====================================================================================
+//! @bsimethod                                   Alain.Robert              03/2017
+//=====================================================================================
+RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
+    { 
+    m_id = realityData.GetIdentifier(); 
+    m_validRequestString = false;
+
+
+
+
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, realityData.GetName());
+    properties.Insert(RealityDataField::Classification, realityData.GetClassificationTag());
+    properties.Insert(RealityDataField::Type, realityData.GetRealityDataType());
+    properties.Insert(RealityDataField::Visibility, realityData.GetVisibilityTag());
+    properties.Insert(RealityDataField::RootDocument, realityData.GetRootDocument());
+
+    Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
+
+    m_requestType = HttpRequestType::POST_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
+    m_requestPayload.append(formatedProps);
+    m_requestPayload.append("}}}");
+    }
+
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataCreateRequest::_PrepareHttpRequestStringAndPayload() const
@@ -916,6 +955,31 @@ RealityDataChangeRequest::RealityDataChangeRequest(Utf8String realityDataId, Utf
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(properties);
+    m_requestPayload.append("}}}");
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              03/2017
+//=====================================================================================
+RealityDataChangeRequest::RealityDataChangeRequest(RealityDataCR realityData)
+    {
+    m_id = realityData.GetIdentifier(); 
+    m_validRequestString = false;
+
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, realityData.GetName());
+    properties.Insert(RealityDataField::Classification, realityData.GetClassificationTag());
+    properties.Insert(RealityDataField::Type, realityData.GetRealityDataType());
+    properties.Insert(RealityDataField::Visibility, realityData.GetVisibilityTag());
+    properties.Insert(RealityDataField::RootDocument, realityData.GetRootDocument());
+
+    Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
+
+    m_requestType = HttpRequestType::POST_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
+    m_requestPayload.append(formatedProps);
     m_requestPayload.append("}}}");
     }
 
@@ -1151,7 +1215,7 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void TransferReport::ToXml(Utf8StringR report)
+void TransferReport::ToXml(Utf8StringR report) const
     {
     BeXmlWriterPtr writer = BeXmlWriter::Create();
     BeAssert(writer.IsValid());
@@ -1334,7 +1398,7 @@ BentleyStatus AzureHandshake::ParseResponse(Utf8StringCR jsonResponse, Utf8Strin
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-TransferReport* RealityDataServiceTransfer::Perform()
+const TransferReport& RealityDataServiceTransfer::Perform()
     {
     m_currentTransferedAmount = 0;
     m_progress = 0.0;
@@ -1344,7 +1408,7 @@ TransferReport* RealityDataServiceTransfer::Perform()
     if(!IsValidTransfer())
         {
         ReportStatus(0, nullptr, -1, "No files to transfer, please verify that the previous steps completed without failure");
-        return &m_report;
+        return m_report;
         }
 
     // we can optionally limit the total amount of connections this multi handle uses 
@@ -1472,7 +1536,7 @@ TransferReport* RealityDataServiceTransfer::Perform()
 
         } while (still_running);
 
-    return &m_report;
+    return m_report;
     }
 
 //=====================================================================================
@@ -1732,6 +1796,10 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_id);
     RawServerResponse rawResponse = RawServerResponse();
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, rawResponse);
+
+    // If no files listed ... something went wrong
+    if (filesInRepo.size() == 0)
+        rawResponse.status = RequestStatus::BADREQ;
 
     if(rawResponse.status == RequestStatus::BADREQ)
         {
@@ -2000,6 +2068,25 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
+void RealityDataService::Request(const RealityDataDelete& request, RawServerResponse& rawResponse)
+    {
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
+    
+    if (rawResponse.status != RequestStatus::OK)
+        {
+        s_errorCallback("RealityDataDelete failed with response", rawResponse);
+        }
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
@@ -2190,6 +2277,9 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRela
     return relations;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
@@ -2209,6 +2299,9 @@ Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, 
     return rawResponse.body;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, RawServerResponse& rawResponse)
 {
     if (!RealityDataService::AreParametersSet())
@@ -2228,6 +2321,9 @@ Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, 
     return rawResponse.body;
 }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataService::Request(const RealityDataRelationshipCreateRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
@@ -2240,6 +2336,27 @@ Utf8String RealityDataService::Request(const RealityDataRelationshipCreateReques
 
     if (rawResponse.status != RequestStatus::OK)
         s_errorCallback("RealityDataRelationshipCreateRequest failed with response", rawResponse);
+
+    return rawResponse.body;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+Utf8String RealityDataService::Request(const RealityDataRelationshipDelete& request, RawServerResponse& rawResponse)
+    {
+    rawResponse.clear();
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return "";
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataRelationshipDelete failed with response", rawResponse);
 
     return rawResponse.body;
     }

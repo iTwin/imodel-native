@@ -67,7 +67,17 @@ public:
 
     RequestStatus ValidateResponse();
     RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
+
+    void clear() {header.clear(); body.clear(); responseCode = -1; curlCode=ServerType::WSG; status = RequestStatus::UNSENT;}
+
+    //! Compares a Request Status to the request status imbedded in the response
+    bool operator==(RequestStatus compareStatus) {return (compareStatus == status);}
+    bool operator!=(RequestStatus compareStatus) {return (compareStatus != status);}
     };
+
+// Operator (left hand request status to rawServerResponse compare)
+inline bool operator==(RequestStatus compareStatus, RawServerResponse& response) {return (compareStatus == response.status);}
+inline bool operator!=(RequestStatus compareStatus, RawServerResponse& response) {return (compareStatus != response.status);}
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
