@@ -279,7 +279,8 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
         }
 
     BeAssert(false && "Case not handled");
-    return *((PropertyMap const*) (nullptr));
+    PropertyMap const* nullPropertyMap = nullptr;
+    return *nullPropertyMap;
     }
 
 //-----------------------------------------------------------------------------------------
