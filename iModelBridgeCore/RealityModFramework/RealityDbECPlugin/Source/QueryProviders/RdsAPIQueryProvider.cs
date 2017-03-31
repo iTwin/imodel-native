@@ -39,11 +39,11 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
+        /// <param name="dbQuerier">The IDbQuerier object used to communicate</param>
         /// <param name="schema">The schema of the ECPlugin</param>
         /// <param name="base64token">The token (base64) used to communicate with rds.</param>
-        public RdsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema, string base64token)
-            : base(query, querySettings, connectionString, schema, DataSource.RDS, false)
+        public RdsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema, string base64token)
+            : base(query, querySettings, dbQuerier, schema, DataSource.RDS, false)
             {
             m_rdsDataFetcher = new RDSDataFetcher(base64token);
             }

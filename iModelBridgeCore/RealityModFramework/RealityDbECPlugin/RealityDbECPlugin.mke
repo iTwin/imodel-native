@@ -143,6 +143,7 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
+			$(baseDir)Source/Helpers/DbConnectionCreator.cs \
             $(baseDir)Source/Helpers/DbConnectionHelper.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/DownloadReportHelper.cs \

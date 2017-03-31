@@ -360,7 +360,7 @@ namespace IndexECPlugin.Source
                         {
                         //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                         //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                        IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
+                        IECQueryProvider helper = new SqlQueryProvider(query, querySettings, new DbQuerier(ConnectionString, new SqlDbConnectionCreator()), schema);
                         indexInstances = helper.CreateInstanceList().ToList();
                         //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
                         //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
@@ -396,7 +396,7 @@ namespace IndexECPlugin.Source
                         {
                         //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                         //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                        IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                        IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, new DbQuerier(ConnectionString, new SqlDbConnectionCreator()), schema);
                         usgsInstances = helper.CreateInstanceList();
                         //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
                         //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
@@ -434,7 +434,7 @@ namespace IndexECPlugin.Source
                         {
                         //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                         //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, ConnectionString, schema, base64token);
+                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, new DbQuerier(ConnectionString, new SqlDbConnectionCreator()), schema, base64token);
                         rdsInstances = helper.CreateInstanceList();
                         //instanceOverrider.Modify(usgsInstances, DataSource.RDS, ConnectionString);
                         //instanceComplement.Modify(usgsInstances, DataSource.RDS, ConnectionString);
@@ -626,7 +626,7 @@ namespace IndexECPlugin.Source
                             }
                         string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
                         IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                        Packager packager = new Packager(new DbQuerier(ConnectionString), (EnumerableBasedQueryHandler) ExecuteQuery);
+                        Packager packager = new Packager(new DbQuerier(ConnectionString, new SqlDbConnectionCreator()), (EnumerableBasedQueryHandler) ExecuteQuery);
                         packager.InsertPackageRequest(schema, connection, instance, sender.ParentECPlugin.QueryModule, version, 0, requestor, requestorVersion);
                         return;
 
