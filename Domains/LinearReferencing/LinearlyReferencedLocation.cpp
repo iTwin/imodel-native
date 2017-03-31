@@ -53,11 +53,11 @@ bool LinearlyReferencedAtLocation::_HasChanges() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
-    auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
+    auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
         "SET AtPosition.DistanceAlongFromStart = ?, AtPosition.LateralOffsetFromILinearElement = ?, AtPosition.VerticalOffsetFromILinearElement = ?, "
         "   AtPosition.DistanceAlongFromReferent = ?, FromReferent = ? "
-        "WHERE ECInstanceId = ?;");
+        "WHERE ECInstanceId = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindDouble(1, GetAtPosition().GetDistanceAlongFromStart());
@@ -155,13 +155,13 @@ bool LinearlyReferencedFromToLocation::_HasChanges() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
-    auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
+    auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
         "SET FromPosition.DistanceAlongFromStart = ?, FromPosition.LateralOffsetFromILinearElement = ?, FromPosition.VerticalOffsetFromILinearElement = ?, "
         "   FromPosition.DistanceAlongFromReferent = ?, FromPositionFromReferent = ?, "
         "   ToPosition.DistanceAlongFromStart = ?, ToPosition.LateralOffsetFromILinearElement = ?, ToPosition.VerticalOffsetFromILinearElement = ?, "
         "   ToPosition.DistanceAlongFromReferent = ?, ToPositionFromReferent = ? "
-        "WHERE ECInstanceId = ?;");
+        "WHERE ECInstanceId = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindDouble(1, GetFromPosition().GetDistanceAlongFromStart());
