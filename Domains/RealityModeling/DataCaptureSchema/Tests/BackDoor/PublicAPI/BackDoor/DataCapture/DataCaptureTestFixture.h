@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "DatacaptureTests.h"
-
+#include "DataCaptureTests.h"
 BEGIN_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE
 
 

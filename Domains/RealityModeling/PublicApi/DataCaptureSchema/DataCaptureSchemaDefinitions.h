@@ -8,15 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include <Bentley/Bentley.h>
-#include <ECDb/ECDbTypes.h>
-#include <ECDb/ECDbApi.h>
-#include <ECUnits/Units.h>
-#include <ECObjects/ECSchema.h>
-#include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnDb.h>
-#include <DgnPlatform/DgnModel.h>
-
+#include <Bentley/Bentley.h>#include <ECDb/ECDbTypes.h>#include <ECDb/ECDbApi.h>#include <ECUnits/Units.h>#include <ECObjects/ECSchema.h>#include <DgnPlatform/DgnPlatformApi.h>#include <DgnPlatform/DgnDb.h>#include <DgnPlatform/DgnModel.h>
 
 #ifdef __DATACAPTURE_BUILD__
 #define DATACAPTURE_EXPORT EXPORT_ATTRIBUTE
@@ -29,13 +21,11 @@
 //-----------------------------------------------------------------------------------------
 #define LOGGER_NAMESPACE_DATACAPTURE    "DataCapture"
 #if defined (ANDROID)
-#include <android/log.h>
-#define DGNCLIENTFX_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOGGER_NAMESPACE_DGNCLIENTFX_CPP, __VA_ARGS__);
+#include <android/log.h>#define DGNCLIENTFX_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOGGER_NAMESPACE_DGNCLIENTFX_CPP, __VA_ARGS__);
 #define DGNCLIENTFX_LOGW(...) __android_log_print(ANDROID_LOG_WARN,  LOGGER_NAMESPACE_DGNCLIENTFX_CPP, __VA_ARGS__);
 #define DGNCLIENTFX_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOGGER_NAMESPACE_DGNCLIENTFX_CPP, __VA_ARGS__);
 #else
-#include <Logging/BentleyLogging.h>
-#define DATACAPTURE_LOG                 (*NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_DATACAPTURE))
+#include <Logging/bentleylogging.h>#define DATACAPTURE_LOG                 (*NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_DATACAPTURE))
 #define DATACAPTURE_LOGD(...)           DATACAPTURE_LOG.debugv (__VA_ARGS__);
 #define DATACAPTURE_LOGI(...)           DATACAPTURE_LOG.infov (__VA_ARGS__);
 #define DATACAPTURE_LOGW(...)           DATACAPTURE_LOG.warningv (__VA_ARGS__);
