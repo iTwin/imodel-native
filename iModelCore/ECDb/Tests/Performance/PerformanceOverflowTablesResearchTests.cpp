@@ -19,9 +19,9 @@ struct PerformanceOverflowTables_PhysicalElementTests : PerformanceOverflowTable
             //col counts don't include the id col
             const int primaryTableColCount = 11; //bis_Element
             const int secondaryTableUnsharedColCount = 18; // bis_GeometricElement3d
-            const int eightyPercentClassColCount = 50; //assumed for now. Might have to test with different ones
-            std::vector<int> maxClassColCounts {50, 100, 200};
-            std::vector<int> sharedColCounts {10, 20, 30, 40, 100};
+            const int eightyPercentClassColCount = 40; //assumed for now. Might have to test with different ones
+            std::vector<int> maxClassColCounts {50, 75, 100, 125, 150, 200};
+            std::vector<int> sharedColCounts {10, 20, 30, 40, 70, 110};
 
             std::vector<Scenario> scenarios;
             for (int maxClassColCount : maxClassColCounts)

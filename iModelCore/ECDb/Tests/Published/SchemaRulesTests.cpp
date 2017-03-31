@@ -471,6 +471,59 @@ TEST_F(SchemaRulesTestFixture, Instantiability)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRulesTestFixture, KindOfQuantities)
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <KindOfQuantity typeName="MyKoq" precision="1" persistenceUnit="FT" />
+                    <ECStructClass typeName="TestStruct" >
+                       <ECProperty propertyName="Name" typeName="string"/>
+                    </ECStructClass>
+                    <ECEntityClass typeName="TestClass" >
+                       <ECProperty propertyName="Prop1" typeName="double" kindOfQuantity="MyKoq" />
+                       <ECPrimitiveArrayProperty propertyName="Prop2" typeName="double" kindOfQuantity="MyKoq"/>
+                       <ECStructProperty propertyName="Prop3" typeName="TestStruct" kindOfQuantity="MyKoq"/>
+                       <ECStructArrayProperty propertyName="Prop4" typeName="TestStruct" kindOfQuantity="MyKoq"/>
+                     </ECEntityClass>
+                   </ECSchema>)xml", true, "KOQ can be applied to prim, struct, and array properties."), "ecdbschemarules_koq.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
+    KindOfQuantityCP expectedKoq = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
+    ASSERT_TRUE(expectedKoq != nullptr);
+    for (ECPropertyCP prop : testClass->GetProperties())
+        {
+        ASSERT_EQ(expectedKoq, prop->GetKindOfQuantity()) << prop->GetName().c_str();
+        }
+    ecdb.CloseDb();
+
+    std::vector<SchemaItem> invalidSchemas {
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <KindOfQuantity typeName="MyKoq" precision="1" persistenceUnit="FT" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string"/>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string"/>
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" kindOfQuantity="MyKoq"/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing" >
+                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Parent">
+                            <Class class="Parent"/>
+                       </Source>
+                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="Child">
+                            <Class class="Child"/>
+                       </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "KOQ cannot be applied to a nav prop.")};
+
+    AssertSchemaImport(invalidSchemas, "ecdbschemarules_koq.ecdb");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
@@ -529,11 +582,7 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
                  false, "Case-sensitive class and prop names and property is of array of subclass of class.")
         };
 
-
-    for (SchemaItem const& testItem : testItems)
-        {
-        AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
-        }
+    AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
     }
 
 //---------------------------------------------------------------------------------------
