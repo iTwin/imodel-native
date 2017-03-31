@@ -332,6 +332,10 @@ struct AccessSpreader {
 
 template <>
 Getcpu::Func AccessSpreader<std::atomic>::pickGetcpuFunc();
+template <>
+Getcpu::Func AccessSpreader<std::atomic>::getcpuFunc;
+template <>
+AccessSpreader<std::atomic>::CompactStripe AccessSpreader<std::atomic>::widthAndCpuToStripe[AccessSpreader<std::atomic>::kMaxCpus + 1][AccessSpreader<std::atomic>::kMaxCpus];
 
 #define DECLARE_ACCESS_SPREADER_TYPE(Atom)                                     \
   namespace folly {                                                            \
