@@ -22,10 +22,16 @@
 // Prevent MSVC from defining min and max macros
 #define NOMINMAX
 
-#include <ctype.h>#include <float.h>#include <limits>#ifdef __INTEL_COMPILER
-#include <mathimf.h>#else
-#include <math.h>#endif
-#include <pt/Debug.h>
+#include <ctype.h>
+#include <float.h>
+#include <limits>
+#ifdef __INTEL_COMPILER
+#include <mathimf.h>
+#else
+#include <math.h>
+#endif
+#include <pt/Debug.h>
+
 #undef min
 #undef max
 
@@ -299,6 +305,7 @@ inline double wrap(double t, double hi) {
 } // namespace
 
 
-#include "ptmath.inl"
+#include "ptmath.inl"
+
 #endif
 

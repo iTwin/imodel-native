@@ -1,19 +1,32 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef _DEBUG
 #define FILE_TRACE	1
 #endif
 
-#include <pt/trace.h>
-#include <ptapi/PointoolsVortexAPI.h>
+#include <pt/trace.h>
 
-#include <ptengine/renderContext.h>#include <ptengine/pointspager.h>#include <ptengine/engine.h>#include <ptedit/editmanager.h>
+#include <ptapi/PointoolsVortexAPI.h>
+
+
+#include <ptengine/renderContext.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/engine.h>
+#include <ptedit/editmanager.h>
+
 #ifdef HAVE_OPENGL
-#include <ptgl/glInvariant.h>#include <ptgl/glCamera.h>#include <ptgl/glLight.h>#endif
+#include <ptgl/glInvariant.h>
+#include <ptgl/glCamera.h>
+#include <ptgl/glLight.h>
+#endif
 
-#include <pt/debugassert.h>#include <ptappdll/ptapp.h>
-#include <pt/timestamp.h>
+#include <pt/debugassert.h>
+#include <ptappdll/ptapp.h>
+
+#include <pt/timestamp.h>
+
 using namespace pt;
 using namespace pointsengine;
 

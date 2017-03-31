@@ -1,10 +1,24 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #define POINTOOLS_API_BUILD_DLL
 
-#include <ptapi/PointoolsVortexAPI.h>#include <ptapi/PointoolsAPI_handle.h>
-#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>
-#include <ptappdll/ptapp.h>#include <ptcloud2/pod.h>
-#include <ptl/branch.h>#include <ptl/project.h>#include <pt/project.h>#include <pt/registry.h>#include <pt/timestamp.h>
+#include <ptapi/PointoolsVortexAPI.h>
+#include <ptapi/PointoolsAPI_handle.h>
+
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/engine.h>
+
+#include <ptappdll/ptapp.h>
+#include <ptcloud2/pod.h>
+
+#include <ptl/branch.h>
+#include <ptl/project.h>
+#include <pt/project.h>
+#include <pt/registry.h>
+#include <pt/timestamp.h>
+
 using namespace pcloud;
 using namespace pointsengine;
 

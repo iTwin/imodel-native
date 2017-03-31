@@ -9,7 +9,13 @@
 #ifndef POINTOOLS_ENGINE_POINTS_PAGER
 #define POINTOOLS_ENGINE_POINTS_PAGER 1
 
-#include <ptcloud2/voxel.h>#include <ptfs/filepath.h>#include <ptengine/ptengine_api.h>#include <ptengine/module.h>#include <ptengine/podCache.h>#include <ptengine/voxelLoader.h>
+#include <ptcloud2/voxel.h>
+#include <ptfs/filepath.h>
+#include <ptengine/ptengine_api.h>
+#include <ptengine/module.h>
+#include <ptengine/podCache.h>
+#include <ptengine/voxelLoader.h>
+
 #define	LOW_LOD_LOAD_THRESHOLD	512
 #define	LOAD_BLOCK_SIZE 65536
 

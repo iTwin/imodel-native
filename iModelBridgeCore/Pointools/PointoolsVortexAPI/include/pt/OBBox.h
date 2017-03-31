@@ -6,8 +6,13 @@
 #pragma once
 
 //! Oriented Bounding Box
-#include <pt/classes.h>#include <pt/geomtypes.h>#include <pt/boundingbox.h>#include <math/matrix_math.h>#ifdef HAVE_WILDMAGIC
-#include <wildmagic/math/Wm5Quaternion.h>#endif
+#include <pt/classes.h>
+#include <pt/geomtypes.h>
+#include <pt/boundingbox.h>
+#include <math/matrix_math.h>
+#ifdef HAVE_WILDMAGIC
+#include <wildmagic/math/Wm5Quaternion.h>
+#endif
 
 namespace pt
 {

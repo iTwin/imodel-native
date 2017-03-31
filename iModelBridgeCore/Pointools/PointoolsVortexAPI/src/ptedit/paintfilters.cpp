@@ -1,4 +1,8 @@
-#include "PointoolsVortexAPIInternal.h"#include <ptedit/paintfilters.h>#include <ptcloud2/datachannel.h>#include <ptedit/editstack.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptedit/paintfilters.h>
+#include <ptcloud2/datachannel.h>
+#include <ptedit/editstack.h>
+
 using namespace pcloud;
 
 namespace ptedit

@@ -1,6 +1,9 @@
 #pragma once
 
-#include <PTRMI/Status.h>#include <ptds/DataSource.h>#include <ptds/bitarray.h>
+#include <PTRMI/Status.h>
+#include <ptds/DataSource.h>
+#include <ptds/bitarray.h>
+
 #define DATA_CACHE_DEFAULT_FILE_SIZE						0
 #define DATA_CACHE_DEFAULT_NUM_PAGES_RESIDENT				0
 #define DATA_CACHE_DEFAULT_CACHE_SIZE						(1024 * 128)		// Default cache page size 128k

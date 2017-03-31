@@ -1,11 +1,22 @@
 #pragma warning ( disable : 4786)
-#include "PointoolsVortexAPIInternal.h"
-#include <gl/gl.h>#include <gl/glu.h>
-#ifdef POINTOOLS_API_INCLUDE
-#include <ptapi/PointoolsVortexAPI.h>#endif
+#include "PointoolsVortexAPIInternal.h"
 
-#include <ptgl/gltext.h>#include <ptgl/glfont.h>#include <ptappdll/ptapp.h>#include <pt/UnicodeConversion.h>
-#include <iostream>#include <map>#include <string>
+#include <gl/gl.h>
+#include <gl/glu.h>
+
+#ifdef POINTOOLS_API_INCLUDE
+#include <ptapi/PointoolsVortexAPI.h>
+#endif
+
+#include <ptgl/gltext.h>
+#include <ptgl/glfont.h>
+#include <ptappdll/ptapp.h>
+#include <pt/UnicodeConversion.h>
+
+#include <iostream>
+#include <map>
+#include <string>
+
 using namespace ptgl;
 typedef std::map<std::string, Font*> FONTMAP;
 

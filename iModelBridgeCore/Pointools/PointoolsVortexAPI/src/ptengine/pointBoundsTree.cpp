@@ -1,7 +1,21 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/pointBoundsTree.h>#include <ptengine/engine.h>#include <ptengine/queryScene.h>#include <ptengine/pointsScene.h>#include <ptengine/renderengine.h>
-#include <ptengine/queryEngine.h>#include <ptengine/voxelLoader.h>#include <ptengine/queryDensity.h>#include <ptengine/queryFilterGrid.h>#include <ptengine/queryfilterobb.h>#include <ptengine/queryPointsArray.h>#include <ptengine/queryTraversalOctree.h>
-#include <ptengine/StreamManager.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <ptengine/pointBoundsTree.h>
+#include <ptengine/engine.h>
+#include <ptengine/queryScene.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/renderengine.h>
+
+#include <ptengine/queryEngine.h>
+#include <ptengine/voxelLoader.h>
+#include <ptengine/queryDensity.h>
+#include <ptengine/queryFilterGrid.h>
+#include <ptengine/queryfilterobb.h>
+#include <ptengine/queryPointsArray.h>
+#include <ptengine/queryTraversalOctree.h>
+
+#include <ptengine/StreamManager.h>
+
 using namespace pt;
 using namespace pointsengine;
 

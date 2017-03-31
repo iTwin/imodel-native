@@ -36,11 +36,17 @@
 #else
 
 
-#include <string>#include <pt/ptUnicode.h>#include <pt/classes.h>
+#include <string>
+#include <pt/ptUnicode.h>
+#include <pt/classes.h>
+
 #ifdef __linux__
     // Needed so we can define a global display
     // pointer for debugAssert.
-    #include <X11/Xlib.h>    #include <X11/Xutil.h>    #include <X11/Xatom.h>#endif
+    #include <X11/Xlib.h>
+    #include <X11/Xutil.h>
+    #include <X11/Xatom.h>
+#endif
 
 /**
  @def debugBreak()

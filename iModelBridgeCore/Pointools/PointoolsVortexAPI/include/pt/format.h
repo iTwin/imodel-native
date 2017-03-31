@@ -13,7 +13,8 @@
 #ifndef G3D_FORMAT_H
 #define G3D_FORMAT_H
 
-#include <pt/ptUnicode.h>
+#include <pt/ptUnicode.h>
+
 namespace pt {
 
 /**

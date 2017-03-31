@@ -1,4 +1,10 @@
-#include "PointoolsVortexAPIInternal.h"#include <ptengine/renderPlaneEffect.h>#include <ptengine/renderContext.h>#include <ptengine/renderShaderUniforms.h>#include <ptgl/glShader.h>#include <ptgl/glstate.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptengine/renderPlaneEffect.h>
+#include <ptengine/renderContext.h>
+#include <ptengine/renderShaderUniforms.h>
+#include <ptgl/glShader.h>
+#include <ptgl/glstate.h>
+
 using namespace pointsengine;
 
 uint			RenderPlaneEffectGL::requiredStandardUniforms() const

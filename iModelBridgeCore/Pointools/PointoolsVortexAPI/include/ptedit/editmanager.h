@@ -1,9 +1,27 @@
 #pragma once
 
-#include <pt/rect.h>#include <pt/fence.h>#include <pt/ViewParams.h>#include <pt/project.h>#include <pt/timestamp.h>#include <pt/datatree.h>#include <pt/boundingbox.h>
-#include <ptcloud2/voxel.h>
-#include <ptengine/pointsScene.h>#include <ptengine/engine.h>
-#include <ptedit/editstack.h>#include <ptedit/editfilters.h>#include <ptedit/fencefilter.h>#include <ptedit/frustumfilter.h>#include <ptedit/planefilter.h>#include <ptedit/paintfilters.h>#include <ptedit/cloudselect.h>#include <ptedit/boxfilter.h>
+#include <pt/rect.h>
+#include <pt/fence.h>
+#include <pt/ViewParams.h>
+#include <pt/project.h>
+#include <pt/timestamp.h>
+#include <pt/datatree.h>
+#include <pt/boundingbox.h>
+
+#include <ptcloud2/voxel.h>
+
+#include <ptengine/pointsScene.h>
+#include <ptengine/engine.h>
+
+#include <ptedit/editstack.h>
+#include <ptedit/editfilters.h>
+#include <ptedit/fencefilter.h>
+#include <ptedit/frustumfilter.h>
+#include <ptedit/planefilter.h>
+#include <ptedit/paintfilters.h>
+#include <ptedit/cloudselect.h>
+#include <ptedit/boxfilter.h>
+
 namespace ptedit
 {
 class OperationStack;

@@ -1,6 +1,13 @@
-#include "PointoolsVortexAPIInternal.h"#include <ptedit/editstack.h>#include <ptedit/editstate.h>#include <ptedit/editstackstate.h>#include <ptedit/editevaluatedstacknode.h>
-#include <pt/datatreeUtils.h>
-#include <ptl/project.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptedit/editstack.h>
+#include <ptedit/editstate.h>
+#include <ptedit/editstackstate.h>
+#include <ptedit/editevaluatedstacknode.h>
+
+#include <pt/datatreeUtils.h>
+
+#include <ptl/project.h>
+
 namespace ptedit
 {
 	/* global state handling */ 

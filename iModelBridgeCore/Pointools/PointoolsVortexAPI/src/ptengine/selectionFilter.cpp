@@ -1,6 +1,12 @@
-#include <iostream>#include <ptengine/selectionFilter.h>#include <ptgl/glviewstore.h>
-#include <pt/boundingbox.h>#include <pt/project.h>
-#include <ptengine/queryScene.h>
+#include <iostream>
+#include <ptengine/selectionFilter.h>
+#include <ptgl/glviewstore.h>
+
+#include <pt/boundingbox.h>
+#include <pt/project.h>
+
+#include <ptengine/queryScene.h>
+
 using namespace pointsengine;
 using namespace pt;
 using namespace pcloud;

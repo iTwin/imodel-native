@@ -1,6 +1,12 @@
 #pragma once
 
-#include <ptengine/ptengine_api.h>#include <ptcloud2/scene.h>#include <pt/boundsTree.h>#include <FastDelegate/fastdelegate.h>#include <ptengine/queryFilter.h>#include <ptengine/queryPointsArray.h>
+#include <ptengine/ptengine_api.h>
+#include <ptcloud2/scene.h>
+#include <pt/boundsTree.h>
+#include <FastDelegate/fastdelegate.h>
+#include <ptengine/queryFilter.h>
+#include <ptengine/queryPointsArray.h>
+
 namespace pointsengine
 {
 	class PointsBoundsTree : public pt::OrientedBoxBoundsTreed

@@ -1,8 +1,25 @@
 #pragma once
 
-#include <pt/boundingbox.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>#include <ptengine/clipManager.h>#include <ptcloud2/voxel.h>
-#include <ptedit/edit.h>#include <ptedit/editstate.h>#include <ptedit/editapply.h>#include <ptedit/editNodeDef.h>#include <ptedit/pointvisitors.h>#include <ptedit/isolationFilter.h>
-#include <pt/project.h>#include <pt/timestamp.h>#include <pt/datatree.h>#include <pt/rect.h>
+#include <pt/boundingbox.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/engine.h>
+#include <ptengine/clipManager.h>
+#include <ptcloud2/voxel.h>
+
+#include <ptedit/edit.h>
+#include <ptedit/editstate.h>
+#include <ptedit/editapply.h>
+#include <ptedit/editNodeDef.h>
+#include <ptedit/pointvisitors.h>
+#include <ptedit/isolationFilter.h>
+
+#include <pt/project.h>
+#include <pt/timestamp.h>
+#include <pt/datatree.h>
+#include <pt/rect.h>
+
 #define	NO_TEST_POINT \
 		inline static bool testPoint(int t, pcloud::Voxel *v, const pt::vector3d &p, uint i) { return true; } 
 

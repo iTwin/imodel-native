@@ -1,7 +1,10 @@
 #ifndef __POINTOOLS_BLOCK_HEADER
 #define __POINTOOLS_BLOCK_HEADER
 
-#include <loki/AssocVector.h>#include "../callback/callback.h"#include "comp.h"
+#include <loki/AssocVector.h>
+#include "../callback/callback.h"
+#include "comp.h"
+
 struct ptlblock
 {
 	unsigned int	type_id;

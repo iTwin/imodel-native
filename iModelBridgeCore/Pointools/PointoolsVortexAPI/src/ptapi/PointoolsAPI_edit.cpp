@@ -1,17 +1,38 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef _DEBUG
 #define FILE_TRACE	1
 #endif
-#include <pt/trace.h>
-#include <ptapi/PointoolsVortexAPI.h>#include <ptapi/PointoolsAPI_handle.h>
-#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/renderSettings.h>#include <ptengine/pointsexchanger.h>#include <ptengine/visibilityengine.h>#include <ptengine/pointLayers.h>#include <ptengine/engine.h>
-#include <ptcloud2/pod.h>#include <pt/project.h>#include <pt/datatreeIO.h>
-#include <ptds/DataSourceMemBlock.h>
-#include <ptgl/gltext.h>#include <ptgl/color.h>
-#include <ptedit/editmanager.h>
-#include <pt/memrw.h>#include <list>
+#include <pt/trace.h>
+
+#include <ptapi/PointoolsVortexAPI.h>
+#include <ptapi/PointoolsAPI_handle.h>
+
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/renderSettings.h>
+#include <ptengine/pointsexchanger.h>
+#include <ptengine/visibilityengine.h>
+#include <ptengine/pointLayers.h>
+#include <ptengine/engine.h>
+
+#include <ptcloud2/pod.h>
+#include <pt/project.h>
+#include <pt/datatreeIO.h>
+
+#include <ptds/DataSourceMemBlock.h>
+
+#include <ptgl/gltext.h>
+#include <ptgl/color.h>
+
+#include <ptedit/editmanager.h>
+
+#include <pt/memrw.h>
+#include <list>
+
 using namespace pt;
 using namespace pcloud;
 using namespace pointsengine;

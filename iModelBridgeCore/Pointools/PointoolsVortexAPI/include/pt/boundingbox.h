@@ -10,9 +10,13 @@
 #define COMMONCLASSESBOUNDINGBOX_INTERFACE
 
 #ifndef _DEBUG
-#include <pt/ptmath.h>#endif
+#include <pt/ptmath.h>
+#endif
 
-#include <pt/classes.h>#include <pt/bounds.h>#include <pt/geomtypes.h>
+#include <pt/classes.h>
+#include <pt/bounds.h>
+#include <pt/geomtypes.h>
+
 namespace pt
 {
 template<typename T> class BBox : public Bounds<3, T>

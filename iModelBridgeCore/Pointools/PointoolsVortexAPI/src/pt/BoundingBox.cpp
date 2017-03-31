@@ -5,7 +5,9 @@
 /*																			*/ 
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include <pt/ptmath.h>#include <pt/boundingbox.h>//#include <MGC/MgcIntr3DLinBox.h>
+#include <pt/ptmath.h>
+#include <pt/boundingbox.h>
+//#include <MGC/MgcIntr3DLinBox.h>
 
 using namespace pt;
 

@@ -4,7 +4,11 @@
 /*																			*/ 
 /*  Last Updated 30 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include "PointoolsVortexAPIInternal.h"#include <ptappdll/ptapp.h>#include <pt/parametermap.h>#include <ptfs/filepath.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptappdll/ptapp.h>
+#include <pt/parametermap.h>
+#include <ptfs/filepath.h>
+
 using namespace pt;
 using namespace ptapp;
 

@@ -8,7 +8,11 @@
 #ifndef POINTOOLS_GLFRUSTUM
 #define POINTOOLS_GLFRUSTUM
 
-#include <ptgl/ptgl.h>#include <pt/boundingbox.h>#include <pt/boundingsphere.h>#include <pt/plane.h>
+#include <ptgl/ptgl.h>
+#include <pt/boundingbox.h>
+#include <pt/boundingsphere.h>
+#include <pt/plane.h>
+
 namespace ptgl
 {
 class PTGL_API Frustum  

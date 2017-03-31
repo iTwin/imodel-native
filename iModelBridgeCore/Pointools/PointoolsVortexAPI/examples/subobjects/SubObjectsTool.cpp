@@ -5,8 +5,11 @@
 // Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 //
 //----------------------------------------------------------------------------
-#include "subobjectstool.h"#include "QueryBuffer.h"
-#include <set>
+#include "subobjectstool.h"
+#include "QueryBuffer.h"
+
+#include <set>
+
 static RGBc LABELCOL(60,210,210);
 static SubObjectsTool* s_instance = 0;
 

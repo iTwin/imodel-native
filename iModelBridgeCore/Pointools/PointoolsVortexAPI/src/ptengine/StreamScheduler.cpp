@@ -1,5 +1,10 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/StreamScheduler.h>#include <ptengine/StreamManager.h>#include <ptengine/pointspager.h>#include <ptengine/engine.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <ptengine/StreamScheduler.h>
+#include <ptengine/StreamManager.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/engine.h>
+
 namespace pointsengine
 {
 

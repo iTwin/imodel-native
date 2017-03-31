@@ -1,9 +1,17 @@
 
 #pragma once
 
-#include <ptcloud2/voxel.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/globalpagerdata.h>#include <ptengine/StreamDataSource.h>#include <ptengine/StreamManagerDataSourceSet.h>
-#include <ptengine/StreamManagerParameters.h>
-#include <PTRMI/Mutex.h>
+#include <ptcloud2/voxel.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/globalpagerdata.h>
+#include <ptengine/StreamDataSource.h>
+#include <ptengine/StreamManagerDataSourceSet.h>
+
+#include <ptengine/StreamManagerParameters.h>
+
+#include <PTRMI/Mutex.h>
+
 //#include <set>
 
 //using namespace pointsengine;

@@ -1,4 +1,8 @@
-#include "PointoolsVortexAPIInternal.h"#include <gl/glew.h>#include <ptengine/renderGLResourceAdaptor.h>#include <ptgl/glShader.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <gl/glew.h>
+#include <ptengine/renderGLResourceAdaptor.h>
+#include <ptgl/glShader.h>
+
 using namespace pointsengine;
 
 

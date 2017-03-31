@@ -1,5 +1,11 @@
-#include "PointoolsVortexAPIInternal.h"#include <ptedit/editstate.h>#include <ptedit/editstack.h>#include <ptedit/editapply.h>
-#include <ptedit/editmanager.h>#include <ptengine/clipManager.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptedit/editstate.h>
+#include <ptedit/editstack.h>
+#include <ptedit/editapply.h>
+
+#include <ptedit/editmanager.h>
+#include <ptengine/clipManager.h>
+
 using namespace ptedit;
 using namespace pt;
 

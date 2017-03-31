@@ -1,10 +1,21 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #define POINTOOLS_API_BUILD_DLL
 
-#include <ptapi/PointoolsVortexAPI.h>
-#include <diagnostics/diagnosticCmds.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>
-#include <ptcloud2/pod.h>#include <pt/project.h>
-#include <ptl/branch.h>#include <ptl/project.h>
+#include <ptapi/PointoolsVortexAPI.h>
+
+#include <diagnostics/diagnosticCmds.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/engine.h>
+
+#include <ptcloud2/pod.h>
+#include <pt/project.h>
+
+#include <ptl/branch.h>
+#include <ptl/project.h>
+
 extern int setLastErrorCode( int );
 using namespace pt;
 using namespace pointsengine;

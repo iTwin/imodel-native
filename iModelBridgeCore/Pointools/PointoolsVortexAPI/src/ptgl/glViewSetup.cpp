@@ -1,6 +1,10 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptgl/glViewSetup.h>
-#include <gl/gl.h>#include <gl/glu.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <ptgl/glViewSetup.h>
+
+#include <gl/gl.h>
+#include <gl/glu.h>
+
 using namespace ptgl;
 
 PixelView::PixelView()

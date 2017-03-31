@@ -1,8 +1,15 @@
 #ifndef POINTOOLS_IO_HELPER
 #define POINTOOLS_IO_HELPER
 
-#include <ptds/DataSource.h>#include <pt/typedefs.h>#include <pt/boundingbox.h>#include <pt/ptstring.h>#include <ptfs/filepath.h>
-#include <map>#include <iostream>
+#include <ptds/DataSource.h>
+#include <pt/typedefs.h>
+#include <pt/boundingbox.h>
+#include <pt/ptstring.h>
+#include <ptfs/filepath.h>
+
+#include <map>
+#include <iostream>
+
 #define INT_SIZE 4
 #define INT64_SIZE 8
 #define FLOAT_SIZE 4

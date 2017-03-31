@@ -1,6 +1,9 @@
 #pragma once
 
-#include <PTRMI/Mutex.h>#include <PTRMI/referencecounter.h>#include <map>
+#include <PTRMI/Mutex.h>
+#include <PTRMI/referencecounter.h>
+#include <map>
+
 namespace PTRMI
 {
 

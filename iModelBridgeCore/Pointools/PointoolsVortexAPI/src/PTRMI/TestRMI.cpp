@@ -2,13 +2,24 @@
 //
 
 
-#include <PTRMI/PTRMI.h>
-#include <PTRMI/ClientInterface.h>#include <PTRMI/ServerInterface.h>
-#include <PTRMI/ObjectManager.h>
-#include <PTRMI/RemotePtr.h>
-#include <PTRMI/Manager.h>#include <PTRMI/PipeManagerExt.h>
-#include <PTRMI/Stream.h>
-#include <ptds/DataSourceFile.h>#include <ptds/DataSourceCache.h>#include <ptds/DataSourceServer.h>
+#include <PTRMI/PTRMI.h>
+
+#include <PTRMI/ClientInterface.h>
+#include <PTRMI/ServerInterface.h>
+
+#include <PTRMI/ObjectManager.h>
+
+#include <PTRMI/RemotePtr.h>
+
+#include <PTRMI/Manager.h>
+#include <PTRMI/PipeManagerExt.h>
+
+#include <PTRMI/Stream.h>
+
+#include <ptds/DataSourceFile.h>
+#include <ptds/DataSourceCache.h>
+#include <ptds/DataSourceServer.h>
+
 
 using namespace PTRMI;
 

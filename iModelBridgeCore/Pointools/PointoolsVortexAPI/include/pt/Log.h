@@ -10,9 +10,13 @@
 #ifndef PT_LOG_H
 #define PT_LOG_H
 
-#include <stdio.h>#include <string>#include <pt/ptUnicode.h>
+#include <stdio.h>
+#include <string>
+#include <pt/ptUnicode.h>
+
 #ifndef _WIN32
-    #include <stdarg.h>#endif
+    #include <stdarg.h>
+#endif
 
 namespace pt {
 

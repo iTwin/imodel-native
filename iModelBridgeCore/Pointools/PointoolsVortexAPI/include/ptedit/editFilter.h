@@ -1,6 +1,16 @@
 #pragma once
 
-#include <pt/boundingbox.h>#include <ptengine/pointsScene.h>#include <ptengine/engine.h>#include <ptcloud2/voxel.h>#include <pt/rect.h>#include <pt/fence.h>#include <pt/ViewParams.h>#include <pt/project.h>#include <pt/timestamp.h>#include <pt/datatree.h>
+#include <pt/boundingbox.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/engine.h>
+#include <ptcloud2/voxel.h>
+#include <pt/rect.h>
+#include <pt/fence.h>
+#include <pt/ViewParams.h>
+#include <pt/project.h>
+#include <pt/timestamp.h>
+#include <pt/datatree.h>
+
 namespace ptedit
 {
 class PointEdit

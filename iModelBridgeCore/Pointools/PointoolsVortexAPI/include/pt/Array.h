@@ -14,9 +14,13 @@
 #ifndef PT_ARRAY_H
 #define PT_ARRAY_H
 
-#include <pt/Debug.h>#include <pt/System.h>#include <algorithm>
+#include <pt/Debug.h>
+#include <pt/System.h>
+#include <algorithm>
+
 #ifdef _WIN32
-    #include <new.h>#endif
+    #include <new.h>
+#endif
 
 
 namespace pt {

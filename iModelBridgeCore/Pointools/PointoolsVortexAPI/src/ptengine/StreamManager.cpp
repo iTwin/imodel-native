@@ -1,11 +1,18 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <ptengine/StreamManager.h>
-#include <ptengine/voxelLoader.h>
-#include <pt/timestamp.h>
-#include <PTRMI/Status.h>
-#include <ptengine/StreamSchedulerSequential.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <ptengine/StreamManager.h>
+
+#include <ptengine/voxelLoader.h>
+
+#include <pt/timestamp.h>
+
+#include <PTRMI/Status.h>
+
+#include <ptengine/StreamSchedulerSequential.h>
+
 #ifdef NEEDS_WORK_VORTEX_DGNDB
-#include <PTRMI/Manager.h>#endif
+#include <PTRMI/Manager.h>
+#endif
 
 
 #define PTRMI_STREAM_MANAGER_MUTEX_TIMEOUT	1000 * 60

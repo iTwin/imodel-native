@@ -1,6 +1,14 @@
-#include "PointoolsVortexAPIInternal.h"#include <ptgl/glVertexProgram.h>#include <ptgl/glEffects.h>
-#include <math/matrix_math.h>#include <ptappdll/ptapp.h>
-#include <iostream>#include <fstream>#include <set>
+#include "PointoolsVortexAPIInternal.h"
+#include <ptgl/glVertexProgram.h>
+#include <ptgl/glEffects.h>
+
+#include <math/matrix_math.h>
+#include <ptappdll/ptapp.h>
+
+#include <iostream>
+#include <fstream>
+#include <set>
+
 using namespace ptgl;
 
 extern bool g_showDebugInfo;

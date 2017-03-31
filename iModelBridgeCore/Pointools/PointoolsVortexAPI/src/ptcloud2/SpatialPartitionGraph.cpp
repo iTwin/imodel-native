@@ -1,6 +1,10 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <vector>#include <map>
-#include <ptcloud2/spatialPartitionGraph.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <vector>
+#include <map>
+
+#include <ptcloud2/spatialPartitionGraph.h>
+
 using namespace SpatialPartitioner;
 
 

@@ -8,9 +8,15 @@
 #define POINTOOLS_TOOL_BASECLASS_HEADER
 
 
-#include <pt/geomtypes.h>#include <pttool/pttool.h>#include <ptcmdppe/eventdefs.h>#include <ptmodm/module.h>#ifdef HAVE_OPENGL
-#include <ptgl/glCamera.h>#endif
-#include <pt/parametermap.h>
+#include <pt/geomtypes.h>
+#include <pttool/pttool.h>
+#include <ptcmdppe/eventdefs.h>
+#include <ptmodm/module.h>
+#ifdef HAVE_OPENGL
+#include <ptgl/glCamera.h>
+#endif
+#include <pt/parametermap.h>
+
 namespace ptapp
 {
 class Tools;

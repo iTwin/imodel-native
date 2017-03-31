@@ -25,7 +25,8 @@
 // ***************************************************************************************
 
 // C
-#include <vector>
+#include <vector>
+
 
 // ***************************************************************************************
 // Class		:	
@@ -115,9 +116,12 @@
 */
 
 // C
-#include <deque>
+#include <deque>
+
 // Local
-#include <math/matrix_math.h>#include <pt/boundingbox.h>
+#include <math/matrix_math.h>
+#include <pt/boundingbox.h>
+
 const double ZERO_OVERLAP_THRESHOLD = 0.000001;
 
 

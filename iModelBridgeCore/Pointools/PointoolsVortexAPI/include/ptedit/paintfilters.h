@@ -1,6 +1,13 @@
 #pragma once
 
-#include <ptedit/editSelect.h>#include <ptedit/editstate.h>#include <ptedit/editNodeDef.h>#include <ptedit/editfilters.h>#include <ptedit/editapply.h>#include <pt/plane.h>#include <math.h>
+#include <ptedit/editSelect.h>
+#include <ptedit/editstate.h>
+#include <ptedit/editNodeDef.h>
+#include <ptedit/editfilters.h>
+#include <ptedit/editapply.h>
+#include <pt/plane.h>
+#include <math.h>
+
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))

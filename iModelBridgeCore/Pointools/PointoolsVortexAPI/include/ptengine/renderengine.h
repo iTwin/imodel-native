@@ -11,9 +11,20 @@
 
 #ifdef HAVE_OPENGL
 
-#include <ptcloud2/defs.h>#include <ptgl/glCamera.h>#include <ptgl/glLight.h>#include <ptgl/glstate.h>#include <ptgl/glVertexProgram.h>
-#include <ptcloud2/pointcloud.h>#include <ptengine/colourRamps.h>#include <ptengine/ptengine_api.h>#include <ptengine/module.h>
-#include <loki/AssocVector.h>#include <set>
+#include <ptcloud2/defs.h>
+#include <ptgl/glCamera.h>
+#include <ptgl/glLight.h>
+#include <ptgl/glstate.h>
+#include <ptgl/glVertexProgram.h>
+
+#include <ptcloud2/pointcloud.h>
+#include <ptengine/colourRamps.h>
+#include <ptengine/ptengine_api.h>
+#include <ptengine/module.h>
+
+#include <loki/AssocVector.h>
+#include <set>
+
 namespace pointsengine
 {
 #ifndef POINTOOLS_TYPEDEFS_HEADER

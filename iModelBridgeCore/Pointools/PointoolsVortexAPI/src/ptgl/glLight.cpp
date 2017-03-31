@@ -1,7 +1,12 @@
-#include "PointoolsVortexAPIInternal.h"
-#include <gl/gl.h>#include <gl/glExt.h>
-#include <math/matrix_math.h>
-#include <ptgl/glLight.h>
+#include "PointoolsVortexAPIInternal.h"
+
+#include <gl/gl.h>
+#include <gl/glExt.h>
+
+#include <math/matrix_math.h>
+
+#include <ptgl/glLight.h>
+
 
 using namespace ptgl;
 

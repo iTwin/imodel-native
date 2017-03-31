@@ -1,10 +1,18 @@
 
 #define POINTOOLS_API_BUILD_DLL
 
-#include <ptapi/PointoolsVortexAPI.h>
-#include <ptgl/glInvariant.h>#include <ptengine/renderengine.h>#include <ptengine/pointspager.h>#include <ptengine/engine.h>
-#include <pt/debugassert.h>#include <ptappdll/ptapp.h>
-#include <pt/timestamp.h>
+#include <ptapi/PointoolsVortexAPI.h>
+
+#include <ptgl/glInvariant.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/engine.h>
+
+#include <pt/debugassert.h>
+#include <ptappdll/ptapp.h>
+
+#include <pt/timestamp.h>
+
 using namespace pt;
 using namespace pointsengine;
 

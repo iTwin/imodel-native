@@ -1,6 +1,8 @@
 #pragma  once
 
-#include <ptengine/renderPointsMethod.h>#include <loki/AssocVector.h>
+#include <ptengine/renderPointsMethod.h>
+#include <loki/AssocVector.h>
+
 
 namespace ptgl { class Shader; }
 

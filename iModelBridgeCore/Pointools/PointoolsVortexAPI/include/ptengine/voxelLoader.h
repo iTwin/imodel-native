@@ -9,7 +9,11 @@
 #ifndef POINTOOLS_ENGINE_POINTS_LOADER
 #define POINTOOLS_ENGINE_POINTS_LOADER 1
 
-#include <ptcloud2/voxel.h>#include <ptds/FilePath.h>#include <ptengine/ptengine_api.h>#include <set>
+#include <ptcloud2/voxel.h>
+#include <ptds/FilePath.h>
+#include <ptengine/ptengine_api.h>
+#include <set>
+
 namespace pointsengine
 {
 	//---------------------------------------------------------

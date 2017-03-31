@@ -1,6 +1,11 @@
 #pragma once
 
-#include <pt/datatree.h>#include <ptfs/filepath.h>#include <ptedit/editNodeDef.h>#include <FastDelegate/fastdelegate.h>#include <ptcmdppe/cmdprogress.h>
+#include <pt/datatree.h>
+#include <ptfs/filepath.h>
+#include <ptedit/editNodeDef.h>
+#include <FastDelegate/fastdelegate.h>
+#include <ptcmdppe/cmdprogress.h>
+
 namespace ptedit
 {
 struct StateHandler

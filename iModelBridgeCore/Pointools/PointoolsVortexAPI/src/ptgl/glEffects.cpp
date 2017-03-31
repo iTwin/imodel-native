@@ -3,8 +3,17 @@
 /*  (C) 2004 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
 /*																			*/ 
 /*--------------------------------------------------------------------------*/ 
-#include <gl/glew.h>#include <ptgl/glExtensions.h>#include <ptgl/glEffects.h>#include <ptgl/glstate.h>//#include <ptgl/arb_vertex_program.h>
-#include <boost/filesystem/path.hpp>#include <ptappdll/ptapp.h>#include <math/matrix_math.h>#include <vector>#include <fstream>
+#include <gl/glew.h>
+#include <ptgl/glExtensions.h>
+#include <ptgl/glEffects.h>
+#include <ptgl/glstate.h>
+//#include <ptgl/arb_vertex_program.h>
+#include <boost/filesystem/path.hpp>
+#include <ptappdll/ptapp.h>
+#include <math/matrix_math.h>
+#include <vector>
+#include <fstream>
+
 
 using namespace ptgl;
 

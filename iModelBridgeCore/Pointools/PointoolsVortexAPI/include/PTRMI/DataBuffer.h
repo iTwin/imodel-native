@@ -1,7 +1,10 @@
 
 #pragma once
 
-#include <PTRMI/Name.h>#include <PTRMI/Status.h>#include <ptds/FilePath.h>
+#include <PTRMI/Name.h>
+#include <PTRMI/Status.h>
+#include <ptds/FilePath.h>
+
 namespace ptds
 {
 	class DataSource;

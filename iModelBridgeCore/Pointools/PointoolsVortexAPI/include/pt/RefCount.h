@@ -9,7 +9,8 @@
 #ifndef POINTOOLS_REF_COUNT
 #define POINTOOLS_REF_COUNT
 
-#include <pt/Debug.h>
+#include <pt/Debug.h>
+
 namespace pt
 {
 class ReferenceCountedObject {

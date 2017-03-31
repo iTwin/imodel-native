@@ -8,11 +8,20 @@
 /*----------------------------------------------------------*/ 
 #pragma once
 
-#include <set>#include <loki/AssocVector.h>
-#include <pt/datatreeBranch.h>
-#include <ptfs/filepath.h>#include <ptfs/iohelper.h>
-#include <ptcloud2/voxel.h>#include <ptcloud2/pointcloud.h>
-#include <ptengine/ptengine_api.h>#include <ptengine/module.h>
+#include <set>
+#include <loki/AssocVector.h>
+
+#include <pt/datatreeBranch.h>
+
+#include <ptfs/filepath.h>
+#include <ptfs/iohelper.h>
+
+#include <ptcloud2/voxel.h>
+#include <ptcloud2/pointcloud.h>
+
+#include <ptengine/ptengine_api.h>
+#include <ptengine/module.h>
+
 
 #define PT_NULL_FILE_POS 0xFFFFFFFFFFFFFFFF
   

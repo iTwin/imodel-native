@@ -3,13 +3,32 @@
 // PT_EDIT Point cloud editing plugin
 //
 //-----------------------------------------------------------------------------------------------
-#include <Wm5matrix3.h>#include <Wm5ApprPlaneFit3.h>
+#include <Wm5matrix3.h>
+#include <Wm5ApprPlaneFit3.h>
 
-#include <pt/trace.h>#include <ptengine/engine.h>#include <ptedit/selectionFilter.h>#include <ptengine/renderengine.h>#include <pttool/tool.h>
-#include <ptedit/paintfilters.h>#include <ptedit/fencefilter.h>#include <ptedit/frustumfilter.h>#include <ptedit/boxfilter.h>#include <ptedit/planefilter.h>#include <ptedit/filterops.h>
-#include <ptgl/gltext.h>#include <ptgl/glDraw.h>
-#include <FastDelegate/fastdelegate.h>
-#include <ptl/dispatcher.h>#include <map>#include <string>
+
+#include <pt/trace.h>
+#include <ptengine/engine.h>
+#include <ptedit/selectionFilter.h>
+#include <ptengine/renderengine.h>
+#include <pttool/tool.h>
+
+#include <ptedit/paintfilters.h>
+#include <ptedit/fencefilter.h>
+#include <ptedit/frustumfilter.h>
+#include <ptedit/boxfilter.h>
+#include <ptedit/planefilter.h>
+#include <ptedit/filterops.h>
+
+#include <ptgl/gltext.h>
+#include <ptgl/glDraw.h>
+
+#include <FastDelegate/fastdelegate.h>
+
+#include <ptl/dispatcher.h>
+#include <map>
+#include <string>
+
 #define HIDDEN_LAYER_MASK 0x40
 
 using namespace pt;

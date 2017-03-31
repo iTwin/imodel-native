@@ -1,4 +1,15 @@
-#include "PointoolsVortexAPIInternal.h"#include <gl/glew.h>#include <ptgl/glShader.h>#include <ptengine/renderContext.h>#include <ptengine/renderShaderUniforms.h>#include <ptengine/renderPipelineGLShader.h>#include <ptengine/renderVoxelBuffer.h>#include <ptengine/visibilityengine.h>#include <ptengine/engine.h>#include <ptengine/pointLayers.h>#include <ptengine/clipManager.h>using namespace pointsengine;
+#include "PointoolsVortexAPIInternal.h"
+#include <gl/glew.h>
+#include <ptgl/glShader.h>
+#include <ptengine/renderContext.h>
+#include <ptengine/renderShaderUniforms.h>
+#include <ptengine/renderPipelineGLShader.h>
+#include <ptengine/renderVoxelBuffer.h>
+#include <ptengine/visibilityengine.h>
+#include <ptengine/engine.h>
+#include <ptengine/pointLayers.h>
+#include <ptengine/clipManager.h>
+using namespace pointsengine;
 
 //
 // Shader Pipeline

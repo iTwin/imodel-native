@@ -4,15 +4,32 @@
 //
 //-----------------------------------------------------------------------------------------------
 
-#include "PointoolsVortexAPIInternal.h"#ifdef HAVE_WILDMAGIC
-#include <wildmagic/math/Wm5matrix3.h>#include <wildmagic/math/Wm5ApprPlaneFit3.h>#endif
+#include "PointoolsVortexAPIInternal.h"
+#ifdef HAVE_WILDMAGIC
+#include <wildmagic/math/Wm5matrix3.h>
+#include <wildmagic/math/Wm5ApprPlaneFit3.h>
+#endif
 
-#include <pt/trace.h>
-#include <ptedit/editmanager.h>#include <ptedit/constriants.h>#include <ptedit/editstackstate.h>#include <ptedit/cloudselect.h>
-#include <ptengine/renderengine.h>#include <ptengine/pointLayers.h>#include <ptengine/pointsfilter.h>#include <ptengine/engine.h>
-#include <FastDelegate/fastdelegate.h>#include <ptl/dispatcher.h>
+#include <pt/trace.h>
 
-#include <stack>#include <map>#include <string>
+#include <ptedit/editmanager.h>
+#include <ptedit/constriants.h>
+#include <ptedit/editstackstate.h>
+#include <ptedit/cloudselect.h>
+
+#include <ptengine/renderengine.h>
+#include <ptengine/pointLayers.h>
+#include <ptengine/pointsfilter.h>
+#include <ptengine/engine.h>
+
+#include <FastDelegate/fastdelegate.h>
+#include <ptl/dispatcher.h>
+
+
+#include <stack>
+#include <map>
+#include <string>
+
 
 using namespace pt;
 using namespace ptl;

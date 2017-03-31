@@ -1,7 +1,9 @@
 #pragma once
 
-#include <ptcloud2/voxel.h>
-#include <ptengine/StreamVoxel.h>
+#include <ptcloud2/voxel.h>
+
+#include <ptengine/StreamVoxel.h>
+
 
 namespace pointsengine
 {

@@ -1,7 +1,13 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #ifdef HAVE_OPENGL
-#include <ptgl/glstate.h>#include <ptgl/glShader.h>#endif
-#include <ptengine/renderContext.h>#include <ptengine/renderRGBEffect.h>#include <ptengine/renderShaderUniforms.h>
+#include <ptgl/glstate.h>
+#include <ptgl/glShader.h>
+#endif
+#include <ptengine/renderContext.h>
+#include <ptengine/renderRGBEffect.h>
+#include <ptengine/renderShaderUniforms.h>
+
 using namespace pointsengine;
 
 /*****************************************************************************/

@@ -10,9 +10,12 @@
 #ifndef POINTOOOLS_POD_WRITER_WRAPPER
 #define POINTOOOLS_POD_WRITER_WRAPPER
 
-#include <windows.h>#include <tchar.h>
+#include <windows.h>
+#include <tchar.h>
+
 /* API headers */ 
-#include <PodWriter.h>
+#include <PodWriter.h>
+
 #define POD_CloudRGB			4
 #define POD_CloudIntensity		8
 #define POD_CloudNormal			16

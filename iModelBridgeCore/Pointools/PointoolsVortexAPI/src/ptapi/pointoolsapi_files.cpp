@@ -1,21 +1,46 @@
-#include "PointoolsVortexAPIInternal.h"
+#include "PointoolsVortexAPIInternal.h"
+
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef POINTOOLS_BENTLEY_LICENSING
-#include <ptlic/PointoolsBentleyLicenseAPI.h>#endif
+#include <ptlic/PointoolsBentleyLicenseAPI.h>
+#endif
 
-#include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsAPI_handle.h>
-#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>
-#include <ptappdll/ptapp.h>#include <ptcloud2/pod.h>
-#include <ptl/branch.h>#include <ptl/project.h>#include <pt/project.h>#include <pt/registry.h>#include <pt/timestamp.h> 
-#include <encryption/TEA.h>
-#include <ptds/DataSourceManager.h>#include <ptds/DataSourceServer.h>#include <ptds/DataSourceCache.h>
-#include <ptengine/StreamHost.h>
+#include <ptapi/PointoolsVortexAPI.h>
+
+#include <ptapi/PointoolsAPI_handle.h>
+
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/engine.h>
+
+#include <ptappdll/ptapp.h>
+#include <ptcloud2/pod.h>
+
+#include <ptl/branch.h>
+#include <ptl/project.h>
+#include <pt/project.h>
+#include <pt/registry.h>
+#include <pt/timestamp.h>
+ 
+#include <encryption/TEA.h>
+
+#include <ptds/DataSourceManager.h>
+#include <ptds/DataSourceServer.h>
+#include <ptds/DataSourceCache.h>
+
+#include <ptengine/StreamHost.h>
+
 #if NEEDS_WORK_VORTEX_DGNDB 
-#include <PTRMI/ClientInterfaceExtDataBentley.h>#include <PTRMI/TestPTRMI.h>#include <PTRMI/Manager.h>#include <PTRMI/PipeManagerExt.h>#endif
+#include <PTRMI/ClientInterfaceExtDataBentley.h>
+#include <PTRMI/TestPTRMI.h>
+#include <PTRMI/Manager.h>
+#include <PTRMI/PipeManagerExt.h>
+#endif
 
-#include <pt/trace.h>
+#include <pt/trace.h>
+
 #define xstr(s) str(s)
 #define str(s) #s
 

@@ -8,7 +8,8 @@
 #ifndef PTLBLOCK_DEFINITION_HEADER
 #define PTLBLOCK_DEFINITION_HEADER	1
 
-#include <loki/AssocVector.h>
+#include <loki/AssocVector.h>
+
 
 #define PTLBLOCK_DEL_AFTER_USE	1
 

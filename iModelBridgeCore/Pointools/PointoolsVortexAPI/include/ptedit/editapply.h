@@ -1,5 +1,11 @@
 #pragma once
-#include <pt/boundingbox.h>#include <ptengine/pointsScene.h>#include <ptengine/pointspager.h>#include <ptengine/renderengine.h>#include <ptengine/engine.h>#include <ptcloud2/voxel.h>
+#include <pt/boundingbox.h>
+#include <ptengine/pointsScene.h>
+#include <ptengine/pointspager.h>
+#include <ptengine/renderengine.h>
+#include <ptengine/engine.h>
+#include <ptcloud2/voxel.h>
+
 namespace ptedit
 {
 	enum EditApplyMode

@@ -1,7 +1,12 @@
 #ifndef POINTOOLS_PCLOUD2_POD
 #define POINTOOLS_PCLOUD2_POD
 
-#include <ptds/FilePath.h>#include <ptcloud2/pointcloud.h>#include <ptcloud2/pcloud.h>#include <ptcloud2/scene.h>#include <list>
+#include <ptds/FilePath.h>
+#include <ptcloud2/pointcloud.h>
+#include <ptcloud2/pcloud.h>
+#include <ptcloud2/scene.h>
+#include <list>
+
 
 // Supported POD file version, current supported version is 4, 4, 0, 255 (header, structure, data, reserved).
 // *** To enable the new strata code set the version to 4, 6, 0, 255 ***
