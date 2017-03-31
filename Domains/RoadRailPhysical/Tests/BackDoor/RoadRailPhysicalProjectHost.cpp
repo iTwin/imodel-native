@@ -160,33 +160,23 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     BeFileName schemaRootDir = assetsRootDir;
     schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
 
-    DgnDbStatus status;
-    BeFileName lrSchemaFileName = schemaRootDir;
-    lrSchemaFileName.AppendToPath(BLR_SCHEMA_FILE);    
-    if (DgnDbStatus::Success != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr, lrSchemaFileName)))
+    DbResult status;
+    if (DbResult::BE_SQLITE_OK != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    BeFileName alignSchemaFileName = schemaRootDir;
-    alignSchemaFileName.AppendToPath(BRRA_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
+    if (DbResult::BE_SQLITE_OK != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    BeFileName costSchemaFileName = schemaRootDir;
-    costSchemaFileName.AppendToPath(BCST_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = Costing::CostingDomain::GetDomain().ImportSchema(*projectPtr, costSchemaFileName)))
+    if (DbResult::BE_SQLITE_OK != (status = Costing::CostingDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    BeFileName bridgeSchemaFileName = schemaRootDir;
-    bridgeSchemaFileName.AppendToPath(BBP_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr, bridgeSchemaFileName)))
+    if (DbResult::BE_SQLITE_OK != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    BeFileName roadRailSchemaFileName = schemaRootDir;
-    roadRailSchemaFileName.AppendToPath(BRRP_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr, roadRailSchemaFileName)))
+    if (DbResult::BE_SQLITE_OK != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    projectPtr->Schemas().CreateECClassViewsInDb();
+    projectPtr->Schemas().CreateClassViewsInDb();
 
     if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
         return nullptr;
@@ -221,10 +211,10 @@ RoadRailPhysicalProjectHostImpl::RoadRailPhysicalProjectHostImpl() : m_isInitial
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain());
-    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain());
-    DgnDomains::RegisterDomain(BridgePhysicalDomain::GetDomain());
-    DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain());
+    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(BridgePhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
     m_isInitialized = true;
     }
 

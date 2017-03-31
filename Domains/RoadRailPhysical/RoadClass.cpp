@@ -164,7 +164,7 @@ RoadClassPtr RoadClass::Create(RoadRangeCR roadRange, RoadClassDefinitionCR Clas
 
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()));
     params.SetParentId(roadRange.GetElementId(),
-        DgnClassId(roadRange.GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasRoadClasses)));
+        DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasRoadClasses)));
 
     auto retVal = new RoadClass(params, ClassDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
@@ -177,5 +177,5 @@ RoadClassPtr RoadClass::Create(RoadRangeCR roadRange, RoadClassDefinitionCR Clas
 void RoadClass::SetClassDefinition(RoadClassDefinitionCR ClassDef) 
     { 
     SetPropertyValue("RoadClassDefinition", ClassDef.GetElementId(),
-        GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadClassRefersToDefinition));
+        GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadClassRefersToDefinition));
     }

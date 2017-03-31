@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadRailPhysicalDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,6 +26,9 @@ public:
     RoadRailPhysicalDomain();
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::DgnDbR);
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
 }; // RoadRailPhysicalDomain
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

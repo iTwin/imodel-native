@@ -39,7 +39,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
-        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
+        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
@@ -68,18 +68,46 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
 
     // Create RoadSegment #2
     auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150, *roadCrossSectionPtr);
-    ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
+    auto roadSegment2CPtr = roadSegment2Ptr->Insert();
+    ASSERT_TRUE(roadSegment2CPtr.IsValid());
+    ASSERT_TRUE(roadSegment2CPtr.IsValid());
 #pragma endregion
 
-#pragma region Station-change Cascading
+#pragma region Station-change Cascading - First segment
     roadSegment1Ptr->SetToDistanceAlong(35);
     roadSegment1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
-    ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetToDistanceAlong());
 
     transitionCPtr = RoadTransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
     ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetToDistanceAlong());
+#pragma endregion
+
+#pragma region Station-change Cascading - Middle segment
+    transitionPtr = dynamic_cast<RoadTransitionSegmentP>(transitionCPtr->CopyForEdit().get());
+    transitionPtr->SetFromDistanceAlong(45);
+    transitionPtr->SetToDistanceAlong(120);
+    transitionPtr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
+    ASSERT_TRUE(transitionPtr->Update().IsValid());
+
+    roadSegment1CPtr = RoadSegment::Get(*projectPtr, roadSegment1Ptr->GetElementId());
+    ASSERT_DOUBLE_EQ(0, roadSegment1CPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(45, roadSegment1CPtr->GetToDistanceAlong());
+
+    roadSegment2CPtr = RoadSegment::Get(*projectPtr, roadSegment2Ptr->GetElementId());
+    ASSERT_DOUBLE_EQ(120, roadSegment2CPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(150, roadSegment2CPtr->GetToDistanceAlong());
+#pragma endregion
+
+#pragma region Station-change Cascading - Third segment
+    roadSegment2Ptr = dynamic_cast<RoadSegmentP>(roadSegment2CPtr->CopyForEdit().get());
+    roadSegment2Ptr->SetFromDistanceAlong(90);
+    roadSegment2Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
+    ASSERT_TRUE(roadSegment2Ptr->Update().IsValid());
+
+    transitionCPtr = RoadTransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    ASSERT_DOUBLE_EQ(45, transitionCPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(90, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
     }
 
@@ -122,7 +150,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
-        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
+        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
