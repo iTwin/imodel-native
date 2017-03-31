@@ -148,16 +148,17 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(DgnDbR db, PhysicalModelR 
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnDbR db)
     {
-    auto categories = new CategorySelector(db,"");
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    auto categories = new CategorySelector(dictionary, "");
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-    auto style = new DisplayStyle3d(db,"");
+    auto style = new DisplayStyle3d(dictionary, "");
     auto flags = style->GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     style->SetViewFlags(flags);
 
-    auto models = new ModelSelector(db,"");
+    auto models = new ModelSelector(dictionary, "");
     ModelIterator modIter = db.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
     for (ModelIteratorEntryCR entry : modIter)
         {
@@ -168,7 +169,7 @@ void ChangeTestFixture::CreateDefaultView(DgnDbR db)
             models->AddModel(id);
         }
 
-    SpatialViewDefinition view(db.GetDictionaryModel(), "Default", *categories, *style, *models);
+    SpatialViewDefinition view(dictionary, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());
@@ -176,4 +177,3 @@ void ChangeTestFixture::CreateDefaultView(DgnDbR db)
     DgnViewId viewId = view.GetViewId();
     db.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     }
-

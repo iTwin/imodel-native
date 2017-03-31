@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-//----------------------------------------------------------------------------------------
+//========================================================================================
 // @bsiclass                                    Shaun.Sewall                    02/2017
-//----------------------------------------------------------------------------------------
+//========================================================================================
 struct ViewDefinitionTests : public DgnDbTestFixture
-    {
+{
     OrthographicViewDefinitionPtr InsertSpatialView(SpatialModelR model, Utf8CP name);
-    };
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
@@ -21,10 +21,11 @@ struct ViewDefinitionTests : public DgnDbTestFixture
 OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
-    ModelSelectorPtr modelSelector = new ModelSelector(db, "");
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(db.GetDictionaryModel(), name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
     BeAssert(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
@@ -172,21 +173,22 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
     DgnViewId DviewDefid, SviewDefid,RviewDefid;
     if (true)
         {
+        DefinitionModelR dictionary = m_db->GetDictionaryModel();
         DocumentListModelPtr DocListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*DocListModel, "TestDrawingModel");
         DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
 
-        CategorySelectorPtr categories = new CategorySelector(*m_db, "");
+        CategorySelectorPtr categories = new CategorySelector(dictionary, "");
         for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
             categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        DisplayStyle2dPtr style = new DisplayStyle2d(*m_db, "");
+        DisplayStyle2dPtr style = new DisplayStyle2d(dictionary, "");
         ASSERT_TRUE(style.IsValid());
         Render::ViewFlags flags = style->GetViewFlags();
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
         style->SetViewFlags(flags);
         //Create a  DrawingView
-        DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(m_db->GetDictionaryModel(), "DrawingView", drawingModel->GetModelId(), *categories, *style);
+        DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(dictionary, "DrawingView", drawingModel->GetModelId(), *categories, *style);
         ASSERT_TRUE(viewDef.IsValid());
         ASSERT_EQ(viewDef->GetName(), "DrawingView");
         viewDef->SetDescription("DrawingView Descr");
@@ -198,11 +200,11 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         ViewDefinitionCPtr viewDefele = viewDef->Insert();
         ASSERT_TRUE(viewDefele.IsValid());
         DviewDefid = viewDefele->GetViewId();
-        ASSERT_TRUE(DviewDefid == ViewDefinition::QueryViewId(m_db->GetDictionaryModel(), "DrawingView"));
+        ASSERT_TRUE(DviewDefid == ViewDefinition::QueryViewId(dictionary, "DrawingView"));
         //Create SheetView
         Sheet::ElementPtr sheet = DgnDbTestUtils::InsertSheet(*DocListModel, 1.0, 1.0, 1.0, "MySheet");
         Sheet::ModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
-        SheetViewDefinitionPtr sheetView=new SheetViewDefinition(m_db->GetDictionaryModel(), "MySheetView", sheetModel->GetModelId(), *categories, *style);
+        SheetViewDefinitionPtr sheetView=new SheetViewDefinition(dictionary, "MySheetView", sheetModel->GetModelId(), *categories, *style);
         ASSERT_TRUE(sheetView.IsValid());
         ASSERT_EQ(sheetView->GetName(), "MySheetView");
         sheetView->SetDescription("SheetView Descr");
@@ -213,7 +215,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         //Insert SheetView
         ViewDefinitionCPtr sheetviewele=sheetView->Insert();
         SviewDefid = sheetviewele->GetViewId();
-        ASSERT_TRUE(SviewDefid == ViewDefinition::QueryViewId(m_db->GetDictionaryModel(), "MySheetView"));
+        ASSERT_TRUE(SviewDefid == ViewDefinition::QueryViewId(dictionary, "MySheetView"));
         }
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();

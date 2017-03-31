@@ -124,9 +124,10 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     auto viewElement = m_db->Elements().Create<SpatialViewDefinition>(*ecInstance);
     ASSERT_TRUE(viewElement.IsValid());
 
-    viewElement->SetDisplayStyle3d(*new DisplayStyle3d(*m_db, ""));
-    viewElement->SetCategorySelector(*new CategorySelector(*m_db, ""));
-    viewElement->SetModelSelector(*new ModelSelector(*m_db, ""));
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    viewElement->SetDisplayStyle3d(*new DisplayStyle3d(dictionary, ""));
+    viewElement->SetCategorySelector(*new CategorySelector(dictionary, ""));
+    viewElement->SetModelSelector(*new ModelSelector(dictionary, ""));
 
     {
     auto inserted = viewElement->Insert();

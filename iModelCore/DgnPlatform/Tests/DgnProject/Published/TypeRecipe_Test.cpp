@@ -976,11 +976,11 @@ DgnViewId TypeTests::InsertTemplateView3d(DefinitionModelR model, Utf8CP name)
 DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
-
-    ModelSelectorPtr modelSelector = new ModelSelector(db, "");
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinition view(db.GetDictionaryModel(), name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    OrthographicViewDefinition view(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         view.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());

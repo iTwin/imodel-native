@@ -2755,7 +2755,7 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 
     void _InitMasterFile() override
         {
-        DisplayStyle2d style(*m_db, "MyDisplayStyle");
+        DisplayStyle2d style(m_db->GetDictionaryModel(), "MyDisplayStyle");
         style.Insert();
         m_displayStyleId = style.GetElementId();
         ASSERT_TRUE(m_displayStyleId.IsValid());
@@ -2777,7 +2777,8 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
     {
-    auto style = DisplayStyle::GetByName(db, "MyDisplayStyle");
+    DgnCode styleCode = DisplayStyle::CreateCode(db.GetDictionaryModel(), "MyDisplayStyle");
+    auto style = db.Elements().Get<DisplayStyle>(db.Elements().QueryElementIdByCode(styleCode));
     EXPECT_TRUE(style.IsValid());
     if (!style.IsValid())
         return false;
@@ -2791,7 +2792,7 @@ bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IndirectLocksTest::CreateView(DgnDbR db)
     {
-    CategorySelectorPtr categorySelector = new CategorySelector(db, "MyCategorySelector");
+    CategorySelectorPtr categorySelector = new CategorySelector(db.GetDictionaryModel(), "MyCategorySelector");
     Acquire(*categorySelector, BeSQLite::DbOpcode::Insert);
     if (!categorySelector->Insert().IsValid())
         return false;

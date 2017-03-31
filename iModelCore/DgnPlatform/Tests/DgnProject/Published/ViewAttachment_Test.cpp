@@ -84,7 +84,8 @@ void ViewAttachmentTest::SetUp()
     m_drawingModelId = drawingModel->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(db.GetDictionaryModel(), "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle2d(db,""));
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    DrawingViewDefinition view(dictionary, "MyDrawingView", m_drawingModelId, *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary, ""));
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -299,7 +300,7 @@ TEST_F(ViewAttachmentTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewAttachmentTest, Geom)
     {
-    auto& db = GetDgnDb();
+    DgnDbR db = GetDgnDb();
 
     // Add some geometry to the drawing and regenerate attachment geometry
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
@@ -322,9 +323,10 @@ TEST_F(ViewAttachmentTest, Geom)
     Sheet::ViewAttachmentPtr pAttach = cpAttach->MakeCopy<Sheet::ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
 
-    DisplayStyle2dPtr noStyle = new DisplayStyle2d(db,"");
-    CategorySelectorPtr cats = new CategorySelector(db,"");
-    SheetViewDefinition sheetView(db.GetDictionaryModel(), "MySheetView", m_sheetModelId, *cats, *noStyle);
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    DisplayStyle2dPtr noStyle = new DisplayStyle2d(dictionary, "");
+    CategorySelectorPtr cats = new CategorySelector(dictionary, "");
+    SheetViewDefinition sheetView(dictionary, "MySheetView", m_sheetModelId, *cats, *noStyle);
     sheetView.Insert();
 
     Sheet::ViewControllerPtr viewController = sheetView.LoadViewController();
