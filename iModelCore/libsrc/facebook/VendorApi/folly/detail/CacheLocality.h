@@ -332,10 +332,14 @@ struct AccessSpreader {
 
 template <>
 Getcpu::Func AccessSpreader<std::atomic>::pickGetcpuFunc();
-template <>
-Getcpu::Func AccessSpreader<std::atomic>::getcpuFunc;
-template <>
-AccessSpreader<std::atomic>::CompactStripe AccessSpreader<std::atomic>::widthAndCpuToStripe[AccessSpreader<std::atomic>::kMaxCpus + 1][AccessSpreader<std::atomic>::kMaxCpus];
+
+// To satisfy clang 8.1.0 -- must be careful since MSVC 14 doesn't like this.
+#if defined (__APPLE__) && defined (__clang__)
+    template <>
+    Getcpu::Func AccessSpreader<std::atomic>::getcpuFunc;
+    template <>
+    AccessSpreader<std::atomic>::CompactStripe AccessSpreader<std::atomic>::widthAndCpuToStripe[AccessSpreader<std::atomic>::kMaxCpus + 1][AccessSpreader<std::atomic>::kMaxCpus];
+#endif
 
 #define DECLARE_ACCESS_SPREADER_TYPE(Atom)                                     \
   namespace folly {                                                            \
