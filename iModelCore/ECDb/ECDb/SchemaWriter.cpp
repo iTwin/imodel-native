@@ -571,9 +571,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
 
         if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *primProp))
             return ERROR;
-
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, *primProp))
-            return ERROR;
         }
     else if (ecProperty.GetIsStruct())
         {
@@ -581,9 +578,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
-            return ERROR;
-
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
             return ERROR;
         }
     else if (ecProperty.GetIsArray())
@@ -617,9 +611,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
         if (BE_SQLITE_OK != stmt->BindInt(arrayMaxIndex, (int) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
 
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
-            return ERROR;
-
         }
     else if (ecProperty.GetIsNavigation())
         {
@@ -633,6 +624,11 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
         if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
             return ERROR;
         }
+
+    //KOQs are allowed for all property kinds except for nav props (this will be caught be ECObjects already
+    //and is checked again within this method)
+    if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
+        return ERROR;
 
     DbResult stat = stmt->Step();
     if (BE_SQLITE_DONE != stat)
@@ -817,6 +813,12 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
     {
     if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
         return SUCCESS;
+
+    if (prop.GetIsNavigation())
+        {
+        Issues().Report("Failed to import Navigation ECProperty '%s.%s' because a KindOfQuantity is assigned to it which is not valid.", prop.GetClass().GetFullName(), prop.GetName().c_str());
+        return ERROR;
+        }
 
     KindOfQuantityCP koq = prop.GetKindOfQuantity();
     if (SUCCESS != ImportKindOfQuantity(*koq))
