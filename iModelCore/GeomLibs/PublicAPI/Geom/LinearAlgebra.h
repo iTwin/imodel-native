@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/LinearAlgebra.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,6 +19,8 @@ size_t m_numRows;
 size_t m_numColumns;
 public:
 GEOMDLLIMPEXP RowMajorMatrix (size_t numRows, size_t numColumns, double *data = NULL, bool transposeData = false);
+GEOMDLLIMPEXP RowMajorMatrix ();
+GEOMDLLIMPEXP void SetSizes (size_t numRows, size_t numColumns, double *data = NULL, bool transposeData = false);
 size_t NumRows () const { return m_numRows;}
 size_t NumColumns () const { return m_numColumns;}
 size_t Index (size_t i, size_t j) const { return i * m_numColumns + j;}

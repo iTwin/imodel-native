@@ -54,6 +54,14 @@ static DPoint3d FromOne();
 //! @param [in] z z coordinate.
 static DPoint3d FromXYZ (double x, double y, double z);
 
+//! @description Simple initialization from base point and shifts
+static DPoint3d FromShift
+(
+DPoint3dCR xyz0,    //!< [in] reference point
+double dx = 0.0,    //!< [in] shift to apply to x direction
+double dy = 0.0,    //!< [in] shift to apply to y direction
+double dz = 0.0     //!< [in] shift to apply to z direction
+);
 
 //! @description Simple initialization from 3 coordinates in array.
 //! @param [in] pXyz x, y, z components
