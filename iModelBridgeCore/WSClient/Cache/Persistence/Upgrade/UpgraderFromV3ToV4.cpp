@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV3ToV4.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
