@@ -50,8 +50,6 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    BE_JSON_NAME(styles);
-
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -67,6 +65,13 @@ protected:
     JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
 public:
+    BE_JSON_NAME(styles);
+    BE_JSON_NAME(viewflags)
+    BE_JSON_NAME(backgroundColor)
+    BE_JSON_NAME(monochromeColor)
+    BE_JSON_NAME(subCategory)
+    BE_JSON_NAME(subCategoryOvr)
+
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
     DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
@@ -201,7 +206,15 @@ protected:
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
+    BE_JSON_NAME(ambient)
+    BE_JSON_NAME(flash)
+    BE_JSON_NAME(portrait)
+    BE_JSON_NAME(sun)
+    BE_JSON_NAME(sunDir)
+    BE_JSON_NAME(sceneLights);
+    BE_JSON_NAME(brightness);
     BE_JSON_NAME(hline)
+    BE_JSON_NAME(fstop);
 
     //! Construct a new DisplayStyle3d.
     //! @param[in] db The DgnDb to hold the DisplayStyle3d
@@ -228,8 +241,9 @@ public:
     DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
-    DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
-    DGNPLATFORM_EXPORT Render::SceneLights::Brightness GetSceneBrightness() const;
+
+    void SetSceneBrightness(double fstop) {std::max(-3.0, std::min(fstop, 3.0)); GetStylesR()[json_sceneLights()].SetOrRemoveDouble(json_fstop(), fstop, 0.0);}
+    double GetSceneBrightness() const {return GetStyles()[json_sceneLights()][json_fstop()].asDouble();}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -438,6 +452,16 @@ protected:
     void AdjustAspectRatio(double windowAspect);
 
 public:
+    BE_JSON_NAME(width)
+    BE_JSON_NAME(height)
+    BE_JSON_NAME(format)
+    BE_JSON_NAME(clip)
+    BE_JSON_NAME(gridOrient)
+    BE_JSON_NAME(gridSpaceX)
+    BE_JSON_NAME(gridSpaceY)
+    BE_JSON_NAME(gridPerRef)
+    BE_JSON_NAME(acs)
+
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
 
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
@@ -1177,6 +1201,8 @@ protected:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
 
 public:
+    BE_JSON_NAME(aspectSkew)
+
     //! Construct a DrawingViewDefinition subclass prior to inserting it
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(db, name, classId, baseModelId, categories, displayStyle) {}

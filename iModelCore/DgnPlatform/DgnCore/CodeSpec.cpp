@@ -249,17 +249,17 @@ CodeSpec::CodeSpec(CreateParams const& params)
 void CodeSpec::ToPropertiesJson(JsonValueR json) const
     {
     if (!m_specProperties.empty())
-        json[str_spec()] = m_specProperties;
+        json[json_spec()] = m_specProperties;
 
-    json[str_version()] = BeVersion(1, 0).ToMajorMinorString();
-    json[str_scopeSpec()] = GetScope();
+    json[json_version()] = BeVersion(1, 0).ToMajorMinorString();
+    json[json_scopeSpec()] = GetScope();
 
     Json::Value fragmentSpecArray(Json::arrayValue);
     for (CodeFragmentSpecCR fragmentSpec : GetFragmentSpecs())
         fragmentSpecArray.append(fragmentSpec);
 
     if (fragmentSpecArray.size() > 0)
-        json[str_fragmentSpecs()] = fragmentSpecArray;
+        json[json_fragmentSpecs()] = fragmentSpecArray;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,10 +267,10 @@ void CodeSpec::ToPropertiesJson(JsonValueR json) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::FromPropertiesJson(JsonValueCR json)
     {
-    m_specProperties = json[str_spec()];
-    SetScope((CodeScopeSpecCR)json[str_scopeSpec()]);
+    m_specProperties = json[json_spec()];
+    SetScope((CodeScopeSpecCR)json[json_scopeSpec()]);
 
-    JsonValueCR fragmentSpecArrayJson = json[str_fragmentSpecs()];
+    JsonValueCR fragmentSpecArrayJson = json[json_fragmentSpecs()];
     if (!fragmentSpecArrayJson.isNull())
         {
         for (JsonValueCR fragmentSpecJson : fragmentSpecArrayJson)
