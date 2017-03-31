@@ -565,9 +565,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
 
         if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *primProp))
             return ERROR;
-
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, *primProp))
-            return ERROR;
         }
     else if (ecProperty.GetIsStruct())
         {
@@ -590,9 +587,6 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
 
             if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *arrayProp->GetAsPrimitiveArrayProperty()))
                 return ERROR;
-
-            if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, *arrayProp->GetAsPrimitiveArrayProperty()))
-                return ERROR;
             }
         else
             {
@@ -610,6 +604,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
         if (BE_SQLITE_OK != stmt->BindInt(arrayMaxIndex, (int) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
+
         }
     else if (ecProperty.GetIsNavigation())
         {
@@ -623,6 +618,11 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t
         if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
             return ERROR;
         }
+
+    //KOQs are allowed for all property kinds except for nav props (this will be caught be ECObjects already
+    //and is checked again within this method)
+    if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
+        return ERROR;
 
     DbResult stat = stmt->Step();
     if (BE_SQLITE_DONE != stat)
@@ -803,26 +803,16 @@ BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int pa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, PrimitiveECPropertyCR prop)
+BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
     if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
         return SUCCESS;
 
-    KindOfQuantityCP koq = prop.GetKindOfQuantity();
-    if (SUCCESS != ImportKindOfQuantity(*koq))
+    if (prop.GetIsNavigation())
+        {
+        Issues().Report("Failed to import Navigation ECProperty '%s.%s' because a KindOfQuantity is assigned to it which is not valid.", prop.GetClass().GetFullName(), prop.GetName().c_str());
         return ERROR;
-
-    BeAssert(koq->HasId());
-    return stmt.BindId(paramIndex, koq->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    06/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, PrimitiveArrayECPropertyCR prop)
-    {
-    if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
-        return SUCCESS;
+        }
 
     KindOfQuantityCP koq = prop.GetKindOfQuantity();
     if (SUCCESS != ImportKindOfQuantity(*koq))
