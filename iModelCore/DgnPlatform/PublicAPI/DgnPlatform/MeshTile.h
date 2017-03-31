@@ -101,12 +101,14 @@ struct TileTextureImage : RefCountedBase
 struct TileDisplayParams : RefCountedBase
 {
     friend struct TileDisplayParamsCache;
+
 private:
     DgnCategoryId                   m_categoryId;
     DgnSubCategoryId                m_subCategoryId;
-    uint32_t                        m_fillColor;
+    uint32_t                        m_color;
     mutable TileTextureImagePtr     m_textureImage;
     DgnGeometryClass                m_class = DgnGeometryClass::Primary;
+    bool                            m_isColorFromBackground = false;
     // Mesh only...
     DgnMaterialId                   m_materialId;
     bool                            m_ignoreLighting;
@@ -116,32 +118,33 @@ private:
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 0x7fffffff;} 
 
-    DGNPLATFORM_EXPORT TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
-    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0), m_linePixels(0) { }
-    TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0), m_linePixels(0), m_class(geometryParams.GetGeometryClass()) {}
-    TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0), m_linePixels(0) {}
-    TileDisplayParams() : TileDisplayParams(nullptr, nullptr, false) {}
+    DGNPLATFORM_EXPORT TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting, bool useLineParams);
+    TileDisplayParams(uint32_t color, TileTextureImageP texture, bool ignoreLighting) : m_color(color), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0), m_linePixels(0) { }
+    TileDisplayParams(uint32_t color, GeometryParamsCR geometryParams) : m_color(color), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0), m_linePixels(0), m_class(geometryParams.GetGeometryClass()) {}
+    TileDisplayParams(uint32_t color, DgnMaterialId materialId) : m_color(color), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0), m_linePixels(0) {}
+    TileDisplayParams() : TileDisplayParams(nullptr, nullptr, false, false) {}
 
     TileDisplayParamsCPtr Clone() const;
 public:
-    static TileDisplayParamsCPtr Create(uint32_t fillColor, GeometryParamsCR geomParams) { return new TileDisplayParams(fillColor, geomParams); }
-    static TileDisplayParamsCPtr Create(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(fillColor, texture, ignoreLighting); }
+    static TileDisplayParamsCPtr Create(uint32_t color, GeometryParamsCR geomParams) { return new TileDisplayParams(color, geomParams); }
+    static TileDisplayParamsCPtr Create(uint32_t color, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(color, texture, ignoreLighting); }
     static TileDisplayParamsCPtr Create() { return new TileDisplayParams(); }
 
     // These comparisons ignore category, subcategory, and class.
     bool operator<(TileDisplayParamsCR rhs) const { return IsLessThan(rhs, true); }
     bool operator==(TileDisplayParamsCR rhs) const { return !(*this != rhs); }
     bool operator!=(TileDisplayParamsCR rhs) const { return *this < rhs || rhs < *this; }
-    DGNPLATFORM_EXPORT bool IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const;
+    DGNPLATFORM_EXPORT bool IsLessThan(TileDisplayParams const& rhs, bool compareColors) const;
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
     DgnMaterialId GetMaterialId() const { return m_materialId; }
     DgnGeometryClass GetClass() const { return m_class; }
-    uint32_t GetFillColor() const { return m_fillColor; }
+    uint32_t GetColor() const { return m_color; }
     uint32_t GetRasterWidth() const { return m_rasterWidth; }
     uint32_t GetLinePixels() const { return m_linePixels; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }
+    bool GetIsColorFromBackground() const { return m_isColorFromBackground; }
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
@@ -172,9 +175,9 @@ private:
 
     TileDisplayParamsCR Get(TileDisplayParamsR params);
 public:
-    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false)
+    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false, bool useLineParams=false)
         {
-        TileDisplayParams params(&gfParams, &geomParams, ignoreLighting);
+        TileDisplayParams params(&gfParams, &geomParams, ignoreLighting, useLineParams);
         return Get(params);
         }
     TileDisplayParamsCR GetDefault()
@@ -444,7 +447,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t fillColor);
+    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -470,7 +473,7 @@ struct TileMeshMergeKey
         if(m_hasFacets != rhs.m_hasFacets)
             return !m_hasFacets;
 
-        return m_params->IsLessThan(*rhs.m_params, false);  // don't compare fill colors.
+        return m_params->IsLessThan(*rhs.m_params, false);  // don't compare colors.
         }
 };
 
@@ -488,12 +491,12 @@ struct TileMeshBuilder : RefCountedBase
         DVec3d              m_normal;
         DPoint2d            m_param;
         FeatureAttributes   m_attributes;
-        uint32_t            m_fillColor = 0;
+        uint32_t            m_color = 0;
         bool                m_normalValid = false;
         bool                m_paramValid = false;
 
         VertexKey() { }
-        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr), m_fillColor(fillColor)
+        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr, uint32_t color) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr), m_color(color)
             {
             if(m_normalValid) m_normal = *normal;
             if(m_paramValid) m_param = *param;
@@ -542,9 +545,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, transformFromDgn, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t color);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t color);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t color);
 
     void AddMesh(TileTriangleCR triangle);
     void AddTriangle(TileTriangleCR triangle);

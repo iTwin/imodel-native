@@ -10,6 +10,7 @@
 #include <Bentley/BeTextFile.h>
 #include "Command.h"
 #include "BimConsole.h"
+#include <numeric>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -53,7 +54,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -77,6 +78,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".schemastats")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".validate")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".exit")->GetUsage().c_str());
@@ -1621,6 +1623,177 @@ void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8Strin
         }
     else
         BimConsole::WriteLine("%d DB mapping issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
+    }
+
+
+//******************************* SchemaStatsCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     03/2017
+//---------------------------------------------------------------------------------------
+Utf8String SchemaStatsCommand::_GetUsage() const
+    {
+    return " .schemastats classhierarchy rootclass\r\n"
+        COMMAND_USAGE_IDENT "Computes statistics for a class hierarchy or a branch of it\r\n";
+        COMMAND_USAGE_IDENT "rootclass: Fully specified class name of the root class of the hierarchy\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     03/2017
+//---------------------------------------------------------------------------------------
+void SchemaStatsCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    if (!session.IsECDbFileLoaded(true))
+        return;
+    
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+    if (args.empty())
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    Utf8StringCR switchArg = args[0];
+
+    if (switchArg.EqualsIAscii("classhierarchy"))
+        {
+        ComputeClassHierarchyStats(session, args);
+        return;
+        }
+
+    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     03/2017
+//---------------------------------------------------------------------------------------
+void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vector<Utf8String> const& args) const
+    {
+    Utf8StringCR rootClassName = args[1];
+    bvector<Utf8String> parsedRootClassName;
+    BeStringUtilities::Split(rootClassName.c_str(), ".:", parsedRootClassName);
+    if (parsedRootClassName.size() != 2)
+        {
+        BimConsole::WriteErrorLine("Invalid root class name %s. Format must be: <schema name>.<class name> or <schema name>:<class name>", rootClassName.c_str());
+        return;
+        }
+
+    ECDbCR ecdb = *session.GetFile().GetECDbHandle();
+    ECClassCP rootClass = ecdb.Schemas().GetClass(parsedRootClassName[0], parsedRootClassName[1], ResolveSchema::AutoDetect);
+    if (rootClass == nullptr || !rootClass->IsEntityClass())
+        {
+        BimConsole::WriteErrorLine("Root class %s is not an entity class or does not exist in the current file.", rootClass->GetFullName());
+        return;
+        }
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, R"sql(  SELECT t.Name, count(*) FROM ec_Class c
+                        JOIN ec_PropertyMap pm ON c.Id=pm.ClassId
+                        JOIN ec_Column col ON col.Id=pm.ColumnId
+                        JOIN ec_Table t ON t.Id=col.TableId
+                        WHERE col.IsVirtual=0 AND c.Id=?
+                        group by t.Id order by t.Id)sql"))
+        {
+        BimConsole::WriteErrorLine("Preparing stats SQL failed: %s", ecdb.GetLastError().c_str());
+        return;
+        }
+    
+    std::map<ECClassCP, ClassColumnStats> classStats;
+    std::function<BentleyStatus(std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)> gatherClassStats;
+    gatherClassStats = [&gatherClassStats] (std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)
+        {
+        if (ecClass.GetClassModifier() != ECClassModifier::Abstract)
+            {
+            if (BE_SQLITE_OK != stmt.BindId(1, ecClass.GetId()))
+                return ERROR;
+
+            ClassColumnStats stats;
+            while (BE_SQLITE_ROW == stmt.Step())
+                {
+                stats.Add(stmt.GetValueText(0), (uint32_t) stmt.GetValueInt(1));
+                }
+
+            stmt.Reset();
+            stmt.ClearBindings();
+
+            if (!stats.GetColCountPerTable().empty())
+                classStats[&ecClass] = stats;
+            }
+
+        for (ECClassCP subclass : ecdb.Schemas().GetDerivedClasses(ecClass))
+            {
+            if (SUCCESS != gatherClassStats(classStats, ecdb, *subclass, stmt))
+                return ERROR;
+            }
+
+        return SUCCESS;
+        };
+
+    if (SUCCESS != gatherClassStats(classStats, ecdb, *rootClass, stmt))
+        {
+        BimConsole::WriteErrorLine("Gathering Class Hierarchy stats for %s failed.", rootClass->GetFullName());
+        return;
+        }
+
+    //compute 80% quantile
+    std::vector<uint32_t> sortedClassColCounts;
+    for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
+        {
+        sortedClassColCounts.push_back(kvPair.second.GetTotalColumnCount());
+        }
+    std::sort(sortedClassColCounts.begin(), sortedClassColCounts.end());
+
+
+    BimConsole::WriteLine("Mapped column count stats for class hierarchy of class %s", rootClass->GetFullName());
+    BimConsole::WriteLine("Minimum: %" PRIu32, sortedClassColCounts.front());
+    BimConsole::WriteLine("Maximum: %" PRIu32, sortedClassColCounts.back());
+    BimConsole::WriteLine("Median: %.1f", ComputeQuantile(sortedClassColCounts, .5));
+    BimConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(sortedClassColCounts, .8));
+    BimConsole::WriteLine("Mean: %.1f:", std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) * 1.0 / sortedClassColCounts.size());
+
+    for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
+        {
+        BimConsole::WriteLine("%s: %" PRIu32 " columns", kvPair.first->GetFullName(), kvPair.second.GetTotalColumnCount());
+        for (std::pair<Utf8String, uint32_t> const& colCountPerTable : kvPair.second.GetColCountPerTable())
+            {
+            BimConsole::WriteLine("  Table %s: %" PRIu32 " columns", colCountPerTable.first.c_str(), colCountPerTable.second);
+            }
+
+        BimConsole::WriteLine();
+        }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     03/2017
+//---------------------------------------------------------------------------------------
+//static
+double SchemaStatsCommand::ComputeQuantile(std::vector<uint32_t> const& sortedValues, double p)
+    {
+    if (p < 0 || p > 1)
+        {
+        BeAssert(false);
+        return -1;
+        }
+
+    const double np = p * sortedValues.size();
+    const double np_floor = std::floor(np);
+
+    if ((np - np_floor) < std::numeric_limits<double>::epsilon())
+        {
+        //np is not integral
+        const size_t index = (size_t) std::floor(np + 1);
+        BeAssert(index - 1 < sortedValues.size());
+        return (double) sortedValues[index - 1];
+        }
+
+    //np is integral
+    const size_t index1 = (size_t) np_floor;
+    BeAssert(index1 - 1 < sortedValues.size());
+    const size_t index2 = (size_t) (np_floor + 1);
+    BeAssert(index2 - 1 < sortedValues.size());
+    return .5 * (sortedValues[index1 - 1] + sortedValues[index2 - 1]);
     }
 
 //******************************* DebugCommand ******************

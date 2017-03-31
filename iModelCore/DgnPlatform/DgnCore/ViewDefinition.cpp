@@ -33,44 +33,22 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace ViewProperties
 {
-    static constexpr Utf8CP str_ModelSelector() {return "ModelSelector";}
-    static constexpr Utf8CP str_CategorySelector() {return "CategorySelector";}
-    static constexpr Utf8CP str_DisplayStyle() {return "DisplayStyle";}
-    static constexpr Utf8CP str_BackgroundColor(){return "backgroundColor";}
-    static constexpr Utf8CP str_MonochromeColor(){return "monochromeColor";}
-    static constexpr Utf8CP str_ViewFlags() {return "viewflags";}
-    static constexpr Utf8CP str_SubCategory() {return "SubCategory";}
-    static constexpr Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
-    static constexpr Utf8CP str_LensAngle() {return "LensAngle";}
-    static constexpr Utf8CP str_FocusDistance() {return "FocusDistance";}
-    static constexpr Utf8CP str_EyePoint() {return "EyePoint";}
-    static constexpr Utf8CP str_BaseModel() {return "BaseModel";}
-    static constexpr Utf8CP str_Origin() {return "Origin";}
-    static constexpr Utf8CP str_Extents() {return "Extents";}
-    static constexpr Utf8CP str_RotationAngle() {return "RotationAngle";}
-    static constexpr Utf8CP str_Yaw() {return "Yaw";}
-    static constexpr Utf8CP str_Pitch() {return "Pitch";}
-    static constexpr Utf8CP str_Roll() {return "Roll";}
-    static constexpr Utf8CP str_AspectSkew() {return "AspectSkew";}
-    static constexpr Utf8CP str_Width() {return "width";}
-    static constexpr Utf8CP str_Height() {return "height";}
-    static constexpr Utf8CP str_Format() {return "format";}
-    static constexpr Utf8CP str_Jpeg() {return "jpeg";}
-    static constexpr Utf8CP str_Png() {return "png";}
-    static constexpr Utf8CP str_Clip() {return "clip";}
-    static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
-    static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
-    static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
-    static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
-    static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
-    static constexpr Utf8CP str_ACS() {return "acs";}
-    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
-    static constexpr Utf8CP str_Ambient() {return "ambient";}
-    static constexpr Utf8CP str_Flash() {return "flash";}
-    static constexpr Utf8CP str_Portrait() {return "portrait";}
-    static constexpr Utf8CP str_Sun() {return "sun";}
-    static constexpr Utf8CP str_SunDir() {return "sunDir";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    BE_PROP_NAME(ModelSelector)
+    BE_PROP_NAME(CategorySelector)
+    BE_PROP_NAME(DisplayStyle)
+    BE_PROP_NAME(LensAngle)
+    BE_PROP_NAME(FocusDistance)
+    BE_PROP_NAME(EyePoint)
+    BE_PROP_NAME(BaseModel)
+    BE_PROP_NAME(Origin)
+    BE_PROP_NAME(Extents)
+    BE_PROP_NAME(RotationAngle)
+    BE_PROP_NAME(Yaw)
+    BE_PROP_NAME(Pitch)
+    BE_PROP_NAME(Roll)
+    BE_PROP_NAME(IsCameraOn)
+    BE_PROP_NAME(jpeg)
+    BE_PROP_NAME(png)
 };
 
 using namespace ViewProperties;
@@ -198,9 +176,9 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     BeAssert(GetDisplayStyleId().IsValid());
     BeAssert(GetCategorySelectorId().IsValid());
-    auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
+    auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(prop_DisplayStyle()), GetDisplayStyleId());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(prop_CategorySelector()), GetCategorySelectorId());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -219,9 +197,9 @@ Utf8String ViewDefinition::ToDetailJson()
 void ViewDefinition::SetViewClip(ClipVectorPtr clip)
     {
     if (clip.IsValid())
-        SetDetail(str_Clip(), clip->ToJson());
+        SetDetail(json_clip(), clip->ToJson());
     else
-        RemoveDetail(str_Clip());
+        RemoveDetail(json_clip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,7 +207,7 @@ void ViewDefinition::SetViewClip(ClipVectorPtr clip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewDefinition::GetViewClip() const
     {
-    return ClipVector::FromJson(GetDetail(str_Clip()));
+    return ClipVector::FromJson(GetDetail(json_clip()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,10 +234,10 @@ void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR
         }
 
     auto& details = GetDetailsR();
-    details.SetOrRemoveUInt(str_GridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
-    details.SetOrRemoveUInt(str_GridPerRef(), gridsPerRef, 10);
-    details.SetOrRemoveDouble(str_GridSpaceX(), spacing.x, 1.0);
-    details.SetOrRemoveDouble(str_GridSpaceY(), spacing.y, spacing.x);
+    details.SetOrRemoveUInt(json_gridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
+    details.SetOrRemoveUInt(json_gridPerRef(), gridsPerRef, 10);
+    details.SetOrRemoveDouble(json_gridSpaceX(), spacing.x, 1.0);
+    details.SetOrRemoveDouble(json_gridSpaceY(), spacing.y, spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,10 +245,10 @@ void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
-    orientation = (GridOrientationType) GetDetail(str_GridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
-    gridsPerRef = GetDetail(str_GridPerRef()).asUInt(10);
-    spacing.x = GetDetail(str_GridSpaceX()).asDouble(1.0);
-    spacing.y = GetDetail(str_GridSpaceY()).asDouble(spacing.x);
+    orientation = (GridOrientationType) GetDetail(json_gridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
+    gridsPerRef = GetDetail(json_gridPerRef()).asUInt(10);
+    spacing.x = GetDetail(json_gridSpaceX()).asDouble(1.0);
+    spacing.y = GetDetail(json_gridSpaceY()).asDouble(spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,7 +256,7 @@ void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
     {
-    return DgnElementId(GetDetail(str_ACS()).asUInt64());
+    return DgnElementId(GetDetail(json_acs()).asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -289,9 +267,9 @@ void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
     BeAssert(!IsPersistent());
 
     if (acsId.IsValid())
-        SetDetail(str_ACS(), Json::Value(acsId.GetValue()));
+        SetDetail(json_acs(), Json::Value(acsId.GetValue()));
     else
-        RemoveDetail(str_ACS());
+        RemoveDetail(json_acs());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -330,8 +308,8 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
-    m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
+    m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_DisplayStyle()));
+    m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_CategorySelector()));
 
     // NOTE: Const ViewDefinitions should never have their display styles or category selector set! You must get a writeable copy to have them.
     return DgnDbStatus::Success;
@@ -380,7 +358,7 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DrawingViewDefinition::GetAspectRatioSkew() const
     {
-    return GetDetail(str_AspectSkew()).asDouble(1.0);
+    return GetDetail(json_aspectSkew()).asDouble(1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,13 +419,13 @@ void ViewDefinition2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     {
     T_Super::_BindWriteParams(stmt, forInsert);
 
-    auto stat = stmt.BindPoint2d(stmt.GetParameterIndex(str_Origin()), m_origin);
+    auto stat = stmt.BindPoint2d(stmt.GetParameterIndex(prop_Origin()), m_origin);
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindPoint2d(stmt.GetParameterIndex(str_Extents()), m_delta);
+    stat = stmt.BindPoint2d(stmt.GetParameterIndex(prop_Extents()), m_delta);
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_RotationAngle()), Angle::FromRadians(m_rotAngle).Degrees());
+    stat = stmt.BindDouble(stmt.GetParameterIndex(prop_RotationAngle()), Angle::FromRadians(m_rotAngle).Degrees());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId);
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(prop_BaseModel()), m_baseModelId);
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -456,10 +434,10 @@ void ViewDefinition2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    m_origin  = stmt.GetValuePoint2d(params.GetSelectIndex(str_Origin()));
-    m_delta   = DVec2d::From(stmt.GetValuePoint2d(params.GetSelectIndex(str_Extents())));
-    m_rotAngle = Angle::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(str_RotationAngle()))).Radians();
-    m_baseModelId = stmt.GetValueNavigation<DgnModelId>(params.GetSelectIndex(str_BaseModel()));
+    m_origin  = stmt.GetValuePoint2d(params.GetSelectIndex(prop_Origin()));
+    m_delta   = DVec2d::From(stmt.GetValuePoint2d(params.GetSelectIndex(prop_Extents())));
+    m_rotAngle = Angle::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(prop_RotationAngle()))).Radians();
+    m_baseModelId = stmt.GetValueNavigation<DgnModelId>(params.GetSelectIndex(prop_BaseModel()));
 
     return T_Super::_ReadSelectParams(stmt, params);
     }
@@ -809,23 +787,23 @@ void ViewDefinition3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     {
     T_Super::_BindWriteParams(stmt, forInsert);
 
-    stmt.BindPoint3d(stmt.GetParameterIndex(str_Origin()), m_origin);
-    stmt.BindPoint3d(stmt.GetParameterIndex(str_Extents()), m_extents);
+    stmt.BindPoint3d(stmt.GetParameterIndex(prop_Origin()), m_origin);
+    stmt.BindPoint3d(stmt.GetParameterIndex(prop_Extents()), m_extents);
 
     YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, m_rotation);
 
-    stmt.BindDouble(stmt.GetParameterIndex(str_Yaw()), angles.GetYaw().Degrees());
-    stmt.BindDouble(stmt.GetParameterIndex(str_Pitch()), angles.GetPitch().Degrees());
-    stmt.BindDouble(stmt.GetParameterIndex(str_Roll()), angles.GetRoll().Degrees());
+    stmt.BindDouble(stmt.GetParameterIndex(prop_Yaw()), angles.GetYaw().Degrees());
+    stmt.BindDouble(stmt.GetParameterIndex(prop_Pitch()), angles.GetPitch().Degrees());
+    stmt.BindDouble(stmt.GetParameterIndex(prop_Roll()), angles.GetRoll().Degrees());
 
-    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
+    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(prop_EyePoint()), GetEyePoint());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle().Radians());
+    stat = stmt.BindDouble(stmt.GetParameterIndex(prop_LensAngle()), GetLensAngle().Radians());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
+    stat = stmt.BindDouble(stmt.GetParameterIndex(prop_FocusDistance()), GetFocusDistance());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(prop_IsCameraOn()), IsCameraOn());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -853,19 +831,19 @@ bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    m_origin  = stmt.GetValuePoint3d(params.GetSelectIndex(str_Origin()));
-    m_extents = DVec3d::From(stmt.GetValuePoint3d(params.GetSelectIndex(str_Extents())));
+    m_origin  = stmt.GetValuePoint3d(params.GetSelectIndex(prop_Origin()));
+    m_extents = DVec3d::From(stmt.GetValuePoint3d(params.GetSelectIndex(prop_Extents())));
 
-    double yaw   = stmt.GetValueDouble(params.GetSelectIndex(str_Yaw())),
-           pitch = stmt.GetValueDouble(params.GetSelectIndex(str_Pitch())),
-           roll  = stmt.GetValueDouble(params.GetSelectIndex(str_Roll()));
+    double yaw   = stmt.GetValueDouble(params.GetSelectIndex(prop_Yaw())),
+           pitch = stmt.GetValueDouble(params.GetSelectIndex(prop_Pitch())),
+           roll  = stmt.GetValueDouble(params.GetSelectIndex(prop_Roll()));
 
     m_rotation = YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)).ToRotMatrix();
 
-    m_cameraDef.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
-    m_cameraDef.SetLensAngle(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle()))));
-    m_cameraDef.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
-    m_cameraOn = stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn()));
+    m_cameraDef.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(prop_EyePoint())));
+    m_cameraDef.SetLensAngle(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(prop_LensAngle()))));
+    m_cameraDef.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(prop_FocusDistance())));
+    m_cameraOn = stmt.GetValueBoolean(params.GetSelectIndex(prop_IsCameraOn()));
 
     return T_Super::_ReadSelectParams(stmt, params);
     }
@@ -891,9 +869,9 @@ void ViewDefinition3d::_CopyFrom(DgnElementCR el)
 DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR source) const
     {
     Json::Value val;
-    val[str_Width()] = size.x;
-    val[str_Height()] = size.y;
-    val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
+    val[json_width()] = size.x;
+    val[json_height()] = size.y;
+    val[json_format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? prop_jpeg() : prop_png();
 
     DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), val.ToString(), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
     return rc;
@@ -919,7 +897,7 @@ ImageSource ViewDefinition::ReadThumbnail() const
 
     Json::Value value;
     Json::Reader::Parse(jsonStr, value);
-    image.SetFormat(value[str_Format()] == str_Jpeg() ? ImageSource::Format::Jpeg : ImageSource::Format::Png);
+    image.SetFormat(value[json_format()] == prop_jpeg() ? ImageSource::Format::Jpeg : ImageSource::Format::Png);
     image.GetByteStreamR().Resize(bytes);
     stat = db.QueryProperty(image.GetByteStreamR().GetDataP(), bytes, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
     BeAssert(BE_SQLITE_ROW == stat);
@@ -941,8 +919,8 @@ Point2d ViewDefinition::GetThumbnailSize() const
 
     Json::Value value;
     Json::Reader::Parse(jsonStr, value);
-    size.x = value[str_Width()].asInt();
-    size.y = value[str_Height()].asInt();
+    size.x = value[json_width()].asInt();
+    size.y = value[json_height()].asInt();
     return size;
     }
 
@@ -1003,7 +981,7 @@ void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
     T_Super::_BindWriteParams(stmt, forInsert);
 
     BeAssert(GetModelSelectorId().IsValid());
-    stmt.BindNavigationValue(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId());
+    stmt.BindNavigationValue(stmt.GetParameterIndex(prop_ModelSelector()), GetModelSelectorId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1011,7 +989,7 @@ void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    m_modelSelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_ModelSelector()));
+    m_modelSelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_ModelSelector()));
     return T_Super::_ReadSelectParams(stmt, params);
     }
 
@@ -1115,13 +1093,13 @@ void DisplayStyle::_CopyFrom(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::_OnLoadedJsonProperties()
     {
-    m_viewFlags.FromJson(GetStyle(str_ViewFlags()));
+    m_viewFlags.FromJson(GetStyle(json_viewflags()));
 
-    JsonValueCR overrides = GetStyle(str_SubCategoryOverrides());
+    JsonValueCR overrides = GetStyle(json_subCategoryOvr());
     for (Json::ArrayIndex i = 0; i<overrides.size(); ++i)
         {
         JsonValueCR val = overrides[i];
-        DgnSubCategoryId subCategoryId(val[str_SubCategory()].asUInt64());
+        DgnSubCategoryId subCategoryId(val[json_subCategory()].asUInt64());
         if (!subCategoryId.IsValid())
             {
             BeDataAssert(false && "SubCategoryOverride refers to missing SubCategory");
@@ -1155,11 +1133,11 @@ bool DisplayStyle::EqualState(DisplayStyleR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::_OnSaveJsonProperties()
     {
-    SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
+    SetStyle(json_viewflags(), m_viewFlags.ToJson());
 
     if (m_subCategoryOverrides.empty())
         {
-        RemoveStyle(str_SubCategoryOverrides());
+        RemoveStyle(json_subCategoryOvr());
         }
     else
         {
@@ -1167,10 +1145,10 @@ void DisplayStyle::_OnSaveJsonProperties()
         int i=0;
         for (auto const& it : m_subCategoryOverrides)
             {
-            ovrJson[i][Json::StaticString(str_SubCategory())] = it.first.GetValue();
+            ovrJson[i][json_subCategory()] = it.first.GetValue();
             it.second.ToJson(ovrJson[i++]);
             }
-        SetStyle(str_SubCategoryOverrides(), ovrJson);
+        SetStyle(json_subCategoryOvr(), ovrJson);
         }
     }
 
@@ -1179,7 +1157,7 @@ void DisplayStyle::_OnSaveJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DisplayStyle::GetBackgroundColor() const
     {
-    return ColorDef(GetStyle(str_BackgroundColor()).asUInt(ColorDef::Black().GetValue()));
+    return ColorDef(GetStyle(json_backgroundColor()).asUInt(ColorDef::Black().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1187,7 +1165,7 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    GetStylesR().SetOrRemoveInt(str_BackgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
+    GetStylesR().SetOrRemoveInt(json_backgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1195,7 +1173,7 @@ void DisplayStyle::SetBackgroundColor(ColorDef val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DisplayStyle::GetMonochromeColor() const
     {
-    return ColorDef(GetStyle(str_MonochromeColor()).asUInt(ColorDef::White().GetValue()));
+    return ColorDef(GetStyle(json_monochromeColor()).asUInt(ColorDef::White().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1203,7 +1181,7 @@ ColorDef DisplayStyle::GetMonochromeColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetMonochromeColor(ColorDef val)
     {
-    GetStylesR().SetOrRemoveInt(str_MonochromeColor(), val.GetValue(), ColorDef::White().GetValue());
+    GetStylesR().SetOrRemoveInt(json_monochromeColor(), val.GetValue(), ColorDef::White().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1211,23 +1189,23 @@ void DisplayStyle::SetMonochromeColor(ColorDef val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     {
-    JsonValueCR sceneLights = GetStyle(Json::StaticString(str_SceneLights()));
+    JsonValueCR sceneLights = GetStyle(json_sceneLights());
 
     Render::SceneLightsPtr lights = new Render::SceneLights();
     if (m_viewFlags.ShowCameraLights())
         {
-        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
-        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
-        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_flash()]));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_ambient()]));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_portrait()]));
         }
 
     if (m_viewFlags.ShowSolarLight())
         {
-        auto& sun = (Lighting::Parameters const&) sceneLights[str_Sun()];
+        auto& sun = (Lighting::Parameters const&) sceneLights[json_sun()];
         if (sun.IsValid())
             {
             DVec3d dir = DVec3d::UnitZ();
-            auto& sundir = sceneLights[str_SunDir()];
+            auto& sundir = sceneLights[json_sunDir()];
             if (!sundir.isNull())
                 JsonUtils::DVec3dFromJson(dir, sundir);
 
@@ -1235,7 +1213,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
             }
         }
 
-    lights->m_brightness.FromJson(sceneLights[str_Brightness()]);
+    lights->m_fstop = GetSceneBrightness();
     return lights;
     }
 
@@ -1247,19 +1225,19 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
     if (!params.IsValid())
         return;
 
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     switch (params.GetType())
         {
         case Lighting::LightType::Ambient:
-            sceneLights[str_Ambient()] = params;
+            sceneLights[json_ambient()] = params;
             break;
 
         case Lighting::LightType::Flash:
-            sceneLights[str_Flash()] = params;
+            sceneLights[json_flash()] = params;
             break;
 
         case Lighting::LightType::Portrait:
-            sceneLights[str_Portrait()] = params;
+            sceneLights[json_portrait()] = params;
             break;
         }
     }
@@ -1269,29 +1247,15 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR direction)
     {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     if (params.GetType() != Lighting::LightType::Solar || !params.IsValid())
         {
-        sceneLights.removeMember(str_SunDir());
+        sceneLights.removeMember(json_sunDir());
         return;
         }
 
-    sceneLights[str_Sun()] = params;
-    JsonUtils::DVec3dToJson(sceneLights[str_SunDir()], direction);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::SetSceneBrightness(Render::SceneLights::Brightness const& brightness)
-    {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
-    if (!brightness.IsValid())
-        {
-        sceneLights.removeMember(str_Brightness());
-        return;
-        }
-    sceneLights[str_Brightness()] = brightness.ToJson();
+    sceneLights[json_sun()] = params;
+    JsonUtils::DVec3dToJson(sceneLights[json_sunDir()], direction);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1874,7 +1838,7 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, str_DisplayStyle(), 
+    params.RegisterPropertyAccessors(layout, prop_DisplayStyle(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
@@ -1912,7 +1876,7 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_CategorySelector(), 
+    params.RegisterPropertyAccessors(layout, prop_CategorySelector(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
@@ -1956,7 +1920,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
                 return DgnDbStatus::BadArg;
 
-    params.RegisterPropertyAccessors(layout, str_Origin(), 
+    params.RegisterPropertyAccessors(layout, prop_Origin(), 
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT(viewDef.GetOrigin());
@@ -1967,7 +1931,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT(viewDef.SetOrigin(value.GetPoint3d()));
             });
 
-    params.RegisterPropertyAccessors(layout, str_Extents(), 
+    params.RegisterPropertyAccessors(layout, prop_Extents(), 
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT(viewDef.GetExtents());
@@ -1978,7 +1942,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT(viewDef.SetExtents(DVec3d::From(value.GetPoint3d())));
             });
 
-    params.RegisterPropertyAccessors(layout, str_Yaw(), 
+    params.RegisterPropertyAccessors(layout, prop_Yaw(), 
         [](ECValueR value, DgnElementCR el)
             {
             GET_DOUBLE(angles.GetYaw().Degrees());
@@ -1989,7 +1953,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_DOUBLE(angles.SetYaw(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
-    params.RegisterPropertyAccessors(layout, str_Pitch(),
+    params.RegisterPropertyAccessors(layout, prop_Pitch(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_DOUBLE(angles.GetPitch().Degrees());
@@ -2000,7 +1964,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_DOUBLE(angles.SetPitch(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
-    params.RegisterPropertyAccessors(layout, str_Roll(),
+    params.RegisterPropertyAccessors(layout, prop_Roll(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_DOUBLE(angles.GetRoll().Degrees());
@@ -2011,7 +1975,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
-    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
+    params.RegisterPropertyAccessors(layout, prop_EyePoint(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2026,7 +1990,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
+    params.RegisterPropertyAccessors(layout, prop_LensAngle(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2041,7 +2005,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
+    params.RegisterPropertyAccessors(layout, prop_FocusDistance(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2056,7 +2020,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
+    params.RegisterPropertyAccessors(layout, prop_IsCameraOn(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2090,7 +2054,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
                 return DgnDbStatus::BadArg;
 
-    params.RegisterPropertyAccessors(layout, str_BaseModel(), 
+    params.RegisterPropertyAccessors(layout, prop_BaseModel(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
@@ -2107,7 +2071,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_RotationAngle(), 
+    params.RegisterPropertyAccessors(layout, prop_RotationAngle(), 
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
@@ -2122,7 +2086,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_Origin(), 
+    params.RegisterPropertyAccessors(layout, prop_Origin(), 
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT2d(viewDef.GetOrigin2d());
@@ -2133,7 +2097,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT2d(viewDef.SetOrigin2d(value.GetPoint2d()));
             });
 
-    params.RegisterPropertyAccessors(layout, str_Extents(), 
+    params.RegisterPropertyAccessors(layout, prop_Extents(), 
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT2d(viewDef.GetDelta2d());
@@ -2155,7 +2119,7 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, str_ModelSelector(), 
+    params.RegisterPropertyAccessors(layout, prop_ModelSelector(), 
         [](ECValueR value, DgnElementCR el)
             {
             SpatialViewDefinitionCR viewDef = (SpatialViewDefinitionCR)el;

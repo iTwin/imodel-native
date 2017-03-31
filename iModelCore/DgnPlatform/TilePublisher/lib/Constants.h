@@ -109,7 +109,7 @@ static std::string s_texturedVertexShader = R"RAW_STRING(
     }
 )RAW_STRING";
 
-static std::string s_computeIndexedColor[3] =
+static std::string s_computeIndexedColor[4] =
     {
     R"RAW_STRING(
         uniform vec4 u_color;
@@ -153,7 +153,13 @@ static std::string s_computeIndexedColor[3] =
             }
 
         vec4 computeColor() { return texture2D(u_tex, computeColorSt(a_colorIndex)); }
-    )RAW_STRING"
+    )RAW_STRING",
+
+    R"RAW_STRING(
+        varying vec4 v_color;
+        vec4 computeColor() { return czm_backgroundColor; }
+    )RAW_STRING",
+
     };
 
 static std::string s_assignIndexedColor = R"RAW_STRING(
@@ -161,11 +167,12 @@ static std::string s_assignIndexedColor = R"RAW_STRING(
         }
 )RAW_STRING";
 
-static std::string s_untexturedVertexShaders[3] =
+static std::string s_untexturedVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_litVertexCommon + s_assignIndexedColor,
     s_computeIndexedColor[1] + s_litVertexCommon + s_assignIndexedColor,
     s_computeIndexedColor[2] + s_litVertexCommon + s_assignIndexedColor,
+    s_computeIndexedColor[3] + s_litVertexCommon + s_assignIndexedColor,
     };
 
 // Used for reality meshes.
@@ -273,11 +280,12 @@ static std::string s_unlitVertexMain = R"RAW_STRING(
         }
 )RAW_STRING";
 
-static std::string s_unlitVertexShaders[3] =
+static std::string s_unlitVertexShaders[4] =
     {
     s_unlitVertexCommon + s_computeIndexedColor[0] + s_unlitVertexMain,
     s_unlitVertexCommon + s_computeIndexedColor[1] + s_unlitVertexMain,
     s_unlitVertexCommon + s_computeIndexedColor[2] + s_unlitVertexMain,
+    s_unlitVertexCommon + s_computeIndexedColor[3] + s_unlitVertexMain,
     };
 
 static std::string s_unlitFragmentShader = R"RAW_STRING(
@@ -316,7 +324,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                         {
                         float   miter  = dist / dotP;
             
-                        delta = bisector * miter; // max(miter, - 5.0 * dist);
+                        delta = bisector * max(miter, - 5.0 * dist);
                         }
                     else
                         {
@@ -465,32 +473,36 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
 )RAW_STRING";
 
 
-static std::string s_tesselatedTexturedPolylineVertexShaders[3] =
+static std::string s_tesselatedTexturedPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_tesselatedTexturedPolylineVertexCommon,
     s_computeIndexedColor[1] + s_tesselatedTexturedPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_tesselatedTexturedPolylineVertexCommon
+    s_computeIndexedColor[2] + s_tesselatedTexturedPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_tesselatedTexturedPolylineVertexCommon
     };
 
-static std::string s_tesselatedSolidPolylineVertexShaders[3] =
+static std::string s_tesselatedSolidPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_tesselatedSolidPolylineVertexCommon,
     s_computeIndexedColor[1] + s_tesselatedSolidPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_tesselatedSolidPolylineVertexCommon
+    s_computeIndexedColor[2] + s_tesselatedSolidPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_tesselatedSolidPolylineVertexCommon
     };
 
-static std::string s_simpleTexturedPolylineVertexShaders[3] =
+static std::string s_simpleTexturedPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_simpleTexturedPolylineVertexCommon,
     s_computeIndexedColor[1] + s_simpleTexturedPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_simpleTexturedPolylineVertexCommon
+    s_computeIndexedColor[2] + s_simpleTexturedPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_simpleTexturedPolylineVertexCommon
     };
 
-static std::string s_simpleSolidPolylineVertexShaders[3] =
+static std::string s_simpleSolidPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_simpleSolidPolylineVertexCommon,
     s_computeIndexedColor[1] + s_simpleSolidPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_simpleSolidPolylineVertexCommon
+    s_computeIndexedColor[2] + s_simpleSolidPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_simpleSolidPolylineVertexCommon
     };
 
 
