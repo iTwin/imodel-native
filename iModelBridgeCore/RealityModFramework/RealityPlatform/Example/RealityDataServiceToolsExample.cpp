@@ -387,19 +387,18 @@ void DownloadCmd()
 
     BeFileName fileName (s_outputPath);
     fileName.AppendToPath(BeFileName(document->GetName()));
-    char outfile[_MAX_PATH] = "";
-    strcpy(outfile, fileName.GetNameUtf8().c_str());
-    FILE* pFile = fopen(outfile, "wb");
-    if (0 != pFile)
+    BeFile file;
+    BeFileStatus fileStatus = file.Create(fileName.GetName(), true);
+    if (fileStatus == BeFileStatus::Success)
         {
         RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
         RawServerResponse contentResponse = RawServerResponse();
-        RealityDataService::Request(*contentRequest, pFile, contentResponse);
-        fclose (pFile);
+        RealityDataService::Request(*contentRequest, &file, contentResponse);
+        file.Close();
         std::cout << "  Done." << std::endl;
         }
     else
-        std::cout << "Output  folder invalide :" << outfile << std::endl;
+        std::cout << "Output folder invalid :" << fileName.GetNameUtf8() << std::endl;
 
     }
 

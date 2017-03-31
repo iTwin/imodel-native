@@ -60,8 +60,6 @@ struct RealityDataFileTransfer : public RealityDataUrl
             m_requestWithToken = m_httpRequestString;
             m_requestWithToken.append(m_azureToken);
 
-            m_requestWithToken.ReplaceAll(" ", "%20");
-
             return m_requestWithToken;
         };
 
@@ -85,7 +83,12 @@ struct RealityDataFileTransfer : public RealityDataUrl
         size_t                  m_index;
     protected:
 
-        Utf8String              m_fileUrl;
+        REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override
+            {
+            m_fileUrl = BeStringUtilities::UriEncode(m_fileUrl.c_str());
+            }
+
+        mutable Utf8String              m_fileUrl;
         Utf8String              m_filename;
 
         BeFile                  m_fileStream;
@@ -163,8 +166,6 @@ public:
                 m_requestWithToken.append("&comp=blocklist");
                 }
             }
-
-        m_requestWithToken.ReplaceAll(" ", "%20");
 
         return m_requestWithToken;
         };
@@ -271,6 +272,12 @@ Utf8StringCR RealityDataUrl::GetVersion() const { return RealityDataService::Get
 Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetSchemaName(); }
 
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
+
+void RealityDataUrl::EncodeId() const 
+    {
+    m_id.ReplaceAll("/", "~2F");
+    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
@@ -417,6 +424,20 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         m_httpRequestString.append("/Document/");
         m_httpRequestString.append(m_id);
         m_httpRequestString.append("/$file");
+        }
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataDocumentContentByIdRequest::EncodeId() const
+    {
+    if(m_AzureRedirected)
+        m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    else
+        {
+        m_id.ReplaceAll("/", "~2F");
+        m_id = BeStringUtilities::UriEncode(m_id.c_str());
         }
     }
 
@@ -618,7 +639,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
-}
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -701,17 +722,35 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter; }
+void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) 
+    { 
+    m_filter = BeStringUtilities::UriEncode(filter.c_str()); 
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetQuery(Utf8StringCR query) { m_query = query; }
+void RealityDataPagedRequest::SetQuery(Utf8StringCR query) 
+    { 
+    m_query = BeStringUtilities::UriEncode(query.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetProject(Utf8StringCR project) { m_project = project; }
+void RealityDataPagedRequest::SetProject(Utf8StringCR project) 
+    { 
+    m_project = BeStringUtilities::UriEncode(project.c_str());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataPagedRequest::EncodeId() const
+    {
+    m_id.ReplaceAll("/", "~2F");
+    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1029,11 +1068,14 @@ RealityDataServiceTransfer::~RealityDataServiceTransfer()
 void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
-    Utf8String addon = "/";
+    Utf8String addon = "";
+    if(!m_fileUrl.StartsWith("/"))
+        addon.append("/");
+
+    EncodeId();
     addon.append(m_fileUrl);
     addon.append("?");
-    addon.ReplaceAll("//","/"); //this covers whether the user input the directory as 
-                                // C:/Directory or C:/Directory/
+
     m_httpRequestString.append(addon);
     m_validRequestString = true;
 
@@ -1138,10 +1180,10 @@ void RealityDataFileDownload::Retry()
 //=====================================================================================
 void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     {
+    EncodeId();
     m_httpRequestString = m_azureServer;
     m_httpRequestString.append(m_fileUrl);
     m_httpRequestString.append("?");
-    m_httpRequestString.ReplaceAll("//", "/"); 
     m_validRequestString = true;
 
     m_requestHeader.clear();
@@ -1330,7 +1372,6 @@ BentleyStatus AzureHandshake::ParseResponse(Utf8StringCR jsonResponse, Utf8Strin
         Utf8String url = instance["Url"].asString();
         bvector<Utf8String> parts;
         BeStringUtilities::Split(url.c_str(), "\?", parts);
-        //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
         azureServer = parts[0];
         azureToken = parts[1];
 
@@ -1552,7 +1593,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
         {
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 0L);
-        /*if (!m_proxyUrl.empty())
+        if (!m_proxyUrl.empty())
             {
             curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
             curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
@@ -1560,7 +1601,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
                 {
                 curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
                 }
-            }*/
+            }
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
@@ -2075,7 +2116,7 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2327,16 +2368,14 @@ Utf8String RealityDataService::Request(const RealityDataRelationshipDelete& requ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRequest* request, Utf8String keyword)
+RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRequest* request, Utf8StringCR keyword)
     {
     RawServerResponse response = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        response.status = RequestStatus::BADREQ;
-    else
+    if(response.ValidateJSONResponse(instances, keyword) == RequestStatus::OK)
         {
         request->AdvancePage();
         response.status = RequestStatus::OK;
@@ -2348,16 +2387,14 @@ RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRe
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request, Utf8String keyword)
+RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request, Utf8StringCR keyword)
     {
     RawServerResponse response = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        response.status = RequestStatus::BADREQ;
-    else
+    if (response.ValidateJSONResponse(instances, keyword) == RequestStatus::OK)
         response.status = RequestStatus::OK;
     
     return response;

@@ -26,9 +26,6 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
-
-BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
@@ -47,6 +44,17 @@ static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
         polygon.append(urlEncode ? "%5D" : "]");
         }
     return polygon;
+    }
+
+static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, BeFile* fileStream)
+    {
+    uint32_t bytesRead = 0;
+    
+    BeFileStatus status = fileStream->Read(buffer, &bytesRead, (uint32_t)(size * count));
+    if (status != BeFileStatus::Success)
+        return 0;
+
+    return bytesRead;
     }
 
 //=====================================================================================
@@ -74,11 +82,11 @@ Utf8StringCR GeoCoordinationServicePagedRequest::GetRepoId() const { return GeoC
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
 SpatialEntityWithDetailsSpatialRequest::SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification) :
-    m_informationSourcefilter(false), m_projectArea(projectArea)
+     m_projectArea(projectArea)
     {   
     m_informationSourceFilter = classification;
     m_filter = "";
-    m_validRequest = false;
+    m_validRequestString = false;
     }
 
 //=====================================================================================
@@ -325,6 +333,21 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
+DownloadReportUploadRequest::DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report)
+    : m_downloadReport(report)
+    {
+    m_validRequestString = false; 
+    m_id = identifier; 
+    m_requestType = HttpRequestType::PUT_Request;
+    
+    Utf8String fileFromRoot = report.GetNameUtf8();
+
+    report.GetFileSize(m_fileSize);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
 void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = GeoCoordinationService::GetServerName();
@@ -344,7 +367,7 @@ Utf8String GeoCoordinationService::s_geoCoordinationWSGProtocol = "2.4";
 Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin-Server";
 Utf8String GeoCoordinationService::s_geoCoordinationSchemaName = "RealityModeling";
 
-int GeoCoordinationService::s_verifyPeer = 0;
+bool GeoCoordinationService::s_verifyPeer = false;
 Utf8String GeoCoordinationService::s_certificatePath = "";
 
 const Utf8String GeoCoordinationService::s_ImageryKey = "Imagery";
@@ -360,60 +383,64 @@ Utf8StringCR GeoCoordinationService::GetServerName() { return s_geoCoordinationS
 Utf8StringCR GeoCoordinationService::GetWSGProtocol() { return s_geoCoordinationWSGProtocol; }
 Utf8StringCR GeoCoordinationService::GetRepoName() { return s_geoCoordinationRepoName; }
 Utf8StringCR GeoCoordinationService::GetSchemaName() { return s_geoCoordinationSchemaName; }
-const int GeoCoordinationService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
+const bool GeoCoordinationService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR GeoCoordinationService::GetCertificatePath() { return s_certificatePath; }
 
+static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
+    {
+    std::cout << basicMessage << std::endl;
+    std::cout << rawResponse.body << std::endl;
+    }
+
+GeoCoordinationService_ErrorCallBack GeoCoordinationService::s_errorCallback = defaultErrorCallback;
+
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const GeoCoordinationServiceRequest* request, RequestStatus& status)
+bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const GeoCoordinationServiceRequest* request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicRequest((&request), jsonString);
+    rawResponse = BasicRequest(request);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status != RequestStatus::OK)
-        {
-        std::cout << "SpatialEntityRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        return nullptr;
-        }
-    RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("SpatialEntityRequest failed with response", rawResponse); 
+    else
+        RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
+
     return entities;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityByIdRequest& request, RequestStatus& status)
+SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityByIdRequest& request, RawServerResponse& rawResponse)
     {
-    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), status)[0];
+    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse)[0];
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityWithDetailsByIdRequest& request, RequestStatus& status)
+SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityWithDetailsByIdRequest& request, RawServerResponse& rawResponse)
     {
-    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), status)[0];
+    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse)[0];
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDataSourceById& request, RequestStatus& status)
+SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDataSourceByIdRequest& request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
 
     bvector<SpatialEntityDataSourcePtr> entities = bvector<SpatialEntityDataSourcePtr>();
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "SpatialEntityDataSourceByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("SpatialEntityDataSourceByIdRequest failed with response", rawResponse);
         return nullptr;
         }
-    RealityConversionTools::JsonToSpatialEntityDataSource(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToSpatialEntityDataSource(rawResponse.body.c_str(), &entities);
 
     return entities[0];
     }
@@ -421,19 +448,17 @@ SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDa
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServerByIdRequest& request, RequestStatus& status)
+SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServerByIdRequest& request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
 
     bvector<SpatialEntityServerPtr> entities = bvector<SpatialEntityServerPtr>();
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "SpatialEntityServerByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("SpatialEntityServerByIdRequest failed with response", rawResponse);
         return nullptr;
         }
-    RealityConversionTools::JsonToSpatialEntityServer(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToSpatialEntityServer(rawResponse.body.c_str(), &entities);
 
     return entities[0];
     }
@@ -441,19 +466,17 @@ SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServer
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMetadataByIdRequest& request, RequestStatus& status)
+SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMetadataByIdRequest& request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
 
     bvector<SpatialEntityMetadataPtr> entities = bvector<SpatialEntityMetadataPtr>();
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "SpatialEntityServerByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("SpatialEntityServerByIdRequest failed with response", rawResponse);
         return nullptr;
         }
-    RealityConversionTools::JsonToSpatialEntityMetadata(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToSpatialEntityMetadata(rawResponse.body.c_str(), &entities);
 
     return entities[0];
     }
@@ -461,40 +484,36 @@ SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMeta
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWithDetailsSpatialRequest& request, RequestStatus& status)
+bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWithDetailsSpatialRequest& request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicPagedRequest((&request), jsonString);
+    rawResponse = BasicPagedRequest(static_cast<const GeoCoordinationServicePagedRequest*>(&request));
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status == RequestStatus::BADREQ)
-    {
-        std::cout << "SpatialEntityWithDetailsSpatialRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        return nullptr;
-    }
+    if (rawResponse.status == RequestStatus::BADREQ)
+        {
+        s_errorCallback("SpatialEntityWithDetailsSpatialRequest failed with response", rawResponse);
+        return entities;
+        }
     else if ((uint8_t)entities.size() < request.GetPageSize())
-        status = RequestStatus::LASTPAGE;
+        rawResponse.status = RequestStatus::LASTPAGE;
 
-    RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
     return entities;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& request, RequestStatus& status)
+Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& request, RawServerResponse& rawResponse)
     {
-    Utf8String jsonString;
-    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
 
-    Utf8String packageInfos;
     Utf8String packageId = "";
     Json::Value packageInfos(Json::objectValue);
-    Json::Reader::Parse(jsonString, packageInfos);
+    Json::Reader::Parse(rawResponse.body, packageInfos);
 
-    if (status == RequestStatus::BADREQ || !packageInfos.isMember("changedInstance"))
-        status =  RequestStatus::BADREQ;
+    if (rawResponse.status == RequestStatus::BADREQ || !packageInfos.isMember("changedInstance"))
+        rawResponse.status =  RequestStatus::BADREQ;
     else
         packageId = packageInfos["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
 
@@ -504,65 +523,104 @@ Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& requ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFileName filename, RequestStatus& status)
+void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse)
     {    
-    Utf8String jsonString;
-    
-    int stat = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
-    char outfile[1024] = "";
-    strcpy(outfile, fileName.GetNameUtf8().c_str());
-    FILE* file = fopen(outfile, "wb");
-
-    Utf8String resultString = WSGRequest::GetInstance().PerformRequest(request, stat, GeoCoordinationService::GetVerifyPeer(), file);
-
-    status = RequestStatus::OK;
-    if (stat != CURLE_OK)
+    BeFile file;
+    if(file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
         {
-        status = RequestStatus::BADREQ;
-        std::cout << "Package download failed with response" << std::endl;
-        std::cout << resultString << std::endl;
+        s_errorCallback("PreparedPackageRequest failed to create file at provided location", rawResponse);
+        return;
+        }
+
+    WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &file);
+
+    rawResponse.status = RequestStatus::OK;
+    if (rawResponse.curlCode != CURLE_OK)
+        {
+        rawResponse.status = RequestStatus::BADREQ;
+        s_errorCallback("Package download failed with response", rawResponse);
+        }
+    else
+        rawResponse.status = RequestStatus::OK;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void GeoCoordinationService::Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse)
+    {
+    BeFile fileStream;
+    BeFileStatus status = fileStream.Open(request.GetFileName(), BeFileAccess::Read);
+    if(status != BeFileStatus::Success)
+        {
+        s_errorCallback("DownloadReport File not found", rawResponse);
+        return;
+        }
+
+    auto curl = WSGRequest::GetInstance().PrepareRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &fileStream);
+
+    if (rawResponse.curlCode == CURLcode::CURLE_FAILED_INIT)
+        {
+        s_errorCallback("Curl init failed for DownloadReportUploadRequest", rawResponse);
+        return;
+        }
+
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION, CurlReadDataCallback);
+    curl_easy_setopt(curl, CURLOPT_READDATA, &fileStream);
+
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, request.GetMessageSize());
+
+    rawResponse.curlCode = (int)curl_easy_perform(curl);
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(rawResponse.responseCode));
+    curl_easy_cleanup(curl);
+
+    if (rawResponse.curlCode == CURLE_OK)
+        rawResponse.status = RequestStatus::OK;
+    else
+        {
+        rawResponse.status = RequestStatus::BADREQ;
+        s_errorCallback("Error Uploading DownloadReport", rawResponse);
         }
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-void Request(const DownloadReportUploadRequest& request, RequestStatus& status)
+RawServerResponse GeoCoordinationService::BasicPagedRequest(const GeoCoordinationServicePagedRequest* request)
     {
+    RawServerResponse rawResponse = RawServerResponse();
+    WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
+    WSGRequest::GetInstance().PerformRequest(*request, rawResponse, GeoCoordinationService::GetVerifyPeer());
 
+    Json::Value instances(Json::objectValue);
+    if ((rawResponse.status != CURLE_OK) || !Json::Reader::Parse(rawResponse.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+        rawResponse.status =  RequestStatus::BADREQ;
+    else
+        {
+        request->AdvancePage();
+        rawResponse.status = RequestStatus::OK;
+        }
+    return rawResponse;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-RequestStatus GeoCoordinationService::BasicPagedRequest(GeoCoordinationServicePagedRequest* const request, Utf8StringR jsonResponse)
-{
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
-
-    Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::BADREQ;
-
-    request->AdvancePage();
-
-    return RequestStatus::OK;
-}
-
-//=====================================================================================
-//! @bsimethod                                   Spencer.Mason              03/2017
-//=====================================================================================
-RequestStatus GeoCoordinationService::BasicRequest(GeoCoordinationServiceRequest* const request, Utf8StringR jsonResponse)
-{
-    int status = RequestType::Body;
+RawServerResponse GeoCoordinationService::BasicRequest(const GeoCoordinationServiceRequest* request)
+    {
+    RawServerResponse rawResponse = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, GeoCoordinationService::GetVerifyPeer());
+    WSGRequest::GetInstance().PerformRequest(*request, rawResponse, GeoCoordinationService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::BADREQ;
+    if ((rawResponse.status != CURLE_OK) || !Json::Reader::Parse(rawResponse.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+        rawResponse.status = RequestStatus::BADREQ;
+    else
+        rawResponse.status = RequestStatus::OK;
 
-    return RequestStatus::OK;
-}
+    return rawResponse;
+    }

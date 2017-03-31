@@ -159,7 +159,7 @@ public:
     //! Create a request for spatial entity with details in the area covered by given polygon for specific classification
     REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification);
 
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterBySource(int informationSource) { m_informationSourceFilter = informationSource; }
+    REALITYDATAPLATFORM_EXPORT void FilterBySource(int informationSource) { m_informationSourceFilter = informationSource; }
     
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -319,16 +319,24 @@ struct DownloadReportUploadRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report) : m_downloadReport(report)
-    { m_validRequestString = false; m_id = identifier; m_requestType = HttpRequestType::PUT_Request; }
+    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report);
    
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() const { return m_fileSize; }
+    REALITYDATAPLATFORM_EXPORT BeFileName GetFileName() const { return m_downloadReport; }
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     BeFileName          m_downloadReport;
+    uint64_t            m_fileSize;
     DownloadReportUploadRequest(){}
     };
+
+//! Callback function to surface request errors.
+//! @param[in] basicMessage Utf8String provided by the specific request
+//! @param[in] rawResponse  the raw server response
+typedef std::function<void(Utf8String basicMessage, const RawServerResponse& rawResponse)> GeoCoordinationService_ErrorCallBack;
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -350,18 +358,20 @@ public:
     //! schemaName is the name of the schema exposing the GeoCoordination Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of GeoCoordination Service.
-    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName)
         {
         BeAssert(server.size() != 0);
         BeAssert(WSGProtocol.size() != 0);
-        BeAssert(name.size() != 0);
+        BeAssert(repoName.size() != 0);
         BeAssert(schemaName.size() != 0);
 
         s_geoCoordinationServer = server;
         s_geoCoordinationWSGProtocol = WSGProtocol;
-        s_geoCoordinationName = name;
+        s_geoCoordinationRepoName = repoName;
         s_geoCoordinationSchemaName = schemaName;
         }
+
+    REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(GeoCoordinationService_ErrorCallBack errorCallback) { s_errorCallback = errorCallback; }
 
     //! Returns the current name of the server
     static Utf8StringCR GetServerName();
@@ -374,6 +384,12 @@ public:
 
     //! Returns the name of the schema defining the classes exposed by the GeoCoordination Service.
     static Utf8StringCR GetSchemaName();
+
+    //! Returns the name of the schema defining the classes exposed by the Service.
+    REALITYDATAPLATFORM_EXPORT static const bool GetVerifyPeer();
+
+    //! Returns the name of the schema defining the classes exposed by the Service.
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
 
     //! The classification codes. The high level interface only supports the four base classification
     enum class Classification
@@ -389,52 +405,53 @@ public:
         USGS_NationalMap = 0x01,
         PublicIndex = 0x02
         };
-public:
+
+
     //! Returns the SpatialEntity object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a partially filled SpatialEntity object or null if an error occured.
     //! Only fields pertinent to a SpatialEntityWithDetails view will be filled 
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityWithDetailsByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityWithDetailsByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a SpatialEntitDataSource or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a SpatialEntityServer or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Request(const SpatialEntityServerByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Request(const SpatialEntityServerByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a SpatialEntityMetadata object ot null if an error occured.
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Request(const SpatialEntityMetadataByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Request(const SpatialEntityMetadataByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of partially filled SpatialEntity objects. Only fields returned in a
     //! SpatialEntity with details object will be filled.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const SpatialEntityWithDetailsSpatialRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const SpatialEntityWithDetailsSpatialRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the identifier of the prepared package or an empty string if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const PackagePreparationRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const PackagePreparationRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the content of the Package requested or an empty vector if an error occured
-    REALITYDATAPLATFORM_EXPORT static bvector<Byte> Request(const PreparedPackageRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static void Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse);
 
     //! Uploads a download report. It is not possible to know if the call worked or not.
-    REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the full WSG JSON returned by the package preparation request
-    REALITYDATAPLATFORM_EXPORT static RequestStatus BasicRequest(const GeoCoordinationServiceRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const GeoCoordinationServiceRequest* request);
 
     //! Returns the full WSG JSON returned by the spatial entity with details spatial request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RequestStatus BasicPagedRequest(const GeoCoordinationServicePagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicPagedRequest(const GeoCoordinationServicePagedRequest* request);
 
     static Utf8String s_geoCoordinationServer;
     static Utf8String s_geoCoordinationWSGProtocol;
     static Utf8String s_geoCoordinationRepoName;
     static Utf8String s_geoCoordinationSchemaName;
 
-    static int s_verifyPeer;
+    static bool s_verifyPeer;
     static Utf8String s_certificatePath;
 
     static const Utf8String s_ImageryKey;
@@ -446,8 +463,10 @@ public:
     static const Utf8String s_PublicIndexInformationSourceKey;
     static const Utf8String s_AllInformationSourceKey;
 
+    static GeoCoordinationService_ErrorCallBack s_errorCallback;
+
 private:
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(GeoCoordinationServiceRequest* request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(const GeoCoordinationServiceRequest* request, RawServerResponse& rawResponse);
     };
 
 

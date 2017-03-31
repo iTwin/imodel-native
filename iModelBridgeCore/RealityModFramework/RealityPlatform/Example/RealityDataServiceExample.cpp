@@ -124,12 +124,12 @@ int main(int argc, char *argv[])
     exeDir = exeDir.substr(0, pos + 1);
     BeFileName fileName = BeFileName(exeDir);
     fileName.AppendToPath(BeFileName("testFile"));
-    char outfile[1024] = "";
-    strcpy(outfile, fileName.GetNameUtf8().c_str());
-    FILE* file = fopen(outfile, "wb");
+    BeFile file;
+    file.Create(fileName.GetName(), true);
 
     RawServerResponse contentResponse = RawServerResponse();
-    RealityDataService::Request(*contentRequest, file, contentResponse);
+    RealityDataService::Request(*contentRequest, &file, contentResponse);
+    file.Close();
     
     bvector<Utf8String> filter1 = bvector<Utf8String>();
     bvector<Utf8String> filter2 = bvector<Utf8String>();
