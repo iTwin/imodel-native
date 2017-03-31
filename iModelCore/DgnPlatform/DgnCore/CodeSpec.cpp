@@ -249,17 +249,17 @@ CodeSpec::CodeSpec(CreateParams const& params)
 void CodeSpec::ToPropertiesJson(JsonValueR json) const
     {
     if (!m_specProperties.empty())
-        json[str_spec()] = m_specProperties;
+        json[json_spec()] = m_specProperties;
 
-    json[str_version()] = BeVersion(1, 0).ToMajorMinorString();
-    json[str_scopeSpec()] = GetScope();
+    json[json_version()] = BeVersion(1, 0).ToMajorMinorString();
+    json[json_scopeSpec()] = GetScope();
 
     Json::Value fragmentSpecArray(Json::arrayValue);
     for (CodeFragmentSpecCR fragmentSpec : GetFragmentSpecs())
         fragmentSpecArray.append(fragmentSpec);
 
     if (fragmentSpecArray.size() > 0)
-        json[str_fragmentSpecs()] = fragmentSpecArray;
+        json[json_fragmentSpecs()] = fragmentSpecArray;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,10 +267,10 @@ void CodeSpec::ToPropertiesJson(JsonValueR json) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::FromPropertiesJson(JsonValueCR json)
     {
-    m_specProperties = json[str_spec()];
-    SetScope((CodeScopeSpecCR)json[str_scopeSpec()]);
+    m_specProperties = json[json_spec()];
+    SetScope((CodeScopeSpecCR)json[json_scopeSpec()]);
 
-    JsonValueCR fragmentSpecArrayJson = json[str_fragmentSpecs()];
+    JsonValueCR fragmentSpecArrayJson = json[json_fragmentSpecs()];
     if (!fragmentSpecArrayJson.isNull())
         {
         for (JsonValueCR fragmentSpecJson : fragmentSpecArrayJson)
@@ -358,27 +358,27 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AuxCoordSystem2d, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AuxCoordSystem3d, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AuxCoordSystemSpatial, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_CategorySelector, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_DisplayStyle, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GeometryPart, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LineStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_MaterialElement, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ModelSelector, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialCategory, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TextAnnotationSeed, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Texture, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TrueColor, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ViewDefinition, CodeScopeSpec::CreateRepositoryScope())) || 
         // CodeSpecs with Model scope
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_CategorySelector, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_DisplayStyle, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Drawing, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_DrawingCategory, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LinkElement, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Sheet, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalType, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe3d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GeometryPart, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalType2d, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe2d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LinkElement, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ModelSelector, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalType, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Sheet, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialLocationType, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe2d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe3d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ViewDefinition, CodeScopeSpec::CreateModelScope())) || 
         // CodeSpecs with ParentElement scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SubCategory, CodeScopeSpec::CreateParentElementScope())) ||
@@ -421,6 +421,17 @@ DgnCode CodeSpec::CreateCode(Utf8StringCR value) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value)
+    {
+    CodeSpecCPtr codeSpec = scopeModel.GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecName);
+    BeAssert(codeSpec.IsValid() && codeSpec->IsModelScope());
+    DgnElementCPtr scopeElement = scopeModel.GetModeledElement();
+    return codeSpec.IsValid() && scopeElement.IsValid() ? codeSpec->CreateCode(*scopeElement, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value)
@@ -436,7 +447,7 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
     {
     BeAssert(scopeElement.GetElementId().IsValid());
-    return scopeElement.GetElementId().IsValid() ? DgnCode(GetCodeSpecId(), value, scopeElement.GetElementId()) : DgnCode();
+    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), value, scopeElement.GetElementId()) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**

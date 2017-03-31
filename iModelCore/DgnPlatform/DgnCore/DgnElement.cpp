@@ -336,7 +336,7 @@ Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
 void DefinitionElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(prop_IsPrivate()), IsPrivate());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -349,7 +349,7 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(prop_IsPrivate()));
 
     return DgnDbStatus::Success;
     }
@@ -736,7 +736,7 @@ DgnDbStatus RoleElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2969,7 +2969,7 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2985,7 +2985,7 @@ SpatialLocationTypeCPtr SpatialLocationElement::GetSpatialLocationType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2993,7 +2993,7 @@ DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3020,7 +3020,7 @@ GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3028,7 +3028,7 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4150,7 +4150,7 @@ void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& 
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
+    params.RegisterPropertyAccessors(layout, DefinitionElement::prop_IsPrivate(), 
         [](ECValueR value, DgnElementCR el)
             {
             DefinitionElementCR def = (DefinitionElementCR)el;
