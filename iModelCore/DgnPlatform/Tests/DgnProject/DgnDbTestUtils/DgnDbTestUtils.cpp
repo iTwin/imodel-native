@@ -372,11 +372,11 @@ ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewName)
+DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR drawingModel, Utf8CP viewName)
     {
-    DgnDbR db = model.GetDgnDb();
+    DgnDbR db = drawingModel.GetDgnDb();
     DefinitionModelR dictionary = db.GetDictionaryModel();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(dictionary, viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(dictionary,""), *new DisplayStyle2d(db,""));
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(dictionary, viewName ? viewName : drawingModel.GetName(), DrawingViewDefinition::QueryClassId(db), drawingModel.GetModelId(), *new CategorySelector(dictionary,""), *new DisplayStyle2d(dictionary,""));
     EXPECT_TRUE(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
@@ -396,7 +396,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    SpatialViewDefinition viewDef(dictionary, viewName ? viewName : model.GetName(), *new CategorySelector(dictionary,""), *new DisplayStyle3d(db,""), *modelSelector);
+    SpatialViewDefinition viewDef(dictionary, viewName ? viewName : model.GetName(), *new CategorySelector(dictionary,""), *new DisplayStyle3d(dictionary,""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
