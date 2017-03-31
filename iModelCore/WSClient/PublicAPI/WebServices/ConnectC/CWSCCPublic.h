@@ -117,9 +117,10 @@ CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHAND
 /************************************************************************************//**
 * \brief Retrieve the instanceId of the last created object (if there is one, empty string otherwise)
 * \param[in] apiHandle Previously created API object
+* \param[out] instanceId the instance id of the last created object by this API object
 * \return last instance Id
 ****************************************************************************************/
-CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle);
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (CWSCCHANDLE apiHandle, Utf8String& instanceId);
 
 /************************************************************************************//**
 * \brief Retrieve the previous status description
@@ -134,6 +135,18 @@ CWSCCHANDLE apiHandle,
 Utf8CP proxyUrl,
 Utf8CP username,
 Utf8CP password
+);
+
+/************************************************************************************//**
+* \brief Create root project storage (project share) for CONNECT Project
+* \param[in] apiHandle API object
+* \param[in] ProjectGuid
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebSServiceClientC_CreateRootProjectShareStorage
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectGuid
 );
 
 /** \} */

@@ -109,7 +109,7 @@ class ConnectWebServicesClientC_internal
 
         Utf8StringCR GetLastStatusMessage();
         Utf8StringCR GetLastStatusDescription();
-        CharCP       GetLastCreatedObjectInstanceId ();
+        void         GetLastCreatedObjectInstanceId (Utf8String& instanceId);
         void SetStatusMessage(Utf8String message);
         void SetStatusDescription(Utf8String desc);
         void SetCreatedObjectResponse (WSUploadResponse response);
