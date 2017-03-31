@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <MTG/MTGApi.h>
+#include <Mtg/MtgApi.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
