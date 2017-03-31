@@ -2,18 +2,81 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMFilteredImage.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRPTypeAdaptFilter.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRPTypeAdaptFilter.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HRPComplexFilter.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HRPFilter.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRAImageOp.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 //&&MM temp: to review when removing s_AddHRPFilterToPipeline
-#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HRADEMRaster.h>#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HRPMapFilters8.h>#include <ImagePP/all/h/HRPMapFilters16.h>#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePP/all/h/HRAImageOpConvFilter.h>#include <ImagePPInternal/gra/HRAImageSampler.h>#include <ImagePP/all/h/HRAImageOpMapFilters.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRPConvFilterV24R8G8B8.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>#include <ImagePP/all/h/HRPDensitySlicingFilter.h>#include <ImagePP/all/h/HRPDensitySlicingFilter8.h>#include <ImagePP/all/h/HRPDensitySlicingFilter16.h>#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter.h>#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter8.h>#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter16.h>#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>#include <ImagePP/all/h/HRPContrastStretchFilter8.h>#include <ImagePP/all/h/HRPContrastStretchFilter16.h>#include <ImagePP/all/h/HRPLigthnessContrastStretch.h>#include <ImagePP/all/h/HRPLigthnessContrastStretch8.h>#include <ImagePP/all/h/HRPLigthnessContrastStretch16.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HRPDEMFilter.h>#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HRADEMRaster.h>
+#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HRPMapFilters8.h>
+#include <ImagePP/all/h/HRPMapFilters16.h>
+#include <ImagePP/all/h/HRAImageOp.h>
+#include <ImagePP/all/h/HRAImageOpConvFilter.h>
+#include <ImagePPInternal/gra/HRAImageSampler.h>
+#include <ImagePP/all/h/HRAImageOpMapFilters.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRPConvFilterV24R8G8B8.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HRPFunctionFilters.h>
+#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>
+#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>
+#include <ImagePP/all/h/HRPDensitySlicingFilter.h>
+#include <ImagePP/all/h/HRPDensitySlicingFilter8.h>
+#include <ImagePP/all/h/HRPDensitySlicingFilter16.h>
+#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter.h>
+#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter8.h>
+#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter16.h>
+#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>
+#include <ImagePP/all/h/HRPContrastStretchFilter8.h>
+#include <ImagePP/all/h/HRPContrastStretchFilter16.h>
+#include <ImagePP/all/h/HRPLigthnessContrastStretch.h>
+#include <ImagePP/all/h/HRPLigthnessContrastStretch8.h>
+#include <ImagePP/all/h/HRPLigthnessContrastStretch16.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRPComplexFilter.h>
+#include <ImagePP/all/h/HRPDEMFilter.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+
 
 
 //&&MM need to think about active image that does things like:

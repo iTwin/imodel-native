@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIG4StripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIG4StripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFIG4StripEditor.h>#include <ImagePP/all/h/HRFIG4File.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFIG4StripEditor.h>
+#include <ImagePP/all/h/HRFIG4File.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

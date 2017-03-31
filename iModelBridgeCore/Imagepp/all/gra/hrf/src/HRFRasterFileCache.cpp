@@ -2,16 +2,32 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileCache.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCache
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HCDCodecFactory.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
-#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFcTiffFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>
+#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImagePP/all/h/HRFMessages.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+#include <ImagePP/all/h/HCDCodecFactory.h>
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
+
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFcTiffFile.h>
+
 
 //-----------------------------------------------------------------------------
 // HMR Message Map

@@ -2,12 +2,24 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageNearestSamplerRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePPInternal/gra/HRAImageNearestSamplerRLE.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HRPPixelType1bitInterface.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HRABitmapRLE.h>#include <ImagePPInternal/gra/HRAImageSurface.h>
+#include <ImageppInternal.h>
+
+#include <ImagePPInternal/gra/HRAImageNearestSamplerRLE.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
+#include <ImagePP/all/h/HRPPixelType1bitInterface.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRABitmapRLE.h>
+#include <ImagePPInternal/gra/HRAImageSurface.h>
+
 
 
 

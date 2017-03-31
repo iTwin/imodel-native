@@ -2,24 +2,50 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPDFLibInterface
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFPDFFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFPDFFile.h>
+
 #if defined(IPP_HAVE_PDF_SUPPORT) 
 
-#include <ImagePP/all/h/HFCBuffer.h>#include <ImagePP/all/h/HFCMemoryLineStream.h>
-#include <ImagePP/all/h/HGF2DProjective.h>
-#include <ImagePP/all/h/HMDAnnotationIconsPDF.h>#include <ImagePP/all/h/HMDLayersPDF.h>#include <ImagePP/all/h/HMDLayerInfoPDF.h>#include <ImagePP/all/h/HMDVolatileLayers.h>
-#include <ImagePP/all/h/HRFAnnotationsPDF.h>#include <ImagePP/all/h/HRFAnnotationInfoPDF.h>#include <ImagePP/all/h/HRFGdalUtilities.h>
+#include <ImagePP/all/h/HFCBuffer.h>
+#include <ImagePP/all/h/HFCMemoryLineStream.h>
 
-#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>#include <ImagePP/all/h/HVE2DEllipse.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DPolySegment.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-#include "HRFPDFLibInterface.h"
+#include <ImagePP/all/h/HGF2DProjective.h>
+
+#include <ImagePP/all/h/HMDAnnotationIconsPDF.h>
+#include <ImagePP/all/h/HMDLayersPDF.h>
+#include <ImagePP/all/h/HMDLayerInfoPDF.h>
+#include <ImagePP/all/h/HMDVolatileLayers.h>
+
+#include <ImagePP/all/h/HRFAnnotationsPDF.h>
+#include <ImagePP/all/h/HRFAnnotationInfoPDF.h>
+#include <ImagePP/all/h/HRFGdalUtilities.h>
+
+
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>
+#include <ImagePP/all/h/HVE2DEllipse.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HVE2DPolygon.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HVE2DPolySegment.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+
+#include "HRFPDFLibInterface.h"
+
 
     
 #define PAGE_PIXEL_PER_INCH        96
@@ -2391,5 +2417,7 @@ void HRFPDFLibInterface::SetLayerVisibility(PDDoc                      pi_pDoc,
     }
 
 
-#include <adobe/Source/PDFLInitHFT.c>#include <adobe/Source/PDFLInitCommon.c>
+#include <adobe/Source/PDFLInitHFT.c>
+#include <adobe/Source/PDFLInitCommon.c>
+
 #endif // IPP_HAVE_PDF_SUPPORT 

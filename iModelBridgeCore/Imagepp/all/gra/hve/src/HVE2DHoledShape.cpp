@@ -2,19 +2,26 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DHoledShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
 HPM_REGISTER_CLASS(HVE2DHoledShape, HVE2DShape)
 
 
-#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
 
 /** -----------------------------------------------------------------------------
     Default constructor for a holed shape. This constructor creates an empty

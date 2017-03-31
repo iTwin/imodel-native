@@ -2,10 +2,18 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSPssToken.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HVE2DShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HVE2DShape.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+
 #pragma once
 
 BEGIN_IMAGEPP_NAMESPACE

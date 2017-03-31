@@ -2,16 +2,34 @@
 //:>
 //:>     $Source: Tests/FileFormat/ExporterTestFixture.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : ExportTester
 //-----------------------------------------------------------------------------
 
-#include <Bentley/BeTest.h>#include <Bentley/md5.h>#include <ImagePP/h/ImageppAPI.h>#include <ImagePP/all/h/HRFFileFormats.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>#include "../Common/ImagePPTestConfig.h"#include <json/json.h>#include "ExporterTestFixture.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/md5.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HRFFileFormats.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
+#include "../Common/ImagePPTestConfig.h"
+#include <json/json.h>
+#include "ExporterTestFixture.h"
+
 //#ifdef USE_GTEST        // TEST_P only available when using gtest.
 
-#include <ImagePP/all/h/HUTClassIDDescriptor.h>#include <Bentley/BeFileName.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HUTClassIDDescriptor.h>
+#include <Bentley/BeFileName.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+
 USING_NAMESPACE_IMAGEPP
 
 //----------------------------------------------------------------------------------------

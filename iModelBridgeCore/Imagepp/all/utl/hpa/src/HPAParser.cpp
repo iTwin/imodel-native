@@ -2,14 +2,22 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPAParser.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPAParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPAParser.h>#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPARule.h>#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HPASession.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPAParser.h>
+#include <ImagePP/all/h/HPATokenizer.h>
+#include <ImagePP/all/h/HPAProduction.h>
+#include <ImagePP/all/h/HPAToken.h>
+#include <ImagePP/all/h/HPARule.h>
+#include <ImagePP/all/h/HPAException.h>
+#include <ImagePP/all/h/HPASession.h>
+
 //---------------------------------------------------------------------------
 // Constructor for this class.
 //---------------------------------------------------------------------------

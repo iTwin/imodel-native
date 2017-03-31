@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStoredRasterEquivalentTransfo.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>
-#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRAImageView.h>
+
+#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>
+
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>
+#include <ImagePP/all/h/HRAImageView.h>
+
 
 /** -----------------------------------------------------------------------------
     Constructor

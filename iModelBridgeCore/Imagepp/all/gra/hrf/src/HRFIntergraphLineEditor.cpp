@@ -2,16 +2,27 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFIntergraphLineEditor.h>#include <ImagePP/all/h/HRFIntergraphFile.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecCRL8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
-#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFIntergraphLineEditor.h>
+#include <ImagePP/all/h/HRFIntergraphFile.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDCodecCRL8.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
+
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+
 
 
 const uint32_t JPegTileTrailerSize     =   2;

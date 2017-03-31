@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPListPixelTypePtrs.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,8 +11,41 @@
 
 #pragma once
 
-#include "HRPPixelType.h"
-#include "HRPPixelTypeI1R8G8B8.h"#include "HRPPixelTypeI1R8G8B8RLE.h"#include "HRPPixelTypeI1R8G8B8A8.h"#include "HRPPixelTypeI1R8G8B8A8RLE.h"#include "HRPPixelTypeI4R8G8B8.h"#include "HRPPixelTypeI4R8G8B8A8.h"#include "HRPPixelTypeI8R8G8B8.h"#include "HRPPixelTypeI8R8G8B8A8.h"#include "HRPPixelTypeI8VA8R8G8B8.h"#include "HRPPixelTypeV1Gray1.h"#include "HRPPixelTypeV8Gray8.h"#include "HRPPixelTypeV16PRGray8A8.h"#include "HRPPixelTypeV24B8G8R8.h"#include "HRPPixelTypeV24PhotoYCC.h"#include "HRPPixelTypeV24R8G8B8.h"#include "HRPPixelTypeV32A8R8G8B8.h"#include "HRPPixelTypeV32PRPhotoYCCA8.h"#include "HRPPixelTypeV32PR8PG8PB8A8.h"#include "HRPPixelTypeV32R8G8B8A8.h"#include "HRPPixelTypeV32R8G8B8X8.h"#include "HRPPixelTypeV32B8G8R8X8.h"#include "HRPPixelTypeV32CMYK.h"#include "HRPPixelTypeV48R16G16B16.h"#include "HRPPixelTypeV64R16G16B16A16.h"#include "HRPPixelTypeV64R16G16B16X16.h"#include "HRPPixelTypeV1GrayWhite1.h"#include "HRPPixelTypeV8GrayWhite8.h"#include "HRPPixelTypeV16Gray16.h"#include "HRPPixelTypeV16Int16.h"#include "HRPPixelTypeV32Float32.h"#include "HRPPixelTypeI8R8G8B8Mask.h"#include "HRPPixelTypeI8Gray8.h"
+#include "HRPPixelType.h"
+
+#include "HRPPixelTypeI1R8G8B8.h"
+#include "HRPPixelTypeI1R8G8B8RLE.h"
+#include "HRPPixelTypeI1R8G8B8A8.h"
+#include "HRPPixelTypeI1R8G8B8A8RLE.h"
+#include "HRPPixelTypeI4R8G8B8.h"
+#include "HRPPixelTypeI4R8G8B8A8.h"
+#include "HRPPixelTypeI8R8G8B8.h"
+#include "HRPPixelTypeI8R8G8B8A8.h"
+#include "HRPPixelTypeI8VA8R8G8B8.h"
+#include "HRPPixelTypeV1Gray1.h"
+#include "HRPPixelTypeV8Gray8.h"
+#include "HRPPixelTypeV16PRGray8A8.h"
+#include "HRPPixelTypeV24B8G8R8.h"
+#include "HRPPixelTypeV24PhotoYCC.h"
+#include "HRPPixelTypeV24R8G8B8.h"
+#include "HRPPixelTypeV32A8R8G8B8.h"
+#include "HRPPixelTypeV32PRPhotoYCCA8.h"
+#include "HRPPixelTypeV32PR8PG8PB8A8.h"
+#include "HRPPixelTypeV32R8G8B8A8.h"
+#include "HRPPixelTypeV32R8G8B8X8.h"
+#include "HRPPixelTypeV32B8G8R8X8.h"
+#include "HRPPixelTypeV32CMYK.h"
+#include "HRPPixelTypeV48R16G16B16.h"
+#include "HRPPixelTypeV64R16G16B16A16.h"
+#include "HRPPixelTypeV64R16G16B16X16.h"
+#include "HRPPixelTypeV1GrayWhite1.h"
+#include "HRPPixelTypeV8GrayWhite8.h"
+#include "HRPPixelTypeV16Gray16.h"
+#include "HRPPixelTypeV16Int16.h"
+#include "HRPPixelTypeV32Float32.h"
+#include "HRPPixelTypeI8R8G8B8Mask.h"
+#include "HRPPixelTypeI8Gray8.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HRPListPixelTypePtrs
     {

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRSObjectStore.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRSObjectStore
@@ -11,9 +11,20 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HPMObjectStore.h>#include "HRFRasterFile.h"#include "HRFResolutionEditor.h"#include "HRFRasterFileFactory.h"#include "HRFRasterFileCapabilities.h"#include "HFCURLFile.h"#include "HFCAccessMode.h"#include "HRABitmap.h"
-#include "HRAStoredRaster.h"#include "HGFTileIDDescriptor.h"
-#include <ImagePP/all/h/HGSTypes.h>
+#include <ImagePP/all/h/HPMObjectStore.h>
+#include "HRFRasterFile.h"
+#include "HRFResolutionEditor.h"
+#include "HRFRasterFileFactory.h"
+#include "HRFRasterFileCapabilities.h"
+#include "HFCURLFile.h"
+#include "HFCAccessMode.h"
+#include "HRABitmap.h"
+
+#include "HRAStoredRaster.h"
+#include "HGFTileIDDescriptor.h"
+
+#include <ImagePP/all/h/HGSTypes.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HCDPacketRLE;
 class HRATiledRaster;
@@ -291,5 +302,6 @@ private:
     };
 END_IMAGEPP_NAMESPACE
 
-#include "HRSObjectStore.hpp"
+#include "HRSObjectStore.hpp"
+
 

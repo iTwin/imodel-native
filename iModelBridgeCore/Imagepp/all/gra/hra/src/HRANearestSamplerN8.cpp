@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRANearestSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,14 +10,19 @@
 //:> Class HRANearestSamplerN8
 //:>---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRANearestSamplerN8.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRASurface.h>
+
+#include <ImagePP/all/h/HRANearestSamplerN8.h>
+
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRASurface.h>
+
 //#define MMX_OPTIMIZE_ON
 
 #ifdef MMX_OPTIMIZE_ON
-#include <Imagepp/all/h/emmintrin.h>#endif
+#include <Imagepp/all/h/emmintrin.h>
+#endif
 
 /**----------------------------------------------------------------------------
  Constructor for this class

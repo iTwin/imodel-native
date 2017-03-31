@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffCacheFileCreator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,8 +11,18 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFCacheController.h>#include <ImagePP/all/h/HRFBilFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFcTiffFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFCacheController.h>
+#include <ImagePP/all/h/HRFBilFile.h>
+
 // MakeDir and Access
 
 static const Utf8String s_cTiffExtensionCache = ".cache.cTIFF"; // ctiff extension

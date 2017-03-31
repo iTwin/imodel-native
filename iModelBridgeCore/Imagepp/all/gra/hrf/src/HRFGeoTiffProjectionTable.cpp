@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffProjectionTable.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRFGeoTiffProjectionTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFGeoTiffProjectionTable.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFGeoTiffProjectionTable.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffProjectionTable.tbl
 
@@ -32,7 +36,8 @@
  @see HRFGeoTiffCompressedTable::ColumnInfo
  @see epsg.mdb
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffProjectionTable.tbl"
+#include "HRFGeoTiffProjectionTable.tbl"
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffProjectionTable.dat
 
@@ -47,7 +52,8 @@
  @see HRFGeoTiffCompressedTable
  @see HRFGeoTiffCompressTable application
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffProjectionTable.dat"
+#include "HRFGeoTiffProjectionTable.dat"
+
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------

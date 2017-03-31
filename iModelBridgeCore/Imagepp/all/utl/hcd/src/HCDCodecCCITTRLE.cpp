@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecCCITTRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecCCITTRLE
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecCCITTRLE.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecCCITTRLE.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 
 
 //#define SUPPORT_REVERSE_BIT_ONLY 1

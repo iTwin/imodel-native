@@ -2,15 +2,24 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRANearestSamplerRLE1.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HRPPixelType1bitInterface.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+
+#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
+
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HRPPixelType1bitInterface.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 #define RLE_RUN_LIMIT 32767
 
 /**----------------------------------------------------------------------------

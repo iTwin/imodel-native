@@ -2,24 +2,51 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFxChFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFxChFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFxChFile.h>#include <ImagePP/all/h/HRFxChEditor.h>
-#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFHMRFile.h>
-#include <ImagePP/all/h/HFCStat.h>
-#include <ImagePP/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
-#include <BeXml/BeXml.h>
+#include <ImagePP/all/h/HRFxChFile.h>
+#include <ImagePP/all/h/HRFxChEditor.h>
+
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRFHMRFile.h>
+
+#include <ImagePP/all/h/HFCStat.h>
+
+#include <ImagePP/all/h/HRPPixelType.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
+
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <BeXml/BeXml.h>
+
 
 
 /** ---------------------------------------------------------------------------

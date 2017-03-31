@@ -13,8 +13,11 @@
 
 #pragma once
 
-#include "HRFResolutionEditor.h"
-#include "HFCBinStream.h"#include "HTIFFUtils.h"
+#include "HRFResolutionEditor.h"
+
+#include "HFCBinStream.h"
+#include "HTIFFUtils.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HRFRLCFile;
 

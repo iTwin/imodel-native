@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStripAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,10 +10,31 @@
 // Methods for class HIMStripAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMStripAdapter.h>
-#include <ImagePP/all/h/HIMStripAdapterIterator.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HIMStripAdapter.h>
+
+#include <ImagePP/all/h/HIMStripAdapterIterator.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+
 
 HPM_REGISTER_CLASS(HIMStripAdapter, HRAImageView)
 

@@ -2,18 +2,22 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFTileIDDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGFTileIDDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HFCGrid.h>
+
+#include <ImagePP/all/h/HGF2DExtent.h>
+#include <ImagePP/all/h/HFCGrid.h>
+
 // The class declaration must be the last include file.
-#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+
 
 const uint64_t HGFTileIDDescriptor::INDEX_NOT_FOUND = UINT64_MAX;
 

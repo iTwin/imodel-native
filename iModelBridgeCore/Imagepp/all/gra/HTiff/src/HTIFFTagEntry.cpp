@@ -2,17 +2,22 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFTagEntry.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFTagEntry
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HTIFFTagEntry.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFDirectory.h>
-#include <ImagePP/all/h/HTIFFRational.h>
+
+#include <ImagePP/all/h/HTIFFTagEntry.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImagePP/all/h/HTIFFDirectory.h>
+
+#include <ImagePP/all/h/HTIFFRational.h>
+
 #define MAX_SPP     48      // Maximun number of sample by pixels
 
 

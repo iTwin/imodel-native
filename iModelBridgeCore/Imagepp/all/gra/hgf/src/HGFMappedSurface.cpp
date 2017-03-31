@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFMappedSurface.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,10 +11,19 @@
 // This class encapsulates the functionalities of the page
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
-#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>
+
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+
 
 //-----------------------------------------------------------------------------
 // Constructor

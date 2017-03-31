@@ -2,16 +2,20 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecJBIG.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCBinStream.h>
-#include <ImagePP/all/h/HCDCodecJBIG.h>
-#include <Imagepp/all/h/D:\BSI\08.09.00.xx\src\imagepp\ext\jbigkit\libjbig\jbig.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCBinStream.h>
+
+#include <ImagePP/all/h/HCDCodecJBIG.h>
+
+#include <Imagepp/all/h/D:\BSI\08.09.00.xx\src\imagepp\ext\jbigkit\libjbig\jbig.h>
+
 #define HCD_CODEC_NAME "JBIG"
 
 //-----------------------------------------------------------------------------

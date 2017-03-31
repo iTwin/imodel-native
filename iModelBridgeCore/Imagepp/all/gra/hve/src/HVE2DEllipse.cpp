@@ -2,19 +2,24 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DEllipse.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Methods for class HVE2DEllipse
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DEllipse.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
+#include <ImagePP/all/h/HVE2DEllipse.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
 HPM_REGISTER_CLASS(HVE2DEllipse, HVE2DSimpleShape)
 
-#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+
 #define NB_SAMPLINGS 50
 
 //-----------------------------------------------------------------------------

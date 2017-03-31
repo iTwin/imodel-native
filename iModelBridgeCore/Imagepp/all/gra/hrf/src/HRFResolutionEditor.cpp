@@ -2,15 +2,27 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResolutionEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFResolutionEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecImage.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecImage.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFResolutionDescriptor.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRPPixelPalette.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

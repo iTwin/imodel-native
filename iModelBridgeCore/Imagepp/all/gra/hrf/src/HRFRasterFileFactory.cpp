@@ -2,15 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRFRasterFileFactory
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>
+
+#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+
 
 // **** Kept here for history purpose only **********
 #ifdef _HRF_COM_SUPPORT

@@ -2,7 +2,7 @@
 |
 |     $Source: all/gra/hrf/src/HRFURLInternetImagingHTTP.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
@@ -10,8 +10,12 @@
 // Methods for class HRFURLInternetImagingHTTP
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>#include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLHTTP.h>
+#include <ImagePP/all/h/HFCURLHTTPS.h>
+#include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>
+
 //-----------------------------------------------------------------------------
 // This constructor configures the object from the detached parts of the URL
 // specification.

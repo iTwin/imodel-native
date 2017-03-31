@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hmg/src/HMGSink.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HMGSink
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMGSink.h>#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HMGMessageReceiver.h>
+
+#include <ImagePP/all/h/HMGSink.h>
+#include <ImagePP/all/h/HMGMessage.h>
+#include <ImagePP/all/h/HMGMessageReceiver.h>
+
 
 ///////////////////////
 // HMGMessageEnvelope

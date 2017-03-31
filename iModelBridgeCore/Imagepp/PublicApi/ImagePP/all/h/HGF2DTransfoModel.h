@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DTransfoModel
@@ -12,7 +12,10 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DShape.h>#include "HFCMatrix.h"
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HGF2DShape.h>
+#include "HFCMatrix.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;

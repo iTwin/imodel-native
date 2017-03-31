@@ -2,18 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFDtedEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 #ifdef IPP_HAVE_GDAL_SUPPORT
 
-#include <ImagePP/all/h/HRFDtedEditor.h>#include <ImagePP/all/h/HRFDtedFile.h>
-#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP/all/h/HRFDtedEditor.h>
+#include <ImagePP/all/h/HRFDtedFile.h>
+
+#include <ImagePP-GdalLib/gdal_priv.h>
+
 #define BAND_1 0
 #define BAND_2 1
 #define BAND_3 2

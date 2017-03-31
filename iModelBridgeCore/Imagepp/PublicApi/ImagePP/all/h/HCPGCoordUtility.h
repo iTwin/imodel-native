@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordUtility.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,10 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HFCMacros.h>#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HFCMacros.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DWorldCluster;

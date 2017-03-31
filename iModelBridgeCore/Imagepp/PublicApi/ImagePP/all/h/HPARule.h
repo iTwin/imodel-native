@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPARule.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPARule
@@ -17,7 +17,9 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HPAGrammarObject.h>#include <ImagePP/all/h/HPAProduction.h>
+#include <ImagePP/all/h/HPAGrammarObject.h>
+#include <ImagePP/all/h/HPAProduction.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HPARule : public HPAGrammarObject
     {
@@ -58,4 +60,5 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPARule.hpp"
+#include "HPARule.hpp"
+

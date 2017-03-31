@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+
 //:Ignore
 // This is the creator that registers itself in the scheme list.
 struct URLFileCreator : public HFCURL::Creator

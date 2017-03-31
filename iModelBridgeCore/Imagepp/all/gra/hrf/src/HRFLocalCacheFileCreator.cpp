@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLocalCacheFileCreator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,8 +11,16 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>#include <ImagePP/all/h/HRFiTiffFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
+#include <ImagePP/all/h/HRFiTiffFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
 //-----------------------------------------------------------------------------
 // This is a helper class to instantiate an implementation object
 // without knowing the different implementations.

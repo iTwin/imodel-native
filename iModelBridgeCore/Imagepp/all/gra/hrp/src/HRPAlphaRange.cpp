@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPAlphaRange.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for HRPAlphaRange
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPAlphaRange.h>#include <ImagePP/all/h/HGFRGBCube.h>
+
+#include <ImagePP/all/h/HRPAlphaRange.h>
+#include <ImagePP/all/h/HGFRGBCube.h>
+
 //-----------------------------------------------------------------------------
 // public
 // default constructor.

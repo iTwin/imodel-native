@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPComplexConverter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPComplexConverter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPComplexConverter.h>
+
+#include <ImagePP/all/h/HRPComplexConverter.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor

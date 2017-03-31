@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRawLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFRawLineEditor.h>#include <ImagePP/all/h/HRFRawFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFRawLineEditor.h>
+#include <ImagePP/all/h/HRFRawFile.h>
+
 
 
 //-----------------------------------------------------------------------------

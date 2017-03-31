@@ -2,12 +2,15 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCCallbackRegistry.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCCallbackRegistry.h>#include <ImagePP/all/h/HFCCallback.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCCallbackRegistry.h>
+#include <ImagePP/all/h/HFCCallback.h>
+
 
 // Singleton
 HFC_IMPLEMENT_SINGLETON(HFCCallbackRegistry)

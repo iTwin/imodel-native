@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPcxLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPcxLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>                //:> must be first for PreCompiledHeader Option
-#include <ImagePP/all/h/HRFPcxLineEditor.h>#include <ImagePP/all/h/HRFPcxFile.h>
+#include <ImageppInternal.h>
+                //:> must be first for PreCompiledHeader Option
+#include <ImagePP/all/h/HRFPcxLineEditor.h>
+#include <ImagePP/all/h/HRFPcxFile.h>
+
 //:Ignore
 #define BUFFER_SIZE 16
 #define END_OF_HEADER_OFFSET 128

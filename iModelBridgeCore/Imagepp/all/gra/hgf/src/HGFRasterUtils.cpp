@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFRasterUtils.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
 
-#include <Imagepp/all/h/HGFRasterUtils.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HGF2DGrid.h>
+
+#include <Imagepp/all/h/HGFRasterUtils.h>
+#include <ImagePP/all/h/HGF2DExtent.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+
 
 
 // bit utilities... to be packaged elsewhere in a class

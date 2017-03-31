@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DVoidShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DVoidShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
 HPM_REGISTER_CLASS(HVE2DVoidShape, HVE2DSimpleShape)
 
 //-----------------------------------------------------------------------------

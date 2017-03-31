@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRPackBits.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecHMRPackBits
@@ -13,9 +13,12 @@
 // Programming graphic files in C and C++, by John Levine, Wiley.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDException.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
+
+#include <ImagePP/all/h/HCDException.h>
+#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
+
 
 //-----------------------------------------------------------------------------
 // public

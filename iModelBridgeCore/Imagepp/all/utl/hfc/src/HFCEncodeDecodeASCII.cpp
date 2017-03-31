@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEncodeDecodeASCII.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
+
+#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
+
 //-----------------------------------------------------------------------------
 // Static method...
 //-----------------------------------------------------------------------------

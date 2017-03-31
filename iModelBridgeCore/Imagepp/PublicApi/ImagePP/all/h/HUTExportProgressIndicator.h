@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTExportProgressIndicator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTExportProgressIndicator
@@ -11,8 +11,11 @@
 
 //----------------------------------------------------------------------------
 
-#include <ImagePP/all/h/HFCProgressIndicator.h>#include <ImagePP/all/h/HFCMacros.h>
-#include "HRFRasterFile.h"//----------------------------------------------------------------------------
+#include <ImagePP/all/h/HFCProgressIndicator.h>
+#include <ImagePP/all/h/HFCMacros.h>
+
+#include "HRFRasterFile.h"
+//----------------------------------------------------------------------------
 
 BEGIN_IMAGEPP_NAMESPACE
 class HUTExportProgressIndicator : public HFCProgressIndicator
@@ -41,5 +44,6 @@ private:
 END_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------
-#include "HUTExportProgressIndicator.hpp"
+#include "HUTExportProgressIndicator.hpp"
+
 

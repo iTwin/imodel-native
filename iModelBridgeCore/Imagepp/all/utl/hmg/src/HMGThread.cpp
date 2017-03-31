@@ -2,15 +2,20 @@
 //:>
 //:>     $Source: all/utl/hmg/src/HMGThread.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HMGThread
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMGThread.h>#include <ImagePP/all/h/HMGMacros.h>#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HMGSink.h>
+
+#include <ImagePP/all/h/HMGThread.h>
+#include <ImagePP/all/h/HMGMacros.h>
+#include <ImagePP/all/h/HMGMessage.h>
+#include <ImagePP/all/h/HMGSink.h>
+
 
 // Definition of class statics
 

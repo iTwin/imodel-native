@@ -2,19 +2,41 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBufferedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMBufferedImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMBufferedImage.h>#include <ImagePP/all/h/HIMBufferedImageIterator.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>
-#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRAMessages.h>
-#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HRPMessages.h>
-#include <ImagePP/all/h/HMDContext.h>
+
+#include <ImagePP/all/h/HIMBufferedImage.h>
+#include <ImagePP/all/h/HIMBufferedImageIterator.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HFCMonitor.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HGSTypes.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRAMessages.h>
+
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>
+#include <ImagePP/all/h/HGFException.h>
+#include <ImagePP/all/h/HRPMessages.h>
+
+#include <ImagePP/all/h/HMDContext.h>
+
 
 ///////////////////////////////////
 // HIMBufferedImage class

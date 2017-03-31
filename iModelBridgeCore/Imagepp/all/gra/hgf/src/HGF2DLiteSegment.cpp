@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLiteSegment.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLiteSegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DLiteLine.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGF2DLiteSegment.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DLiteLine.h>
+
 
 /** -----------------------------------------------------------------------------
     This method checks that self segment is crossed at junction point

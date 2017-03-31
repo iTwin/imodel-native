@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DDisplacement.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DDisplacement
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+
 
 /** -----------------------------------------------------------------------------
     This method permits to extract the bearing of the displacement.

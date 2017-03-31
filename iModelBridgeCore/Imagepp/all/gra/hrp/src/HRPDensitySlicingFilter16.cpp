@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPDensitySlicingFilter16.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPDensitySlicingFilter16
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPDensitySlicingFilter16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+
+#include <ImagePP/all/h/HRPDensitySlicingFilter16.h>
+#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
 //-----------------------------------------------------------------------------

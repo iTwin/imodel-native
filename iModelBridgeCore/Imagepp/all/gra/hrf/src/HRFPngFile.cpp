@@ -2,17 +2,43 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFPngFile.h>
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePP/all/h/HFCBuffer.h>
-#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPHistogram.h>#include <ImagePP/all/h/HRFPngLineEditor.h>#include <ImagePP/all/h/HRFPngImageEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HRFPngFile.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HFCMemoryBinStream.h>
+#include <ImagePP/all/h/HFCBuffer.h>
+
+#include <ImagePP/all/h/HRPChannelOrgGray.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPHistogram.h>
+#include <ImagePP/all/h/HRFPngLineEditor.h>
+#include <ImagePP/all/h/HRFPngImageEditor.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //**************** TO DO ******************
 //#include "HRPPixelTypeI2SR8G8B8A8.h"
 //#include "HRPPixelTypeV16Gray8Alpha8.h"
@@ -22,8 +48,11 @@
 //#include "HRPPixelTypeV64R16G16B16A16.h"
 //******************************************
 
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <png/png.h>
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <png/png.h>
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
 static void hmr_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
     {
     png_size_t check;

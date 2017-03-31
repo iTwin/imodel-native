@@ -2,20 +2,29 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DOrientedRectangle.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HVE2DOrientedRectangle
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DOrientedRectangle.h>
+
+#include <ImagePP/all/h/HVE2DOrientedRectangle.h>
+
 HPM_REGISTER_CLASS(HVE2DOrientedRectangle, HVE2DSimpleShape)
 
 
-#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <Imagepp/all/h/HVEShapeRasterLine.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HVE2DPolygon.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <Imagepp/all/h/HVEShapeRasterLine.h>
+
 
 //-----------------------------------------------------------------------------
 // GenerateScanLines

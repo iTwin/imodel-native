@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPANode.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -25,7 +25,10 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HPASession.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HPASession.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 class HPAParser;
@@ -103,4 +106,5 @@ struct HPANodeCreator
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPANode.hpp"
+#include "HPANode.hpp"
+

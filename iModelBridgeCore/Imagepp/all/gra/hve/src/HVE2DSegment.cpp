@@ -2,20 +2,25 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DSegment.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DSegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
-#include <ImagePP/all/h/HVE2DSegment.h>
+
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+
+#include <ImagePP/all/h/HVE2DSegment.h>
+
 HPM_REGISTER_CLASS(HVE2DSegment, HVE2DLinear)
 
 
-#include <ImagePP/all/h/HVE2DComplexLinear.h>
+#include <ImagePP/all/h/HVE2DComplexLinear.h>
+
 
 //-----------------------------------------------------------------------------
 // Rotate

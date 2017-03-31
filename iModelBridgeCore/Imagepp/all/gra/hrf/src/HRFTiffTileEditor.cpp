@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFTiffTileEditor.h>#include <ImagePP/all/h/HRFTiffFile.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HCDPacket.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFTiffTileEditor.h>
+#include <ImagePP/all/h/HRFTiffFile.h>
+#include <ImagePP/all/h/HTIFFFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+
 #define RASTER_FILE     static_cast<HRFTiffFile*>(GetRasterFile().GetPtr())
 #define TIFF_FILE       (RASTER_FILE->GetFilePtr())
 

@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFPXSingleColor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecFPXSingleColor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>
+
 
 //-----------------------------------------------------------------------------
 // public

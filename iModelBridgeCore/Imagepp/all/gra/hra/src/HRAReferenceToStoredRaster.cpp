@@ -2,13 +2,17 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAReferenceToStoredRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRAReferenceToRaster
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HMGMessage.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HMGMessage.h>
+
 
 HPM_REGISTER_CLASS(HRAReferenceToStoredRaster, HRAReferenceToRaster)
 

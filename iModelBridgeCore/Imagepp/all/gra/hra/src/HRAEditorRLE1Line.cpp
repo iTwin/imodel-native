@@ -2,17 +2,22 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditorRLE1Line.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>---------------------------------------------------------------------------------------
 //:> Method for class HRAEditorRLE1Line
 //:>---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAEditorRLE1Line.h>
-#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRAEditorRLE1Line.h>
+
+#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
 // We assume blacks are on 0 and whites on 1
 #define ON_BLACK_STATE(bufferIndex) (!(bufferIndex & 0x00000001))       // block run is ON even number. 0,2,4,6...
 #define RLE_RUN_LIMIT 32767

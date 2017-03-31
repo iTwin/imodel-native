@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileCapabilities.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
+#include <ImageppInternal.h>
+ // Must be the first include.
 
-#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
 /** -----------------------------------------------------------------------------
     This is the constructor. An empty capability set is created. Since capabilities
     cannot be added unless access is possible to the Add() protected method,

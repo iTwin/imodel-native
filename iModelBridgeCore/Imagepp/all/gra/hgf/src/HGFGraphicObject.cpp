@@ -2,19 +2,26 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFGraphicObject.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGFGraphicObject
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HMDMetaDataContainerList.h>#include <ImagePP/all/h/HPMAttributeSet.h>#include <ImagePP/all/h/HGFMessages.h>
+
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DExtent.h>
+#include <ImagePP/all/h/HMDMetaDataContainerList.h>
+#include <ImagePP/all/h/HPMAttributeSet.h>
+#include <ImagePP/all/h/HGFMessages.h>
+
 // The class declaration must be the last include file.
-#include <ImagePP/all/h/HGFGraphicObject.h>
+#include <ImagePP/all/h/HGFGraphicObject.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HGFGraphicObject, HPMPersistentObject)
 
 

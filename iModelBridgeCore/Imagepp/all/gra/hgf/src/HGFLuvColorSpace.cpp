@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFLuvColorSpace.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFLuvColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGFLuvColorSpace.h>#include <ImagePP/all/h/HFCMaths.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGFLuvColorSpace.h>
+#include <ImagePP/all/h/HFCMaths.h>
+
 #define CIE_E     (216.0 / 24389.0)  // 0.00885645168
 #define CIE_K     (24389.0 / 27.0 )  // 903.296296296
 

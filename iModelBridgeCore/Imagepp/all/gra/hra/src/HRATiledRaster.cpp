@@ -2,16 +2,55 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATiledRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRATiledRasterIterator.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRABitmapRLE.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HRAHistogramProgressIndicator.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HRATransaction.h>
-#include <ImagePP/all/h/HRARasterEditor.h>#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HRAEditor.h>
-#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGFMappedSurface.h>
-#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/DownSampling.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>#include <ImagePPInternal/gra/ImageAllocator.h>
+
+#include <ImagePP/all/h/HRATiledRaster.h>
+#include <ImagePP/all/h/HRATiledRasterIterator.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRFMessages.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRABitmapRLE.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>
+#include <ImagePP/all/h/HRAHistogramProgressIndicator.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRARasterEditor.h>
+#include <ImagePP/all/h/HRABitmapEditor.h>
+#include <ImagePP/all/h/HRAEditor.h>
+
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/DownSampling.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePPInternal/gra/ImageAllocator.h>
+
 
 #define MANAGEABLE_RASTER_PHYSICAL_SIZE (1024)
 

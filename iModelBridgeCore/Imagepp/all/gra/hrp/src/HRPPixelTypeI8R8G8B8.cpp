@@ -2,17 +2,25 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeI8R8G8B8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeI8R8G8B8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
+#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+
 HPM_REGISTER_CLASS(HRPPixelTypeI8R8G8B8, HRPPixelTypeRGB)
 
 // STL typeDef

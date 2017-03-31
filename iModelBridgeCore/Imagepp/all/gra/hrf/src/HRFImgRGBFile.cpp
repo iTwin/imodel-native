@@ -2,16 +2,29 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgRGBFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>
+    //:> must be first for PreCompiledHeader Option
 
-#include <ImagePP/all/h/HRFImgRGBFile.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCStat.h>
-#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFImgRGBLineEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HRFImgRGBFile.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCStat.h>
+
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRFImgRGBLineEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 /** ---------------------------------------------------------------------------
     Block capabilities of the ImgRGB file format.
     ImgRGB file format only supports line capability with random access.

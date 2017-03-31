@@ -2,17 +2,28 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStripAdapterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMStripAdapterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMStripAdapterIterator.h>
-#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HIMStripProgressIndicator.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HIMStripAdapter.h>
+
+#include <ImagePP/all/h/HIMStripAdapterIterator.h>
+
+#include <ImagePP/all/h/HRAReferenceToRaster.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HIMStripProgressIndicator.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HIMStripAdapter.h>
+
 
 //-----------------------------------------------------------------------------
 // Shaped constructor.  It takes a pointer to the raster to scan, and the region

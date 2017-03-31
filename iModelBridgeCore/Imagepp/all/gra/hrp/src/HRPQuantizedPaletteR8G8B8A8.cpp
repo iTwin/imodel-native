@@ -2,13 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPQuantizedPaletteR8G8B8A8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8A8.h>#include <ImagePP/all/h/HRPHistogram.h>
+
+#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8A8.h>
+#include <ImagePP/all/h/HRPHistogram.h>
+
 /**----------------------------------------------------------------------------
    Constructor for HRPQuantizedPaletteR8G8B8A8
    ----------------------------------------------------------------------------

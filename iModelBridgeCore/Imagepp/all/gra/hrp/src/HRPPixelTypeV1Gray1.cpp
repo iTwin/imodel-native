@@ -2,16 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV1Gray1.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV1Gray1
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HFCMath.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRPChannelOrgGray.h>
+
+
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 // According non linear human vision perception, a source having
 // only 18% of a reference luminance appears about half bright.
 // We usually dont have any reference, so, take the max range as

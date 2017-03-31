@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLCommonInternet.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLCommonInternet
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURLCommonInternet.h>#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
+
+#include <ImagePP/all/h/HFCURLCommonInternet.h>
+#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
+
 //:Ignore
 //-----------------------------------------------------------------------------
 // Little static function that is used by constructor

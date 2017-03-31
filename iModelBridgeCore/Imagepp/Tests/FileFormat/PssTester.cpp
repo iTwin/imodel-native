@@ -2,13 +2,26 @@
 //:>
 //:>     $Source: Tests/FileFormat/PssTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : ExportiTiffTester
 //-----------------------------------------------------------------------------
 
-#include <Bentley/BeTest.h>#include <ImagePP/h/ImageppAPI.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>#include "../Common/ImagePPTestConfig.h"#include "ExporterTestFixture.h"#include <Bentley/BeFileName.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRFiTiffFile.h>#include <Bentley/BeDirectoryIterator.h>#include <ImagePP/all/h/HPSObjectStore.h>
+#include <Bentley/BeTest.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
+#include "../Common/ImagePPTestConfig.h"
+#include "ExporterTestFixture.h"
+#include <Bentley/BeFileName.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRFiTiffFile.h>
+#include <Bentley/BeDirectoryIterator.h>
+#include <ImagePP/all/h/HPSObjectStore.h>
+
 
 USING_NAMESPACE_IMAGEPP
 //#ifdef USE_GTEST        // TEST_P only available when using gtest.

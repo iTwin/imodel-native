@@ -2,20 +2,27 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+
+#include <ImagePP/all/h/HGF2DShape.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+
 
 // HPM_REGISTER_ABSTRACT_CLASS(HGF2DShape, HGF2DVector)
 
 
-#include <ImagePP/all/h/HGF2DSimpleShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HGF2DSimpleShape.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DSegment.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
 
 //-----------------------------------------------------------------------------
 // Rasterize

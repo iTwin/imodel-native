@@ -2,20 +2,53 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFErMapperSupportedFile.h>#if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/ImageppLib.h>
-#include <ImagePP/all/h/HCDCodecECW.h>#include <ImagePP/all/h/HCDCodecJPEG2000.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLECWP.h>#include <ImagePP/all/h/HFCURLECWPS.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HRFErMapperSupportedFileEditor.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HVETileIDIterator.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+#if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
+
+#include <ImagePP/all/h/ImageppLib.h>
+
+#include <ImagePP/all/h/HCDCodecECW.h>
+#include <ImagePP/all/h/HCDCodecJPEG2000.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLECWP.h>
+#include <ImagePP/all/h/HFCURLECWPS.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HRFErMapperSupportedFileEditor.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HTIFFTag.h>
+#include <ImagePP/all/h/HVETileIDIterator.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 // Includes from the ERMapper SDK
-#include <ErdasEcwJpeg2000/NCSECWClient.h>#include <ErdasEcwJpeg2000/NCSTypes.h>#include <ErdasEcwJpeg2000/NCSECWCompressClient.h>
+#include <ErdasEcwJpeg2000/NCSECWClient.h>
+#include <ErdasEcwJpeg2000/NCSTypes.h>
+#include <ErdasEcwJpeg2000/NCSECWCompressClient.h>
+
 // We cannot forward declare NCS typedef so we use a struct to hide them in the header file.
 struct NCSObjects 
     {

@@ -2,21 +2,41 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFFliFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSpotFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <ImagePP/all/h/HRFFliFile.h>
-#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePP/all/h/HFCBuffer.h>
-#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPHistogram.h>#include <ImagePP/all/h/HRFFliCompressLineEditor.h>#include <ImagePP/all/h/HRFFliLineEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFLIRLE8.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HRFUtility.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFFliFile.h>
+
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCMemoryBinStream.h>
+#include <ImagePP/all/h/HFCBuffer.h>
+
+#include <ImagePP/all/h/HRPChannelOrgGray.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPHistogram.h>
+#include <ImagePP/all/h/HRFFliCompressLineEditor.h>
+#include <ImagePP/all/h/HRFFliLineEditor.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecFLIRLE8.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
 
 //////////////////////////////////////////////////////////////////////////
 #define FLIC_CEL_DATA       3       /*registration and transparency*/

@@ -2,15 +2,43 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodec
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDCodecFactory.h>#include <ImagePP/all/h/HCDCodecBMPRLE4.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HCDCodecCCITTRLE.h>#include <ImagePP/all/h/HCDCodecCRL8.h>#include <ImagePP/all/h/HCDCodecECW.h>#include <ImagePP/all/h/HCDCodecErMapperSupported.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecFlashpixOLDForMSI10.h>#include <ImagePP/all/h/HCDCodecFLIRLE8.h>#include <ImagePP/all/h/HCDCodecJBIG.h>#include <ImagePP/all/h/HCDCodecLRDRLE.h>#include <ImagePP/all/h/HCDCodecLZW.h>#include <ImagePP/all/h/HCDCodecRLE8.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecTgaRLE.h>#include <ImagePP/all/h/HCDCodecPCX.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecJPEG2000.h>#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>#include <ImagePP/all/h/HCDCodecZlib.h>
+
+#include <ImagePP/all/h/HCDCodecFactory.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE4.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
+#include <ImagePP/all/h/HCDCodecCCITTRLE.h>
+#include <ImagePP/all/h/HCDCodecCRL8.h>
+#include <ImagePP/all/h/HCDCodecECW.h>
+#include <ImagePP/all/h/HCDCodecErMapperSupported.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>
+#include <ImagePP/all/h/HCDCodecFlashpixOLDForMSI10.h>
+#include <ImagePP/all/h/HCDCodecFLIRLE8.h>
+#include <ImagePP/all/h/HCDCodecJBIG.h>
+#include <ImagePP/all/h/HCDCodecLRDRLE.h>
+#include <ImagePP/all/h/HCDCodecLZW.h>
+#include <ImagePP/all/h/HCDCodecRLE8.h>
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
+#include <ImagePP/all/h/HCDCodecTgaRLE.h>
+#include <ImagePP/all/h/HCDCodecPCX.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
+#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>
+#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecJPEG2000.h>
+#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+
 
 #define REGISTER_CODEC(pi_ClassName) \
     static struct pi_ClassName##Creator : public HCDCodecFactory::HCDCodecCreator \

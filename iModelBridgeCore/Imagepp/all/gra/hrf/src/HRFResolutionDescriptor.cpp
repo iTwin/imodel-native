@@ -2,17 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResolutionDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFCachedFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Default constructor.

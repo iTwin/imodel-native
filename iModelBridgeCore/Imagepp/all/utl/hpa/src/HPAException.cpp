@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPAException.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPAException
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HPANode.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPAException.h>
+#include <ImagePP/all/h/HPANode.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 
 //-----------------------------------------------------------------------------
 // public

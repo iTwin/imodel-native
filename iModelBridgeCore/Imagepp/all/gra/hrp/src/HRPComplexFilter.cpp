@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPComplexFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPComplexFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPComplexFilter.h>
+
+#include <ImagePP/all/h/HRPComplexFilter.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

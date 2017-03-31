@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelType1BitInterface.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelType1bitInterface.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelType1bitInterface.h>
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.Marchand  02/2005
 +---------------+---------------+---------------+---------------+---------------+------*/

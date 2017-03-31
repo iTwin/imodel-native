@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSunRasterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSunRasterLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFSunRasterFile.h>#include <ImagePP/all/h/HRFSunRasterEditor.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFSunRasterFile.h>
+#include <ImagePP/all/h/HRFSunRasterEditor.h>
+
 //---------------------------------------------- HRFSunRasterLineEditor
 
 //-----------------------------------------------------------------------------

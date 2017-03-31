@@ -2,17 +2,27 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPixelTypeReplacer.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAPixelTypeReplacer
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAPixelTypeReplacer.h>
-#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HRAPixelTypeReplacer.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 
 
 HPM_REGISTER_CLASS(HRAPixelTypeReplacer, HRAImageView)

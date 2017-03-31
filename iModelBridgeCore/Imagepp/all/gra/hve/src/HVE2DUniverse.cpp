@@ -2,19 +2,24 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DUniverse.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DUniverse
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
+#include <ImagePP/all/h/HVE2DUniverse.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+
 HPM_REGISTER_CLASS(HVE2DUniverse, HVE2DSimpleShape)
 
 
-#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+
 
 //-----------------------------------------------------------------------------
 // Default Constructor

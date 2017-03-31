@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -13,9 +13,14 @@
 //* This editor is not used for now *
 //***********************************
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HRFBmpCompressLineEditor.h>
+
+#include <ImagePP/all/h/HRFBmpFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
+#include <ImagePP/all/h/HRFBmpCompressLineEditor.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

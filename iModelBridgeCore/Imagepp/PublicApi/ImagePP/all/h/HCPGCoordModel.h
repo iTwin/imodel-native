@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordModel.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,8 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;

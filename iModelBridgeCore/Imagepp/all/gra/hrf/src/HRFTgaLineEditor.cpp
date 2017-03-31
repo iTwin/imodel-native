@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HRFTgaLineEditor.h>#include <ImagePP/all/h/HRFTgaFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCMath.h>
+#include <ImagePP/all/h/HRFTgaLineEditor.h>
+#include <ImagePP/all/h/HRFTgaFile.h>
+
 #ifndef DIVROUNDUP
 #define DIVROUNDUP(x,y) ((x % y) != 0 ? (x / y) + 1 : x / y)
 #endif

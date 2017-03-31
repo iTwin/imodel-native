@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLMemFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLMemFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLMemFile.h>
+
 //:Ignore
 // This is the creator that registers itself in the scheme list.
 struct URLMemoryCreator : public HFCURL::Creator

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDLZWEncoder.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDLZWEncoder
@@ -11,8 +11,11 @@
 // See : http://www.libtiff.org/
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDLZWEncoder.h>#include <ImagePP/all/h/HFCMath.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDLZWEncoder.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 HCDLZWEncoder::HCDLZWEncoder()
     {
     }

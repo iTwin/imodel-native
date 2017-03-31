@@ -2,10 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageOpContrastStretchFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>#include <ImagePP/all/h/HGFLuvColorSpace.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>
+#include <ImagePP/all/h/HGFLuvColorSpace.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
+#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+
 
 
 

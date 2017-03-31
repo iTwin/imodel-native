@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPConvFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPConvFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPConvFilter.h>
+
+#include <ImagePP/all/h/HRPConvFilter.h>
+
 //-----------------------------------------------------------------------------
 // protected
 // Constructor.

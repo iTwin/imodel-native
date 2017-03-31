@@ -6,14 +6,16 @@
 //:>       $Date: 2011/12/22 14:03:54 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoreferenceContext
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HPMPersistentObject.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoreferenceContext : public HFCShareableObject<HRFGeoreferenceContext>

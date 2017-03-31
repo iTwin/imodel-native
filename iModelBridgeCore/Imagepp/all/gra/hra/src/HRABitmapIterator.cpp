@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapIterator
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRABitmapIterator.h>#include <ImagePP/all/h/HRABitmapBase.h>
+
+#include <ImagePP/all/h/HRABitmapIterator.h>
+#include <ImagePP/all/h/HRABitmapBase.h>
+
 //-----------------------------------------------------------------------------
 // HRABitmapIterator::HRABitmapIterator - Constructor
 //-----------------------------------------------------------------------------

@@ -2,21 +2,34 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DShape.h>
+
+#include <ImagePP/all/h/HVE2DShape.h>
+
 
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DShape, HVE2DVector)
 
 
-#include <ImagePP/all/h/HVE2DSimpleShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HGFScanlines.h>
-#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DSimpleShape.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HVE2DUniverse.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
+#include <ImagePP/all/h/HGF2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DComplexShape.h>
+
 //-----------------------------------------------------------------------------
 // Rasterize
 // This method rasterizes (generates scanlines) for the shape.

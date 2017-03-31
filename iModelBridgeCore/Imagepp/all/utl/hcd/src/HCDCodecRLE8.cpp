@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecRLE8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecRLE8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecRLE8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecRLE8.h>
+
 #define HCD_CODEC_NAME "RLE8bits"
 
 //-----------------------------------------------------------------------------

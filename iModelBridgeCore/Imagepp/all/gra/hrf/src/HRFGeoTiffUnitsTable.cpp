@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffUnitsTable.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRFGeoTiffUnitsTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFGeoTiffUnitsTable.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFGeoTiffUnitsTable.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffUnitsTable.tbl
 
@@ -32,7 +36,8 @@
  @see HRFGeoTiffCompressedTable::ColumnInfo
  @see epsg.mdb
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffUnitsTable.tbl"
+#include "HRFGeoTiffUnitsTable.tbl"
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffCoordSysTable.dat
 
@@ -47,7 +52,8 @@
  @see HRFGeoTiffCompressedTable
  @see HRFGeoTiffCompressTable application
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffUnitsTable.dat"
+#include "HRFGeoTiffUnitsTable.dat"
+
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------

@@ -2,15 +2,22 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSNode.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSNode
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HPSNode.h>#include "HPSSession.h"#include "HPSParserScope.h"#include "HPSInternalNodes.h"#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HRARaster.h>
+
+#include <ImagePP/all/h/HPSNode.h>
+#include "HPSSession.h"
+#include "HPSParserScope.h"
+#include "HPSInternalNodes.h"
+#include <ImagePP/all/h/HPSException.h>
+#include <ImagePP/all/h/HRARaster.h>
+
 //---------------------------------------------------------------------------
 HPSNode::HPSNode(HPAGrammarObject* pi_pObj,
                  const HPANodeList& pi_rList,

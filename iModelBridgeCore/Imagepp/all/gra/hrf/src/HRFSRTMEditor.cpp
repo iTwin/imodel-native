@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSRTMEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSRTMLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFSRTMFile.h>#include <ImagePP/all/h/HRFSRTMEditor.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFSRTMFile.h>
+#include <ImagePP/all/h/HRFSRTMEditor.h>
+
 //---------------------------------------------- HRFSRTMLineEditor
 
 //-----------------------------------------------------------------------------

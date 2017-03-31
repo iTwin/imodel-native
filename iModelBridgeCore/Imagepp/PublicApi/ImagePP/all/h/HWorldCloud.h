@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HWorldCloud.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+
 //
 // Temp World .....
 //

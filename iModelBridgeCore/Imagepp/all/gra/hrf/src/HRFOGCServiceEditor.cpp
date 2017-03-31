@@ -2,20 +2,47 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceEditor
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include "HRFOGCServiceEditor.h"#include <ImagePP/all/h/HRFOGCService.h>
-#include <ImagePP/all/h/HCDCodecImage.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HRFGifFile.h>#include <ImagePP/all/h/HRFJpegFile.h>#include <ImagePP/all/h/HRFGeoTiffFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
-#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
-#include <ImagePP/all/h/HMDLayerInfoWMS.h>#include <ImagePP/all/h/HMDVolatileLayers.h>
-#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
-#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePPInternal/HttpConnection.h>
+
+#include "HRFOGCServiceEditor.h"
+#include <ImagePP/all/h/HRFOGCService.h>
+
+#include <ImagePP/all/h/HCDCodecImage.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <ImagePP/all/h/HRFBmpFile.h>
+#include <ImagePP/all/h/HRFGifFile.h>
+#include <ImagePP/all/h/HRFJpegFile.h>
+#include <ImagePP/all/h/HRFGeoTiffFile.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HFCExceptionHandler.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include <ImagePP/all/h/HMDLayerInfoWMS.h>
+#include <ImagePP/all/h/HMDVolatileLayers.h>
+
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePPInternal/HttpConnection.h>
+
 #define OGC_RASTERFILE          static_cast<HRFOGCService*>(GetRasterFile().GetPtr())
 #define NB_BLOCK_READER_THREAD  4
 

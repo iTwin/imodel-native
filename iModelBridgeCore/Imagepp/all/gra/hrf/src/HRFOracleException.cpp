@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOracleException.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation for HRFOracleException
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFOracleException.h>
+
+#include <ImagePP/all/h/HRFOracleException.h>
+
 typedef map<HRFOracleException::ErrorCode, ImagePPExceptions::StringId> ErrorMap;
 typedef ErrorMap::value_type                                            ErrorMapItem;
 

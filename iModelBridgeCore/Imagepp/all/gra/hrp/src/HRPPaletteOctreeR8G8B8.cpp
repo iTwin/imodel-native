@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPaletteOctreeR8G8B8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
+
 HRPPaletteOctreeR8G8B8 g_PaletteOctreeR8G8B8;
 
 

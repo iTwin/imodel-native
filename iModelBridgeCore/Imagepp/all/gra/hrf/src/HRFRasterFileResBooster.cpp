@@ -2,18 +2,37 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileResBooster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFRasterFileResBooster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileResBooster.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HRFBilFile.h>
-#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFactory.h>
+
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFResBoosterEditor.h>
+#include <ImagePP/all/h/HRFCacheFileCreator.h>
+#include <ImagePP/all/h/HRFRasterFileResBooster.h>
+#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
+#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>
+#include <ImagePP/all/h/HRFcTiffFile.h>
+#include <ImagePP/all/h/HRFBilFile.h>
+
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecFactory.h>
+
 
 
 #define SMALL_IMAGE_SIZE    262144

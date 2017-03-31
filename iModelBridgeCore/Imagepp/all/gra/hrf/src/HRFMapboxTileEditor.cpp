@@ -2,16 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMapboxTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMapBoxTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFMapboxFile.h>#include <ImagePP/all/h/HRFMapboxTileEditor.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePPInternal/HttpConnection.h>#include <BeJpeg/BeJpeg.h>
-#include <ImagePP/all/h/HGF2DStretch.h>
+
+#include <ImagePP/all/h/HRFMapboxFile.h>
+#include <ImagePP/all/h/HRFMapboxTileEditor.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <ImagePPInternal/HttpConnection.h>
+#include <BeJpeg/BeJpeg.h>
+
+#include <ImagePP/all/h/HGF2DStretch.h>
+
 #define MB_MAP_RESOLUTION       19
 
 BEGIN_IMAGEPP_NAMESPACE

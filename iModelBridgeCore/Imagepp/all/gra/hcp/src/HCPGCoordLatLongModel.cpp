@@ -2,12 +2,17 @@
 |
 |     $Source: all/gra/hcp/src/HCPGCoordLatLongModel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
 
-#include <ImagePP/all/h/HCPGCoordLatLongModel.h>#include <ImagePP/all/h/HVE2DShape.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+
+#include <ImagePP/all/h/HCPGCoordLatLongModel.h>
+#include <ImagePP/all/h/HVE2DShape.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 
 
 /*=================================================================================**//**

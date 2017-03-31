@@ -2,26 +2,63 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGeoRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFOracleException.h>#include <ImagePP/all/h/HRFGeoRasterFile.h>#include <ImagePP/all/h/HRFGeoRasterEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>
-#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecZlib.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
-#include <ImagePP/all/h/HVETileIDIterator.h>
-#include <ImagePP/all/h/HTIFFUtils.h>
-#include <ImagePP/all/h/HFCCallbackRegistry.h>#include <ImagePP/all/h/HFCCallbacks.h>
-#include <ImagePP/all/h/SDOGeoRasterWrapper.h>
-#include <ImagePP/all/h/HCPGeoTiffKeys.h>
-#include <BeXml/BeXml.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRFOracleException.h>
+#include <ImagePP/all/h/HRFGeoRasterFile.h>
+#include <ImagePP/all/h/HRFGeoRasterEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>
+
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HVETileIDIterator.h>
+
+#include <ImagePP/all/h/HTIFFUtils.h>
+
+#include <ImagePP/all/h/HFCCallbackRegistry.h>
+#include <ImagePP/all/h/HFCCallbacks.h>
+
+#include <ImagePP/all/h/SDOGeoRasterWrapper.h>
+
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <BeXml/BeXml.h>
+
 using namespace ImagePP;
 
 #define GEORASTER_XML_NAMESPACE         "http://xmlns.oracle.com/spatial/georaster"

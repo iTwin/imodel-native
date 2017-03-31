@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEmbedBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCEmbedBinStream
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCEmbedBinStream.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCEmbedBinStream.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLEmbedFile.h>
+
 
 //---------------------------------------------------------------------------
 // This is the creator that registers itself in the stream-type list.

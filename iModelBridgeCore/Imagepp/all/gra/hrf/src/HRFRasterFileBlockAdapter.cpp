@@ -2,18 +2,27 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileBlockAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFRasterFileBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFBlockAdapterFactory.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HFCURLFile.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFBlockAdapterFactory.h>
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFCacheFileCreator.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
 //-----------------------------------------------------------------------------
 // HRFRasterFileBlockAdapterBlockCapabilities
 //-----------------------------------------------------------------------------

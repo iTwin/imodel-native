@@ -2,13 +2,32 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTDEMRasterXYZPointsExtractor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HUTDEMRasterXYZPointsIterator.h>#include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>#include <ImagePP/all/h/HRFException.h>
+
+#include <ImagePP/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HUTDEMRasterXYZPointsIterator.h>
+#include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
+#include <ImagePP/all/h/HRFException.h>
+
 
 
 

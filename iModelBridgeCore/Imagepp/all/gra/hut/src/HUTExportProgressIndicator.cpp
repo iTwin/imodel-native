@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTExportProgressIndicator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -11,9 +11,13 @@
 //
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HUTExportProgressIndicator.h>
-#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
+
+#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+
 //----------------------------------------------------------------------------
 
 HFC_IMPLEMENT_SINGLETON(HUTExportProgressIndicator)

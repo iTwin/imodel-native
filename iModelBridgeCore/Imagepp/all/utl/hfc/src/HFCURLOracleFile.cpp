@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLOracleFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLOracleFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLOracleFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLOracleFile.h>
+
 
 // This is the creator that registers itself in the scheme list.
 struct URLOracleFileCreator : public HFCURL::Creator

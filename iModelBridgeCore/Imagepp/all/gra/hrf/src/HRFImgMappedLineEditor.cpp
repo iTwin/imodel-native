@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgMappedLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>                //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>
+                //:> must be first for PreCompiledHeader Option
 
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFImgMappedFile.h>#include <ImagePP/all/h/HRFImgMappedLineEditor.h>
-#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFImgMappedFile.h>
+#include <ImagePP/all/h/HRFImgMappedLineEditor.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+
 
 /** ---------------------------------------------------------------------------
     Constructor.

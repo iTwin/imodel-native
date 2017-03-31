@@ -2,17 +2,22 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DExtent.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGF2DExtent
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DLocation.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DRectangle.h>
-#include <ImagePP/all/h/HGF2DExtent.h>
+
+#include <ImagePP/all/h/HGF2DLocation.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DRectangle.h>
+
+#include <ImagePP/all/h/HGF2DExtent.h>
+
 
 /** -----------------------------------------------------------------------------
     Default constructor

@@ -2,16 +2,22 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFDirectory.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFDirectory
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HTIFFDirectory.h>#include <ImagePP/all/h/HTIFFTagEntry.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFGeoKey.h>
-#include <ImagePP/all/h/HTagIdIterator.h>
+
+#include <ImagePP/all/h/HTIFFDirectory.h>
+#include <ImagePP/all/h/HTIFFTagEntry.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImagePP/all/h/HTIFFGeoKey.h>
+
+#include <ImagePP/all/h/HTagIdIterator.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor, Create an empty entry.

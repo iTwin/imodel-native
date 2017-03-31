@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPATokenizer.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPATokenizer
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPATokenizer.h>
+#include <ImagePP/all/h/HPAToken.h>
+#include <ImagePP/all/h/HPAException.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+
 #if 0
 //----------------------------------------------------------------------------
 // Here's a little consumer-transformer following the STL design philosophy.

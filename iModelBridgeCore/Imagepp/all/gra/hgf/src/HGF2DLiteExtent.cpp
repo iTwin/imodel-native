@@ -2,17 +2,19 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLiteExtent.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 
 
 // The class declaration must be the last include file.
-#include <ImagePP/all/h/HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+
 // VC8 support
 // link warning LNK4221
 // because all method are inline, no public symbol was found into the object file

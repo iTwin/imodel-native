@@ -2,23 +2,45 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFArcInfoAsciiGridFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFArcInfoAsciiGridFile
 //-----------------------------------------------------------------------------
 // This class describes a File Raster image.
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 #ifdef IPP_HAVE_GDAL_SUPPORT
 
-#include <ImagePP/all/h/HRFArcInfoAsciiGridFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HTIFFUtils.h>
-#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HRFArcInfoAsciiGridFile.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //GDAL
-#include <ImagePP-GdalLib/gdal_priv.h>#include <ImagePP-GdalLib/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
+
 
 namespace {
 

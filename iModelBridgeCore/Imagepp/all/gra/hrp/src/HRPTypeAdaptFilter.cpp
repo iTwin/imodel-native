@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPTypeAdaptFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPTypeAdaptFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPTypeAdaptFilter.h>
+
+#include <ImagePP/all/h/HRPTypeAdaptFilter.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

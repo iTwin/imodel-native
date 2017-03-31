@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABlitter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,14 +10,34 @@
 //:> Class HRABlitter
 //:>---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRABlitter.h>
-#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HRATransaction.h>
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>
 
-#include <ImagePP/all/h/HRASampler.h>#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HRABlitter.h>
+
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HRPFilter.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+
+
+#include <ImagePP/all/h/HRASampler.h>
+#include <ImagePP/all/h/HGSTypes.h>
+#include <ImagePP/all/h/HGSRegion.h>
+
 
 //:>---------------------------------------------------------------------------------------
 //:> public section

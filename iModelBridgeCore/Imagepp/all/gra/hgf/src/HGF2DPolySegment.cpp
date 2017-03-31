@@ -2,15 +2,22 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPolySegment.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DPolySegment.h>#include <ImagePP/all/h/HGF2DSegment.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DLiteSegment.h>
+#include <ImagePP/all/h/HGF2DPolySegment.h>
+#include <ImagePP/all/h/HGF2DSegment.h>
+
 /** -----------------------------------------------------------------------------
     Finds and returns all auto intersection points.
 

@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIdentity.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIdentity
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
 #define HCD_CODEC_NAME "Uncompressed"
 //-----------------------------------------------------------------------------
 // public

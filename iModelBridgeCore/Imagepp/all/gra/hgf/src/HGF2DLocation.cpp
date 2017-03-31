@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLocation.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLocation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DLocation.h>
+
+#include <ImagePP/all/h/HGF2DLocation.h>
+
 
 
 /** -----------------------------------------------------------------------------

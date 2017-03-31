@@ -9,7 +9,11 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HRPPixelTypeGray.h"#include "HRPPixelPalette.h"#include "HRPPixelConverter.h"#include "HRPPixelType1bitInterface.h"
+#include "HRPPixelTypeGray.h"
+#include "HRPPixelPalette.h"
+#include "HRPPixelConverter.h"
+#include "HRPPixelType1bitInterface.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelConverter;
 

@@ -8,9 +8,13 @@
 //-----------------------------------------------------------------------------
 // Methods for class HRPPixelTypeI8R8G8B8
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+
 HPM_REGISTER_CLASS(HRPPixelTypeI8R8G8B8Mask, HRPPixelTypeI8R8G8B8)
 
 // STL typeDef

@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hmd/src/HMDLayers.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HMDLayers
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMDLayers.h>
+
+#include <ImagePP/all/h/HMDLayers.h>
+
 
 //-----------------------------------------------------------------------------
 // Public

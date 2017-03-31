@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/utl/hmg/src/HMGMessageDuplex.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HMGMessageDuplex
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMGMessageDuplex.h>#include <ImagePP/all/h/HMGMessage.h>
+
+#include <ImagePP/all/h/HMGMessageDuplex.h>
+#include <ImagePP/all/h/HMGMessage.h>
+
 
 //-----------------------------------------------------------------------------
 // The default constructor.

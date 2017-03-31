@@ -2,16 +2,24 @@
 |
 |     $Source: all/gra/hra/src/HRABitmapEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 // Methods for class HRABitmapEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGSRegion.h>
+
+#include <ImagePP/all/h/HRABitmapEditor.h>
+#include <ImagePP/all/h/HRABitmapBase.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HGSRegion.h>
+
 
 //-----------------------------------------------------------------------------
 // Constructor

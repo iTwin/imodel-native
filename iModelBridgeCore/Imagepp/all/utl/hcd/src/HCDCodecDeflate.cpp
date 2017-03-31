@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecDeflate.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecDeflate
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDCodecDeflate.h>
+
+#include <ImagePP/all/h/HCDCodecDeflate.h>
+
 #define HCD_CODEC_NAME "Deflate"
 
 //-----------------------------------------------------------------------------

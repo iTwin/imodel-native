@@ -2,15 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaCompressImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaCompressImageEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFTgaFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecTgaRLE.h>#include <ImagePP/all/h/HRFTgaCompressImageEditor.h>
+
+#include <ImagePP/all/h/HRFTgaFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecTgaRLE.h>
+#include <ImagePP/all/h/HRFTgaCompressImageEditor.h>
+
 
 #define TGA_RASTERFILE  static_cast<HRFTgaFile*>(GetRasterFile().GetPtr())
 

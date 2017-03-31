@@ -2,21 +2,36 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWcsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWCSFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFWcsFile.h>#include <Imagepp/all/h/HRFOGCServiceEditor.h>#include <ImagePP/all/h/HRFOGCService.h>
-#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/all/h/HRFException.h>
-#include <BeXml/BeXml.h>
+
+#include <ImagePP/all/h/HRFWcsFile.h>
+#include <Imagepp/all/h/HRFOGCServiceEditor.h>
+#include <ImagePP/all/h/HRFOGCService.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLHTTP.h>
+#include <ImagePP/all/h/HFCURLHTTPS.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include <BeXml/BeXml.h>
+
 
 
 //-----------------------------------------------------------------------------

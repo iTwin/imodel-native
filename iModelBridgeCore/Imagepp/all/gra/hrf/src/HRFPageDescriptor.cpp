@@ -2,15 +2,24 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPageDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFThumbnail.h>#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HRFPageDescriptor.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFThumbnail.h>
+#include <ImagePP/all/h/HRFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFPageDescriptor.h>
+#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 
 /** -----------------------------------------------------------------------------
     This constructor should @b{not be used}.

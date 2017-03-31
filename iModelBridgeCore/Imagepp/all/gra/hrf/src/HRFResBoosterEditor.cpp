@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResBoosterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFResBoosterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFResBoosterEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

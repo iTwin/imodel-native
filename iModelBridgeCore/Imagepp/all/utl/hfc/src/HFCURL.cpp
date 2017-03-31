@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURL.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURL
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURL.h>
+
 // Static member initialization
 
 HFCURL::SchemeList* HFCURL::s_pSchemeList = 0;

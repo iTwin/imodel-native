@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLMemFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,7 +11,8 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 //:> URL specification at this level is:
 //:> memory:{//Filename[.extension]}

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Header for class : HPSParserScope
@@ -13,7 +13,9 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCPtr.h>#include "HPSInternalNodes.h"
+#include <ImagePP/all/h/HFCPtr.h>
+#include "HPSInternalNodes.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;
@@ -67,4 +69,5 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HPSParserScope.hpp"
+#include "HPSParserScope.hpp"
+

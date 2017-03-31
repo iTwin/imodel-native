@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFLUVCube.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HGFLUVSet
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGFLUVCube.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGFLUVCube.h>
+
 const double HGFLUVCube::L_MIN = 0.0;
 const double HGFLUVCube::L_MAX = 100.0;
 

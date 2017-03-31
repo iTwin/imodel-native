@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DIdentity.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DIdentity
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+
 /** -----------------------------------------------------------------------------
     Default Constructor
     Initializes the model with units for all channels set to meters.

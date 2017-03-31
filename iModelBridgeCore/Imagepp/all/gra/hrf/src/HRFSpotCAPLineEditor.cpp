@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotCAPLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFSpotCAPLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFSpotCAPLineEditor.h>#include <ImagePP/all/h/HRFSpotCAPFile.h>#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFSpotCAPLineEditor.h>
+#include <ImagePP/all/h/HRFSpotCAPFile.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+
 
 
 

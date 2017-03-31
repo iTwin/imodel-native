@@ -6,16 +6,19 @@
 //:>       $Date: 2008/11/24 19:52:55 $
 //:>     $Author: Ghislain.Tardif $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDPacketRLE
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+
+#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+
 // We assume blacks are on 0 and whites on 1
 #define ON_BLACK_STATE(bufferIndex) (!(bufferIndex & 0x00000001))       // block run is ON even number. 0,2,4,6...
 #define RLE_RUN_LIMIT 32767

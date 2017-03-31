@@ -2,16 +2,25 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjective.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjective
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DDCTransfoModel.h>
-#include <ImagePP/all/h/HGF2DProjective.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DDCTransfoModel.h>
+
+#include <ImagePP/all/h/HGF2DProjective.h>
+
 /** -----------------------------------------------------------------------------
     Default Constructor
     Initializes the model to no transformation (Scaling = 1.0, Translation = none ,

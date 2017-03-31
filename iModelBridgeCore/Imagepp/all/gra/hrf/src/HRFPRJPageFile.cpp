@@ -2,17 +2,29 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPRJPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPRJPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HTIFFTag.h>
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HRFPRJPageFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCIniFileBrowser.h>
-#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HTIFFTag.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HRFPRJPageFile.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCIniFileBrowser.h>
+
+#include <ImagePP/all/h/HRFCalsFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
 
 
 //-----------------------------------------------------------------------------

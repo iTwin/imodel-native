@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DDCTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DDCTransfoModel
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 
 // The class declaration must be the last include file.
-#include <ImagePP/all/h/HGF2DDCTransfoModel.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HGF2DDCTransfoModel.h>
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+
 struct HDPoint3d
     {
     double x;

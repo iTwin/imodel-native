@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoordSys.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DCoordSys
@@ -12,7 +12,11 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGF2DTransfoModel.h"#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HFCExclusiveKey.h>
+#include "HGF2DTransfoModel.h"
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HPMPersistentObject.h>
+#include <ImagePP/all/h/HFCExclusiveKey.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HGF2DTransfoModel;
 class HGF2DCoordSysImpl;
@@ -315,4 +319,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HGF2DCoordSys.hpp"
+#include "HGF2DCoordSys.hpp"

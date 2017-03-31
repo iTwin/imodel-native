@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRRLE1.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecHMRRLE1
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

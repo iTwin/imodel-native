@@ -2,15 +2,20 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSParserScope
 //---------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
-#include "HPSParserScope.h"#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HPSParser.h>
+#include <ImageppInternal.h>
+
+#include "HPSParserScope.h"
+#include <ImagePP/all/h/HPAToken.h>
+#include <ImagePP/all/h/HPSException.h>
+#include <ImagePP/all/h/HPSParser.h>
+
 //---------------------------------------------------------------------------
 StatementDefinitionNode* HPSParserScope::FindStatement(const Utf8String& pi_rString)
     {

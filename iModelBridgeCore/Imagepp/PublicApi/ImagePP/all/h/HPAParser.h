@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAParser.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAParser
@@ -16,7 +16,14 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPARule.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HPASession.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HPATokenizer.h>
+#include <ImagePP/all/h/HPARule.h>
+#include <ImagePP/all/h/HPAToken.h>
+#include <ImagePP/all/h/HPAProduction.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HPASession.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 
@@ -61,5 +68,6 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPAParser.hpp"
+#include "HPAParser.hpp"
+
 

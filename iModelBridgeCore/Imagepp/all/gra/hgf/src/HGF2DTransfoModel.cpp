@@ -2,16 +2,22 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DTransfoModel
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 
 // The class declaration must be the last include file.
-#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>   // special case include turn around#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DUniverse.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>   // special case include turn around
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DUniverse.h>
+
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------

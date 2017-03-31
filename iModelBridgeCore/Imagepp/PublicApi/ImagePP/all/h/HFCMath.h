@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMath.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMath
@@ -11,7 +11,8 @@
 
 //----------------------------------------------------------------------------
 
-#include <ImagePP/all/h/HFCMacros.h>
+#include <ImagePP/all/h/HFCMacros.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 
@@ -59,6 +60,7 @@ public:
 
 END_IMAGEPP_NAMESPACE
 
-#include <ImagePP/all/h/HFCMath.hpp>//----------------------------------------------------------------------------
+#include <ImagePP/all/h/HFCMath.hpp>
+//----------------------------------------------------------------------------
 
 

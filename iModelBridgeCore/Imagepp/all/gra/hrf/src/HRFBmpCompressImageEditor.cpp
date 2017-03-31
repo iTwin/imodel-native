@@ -2,15 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpCompressImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFBmpCompressImageEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HCDCodecBMPRLE4.h>#include <ImagePP/all/h/HRFBmpCompressImageEditor.h>
+
+#include <ImagePP/all/h/HRFBmpFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE4.h>
+#include <ImagePP/all/h/HRFBmpCompressImageEditor.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

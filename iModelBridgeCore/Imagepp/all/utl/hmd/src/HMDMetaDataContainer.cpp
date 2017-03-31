@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: all/utl/hmd/src/HMDMetaDataContainer.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMDMetaDataContainer.h>
+
+#include <ImagePP/all/h/HMDMetaDataContainer.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

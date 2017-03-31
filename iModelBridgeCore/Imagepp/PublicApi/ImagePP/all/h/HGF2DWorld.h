@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DWorld.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,7 +15,10 @@
 #pragma once
 
 
-#include "HGF2DTransfoModel.h"#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include "HGF2DTransfoModel.h"
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 typedef uint32_t HGF2DWorldIdentificator;
@@ -74,4 +77,5 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGF2DWorld.hpp"
+#include "HGF2DWorld.hpp"
+

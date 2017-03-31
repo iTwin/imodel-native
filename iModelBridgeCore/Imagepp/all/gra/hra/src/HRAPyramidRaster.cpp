@@ -2,16 +2,41 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPyramidRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAPyramidRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRAPyramidRasterIterator.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRAStripedRaster.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRAPyramidRasterIterator.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRATiledRaster.h>
+#include <ImagePP/all/h/HRAStripedRaster.h>
+#include <ImagePP/all/h/HRFMessages.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HFCExceptionHandler.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 HPM_REGISTER_CLASS(HRAPyramidRaster, HRAStoredRaster)
 
 

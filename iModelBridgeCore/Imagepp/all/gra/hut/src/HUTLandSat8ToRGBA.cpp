@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTLandSat8ToRGBA.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,8 +10,17 @@
 // HRFUtility implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HUTLandSat8ToRGBA.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPContrastStretchFilter16.h>#include <ImagePP/all/h/HRPFunctionFilters.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HUTLandSat8ToRGBA.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HRFRasterFileExtender.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPContrastStretchFilter16.h>
+#include <ImagePP/all/h/HRPFunctionFilters.h>
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Donald.Morissette 08/16

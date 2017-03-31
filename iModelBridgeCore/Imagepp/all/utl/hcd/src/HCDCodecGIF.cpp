@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecGIF.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecGIF
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecGIF.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecGIF.h>
+
 #define HCD_CODEC_NAME     "LZWGif"
 
 // Estimation of the compression ratio (to be adjusted by Dominic if required)

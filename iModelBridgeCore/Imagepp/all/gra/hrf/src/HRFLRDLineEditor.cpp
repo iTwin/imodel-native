@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLRDLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFLRDLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFLRDLineEditor.h>#include <ImagePP/all/h/HRFLRDFile.h>#include <ImagePP/all/h/HCDPacket.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFLRDLineEditor.h>
+#include <ImagePP/all/h/HRFLRDFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

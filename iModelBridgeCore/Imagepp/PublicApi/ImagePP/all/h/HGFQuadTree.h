@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFQuadTree.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/all/h/HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+
 #pragma once
 
 BEGIN_IMAGEPP_NAMESPACE

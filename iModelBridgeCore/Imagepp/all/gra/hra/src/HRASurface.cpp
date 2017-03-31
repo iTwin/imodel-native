@@ -2,21 +2,33 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRASurface.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 // Class HRASurface
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HRAEditor.h>
-#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
-#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HRAEditor.h>
+
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+
 // Codec
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+
 // macro
 #define BytesFromBits(NbBits) ((NbBits + 7) / 8)
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBlockAdapterFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,11 +11,26 @@
 // This class describes the BlockAdapter implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFBlockAdapterFactory.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRFBlockAdapterFactory.h>
+
 HFC_IMPLEMENT_SINGLETON(HRFBlockAdapterFactory)
 
-#include <ImagePP/all/h/HRFAdaptLineToImage.h>#include <ImagePP/all/h/HRFAdaptLineToStrip.h>#include <ImagePP/all/h/HRFAdaptLineToTile.h>#include <ImagePP/all/h/HRFAdaptStripToLine.h>#include <ImagePP/all/h/HRFAdaptStripToTile.h>#include <ImagePP/all/h/HRFAdaptStripToImage.h>#include <ImagePP/all/h/HRFAdaptStripToNStrip.h>#include <ImagePP/all/h/HRFAdaptTileToStrip.h>#include <ImagePP/all/h/HRFAdaptTileToImage.h>#include <ImagePP/all/h/HRFAdaptTileToLine.h>#include <ImagePP/all/h/HRFAdaptNTileToTile.h>#include <ImagePP/all/h/HRFAdaptImageToLine.h>
+#include <ImagePP/all/h/HRFAdaptLineToImage.h>
+#include <ImagePP/all/h/HRFAdaptLineToStrip.h>
+#include <ImagePP/all/h/HRFAdaptLineToTile.h>
+#include <ImagePP/all/h/HRFAdaptStripToLine.h>
+#include <ImagePP/all/h/HRFAdaptStripToTile.h>
+#include <ImagePP/all/h/HRFAdaptStripToImage.h>
+#include <ImagePP/all/h/HRFAdaptStripToNStrip.h>
+#include <ImagePP/all/h/HRFAdaptTileToStrip.h>
+#include <ImagePP/all/h/HRFAdaptTileToImage.h>
+#include <ImagePP/all/h/HRFAdaptTileToLine.h>
+#include <ImagePP/all/h/HRFAdaptNTileToTile.h>
+#include <ImagePP/all/h/HRFAdaptImageToLine.h>
+
 HRF_REGISTER_BLOCKADAPTER(HRFAdaptLineToImageCreator)
 HRF_REGISTER_BLOCKADAPTER(HRFAdaptLineToStripCreator)
 HRF_REGISTER_BLOCKADAPTER(HRFAdaptLineToTileCreator)

@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRADrawOptions.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRADrawOptions
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor.

@@ -2,13 +2,18 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRACachedHistogramRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>
+    //:> must be first for PreCompiledHeader Option
 
-#include <ImagePP/all/h/HRACachedHistogramRaster.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HRACachedHistogramRaster.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPMessages.h>
+
 
 
 HPM_REGISTER_CLASS(HRACachedHistogramRaster, HRAImageView)

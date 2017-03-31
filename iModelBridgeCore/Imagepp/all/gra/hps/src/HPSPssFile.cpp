@@ -2,11 +2,14 @@
 |
 |     $Source: all/gra/hps/src/HPSPssFile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HPSPssToken.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPSPssFile.h>
+#include <ImagePP/all/h/HPSPssToken.h>
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007

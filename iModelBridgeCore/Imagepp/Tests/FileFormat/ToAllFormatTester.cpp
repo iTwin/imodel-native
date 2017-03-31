@@ -7,10 +7,23 @@
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <Bentley/BeTest.h>#include <ImagePP/h/ImageppAPI.h>#include <ImagePP/all/h/HRFFileFormats.h>#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>#include "../Common/ImagePPTestConfig.h"#include "ExporterTestFixture.h"
+#include <Bentley/BeTest.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HRFFileFormats.h>
+#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
+#include "../Common/ImagePPTestConfig.h"
+#include "ExporterTestFixture.h"
+
 //#ifdef USE_GTEST        // TEST_P only available when using gtest.
 
-#include <ImagePP/all/h/HUTClassIDDescriptor.h>#include <Bentley/BeFileName.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRFiTiffFile.h>#include <ImagePP/all/h/HRFRasterFileExtender.h>
+#include <ImagePP/all/h/HUTClassIDDescriptor.h>
+#include <Bentley/BeFileName.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRFiTiffFile.h>
+#include <ImagePP/all/h/HRFRasterFileExtender.h>
+
 
 USING_NAMESPACE_IMAGEPP
 

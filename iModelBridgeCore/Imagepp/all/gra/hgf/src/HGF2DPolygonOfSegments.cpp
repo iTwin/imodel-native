@@ -2,15 +2,32 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPolygonOfSegments.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DPolygonOfSegments
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DRectangle.h>#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DComplexShape.h>
+#include <ImagePP/all/h/HGF2DLiteSegment.h>
+#include <ImagePP/all/h/HGF2DRectangle.h>
+#include <ImagePP/all/h/HGF2DSegment.h>
+#include <ImagePP/all/h/HGF2DVoidShape.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+
 
 enum PointUsage
     {

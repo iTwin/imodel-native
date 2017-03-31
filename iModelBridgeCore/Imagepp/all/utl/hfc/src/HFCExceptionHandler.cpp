@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCExceptionHandler.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HFCExceptionHandler
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <Logging/bentleylogging.h>
+#include <ImageppInternal.h>
+ // Must be the first include.
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCExceptionHandler.h>
+#include <Logging/bentleylogging.h>
+
 USING_NAMESPACE_BENTLEY_LOGGING
 
 // Initialisation of the static member.

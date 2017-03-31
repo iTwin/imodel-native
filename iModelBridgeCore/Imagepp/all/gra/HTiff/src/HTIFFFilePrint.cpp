@@ -2,15 +2,21 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFilePrint.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFFilePrint
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HTIFFGeoKey.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFDirectory.h>
+
+#include <ImagePP/all/h/HTIFFFile.h>
+#include <ImagePP/all/h/HTIFFTag.h>
+#include <ImagePP/all/h/HTIFFGeoKey.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImagePP/all/h/HTIFFDirectory.h>
+
 
 
 static void s_PrintAscii    (FILE* po_pOutput, const char* pi_pCar, int32_t pi_NbCars = -1);

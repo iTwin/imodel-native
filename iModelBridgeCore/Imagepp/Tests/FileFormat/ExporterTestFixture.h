@@ -2,13 +2,19 @@
 //:>
 //:>     $Source: Tests/FileFormat/ExporterTestFixture.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : ExportTester
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HFCURL.h>#include <Bentley/md5.h>#include <json/json.h>#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HFCURL.h>
+#include <Bentley/md5.h>
+#include <json/json.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+
 // Clear timestamp related info for certain format so we can compare them.
 bool UpdateTiffHistogramTimestamp(ImagePP::HFCPtr<ImagePP::HFCURL> const& pUrl);
 

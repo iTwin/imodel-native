@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPAToken.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPAToken
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPAToken.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPAToken.h>
+
 #if 0
 static struct HPATokenNodeCreator : public HPANodeCreator
     {

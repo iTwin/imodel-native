@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheFileCreator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,10 +11,17 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFCacheFileCreator.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

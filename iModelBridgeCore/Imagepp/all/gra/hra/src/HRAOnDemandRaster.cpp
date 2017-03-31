@@ -2,17 +2,29 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAOnDemandRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HPSObjectStore.h>//#include <all/gra/hps/src/HPSUtility.h>
-#include <ImagePP/all/h/HRAOnDemandRaster.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>
-#include <ImagePP/all/h/HRFUtility.h>
-#include "../../hps/src/HPSParserScope.h"
-#include <BeXml/BeXml.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HPSObjectStore.h>
+//#include <all/gra/hps/src/HPSUtility.h>
+#include <ImagePP/all/h/HRAOnDemandRaster.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include "../../hps/src/HPSParserScope.h"
+
+#include <BeXml/BeXml.h>
+
 #define ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS 10
 
 void ImagePP::GetDoubleFormatting(Utf8Char* format, size_t maxNbChars)

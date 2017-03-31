@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,7 +12,10 @@
 #pragma once
 
 //#include <ImagePP/h/HTypes.h> included by hstdcpp.h
-#include "HTIFFUtils.h"#include "HTIFFDirectory.h"#include "HFCURL.h"
+#include "HTIFFUtils.h"
+#include "HTIFFDirectory.h"
+#include "HFCURL.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HTIFFDirectory;
 
@@ -330,4 +333,4 @@ private:
 END_IMAGEPP_NAMESPACE
 
 
-#include "HTagFile.hpp"
+#include "HTagFile.hpp"

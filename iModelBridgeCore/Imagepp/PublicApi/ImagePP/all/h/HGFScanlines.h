@@ -2,13 +2,16 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFScanlines.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
-#include "HGF2DCoordSys.h"#include "HFCPtr.h"#include "HGF2DPosition.h"
+#include "HGF2DCoordSys.h"
+#include "HFCPtr.h"
+#include "HGF2DPosition.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT IPixelSelectionStrategy
     {
@@ -132,4 +135,4 @@ protected:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGFScanlines.hpp"
+#include "HGFScanlines.hpp"

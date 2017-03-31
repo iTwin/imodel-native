@@ -2,15 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheSequentialBlockEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFCacheSequentialBlockEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDPacket.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>
+#include <ImagePP/all/h/HFCMonitor.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDPacket.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

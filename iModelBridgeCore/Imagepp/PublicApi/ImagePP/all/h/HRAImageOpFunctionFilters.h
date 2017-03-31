@@ -2,12 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpFunctionFilters.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HRAImageOp.h>#include "HRPAlphaRange.h"#include "HGFRGBCube.h"#include "HGFRGBSet.h"#include "HGFLUVCube.h"
+#include <ImagePP/all/h/HRAImageOp.h>
+#include "HRPAlphaRange.h"
+#include "HGFRGBCube.h"
+#include "HGFRGBSet.h"
+#include "HGFLUVCube.h"
+
 IMAGEPP_REF_COUNTED_PTR(HRAImageOpPixelReplacerFilter)
 
 BEGIN_IMAGEPP_NAMESPACE

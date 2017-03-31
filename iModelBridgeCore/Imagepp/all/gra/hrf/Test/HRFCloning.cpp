@@ -2,16 +2,38 @@
 //:>
 //:>     $Source: all/gra/hrf/Test/HRFCloning.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCURLFile.h>
+
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+
 
 
 // HRF Includes and File format registration
-#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFGeoTiffFile.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRFIntergraphCITFile.h>#include <ImagePP/all/h/HRFIntergraphCOT29File.h>#include <ImagePP/all/h/HRFIntergraphCotFile.h>#include <ImagePP/all/h/HRFIntergraphRGBFile.h>#include <ImagePP/all/h/HRFIntergraphRLEFile.h>#include <ImagePP/all/h/HRFIntergraphTG4File.h>#include <ImagePP/all/h/HRFiTiffFile.h>#include <ImagePP/all/h/HRFJpegFile.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePP/all/h/HRFTiffFile.h>#include <ImagePP/all/h/HRFGifFile.h>
+#include <ImagePP/all/h/HRFBmpFile.h>
+#include <ImagePP/all/h/HRFCalsFile.h>
+#include <ImagePP/all/h/HRFGeoTiffFile.h>
+#include <ImagePP/all/h/HRFHMRFile.h>
+#include <ImagePP/all/h/HRFIntergraphCITFile.h>
+#include <ImagePP/all/h/HRFIntergraphCOT29File.h>
+#include <ImagePP/all/h/HRFIntergraphCotFile.h>
+#include <ImagePP/all/h/HRFIntergraphRGBFile.h>
+#include <ImagePP/all/h/HRFIntergraphRLEFile.h>
+#include <ImagePP/all/h/HRFIntergraphTG4File.h>
+#include <ImagePP/all/h/HRFiTiffFile.h>
+#include <ImagePP/all/h/HRFJpegFile.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <ImagePP/all/h/HRFTiffFile.h>
+#include <ImagePP/all/h/HRFGifFile.h>
+
 
 HRF_REGISTER_FILEFORMAT(HRFHMRCreator)
 HRF_REGISTER_FILEFORMAT(HRFiTiffCreator)

@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelConverter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelConverter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+
 //-----------------------------------------------------------------------------
 // Constructor with source and dest pixel type pointers
 //-----------------------------------------------------------------------------

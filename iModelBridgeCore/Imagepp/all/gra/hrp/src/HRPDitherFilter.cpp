@@ -2,16 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPDitherFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPDitherFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPDitherFilter.h>
-#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HMGMessageDuplex.h>
+
+#include <ImagePP/all/h/HRPDitherFilter.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HMGMessageDuplex.h>
+
 #define OCTREE_LEVEL 4
 
 

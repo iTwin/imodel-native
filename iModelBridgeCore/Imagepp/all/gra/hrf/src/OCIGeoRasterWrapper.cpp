@@ -2,16 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/OCIGeoRasterWrapper.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class OCIGeoRasterWrapper
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>#include <ImagePP/all/h/HFCMacros.h>
-#include <oracle/oci.h>
-#include <ImagePP/all/h/OCIGeoRasterWrapper.h>
-#include <sstream>using namespace std;
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCMacros.h>
+
+#include <oracle/oci.h>
+
+#include <ImagePP/all/h/OCIGeoRasterWrapper.h>
+
+#include <sstream>
+using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2012

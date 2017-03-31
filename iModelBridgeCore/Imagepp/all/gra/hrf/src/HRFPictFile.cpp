@@ -2,20 +2,41 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPictFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPictFile
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFPictFile.h>#include <ImagePP/all/h/HRFPictLineEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HTIFFUtils.h>
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HRFPictFile.h>
+#include <ImagePP/all/h/HRFPictLineEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------

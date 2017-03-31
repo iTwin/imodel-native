@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DVector.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HVE2DVector.h>#include <ImagePP/all/h/HVE2DLinear.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HVE2DVector.h>
+#include <ImagePP/all/h/HVE2DLinear.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DVector, HGFGraphicObject)
 
 

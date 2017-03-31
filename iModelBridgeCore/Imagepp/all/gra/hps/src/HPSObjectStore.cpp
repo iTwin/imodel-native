@@ -2,16 +2,33 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSObjectStore.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Methods for class HPSObjectStore
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HIMOnDemandMosaic.h>#include <ImagePP/all/h/HPSObjectStore.h>#include <ImagePP/all/h/HPSParser.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRFException.h>
-#include "HPSInternalNodes.h"#include "HPSParserScope.h"
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HIMOnDemandMosaic.h>
+#include <ImagePP/all/h/HPSObjectStore.h>
+#include <ImagePP/all/h/HPSParser.h>
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRARaster.h>
+#include <ImagePP/all/h/HRFcTiffFile.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include "HPSInternalNodes.h"
+#include "HPSParserScope.h"
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------

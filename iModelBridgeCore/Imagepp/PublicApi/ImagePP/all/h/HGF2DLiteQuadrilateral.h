@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteQuadrilateral.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DPosition.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGF2DPosition.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HGF2DLiteQuadrilateral
     {
@@ -85,4 +87,5 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include <ImagePP/all/h/HGF2DLiteQuadrilateral.hpp>
+#include <ImagePP/all/h/HGF2DLiteQuadrilateral.hpp>
+

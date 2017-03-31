@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLine.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGF2DLine
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGF2DLine.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGF2DLine.h>
+
 /** -----------------------------------------------------------------------------
     Constructor by bearing
 

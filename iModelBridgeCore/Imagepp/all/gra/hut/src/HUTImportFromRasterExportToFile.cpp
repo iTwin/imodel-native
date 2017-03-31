@@ -2,18 +2,33 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTImportFromRasterExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HUTImportFromRasterExportToFile
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
 
-#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HUTExportToFile.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HUTExportToFile.h>
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
 //-----------------------------------------------------------------------------
 // Constructor
 // Creation and destruction interface

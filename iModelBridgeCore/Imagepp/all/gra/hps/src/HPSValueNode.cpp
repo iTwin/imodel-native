@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSValueNode.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Methods for class HPSValueNode
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HPSValueNode.h>
+
+#include <ImagePP/all/h/HPSValueNode.h>
+
 //---------------------------------------------------------------------------
 HPSValueNode::HPSValueNode(HPAGrammarObject* pi_pObj,
                            const HPANodeList& pi_rList,

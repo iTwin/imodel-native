@@ -2,19 +2,35 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMapBoxFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMapBoxFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFMapboxFile.h>#include <ImagePP/all/h/HRFMapboxTileEditor.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecJPEG.h>#include <ImagePP/all/h/HCDCodecIJG.h>
-#include <ImagePP/all/h/HGF2DStretch.h>
-#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRFUtility.h>
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/all/h/HFCURLHTTP.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFMapboxFile.h>
+#include <ImagePP/all/h/HRFMapboxTileEditor.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCDCodecJPEG.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+
+#include <ImagePP/all/h/HGF2DStretch.h>
+
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HFCURLHTTP.h>
+
 #define MB_MAP_RESOLUTION       19
 #define MB_MAP_WIDTH            (256 * (1 << MB_MAP_RESOLUTION))
 #define MB_MAP_HEIGHT           (256 * (1 << MB_MAP_RESOLUTION))

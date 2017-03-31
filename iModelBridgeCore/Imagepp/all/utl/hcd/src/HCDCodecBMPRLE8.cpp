@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecBMPRLE8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecBMPRLE8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
+
 #define HCD_CODEC_NAME "BMP RLE8bits"
 
 //-----------------------------------------------------------------------------

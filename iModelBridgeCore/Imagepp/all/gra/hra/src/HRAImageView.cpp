@@ -2,12 +2,17 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageView.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAImageView.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HVEShape.h>
+
+#include <ImagePP/all/h/HRAImageView.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HVEShape.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HRAImageView, HRARaster)
 
 

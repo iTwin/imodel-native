@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hpm/src/HPMAttributeSet.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttributeSet
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
+#include <ImageppInternal.h>
+ // Must be the first include.
 
-#include <ImagePP/all/h/HPMAttributeSet.h>
+#include <ImagePP/all/h/HPMAttributeSet.h>
+
 HPM_REGISTER_CLASS(HPMAttributeSet, HPMPersistentObject);
 
 

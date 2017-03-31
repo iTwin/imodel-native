@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/utl/hpm/src/HPMObjectStore.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPMObjectStore
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPMObjectStore.h>#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HFCMonitor.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPMObjectStore.h>
+#include <ImagePP/all/h/HPMPersistentObject.h>
+#include <ImagePP/all/h/HFCMonitor.h>
+
 /**----------------------------------------------------------------------------
  This is the constructor for this class.  At this generic level, the
  constructor only establish a link between the store and a "default

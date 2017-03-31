@@ -2,16 +2,24 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATIFFFileTransactionRecorder.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HRATIFFFileTransactionRecorder
 //:>---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRATIFFFileTransactionRecorder.h>
-#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>#include <ImagePP/all/h/HCDPacket.h>
+
+#include <ImagePP/all/h/HRATIFFFileTransactionRecorder.h>
+
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HTIFFFile.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCURLEmbedFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+
 //---------------------------------------------------------------------------
 // class HTIFFFileRecorder
 //---------------------------------------------------------------------------

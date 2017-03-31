@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTypes.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HRFUtility implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFTypes.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFTypes.h>
+
 //-----------------------------------------------------------------------------
 // HRFBlockType for persistence
 //-----------------------------------------------------------------------------

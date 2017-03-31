@@ -2,12 +2,14 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HPSPssFileCreator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HPSPssFile.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 

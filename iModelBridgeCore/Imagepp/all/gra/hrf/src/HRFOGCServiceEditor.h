@@ -10,7 +10,9 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePPInternal/gra/Task.h>
+#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePPInternal/gra/Task.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HMDVolatileLayers;
 class BlockReaderThread;

@@ -2,18 +2,36 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HRFVirtualEarthFile.h>#include "HRFVirtualEarthEditor.h"#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCCallbacks.h>#include <ImagePP/all/h/HFCCallbackRegistry.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
-#include <BeXml/BeXml.h>
-#include <ImagePPInternal/gra/Task.h>#include <ImagePPInternal/HttpConnection.h>
+
+#include <ImagePP/all/h/HFCURLHTTP.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include "HRFVirtualEarthEditor.h"
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCCallbacks.h>
+#include <ImagePP/all/h/HFCCallbackRegistry.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <BeXml/BeXml.h>
+
+#include <ImagePPInternal/gra/Task.h>
+#include <ImagePPInternal/HttpConnection.h>
+
 // Do not change this number without validating resolution descriptor creation.
 #define NB_BLOCK_READER_THREAD 10
 

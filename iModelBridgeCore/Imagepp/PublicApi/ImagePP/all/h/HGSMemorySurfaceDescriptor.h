@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGSMemorySurfaceDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGSMemorySurfaceDescriptor
@@ -11,7 +11,11 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGSMemoryBaseSurfaceDescriptor.h"#include "HRPPixelType.h"#include "HCDPacket.h"#include "HGFScanLineOrientation.h"
+#include "HGSMemoryBaseSurfaceDescriptor.h"
+#include "HRPPixelType.h"
+#include "HCDPacket.h"
+#include "HGFScanLineOrientation.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 class HGSMemorySurfaceDescriptor : public HGSMemoryBaseSurfaceDescriptor
     {

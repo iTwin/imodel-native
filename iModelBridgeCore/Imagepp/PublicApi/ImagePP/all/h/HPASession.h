@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPASession.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPASession
@@ -11,7 +11,8 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HFCPtr.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HPAParser;
 class HFCBinStream;
@@ -42,4 +43,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPASession.hpp"
+#include "HPASession.hpp"

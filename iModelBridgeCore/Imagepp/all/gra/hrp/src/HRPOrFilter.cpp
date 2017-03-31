@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPOrFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPOrFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPOrFilter.h>
+
+#include <ImagePP/all/h/HRPOrFilter.h>
+
 Byte HRPOrFilter::m_sMask[]       = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 bool HRPOrFilter::m_sTableUpdated  = false;
 Byte HRPOrFilter::m_sTable[2][256];

@@ -2,16 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPConvFiltersV24R8G8B8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Convolution filters
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>
+
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>
+
 int32_t HRPSmoothFilter::WeightMatrix[3][3] = { {1, 1, 1},
         {1, 5, 1},
         {1, 1, 1}

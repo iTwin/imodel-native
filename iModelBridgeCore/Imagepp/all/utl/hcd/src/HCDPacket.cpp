@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDPacket.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDPacket
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HCDCodec.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HFCMonitor.h>
+#include <ImagePP/all/h/HCDCodec.h>
+
 
 //-----------------------------------------------------------------------------
 // public

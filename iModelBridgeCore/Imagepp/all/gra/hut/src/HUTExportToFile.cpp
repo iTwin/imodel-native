@@ -2,19 +2,57 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HUTExportFile.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRFImportExport.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFLRDFile.h>#include <ImagePP/all/h/HRFPageFileFactory.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>#include <ImagePP/all/h/HRFRasterFileResBooster.h>#include <ImagePP/all/h/HRFSLOStripAdapter.h>#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HUTExportProgressIndicator.h>#include <ImagePP/all/h/HUTExportToFile.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HVE2DRectangle.h>
-#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HIMStripAdapter.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
-#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>
+#include <ImagePP/all/h/HRFCalsFile.h>
+#include <ImagePP/all/h/HRFHMRFile.h>
+#include <ImagePP/all/h/HRFImportExport.h>
+#include <ImagePP/all/h/HRFIntergraphFile.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFLRDFile.h>
+#include <ImagePP/all/h/HRFPageFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
+#include <ImagePP/all/h/HRFRasterFileResBooster.h>
+#include <ImagePP/all/h/HRFSLOStripAdapter.h>
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
+#include <ImagePP/all/h/HUTExportToFile.h>
+#include <ImagePP/all/h/HVE2DUniverse.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HIMStripAdapter.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+
 
 
 

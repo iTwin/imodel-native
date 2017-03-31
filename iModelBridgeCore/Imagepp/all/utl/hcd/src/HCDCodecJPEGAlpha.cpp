@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecJPEGAlpha.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecJPEGAlpha
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>#include <ImagePP/all/h/HFCBuffer.h>#include <ImagePP/all/h/HCDCodecRLE8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>
+#include <ImagePP/all/h/HFCBuffer.h>
+#include <ImagePP/all/h/HCDCodecRLE8.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

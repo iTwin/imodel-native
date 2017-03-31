@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPConvFilterV24PhotoYCC.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPConvFilterV24PhotoYCC
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPConvFilterV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
+
+#include <ImagePP/all/h/HRPConvFilterV24PhotoYCC.h>
+#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
+
 
 //-----------------------------------------------------------------------------
 // public

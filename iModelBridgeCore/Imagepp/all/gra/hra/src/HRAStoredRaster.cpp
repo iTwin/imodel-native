@@ -2,16 +2,49 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAStoredRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAStoredRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRARasterIterator.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HGFMessages.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HRATransactionRecorder.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>#include <ImagePPInternal/gra/ImageAllocator.h>#include <ImagePPInternal/gra/HRAImageNode.h>
+
+#include <ImagePP/all/h/HFCMath.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRARasterIterator.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HGFMessages.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImagePP/all/h/HRABitmapBase.h>
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HRATransactionRecorder.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HRABitmapEditor.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePPInternal/gra/ImageAllocator.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HRAStoredRaster, HRARaster)
 
 //-----------------------------------------------------------------------------

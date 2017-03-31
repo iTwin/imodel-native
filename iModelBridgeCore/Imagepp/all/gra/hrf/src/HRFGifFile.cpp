@@ -2,19 +2,37 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>
-#include <ImagePP/all/h/HRFGifFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFGifLineEditor.h>#include <ImagePP/all/h/HRFGifImageEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRFException.h>
-#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HCDPacket.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HFCMath.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+
+#include <ImagePP/all/h/HRFGifFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFGifLineEditor.h>
+#include <ImagePP/all/h/HRFGifImageEditor.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>
+#include <ImagePP/all/h/HCDPacket.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //-----------------------------------------------------------------------------
 // HRFGifBlockCapabilities
 //-----------------------------------------------------------------------------

@@ -2,16 +2,25 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveGrid.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveGrid
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>#include <ImagePP/all/h/HGF2DPosition.h>
-#include <ImagePP/all/h/HGF2DProjectiveGrid.h>
+
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HGF2DPosition.h>
+
+#include <ImagePP/all/h/HGF2DProjectiveGrid.h>
+
 
 //-----------------------------------------------------------------------------
 // Default Constructor

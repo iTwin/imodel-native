@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLEmbedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLOracleFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLEmbedFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLEmbedFile.h>
+
 // This is the creator that registers itself in the scheme list.
 struct URLEmbedFileCreator : public HFCURL::Creator
     {

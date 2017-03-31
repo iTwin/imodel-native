@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/NonLinearTransforms.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRARasterCopyFromTester
@@ -10,7 +10,8 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+
 /*
 //-----------------------------------------------------------------------------
 //  This class is a 2DTransfoModel defined for testing purposes only.

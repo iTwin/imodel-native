@@ -2,19 +2,27 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DSimpleShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DSimpleShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DSimpleShape.h>
+
+#include <ImagePP/all/h/HVE2DSimpleShape.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DSimpleShape, HVE2DShape)
 
 
-#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HVE2DPolygon.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DUniverse.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+
 
 
 //-----------------------------------------------------------------------------

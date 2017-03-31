@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPyramidRasterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
 // Methods for class HRAPyramidRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRAPyramidRasterIterator.h>
+
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRAPyramidRasterIterator.h>
+
 
 //-----------------------------------------------------------------------------
 // public

@@ -6,16 +6,18 @@
 //:>       $Date: 2011/12/22 14:03:58 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoreferenceContext
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HRFGeoreferenceContext.h>
+
+#include <ImagePP/all/h/HRFGeoreferenceContext.h>
+
 
 HRFGeoreferenceContext::HRFGeoreferenceContext(double pi_defaultRatioToMeterForRaster,
                                                double pi_defaultRatioToMeterForSisterFile,

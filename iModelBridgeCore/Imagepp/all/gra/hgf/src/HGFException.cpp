@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFException.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGFException.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGFException.h>
+
 
 
 //---------------------------------------------------------------------------

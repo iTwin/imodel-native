@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecLZW.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 // Methods for class HCDCodecLZW
 //-----------------------------------------------------------------------------
   
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecLZW.h>#include <ImagePP/all/h/HCDLZWDecoder.h>#include <ImagePP/all/h/HCDLZWEncoder.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecLZW.h>
+#include <ImagePP/all/h/HCDLZWDecoder.h>
+#include <ImagePP/all/h/HCDLZWEncoder.h>
+
 #define XREPEAT4(n, op)        \
     switch (n) {        \
     default: { HSINTX i; for (i = n-4; i > 0; i--) { op; } } \

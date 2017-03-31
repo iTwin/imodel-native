@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFLIRLE8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecFLIRLE8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecFLIRLE8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecFLIRLE8.h>
+
 #define HCD_CODEC_NAME "FLI_RLE8bits"
 
 //-----------------------------------------------------------------------------

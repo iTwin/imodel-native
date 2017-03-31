@@ -2,34 +2,85 @@
 //:>
 //:>     $Source: all/gra/hrs/src/HRSObjectStore.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRSObjectStore
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRSObjectStore.h>
-#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRAStripedRaster.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRABitmapRLE.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRATransactionRecorder.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
-#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGF2DTranslation.h>
-#include <ImagePP/all/h/HRFRasterFileResBooster.h>
+
+#include <ImagePP/all/h/HRSObjectStore.h>
+
+#include <ImagePP/all/h/HRATiledRaster.h>
+#include <ImagePP/all/h/HRAStripedRaster.h>
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HFCExceptionHandler.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRABitmapRLE.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HTIFFTag.h>
+#include <ImagePP/all/h/HGSTypes.h>
+#include <ImagePP/all/h/HRABitmapBase.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRATransactionRecorder.h>
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+
+#include <ImagePP/all/h/HRFRasterFileResBooster.h>
+
 // Improve
-#include <ImagePP/all/h/HRFAdaptStripToImage.h>#include <ImagePP/all/h/HRFAdaptTileToImage.h>#include <ImagePP/all/h/HRFAdaptLineToImage.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCStat.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRFAdaptStripToImage.h>
+#include <ImagePP/all/h/HRFAdaptTileToImage.h>
+#include <ImagePP/all/h/HRFAdaptLineToImage.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCStat.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+
 // These pixeltypes below are hidden.
 //
 //    --> to RLE1Bit
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>//
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
+//
 //  --> to I8R8G8B8(A8)
-#include <ImagePP/all/h/HRPPixelTypeI2R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>//
+#include <ImagePP/all/h/HRPPixelTypeI2R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>
+//
 //  --> to V24R8G8B8
-#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>
+#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>
+#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>
 
-#include <ImagePP/all/h/HUTExportProgressIndicator.h>
-#include <ImagePP/all/h/HMDAnnotationIconsPDF.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HMDVolatileLayers.h>
+
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
+
+#include <ImagePP/all/h/HMDAnnotationIconsPDF.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HMDVolatileLayers.h>
+
 //-----------------------------------------------------------------------------
 // Adds information about the raster file in the raster file tags.
 //-----------------------------------------------------------------------------

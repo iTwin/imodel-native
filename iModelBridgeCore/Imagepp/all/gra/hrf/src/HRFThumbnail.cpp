@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFThumbnail.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HRFThumbnail
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
-#include <ImagePP/all/h/HRFThumbnail.h>#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImageppInternal.h>
+ // Must be the first include.
+#include <ImagePP/all/h/HRFThumbnail.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+
 
 //-----------------------------------------------------------------------------
 // Public

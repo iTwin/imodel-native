@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DWorldCluster
@@ -13,7 +13,10 @@
 #pragma once
 
 
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -100,4 +103,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGF2DWorldCluster.hpp"
+#include "HGF2DWorldCluster.hpp"

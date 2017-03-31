@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTClassIDDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTClassIDDescriptor
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCMacros.h"#include "HPMClassKey.h"#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include "HFCMacros.h"
+#include "HPMClassKey.h"
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HCDCodec;
 class HRPPixelType;

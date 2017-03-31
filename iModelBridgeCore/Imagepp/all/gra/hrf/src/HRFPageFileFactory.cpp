@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageFileFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,8 +11,11 @@
 // This class describes the PageFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFPageFileFactory.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFPageFileFactory.h>
+
 HFC_IMPLEMENT_SINGLETON(HRFPageFileFactory)
 
 //-----------------------------------------------------------------------------

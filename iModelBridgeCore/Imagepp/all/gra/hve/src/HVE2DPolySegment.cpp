@@ -2,16 +2,23 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DPolySegment.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HVE2DPolySegment.h>#include <ImagePP/all/h/HVE2DSegment.h>
-#include <ImagePP/all/h/HFCException.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DLiteSegment.h>
+#include <ImagePP/all/h/HVE2DPolySegment.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
+
+#include <ImagePP/all/h/HFCException.h>
+
 HPM_REGISTER_CLASS(HVE2DPolySegment, HVE2DLinear)
 
 

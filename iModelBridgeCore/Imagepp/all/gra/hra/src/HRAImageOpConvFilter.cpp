@@ -2,12 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageOpConvFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRAImageOpConvFilter.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRAImageOpConvFilter.h>
+#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+
 enum ChannelOperation
     {
     CHANNELOP_Nop,          // Use when channel doesn't exist.

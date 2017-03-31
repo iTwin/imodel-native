@@ -2,15 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifLineEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFGifFile.h>#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HRFGifLineEditor.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+
+#include <ImagePP/all/h/HRFGifFile.h>
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>
+#include <ImagePP/all/h/HRFGifLineEditor.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+
 #define DEFAULT_SIZE 1000
 
 //-----------------------------------------------------------------------------

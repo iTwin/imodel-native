@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSException.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HPANode.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPSException.h>
+#include <ImagePP/all/h/HPANode.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor

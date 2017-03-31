@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: all/utl/hmd/src/HMDAnnotations.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>ayer
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMDAnnotations.h>
+
+#include <ImagePP/all/h/HMDAnnotations.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

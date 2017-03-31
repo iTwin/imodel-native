@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileExtender.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HRFRasterFileExtender
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HMDContext.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFRasterFileExtender.h>
+#include <ImagePP/all/h/HMDContext.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // HRFRasterFileExtender

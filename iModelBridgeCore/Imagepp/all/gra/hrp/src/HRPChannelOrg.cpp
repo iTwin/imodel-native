@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPChannelOrg.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPChannelOrg
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPChannelOrg.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPChannelOrg.h>
+
 //-----------------------------------------------------------------------------
 // Constructor.  It takes no argument, object properties must be set with
 // channel and palette setup methods.

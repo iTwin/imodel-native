@@ -2,16 +2,29 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFilePageDecorator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFilePageDecorator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>
-#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HRFCombinedRasterFileCapabilities.h>#include <ImagePP/all/h/HRFSLOModelComposer.h>#include <ImagePP/all/h/HGF2DStretch.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFResBoosterEditor.h>
+#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>
+#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
+#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>
+#include <ImagePP/all/h/HRFCombinedRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRFSLOModelComposer.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

@@ -2,27 +2,35 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIJG8Bits.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDException.h>
+
+#include <ImagePP/all/h/HCDException.h>
+
 // Enable this to have MergeDQT_DHT support. Right now libjpeg-turbo is not exposing this service but it could.
 // #define HAVE_TRANSUPP
 
 #ifdef JPEGLIB_SUPPORT_12BITS
     // jpegturbo cannot handle 12 bits. Use the libjpeg from out external source.
-    #include "../../../../ext/jpeg/jpeglib.h"    #ifdef HAVE_TRANSUPP
-        #include "../../../../ext/jpeg/transupp.h"    #endif
-    #include "HCDCodecIJG12Bits.h"    #define JPEGLIB_SUPPORT_12BITS          // HCDCodecIJG12bits.h undefines the symbol
+    #include "../../../../ext/jpeg/jpeglib.h"
+    #ifdef HAVE_TRANSUPP
+        #include "../../../../ext/jpeg/transupp.h"
+    #endif
+    #include "HCDCodecIJG12Bits.h"
+    #define JPEGLIB_SUPPORT_12BITS          // HCDCodecIJG12bits.h undefines the symbol
 #else
-    #include <libjpeg-turbo/jpeglib.h>    #ifdef HAVE_TRANSUPP
-        #include <libjpeg-turbo/transupp.h>    #endif
-    #include "HCDCodecIJG8Bits.h"#endif
+    #include <libjpeg-turbo/jpeglib.h>
+    #ifdef HAVE_TRANSUPP
+        #include <libjpeg-turbo/transupp.h>
+    #endif
+    #include "HCDCodecIJG8Bits.h"
+#endif
 
 //When the size of the subset is very small it is possible that the safety factor of
 //2 may be not enough. So add an offset that should be increased as required.

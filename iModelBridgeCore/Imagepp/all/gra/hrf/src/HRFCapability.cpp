@@ -2,14 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCapability.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFCapability
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
-#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HPMAttribute.h>#include <ImagePP/all/h/HCDCodecFactory.h>
+#include <ImageppInternal.h>
+ // Must be the first include.
+#include <ImagePP/all/h/HRFCapability.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HPMAttribute.h>
+#include <ImagePP/all/h/HCDCodecFactory.h>
+
 
 
 /*---------------------------------------------------------------------------------**//**

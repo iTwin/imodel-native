@@ -2,14 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngImageEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFPngImageEditor.h>#include <ImagePP/all/h/HRFPngFile.h>#include <png/png.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFPngImageEditor.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <png/png.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
 
 #define PNG_RASTERFILE  static_cast<HRFPngFile*>(GetRasterFile().GetPtr())
 

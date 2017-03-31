@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMath.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMath
 //----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCMath.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCMath.h>
+
 
 HFC_IMPLEMENT_SINGLETON(HFCMath)
 

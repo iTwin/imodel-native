@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSInternalNodes.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Node types, in order of appearance in grammar description
@@ -11,10 +11,23 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCMemoryLineStream.h>
-#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFLUVCube.h>#include <ImagePP/all/h/HGFRGBCube.h>
-#include <ImagePP/all/h/HMDContext.h>
-#include <ImagePP/all/h/HPSNode.h>#include <ImagePP/all/h/HPSValueNode.h>#include "HPSSession.h"#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRFGeoreferenceContext.h>#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HRPAlphaRange.h>
+#include <ImagePP/all/h/HFCLocalBinStream.h>
+#include <ImagePP/all/h/HFCMemoryLineStream.h>
+
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGFLUVCube.h>
+#include <ImagePP/all/h/HGFRGBCube.h>
+
+#include <ImagePP/all/h/HMDContext.h>
+
+#include <ImagePP/all/h/HPSNode.h>
+#include <ImagePP/all/h/HPSValueNode.h>
+#include "HPSSession.h"
+#include <ImagePP/all/h/HRARaster.h>
+#include <ImagePP/all/h/HRFGeoreferenceContext.h>
+#include <ImagePP/all/h/HRPFilter.h>
+#include <ImagePP/all/h/HRPAlphaRange.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;

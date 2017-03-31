@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: all/utl/hmd/src/HMDLayerInfoPDF.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMDLayerInfoPDF.h>
+
+#include <ImagePP/all/h/HMDLayerInfoPDF.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

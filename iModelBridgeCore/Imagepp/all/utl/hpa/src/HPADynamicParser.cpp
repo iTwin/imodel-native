@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPADynamicParser.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPADynamicParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPADynamicParser.h>#include <ImagePP/all/h/HPASession.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPADynamicParser.h>
+#include <ImagePP/all/h/HPASession.h>
+
 /////////////////////////////////////////////////////////////////////////////
 // Specialized node types.  When a rule is resolved a grammar object
 // is created or (for topmost rule) the parser is told to use the new

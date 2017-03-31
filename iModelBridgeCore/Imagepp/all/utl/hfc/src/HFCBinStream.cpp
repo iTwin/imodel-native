@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 // Static member initialization
 
 HFCBinStream::StreamTypeList* HFCBinStream::s_pStreamTypeList = 0;

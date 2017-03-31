@@ -2,14 +2,22 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCStat.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCStat
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>#include <ImagePP/all/h/interface/IFileReaderHandler.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCURLHTTP.h>
+#include <ImagePP/all/h/HFCURLHTTPS.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HFCURLEmbedFile.h>
+#include <ImagePP/all/h/interface/IFileReaderHandler.h>
+
 //-----------------------------------------------------------------------------
 // Static member Initialization
 //-----------------------------------------------------------------------------

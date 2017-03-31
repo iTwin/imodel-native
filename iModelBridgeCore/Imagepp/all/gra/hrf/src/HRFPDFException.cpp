@@ -2,17 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFException.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation for HRFPDFException
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFPDFFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFPDFFile.h>
+
 #if defined(IPP_HAVE_PDF_SUPPORT) 
 
-#include <ImagePP/all/h/HRFPDFException.h>
-#include "HRFPDFLibInterface.h"
+#include <ImagePP/all/h/HRFPDFException.h>
+
+#include "HRFPDFLibInterface.h"
+
 typedef map<HRFPDFException::ErrorCode, ExceptionID>        ErrorMap;
 typedef ErrorMap::value_type                                ErrorMapItem;
 

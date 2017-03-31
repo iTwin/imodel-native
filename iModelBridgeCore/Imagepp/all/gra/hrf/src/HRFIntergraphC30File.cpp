@@ -2,18 +2,36 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphC30File.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphC30File
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFIntergraphC30File.h>#include <ImagePP/all/h/HRFIntergraphColorFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HCDCodecIJG.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCException.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFIntergraphC30File.h>
+#include <ImagePP/all/h/HRFIntergraphColorFile.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/HRPPixelPalette.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCException.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //-----------------------------------------------------------------------------
 // HRFIntergraphC30BlockCapabilities
 //-----------------------------------------------------------------------------

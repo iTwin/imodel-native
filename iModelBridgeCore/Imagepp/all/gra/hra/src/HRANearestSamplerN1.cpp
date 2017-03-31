@@ -2,14 +2,20 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRANearestSamplerN1.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRANearestSamplerN1.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCMath.h>
+
+#include <ImagePP/all/h/HRANearestSamplerN1.h>
+
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 
 /**----------------------------------------------------------------------------
  Constructor for this class

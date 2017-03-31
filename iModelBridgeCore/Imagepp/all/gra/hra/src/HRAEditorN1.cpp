@@ -2,17 +2,25 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditorN1.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------
 // Class HRAEditorN1
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAEditorN1.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HGFScanLineOrientation.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HFCMath.h>
+
+#include <ImagePP/all/h/HRAEditorN1.h>
+
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HGFScanLineOrientation.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor

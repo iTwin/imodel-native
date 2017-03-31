@@ -2,17 +2,44 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIMMosaic.h>#include <ImagePP/all/h/HIMBufferedImage.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
-#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>
-#include <ImagePP/all/h/HFCException.h>
-#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HGFMappedSurface.h>
-#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HIMMosaic.h>
+#include <ImagePP/all/h/HIMBufferedImage.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HVE2DUniverse.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+
+#include <ImagePP/all/h/HFCException.h>
+
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 HPM_REGISTER_CLASS(HIMMosaic, HRARaster)
 
 

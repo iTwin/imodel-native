@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecErMapperSupported.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecErMapperSupported.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecErMapperSupported.h>
+
 #define HCD_CODEC_NAME     "ErMapperSupportedCodec"
 
 //-----------------------------------------------------------------------------

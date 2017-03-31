@@ -2,17 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPFilter.h>
-#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+
+#include <ImagePP/all/h/HRPFilter.h>
+
+#include <ImagePP/all/h/HRPComplexFilter.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+
 //-----------------------------------------------------------------------------
 // protected
 // Default constructor.

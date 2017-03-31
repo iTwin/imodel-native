@@ -2,14 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeRGB.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeRGB
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelTypeRGB.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h>#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8A8.h>#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8A8.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelTypeRGB.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h>
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
+#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8A8.h>
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8A8.h>
+
 
 
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelTypeRGB, HRPPixelType)

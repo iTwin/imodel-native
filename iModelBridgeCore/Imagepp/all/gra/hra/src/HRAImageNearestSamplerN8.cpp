@@ -2,12 +2,20 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageNearestSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePPInternal/gra/HRAImageNearestSamplerN8.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePPInternal/gra/HRAImageSurface.h>
+#include <ImageppInternal.h>
+
+#include <ImagePPInternal/gra/HRAImageNearestSamplerN8.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
+#include <ImagePPInternal/gra/HRAImageSurface.h>
+
 
 
 /*---------------------------------------------------------------------------------**//**

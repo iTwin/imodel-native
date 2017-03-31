@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCCapabilities.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h> // Must be the first include.
+#include <ImageppInternal.h>
+ // Must be the first include.
 
-#include <ImagePP/all/h/HFCCapabilities.h>#include <ImagePP/all/h/HFCCapability.h>
+#include <ImagePP/all/h/HFCCapabilities.h>
+#include <ImagePP/all/h/HFCCapability.h>
+
 
 /** -----------------------------------------------------------------------------
     This is the constructor. An empty capability set is created. Since capabilities

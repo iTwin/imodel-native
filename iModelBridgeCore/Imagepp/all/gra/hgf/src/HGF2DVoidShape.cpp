@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DVoidShape.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DVoidShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
+
+#include <ImagePP/all/h/HGF2DVoidShape.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
 
 //-----------------------------------------------------------------------------
 // CalculateSpatialPositionOf

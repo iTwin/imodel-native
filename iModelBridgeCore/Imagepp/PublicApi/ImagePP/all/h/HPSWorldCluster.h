@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,7 +14,9 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HGF2DWorldCluster.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSWorldCluster : public HGF2DWorldCluster

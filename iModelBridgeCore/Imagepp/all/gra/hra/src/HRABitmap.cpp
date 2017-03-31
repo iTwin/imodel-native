@@ -2,19 +2,73 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmap.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmap
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRABitmapIterator.h>#include <ImagePP/all/h/HGF2DLocation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGFLightnessColorSpace.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRASamplingOptions.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRARasterEditor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HRATransaction.h>
-#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HGFScanlines.h>
-#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRASurface.h>
-#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeGray.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HGFTolerance.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePPInternal/gra/ImageCommon.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRABitmapIterator.h>
+#include <ImagePP/all/h/HGF2DLocation.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGFLightnessColorSpace.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRASamplingOptions.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HRARasterEditor.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HPMPool.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HRPComplexFilter.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRABitmapEditor.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRASurface.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
+#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>
+#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HRPPixelTypeGray.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <ImagePP/all/h/HGFTolerance.h>
+#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImagePPInternal/gra/ImageCommon.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 
 
 HPM_REGISTER_CLASS(HRABitmap, HRABitmapBase)

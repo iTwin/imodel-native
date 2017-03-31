@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAReferenceToRasterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAReferenceToRasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>#include <ImagePP/all/h/HRAReferenceToRasterEditor.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRAReferenceToRasterEditor.h>
+
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

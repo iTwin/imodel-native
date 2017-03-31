@@ -2,17 +2,26 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSRTMFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSRTMFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRFSRTMFile.h>#include <ImagePP/all/h/HRFSRTMEditor.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRFSRTMFile.h>
+#include <ImagePP/all/h/HRFSRTMEditor.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 // Constant initialization
 const uint32_t HRFSRTMFile::SRTM1_SIZE = 25934402;
 const uint32_t HRFSRTMFile::SRTM3_SIZE = 2884802;

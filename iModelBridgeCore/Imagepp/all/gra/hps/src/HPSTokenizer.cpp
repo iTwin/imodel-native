@@ -2,14 +2,22 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSTokenizer.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSTokenizer
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPSTokenizer.h>#include <ImagePP/all/h/HPSParser.h>#include "HPSParserScope.h"#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPSTokenizer.h>
+#include <ImagePP/all/h/HPSParser.h>
+#include "HPSParserScope.h"
+#include <ImagePP/all/h/HPSException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
 //---------------------------------------------------------------------------
 HPSTokenizer::HPSTokenizer(HPSParser* pi_pParser)
     : HPADefaultTokenizer(false),

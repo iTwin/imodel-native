@@ -2,20 +2,42 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphMPFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphMPFFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFIntergraphMPFFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
-#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
-#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>
-#include <ImagePP/all/h/HRFIntergraphCITFile.h>#include <ImagePP/all/h/HRFIntergraphTG4File.h>#include <ImagePP/all/h/HRFIntergraphRLEFile.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFIntergraphFile.h>
+#include <ImagePP/all/h/HRFIntergraphMPFFile.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+
+#include <ImagePP/all/h/HRPPixelPalette.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include <ImagePP/all/h/HRFIntergraphCITFile.h>
+#include <ImagePP/all/h/HRFIntergraphTG4File.h>
+#include <ImagePP/all/h/HRFIntergraphRLEFile.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 //-----------------------------------------------------------------------------
 // HRFMPFBlockCapabilities
 //-----------------------------------------------------------------------------

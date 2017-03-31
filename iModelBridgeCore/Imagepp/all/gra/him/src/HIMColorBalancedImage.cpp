@@ -2,13 +2,31 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMColorBalancedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    //:> must be first
+#include <ImageppInternal.h>
+    //:> must be first
 
-#include <ImagePP/all/h/HIMColorBalancedImage.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HIMColorBalancedImageIterator.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeGray.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRPHistogram.h>
+#include <ImagePP/all/h/HIMColorBalancedImage.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HIMColorBalancedImageIterator.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeGray.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRPHistogram.h>
+
 HPM_REGISTER_CLASS(HIMColorBalancedImage, HRAImageView)
 
 

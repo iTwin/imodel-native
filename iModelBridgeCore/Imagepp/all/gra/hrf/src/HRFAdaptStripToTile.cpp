@@ -2,16 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptStripToTile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptStripToTile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFAdaptStripToTile.h>
+
 HFC_IMPLEMENT_SINGLETON(HRFAdaptStripToTileCapabilities)
 
 //-----------------------------------------------------------------------------

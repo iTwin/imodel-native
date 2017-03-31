@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hmg/src/HMGMessage.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for classes HMGMessage, HMGSynchronousMessage and HMGAsynchronousMessage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HMGMessage.h>
+
+#include <ImagePP/all/h/HMGMessage.h>
+
 
 ///////////////////////////////////////////////
 // Methods of class HMGMessage

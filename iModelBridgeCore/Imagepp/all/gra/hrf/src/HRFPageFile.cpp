@@ -2,17 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCStat.h>
-#include <ImagePP/all/h/HRFPageFile.h>#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+
+#include <ImagePP/all/h/HFCStat.h>
+
+#include <ImagePP/all/h/HRFPageFile.h>
+#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

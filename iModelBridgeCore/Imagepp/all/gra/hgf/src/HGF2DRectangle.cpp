@@ -2,18 +2,28 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DRectangle.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DRectangle
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <ImagePP/all/h/HGF2DRectangle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HGF2DRectangle.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+
+
+
+#include <ImagePP/all/h/HGF2DSegment.h>
+#include <ImagePP/all/h/HGF2DComplexShape.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DVoidShape.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
 
 //-----------------------------------------------------------------------------
 // GetLinear

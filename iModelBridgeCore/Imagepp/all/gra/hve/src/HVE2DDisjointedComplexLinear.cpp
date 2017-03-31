@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DDisjointedComplexLinear.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>
+
+#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>
+
 
 HPM_REGISTER_CLASS(HVE2DDisjointedComplexLinear, HVE2DComplexLinear)
 

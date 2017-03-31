@@ -2,18 +2,29 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPWRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFPWRasterFile.h>#include <ImagePP/all/h/HRFPWEditor.h>
+
+#include <ImagePP/all/h/HRFPWRasterFile.h>
+#include <ImagePP/all/h/HRFPWEditor.h>
+
 #if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
 
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFException.h>
-#include <ImagePP/all/h/interface/IHRFPWFileHandler.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFException.h>
+
+#include <ImagePP/all/h/interface/IHRFPWFileHandler.h>
+
 //-----------------------------------------------------------------------------
 // class HRFPWCapabilities
 //-----------------------------------------------------------------------------

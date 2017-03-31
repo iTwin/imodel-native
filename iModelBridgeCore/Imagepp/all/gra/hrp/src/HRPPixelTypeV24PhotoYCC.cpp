@@ -2,17 +2,27 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV24PhotoYCC.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV24PhotoYCC
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>#include <ImagePP/all/h/HRPChannelOrgPhotoYCC.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include "v24rgb.h" // for YCC conversion factor
+
+#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
+
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
+#include <ImagePP/all/h/HRPChannelOrgPhotoYCC.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include "v24rgb.h" // for YCC conversion factor
+
 HPM_REGISTER_CLASS(HRPPixelTypeV24PhotoYCC, HRPPixelType)
 
 // STL typeDef

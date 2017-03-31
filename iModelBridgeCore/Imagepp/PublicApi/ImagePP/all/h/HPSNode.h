@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSNode.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -13,7 +13,10 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HPANode.h>
+#include <ImagePP/all/h/HGF2DWorldCluster.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class PageStatementNode;
 class HRARaster;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheController.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,8 +10,12 @@
 // Class HRFCacheController
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
-#include <ImagePP/all/h/HRFCacheController.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>
+#include <ImageppInternal.h>
+    //:> must be first for PreCompiledHeader Option
+#include <ImagePP/all/h/HRFCacheController.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+
 /**-----------------------------------------------------------------------------
  Public constructor of the class.
 ------------------------------------------------------------------------------*/

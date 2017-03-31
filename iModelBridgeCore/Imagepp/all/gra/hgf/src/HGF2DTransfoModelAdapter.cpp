@@ -2,17 +2,20 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DTransfoModelAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGF2DTransfoModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DIdentity.h>
-#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
+
+#include <ImagePP/all/h/HGF2DIdentity.h>
+
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
+
 
 //-----------------------------------------------------------------------------
 // Default Constructor

@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPMedianFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPMedianFilter.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPMedianFilter.h>
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // HRPMedianFilter
 //-----------------------------------------------------------------------------

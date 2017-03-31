@@ -2,15 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include "HRFVirtualEarthEditor.h"#include <ImagePP/all/h/HRFVirtualEarthFile.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePPInternal/gra/Task.h>#include <ImagePPInternal/HttpConnection.h>#include <BeJpeg/BeJpeg.h>
+
+#include "HRFVirtualEarthEditor.h"
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <ImagePPInternal/gra/Task.h>
+#include <ImagePPInternal/HttpConnection.h>
+#include <BeJpeg/BeJpeg.h>
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------

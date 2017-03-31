@@ -8,13 +8,20 @@
 // Class HRFErMapperSupportedFileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+
 #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
 
-#include <ImagePP/all/h/HRFErMapperSupportedFileEditor.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HRFErMapperSupportedFileEditor.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 // Includes from the ERMapper SDK
-#include <ErdasEcwJpeg2000/NCSECWClient.h>#include <ErdasEcwJpeg2000/NCSTypes.h>#include <ErdasEcwJpeg2000/NCSUtil.h>
+#include <ErdasEcwJpeg2000/NCSECWClient.h>
+#include <ErdasEcwJpeg2000/NCSTypes.h>
+#include <ErdasEcwJpeg2000/NCSUtil.h>
+
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------
@@ -401,10 +408,24 @@ uint64_t s_RemapXChannelsToRGBA (Byte* const       po_pBIPOutputBuffer,
 
 #ifdef __ECW_EXPORT_ENABLE__
 
-#include <ImagePP/all/h/HUTExportProgressIndicator.h>#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HCDCodecErMapperSupported.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
+#include <ImagePP/all/h/HRFRasterFileExtender.h>
+#include <ImagePP/all/h/HCDCodecErMapperSupported.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRAPyramidRaster.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+
 // Includes from the ERMapper  SDK
-#include <ErdasEcwJpeg2000/NCSEcwCompressClient.h>#include <ErdasEcwJpeg2000/NCSTypes.h>//#include <ErdasEcwJpeg2000/NCSGDTLocation.h>
-#include <ErdasEcwJpeg2000/NCSMalloc.h>
+#include <ErdasEcwJpeg2000/NCSEcwCompressClient.h>
+#include <ErdasEcwJpeg2000/NCSTypes.h>
+//#include <ErdasEcwJpeg2000/NCSGDTLocation.h>
+#include <ErdasEcwJpeg2000/NCSMalloc.h>
+
 //----------------------------------------------------------------------------
 // Structure to store client read data
 struct ECWReadInfoStruct

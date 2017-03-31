@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelBuffer.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HRPPixelBuffer
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelBuffer.h>#include <ImagePP/all/h/HRPPixelType.h>
+
+#include <ImagePP/all/h/HRPPixelBuffer.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Constructor.

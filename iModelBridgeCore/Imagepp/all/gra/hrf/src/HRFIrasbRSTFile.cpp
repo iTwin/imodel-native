@@ -2,14 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIrasbRSTFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    // must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>
+    // must be first for PreCompiledHeader Option
 
-#include <ImagePP/all/h/HRFIrasbRSTFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFIntergraphMPFFile.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HRFIrasbRSTFile.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFIntergraphMPFFile.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
 HFC_IMPLEMENT_SINGLETON(HRFIrasbRSTCreator)
 
 //-----------------------------------------------------------------------------

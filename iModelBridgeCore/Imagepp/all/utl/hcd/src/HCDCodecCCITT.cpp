@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecCCITT.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecCCITT
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecCCITT.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecCCITT.h>
+
 #define HCDCODECCCITT_WORSTCASEINFLATION            6
 
 // After some tests, 20:1 looks more realistic than 50:1

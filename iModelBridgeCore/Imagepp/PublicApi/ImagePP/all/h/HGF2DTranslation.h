@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTranslation.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DTranslation
@@ -11,7 +11,9 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -142,4 +144,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGF2DTranslation.hpp"
+#include "HGF2DTranslation.hpp"

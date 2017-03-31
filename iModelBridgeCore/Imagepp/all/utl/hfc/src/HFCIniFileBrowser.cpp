@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCIniFileBrowser.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation of the HFCIniFileBrowser class.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCIniFileBrowser.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HFCIniFileBrowser.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+
 /**----------------------------------------------------------------------------
  Constructor for this class. The constructor opens the configuration
  file to be browsed.  It must be existent and it must contain at least

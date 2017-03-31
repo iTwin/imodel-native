@@ -2,16 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFJpegLineEditor.h>#include <ImagePP/all/h/HRFJpegFile.h>
-#include <libjpeg-turbo/jpeglib.h>
-#include <ImagePP/all/h/HGFCMYKColorSpace.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFJpegLineEditor.h>
+#include <ImagePP/all/h/HRFJpegFile.h>
+
+#include <libjpeg-turbo/jpeglib.h>
+
+#include <ImagePP/all/h/HGFCMYKColorSpace.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

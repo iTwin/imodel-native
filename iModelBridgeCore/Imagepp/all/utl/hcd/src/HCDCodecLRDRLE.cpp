@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecLRDRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecLRDRLE
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HCDCodecLRDRLE.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HCDCodecLRDRLE.h>
+
 #define HCD_CODEC_NAME "LRDRLE1bits"
 
 static const unsigned char s_StartBitMask [8]        = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};

@@ -2,14 +2,21 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFPolynomialModelAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFPolynomialModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DPosition.h>#include <Geom/GeomApi.h>
-#include <ImagePP/all/h/HGFPolynomialModelAdapter.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DPosition.h>
+#include <Geom/GeomApi.h>
+
+#include <ImagePP/all/h/HGFPolynomialModelAdapter.h>
+
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 

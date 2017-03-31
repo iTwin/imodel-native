@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DBasicLinear.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGF2DBasicLinear.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+
+#include <ImagePP/all/h/HGF2DBasicLinear.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+
 
 
 //-----------------------------------------------------------------------------

@@ -2,14 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffStripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFTiffStripEditor.h>#include <ImagePP/all/h/HRFTiffFile.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFTiffStripEditor.h>
+#include <ImagePP/all/h/HRFTiffFile.h>
+#include <ImagePP/all/h/HTIFFFile.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
+#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 
 
 #define RASTER_FILE     static_cast<HRFTiffFile*>(GetRasterFile().GetPtr())

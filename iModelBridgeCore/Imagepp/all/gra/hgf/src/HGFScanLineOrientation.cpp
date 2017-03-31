@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFScanLineOrientation.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFScanLineOrientation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFScanLineOrientation.h>#include <ImagePP/all/h/HGF2DAffine.h>
+
+#include <ImagePP/all/h/HGFScanLineOrientation.h>
+#include <ImagePP/all/h/HGF2DAffine.h>
+
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

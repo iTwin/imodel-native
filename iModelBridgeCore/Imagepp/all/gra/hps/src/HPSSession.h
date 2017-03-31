@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSSession.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -13,8 +13,12 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCURL.h>
-#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HPASession.h>#include <ImagePP/all/h/HPSWorldCluster.h>
+#include <ImagePP/all/h/HFCURL.h>
+
+#include <ImagePP/all/h/HPANode.h>
+#include <ImagePP/all/h/HPASession.h>
+#include <ImagePP/all/h/HPSWorldCluster.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPMPool;
@@ -86,4 +90,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPSSession.hpp"
+#include "HPSSession.hpp"

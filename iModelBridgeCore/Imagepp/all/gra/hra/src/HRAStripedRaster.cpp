@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAStripedRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAStripedRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAStripedRaster.h>#include <ImagePP/all/h/HGF2DGrid.h>
+
+#include <ImagePP/all/h/HRAStripedRaster.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+
 
 HPM_REGISTER_CLASS(HRAStripedRaster, HRATiledRaster)
 

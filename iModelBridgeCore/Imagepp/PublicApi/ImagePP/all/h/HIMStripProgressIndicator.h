@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStripProgressIndicator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMStripProgressIndicator
@@ -11,7 +11,9 @@
 
 //----------------------------------------------------------------------------
 
-#include <ImagePP/all/h/HFCProgressIndicator.h>#include <ImagePP/all/h/HFCMacros.h>
+#include <ImagePP/all/h/HFCProgressIndicator.h>
+#include <ImagePP/all/h/HFCMacros.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 

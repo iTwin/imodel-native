@@ -2,13 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProfiler.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include "winbase.h"
-#include <ImagePP/all/h/HFCExclusiveKey.h>#include "HFCMacros.h"#include "HFCMonitor.h"
+#include "winbase.h"
+
+#include <ImagePP/all/h/HFCExclusiveKey.h>
+#include "HFCMacros.h"
+#include "HFCMonitor.h"
+
 BEGIN_IMAGEPP_NAMESPACE
 /**
 
@@ -112,4 +116,5 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HFCProfiler.hpp"
+#include "HFCProfiler.hpp"
+

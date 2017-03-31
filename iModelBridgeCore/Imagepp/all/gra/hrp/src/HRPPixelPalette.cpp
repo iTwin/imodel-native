@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelPalette.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelPalette
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelPalette.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelPalette.h>
+
 
 // Mask used to store the last byte of a palette entry
 static const Byte s_Mask[8] = {0xFF, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};

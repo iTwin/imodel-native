@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgs/src/HGSRegion.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -13,8 +13,15 @@
 //:> public section
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGFScanlines.h>
+
 /**----------------------------------------------------------------------------
  Constructor for this class.
 -----------------------------------------------------------------------------*/

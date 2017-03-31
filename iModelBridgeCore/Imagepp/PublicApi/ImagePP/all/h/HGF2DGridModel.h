@@ -2,13 +2,19 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DGridModel.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGFQuadTree.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DPieceWiseModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
+#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGFQuadTree.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGF2DPieceWiseModel.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     HGF2DGridModel

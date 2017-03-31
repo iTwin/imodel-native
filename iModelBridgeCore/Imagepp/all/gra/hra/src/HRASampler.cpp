@@ -2,17 +2,33 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRASampler.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRASampler
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HRASampler.h>#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
-#include <ImagePP/all/h/HRAAverageSamplerN8.h>#include <ImagePP/all/h/HRABicubicSamplerN8.h>#include <ImagePP/all/h/HRABilinearSamplerN8.h>#include <ImagePP/all/h/HRAGenericAverageSampler.h>#include <ImagePP/all/h/HRANearestSamplerN1.h>#include <ImagePP/all/h/HRANearestSamplerN8.h>#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGSTypes.h>
+#include <ImagePP/all/h/HRASampler.h>
+#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>
+#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HRAAverageSamplerN8.h>
+#include <ImagePP/all/h/HRABicubicSamplerN8.h>
+#include <ImagePP/all/h/HRABilinearSamplerN8.h>
+#include <ImagePP/all/h/HRAGenericAverageSampler.h>
+#include <ImagePP/all/h/HRANearestSamplerN1.h>
+#include <ImagePP/all/h/HRANearestSamplerN8.h>
+#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
+
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
+
 /**----------------------------------------------------------------------------
  Constructor for this class
 

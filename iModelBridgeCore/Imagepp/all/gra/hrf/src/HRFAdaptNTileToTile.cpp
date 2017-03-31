@@ -2,17 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptNTileToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptNTileToTile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptNTileToTile.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFAdaptNTileToTile.h>
+
 
 HFC_IMPLEMENT_SINGLETON(HRFAdaptNTileToTileCapabilities)
 

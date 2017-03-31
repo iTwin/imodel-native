@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hpm/src/HPMPersistentObject.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPMPersistentObject
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HPMObjectStore.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPMPersistentObject.h>
+#include <ImagePP/all/h/HPMObjectStore.h>
+
 
 /**----------------------------------------------------------------------------
  Default constructor for this class.

@@ -7,7 +7,9 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include "HMDMetaDataContainer.h"#include <ImagePP/all/h/HMDVolatileLayerInfo.h>
+#include "HMDMetaDataContainer.h"
+#include <ImagePP/all/h/HMDVolatileLayerInfo.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HMDLayerInfo;

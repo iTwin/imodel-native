@@ -2,24 +2,31 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalUtilities.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGdalUtilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
 #ifdef IPP_HAVE_GDAL_SUPPORT
 
-#include <ImagePP/all/h/HPMAttributeSet.h>#include <ImagePP/all/h/HRFGdalUtilities.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
-#include <ImagePP-GdalLib/cpl_conv.h>#include <ImagePP-GdalLib/ogr_spatialref.h>
+#include <ImagePP/all/h/HPMAttributeSet.h>
+#include <ImagePP/all/h/HRFGdalUtilities.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <ImagePP-GdalLib/cpl_conv.h>
+#include <ImagePP-GdalLib/ogr_spatialref.h>
+
 
 // All this ugly stuff below exists so we do not need to add gdal internals to our search path.
 // Hopefully we are planning or redesigning how we handle geocoding. 
 // #ifndef BEIJING_WIP_IMAGEPP
      #define GEO_CONFIG_H // avoid inclusion of geo_config.h stuff
-     #include "../../../../ext/gdal/frmts/gtiff/libgeotiff/geo_normalize.h"// #endif
+     #include "../../../../ext/gdal/frmts/gtiff/libgeotiff/geo_normalize.h"
+// #endif
 
 extern "C" char CPL_DLL* GTIFGetOGISDefn(GTIF*, GTIFDefn*);
 extern "C" int32_t  CPL_DLL  GTIFSetFromOGISDefn(GTIF*, const char*);

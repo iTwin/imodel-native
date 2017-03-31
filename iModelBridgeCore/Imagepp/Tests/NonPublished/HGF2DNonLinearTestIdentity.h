@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/HGF2DNonLinearTestIdentity.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DNonLinearTestIdentity
@@ -12,7 +12,8 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+
 class HGFDistance;
 
 

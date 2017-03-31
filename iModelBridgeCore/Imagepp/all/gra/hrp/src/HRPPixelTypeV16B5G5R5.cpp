@@ -8,10 +8,18 @@
 // Methods for class HRPPixelTypeV16B5G5R5
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPChannelOrgB5G5R5.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HFCMath.h>
+#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRPChannelOrgB5G5R5.h>
+
+
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 HPM_REGISTER_CLASS(HRPPixelTypeV16B5G5R5, HRPPixelType)
 
 // STL typeDef

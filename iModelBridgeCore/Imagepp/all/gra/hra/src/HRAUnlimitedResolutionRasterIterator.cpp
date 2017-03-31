@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAUnlimitedResolutionRasterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
 // Methods for class HRAUnlimitedResolutionRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAUnlimitedResolutionRasterIterator.h>#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>
+
+#include <ImagePP/all/h/HRAUnlimitedResolutionRasterIterator.h>
+#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>
+
 
 //-----------------------------------------------------------------------------
 // public

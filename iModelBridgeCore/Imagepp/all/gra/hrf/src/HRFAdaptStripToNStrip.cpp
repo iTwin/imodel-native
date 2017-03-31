@@ -2,17 +2,23 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToNStrip.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptStripToNStrip
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptStripToNStrip.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFAdaptStripToNStrip.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDPacketRLE.h>
+
 //-----------------------------------------------------------------------------
 // Utility class no turn off buffer ownership.
 //-----------------------------------------------------------------------------

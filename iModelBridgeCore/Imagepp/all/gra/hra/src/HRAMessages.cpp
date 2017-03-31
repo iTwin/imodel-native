@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAMessages.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for HRA message classes
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRARaster.h>      // Got to...
+
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRARaster.h>      // Got to...
+
 //-----------------------------------------------------------------------------
 // Destructor
 //-----------------------------------------------------------------------------

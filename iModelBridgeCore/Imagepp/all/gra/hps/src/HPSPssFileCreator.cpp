@@ -2,11 +2,25 @@
 |
 |     $Source: all/gra/hps/src/HPSPssFileCreator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPSPssFileCreator.h>#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPSPssFileCreator.h>
+#include <ImagePP/all/h/HPSPssFile.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -2,22 +2,38 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HMDAnnotations.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HMDLayers.h>#include <ImagePP/all/h/HMDVolatileLayers.h>#include <ImagePP/all/h/HGF2DCoordSys.h> #include <ImagePP/all/h/HGF2DPosition.h>
+#include <ImagePP/all/h/HMDAnnotations.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HMDLayers.h>
+#include <ImagePP/all/h/HMDVolatileLayers.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h> 
+#include <ImagePP/all/h/HGF2DPosition.h>
+
 class HVE2DVector;
 
 
-#include <PdfLibInitializer/PdfLibInitializerManager.h>
-#ifdef _WIN32
-    #include <Shtypes.h>    // Needed for some PDF include files#endif
+#include <PdfLibInitializer/PdfLibInitializerManager.h>
 
-#include <adobe/Headers/ASCalls.h>#include <adobe/Headers/ASExpT.h>#include <adobe/Headers/ASExtraCalls.h>#include <adobe/Headers/PDCalls.h>#include <adobe/Headers/PDFLCalls.h>#include <adobe/Headers/PERCalls.h>#include <adobe/Headers/PEWCalls.h>#include <adobe/Headers/CosCalls.h>
+#ifdef _WIN32
+    #include <Shtypes.h>    // Needed for some PDF include files
+#endif
+
+#include <adobe/Headers/ASCalls.h>
+#include <adobe/Headers/ASExpT.h>
+#include <adobe/Headers/ASExtraCalls.h>
+#include <adobe/Headers/PDCalls.h>
+#include <adobe/Headers/PDFLCalls.h>
+#include <adobe/Headers/PERCalls.h>
+#include <adobe/Headers/PEWCalls.h>
+#include <adobe/Headers/CosCalls.h>
+
 #define PDF_TILE_WIDTH_HEIGHT   1024
 #define PDF_TILE_SIZE_IN_BYTES  PDF_TILE_WIDTH_HEIGHT*PDF_TILE_WIDTH_HEIGHT*3
 

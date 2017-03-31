@@ -2,15 +2,27 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapBase.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapBase
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRABitmapIterator.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HRAWarper.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRATransaction.h>
+
+#include <ImagePP/all/h/HRABitmapBase.h>
+#include <ImagePP/all/h/HRABitmapIterator.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePP/all/h/HRAWarper.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRATransaction.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HRABitmapBase, HRAStoredRaster)
 
 //-----------------------------------------------------------------------------

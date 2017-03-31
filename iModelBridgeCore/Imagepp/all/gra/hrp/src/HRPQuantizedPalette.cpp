@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPQuantizedPalette.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPQuantizedPalette
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>    // must be first fptr PreCompiledHeader Option
-#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImageppInternal.h>
+    // must be first fptr PreCompiledHeader Option
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+
 //-----------------------------------------------------------------------------
 // Constructor for HRPQuantizedPalette
 //-----------------------------------------------------------------------------

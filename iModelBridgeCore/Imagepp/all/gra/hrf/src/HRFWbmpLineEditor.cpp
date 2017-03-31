@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWbmpLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWbmpLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFWbmpFile.h>#include <ImagePP/all/h/HRFWbmpLineEditor.h>
+
+#include <ImagePP/all/h/HRFWbmpFile.h>
+#include <ImagePP/all/h/HRFWbmpLineEditor.h>
+
 //-----------------------------------------------------------------------------
 // public
 // Construction

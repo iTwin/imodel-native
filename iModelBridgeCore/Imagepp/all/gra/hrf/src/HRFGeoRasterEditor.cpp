@@ -2,17 +2,24 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGeoRasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFGeoRasterEditor.h>#include <ImagePP/all/h/HRFGeoRasterFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
-#include <ImagePP/all/h/HTIFFUtils.h>
-#include <ImagePP/all/h/SDOGeoRasterWrapper.h>
+
+#include <ImagePP/all/h/HRFGeoRasterEditor.h>
+#include <ImagePP/all/h/HRFGeoRasterFile.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+
+#include <ImagePP/all/h/HTIFFUtils.h>
+
+#include <ImagePP/all/h/SDOGeoRasterWrapper.h>
+
 #define GEORASTER_RASTERFILE      (static_cast<HRFGeoRasterFile*>(GetRasterFile().GetPtr()))
 
 //-----------------------------------------------------------------------------

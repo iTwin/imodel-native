@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPATokenizer.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPATokenizer
@@ -14,7 +14,8 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/all/h/HPANode.h>
+#include <ImagePP/all/h/HPANode.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 class HPATokenNode;
 class HPAToken;
@@ -157,4 +158,5 @@ protected:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HPATokenizer.hpp"
+#include "HPATokenizer.hpp"
+

@@ -2,14 +2,20 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DVector.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DVector.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DLinear.h>#include <ImagePP/all/h/HGFLiteTolerance.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HGF2DVector.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DLinear.h>
+#include <ImagePP/all/h/HGFLiteTolerance.h>
+
 #define DEFAULT_STROKE_TOLERANCE_EXTENT_RATIO (100.0)
 
 //-----------------------------------------------------------------------------

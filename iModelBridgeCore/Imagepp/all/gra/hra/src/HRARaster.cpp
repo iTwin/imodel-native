@@ -2,13 +2,27 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRARaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRARasterIterator.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HMDContext.h>
+
+#include <ImagePP/all/h/HRARaster.h>
+#include <ImagePP/all/h/HRARasterIterator.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRADrawProgressIndicator.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImagePP/all/h/HMDContext.h>
+
 
 
 

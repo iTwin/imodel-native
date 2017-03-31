@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffCoordSysTable.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,8 +10,12 @@
 //:> Methods for class HRFGeoTiffCoordSysTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFGeoTiffCoordSysTable.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFGeoTiffCoordSysTable.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffCoordSysTable.tbl
 
@@ -33,7 +37,8 @@
  @see HRFGeoTiffCompressedTable::ColumnInfo
  @see epsg.mdb
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffCoordSysTable.tbl"
+#include "HRFGeoTiffCoordSysTable.tbl"
+
 /**----------------------------------------------------------------------------
  HRFGeoTiffCoordSysTable.dat
 
@@ -48,7 +53,8 @@
  @see HRFGeoTiffCompressedTable
  @see HRFGeoTiffCompressTable application
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffCoordSysTable.dat"
+#include "HRFGeoTiffCoordSysTable.dat"
+
 
 //-----------------------------------------------------------------------------
 // Macros

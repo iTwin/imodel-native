@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPARule.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPARule
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPARule.h>#include <ImagePP/all/h/HPAProduction.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPARule.h>
+#include <ImagePP/all/h/HPAProduction.h>
+
 static struct HPARuleNodeCreator : public HPANodeCreator
     {
     virtual HPANode* Create(HPAGrammarObject* pi_pObj,

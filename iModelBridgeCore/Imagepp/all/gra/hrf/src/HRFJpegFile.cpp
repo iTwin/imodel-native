@@ -3,20 +3,42 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFJpegFile.h>
-#include <libjpeg-turbo/jpeglib.h>#include <libjpeg-turbo/jerror.h>
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRFJpegLineEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>
-#include <ImagePP/all/h/HTIFFFile.h>
-#include <ImagePP/all/h/ImagePPMessages.xliff.h>
-#include <ImagePP/all/h/HFCURLMemFile.h>
+
+#include <ImagePP/all/h/HRFJpegFile.h>
+
+#include <libjpeg-turbo/jpeglib.h>
+#include <libjpeg-turbo/jerror.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRPChannelOrgGray.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/HRFJpegLineEditor.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+
+#include <ImagePP/all/h/HTIFFFile.h>
+
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+
+#include <ImagePP/all/h/HFCURLMemFile.h>
+
 
 
 // This structure is used by the error handling functions

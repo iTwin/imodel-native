@@ -11,7 +11,8 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:

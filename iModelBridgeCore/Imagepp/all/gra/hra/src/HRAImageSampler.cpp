@@ -2,12 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageSampler.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePPInternal/gra/HRAImageSampler.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePPInternal/gra/ImageCommon.h>#include <ImagePPInternal/gra/HRAImageSurface.h>
+#include <ImageppInternal.h>
+
+#include <ImagePPInternal/gra/HRAImageSampler.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePPInternal/gra/ImageCommon.h>
+#include <ImagePPInternal/gra/HRAImageSurface.h>
+
 
 
 /*---------------------------------------------------------------------------------**//**

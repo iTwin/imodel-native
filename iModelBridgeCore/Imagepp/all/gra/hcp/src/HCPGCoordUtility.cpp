@@ -5,8 +5,21 @@
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
-#include <ImagePP/all/h/HCPGCoordUtility.h>#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HRFGdalUtilities.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGFPolynomialModelAdapter.h>
+#include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
+
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>
+#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>
+#include <ImagePP/all/h/HGF2DWorldCluster.h>
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HRFGdalUtilities.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGFPolynomialModelAdapter.h>
+
 #define MAX_GRIDSIZE (300)
 
 /*---------------------------------------------------------------------------------**//**

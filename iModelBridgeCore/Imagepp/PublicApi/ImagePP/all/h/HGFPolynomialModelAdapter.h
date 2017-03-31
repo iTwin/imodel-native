@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFPolynomialModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFPolynomialModelAdapter
@@ -12,7 +12,12 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HFCMatrix.h>
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DShape.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HFCMatrix.h>
+
 
 
 #define POLYNOMIAL_DEGREE 3

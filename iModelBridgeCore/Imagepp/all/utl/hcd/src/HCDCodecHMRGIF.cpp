@@ -2,16 +2,19 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRGIF.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecHMRGIF
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HFCMath.h>
+
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>
+#include <ImagePP/all/h/HFCMath.h>
+
 
 // NOTE: THERE ARE A LOT OF CONSTANT NUMBERS; I DO NOT MAKE "DEFINE" WITH THEM BECAUSE I DON'T
 // KNOW WHAT THEY MEAN. THE ALGO COME FROM THE WEB.

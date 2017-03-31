@@ -2,13 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFxChEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFxChFile.h>#include <ImagePP/all/h/HRFxChEditor.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+
+#include <ImagePP/all/h/HRFxChFile.h>
+#include <ImagePP/all/h/HRFxChEditor.h>
+#include <ImagePP/all/h/HRFHMRFile.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+
 #define RASTER_FILE     static_cast<HRFxChFile*>(GetRasterFile().GetPtr())
 
 /** ---------------------------------------------------------------------------

@@ -2,16 +2,35 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRADEMRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRADEMRaster.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPDEMFilter.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+#include <ImagePP/all/h/HRADEMRaster.h>
+#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGSRegion.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRABlitter.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>
+#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRPDEMFilter.h>
+#include <ImagePP/all/h/HRADrawOptions.h>
+#include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
 
 
 HPM_REGISTER_CLASS(HRADEMRaster, HRAImageView)

@@ -2,18 +2,41 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBlendCorridor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRARasterIterator.h>
-#include <ImagePP/all/h/HIMBlendCorridor.h>#include <ImagePP/all/h/HIMBlendCorridorIterator.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>
-#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>
+
+#include <ImagePP/all/h/HRARasterIterator.h>
+
+#include <ImagePP/all/h/HIMBlendCorridor.h>
+#include <ImagePP/all/h/HIMBlendCorridorIterator.h>
+#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HGF2DGrid.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+
 // All these for CreateCorridor
-#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HMDContext.h>
-#include <ImagePP/all/h/HFCGrid.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HRABitmapEditor.h>
+#include <ImagePP/all/h/HMDContext.h>
+
+#include <ImagePP/all/h/HFCGrid.h>
+
 // Tile dimensions. We start at the base dimension, but we try
 // to adjust so that we only use one tile in each dimension. We
 // will never exceed the maximum tile sizes however.

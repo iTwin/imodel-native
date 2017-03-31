@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeBGR.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeBGR
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRPPixelTypeBGR.h>#include <ImagePP/all/h/HRPChannelOrgBGR.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelTypeBGR.h>
+#include <ImagePP/all/h/HRPChannelOrgBGR.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelTypeBGR, HRPPixelType)
 
 

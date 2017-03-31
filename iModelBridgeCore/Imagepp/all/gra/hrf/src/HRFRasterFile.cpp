@@ -2,17 +2,31 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HVETileIDIterator.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HVE2DRectangle.h>
-#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
+#include <ImagePP/all/h/HVETileIDIterator.h>
+#include <ImagePP/all/h/HRFMessages.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HFCMemoryBinStream.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 
 //-----------------------------------------------------------------------------
 // Public

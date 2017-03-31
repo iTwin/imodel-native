@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hidx/src/HIDXSearchCriteria.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXSearchCriteria
@@ -11,9 +11,12 @@
 //-----------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HIDXSearchCriteria.h>#include <ImagePP/all/h/HIDXCriteria.h>
+
+#include <ImagePP/all/h/HIDXSearchCriteria.h>
+#include <ImagePP/all/h/HIDXCriteria.h>
+
 
 
 //-----------------------------------------------------------------------------

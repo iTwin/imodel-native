@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCException.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -56,7 +56,9 @@
 #pragma once
 
 
-#include <ImagePP/all/h/HFCMacros.h>#include <ImagePP/h/ImagePPExceptionMessages.xliff.h>
+#include <ImagePP/all/h/HFCMacros.h>
+#include <ImagePP/h/ImagePPExceptionMessages.xliff.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPANode;

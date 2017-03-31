@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordContiguousModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,9 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
+#include <ImagePP/all/h/HCPGCoordModel.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 // ----------------------------------------------------------------------------

@@ -2,17 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBlockAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCAccessMode.h>
-#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+
+#include <ImagePP/all/h/HFCAccessMode.h>
+
+#include <ImagePP/all/h/HRFRasterFile.h>
+#include <ImagePP/all/h/HRFBlockAdapter.h>
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
+
 //-----------------------------------------------------------------------------
 // This ancestor class define the standard
 // interface to query about the supported thing.

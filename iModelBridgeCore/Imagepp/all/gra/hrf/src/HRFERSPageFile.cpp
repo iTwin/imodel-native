@@ -2,20 +2,41 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFERSPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFERSPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>   
+#include <ImageppInternal.h>
+   
 
-#include <ImagePP/all/h/HTIFFTag.h>
-#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HRFERSPageFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCIniFileBrowser.h>
-#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFUtility.h>
-#include <ImagePP/all/h/HCPGeoTiffKeys.h>
-#include <ImagePP/all/h/HRFErMapperSupportedFile.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HTIFFTag.h>
+
+#include <ImagePP/all/h/HGFAngle.h>
+#include <ImagePP/all/h/HRFERSPageFile.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCIniFileBrowser.h>
+
+#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HRFCalsFile.h>
+#include <ImagePP/all/h/HRFUtility.h>
+
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 
 
 //ERS possible entries

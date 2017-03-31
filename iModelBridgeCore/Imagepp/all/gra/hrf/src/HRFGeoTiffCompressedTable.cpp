@@ -2,15 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffCompressedTable.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRFGeoTiffCompressedTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HRFGeoTiffCompressedTable.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCURL.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFGeoTiffCompressedTable.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCURL.h>
+
 //:>-----------------------------------------------------------------------------
 //:> public section
 //:>-----------------------------------------------------------------------------

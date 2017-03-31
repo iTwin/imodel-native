@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCLocalBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCLocalBinStream
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>
+
+#include <ImagePP/all/h/HFCLocalBinStream.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+
 #define SLEEP_TIME 50
 
 // This is the creator that registers itself in the stream-type list.

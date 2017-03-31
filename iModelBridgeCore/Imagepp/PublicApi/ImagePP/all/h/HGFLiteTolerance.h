@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLiteTolerance.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,7 +11,9 @@
 
 #pragma once
 
-#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DTransfoModel;

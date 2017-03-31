@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPANode.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPANode
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HPAGrammarObject.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HPANode.h>
+#include <ImagePP/all/h/HPAGrammarObject.h>
+
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 HPANode::HPANode(HPAGrammarObject* pi_pObj,

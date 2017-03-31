@@ -2,13 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAnnotationInfoPDF.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRFAnnotationInfoPDF.h>#include <ImagePP/all/h/HRFAnnotationsPDF.h>
-#include <ImagePP/all/h/HVE2DComplexLinear.h>#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>#include <ImagePP/all/h/HVE2DSimpleShape.h>
+
+#include <ImagePP/all/h/HRFAnnotationInfoPDF.h>
+#include <ImagePP/all/h/HRFAnnotationsPDF.h>
+
+#include <ImagePP/all/h/HVE2DComplexLinear.h>
+#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>
+#include <ImagePP/all/h/HVE2DSimpleShape.h>
+
 
 //-----------------------------------------------------------------------------
 // Public

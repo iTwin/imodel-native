@@ -2,14 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBinStream.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCBinStream
 //---------------------------------------------------------------------------
 #pragma once
 
-#include "HFCAccessMode.h"#include "HFCPtr.h"#include <ImagePP/all/h/HFCException.h>
+#include "HFCAccessMode.h"
+#include "HFCPtr.h"
+#include <ImagePP/all/h/HFCException.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 class HFCException;

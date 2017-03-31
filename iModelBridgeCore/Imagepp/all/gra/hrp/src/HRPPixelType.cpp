@@ -2,13 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelType.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPComplexConverter.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HRPMessages.h>
+
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPComplexConverter.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
+#include <ImagePP/all/h/HRPMessages.h>
+
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelType, HPMPersistentObject)
 
 
