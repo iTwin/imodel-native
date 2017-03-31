@@ -3161,7 +3161,7 @@ bool ECUnitsTypeAdapter::_GetUnits (UnitSpecR spec, IDgnECTypeAdapterContextCR c
     if (!TryGetKindOfQuantity(ecprop, koq))
         return false;
 
-    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), ecunit))
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), ecunit))
         return false;
 
     spec = ecunit;
@@ -3181,7 +3181,7 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     if (!TryGetKindOfQuantity(ecprop, koq))
         return false;
 
-    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit))
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit))
         return false;
 
     if (context.GetDgnModel())
@@ -3191,8 +3191,8 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     Utf8String fmt;
     Utf8CP label = storedUnit.GetShortLabel();
 
-    Utf8String displayUnitName = koq->GetDefaultPresentationUnit();
-    if (TryGetOldUnitFromNewName(displayUnitName.c_str(), displayUnit))
+    Utf8CP displayUnitName = koq->GetDefaultPresentationUnit().GetUnit()->GetName();
+    if (TryGetOldUnitFromNewName(displayUnitName, displayUnit))
         {
         if (!v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
             return false;
@@ -3239,8 +3239,8 @@ bool ECUnitsTypeAdapter::_ConvertToDisplayType (ECValueR v, IDgnECTypeAdapterCon
     Utf8String unusedFmt;
     KindOfQuantityCP koq = nullptr;
     if (!v.IsNull() && NULL != ecprop && TryGetKindOfQuantity(ecprop, koq) 
-                                        && TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit) 
-                                        && TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().c_str(), displayUnit))
+                                        && TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit) 
+                                        && TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().GetUnit()->GetName(), displayUnit))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
@@ -3267,12 +3267,12 @@ bool ECUnitsTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP stringValue, IDg
             return false;
 
         Unit storedUnit;
-        if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit))
+        if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit))
             return false;
         
         Utf8String fmt;
         Unit displayUnit;
-        if (TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().c_str(), displayUnit))
+        if (TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().GetUnit()->GetName(), displayUnit))
             {
             // Convert to storage units
             double value = v.GetDouble();
