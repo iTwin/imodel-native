@@ -1506,12 +1506,12 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
     uint32_t rgbInt = params.GetColor();
     double alpha = 1.0 - ((uint8_t*)&rgbInt)[3] / 255.0;
 
-    if (!m_ignoreLighting && params.GetMaterialId().IsValid())
+    if (params.GetMaterialId().IsValid())
         {
-        auto material = DgnMaterial::Get(db, params.GetMaterialId());
-        if (material.IsValid())
+        m_material = DgnMaterial::Get(db, params.GetMaterialId());
+        if (m_material.IsValid())
             {
-            auto jsonMat = &material->GetRenderingAsset();
+            auto jsonMat = &m_material->GetRenderingAsset();
             m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
             m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
@@ -1537,8 +1537,6 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
             constexpr double s_finishScale = 15.0;
             if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasFinish, false))
                 m_specularExponent = jsonMat->GetDouble(RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
-
-            m_material = DgnMaterial::Get(db, params.GetMaterialId());
             }
         }
 
