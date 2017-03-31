@@ -29,10 +29,35 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
 //+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
+static size_t WriteData(void *contents, size_t size, size_t nmemb, BeFile *stream)
     {
-    size_t written = fwrite(contents, size, nmemb, stream);
-    return written;
+    uint32_t bytesRead = 0;
+    
+    BeFileStatus status = stream->Read(contents, &bytesRead, (uint32_t)(size * nmemb));
+    if (status != BeFileStatus::Success)
+        return 0;
+
+    return bytesRead;
+    }
+
+RequestStatus RawServerResponse::ValidateResponse()
+    {
+    if ((curlCode != CURLE_OK) || (responseCode > 399))
+        status = RequestStatus::BADREQ;
+    else
+        status = RequestStatus::OK;
+
+    return status;
+    }
+
+RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword)
+    {
+    if ((curlCode != CURLE_OK) || (responseCode > 399) || !Json::Reader::Parse(body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword))
+        status = RequestStatus::BADREQ;
+    else
+        status = RequestStatus::OK;
+
+    return status;
     }
 
 //-------------------------------------------------------------------------------------
@@ -151,7 +176,7 @@ void CurlConstructor::RefreshToken()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file, bool retry) const
+void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
     response.curlCode = ServerType::WSG;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
@@ -160,7 +185,7 @@ void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& res
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file, bool retry) const
+void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
     response.curlCode = ServerType::Azure;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
@@ -169,7 +194,7 @@ void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file) const
+CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const
     {
     CURL* curl = curl_easy_init();
     if (nullptr == curl)
@@ -193,6 +218,16 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& 
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
         }
 
+    if (!m_proxyUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_PROXY, m_proxyUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+        if (!m_proxyCreds.empty())
+            {
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+            }
+        }
+
     bvector<Utf8String> wsgHeaders = wsgRequest.GetRequestHeader();
     for (Utf8String header : wsgHeaders)
         headers = curl_slist_append(headers, header.c_str());
@@ -213,7 +248,7 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseObject, bool verifyPeer, FILE* file, bool retry) const
+CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseObject, bool verifyPeer, BeFile* file) const
     {
     CURL* curl = PrepareCurl(wsgRequest, responseObject, verifyPeer, file);
 
@@ -237,9 +272,9 @@ CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& re
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file, bool retry) const
+void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
-    auto curl = PrepareRequest(wsgRequest, response, verifyPeer, file, retry);
+    auto curl = PrepareRequest(wsgRequest, response, verifyPeer, file);
 
     if(response.curlCode == CURLcode::CURLE_FAILED_INIT)
         return;
@@ -252,7 +287,7 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
         {
         WSGRequest::GetInstance().RefreshToken();
         response = RawServerResponse();
-        return WSGRequest::GetInstance().PerformRequest(wsgRequest, response, verifyPeer, file, false);
+        return _PerformRequest(wsgRequest, response, verifyPeer, file, false);
         }
     }
 
@@ -428,7 +463,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
 
     delete navRoot;
     Json::Value instances(Json::objectValue);
-    if((responseObject.curlCode != CURLE_OK) || !Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+    if(responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVector; 
 
     for (auto instance : instances["instances"])
@@ -471,7 +506,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 
     delete navNode;
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || !Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVector;
 
     for (auto instance : instances["instances"])
@@ -660,7 +695,7 @@ bvector<Utf8String> WSGServer::GetPlugins(RawServerResponse& responseObject) con
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
 
     for (auto instance : instances["instances"])
@@ -686,7 +721,7 @@ Utf8String WSGServer::GetVersion(RawServerResponse& responseObject) const
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
-    if (responseObject.curlCode != CURLE_OK)
+    if (responseObject.ValidateResponse() != RequestStatus::OK)
         return "";
 
     const char* charstring = responseObject.header.c_str();
@@ -725,7 +760,7 @@ bvector<Utf8String> WSGServer::GetRepositories(RawServerResponse& responseObject
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
     
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -762,7 +797,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if ((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -800,7 +835,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
-    if((responseObject.curlCode != CURLE_OK) || (!Json::Reader::Parse(responseObject.body, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
+    if(responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
 
     for(auto instance : instances["instances"])

@@ -13,6 +13,7 @@
 #include <ctime>
 
 #include <Bentley/DateTime.h>
+#include <Bentley/BeFile.h>
 #include <curl/curl.h>
 #include <sql.h>
 #include <sqlext.h>
@@ -63,6 +64,9 @@ public:
 
     RawServerResponse():responseCode(-1), curlCode(ServerType::WSG), status(RequestStatus::UNSENT),
     header(Utf8String()), body(Utf8String()){}
+
+    RequestStatus ValidateResponse();
+    RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
     };
 
 //=====================================================================================
@@ -428,11 +432,16 @@ public:
     REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
 
+    //! Set proxy informations
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}
 protected:
-    REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file) const;
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const;
 
+    Utf8String          m_proxyUrl;
+    Utf8String          m_proxyCreds;
     Utf8String          m_token;
     BeFileName          m_certificatePath;
     time_t              m_tokenRefreshTimer;
@@ -443,16 +452,16 @@ struct WSGRequest : public CurlConstructor
 private:
     static WSGRequest* s_instance;
 
-    void _PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, FILE* file, bool retry) const;
+    void _PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();
     WSGRequest();
 
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string. If a FILE is provided, the result will be written to a file
-    REALITYDATAPLATFORM_EXPORT void PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT void PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT void PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT void PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer = true, BeFile* file = nullptr) const;
     };
 
 

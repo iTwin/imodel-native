@@ -319,14 +319,17 @@ struct DownloadReportUploadRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report) : m_downloadReport(report)
-    { m_validRequestString = false; m_id = identifier; m_requestType = HttpRequestType::PUT_Request; }
+    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report);
    
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() const { return m_fileSize; }
+    REALITYDATAPLATFORM_EXPORT BeFileName GetFileName() const { return m_downloadReport; }
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     BeFileName          m_downloadReport;
+    uint64_t            m_fileSize;
     DownloadReportUploadRequest(){}
     };
 
@@ -334,7 +337,6 @@ private:
 //! @param[in] basicMessage Utf8String provided by the specific request
 //! @param[in] rawResponse  the raw server response
 typedef std::function<void(Utf8String basicMessage, const RawServerResponse& rawResponse)> GeoCoordinationService_ErrorCallBack;
-
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -403,7 +405,8 @@ public:
         USGS_NationalMap = 0x01,
         PublicIndex = 0x02
         };
-public:
+
+
     //! Returns the SpatialEntity object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request, RawServerResponse& rawResponse);
 

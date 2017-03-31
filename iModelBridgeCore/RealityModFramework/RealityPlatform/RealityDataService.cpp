@@ -629,7 +629,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
-}
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1308,7 +1308,6 @@ BentleyStatus AzureHandshake::ParseResponse(Utf8StringCR jsonResponse, Utf8Strin
         Utf8String url = instance["Url"].asString();
         bvector<Utf8String> parts;
         BeStringUtilities::Split(url.c_str(), "\?", parts);
-        //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
         azureServer = parts[0];
         azureToken = parts[1];
 
@@ -1530,7 +1529,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
         {
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 0L);
-        /*if (!m_proxyUrl.empty())
+        if (!m_proxyUrl.empty())
             {
             curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
             curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
@@ -1538,7 +1537,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
                 {
                 curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
                 }
-            }*/
+            }
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
@@ -2030,7 +2029,7 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2252,16 +2251,14 @@ Utf8String RealityDataService::Request(const RealityDataRelationshipCreateReques
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRequest* request, Utf8String keyword)
+RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRequest* request, Utf8StringCR keyword)
     {
     RawServerResponse response = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        response.status = RequestStatus::BADREQ;
-    else
+    if(response.ValidateJSONResponse(instances, keyword) == RequestStatus::OK)
         {
         request->AdvancePage();
         response.status = RequestStatus::OK;
@@ -2273,16 +2270,14 @@ RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRe
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request, Utf8String keyword)
+RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request, Utf8StringCR keyword)
     {
     RawServerResponse response = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        response.status = RequestStatus::BADREQ;
-    else
+    if (response.ValidateJSONResponse(instances, keyword) == RequestStatus::OK)
         response.status = RequestStatus::OK;
     
     return response;
