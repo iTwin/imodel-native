@@ -5,11 +5,7 @@
 |   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
-#include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/CommonTools.h>
-#include <EcPresentationRules/RelatedInstanceNodesSpecification.h>
-
+#include "ECObjectsPch.h"#include "PresentationRuleXmlConstants.h"#include <ECPresentationRules/CommonTools.h>#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 USING_NAMESPACE_BENTLEY_EC
 
 /*---------------------------------------------------------------------------------**//**

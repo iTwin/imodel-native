@@ -5,19 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ECObjects/ECObjectsAPI.h>
-#include <Bentley/BeFileName.h>
-#include <Bentley/stdcxx/bvector.h>
-#include <Bentley/stdcxx/rw/bpair.h>
-#include <BeXml/BeXml.h>
-#include <Bentley/BeStringUtilities.h>
-#include <Bentley/BeFIleListIterator.h>
-#include <Logging/bentleylogging.h>
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <wchar.h>
-
+#include <ECObjects/ECObjectsAPI.h>#include <Bentley/BeFileName.h>#include <Bentley/stdcxx/bvector.h>#include <Bentley/stdcxx/rw/bpair.h>#include <BeXml/BeXml.h>#include <Bentley/BeStringUtilities.h>#include <Bentley/BeFileListIterator.h>#include <Logging/bentleylogging.h>#include <windows.h>#include <stdio.h>#include <stdlib.h>#include <wchar.h>
 USING_NAMESPACE_BENTLEY_EC
 
 
