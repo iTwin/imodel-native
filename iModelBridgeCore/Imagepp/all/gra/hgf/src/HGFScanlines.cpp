@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HGFScanlines.h>
 //:Ignore
 ////////////////////////////
 // HGFScanlines

@@ -13,86 +13,23 @@
 | Google Test
 +----------------------------------------------------------------------------------------------------------------------------------------*/
 //#include <gtest/gtest.h>
-#include <Bentley/BeTest.h>
-
+#include <Bentley/BeTest.h>
 /*----------------------------------------------------------------------------------------------------------------------------------------+
 | Host includes
 +----------------------------------------------------------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-
+#include <Bentley/Bentley.h>
 // I++
-#include <ImagePP/h/ImageppAPI.h>
-#include <ImagePP/all/h/HFCPtr.h>
-#include <ImagePP/h/HAutoPtr.h>
-#include <ImagePP/all/h/HFCMacros.h>
-#include <ImagePP/all/h/HFCException.h>
-#include <ImagePP/all/h/HFCMatrix.h>
-#include <ImagePP/all/h/HFCURLFile.h>
-#include <ImagePP/all/h/HFCStat.h>
-#include <ImagePP/all/h/HFCBinStream.h>
-#include <ImagePP/all/h/HFCURL.h>
-#include <ImagePP/all/h/HGF2DWorld.h>
-#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
-#include <ImagePP/all/h/HRABitmapRLE.h>
-
+#include <ImagePP/h/ImageppAPI.h>#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/h/HAutoPtr.h>#include <ImagePP/all/h/HFCMacros.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCMatrix.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HRABitmapRLE.h>
 //HPM
-#include <ImagePP/all/h/HPMPool.h>
-
+#include <ImagePP/all/h/HPMPool.h>
 // HVE
-#include <ImagePP/all/h/HVEShape.h>       
-#include <ImagePP/all/h/HVE2DVoidShape.h>
-#include <ImagePP/all/h/HVE2DPolygon.h>
-#include <ImagePP/all/h/HVE2DPolySegment.h>
-#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
-#include <ImagePP/all/h/HVE2DRectangle.h>
-#include <ImagePP/all/h/HVE2DShape.h>
-#include <ImagePP/all/h/HVE2DSegment.h>
-#include <ImagePP/all/h/HVE2DUniverse.h>
-#include <ImagePP/all/h/HVE2DHoledShape.h>
-#include <ImagePP/all/h/HVE2DComplexShape.h>
-
+#include <ImagePP/all/h/HVEShape.h>       #include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DPolySegment.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DShape.h>#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>
 // HGF
-#include <ImagePP/all/h/HGF2DWorld.h>
-#include <ImagePP/all/h/HGF2DWorldCluster.h>
-#include <ImagePP/all/h/HGF2DCoord.h>
-#include <ImagePP/all/h/HGF2DPosition.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/HGF2DDisplacement.h>
-#include <ImagePP/all/h/HGF2DIdentity.h>
-#include <ImagePP/all/h/HGF2DStretch.h>
-#include <ImagePP/all/h/HGF2DTranslation.h>
-#include <ImagePP/all/h/HGF2DAffine.h>
-#include <ImagePP/all/h/HGF2DSimilitude.h>
-#include <ImagePP/all/h/HGF2DLiteExtent.h>
-#include <ImagePP/all/h/HGF2DProjective.h>
-#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
-#include <ImagePP/all/h/HGF2DCoordSys.h>
-#include <ImagePP/all/h/HGF2DLocation.h>
-#include <ImagePP/all/h/HGF2DGridModel.h>
-#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
-#include <ImagePP/all/h/HGFException.h>
-#include <ImagePP/all/h/HGF2DHelmert.h>
-#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>
-#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>
-#include <ImagePP/all/h/HGFAngle.h>
-#include <ImagePP/all/h/HGF2DExtent.h>
-#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>
-#include <ImagePP/all/h/HGFTolerance.h>
-#include <ImagePP/all/h/HGFScanLines.h>
-#include <ImagePP/all/h/HGFResolutionDescriptor.h>
-#include <ImagePP/all/h/HGF2DProjectiveGrid.h>
-#include <ImagePP/all/h/HGF2DLiteLine.h>
-#include <ImagePP/all/h/HGF2DComplexShape.h>
-#include <ImagePP/all/h/HGF2DHoledShape.h>
-
+#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HGF2DCoord.h>#include <ImagePP/all/h/HGF2DPosition.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DLocation.h>#include <ImagePP/all/h/HGF2DGridModel.h>#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HGF2DHelmert.h>#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>#include <ImagePP/all/h/HGFTolerance.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HGF2DProjectiveGrid.h>#include <ImagePP/all/h/HGF2DLiteLine.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>
 // HGS
-#include <ImagePP/all/h/HGSTypes.h>
-
+#include <ImagePP/all/h/HGSTypes.h>
 // HRF
-#include <ImagePP/all/h/HRFRasterFileFactory.h>
-#include <ImagePP/all/h/HRFRasterFile.h>
-#include <ImagePP/all/h/HRFcTiffFile.h>
-// #include <ImagePP/all/h/HRFTypes.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFcTiffFile.h>// #include <ImagePP/all/h/HRFTypes.h>
 // #include <ImagePP/all/h/HRFImportExport.h>
 // #include <ImagePP/all/h/HRFTiffFile.h>
 // #include <ImagePP/all/h/HRFGeoTiffFile.h>
@@ -143,83 +80,11 @@
 
 
 // HRP
-#include <ImagePP/all/h/HRPFunctionFilter.h>
-#include <ImagePP/all/h/HRPPixelTypeFactory.h>
-#include <ImagePP/all/h/HRPPixelConverter.h>
-#include <ImagePP/all/h/HRPComplexFilter.h>
-#include <ImagePP/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HRPMapFilters8.h>
-#include <ImagePP/all/h/HRPDensitySlicingFilter8.h>
-#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>
-#include <ImagePP/all/h/HRPChannelOrgRGB.h>
-#include <ImagePP/all/h/HRPChannelOrgGray.h>
-#include <ImagePP/all/h/HRPPixelPalette.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI2R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
-#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>
-#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
-#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>
-#include <ImagePP/all/h/HRPPixelTypeV16PRGray8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>
-#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32A8R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32B8G8R8X8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>
-#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <ImagePP/all/h/HRPPixelTypeV96R32G32B32.h>
-#include <ImagePP/all/h/HRPPixelTypeV32CMYK.h>
-#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
-#include <ImagePP/all/h/HRPPixelTypeI8Gray8.h>
-#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
-#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
-#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>
-#include <ImagePP/all/h/HRPPixelTypeRGB.h>
-#include <ImagePP/all/h/HRPFunctionFilters.h>
-#include <ImagePP/all/h/HRPContrastStretchFilter8.h>
-#include <ImagePP/all/h/HRPLigthnessContrastStretch8.h>
-#include <ImagePP/all/h/HRPDEMFilter.h>
-#include <ImagePP/all/h/HRPComplexConverter.h>
-#include <ImagePP/all/h/HRPCustomConvFilter.h>
-
+#include <ImagePP/all/h/HRPFunctionFilter.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPMapFilters8.h>#include <ImagePP/all/h/HRPDensitySlicingFilter8.h>#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI2R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>#include <ImagePP/all/h/HRPPixelTypeV16PRGray8A8.h>#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32A8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32B8G8R8X8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV96R32G32B32.h>#include <ImagePP/all/h/HRPPixelTypeV32CMYK.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeI8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>#include <ImagePP/all/h/HRPPixelTypeRGB.h>#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HRPContrastStretchFilter8.h>#include <ImagePP/all/h/HRPLigthnessContrastStretch8.h>#include <ImagePP/all/h/HRPDEMFilter.h>#include <ImagePP/all/h/HRPComplexConverter.h>#include <ImagePP/all/h/HRPCustomConvFilter.h>
 //HRA
-#include <ImagePP/all/h/HRABitmap.h>
-#include <ImagePP/all/h/HRAReferenceToRaster.h>
-#include <ImagePP/all/h/HRARaster.h>
-#include <ImagePP/all/h/HRAStoredRaster.h>
-#include <ImagePP/all/h/HRAImageView.h>
-#include <ImagePP/all/h/HRATransactionRecorder.h>
-#include <ImagePP/all/h/HRABitmapBase.h>
-#include <ImagePP/all/h/HRACopyFromOptions.h>
-#include <ImagePP/all/h/HRAPyramidRaster.h>
-#include <ImagePP/all/h/HRAPixelTypeReplacer.h>
-#include <ImagePP/all/h/HRADEMRaster.h>
-#include <ImagePP/all/h/HRAClearOptions.h>
-#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>
-#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>
-#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>
-#include <ImagePP/all/h/HRAImageOpMapFilters.h>
-#include <ImagePP/all/h/HRAImageOpConvFilter.h>
-
+#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAImageView.h>#include <ImagePP/all/h/HRATransactionRecorder.h>#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRAPixelTypeReplacer.h>#include <ImagePP/all/h/HRADEMRaster.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>#include <ImagePP/all/h/HRAImageOpMapFilters.h>#include <ImagePP/all/h/HRAImageOpConvFilter.h>
 //HCD
-#include <ImagePP/all/h/HCDCodecIdentity.h>
-// #include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>// #include <ImagePP/all/h/HCDCodecZlib.h>
 // #include <ImagePP/all/h/HCDCodecLZW.h>
 // #include <ImagePP/all/h/HCDPacket.h>
 // #include <ImagePP/all/h/HCDCodecHMRRLE1.h>
@@ -230,26 +95,16 @@
 // #include <ImagePP/all/h/HCDException.h>
 
 //HUT
-#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
-#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>
-#include <ImagePP/all/h/HUTExportProgressIndicator.h>
-
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>#include <ImagePP/all/h/HUTExportProgressIndicator.h>
 //HIM
-#include <ImagePP/all/h/HIMFilteredImage.h>
-#include <ImagePP/all/h/HIMStripAdapter.h>
-#include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HIMOnDemandMosaic.h>
-
+#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HIMStripAdapter.h>#include <ImagePP/all/h/HIMMosaic.h>#include <ImagePP/all/h/HIMOnDemandMosaic.h>
 //HRS
-#include <ImagePP/all/h/HRSObjectStore.h>
-
+#include <ImagePP/all/h/HRSObjectStore.h>
 
 // General compiler Include files
 #if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
 
-#include <concrt.h>
-#include <ppl.h>
-#define HAVE_CONCURRENCY_RUNTIME 
+#include <concrt.h>#include <ppl.h>#define HAVE_CONCURRENCY_RUNTIME 
 
 #elif defined(__unix__)
 
@@ -265,19 +120,7 @@
     #error unknown compiler
 #endif
 
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-
+#include <thread>#include <mutex>#include <condition_variable>
 // Private APIs
-#include "../../PrivateApi/ImagePPInternal/gra/HRAImageNearestSamplerN8.h"
-#include "../../PrivateApi/ImagePPInternal/gra/HRAImageBilinearSamplerN8.h"
-#include "../../PrivateApi/ImagePPInternal/gra/HRAImageBicubicSamplerN8.h"
-#include "../../PrivateApi/ImagePPInternal/gra/HRAImageSampler.h"
-#include "../../PrivateApi/ImagePPInternal/gra/ImageCommon.h"
-#include "../../PrivateApi/ImagePPInternal/gra/HRAImageEditor.h"
-#include "../../PrivateApi/ImagePPInternal/gra/ImageAllocator.h"
-#include "../../PrivateApi/ImagePPInternal/gra/Task.h"
-
-#include "./Common/ImagePPTestConfig.h"
-USING_NAMESPACE_IMAGEPP
+#include "../../PrivateApi/ImagePPInternal/gra/HRAImageNearestSamplerN8.h"#include "../../PrivateApi/ImagePPInternal/gra/HRAImageBilinearSamplerN8.h"#include "../../PrivateApi/ImagePPInternal/gra/HRAImageBicubicSamplerN8.h"#include "../../PrivateApi/ImagePPInternal/gra/HRAImageSampler.h"#include "../../PrivateApi/ImagePPInternal/gra/ImageCommon.h"#include "../../PrivateApi/ImagePPInternal/gra/HRAImageEditor.h"#include "../../PrivateApi/ImagePPInternal/gra/ImageAllocator.h"#include "../../PrivateApi/ImagePPInternal/gra/Task.h"
+#include "Tests/Common/ImagePPTestConfig.h"USING_NAMESPACE_IMAGEPP

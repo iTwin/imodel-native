@@ -8,12 +8,8 @@
 // Methods for class HFCEmbedBinStream
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCEmbedBinStream.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCURLEmbedFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCEmbedBinStream.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>
 
 //---------------------------------------------------------------------------
 // This is the creator that registers itself in the stream-type list.

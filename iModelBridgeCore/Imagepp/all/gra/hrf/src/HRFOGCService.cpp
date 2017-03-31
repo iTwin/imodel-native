@@ -8,39 +8,16 @@
 // Class HRFOGCServiceFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFOGCService.h>
-#include "HRFOGCServiceEditor.h"
-
-#include <Imagepp/all/h/HFCException.h>
-
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCMemoryBinStream.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
-#include <Imagepp/all/h/HFCCallbacks.h>
-#include <Imagepp/all/h/HFCCallbackRegistry.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-#include <ImagePPInternal/HttpConnection.h>
-
+#include <ImagePP/all/h/HRFOGCService.h>#include "HRFOGCServiceEditor.h"
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HFCCallbacks.h>#include <ImagePP/all/h/HFCCallbackRegistry.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HCPGCoordUtility.h>#include <ImagePPInternal/HttpConnection.h>
 //-----------------------------------------------------------------------------
 // class OGRAuthenticationError
 //

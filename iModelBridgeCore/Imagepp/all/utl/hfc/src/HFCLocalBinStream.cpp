@@ -8,13 +8,9 @@
 // Methods for class HFCLocalBinStream
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
+#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>
 #define SLEEP_TIME 50
 
 // This is the creator that registers itself in the stream-type list.

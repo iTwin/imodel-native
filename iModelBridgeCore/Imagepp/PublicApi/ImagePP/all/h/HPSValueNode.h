@@ -13,8 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HPANode.h>
-
+#include <ImagePP/all/h/HPANode.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSObjectValue : public HFCShareableObject<HPSObjectValue>

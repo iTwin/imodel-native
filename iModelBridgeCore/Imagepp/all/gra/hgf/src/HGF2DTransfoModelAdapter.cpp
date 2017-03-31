@@ -9,13 +9,10 @@
 // Methods for class HGF2DTransfoModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
-#include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor

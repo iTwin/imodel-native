@@ -9,12 +9,10 @@
 // Methods for class HGFBearing
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 
 // Most methods are declared inline and can be found in HGFBearing.hpp
-#include <Imagepp/all/h/HGFBearing.h>
-
+#include <ImagePP/all/h/HGFBearing.h>
 
 
 

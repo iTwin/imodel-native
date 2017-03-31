@@ -8,11 +8,9 @@
 // Methods for class HGFCMYKColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFCMYKColorSpace.h>
-
+#include <ImagePP/all/h/HGFCMYKColorSpace.h>
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------

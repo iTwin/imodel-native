@@ -9,14 +9,10 @@
 // Class HRFAdaptTileToLine
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptTileToLine.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptTileToLine.h>
 HFC_IMPLEMENT_SINGLETON(HRFAdaptTileToLineCapabilities)
 
 //-----------------------------------------------------------------------------

@@ -13,14 +13,9 @@
 //* This editor is not used for now *
 //***********************************
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFBmpFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecBMPRLE8.h>
-#include <Imagepp/all/h/HRFBmpCompressLineEditor.h>
-
+#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HRFBmpCompressLineEditor.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

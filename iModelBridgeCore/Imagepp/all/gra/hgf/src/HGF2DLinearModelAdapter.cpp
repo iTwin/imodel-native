@@ -8,19 +8,10 @@
 // Methods for class HGF2DLinearModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
-#include <Imagepp/all/h/HGF2DLinearModelAdapter.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------

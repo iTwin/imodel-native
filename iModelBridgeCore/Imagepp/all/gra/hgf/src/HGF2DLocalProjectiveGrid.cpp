@@ -7,22 +7,11 @@
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLocalProjectiveGrid
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#define NO_IODEFS
+#include <ImageppInternal.h>#define NO_IODEFS
 
 
 
-#include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-#include <Imagepp/all/h/HGFException.h>
-#include <Imagepp/all/h/HGF2DGridModel.h>
-#include <Imagepp/all/h/HGF2DBoundaryModel.h>
-#include <Imagepp/all/h/HGF2DPieceWiseModel.h>
-#include <Imagepp/all/h/HGF2DGridModelBooster.h>
-#include <Imagepp/all/h/HGF2DBoundaryModelBooster.h>
-
+#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HGF2DGridModel.h>#include <ImagePP/all/h/HGF2DBoundaryModel.h>#include <ImagePP/all/h/HGF2DPieceWiseModel.h>#include <ImagePP/all/h/HGF2DGridModelBooster.h>#include <ImagePP/all/h/HGF2DBoundaryModelBooster.h>
 
 #define DEFAULT_NUMBER_OF_ROWS (10)
 #define DEFAULT_NUMBER_OF_COLS (10)

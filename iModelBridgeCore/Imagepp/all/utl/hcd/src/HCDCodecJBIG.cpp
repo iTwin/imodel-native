@@ -8,14 +8,10 @@
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCBinStream.h>
-
-#include <Imagepp/all/h/HCDCodecJBIG.h>
-
-#include <Imagepp/all/h/D:\BSI\08.09.00.xx\src\imagepp\ext\jbigkit\libjbig\jbig.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCBinStream.h>
+#include <ImagePP/all/h/HCDCodecJBIG.h>
+#include <Imagepp/all/h/D:\BSI\08.09.00.xx\src\imagepp\ext\jbigkit\libjbig\jbig.h>
 #define HCD_CODEC_NAME "JBIG"
 
 //-----------------------------------------------------------------------------

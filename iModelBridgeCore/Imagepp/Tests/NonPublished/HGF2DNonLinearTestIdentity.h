@@ -12,8 +12,7 @@
 
 #pragma once
 
-#include <imagepp/all/h/HGF2DTransfoModel.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
 class HGFDistance;
 
 

@@ -8,23 +8,10 @@
 // Class HRFRasterFilePageDecorator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFResBoosterEditor.h>
-#include <Imagepp/all/h/HRFCacheRandomBlockEditor.h>
-#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-#include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
-#include <Imagepp/all/h/HRFCombinedRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFSLOModelComposer.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HRFCombinedRasterFileCapabilities.h>#include <ImagePP/all/h/HRFSLOModelComposer.h>#include <ImagePP/all/h/HGF2DStretch.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

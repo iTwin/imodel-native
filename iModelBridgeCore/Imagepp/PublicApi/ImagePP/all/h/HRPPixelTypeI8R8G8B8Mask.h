@@ -10,8 +10,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
 /*----------------------------------------------------------------------------+
 |Class HRPPixelTypeI8R8G8B8Mask
 |

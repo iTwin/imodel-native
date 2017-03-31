@@ -8,30 +8,12 @@
 // Class HRFIntergraphCot29File
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFIntergraphCot29File.h>
-#include <Imagepp/all/h/HRFIntergraphColorFile.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/HRPPixelPalette.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HCDCodecRLE8.h>
-
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFIntergraphCOT29File.h>#include <ImagePP/all/h/HRFIntergraphColorFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HCDCodecRLE8.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 //-----------------------------------------------------------------------------
 // HRFCot29BlockCapabilities
 //-----------------------------------------------------------------------------

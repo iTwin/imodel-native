@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Imagepp/all/h/HPSPssFile.h>
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-
+#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 

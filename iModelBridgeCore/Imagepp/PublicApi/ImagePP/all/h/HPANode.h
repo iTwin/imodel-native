@@ -25,10 +25,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HPASession.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HPASession.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 class HPAParser;
@@ -106,5 +103,4 @@ struct HPANodeCreator
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPANode.hpp"
-
+#include "HPANode.hpp"

@@ -9,15 +9,8 @@
 //:> Methods for class HRFGeoTiffCompressedTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFGeoTiffCompressedTable.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFGeoTiffCompressedTable.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCURL.h>
 //:>-----------------------------------------------------------------------------
 //:> public section
 //:>-----------------------------------------------------------------------------

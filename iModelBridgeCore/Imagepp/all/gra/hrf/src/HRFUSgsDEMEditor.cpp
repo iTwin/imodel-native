@@ -9,16 +9,12 @@
 // Class HRFDtedEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 #ifdef IPP_HAVE_GDAL_SUPPORT
-#include <Imagepp/all/h/HRFUSgsDEMEditor.h>
-
+#include <ImagePP/all/h/HRFUSgsDEMEditor.h>
 
 //GDAL
-#include <ImagePP-GdalLib/gdal_priv.h>
-#include <ImagePP-GdalLib/cpl_string.h>
-
+#include <ImagePP-GdalLib/gdal_priv.h>#include <ImagePP-GdalLib/cpl_string.h>
 /*
 
 #define BAND_1 0

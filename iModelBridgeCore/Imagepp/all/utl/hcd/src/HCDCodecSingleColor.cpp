@@ -8,10 +8,8 @@
 // Methods for class HCDCodecSingleColor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecSingleColor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecSingleColor.h>
 #define HCD_CODEC_NAME "Single Color"
 
 //-----------------------------------------------------------------------------

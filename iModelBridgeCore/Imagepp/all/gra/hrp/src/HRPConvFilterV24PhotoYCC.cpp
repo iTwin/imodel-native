@@ -9,12 +9,9 @@
 // Methods for class HRPConvFilterV24PhotoYCC
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPConvFilterV24PhotoYCC.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-
+#include <ImagePP/all/h/HRPConvFilterV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>
 
 //-----------------------------------------------------------------------------
 // public

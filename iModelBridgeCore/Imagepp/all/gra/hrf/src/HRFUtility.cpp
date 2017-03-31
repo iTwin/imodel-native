@@ -10,64 +10,19 @@
 // HRFUtility implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFRasterFileResBooster.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HRFPageFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-#include <Imagepp/all/h/HRFSloStripAdapter.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFLRDFile.h>
-#include <Imagepp/all/h/HRFCacheFileCreator.h>
-#include <Imagepp/all/h/HRFThumbnail.h>
-#include <Imagepp/all/h/HTIFFTag.h>
-#include <Imagepp/all/h/HRFTiffFile.h>
-
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
-#include <Imagepp/all/h/HGF2DStretch.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFRasterFileResBooster.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFPageFileFactory.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>#include <ImagePP/all/h/HRFSLOStripAdapter.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFLRDFile.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRFThumbnail.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HRFTiffFile.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
 //-----------------------------------------------------------------------------
 // HGS Implementation Includes for thumbnail
 //-----------------------------------------------------------------------------
-#include <Imagepp/all/h/HRABlitter.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HRASurface.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HRFDtedFile.h>
-
-#include <Imagepp/all/h/HUTExportProgressIndicator.h>
-
+#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRFDtedFile.h>
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
 
 
 

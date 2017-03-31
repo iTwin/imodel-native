@@ -13,9 +13,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPMPersistentObject.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-
+#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HRFRasterFile.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoreferenceContext : public HFCShareableObject<HRFGeoreferenceContext>

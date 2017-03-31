@@ -9,35 +9,12 @@
 // Class HRFBilFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFBilFile.h>
-#include <Imagepp/all/h/HRFBilLineEditor.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRPChannelOrgGray.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFTWFPageFile.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
-#include <Imagepp/all/h/HFCStat.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFBilFile.h>#include <ImagePP/all/h/HRFBilLineEditor.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFTWFPageFile.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 bool ConvertStringToDouble(const string& pi_rString, double* po_pDouble) ;
 bool ConvertStringToLong(const string& pi_rString, int32_t* po_pLong) ;
 bool ConvertStringToULong(const string& pi_rString, uint32_t* po_pLong) ;

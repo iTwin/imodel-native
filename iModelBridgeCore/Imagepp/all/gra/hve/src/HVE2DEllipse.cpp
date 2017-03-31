@@ -9,17 +9,12 @@
 // Methods for class HVE2DEllipse
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DEllipse.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DEllipse.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DEllipse, HVE2DSimpleShape)
 
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-
+#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>
 #define NB_SAMPLINGS 50
 
 //-----------------------------------------------------------------------------

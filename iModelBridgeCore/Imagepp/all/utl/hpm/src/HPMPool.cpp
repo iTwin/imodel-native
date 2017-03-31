@@ -7,10 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPMPool.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPMPool.h>
 //Debug Trace
 #ifdef __HMR_DEBUG
 //NOT_NOW #define __HPMMEMORY_KEEPLAST_TRACE

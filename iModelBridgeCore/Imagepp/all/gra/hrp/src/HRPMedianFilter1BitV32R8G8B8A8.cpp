@@ -9,11 +9,8 @@
 // Methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPMedianFilter1BitV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPMedianFilter1BitV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
 
 #define CHANNELS 4

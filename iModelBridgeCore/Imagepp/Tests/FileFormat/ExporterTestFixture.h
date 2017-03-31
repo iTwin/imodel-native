@@ -8,13 +8,7 @@
 // Class : ExportTester
 //-----------------------------------------------------------------------------
 
-#include <Imagepp/all/h/HPMPool.h>
-#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HFCURL.h>
-#include <Bentley/MD5.h>
-#include <json/json.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-
+#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HFCURL.h>#include <Bentley/md5.h>#include <json/json.h>#include <ImagePP/all/h/HRFRasterFile.h>
 // Clear timestamp related info for certain format so we can compare them.
 bool UpdateTiffHistogramTimestamp(ImagePP::HFCPtr<ImagePP::HFCURL> const& pUrl);
 

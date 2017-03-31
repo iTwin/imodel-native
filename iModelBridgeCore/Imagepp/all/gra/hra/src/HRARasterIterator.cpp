@@ -9,12 +9,9 @@
 // Methods for class HRARasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRARasterIterator.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-
+#include <ImagePP/all/h/HRARasterIterator.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
 
 
 //-----------------------------------------------------------------------------

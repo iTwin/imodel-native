@@ -8,21 +8,10 @@
 // Class HRFIntergraphLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFIntergraphLineEditor.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecCRL8.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-
-#include <Imagepp/all/h/HGFTileIDDescriptor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFIntergraphLineEditor.h>#include <ImagePP/all/h/HRFIntergraphFile.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecCRL8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>
 
 
 const uint32_t JPegTileTrailerSize     =   2;

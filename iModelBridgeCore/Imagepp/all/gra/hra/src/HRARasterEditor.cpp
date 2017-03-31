@@ -9,11 +9,9 @@
 // Methods for class HRARasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRARasterEditor.h>
-
+#include <ImagePP/all/h/HRARasterEditor.h>
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

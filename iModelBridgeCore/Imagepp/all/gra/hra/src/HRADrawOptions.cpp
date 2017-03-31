@@ -9,12 +9,9 @@
 // Methods for class HRADrawOptions
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRATransaction.h>
-
+#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRATransaction.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor.

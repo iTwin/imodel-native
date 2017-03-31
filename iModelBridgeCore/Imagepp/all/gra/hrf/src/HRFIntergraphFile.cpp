@@ -8,43 +8,15 @@
 // Class HRFIntergraphFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <ImagePP/all/h/ImageppLib.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
-#include <Imagepp/all/h/HFCException.h>
-
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HRFIntergraphTileEditor.h>
-#include <Imagepp/all/h/HRFIntergraphLineEditor.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFTypes.h>
-
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecRLE8.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecCRL8.h>
-
-#include <Imagepp/all/h/HRPPixelPalette.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-
+#include <ImagePP/all/h/ImageppLib.h>#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFIntergraphTileEditor.h>#include <ImagePP/all/h/HRFIntergraphLineEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFTypes.h>
+#include <ImagePP/all/h/HCDCodecCCITTFax4.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecRLE8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecCRL8.h>
+#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>
 //-----------------------------------------------------------------------------
 // Static initialization
 //-----------------------------------------------------------------------------

@@ -8,10 +8,8 @@
 // MEthods for class HPAGrammarObject
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPAGrammarObject.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPAGrammarObject.h>
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 HPAGrammarObject::~HPAGrammarObject()

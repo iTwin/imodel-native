@@ -6,34 +6,13 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMSeamlessMosaic.h>
-#include <Imagepp/all/h/HIMColorBalancedImage.h>
-#include <Imagepp/all/h/HIMBlendCorridor.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRABitmap.h>
-#include <Imagepp/all/h/HRARasterIterator.h>
-#include <ImagePP/all/h/HRACopyFromLegacyOptions.h>
-#include <ImagePP/all/h/HRAMessages.h>
-
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HRACachedHistogramRaster.h>
-
-#include <Imagepp/all/h/HRAMessages.h>
-#include <Imagepp/all/h/HRPMessages.h>
-
+#include <ImagePP/all/h/HIMSeamlessMosaic.h>#include <ImagePP/all/h/HIMColorBalancedImage.h>#include <ImagePP/all/h/HIMBlendCorridor.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRARasterIterator.h>#include <ImagePP/all/h/HRACopyFromLegacyOptions.h>#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRACachedHistogramRaster.h>
+#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>
 
 HPM_REGISTER_CLASS(HIMSeamlessMosaic, HIMMosaic)
 

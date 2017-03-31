@@ -6,15 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMStoredRasterEquivalentTransfo.h>
-
-#include <Imagepp/all/h/HRAStoredRaster.h>
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HRAImageView.h>
-
+#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>
+#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRAImageView.h>
 
 /** -----------------------------------------------------------------------------
     Constructor

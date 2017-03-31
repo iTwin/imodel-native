@@ -8,21 +8,14 @@
 // Methods for class HGF2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DShape.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
+#include <ImagePP/all/h/HGF2DShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
 
 // HPM_REGISTER_ABSTRACT_CLASS(HGF2DShape, HGF2DVector)
 
 
-#include <Imagepp/all/h/HGF2DSimpleShape.h>
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DSegment.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HGF2DSimpleShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 //-----------------------------------------------------------------------------
 // Rasterize

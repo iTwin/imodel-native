@@ -9,25 +9,9 @@
 // Class : HRFRasterFileCache
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFCacheRandomBlockEditor.h>
-#include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
-#include <Imagepp/all/h/HGFTileIDDescriptor.h>
-#include <Imagepp/all/h/HRFMessages.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFLocalCacheFileCreator.h>
-
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HCDCodecFactory.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFcTiffFile.h>
 
 //-----------------------------------------------------------------------------
 // HMR Message Map

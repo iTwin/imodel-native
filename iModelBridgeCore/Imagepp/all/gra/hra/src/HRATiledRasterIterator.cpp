@@ -9,12 +9,9 @@
 // Methods for class HRATiledRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRATiledRaster.h>
-#include <Imagepp/all/h/HRATiledRasterIterator.h>
-
+#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRATiledRasterIterator.h>
 
 //-----------------------------------------------------------------------------
 // public

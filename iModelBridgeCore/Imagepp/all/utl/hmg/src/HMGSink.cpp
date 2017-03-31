@@ -8,13 +8,9 @@
 // Methods for class HMGSink
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGSink.h>
-#include <Imagepp/all/h/HMGMessage.h>
-#include <Imagepp/all/h/HMGMessageReceiver.h>
-
+#include <ImagePP/all/h/HMGSink.h>#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HMGMessageReceiver.h>
 
 ///////////////////////
 // HMGMessageEnvelope

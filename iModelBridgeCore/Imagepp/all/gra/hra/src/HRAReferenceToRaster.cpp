@@ -8,28 +8,9 @@
 // Methods for class HRAReferenceToRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HRAReferenceToRasterEditor.h>
-#include <Imagepp/all/h/HRAReferenceToRasterIterator.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HMDContext.h>
-#include <Imagepp/all/h/HRAMessages.h>
-#include <ImagePPInternal/gra/HRAImageNode.h>
-#include <ImagePPInternal/gra/HRACopyToOptions.h>
-
+#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRAReferenceToRasterEditor.h>#include <ImagePP/all/h/HRAReferenceToRasterIterator.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 
 

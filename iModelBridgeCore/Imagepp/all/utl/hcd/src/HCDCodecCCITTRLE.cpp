@@ -9,12 +9,8 @@
 // Methods for class HCDCodecCCITTRLE
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecCCITTRLE.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecCCITTRLE.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacketRLE.h>
 
 
 //#define SUPPORT_REVERSE_BIT_ONLY 1

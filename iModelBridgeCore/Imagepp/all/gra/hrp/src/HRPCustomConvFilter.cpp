@@ -9,11 +9,8 @@
 // User defined convolution filter.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPCustomConvFilter.h>
-#include <Imagepp/all/h/HRPPixelNeighbourhood.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPCustomConvFilter.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------

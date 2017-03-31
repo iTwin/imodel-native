@@ -6,11 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCCallbackRegistry.h>
-#include <Imagepp/all/h/HFCCallback.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCCallbackRegistry.h>#include <ImagePP/all/h/HFCCallback.h>
 
 // Singleton
 HFC_IMPLEMENT_SINGLETON(HFCCallbackRegistry)

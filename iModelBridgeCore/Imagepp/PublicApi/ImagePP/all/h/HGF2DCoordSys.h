@@ -12,11 +12,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGF2DTransfoModel.h"
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HPMPersistentObject.h>
-#include <Imagepp/all/h/HFCExclusiveKey.h>
-
+#include "HGF2DTransfoModel.h"#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HFCExclusiveKey.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HGF2DTransfoModel;
 class HGF2DCoordSysImpl;
@@ -319,4 +315,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HGF2DCoordSys.hpp"
+#include "HGF2DCoordSys.hpp"

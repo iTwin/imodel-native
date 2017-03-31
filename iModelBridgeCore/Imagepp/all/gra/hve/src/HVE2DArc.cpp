@@ -8,16 +8,10 @@
 // Methods for class HVE2DArc
 //-------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-
-#include <Imagepp/all/h/HVE2DArc.h>
-#include <Imagepp/all/h/HGF2DLine.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HVE2DArc.h>#include <ImagePP/all/h/HGF2DLine.h>#include <ImagePP/all/h/HVE2DSegment.h>
 HPM_REGISTER_CLASS(HVE2DArc, HVE2DBasicLinear)
 
 

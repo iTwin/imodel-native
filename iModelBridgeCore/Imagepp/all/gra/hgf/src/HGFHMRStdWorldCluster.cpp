@@ -6,13 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 
 HPM_REGISTER_CLASS(HGFHMRStdWorldCluster, HGF2DWorldCluster)
 

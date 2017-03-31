@@ -8,10 +8,8 @@
 // Class : HCDCodecIJGAltaPhoto
 //--------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecIJGAltaPhoto.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecIJGAltaPhoto.h>
 HCDCodecIJGAltaPhoto::HCDCodecIJGAltaPhoto()
     {
     SetAltaPhotoCodecParameters();

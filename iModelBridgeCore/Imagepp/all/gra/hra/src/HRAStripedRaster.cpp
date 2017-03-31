@@ -9,12 +9,9 @@
 // Methods for class HRAStripedRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAStripedRaster.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-
+#include <ImagePP/all/h/HRAStripedRaster.h>#include <ImagePP/all/h/HGF2DGrid.h>
 
 HPM_REGISTER_CLASS(HRAStripedRaster, HRATiledRaster)
 

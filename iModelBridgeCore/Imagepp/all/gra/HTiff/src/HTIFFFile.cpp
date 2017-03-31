@@ -9,34 +9,12 @@
 // Methods for class HTIFFFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFDirectory.h>
-#include <Imagepp/all/h/HTIFFTagDefinition.h>
-
-#include <Imagepp/all/h/HPMAttributeSet.h>
-
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecFlashpixOLDForMSI10.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecJBIG.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-
-#include <Imagepp/all/h/HFCMonitor.h>
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodec.h>
-#include <Imagepp/all/h/HTIFFTag.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFGeoKey.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFDirectory.h>#include <ImagePP/all/h/HTIFFTagDefinition.h>
+#include <ImagePP/all/h/HPMAttributeSet.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecFlashpixOLDForMSI10.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecJBIG.h>#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodec.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFGeoKey.h>
 
 
 // Private Directory

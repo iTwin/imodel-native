@@ -9,12 +9,9 @@
 // Methods for class HRAPyramidRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAPyramidRaster.h>
-#include <Imagepp/all/h/HRAPyramidRasterIterator.h>
-
+#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRAPyramidRasterIterator.h>
 
 //-----------------------------------------------------------------------------
 // public

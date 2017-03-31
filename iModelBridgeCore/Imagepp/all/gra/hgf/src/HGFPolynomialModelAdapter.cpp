@@ -8,15 +8,8 @@
 // Methods for class HGFPolynomialModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DPosition.h>
-#include <Geom/GeomApi.h>
-
-#include <Imagepp/all/h/HGFPolynomialModelAdapter.h>
-
+#include <ImageppInternal.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DPosition.h>#include <Geom/GeomApi.h>
+#include <ImagePP/all/h/HGFPolynomialModelAdapter.h>
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 

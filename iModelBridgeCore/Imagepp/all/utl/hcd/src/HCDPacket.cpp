@@ -9,12 +9,8 @@
 // Methods for class HCDPacket
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HFCMonitor.h>
-#include <ImagePP/all/h/HCDCodec.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HCDCodec.h>
 
 //-----------------------------------------------------------------------------
 // public

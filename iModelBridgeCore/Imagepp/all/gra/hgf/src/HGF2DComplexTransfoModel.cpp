@@ -9,15 +9,10 @@
 // Methods for class HGF2DComplexTransfoModel
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DUniverse.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DUniverse.h>
 
 //-----------------------------------------------------------------------------
 // Constructor

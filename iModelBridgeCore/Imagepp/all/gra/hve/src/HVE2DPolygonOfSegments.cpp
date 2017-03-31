@@ -8,26 +8,9 @@
 // Methods for class HVE2DPolygonOfSegments
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DLiteSegment.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HVE2DPolygon.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>
 HPM_REGISTER_CLASS(HVE2DPolygonOfSegments, HVE2DSimpleShape)
 
 // &&AR Remove GetPoints() from  file!

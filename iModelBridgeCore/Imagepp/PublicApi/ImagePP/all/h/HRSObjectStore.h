@@ -11,20 +11,9 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPMObjectStore.h>
-#include "HRFRasterFile.h"
-#include "HRFResolutionEditor.h"
-#include "HRFRasterFileFactory.h"
-#include "HRFRasterFileCapabilities.h"
-#include "HFCURLFile.h"
-#include "HFCAccessMode.h"
-#include "HRABitmap.h"
-
-#include "HRAStoredRaster.h"
-#include "HGFTileIDDescriptor.h"
-
-#include <ImagePP/all/h/HGSTypes.h>
-
+#include <ImagePP/all/h/HPMObjectStore.h>#include "HRFRasterFile.h"#include "HRFResolutionEditor.h"#include "HRFRasterFileFactory.h"#include "HRFRasterFileCapabilities.h"#include "HFCURLFile.h"#include "HFCAccessMode.h"#include "HRABitmap.h"
+#include "HRAStoredRaster.h"#include "HGFTileIDDescriptor.h"
+#include <ImagePP/all/h/HGSTypes.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HCDPacketRLE;
 class HRATiledRaster;
@@ -302,6 +291,5 @@ private:
     };
 END_IMAGEPP_NAMESPACE
 
-#include "HRSObjectStore.hpp"
-
+#include "HRSObjectStore.hpp"
 

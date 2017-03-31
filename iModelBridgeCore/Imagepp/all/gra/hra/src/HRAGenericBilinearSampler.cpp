@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAGenericBilinearSampler.h>
-
+#include <ImagePP/all/h/HRAGenericBilinearSampler.h>
 /**----------------------------------------------------------------------------
  Constructor for this class
 

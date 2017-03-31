@@ -8,17 +8,9 @@
 // Class HRFVirtualEarthEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include "HRFVirtualEarthEditor.h"
-#include <Imagepp/all/h/HRFVirtualEarthFile.h>
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HRFPngFile.h>
-#include <ImagePPInternal/gra/Task.h>
-#include <ImagePPInternal/HttpConnection.h>
-#include <BeJpeg/BeJpeg.h>
-
+#include "HRFVirtualEarthEditor.h"#include <ImagePP/all/h/HRFVirtualEarthFile.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePPInternal/gra/Task.h>#include <ImagePPInternal/HttpConnection.h>#include <BeJpeg/BeJpeg.h>
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------

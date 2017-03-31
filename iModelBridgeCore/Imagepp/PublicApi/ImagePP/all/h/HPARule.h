@@ -17,9 +17,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPAGrammarObject.h>
-#include <Imagepp/all/h/HPAProduction.h>
-
+#include <ImagePP/all/h/HPAGrammarObject.h>#include <ImagePP/all/h/HPAProduction.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPARule : public HPAGrammarObject
     {
@@ -60,5 +58,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPARule.hpp"
-
+#include "HPARule.hpp"

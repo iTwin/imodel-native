@@ -9,11 +9,9 @@
 // Methods for class HGF2DCoordSys
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DWorld.h>
-
+#include <ImagePP/all/h/HGF2DWorld.h>
 
 HPM_REGISTER_CLASS(HGF2DWorld, HGF2DCoordSys)
 

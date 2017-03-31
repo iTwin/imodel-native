@@ -8,12 +8,9 @@
 // Methods for class HMGMessageDuplex
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGMessageDuplex.h>
-#include <Imagepp/all/h/HMGMessage.h>
-
+#include <ImagePP/all/h/HMGMessageDuplex.h>#include <ImagePP/all/h/HMGMessage.h>
 
 //-----------------------------------------------------------------------------
 // The default constructor.

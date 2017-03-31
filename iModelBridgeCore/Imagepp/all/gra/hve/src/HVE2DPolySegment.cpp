@@ -8,17 +8,10 @@
 // Methods for class HVE2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DLiteSegment.h>
-#include <Imagepp/all/h/HVE2DPolySegment.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-
-#include <Imagepp/all/h/HFCException.h>
-
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HVE2DPolySegment.h>#include <ImagePP/all/h/HVE2DSegment.h>
+#include <ImagePP/all/h/HFCException.h>
 HPM_REGISTER_CLASS(HVE2DPolySegment, HVE2DLinear)
 
 

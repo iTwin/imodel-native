@@ -8,23 +8,13 @@
 // Methods for class HVE2DRectangle
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DRectangle.h>
-
+#include <ImagePP/all/h/HVE2DRectangle.h>
 HPM_REGISTER_CLASS(HVE2DRectangle, HVE2DSimpleShape)
 
 
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HVE2DPolygon.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 //-----------------------------------------------------------------------------
 // GetLinear

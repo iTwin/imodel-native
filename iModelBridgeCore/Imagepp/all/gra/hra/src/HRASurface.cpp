@@ -9,26 +9,14 @@
 // Class HRASurface
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HRAEditor.h>
-
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-
+#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HRAEditor.h>
+#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 // Codec
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
 // macro
 #define BytesFromBits(NbBits) ((NbBits + 7) / 8)
 

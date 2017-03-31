@@ -6,16 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRANearestSamplerN1.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRANearestSamplerN1.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCMath.h>
 
 /**----------------------------------------------------------------------------
  Constructor for this class

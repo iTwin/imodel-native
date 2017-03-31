@@ -8,10 +8,8 @@
 // Methods for class HCDCodecFPXSingleColor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecFPXSingleColor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>
 
 //-----------------------------------------------------------------------------
 // public

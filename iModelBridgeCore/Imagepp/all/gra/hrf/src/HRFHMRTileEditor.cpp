@@ -8,15 +8,9 @@
 // Class HRFHMRTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-#include <Imagepp/all/h/HRFHMRTileEditor.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRFHMRTileEditor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDPacket.h>
 #define RASTERFILEPTR       (static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->GetFilePtr())
 #define HMR_RASTERFILE      (static_cast<HRFHMRFile*>(GetRasterFile().GetPtr()))
 

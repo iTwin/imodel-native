@@ -9,14 +9,8 @@
 // Class HRFSLOStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFSLOStripEditor.h>
-#include <Imagepp/all/h/HRFSLOStripAdapter.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFSLOStripEditor.h>#include <ImagePP/all/h/HRFSLOStripAdapter.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 
 // Initialisation
 Byte HRFSLOStripEditor::m_BitMask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};

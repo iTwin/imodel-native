@@ -5,11 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPSPssFile.h>
-#include <Imagepp/all/h/HPSPssToken.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HPSPssToken.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007

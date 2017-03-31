@@ -9,34 +9,13 @@
 // Class HRFERSPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-   
+#include <ImageppInternal.h>   
 
-#include <Imagepp/all/h/HTIFFTag.h>
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HRFERSPageFile.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCIniFileBrowser.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-
-#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-
+#include <ImagePP/all/h/HTIFFTag.h>
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HRFERSPageFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCIniFileBrowser.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
 
 
 //ERS possible entries

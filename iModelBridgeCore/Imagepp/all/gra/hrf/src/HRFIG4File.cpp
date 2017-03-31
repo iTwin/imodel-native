@@ -8,32 +8,17 @@
 // Class HRFIG4File
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
+#include <ImagePP/all/h/HRFIG4File.h>#include <ImagePP/all/h/HRFIG4StripEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
 
-#include <Imagepp/all/h/HRFIG4File.h>
-#include <Imagepp/all/h/HRFIG4StripEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRPPixelType.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HTIFFUtils.h>
-
-
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 //-----------------------------------------------------------------------------
 // HRFIG4BlockCapabilities
 //-----------------------------------------------------------------------------

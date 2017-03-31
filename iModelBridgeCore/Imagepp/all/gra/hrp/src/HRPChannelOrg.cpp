@@ -8,10 +8,8 @@
 // Methods for class HRPChannelOrg
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPChannelOrg.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPChannelOrg.h>
 //-----------------------------------------------------------------------------
 // Constructor.  It takes no argument, object properties must be set with
 // channel and palette setup methods.

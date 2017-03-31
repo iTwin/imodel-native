@@ -8,33 +8,12 @@
 // Class: HRFImportExport
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCGrid.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecECW.h>
-#include <Imagepp/all/h/HCDCodecJPEG2000.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-
-#include <Imagepp/all/h/HRFHGRPageFile.h>
-#include <Imagepp/all/h/HRFTWFPageFile.h>
-#include <Imagepp/all/h/HRFImportExport.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-
-#include <Imagepp/all/h/HRFExportOptions.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecECW.h>#include <ImagePP/all/h/HCDCodecJPEG2000.h>#include <ImagePP/all/h/HCDCodecFactory.h>
+#include <ImagePP/all/h/HRFHGRPageFile.h>#include <ImagePP/all/h/HRFTWFPageFile.h>#include <ImagePP/all/h/HRFImportExport.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
+#include <ImagePP/all/h/HRFExportOptions.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>
 
 
 //-----------------------------------------------------------------------------

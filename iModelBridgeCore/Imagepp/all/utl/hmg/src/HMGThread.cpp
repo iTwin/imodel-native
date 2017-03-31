@@ -8,14 +8,9 @@
 // Methods for class HMGThread
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGThread.h>
-#include <Imagepp/all/h/HMGMacros.h>
-#include <Imagepp/all/h/HMGMessage.h>
-#include <Imagepp/all/h/HMGSink.h>
-
+#include <ImagePP/all/h/HMGThread.h>#include <ImagePP/all/h/HMGMacros.h>#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HMGSink.h>
 
 // Definition of class statics
 

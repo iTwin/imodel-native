@@ -13,8 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-BEGIN_IMAGEPP_NAMESPACE
+#include <ImagePP/all/h/HFCPtr.h>BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0

@@ -9,10 +9,8 @@
 // Inline methods for class HGFLUVSet
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGFLUVCube.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGFLUVCube.h>
 const double HGFLUVCube::L_MIN = 0.0;
 const double HGFLUVCube::L_MAX = 100.0;
 

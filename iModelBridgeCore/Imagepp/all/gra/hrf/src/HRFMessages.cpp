@@ -9,12 +9,9 @@
 // Methods for HGF message classes
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGMessage.h>
-#include <Imagepp/all/h/HRFMessages.h>
-
+#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HRFMessages.h>
 
 //-----------------------------------------------------------------------------
 // Destructor

@@ -9,12 +9,9 @@
 // Methods for class HRARepPalParms
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRPQuantizedPalette.h>
-
+#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>
 //-----------------------------------------------------------------------------
 // Copy constructor for HRARepPalParms
 //-----------------------------------------------------------------------------

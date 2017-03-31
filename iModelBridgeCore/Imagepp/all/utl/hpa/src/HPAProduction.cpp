@@ -8,11 +8,8 @@
 // Methods for class HPAProduction
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPAProduction.h>
-#include <Imagepp/all/h/HPARule.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HPARule.h>
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 void HPAProduction::SetRule(HPARule* pi_pRule)

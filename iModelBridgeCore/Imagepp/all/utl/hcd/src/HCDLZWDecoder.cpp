@@ -8,10 +8,8 @@
 // Methods for class HCDLZWDecoder
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDLZWDecoder.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDLZWDecoder.h>
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------

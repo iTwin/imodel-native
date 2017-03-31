@@ -6,12 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HIMBlendCorridorIterator.h>
-
+#include <ImagePP/all/h/HIMBlendCorridorIterator.h>
 
 
 /** -----------------------------------------------------------------------------

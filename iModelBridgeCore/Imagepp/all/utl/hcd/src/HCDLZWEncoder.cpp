@@ -11,11 +11,8 @@
 // See : http://www.libtiff.org/
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDLZWEncoder.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDLZWEncoder.h>#include <ImagePP/all/h/HFCMath.h>
 HCDLZWEncoder::HCDLZWEncoder()
     {
     }

@@ -8,11 +8,8 @@
 // Methods for class HGFLightnessColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGFLightnessColorSpace.h>
-#include <Imagepp/all/h/HFCMaths.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGFLightnessColorSpace.h>#include <ImagePP/all/h/HFCMaths.h>
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------

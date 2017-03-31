@@ -6,29 +6,11 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCPGCoordModel.h>
-
-#include <Imagepp/all/h/HFCException.h>
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32Float32.h>
-#include <Imagepp/all/h/HUTDEMRasterXYZPointsExtractor.h>
-#include <Imagepp/all/h/HUTDEMRasterXYZPointsIterator.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HRFException.h>
-
+#include <ImagePP/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>#include <ImagePP/all/h/HUTDEMRasterXYZPointsIterator.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRFException.h>
 
 #define STRIP_HEIGHT 256
 

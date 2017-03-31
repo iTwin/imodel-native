@@ -8,20 +8,14 @@
 // Methods for class HVE2DComplexShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DComplexShape, HVE2DShape)
 
 
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 /** -----------------------------------------------------------------------------
     Constructor for a complex shape.

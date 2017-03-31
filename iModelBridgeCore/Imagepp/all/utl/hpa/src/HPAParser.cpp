@@ -8,16 +8,8 @@
 // Methods for class HPAParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPAParser.h>
-#include <Imagepp/all/h/HPATokenizer.h>
-#include <Imagepp/all/h/HPAProduction.h>
-#include <Imagepp/all/h/HPAToken.h>
-#include <Imagepp/all/h/HPARule.h>
-#include <Imagepp/all/h/HPAException.h>
-#include <Imagepp/all/h/HPASession.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPAParser.h>#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPARule.h>#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HPASession.h>
 //---------------------------------------------------------------------------
 // Constructor for this class.
 //---------------------------------------------------------------------------

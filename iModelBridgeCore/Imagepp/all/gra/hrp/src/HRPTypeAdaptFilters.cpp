@@ -9,14 +9,10 @@
 // Methods for class HRPTypeAdaptFilters
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPTypeAdaptFilters.h>
-
-#include <Imagepp/all/h/HRPConvFiltersV24R8G8B8.h>
-#include <Imagepp/all/h/HRPConvFiltersV24PhotoYCC.h>
-
+#include <ImagePP/all/h/HRPTypeAdaptFilters.h>
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HRPConvFiltersV24PhotoYCC.h>
 //-----------------------------------------------------------------------------
 // Blur filter
 //-----------------------------------------------------------------------------

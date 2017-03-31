@@ -13,15 +13,8 @@
 //:> public section
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HGF2DWorld.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGFScanlines.h>
 /**----------------------------------------------------------------------------
  Constructor for this class.
 -----------------------------------------------------------------------------*/

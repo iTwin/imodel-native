@@ -8,13 +8,8 @@
 // Class : HRFCapability
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HPMAttribute.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-
+#include <ImageppInternal.h> // Must be the first include.
+#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HPMAttribute.h>#include <ImagePP/all/h/HCDCodecFactory.h>
 
 
 /*---------------------------------------------------------------------------------**//**

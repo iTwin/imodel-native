@@ -8,11 +8,8 @@
 //-----------------------------------------------------------------------------
 // Class SDOGeoRasterWrapper
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/SDOGeoRasterWrapper.h>
-#include <Imagepp/all/h/OCIGeoRasterWrapper.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/SDOGeoRasterWrapper.h>#include <ImagePP/all/h/OCIGeoRasterWrapper.h>
 //-----------------------------------------------------------------------------
 // static method
 //-----------------------------------------------------------------------------

@@ -9,14 +9,9 @@
 // Class: HRFExportOptions
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFExportOptions.h>
-#include <Imagepp/all/h/HPMPersistentObject.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-
+#include <ImagePP/all/h/HRFExportOptions.h>#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFactory.h>
 
 
 /** -----------------------------------------------------------------------------

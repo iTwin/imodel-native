@@ -6,17 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRABilinearSamplerN8.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-
+#include <ImagePP/all/h/HRABilinearSamplerN8.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
 
 /**----------------------------------------------------------------------------
  Constructor for this class

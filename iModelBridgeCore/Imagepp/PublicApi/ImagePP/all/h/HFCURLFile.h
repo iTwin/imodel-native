@@ -9,8 +9,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImagePP/all/h/HFCURL.h>
 BEGIN_IMAGEPP_NAMESPACE
 //:> URL specification at this level is:
 //:> file:{//host/[path] | [//]drive/[path] | [//]relpath}
@@ -104,4 +103,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HFCURLFile.hpp"
+#include "HFCURLFile.hpp"

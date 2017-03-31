@@ -8,11 +8,9 @@
 // Class : HGFResolutionDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-
+#include <ImagePP/all/h/HGFResolutionDescriptor.h>
 //-----------------------------------------------------------------------------
 // Public
 // constructor.

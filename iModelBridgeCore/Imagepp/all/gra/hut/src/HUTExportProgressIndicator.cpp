@@ -11,13 +11,9 @@
 //
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HUTExportProgressIndicator.h>
-
-#include <Imagepp/all/h/HRAUpdateSubResProgressIndicator.h>
-#include <Imagepp/all/h/HRADrawProgressIndicator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HUTExportProgressIndicator.h>
+#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>
 //----------------------------------------------------------------------------
 
 HFC_IMPLEMENT_SINGLETON(HUTExportProgressIndicator)

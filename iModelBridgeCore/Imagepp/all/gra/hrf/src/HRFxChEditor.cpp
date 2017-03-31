@@ -6,14 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFxChFile.h>
-#include <Imagepp/all/h/HRFxChEditor.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-
+#include <ImagePP/all/h/HRFxChFile.h>#include <ImagePP/all/h/HRFxChEditor.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
 #define RASTER_FILE     static_cast<HRFxChFile*>(GetRasterFile().GetPtr())
 
 /** ---------------------------------------------------------------------------

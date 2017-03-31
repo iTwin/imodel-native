@@ -8,15 +8,9 @@
 // Methods for class HTIFFFilePrint
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <ImagePP/all/h/HTIFFTag.h>
-#include <ImagePP/all/h/HTIFFGeoKey.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFDirectory.h>
-
+#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HTIFFGeoKey.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFDirectory.h>
 
 
 static void s_PrintAscii    (FILE* po_pOutput, const char* pi_pCar, int32_t pi_NbCars = -1);

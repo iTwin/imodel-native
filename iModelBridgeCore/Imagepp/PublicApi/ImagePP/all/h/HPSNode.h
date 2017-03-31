@@ -13,10 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HPANode.h>
-#include <Imagepp/all/h/HGF2DWorldCluster.h>
-#include <Imagepp/all/h/HGF2DWorld.h>
-
+#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HGF2DWorld.h>
 BEGIN_IMAGEPP_NAMESPACE
 class PageStatementNode;
 class HRARaster;

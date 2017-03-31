@@ -8,11 +8,8 @@
 // Methods for class HCDCodecBMPRLE4
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecBMPRLE4.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE4.h>#include <ImagePP/all/h/HFCMath.h>
 #define HCD_CODEC_NAME "BMP RLE 4 bits"
 
 //-----------------------------------------------------------------------------

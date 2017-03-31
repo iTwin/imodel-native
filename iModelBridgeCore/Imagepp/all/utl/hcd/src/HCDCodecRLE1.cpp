@@ -8,10 +8,8 @@
 // Methods for class HCDCodecRLE1
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecRLE1.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecRLE1.h>
 #define HCD_CODEC_NAME "RLE1bit"
 
 //-----------------------------------------------------------------------------

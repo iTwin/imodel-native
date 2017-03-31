@@ -8,11 +8,8 @@
 // Methods for class HFCFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCURL.h>
 // Static member initialization
 
 HFCBinStream::StreamTypeList* HFCBinStream::s_pStreamTypeList = 0;

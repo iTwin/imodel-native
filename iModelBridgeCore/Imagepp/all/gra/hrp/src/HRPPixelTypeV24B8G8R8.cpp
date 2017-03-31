@@ -9,21 +9,13 @@
 // Methods for class HRPPixelTypeV24B8G8R8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include "v24rgb.h"
 
 
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include "v24rgb.h"
-
-
-
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
 HPM_REGISTER_CLASS(HRPPixelTypeV24B8G8R8, HRPPixelTypeBGR)
 
 // STL typeDef

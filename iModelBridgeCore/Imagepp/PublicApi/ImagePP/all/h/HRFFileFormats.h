@@ -10,77 +10,13 @@
 //-----------------------------------------------------------------------------
 //#pragma once
 
-#include <ImagePP/all/h/ImageppLib.h>   // To get IPP_HAVE_XXX defines 
-
+#include <ImagePP/all/h/ImageppLib.h>   // To get IPP_HAVE_XXX defines 
 // To include the creators in the factory
-#include "HRFMacros.h"
-#include "HRFRasterFileFactory.h"
-
-#include "HRFArcInfoGridFile.h"
-#include "HRFArcInfoAsciiGridFile.h"
-#include "HRFBmpFile.h"
-#include "HRFBsbFile.h"
-#include "HRFPictFile.h"
-#include "HRFWbmpFile.h"
-#include "HRFCalsFile.h"
-#include "HRFGeoTiffFile.h"
-#include "HRFHMRFile.h"
-#include "HRFImgMappedFile.h"
-#include "HRFImgRGBFile.h"
-#include "HRFIntergraphCITFile.h"
-#include "HRFIntergraphCOT29File.h"
-#include "HRFIntergraphC30File.h"
-#include "HRFIntergraphC31File.h"
-#include "HRFIntergraphCotFile.h"
-#include "HRFIntergraphRGBFile.h"
-#include "HRFIntergraphRLEFile.h"
-#include "HRFIntergraphTG4File.h"
-#include "HRFIntergraphCRLFile.h"
-#include "HRFIntergraphMPFFile.h"
-#include "HRFIrasbRSTFile.h"
-#include "HRFiTiffFile.h"
-#include "HRFJpegFile.h"
-#include "HRFUSgsDEMFile.h"
-#include "HRFUSgsFastL7AFile.h"
-#include "HRFUSgsNDFFile.h"
-#include "HRFUSgsSDTSDEMFile.h"
-
-#include "HRFPngFile.h"
-#include "HRFTiffFile.h"
-#include "HRFGifFile.h"
-#include "HRFcTiffFile.h"
-#include "HRFTgaFile.h"
-#include "HRFRawFile.h"
-#include "HRFPcxFile.h"
-#include "HRFSunRasterFile.h"
-#include "HRFRLCFile.h"
-#include "HRFEpsFile.h"
-#include "HRFTiffIntgrFile.h"
-#include "HRFxChFile.h"
-#include "HRFBilFile.h"
-#include "HRFLRDFile.h"
-#include "HRFFliFile.h"
-#include "HRFDoqFile.h"
-#include "HRFSpotCAPFile.h"
-#include "HRFSpotDimapFile.h"
-#include "HRFPWRasterFile.h"
-#include "HRFErdasImgFile.h"
-#include "HRFNitfFile.h"
-#include "HRFDtedFile.h"
-#include "HRFSRTMFile.h"
-
-#include "HRFErMapperSupportedFile.h"
-#include "HRFMrSIDFile.h"
-#include "HRFGeoRasterFile.h"
-#include "HRFPDFFile.h"
-#include "HRFMapboxFile.h"
-
-#include <Imagepp/all/h/HRFPageFileFactory.h>
-#include <Imagepp/all/h/HRFTWFPageFile.h>
-#include <Imagepp/all/h/HRFHGRPageFile.h>
-#include <Imagepp/all/h/HRFERSPageFile.h>
-#include <Imagepp/all/h/HRFPRJPageFile.h>
-
+#include "HRFMacros.h"#include "HRFRasterFileFactory.h"
+#include "HRFArcInfoGridFile.h"#include "HRFArcInfoAsciiGridFile.h"#include "HRFBmpFile.h"#include "HRFBsbFile.h"#include "HRFPictFile.h"#include "HRFWbmpFile.h"#include "HRFCalsFile.h"#include "HRFGeoTiffFile.h"#include "HRFHMRFile.h"#include "HRFImgMappedFile.h"#include "HRFImgRGBFile.h"#include "HRFIntergraphCITFile.h"#include "HRFIntergraphCOT29File.h"#include "HRFIntergraphC30File.h"#include "HRFIntergraphC31File.h"#include "HRFIntergraphCotFile.h"#include "HRFIntergraphRGBFile.h"#include "HRFIntergraphRLEFile.h"#include "HRFIntergraphTG4File.h"#include "HRFIntergraphCRLFile.h"#include "HRFIntergraphMPFFile.h"#include "HRFIrasbRSTFile.h"#include "HRFiTiffFile.h"#include "HRFJpegFile.h"#include "HRFUSgsDEMFile.h"#include "HRFUSgsFastL7AFile.h"#include "HRFUSgsNDFFile.h"#include "HRFUSgsSDTSDEMFile.h"
+#include "HRFPngFile.h"#include "HRFTiffFile.h"#include "HRFGifFile.h"#include "HRFcTiffFile.h"#include "HRFTgaFile.h"#include "HRFRawFile.h"#include "HRFPcxFile.h"#include "HRFSunRasterFile.h"#include "HRFRLCFile.h"#include "HRFEPSFile.h"#include "HRFTiffIntgrFile.h"#include "HRFxChFile.h"#include "HRFBilFile.h"#include "HRFLRDFile.h"#include "HRFFliFile.h"#include "HRFDoqFile.h"#include "HRFSpotCAPFile.h"#include "HRFSpotDimapFile.h"#include "HRFPWRasterFile.h"#include "HRFErdasImgFile.h"#include "HRFNitfFile.h"#include "HRFDtedFile.h"#include "HRFSRTMFile.h"
+#include "HRFErMapperSupportedFile.h"#include "HRFMrSIDFile.h"#include "HRFGeoRasterFile.h"#include "HRFPDFFile.h"#include "HRFMapboxFile.h"
+#include <ImagePP/all/h/HRFPageFileFactory.h>#include <ImagePP/all/h/HRFTWFPageFile.h>#include <ImagePP/all/h/HRFHGRPageFile.h>#include <ImagePP/all/h/HRFERSPageFile.h>#include <ImagePP/all/h/HRFPRJPageFile.h>
 // We used to have a mess of ifdef for every application(most of them legacy apps) that had specific file format list.  
 // All this logic was removed in favor of a fit most approach.  Rework when required. 
 #if defined(PROJECTWISE_FILE_FORMATS)
@@ -164,10 +100,7 @@
 //              Remote file formats
 //----------------------------------------------------------------------------------------
 #if !defined(IPP_NO_REMOTE_FILE_FORMAT) && !defined(BENTLEY_WINRT)
-    #include "HRFVirtualEarthFile.h"
-    #include "HRFWMSFile.h"
-    #include <ImagePP/all/h/HRFWebFile.h>
-    // Disable image server for now. It requires windows headers and We are not using it on DgnDb
+    #include "HRFVirtualEarthFile.h"    #include "HRFWMSFile.h"    #include <ImagePP/all/h/HRFWebFile.h>    // Disable image server for now. It requires windows headers and We are not using it on DgnDb
     //#include <ImagePP/IppImaging/HRFInternetImagingFile.h>
     //HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
 

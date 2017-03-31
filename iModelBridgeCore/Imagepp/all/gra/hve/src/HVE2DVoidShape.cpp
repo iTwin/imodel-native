@@ -8,13 +8,9 @@
 // Methods for class HVE2DVoidShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DVoidShape, HVE2DSimpleShape)
 
 //-----------------------------------------------------------------------------

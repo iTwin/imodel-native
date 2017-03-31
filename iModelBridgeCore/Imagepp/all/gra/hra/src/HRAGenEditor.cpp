@@ -9,12 +9,9 @@
 // Class HRAGenEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAGenEditor.h>
-#include <Imagepp/all/h/HRATransaction.h>
-
+#include <ImagePP/all/h/HRAGenEditor.h>#include <ImagePP/all/h/HRATransaction.h>
 
 //-----------------------------------------------------------------------------
 // public

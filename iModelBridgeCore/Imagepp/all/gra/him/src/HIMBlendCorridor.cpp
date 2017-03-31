@@ -6,37 +6,14 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRARasterIterator.h>
-
-#include <Imagepp/all/h/HIMBlendCorridor.h>
-#include <Imagepp/all/h/HIMBlendCorridorIterator.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-
+#include <ImagePP/all/h/HRARasterIterator.h>
+#include <ImagePP/all/h/HIMBlendCorridor.h>#include <ImagePP/all/h/HIMBlendCorridorIterator.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>
 // All these for CreateCorridor
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <Imagepp/all/h/HRABitmap.h>
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HRABitmapEditor.h>
-#include <Imagepp/all/h/HMDContext.h>
-
-#include <Imagepp/all/h/HFCGrid.h>
-
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HFCGrid.h>
 // Tile dimensions. We start at the base dimension, but we try
 // to adjust so that we only use one tile in each dimension. We
 // will never exceed the maximum tile sizes however.

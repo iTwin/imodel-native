@@ -6,16 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    // must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>    // must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HRFIrasbRSTFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFIntergraphMPFFile.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFIrasbRSTFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFIntergraphMPFFile.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 HFC_IMPLEMENT_SINGLETON(HRFIrasbRSTCreator)
 
 //-----------------------------------------------------------------------------

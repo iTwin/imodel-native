@@ -8,19 +8,8 @@
 // Class HRFiTiffStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFiTiffStripEditor.h>
-#include <Imagepp/all/h/HRFTiffFile.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HRFiTiffFile.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFiTiffStripEditor.h>#include <ImagePP/all/h/HRFTiffFile.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HRFiTiffFile.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDPacket.h>
 #define RASTER_FILE     (static_cast<HRFTiffFile*>(GetRasterFile().GetPtr()))
 #define TIFF_FILE       (static_cast<HRFTiffFile*>(GetRasterFile().GetPtr())->GetFilePtr())
 

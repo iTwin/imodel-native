@@ -5,8 +5,7 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <Imagepp/all/h/HRPPaletteOctreeR8G8B8.h>
-
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>
 // According non linear human vision perception, a source having
 // only 18% of a reference luminance appears about half bright.
 // We usually dont have any reference, so, take the max range as

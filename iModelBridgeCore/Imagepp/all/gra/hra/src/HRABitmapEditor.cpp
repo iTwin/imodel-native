@@ -9,17 +9,9 @@
 // Methods for class HRABitmapEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRABitmapEditor.h>
-#include <Imagepp/all/h/HRABitmapBase.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HGSRegion.h>
-
+#include <ImagePP/all/h/HRABitmapEditor.h>#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGSRegion.h>
 
 //-----------------------------------------------------------------------------
 // Constructor

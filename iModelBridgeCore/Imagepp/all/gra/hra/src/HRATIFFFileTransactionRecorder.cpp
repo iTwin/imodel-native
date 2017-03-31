@@ -8,18 +8,10 @@
 //:> Class : HRATIFFFileTransactionRecorder
 //:>---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRATIFFFileTransactionRecorder.h>
-
-#include <Imagepp/all/h/HRATransaction.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCURLEmbedFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImagePP/all/h/HRATIFFFileTransactionRecorder.h>
+#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>#include <ImagePP/all/h/HCDPacket.h>
 //---------------------------------------------------------------------------
 // class HTIFFFileRecorder
 //---------------------------------------------------------------------------

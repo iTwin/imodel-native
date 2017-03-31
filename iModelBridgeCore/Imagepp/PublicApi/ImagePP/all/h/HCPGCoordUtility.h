@@ -10,10 +10,7 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HFCMacros.h>
-#include <Imagepp/all/h/HGF2DWorld.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HFCMacros.h>#include <ImagePP/all/h/HGF2DWorld.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DWorldCluster;

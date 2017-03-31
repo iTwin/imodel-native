@@ -8,11 +8,8 @@
 // Methods for class HPMPersistentObject
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPMPersistentObject.h>
-#include <Imagepp/all/h/HPMObjectStore.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPMPersistentObject.h>#include <ImagePP/all/h/HPMObjectStore.h>
 
 /**----------------------------------------------------------------------------
  Default constructor for this class.

@@ -11,17 +11,10 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
+#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

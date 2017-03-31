@@ -7,11 +7,9 @@
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DLinear.h>
-
+#include <ImagePP/all/h/HVE2DLinear.h>
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DLinear, HVE2DVector)
 
 

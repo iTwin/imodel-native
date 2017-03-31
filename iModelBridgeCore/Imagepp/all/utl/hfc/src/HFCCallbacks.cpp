@@ -6,11 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCCallbackRegistry.h>
-#include <Imagepp/all/h/HFCCallbacks.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCCallbackRegistry.h>#include <ImagePP/all/h/HFCCallbacks.h>
 
 
 //-----------------------------------------------------------------------------

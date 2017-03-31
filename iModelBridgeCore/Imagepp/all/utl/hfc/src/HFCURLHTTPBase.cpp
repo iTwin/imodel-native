@@ -8,12 +8,8 @@
 // Methods for class HFCURLHTTPBase
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLHTTPBase.h>
-#include <Imagepp/all/h/HFCURLHTTP.h>
-#include <Imagepp/all/h/HFCURLHTTPS.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLHTTPBase.h>#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>
 // Constants
 static const Utf8String s_DefaultPort("80");
 static const Utf8String s_DefaultSecurePort("443");

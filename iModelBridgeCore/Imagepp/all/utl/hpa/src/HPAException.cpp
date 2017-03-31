@@ -8,13 +8,9 @@
 // Methods for class HPAException
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPAException.h>
-#include <Imagepp/all/h/HPANode.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HPANode.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
 // public

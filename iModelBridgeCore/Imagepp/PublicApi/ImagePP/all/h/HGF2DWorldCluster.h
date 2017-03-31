@@ -13,10 +13,7 @@
 #pragma once
 
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HGF2DWorld.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -103,4 +100,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGF2DWorldCluster.hpp"
+#include "HGF2DWorldCluster.hpp"

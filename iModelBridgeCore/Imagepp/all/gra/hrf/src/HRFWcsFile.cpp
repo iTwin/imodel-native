@@ -8,30 +8,15 @@
 // Class HRFWCSFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFWCSFile.h>
-#include <Imagepp/all/h/HRFOGCServiceEditor.h>
-#include <Imagepp/all/h/HRFOGCService.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCURLHTTP.h>
-#include <Imagepp/all/h/HFCURLHTTPS.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <BeXml/BeXml.h>
-
+#include <ImagePP/all/h/HRFWcsFile.h>#include <Imagepp/all/h/HRFOGCServiceEditor.h>#include <ImagePP/all/h/HRFOGCService.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/all/h/HRFException.h>
+#include <BeXml/BeXml.h>
 
 
 //-----------------------------------------------------------------------------

@@ -7,12 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include "winbase.h"
-
-#include <Imagepp/all/h/HFCExclusiveKey.h>
-#include "HFCMacros.h"
-#include "HFCMonitor.h"
-
+#include "winbase.h"
+#include <ImagePP/all/h/HFCExclusiveKey.h>#include "HFCMacros.h"#include "HFCMonitor.h"
 BEGIN_IMAGEPP_NAMESPACE
 /**
 
@@ -116,5 +112,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HFCProfiler.hpp"
-
+#include "HFCProfiler.hpp"

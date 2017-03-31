@@ -5,13 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAGenericSampler.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-
+#include <ImagePP/all/h/HRAGenericSampler.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 
 /**----------------------------------------------------------------------------
  Constructor for this class

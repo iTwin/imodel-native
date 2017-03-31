@@ -8,11 +8,9 @@
 // Methods for class HCDCodecDeflate
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecDeflate.h>
-
+#include <ImagePP/all/h/HCDCodecDeflate.h>
 #define HCD_CODEC_NAME "Deflate"
 
 //-----------------------------------------------------------------------------

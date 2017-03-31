@@ -9,36 +9,14 @@
 // Class HRFJpegFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFJpegFile.h>
-
-#include <libjpeg-turbo/jpeglib.h>
-#include <libjpeg-turbo/jerror.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRPChannelOrgGray.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRFJpegLineEditor.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HRPPIxelTypeFactory.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-
-#include <Imagepp/all/h/HTIFFFile.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include <Imagepp/all/h/HFCURLMemFile.h>
-
+#include <ImagePP/all/h/HRFJpegFile.h>
+#include <libjpeg-turbo/jpeglib.h>#include <libjpeg-turbo/jerror.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRFJpegLineEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HTIFFFile.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
 
 
 // This structure is used by the error handling functions

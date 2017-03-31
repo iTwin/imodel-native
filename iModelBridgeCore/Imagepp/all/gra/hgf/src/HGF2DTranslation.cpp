@@ -8,15 +8,11 @@
 // Methods for class HGF2DTranslation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
+#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HGF2DTranslation.h>
-
+#include <ImagePP/all/h/HGF2DTranslation.h>
 
 /** -----------------------------------------------------------------------------
     Default constructor

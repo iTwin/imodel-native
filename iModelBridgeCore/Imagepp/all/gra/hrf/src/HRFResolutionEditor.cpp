@@ -9,20 +9,8 @@
 // Class HRFResolutionEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFResolutionEditor.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecImage.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFResolutionDescriptor.h>
-#include <Imagepp/all/h/HFCAccessMode.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-#include <Imagepp/all/h/HRPPixelPalette.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecImage.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

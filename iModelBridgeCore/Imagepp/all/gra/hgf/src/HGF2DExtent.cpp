@@ -9,15 +9,10 @@
 // Methods for class HGF2DExtent
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DLocation.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DRectangle.h>
-
-#include <Imagepp/all/h/HGF2DExtent.h>
-
+#include <ImagePP/all/h/HGF2DLocation.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DRectangle.h>
+#include <ImagePP/all/h/HGF2DExtent.h>
 
 /** -----------------------------------------------------------------------------
     Default constructor

@@ -40,8 +40,7 @@
 //----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPAException.h>
-
+#include <ImagePP/all/h/HPAException.h>
 BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 // Class HPSException ABSTRACT

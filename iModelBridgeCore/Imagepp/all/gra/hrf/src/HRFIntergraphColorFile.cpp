@@ -8,16 +8,9 @@
 // Class HRFIntergraphColorFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFIntergraphColorFile.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRPPixelPalette.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-
+#include <ImagePP/all/h/HRFIntergraphColorFile.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRPPixelPalette.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>
 
 //-----------------------------------------------------------------------------
 // Public

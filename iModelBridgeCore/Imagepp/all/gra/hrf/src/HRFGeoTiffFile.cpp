@@ -9,35 +9,13 @@
 // Class HRFGeoTiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <ImagePP/all/h/ImageppLib.h>
-
-#include <Imagepp/all/h/HRFGeoTiffFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <ImagePP/all/h/HTIFFDirectory.h>
-#include <ImagePP/all/h/HTIFFGeoKey.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFTiffTileEditor.h>
-#include <Imagepp/all/h/HRFTiffStripEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
-#include <Imagepp/all/h/HCDCodec.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/ImageppLib.h>
+#include <ImagePP/all/h/HRFGeoTiffFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HTIFFDirectory.h>#include <ImagePP/all/h/HTIFFGeoKey.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFTiffTileEditor.h>#include <ImagePP/all/h/HRFTiffStripEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HCDCodec.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 
 

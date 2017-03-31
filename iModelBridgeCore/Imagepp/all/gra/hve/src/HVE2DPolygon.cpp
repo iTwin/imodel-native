@@ -8,18 +8,13 @@
 // Methods for class HVE2DPolygon
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DPolygon.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DPolygon, HVE2DSimpleShape)
 
 
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-//-----------------------------------------------------------------------------
+#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DSegment.h>//-----------------------------------------------------------------------------
 // Constructor from rectangle
 //-----------------------------------------------------------------------------
 HVE2DPolygon::HVE2DPolygon(const HVE2DRectangle& pi_rRectangle)

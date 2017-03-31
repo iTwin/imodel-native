@@ -10,9 +10,7 @@
 
 #pragma once
 
-#include "HRPPixelTypeRGB.h"
-#include "HRPPixelType1BitInterface.h"
-
+#include "HRPPixelTypeRGB.h"#include "HRPPixelType1bitInterface.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeI1R8G8B8RLE : public HRPPixelTypeRGB,
     public HRPPixelType1BitInterface

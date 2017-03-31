@@ -9,18 +9,11 @@
 // Class HRFAdaptLineToImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptLineToImage.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecImage.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptLineToImage.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecImage.h>#include <ImagePP/all/h/HCDPacketRLE.h>
 HFC_IMPLEMENT_SINGLETON(HRFAdaptLineToImageCapabilities)
 
 //-----------------------------------------------------------------------------

@@ -9,22 +9,10 @@
 // Class HRFPRJPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HTIFFTag.h>
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HRFPRJPageFile.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCIniFileBrowser.h>
-
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HTIFFTag.h>
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HRFPRJPageFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCIniFileBrowser.h>
+#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFUtility.h>
 
 
 //-----------------------------------------------------------------------------

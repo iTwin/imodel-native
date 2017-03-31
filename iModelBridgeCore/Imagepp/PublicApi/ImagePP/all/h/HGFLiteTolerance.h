@@ -11,9 +11,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HGF2DLiteQuadrilateral.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DTransfoModel;

@@ -7,12 +7,9 @@
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DLinear.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
+#include <ImagePP/all/h/HGF2DLinear.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
 
 //-----------------------------------------------------------------------------
 // PrintState

@@ -12,9 +12,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGF2DWorld.h>
-#include <Imagepp/all/h/HGF2DWorldCluster.h>
-
+#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0

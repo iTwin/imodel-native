@@ -12,10 +12,7 @@
 #pragma once
 
 //#include <ImagePP/h/HTypes.h> included by hstdcpp.h
-#include "HTiffUtils.h"
-#include "HTIFFDirectory.h"
-#include "HFCURL.h"
-
+#include "HTIFFUtils.h"#include "HTIFFDirectory.h"#include "HFCURL.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HTIFFDirectory;
 
@@ -333,4 +330,4 @@ private:
 END_IMAGEPP_NAMESPACE
 
 
-#include "HTagFile.hpp"
+#include "HTagFile.hpp"

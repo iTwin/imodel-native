@@ -6,24 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRAImageOp.h>
-#include <ImagePPInternal/gra/ImageCommon.h>
-#include <ImagePPInternal/gra/HRAImageSampler.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <ImagePP/all/h/HPMPool.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRABitmap.h>
-#include <ImagePP/all/h/HCDPacket.h>
-#include <ImagePP/all/h/HRATiledRaster.h>
-#include <ImagePP/all/h/HRPPixelTypeFactory.h>
-#include <ImagePPInternal/gra/ImageAllocator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePPInternal/gra/ImageCommon.h>#include <ImagePPInternal/gra/HRAImageSampler.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePPInternal/gra/ImageAllocator.h>
 
 
 

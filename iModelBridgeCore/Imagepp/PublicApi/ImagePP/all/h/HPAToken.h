@@ -20,8 +20,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPAGrammarObject.h>
-
+#include <ImagePP/all/h/HPAGrammarObject.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPAToken : public HPAGrammarObject
     {
@@ -115,6 +114,5 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPAToken.hpp"
-
+#include "HPAToken.hpp"
 

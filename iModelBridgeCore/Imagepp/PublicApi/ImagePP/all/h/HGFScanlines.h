@@ -8,10 +8,7 @@
 
 #pragma once
 
-#include "HGF2DCoordSys.h"
-#include "HFCPtr.h"
-#include "HGF2DPosition.h"
-
+#include "HGF2DCoordSys.h"#include "HFCPtr.h"#include "HGF2DPosition.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT IPixelSelectionStrategy
     {
@@ -135,4 +132,4 @@ protected:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGFScanLines.hpp"
+#include "HGFScanlines.hpp"

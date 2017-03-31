@@ -9,25 +9,13 @@
 // Class HRFErdasImgEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 #ifdef IPP_HAVE_GDAL_SUPPORT
 
-#include <Imagepp/all/h/HRFErdasImgEditor.h>
-#include <Imagepp/all/h/HRFErdasImgFile.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-
+#include <ImagePP/all/h/HRFErdasImgEditor.h>#include <ImagePP/all/h/HRFErdasImgFile.h>#include <ImagePP/all/h/HTIFFUtils.h>
 //PixelType
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16X16.h>
-#include <Imagepp/all/h/HRPPixelTypeV96R32G32B32.h>
-
-#include <ImagePP-GdalLib/gdal_priv.h>
-
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>#include <ImagePP/all/h/HRPPixelTypeV96R32G32B32.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
 #define BAND_1 0
 #define BAND_2 1
 #define BAND_3 2

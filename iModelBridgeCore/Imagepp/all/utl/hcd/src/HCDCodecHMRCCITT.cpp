@@ -8,10 +8,8 @@
 // Methods for class HCDCodecHMRCCITT
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
 
 
 bool HCDCodecHMRCCITT::m_TablesBuilded = false;

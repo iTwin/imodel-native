@@ -9,12 +9,9 @@
 // Methods for class HRPDensitySlicingFilter16
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPDensitySlicingFilter16.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-
+#include <ImagePP/all/h/HRPDensitySlicingFilter16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
 //-----------------------------------------------------------------------------

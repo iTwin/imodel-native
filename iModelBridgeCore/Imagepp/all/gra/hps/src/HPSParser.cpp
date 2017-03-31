@@ -9,17 +9,8 @@
 // Methods for class HPSParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPSParser.h>
-#include <Imagepp/all/h/HPSNode.h>
-#include "HPSParserScope.h"
-#include <Imagepp/all/h/HPSException.h>
-#include <Imagepp/all/h/HPSTokenizer.h>
-#include "HPSInternalNodes.h"
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPSParser.h>#include <ImagePP/all/h/HPSNode.h>#include "HPSParserScope.h"#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HPSTokenizer.h>#include "HPSInternalNodes.h"#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HFCBinStream.h>
 //---------------------------------------------------------------------------
 // Instanciation of static node creators.  They are connected to
 // grammar object inside the constructor of the parser.

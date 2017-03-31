@@ -8,12 +8,9 @@
 // Class: HRABitmapIterator
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRABitmapIterator.h>
-#include <Imagepp/all/h/HRABitmapBase.h>
-
+#include <ImagePP/all/h/HRABitmapIterator.h>#include <ImagePP/all/h/HRABitmapBase.h>
 //-----------------------------------------------------------------------------
 // HRABitmapIterator::HRABitmapIterator - Constructor
 //-----------------------------------------------------------------------------

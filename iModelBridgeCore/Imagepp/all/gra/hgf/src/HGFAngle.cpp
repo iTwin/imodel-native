@@ -9,12 +9,10 @@
 
 // All methods are declared inline and are defined in HGFAngle.hpp
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HGFAngle.h>
-//-----------------------------------------------------------------------------
+#include <ImagePP/all/h/HGFAngle.h>//-----------------------------------------------------------------------------
 // ::ConvertDegMinSecToDeg
 // Convert an angle in degree, minute second to an angle in decimal degree
 // Returns true if the conversion succeeded, otherwise false

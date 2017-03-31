@@ -9,11 +9,9 @@
 // Methods for class HGFRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFRaster.h>
-
+#include <ImagePP/all/h/HGFRaster.h>
 HPM_REGISTER_ABSTRACT_CLASS(HGFRaster, HGFGraphicObject)
 
 

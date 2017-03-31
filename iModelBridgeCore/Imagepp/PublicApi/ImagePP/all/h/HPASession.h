@@ -11,8 +11,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-
+#include <ImagePP/all/h/HFCPtr.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPAParser;
 class HFCBinStream;
@@ -43,4 +42,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPASession.hpp"
+#include "HPASession.hpp"

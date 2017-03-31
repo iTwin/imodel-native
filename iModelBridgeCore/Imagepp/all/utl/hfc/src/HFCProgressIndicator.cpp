@@ -7,10 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCProgressIndicator, HFCProgressListener, HFCProgressDurationListener
 //----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCProgressIndicator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCProgressIndicator.h>
 //----------------------------------------------------------------------------
 
 HFCProgressListener::HFCProgressListener()

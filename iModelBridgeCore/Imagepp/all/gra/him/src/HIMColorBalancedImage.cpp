@@ -6,27 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first
+#include <ImageppInternal.h>    //:> must be first
 
-#include <Imagepp/all/h/HIMColorBalancedImage.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HIMColorBalancedImageIterator.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeGray.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HFCGrid.h>
-#include <Imagepp/all/h/HRABlitter.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRPHistogram.h>
-
+#include <ImagePP/all/h/HIMColorBalancedImage.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HIMColorBalancedImageIterator.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeGray.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRPHistogram.h>
 HPM_REGISTER_CLASS(HIMColorBalancedImage, HRAImageView)
 
 

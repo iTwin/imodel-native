@@ -9,19 +9,12 @@
 // Methods for class HGFGraphicObject
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DExtent.h>
-#include <Imagepp/all/h/HMDMetaDataContainerList.h>
-#include <Imagepp/all/h/HPMAttributeSet.h>
-#include <Imagepp/all/h/HGFMessages.h>
-
+#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HMDMetaDataContainerList.h>#include <ImagePP/all/h/HPMAttributeSet.h>#include <ImagePP/all/h/HGFMessages.h>
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HGFGraphicObject.h>
-
+#include <ImagePP/all/h/HGFGraphicObject.h>
 HPM_REGISTER_ABSTRACT_CLASS(HGFGraphicObject, HPMPersistentObject)
 
 

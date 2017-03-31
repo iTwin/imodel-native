@@ -8,16 +8,10 @@
 // Methods for class HRPPixelTypeV32CMYK
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelTypeV32CMYK.h>
-#include <Imagepp/all/h/HRPChannelOrgCMYK.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRPPixelTypeV32CMYK.h>#include <ImagePP/all/h/HRPChannelOrgCMYK.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HFCMath.h>
 HPM_REGISTER_CLASS(HRPPixelTypeV32CMYK, HRPPixelType)
 
 // STL typeDef

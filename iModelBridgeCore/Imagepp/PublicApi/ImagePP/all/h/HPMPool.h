@@ -9,9 +9,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCExclusiveKey.h>
-#include "HFCPtr.h"
-
+#include <ImagePP/all/h/HFCExclusiveKey.h>#include "HFCPtr.h"
 BEGIN_IMAGEPP_NAMESPACE
 
 /**----------------------------------------------------------------------------+
@@ -757,5 +755,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPMPool.hpp"
-
+#include "HPMPool.hpp"

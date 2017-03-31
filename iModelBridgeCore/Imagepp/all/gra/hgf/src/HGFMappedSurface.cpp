@@ -11,19 +11,10 @@
 // This class encapsulates the functionalities of the page
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
+#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DGrid.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 
 //-----------------------------------------------------------------------------
 // Constructor

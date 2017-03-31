@@ -9,12 +9,9 @@
 // Methods for class HRPContrastStretchFilter16
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPContrastStretchFilter16.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-
+#include <ImagePP/all/h/HRPContrastStretchFilter16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
 //-----------------------------------------------------------------------------
 //  Custom Map16  Filter
 //-----------------------------------------------------------------------------

@@ -5,12 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDLayerInfo.h>
-#include <Imagepp/all/h/HMDVolatileLayerInfo.h>
-
+#include <ImagePP/all/h/HMDLayerInfo.h>#include <ImagePP/all/h/HMDVolatileLayerInfo.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

@@ -9,11 +9,8 @@
 // Class: HRFRasterFileExtender
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFRasterFileExtender.h>
-#include <Imagepp/all/h/HMDContext.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HMDContext.h>
 //-----------------------------------------------------------------------------
 // Public
 // HRFRasterFileExtender

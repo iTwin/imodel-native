@@ -5,16 +5,7 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <Imagepp/all/h/HRAImageOpFunctionFilters.h>
-#include <Imagepp/all/h/HFCMath.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-
+#include <ImageppInternal.h>#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 
 #define CLAMP(A)((A)<=(0) ? (0) : (A)<(256) ? (A) : (255))
 

@@ -8,14 +8,9 @@
 // Class HRFTgaCompressImageEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFTgaFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecTgaRLE.h>
-#include <Imagepp/all/h/HRFTgaCompressImageEditor.h>
-
+#include <ImagePP/all/h/HRFTgaFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecTgaRLE.h>#include <ImagePP/all/h/HRFTgaCompressImageEditor.h>
 
 #define TGA_RASTERFILE  static_cast<HRFTgaFile*>(GetRasterFile().GetPtr())
 

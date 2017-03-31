@@ -6,25 +6,12 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HRFImgRGBFile.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCStat.h>
-
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFImgRGBLineEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFImgRGBFile.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFImgRGBLineEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 /** ---------------------------------------------------------------------------
     Block capabilities of the ImgRGB file format.
     ImgRGB file format only supports line capability with random access.

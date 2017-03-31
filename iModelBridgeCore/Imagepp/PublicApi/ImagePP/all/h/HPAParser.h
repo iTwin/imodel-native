@@ -16,14 +16,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HPATokenizer.h>
-#include <Imagepp/all/h/HPARule.h>
-#include <Imagepp/all/h/HPAToken.h>
-#include <Imagepp/all/h/HPAProduction.h>
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HPASession.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPARule.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HPASession.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 
@@ -68,6 +61,5 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPAParser.hpp"
-
+#include "HPAParser.hpp"
 

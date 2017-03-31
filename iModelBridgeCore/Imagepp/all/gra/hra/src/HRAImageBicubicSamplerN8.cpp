@@ -6,15 +6,7 @@
     //:>
     //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <ImagePPInternal/gra/HRAImageBicubicSamplerN8.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <ImagePPInternal/gra/ImageCommon.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/HGF2DCoordSys.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <ImageppInternal/gra/HRAImageSurface.h>
-
+#include <ImageppInternal.h>#include <ImagePPInternal/gra/HRAImageBicubicSamplerN8.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePPInternal/gra/ImageCommon.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImageppInternal/gra/HRAImageSurface.h>
 
 
 static const float s_a = -0.5;

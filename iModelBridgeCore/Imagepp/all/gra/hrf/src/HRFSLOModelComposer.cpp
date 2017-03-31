@@ -9,14 +9,9 @@
 // Class : HRFSLOModelComposer
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFSLOModelComposer.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DPosition.h>
-
+#include <ImagePP/all/h/HRFSLOModelComposer.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DPosition.h>
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

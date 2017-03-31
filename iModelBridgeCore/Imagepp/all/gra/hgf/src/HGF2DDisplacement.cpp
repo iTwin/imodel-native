@@ -8,13 +8,9 @@
 // Methods for class HGF2DDisplacement
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
 
 /** -----------------------------------------------------------------------------
     This method permits to extract the bearing of the displacement.

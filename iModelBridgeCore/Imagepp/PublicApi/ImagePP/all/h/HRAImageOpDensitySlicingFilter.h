@@ -7,8 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HRAImageOp.h>
-
+#include <ImagePP/all/h/HRAImageOp.h>
 
 IMAGEPP_REF_COUNTED_PTR(HRAImageOpDensitySlicingFilter)
 IMAGEPP_REF_COUNTED_PTR(HRAImageOpLightnessDensitySlicingFilter)

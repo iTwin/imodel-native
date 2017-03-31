@@ -10,12 +10,8 @@
 //-----------------------------------------------------------------------------
 // Some common function filters.
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPLigthnessContrastStretch16.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HGFLuvColorSpace.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPLigthnessContrastStretch16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HGFLuvColorSpace.h>
 //-----------------------------------------------------------------------------
 //
 // Domain value for

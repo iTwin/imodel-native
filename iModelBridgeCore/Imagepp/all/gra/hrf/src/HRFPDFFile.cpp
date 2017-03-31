@@ -9,47 +9,20 @@
 // Class HRFPDFFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFPDFFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFPDFFile.h>
 #if defined(IPP_HAVE_PDF_SUPPORT) 
 
-#include <ImagePP/all/h/HRFMacros.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HFCCallbacks.h>
-#include <Imagepp/all/h/HFCCallbackRegistry.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-
-#include <Imagepp/all/h/HMDAnnotations.h>
-#include <Imagepp/all/h/HMDLayers.h>
-#include <Imagepp/all/h/HMDLayerInfoPDF.h>
-#include <Imagepp/all/h/HMDVolatileLayers.h>
-#include <Imagepp/all/h/HMDContext.h>
-
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFPDFException.h>
-#include <Imagepp/all/h/HRFPDFEditor.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-
-#include <Imagepp/all/h/HVETileIDIterator.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFMacros.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCCallbacks.h>#include <ImagePP/all/h/HFCCallbackRegistry.h>#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/HMDAnnotations.h>#include <ImagePP/all/h/HMDLayers.h>#include <ImagePP/all/h/HMDLayerInfoPDF.h>#include <ImagePP/all/h/HMDVolatileLayers.h>#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFPDFException.h>#include <ImagePP/all/h/HRFPDFEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HVETileIDIterator.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 double HRFPDFFile::s_dpiConvertScaleFactor = (96.0 / 72.0);
 
 
@@ -58,8 +31,7 @@ double HRFPDFFile::s_dpiConvertScaleFactor = (96.0 / 72.0);
 // PDFInterfaceWrapper for MicroStation
 //-----------------------------------------------------------------------------\
 
-#include "HRFPDFLibInterface.h"
-
+#include "HRFPDFLibInterface.h"
 ExtensionID gExtensionID = 0;       // For PDF!!!
 
 typedef struct

@@ -7,19 +7,10 @@
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRANearestSamplerRLE1.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HRPPixelType1bitInterface.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
+#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HRPPixelType1bitInterface.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
 #define RLE_RUN_LIMIT 32767
 
 /**----------------------------------------------------------------------------

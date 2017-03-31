@@ -8,11 +8,8 @@
 // Class HRFRawLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFDoqEditor.h>
-#include <Imagepp/all/h/HRFDoqFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFDoqEditor.h>#include <ImagePP/all/h/HRFDoqFile.h>
 
 
 //-----------------------------------------------------------------------------

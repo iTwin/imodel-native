@@ -10,9 +10,7 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
-#include <Imagepp/all/h/HCPGCoordModel.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HCPGCoordModel.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 // ----------------------------------------------------------------------------

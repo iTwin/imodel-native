@@ -10,13 +10,10 @@
 //:> Class HRANearestSampler
 //:>---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRANearestSampler.h>
-
-#include <Imagepp/all/h/HGSMemoryBaseSurfaceDescriptor.h>
-
+#include <ImagePP/all/h/HRANearestSampler.h>
+#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>
 /**----------------------------------------------------------------------------
  Constructor for this class
 

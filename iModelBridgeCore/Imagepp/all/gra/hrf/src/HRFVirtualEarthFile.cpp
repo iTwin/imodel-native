@@ -8,30 +8,12 @@
 // Class HRFVirtualEarthFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCURLHTTP.h>
-#include <Imagepp/all/h/HRFVirtualEarthFile.h>
-#include "HRFVirtualEarthEditor.h"
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HFCCallbacks.h>
-#include <Imagepp/all/h/HFCCallbackRegistry.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include <BeXml/BeXml.h>
-
-#include <ImagePPInternal/gra/Task.h>
-#include <ImagePPInternal/HttpConnection.h>
-
+#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HRFVirtualEarthFile.h>#include "HRFVirtualEarthEditor.h"#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCCallbacks.h>#include <ImagePP/all/h/HFCCallbackRegistry.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <BeXml/BeXml.h>
+#include <ImagePPInternal/gra/Task.h>#include <ImagePPInternal/HttpConnection.h>
 // Do not change this number without validating resolution descriptor creation.
 #define NB_BLOCK_READER_THREAD 10
 

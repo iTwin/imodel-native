@@ -11,10 +11,8 @@
 //
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRAUpdateSubResProgressIndicator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>
 //----------------------------------------------------------------------------
 
 HFC_IMPLEMENT_SINGLETON(HRAUpdateSubResProgressIndicator)

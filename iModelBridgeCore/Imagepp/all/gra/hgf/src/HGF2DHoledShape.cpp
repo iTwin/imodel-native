@@ -8,15 +8,9 @@
 // Methods for class HGF2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 /** -----------------------------------------------------------------------------
     Default constructor for a holed shape. This constructor creates an empty

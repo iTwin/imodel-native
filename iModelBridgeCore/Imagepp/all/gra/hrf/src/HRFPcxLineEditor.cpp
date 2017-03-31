@@ -8,11 +8,8 @@
 // Class HRFPcxLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-                //:> must be first for PreCompiledHeader Option
-#include <Imagepp/all/h/HRFPcxLineEditor.h>
-#include <Imagepp/all/h/HRFPcxFile.h>
-
+#include <ImageppInternal.h>                //:> must be first for PreCompiledHeader Option
+#include <ImagePP/all/h/HRFPcxLineEditor.h>#include <ImagePP/all/h/HRFPcxFile.h>
 //:Ignore
 #define BUFFER_SIZE 16
 #define END_OF_HEADER_OFFSET 128

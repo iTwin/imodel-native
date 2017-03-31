@@ -9,14 +9,8 @@
 // Class HRFCacheSequentialBlockEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
-#include <Imagepp/all/h/HFCMonitor.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDPacket.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

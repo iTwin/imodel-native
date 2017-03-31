@@ -8,12 +8,9 @@
 // Methods for class HGFLabColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFLabColorSpace.h>
-#include <Imagepp/all/h/HFCMaths.h>
-
+#include <ImagePP/all/h/HGFLabColorSpace.h>#include <ImagePP/all/h/HFCMaths.h>
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------

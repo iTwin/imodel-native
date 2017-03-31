@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include "HRPPixelNeighbourhood.h"
-#include <Imagepp/all/h/HRAImageOp.h>    
-
+#include "HRPPixelNeighbourhood.h"#include <ImagePP/all/h/HRAImageOp.h>    
 IMAGEPP_REF_COUNTED_PTR(HRAImageOpDEMFilter)
 
 BEGIN_IMAGEPP_NAMESPACE

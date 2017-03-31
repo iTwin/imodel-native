@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
 /*
 //-----------------------------------------------------------------------------
 //  This class is a 2DTransfoModel defined for testing purposes only.

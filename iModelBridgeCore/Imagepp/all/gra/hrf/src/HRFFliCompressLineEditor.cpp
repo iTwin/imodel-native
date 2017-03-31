@@ -8,16 +8,10 @@
 // Class HRFPngLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFFliCompressLineEditor.h>#include <ImagePP/all/h/HRFFliFile.h>#include <ImagePP/all/h/HCDCodecFLIRLE8.h>
 
-#include <Imagepp/all/h/HRFFliCompressLineEditor.h>
-#include <Imagepp/all/h/HRFFliFile.h>
-#include <Imagepp/all/h/HCDCodecFLIRLE8.h>
-
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 
 
 //-----------------------------------------------------------------------------

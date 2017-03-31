@@ -12,10 +12,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HGF2DShape.h>
-#include "HFCMatrix.h"
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DShape.h>#include "HFCMatrix.h"
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;

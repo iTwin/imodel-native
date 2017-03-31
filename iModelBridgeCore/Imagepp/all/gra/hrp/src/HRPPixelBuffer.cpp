@@ -9,12 +9,9 @@
 // Class: HRPPixelBuffer
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelBuffer.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-
+#include <ImagePP/all/h/HRPPixelBuffer.h>#include <ImagePP/all/h/HRPPixelType.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor.

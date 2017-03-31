@@ -9,11 +9,9 @@
 // Convolution filters
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPConvFiltersV24PhotoYCC.h>
-
+#include <ImagePP/all/h/HRPConvFiltersV24PhotoYCC.h>
 //-----------------------------------------------------------------------------
 // Blur filter
 //-----------------------------------------------------------------------------

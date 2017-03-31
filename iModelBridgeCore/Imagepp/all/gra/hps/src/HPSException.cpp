@@ -8,11 +8,8 @@
 // Methods for class HPSParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPSException.h>
-#include <Imagepp/all/h/HPAnode.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HPANode.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

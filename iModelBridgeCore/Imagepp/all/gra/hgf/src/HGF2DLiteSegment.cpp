@@ -8,12 +8,8 @@
 // Methods for class HGF2DLiteSegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DLiteSegment.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DLiteLine.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DLiteLine.h>
 
 /** -----------------------------------------------------------------------------
     This method checks that self segment is crossed at junction point

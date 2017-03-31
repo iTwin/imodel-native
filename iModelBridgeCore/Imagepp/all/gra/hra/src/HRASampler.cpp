@@ -9,26 +9,10 @@
 //:> Methods for class HRASampler
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGSTypes.h>
-#include <Imagepp/all/h/HRASampler.h>
-#include <Imagepp/all/h/HGSMemoryBaseSurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HRAAverageSamplerN8.h>
-#include <Imagepp/all/h/HRABicubicSamplerN8.h>
-#include <Imagepp/all/h/HRABilinearSamplerN8.h>
-#include <Imagepp/all/h/HRAGenericAverageSampler.h>
-#include <Imagepp/all/h/HRANearestSamplerN1.h>
-#include <Imagepp/all/h/HRANearestSamplerN8.h>
-#include <Imagepp/all/h/HRANearestSamplerRLE1.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32Float32.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HRASampler.h>#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
+#include <ImagePP/all/h/HRAAverageSamplerN8.h>#include <ImagePP/all/h/HRABicubicSamplerN8.h>#include <ImagePP/all/h/HRABilinearSamplerN8.h>#include <ImagePP/all/h/HRAGenericAverageSampler.h>#include <ImagePP/all/h/HRANearestSamplerN1.h>#include <ImagePP/all/h/HRANearestSamplerN8.h>#include <ImagePP/all/h/HRANearestSamplerRLE1.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>
 /**----------------------------------------------------------------------------
  Constructor for this class
 

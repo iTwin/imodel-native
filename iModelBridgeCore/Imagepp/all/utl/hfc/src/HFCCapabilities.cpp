@@ -8,12 +8,9 @@
 // Class : HFCCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
+#include <ImageppInternal.h> // Must be the first include.
 
-#include <Imagepp/all/h/HFCCapabilities.h>
-#include <Imagepp/all/h/HFCCapability.h>
-
+#include <ImagePP/all/h/HFCCapabilities.h>#include <ImagePP/all/h/HFCCapability.h>
 
 /** -----------------------------------------------------------------------------
     This is the constructor. An empty capability set is created. Since capabilities

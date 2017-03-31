@@ -7,13 +7,9 @@
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HVE2DVector.h>
-#include <Imagepp/all/h/HVE2DLinear.h>
-
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HVE2DVector.h>#include <ImagePP/all/h/HVE2DLinear.h>
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DVector, HGFGraphicObject)
 
 

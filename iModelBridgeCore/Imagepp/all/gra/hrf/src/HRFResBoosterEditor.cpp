@@ -9,11 +9,8 @@
 // Class HRFResBoosterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFResBoosterEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFRasterFileCache.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

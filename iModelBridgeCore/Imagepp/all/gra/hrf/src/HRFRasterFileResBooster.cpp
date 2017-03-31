@@ -9,30 +9,11 @@
 // Class HRFRasterFileResBooster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFResBoosterEditor.h>
-#include <Imagepp/all/h/HRFCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFileResBooster.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-#include <Imagepp/all/h/HRFLocalCacheFileCreator.h>
-#include <Imagepp/all/h/HRFCacheRandomBlockEditor.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HRFBilFile.h>
-
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-
+#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFResBoosterEditor.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileResBooster.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>#include <ImagePP/all/h/HRFCacheRandomBlockEditor.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFCacheSequentialBlockEditor.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HRFBilFile.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFactory.h>
 
 
 #define SMALL_IMAGE_SIZE    262144

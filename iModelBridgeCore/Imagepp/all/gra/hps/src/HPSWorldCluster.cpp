@@ -10,13 +10,9 @@
 //-----------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HPSWorldCluster.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
+#include <ImagePP/all/h/HPSWorldCluster.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 HPM_REGISTER_CLASS(HPSWorldCluster, HGF2DWorldCluster)
 
 //-----------------------------------------------------------------------------

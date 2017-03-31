@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HFCProfiler.h>
-
+#include <ImagePP/all/h/HFCProfiler.h>
 
 HFC_IMPLEMENT_SINGLETON(HFCProfiler)
 

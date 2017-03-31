@@ -8,11 +8,8 @@
 // Methods for class HRPPixelTypeGray
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPPixelTypeGray.h>
-#include <Imagepp/all/h/HRPChannelOrgGray.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPPixelTypeGray.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>
 
 
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelTypeGray, HRPPixelType)

@@ -7,28 +7,12 @@
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawFile
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFRawFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFRawLineEditor.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16PRGray8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFRawFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFRawLineEditor.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16PRGray8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 //-----------------------------------------------------------------------------
 // HRFRawBlockCapabilities
 //-----------------------------------------------------------------------------

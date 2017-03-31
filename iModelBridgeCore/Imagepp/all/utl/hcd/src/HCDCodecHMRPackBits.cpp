@@ -13,12 +13,9 @@
 // Programming graphic files in C and C++, by John Levine, Wiley.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDException.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-
+#include <ImagePP/all/h/HCDException.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>
 
 //-----------------------------------------------------------------------------
 // public

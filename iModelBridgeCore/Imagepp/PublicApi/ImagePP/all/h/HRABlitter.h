@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGSTypes.h>
-
+#include <ImagePP/all/h/HGSTypes.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HRASurface;
 class HRPPixelType;

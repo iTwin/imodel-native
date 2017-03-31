@@ -6,10 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPPixelType1BitInterface.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPPixelType1bitInterface.h>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.Marchand  02/2005
 +---------------+---------------+---------------+---------------+---------------+------*/

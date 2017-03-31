@@ -8,10 +8,8 @@
 // Methods for class HFCURLHTTPS
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLHTTPS.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLHTTPS.h>
 //:Ignore
 
 // This is the creator that registers itself in the scheme list.

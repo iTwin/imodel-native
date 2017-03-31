@@ -8,15 +8,11 @@
 // Methods for class HGF2DCoordSys
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-
-#include <Imagepp/all/h/HFCMonitor.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HFCMonitor.h>
 HPM_REGISTER_CLASS(HGF2DCoordSys, HPMPersistentObject)
 
 

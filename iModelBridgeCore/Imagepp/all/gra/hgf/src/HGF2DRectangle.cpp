@@ -8,22 +8,12 @@
 // Methods for class HGF2DRectangle
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HGF2DRectangle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
 
 
-#include <Imagepp/all/h/HGF2DRectangle.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
-
-
-#include <Imagepp/all/h/HGF2DSegment.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 //-----------------------------------------------------------------------------
 // GetLinear

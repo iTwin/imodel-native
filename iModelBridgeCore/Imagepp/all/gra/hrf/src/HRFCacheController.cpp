@@ -10,12 +10,8 @@
 // Class HRFCacheController
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first for PreCompiledHeader Option
-#include <Imagepp/all/h/HRFCacheController.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCStat.h>
-
+#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePP/all/h/HRFCacheController.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>
 /**-----------------------------------------------------------------------------
  Public constructor of the class.
 ------------------------------------------------------------------------------*/

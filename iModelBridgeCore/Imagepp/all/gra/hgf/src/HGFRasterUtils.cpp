@@ -6,15 +6,11 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
 
-
-#include <Imagepp/all/h/HGFRasterUtils.h>
-#include <Imagepp/all/h/HGF2DExtent.h>
-#include <Imagepp/all/h/HGF2DGrid.h>
-
+#include <Imagepp/all/h/HGFRasterUtils.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HGF2DGrid.h>
 
 
 // bit utilities... to be packaged elsewhere in a class

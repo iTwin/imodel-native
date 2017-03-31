@@ -9,13 +9,9 @@
 // Class HRFAdaptStripToTile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptStripToTile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptStripToTile.h>
 HFC_IMPLEMENT_SINGLETON(HRFAdaptStripToTileCapabilities)
 
 //-----------------------------------------------------------------------------

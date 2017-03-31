@@ -8,11 +8,9 @@
 // Methods for class HCDCodec
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodec.h>
-
+#include <ImagePP/all/h/HCDCodec.h>
 //-----------------------------------------------------------------------------
 // protected
 // Default constructor

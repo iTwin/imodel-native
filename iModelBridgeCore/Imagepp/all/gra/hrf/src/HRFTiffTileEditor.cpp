@@ -8,13 +8,8 @@
 // Class HRFTiffTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFTiffTileEditor.h>
-#include <Imagepp/all/h/HRFTiffFile.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFTiffTileEditor.h>#include <ImagePP/all/h/HRFTiffFile.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HCDPacket.h>
 #define RASTER_FILE     static_cast<HRFTiffFile*>(GetRasterFile().GetPtr())
 #define TIFF_FILE       (RASTER_FILE->GetFilePtr())
 

@@ -8,11 +8,9 @@
 // Class: HRATransaction
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRATransaction.h>
-
+#include <ImagePP/all/h/HRATransaction.h>
 
 //-----------------------------------------------------------------------------
 // public section

@@ -8,26 +8,12 @@
 // Class HRFTgaFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCMath.h>
-#include <Imagepp/all/h/HRFTgaFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HRFTgaFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 #ifndef DIVROUNDUP
 #define DIVROUNDUP(x,y) ((x+y-1)/y)
 #else

@@ -11,11 +11,9 @@
 // Map filters
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPMapFilters16.h>
-
+#include <ImagePP/all/h/HRPMapFilters16.h>
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
 //-----------------------------------------------------------------------------

@@ -8,10 +8,8 @@
 // HRFUtility implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFTypes.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFTypes.h>
 //-----------------------------------------------------------------------------
 // HRFBlockType for persistence
 //-----------------------------------------------------------------------------

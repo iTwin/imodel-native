@@ -8,12 +8,9 @@
 // Class HRFBmpLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFBmpFile.h>
-#include <Imagepp/all/h/HRFBmpLineEditor.h>
-
+#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HRFBmpLineEditor.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

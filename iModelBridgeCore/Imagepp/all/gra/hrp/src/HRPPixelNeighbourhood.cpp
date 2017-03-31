@@ -9,11 +9,9 @@
 // Class: HRPPixelNeighbourhood
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelNeighbourhood.h>
-
+#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor.

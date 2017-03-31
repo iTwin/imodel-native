@@ -8,29 +8,13 @@
 // Class HRFMrSIDEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFMrSIDFile.h>
-#include <Imagepp/all/h/HRFMrSIDEditor.h>
-
+#include <ImagePP/all/h/HRFMrSIDFile.h>#include <ImagePP/all/h/HRFMrSIDEditor.h>
 #if defined(IPP_HAVE_MRSID_SUPPORT) 
 
-#include <MrSid/lt_base.h>
-#include <MrSid/lt_fileSpec.h>
-#include <MrSid/lt_types.h>
-
-#include <MrSid/lti_imageReader.h>
-#include <MrSid/lti_metadataUtils.h>
-#include <MrSid/lti_Navigator.h>
-#include <MrSid/lti_metadataReader.h>
-#include <MrSid/lti_metadataDatabase.h>
-#include <MrSid/lti_SceneBuffer.h>
-#include <MrSid/lti_Pixel.h>
-#include <MrSid/lti_metadataRecord.h>
-#include <MrSid/lti_types.h>
-#include <MrSid/lti_viewerImageFilter.h>
-
+#include <MrSid/lt_base.h>#include <MrSid/lt_fileSpec.h>#include <MrSid/lt_types.h>
+#include <MrSid/lti_imageReader.h>#include <MrSid/lti_metadataUtils.h>#include <MrSid/lti_Navigator.h>#include <MrSid/lti_metadataReader.h>#include <MrSid/lti_metadataDatabase.h>#include <MrSid/lti_SceneBuffer.h>#include <MrSid/lti_Pixel.h>#include <MrSid/lti_metadataRecord.h>#include <MrSid/lti_types.h>#include <MrSid/lti_viewerImageFilter.h>
 using namespace LizardTech;
 
 //-----------------------------------------------------------------------------

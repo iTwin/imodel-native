@@ -8,13 +8,8 @@
 // Methods for class HFCMemoryBinStream
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCMemoryBinStream.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCLocalBinStream.h>
 #define SLEEP_TIME 50
 
 //---------------------------------------------------------------------------
@@ -168,8 +163,7 @@ HFCPtr<HFCURL> HFCMemoryBinStream::GetURL() const
 
 #ifdef __HMR_DEBUG_MEMBER
 
-#include "HFCURLFile.h"
-
+#include "HFCURLFile.h"
 //---------------------------------------------------------------------------
 // This method is intend to be used as a debugging tools only.
 //---------------------------------------------------------------------------

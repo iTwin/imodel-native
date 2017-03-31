@@ -8,16 +8,10 @@
 // Methods for class HGF2DTransfoModel
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>   // special case include turn around
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DUniverse.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>   // special case include turn around#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DUniverse.h>
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------

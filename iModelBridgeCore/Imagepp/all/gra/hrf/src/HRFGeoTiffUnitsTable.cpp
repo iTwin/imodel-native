@@ -9,12 +9,8 @@
 //:> Methods for class HRFGeoTiffUnitsTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFGeoTiffUnitsTable.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFGeoTiffUnitsTable.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HFCURL.h>
 /**----------------------------------------------------------------------------
  HRFGeoTiffUnitsTable.tbl
 
@@ -36,8 +32,7 @@
  @see HRFGeoTiffCompressedTable::ColumnInfo
  @see epsg.mdb
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffUnitsTable.tbl"
-
+#include "HRFGeoTiffUnitsTable.tbl"
 /**----------------------------------------------------------------------------
  HRFGeoTiffCoordSysTable.dat
 
@@ -52,8 +47,7 @@
  @see HRFGeoTiffCompressedTable
  @see HRFGeoTiffCompressTable application
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffUnitsTable.dat"
-
+#include "HRFGeoTiffUnitsTable.dat"
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------

@@ -8,11 +8,9 @@
 // Methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPTypedFilter.h>
-
+#include <ImagePP/all/h/HRPTypedFilter.h>
 //-----------------------------------------------------------------------------
 // protected
 // Constructor.

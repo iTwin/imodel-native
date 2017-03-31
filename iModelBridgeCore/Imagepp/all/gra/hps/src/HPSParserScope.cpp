@@ -9,13 +9,8 @@
 //---------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
-
-#include "HPSParserScope.h"
-#include <Imagepp/all/h/HPAToken.h>
-#include <Imagepp/all/h/HPSException.h>
-#include <Imagepp/all/h/HPSParser.h>
-
+#include <ImageppInternal.h>
+#include "HPSParserScope.h"#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPSException.h>#include <ImagePP/all/h/HPSParser.h>
 //---------------------------------------------------------------------------
 StatementDefinitionNode* HPSParserScope::FindStatement(const Utf8String& pi_rString)
     {

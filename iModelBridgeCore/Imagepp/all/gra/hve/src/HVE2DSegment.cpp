@@ -8,19 +8,14 @@
 // Methods for class HVE2DSegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-
-#include <Imagepp/all/h/HVE2DSegment.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HVE2DSegment.h>
 HPM_REGISTER_CLASS(HVE2DSegment, HVE2DLinear)
 
 
-#include <Imagepp/all/h/HVE2DComplexLinear.h>
-
+#include <ImagePP/all/h/HVE2DComplexLinear.h>
 
 //-----------------------------------------------------------------------------
 // Rotate

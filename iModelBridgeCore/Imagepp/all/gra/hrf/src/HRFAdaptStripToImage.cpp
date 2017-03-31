@@ -9,16 +9,10 @@
 // Class HRFAdaptStripToImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptStripToImage.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptStripToImage.h>
 //-----------------------------------------------------------------------------
 // Utility class no turn off buffer ownership.
 //-----------------------------------------------------------------------------

@@ -8,11 +8,8 @@
 // Class : HRFCombinedRasterFileCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
-#include <Imagepp/all/h/HRFCombinedRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFCapability.h>
-
+#include <ImageppInternal.h> // Must be the first include.
+#include <ImagePP/all/h/HRFCombinedRasterFileCapabilities.h>#include <ImagePP/all/h/HRFCapability.h>
 //-----------------------------------------------------------------------------
 // HRFCombinedRasterFileCapabilities
 //-----------------------------------------------------------------------------

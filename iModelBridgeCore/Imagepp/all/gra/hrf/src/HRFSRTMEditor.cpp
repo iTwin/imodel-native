@@ -8,11 +8,8 @@
 // Class HRFSRTMLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFSRTMFile.h>
-#include <Imagepp/all/h/HRFSRTMEditor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFSRTMFile.h>#include <ImagePP/all/h/HRFSRTMEditor.h>
 //---------------------------------------------- HRFSRTMLineEditor
 
 //-----------------------------------------------------------------------------

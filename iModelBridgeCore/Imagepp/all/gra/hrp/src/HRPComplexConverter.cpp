@@ -9,11 +9,9 @@
 // Methods for class HRPComplexConverter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPComplexConverter.h>
-
+#include <ImagePP/all/h/HRPComplexConverter.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

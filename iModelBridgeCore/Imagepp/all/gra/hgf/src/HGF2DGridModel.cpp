@@ -5,16 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DGridModel.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGFException.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
+#include <ImagePP/all/h/HGF2DGridModel.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 //-----------------------------------------------------------------------------
 // HGF2DGridModel
 //-----------------------------------------------------------------------------

@@ -9,10 +9,8 @@
 // Methods for class HRPQuantizedPalette
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    // must be first fptr PreCompiledHeader Option
-#include <Imagepp/all/h/HRPQuantizedPalette.h>
-
+#include <ImageppInternal.h>    // must be first fptr PreCompiledHeader Option
+#include <ImagePP/all/h/HRPQuantizedPalette.h>
 //-----------------------------------------------------------------------------
 // Constructor for HRPQuantizedPalette
 //-----------------------------------------------------------------------------

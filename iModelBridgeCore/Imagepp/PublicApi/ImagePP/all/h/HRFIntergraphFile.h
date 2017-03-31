@@ -10,17 +10,8 @@
 
 #pragma once
 
-#include <ImagePP/h/HArrayAutoPtr.h>
-#include "HFCMacros.h"
-#include "HRFMacros.h"
-
-#include "HRFRasterFileCapabilities.h"
-#include "HGFTileIdDescriptor.h"
-#include "HCDCodecImage.h"
-#include "HFCBinStream.h"
-#include  <ImagePP/h/HAutoPtr.h>
-#include "HRFRasterFile.h"
-
+#include <ImagePP/h/HArrayAutoPtr.h>#include "HFCMacros.h"#include "HRFMacros.h"
+#include "HRFRasterFileCapabilities.h"#include "HGFTileIDDescriptor.h"#include "HCDCodecImage.h"#include "HFCBinStream.h"#include  <ImagePP/h/HAutoPtr.h>#include "HRFRasterFile.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelPalette;
 class HGF2DTransfoModel;

@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DVectorGroup.h>
-
+#include <ImagePP/all/h/HVE2DVectorGroup.h>
 
 HPM_REGISTER_CLASS(HVE2DVectorGroup, HVE2DVector)
 

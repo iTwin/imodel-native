@@ -9,12 +9,9 @@
 // Methods for class HRPMapFilter16
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPMapFilter16.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-
+#include <ImagePP/all/h/HRPMapFilter16.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor.

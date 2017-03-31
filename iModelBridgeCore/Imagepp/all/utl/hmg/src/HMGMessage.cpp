@@ -8,11 +8,9 @@
 // Methods for classes HMGMessage, HMGSynchronousMessage and HMGAsynchronousMessage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGMessage.h>
-
+#include <ImagePP/all/h/HMGMessage.h>
 
 ///////////////////////////////////////////////
 // Methods of class HMGMessage

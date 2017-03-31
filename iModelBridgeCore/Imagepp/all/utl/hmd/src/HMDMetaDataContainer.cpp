@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDMetaDataContainer.h>
-
+#include <ImagePP/all/h/HMDMetaDataContainer.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

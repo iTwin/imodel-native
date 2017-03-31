@@ -9,32 +9,9 @@
 // Methods for class HRAUnlimitedResolutionRaster
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCExceptionHandler.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGFTileIDDescriptor.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HRABitmap.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRADrawProgressIndicator.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRAStripedRaster.h>
-#include <Imagepp/all/h/HRATiledRaster.h>
-#include <Imagepp/all/h/HRAUnlimitedResolutionRaster.h>
-#include <Imagepp/all/h/HRAUnlimitedResolutionRasterIterator.h>
-#include <Imagepp/all/h/HRFMessages.h>
-#include <Imagepp/all/h/HRAMessages.h>
-#include <ImagePP/all/h/HRAClearOptions.h>
-#include <ImagePP/all/h/HRSObjectStore.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
-#include <ImagePP/all/h/HMDContext.h>
-#include <ImagePPInternal/gra/HRAImageNode.h>
-#include <ImagePPInternal/gra/HRACopyToOptions.h>
-
+#include <ImagePP/all/h/HFCExceptionHandler.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAStripedRaster.h>#include <ImagePP/all/h/HRATiledRaster.h>#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>#include <ImagePP/all/h/HRAUnlimitedResolutionRasterIterator.h>#include <ImagePP/all/h/HRFMessages.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 
 HPM_REGISTER_CLASS(HRAUnlimitedResolutionRaster, HRAStoredRaster)

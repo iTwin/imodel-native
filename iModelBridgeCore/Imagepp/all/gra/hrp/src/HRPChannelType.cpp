@@ -8,10 +8,8 @@
 // Methods for class HRPChannelType
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPChannelType.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPChannelType.h>
 
 
 //-----------------------------------------------------------------------------

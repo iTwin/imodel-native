@@ -8,17 +8,10 @@
 // Methods for class HGF2DHelmert
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DDCTransfoModel.h>
-
-#include <Imagepp/all/h/HGF2DHelmert.h>
-
+#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DDCTransfoModel.h>
+#include <ImagePP/all/h/HGF2DHelmert.h>
 
 /** -----------------------------------------------------------------------------
     Default Constructor

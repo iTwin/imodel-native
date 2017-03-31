@@ -9,11 +9,9 @@
 // Methods for class HPSValueNode
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HPSValueNode.h>
-
+#include <ImagePP/all/h/HPSValueNode.h>
 //---------------------------------------------------------------------------
 HPSValueNode::HPSValueNode(HPAGrammarObject* pi_pObj,
                            const HPANodeList& pi_rList,

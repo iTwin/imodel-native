@@ -9,21 +9,10 @@
 // Methods for class HIMStripAdapterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMStripAdapterIterator.h>
-
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HFCGrid.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HIMStripProgressIndicator.h>
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-#include <Imagepp/all/h/HRABitmap.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HIMStripAdapter.h>
-
+#include <ImagePP/all/h/HIMStripAdapterIterator.h>
+#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HIMStripProgressIndicator.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HIMStripAdapter.h>
 
 //-----------------------------------------------------------------------------
 // Shaped constructor.  It takes a pointer to the raster to scan, and the region

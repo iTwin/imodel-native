@@ -6,15 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPComplexConverter.h>
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HRPQuantizedPalette.h>
-#include <ImagePP/all/h/HRPMessages.h>
-
+#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPComplexConverter.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HRPMessages.h>
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelType, HPMPersistentObject)
 
 

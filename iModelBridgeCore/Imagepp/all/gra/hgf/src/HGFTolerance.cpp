@@ -9,11 +9,9 @@
 // Methods for class HGFTolerance
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFTolerance.h>
-
+#include <ImagePP/all/h/HGFTolerance.h>
 
 #define SQUARE(a) ((a)*(a))
 

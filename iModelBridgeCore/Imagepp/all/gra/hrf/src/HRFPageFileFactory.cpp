@@ -11,11 +11,8 @@
 // This class describes the PageFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFPageFileFactory.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFPageFileFactory.h>
 HFC_IMPLEMENT_SINGLETON(HRFPageFileFactory)
 
 //-----------------------------------------------------------------------------

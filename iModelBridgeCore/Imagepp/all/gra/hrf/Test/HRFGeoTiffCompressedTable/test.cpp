@@ -5,10 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFGeoTiffCoordSysTable.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFGeoTiffCoordSysTable.h>
 
 
 //-----------------------------------------------------------------------------

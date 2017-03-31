@@ -9,25 +9,10 @@
 // Methods for class HTIFFFileCoDec
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <ImagePP/all/h/HTIFFTag.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecCCITTRLE.h>
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecLZW.h>
-
-#include <zlib/zlib.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecCCITTRLE.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecLZW.h>
+#include <zlib/zlib.h>
 
 
 //-----------------------------------------------------------------------------

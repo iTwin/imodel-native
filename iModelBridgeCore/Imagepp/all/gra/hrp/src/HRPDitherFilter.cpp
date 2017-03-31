@@ -8,16 +8,10 @@
 // Methods for class HRPDitherFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPDitherFilter.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPMessages.h>
-#include <Imagepp/all/h/HMGMessageDuplex.h>
-
+#include <ImagePP/all/h/HRPDitherFilter.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HMGMessageDuplex.h>
 #define OCTREE_LEVEL 4
 
 

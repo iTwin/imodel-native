@@ -6,10 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGFException.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGFException.h>
 
 
 //---------------------------------------------------------------------------

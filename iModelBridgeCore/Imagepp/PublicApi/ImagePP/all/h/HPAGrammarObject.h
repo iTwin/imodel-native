@@ -22,9 +22,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HPAProduction.h>
-#include <Imagepp/all/h/HPANode.h>
-
+#include <ImagePP/all/h/HPAProduction.h>#include <ImagePP/all/h/HPANode.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 typedef list<HPAProduction*> HPAReferingProdList;
@@ -77,5 +75,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HPAGrammarObject.hpp"
-
+#include "HPAGrammarObject.hpp"

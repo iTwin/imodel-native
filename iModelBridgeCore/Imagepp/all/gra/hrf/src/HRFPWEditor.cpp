@@ -8,15 +8,11 @@
 // Class HRFHMRTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFPWRasterFile.h>
-#include <Imagepp/all/h/HRFPWEditor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFPWRasterFile.h>#include <ImagePP/all/h/HRFPWEditor.h>
 #if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
 
-#include <Imagepp/all/h/interface/IHRFPWFileHandler.h>
-
+#include <ImagePP/all/h/interface/IHRFPWFileHandler.h>
 
 //-----------------------------------------------------------------------------
 // public
@@ -111,10 +107,7 @@ HSTATUS HRFPWEditor::WriteBlock(uint64_t                 pi_PosBlockX,
 // for test
 //-----------------------------------------------------------------------------
 
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-
+#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
 #if 0
 HRFPWHandler::HRFPWHandler(const HFCURL& pi_rPWFile)
     {

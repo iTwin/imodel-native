@@ -11,11 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include "HGF2DCoordSys.h"
-#include "HGF2DLocation.h"
-#include "HVEShape.h"
-
+#include <ImagePP/all/h/HFCPtr.h>#include "HGF2DCoordSys.h"#include "HGF2DLocation.h"#include "HVEShape.h"
 // Class declaration
 // This class has been designed for clipping data according to a stack of
 // masking or boundary clips when the range of the data that
@@ -59,8 +55,7 @@ private :
     };
 END_IMAGEPP_NAMESPACE
 
-#include "HVEClipShape.hpp"
-
+#include "HVEClipShape.hpp"
 
 
 

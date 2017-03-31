@@ -8,13 +8,8 @@
 // Methods for class HPATokenizer
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPATokenizer.h>
-#include <Imagepp/all/h/HPAToken.h>
-#include <Imagepp/all/h/HPAException.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPATokenizer.h>#include <ImagePP/all/h/HPAToken.h>#include <ImagePP/all/h/HPAException.h>#include <ImagePP/all/h/HFCBinStream.h>
 #if 0
 //----------------------------------------------------------------------------
 // Here's a little consumer-transformer following the STL design philosophy.

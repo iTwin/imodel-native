@@ -8,11 +8,9 @@
 // Methods for class HGFBasicColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFBasicColorSpace.h>
-
+#include <ImagePP/all/h/HGFBasicColorSpace.h>
 HGFBasicColorSpace::HGFBasicColorSpace(uint16_t pi_BitsPerPixel)
     {
     m_BitsPerPixel = pi_BitsPerPixel;

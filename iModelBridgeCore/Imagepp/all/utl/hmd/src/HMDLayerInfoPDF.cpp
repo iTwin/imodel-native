@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDLayerInfoPDF.h>
-
+#include <ImagePP/all/h/HMDLayerInfoPDF.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

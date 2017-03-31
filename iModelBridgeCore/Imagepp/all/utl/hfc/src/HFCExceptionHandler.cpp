@@ -8,12 +8,8 @@
 // Class: HFCExceptionHandler
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
-#include <ImagePP/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCExceptionHandler.h>
-#include <Logging/bentleylogging.h>
-
+#include <ImageppInternal.h> // Must be the first include.
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_LOGGING
 
 // Initialisation of the static member.

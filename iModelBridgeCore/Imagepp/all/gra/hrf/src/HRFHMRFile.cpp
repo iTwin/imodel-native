@@ -9,43 +9,14 @@
 // Class HRFHMRFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <ImagePP/all/h/ImageppLib.h>
-
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFHMRTileEditor.h>
-#include <Imagepp/all/h/HRFTiffTileEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecLZW.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPChannelOrgGray.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRPPixelPalette.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/ImageppLib.h>
+#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFHMRTileEditor.h>#include <ImagePP/all/h/HRFTiffTileEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecLZW.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelPalette.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 // this macro returns the number of bytes from a count of bits
 #define BYTES_FROM_BITS(bits)  ((bits/8) + ((bits%8) ? 1:0))

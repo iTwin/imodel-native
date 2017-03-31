@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HCDCodec.h>
-
+#include <ImagePP/all/h/HCDCodec.h>
 BEGIN_IMAGEPP_NAMESPACE
 //=======================================================================================
 //! HCDCodecFactory

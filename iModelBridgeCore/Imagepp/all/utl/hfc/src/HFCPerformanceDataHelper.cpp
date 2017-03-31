@@ -12,10 +12,8 @@
 // INCLUDE FILES
 //###############################
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCPerformanceDataHelper.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCPerformanceDataHelper.h>
 
 //-----------------------------------------------------------------
 // HFCPerformanceDataHelper

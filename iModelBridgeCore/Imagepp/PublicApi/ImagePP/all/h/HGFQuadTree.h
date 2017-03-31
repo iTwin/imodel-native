@@ -5,8 +5,7 @@
 //:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
 #pragma once
 
 BEGIN_IMAGEPP_NAMESPACE

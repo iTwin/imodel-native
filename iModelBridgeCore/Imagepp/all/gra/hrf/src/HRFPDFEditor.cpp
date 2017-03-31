@@ -8,23 +8,14 @@
 // Class HRFPDFEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFPDFFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFPDFFile.h>
 #if defined(IPP_HAVE_PDF_SUPPORT) 
 
-#include <Imagepp/all/h/HRFPDFEditor.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HRFRawFile.h>
-#include <Imagepp/all/h/HMDContext.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HMDVolatileLayers.h>
-
-#include "HRFPDFLibInterface.h"
-
+#include <ImagePP/all/h/HRFPDFEditor.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRFRawFile.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HMDVolatileLayers.h>
+#include "HRFPDFLibInterface.h"
 class UStationPDFEditorWrapper : public PDFEditorWrapper
     {
 public:

@@ -5,22 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPSPssFileCreator.h>
-#include <Imagepp/all/h/HPSPssFile.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HCPGCoordModel.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPSPssFileCreator.h>#include <ImagePP/all/h/HPSPssFile.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/

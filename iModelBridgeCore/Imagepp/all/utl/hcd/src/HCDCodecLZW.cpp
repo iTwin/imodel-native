@@ -9,12 +9,8 @@
 // Methods for class HCDCodecLZW
 //-----------------------------------------------------------------------------
   
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecLZW.h>
-#include <Imagepp/all/h/HCDLZWDecoder.h>
-#include <Imagepp/all/h/HCDLZWEncoder.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecLZW.h>#include <ImagePP/all/h/HCDLZWDecoder.h>#include <ImagePP/all/h/HCDLZWEncoder.h>
 #define XREPEAT4(n, op)        \
     switch (n) {        \
     default: { HSINTX i; for (i = n-4; i > 0; i--) { op; } } \

@@ -8,10 +8,8 @@
 // Methods for class HPAToken
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPAToken.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPAToken.h>
 #if 0
 static struct HPATokenNodeCreator : public HPANodeCreator
     {

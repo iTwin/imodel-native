@@ -9,34 +9,12 @@
 // Methods for class HIMBufferedImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMBufferedImage.h>
-#include <Imagepp/all/h/HIMBufferedImageIterator.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HFCMonitor.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HRADrawProgressIndicator.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HGSTypes.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-
-#include <Imagepp/all/h/HRABitmap.h>
-#include <Imagepp/all/h/HRAMessages.h>
-
-#include <Imagepp/all/h/HRPConvFiltersV24R8G8B8.h>
-#include <Imagepp/all/h/HGFException.h>
-#include <Imagepp/all/h/HRPMessages.h>
-
-#include <Imagepp/all/h/HMDContext.h>
-
+#include <ImagePP/all/h/HIMBufferedImage.h>#include <ImagePP/all/h/HIMBufferedImageIterator.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HFCMonitor.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGSTypes.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRABitmap.h>#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HRPMessages.h>
+#include <ImagePP/all/h/HMDContext.h>
 
 ///////////////////////////////////
 // HIMBufferedImage class

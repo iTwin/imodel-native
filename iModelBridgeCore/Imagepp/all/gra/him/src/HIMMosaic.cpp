@@ -6,40 +6,13 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMMosaic.h>
-#include <Imagepp/all/h/HIMBufferedImage.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HMDContext.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-
-#include <Imagepp/all/h/HFCException.h>
-
-#include <Imagepp/all/h/HRAMessages.h>
-#include <Imagepp/all/h/HRPMessages.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-
-#include <ImagePPInternal/gra/HRAImageNode.h>
-#include <ImagePPInternal/gra/HRACopyToOptions.h>
-
+#include <ImagePP/all/h/HIMMosaic.h>#include <ImagePP/all/h/HIMBufferedImage.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HGFMappedSurface.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
 HPM_REGISTER_CLASS(HIMMosaic, HRARaster)
 
 

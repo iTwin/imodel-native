@@ -14,8 +14,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HPANode.h>
-
+#include <ImagePP/all/h/HPANode.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HPATokenNode;
 class HPAToken;
@@ -158,5 +157,4 @@ protected:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HPATokenizer.hpp"
-
+#include "HPATokenizer.hpp"

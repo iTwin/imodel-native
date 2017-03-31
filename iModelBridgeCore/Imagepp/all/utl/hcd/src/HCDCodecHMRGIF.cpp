@@ -9,12 +9,9 @@
 // Methods for class HCDCodecHMRGIF
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecHMRGIF.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HFCMath.h>
 
 // NOTE: THERE ARE A LOT OF CONSTANT NUMBERS; I DO NOT MAKE "DEFINE" WITH THEM BECAUSE I DON'T
 // KNOW WHAT THEY MEAN. THE ALGO COME FROM THE WEB.

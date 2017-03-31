@@ -5,15 +5,7 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DWorld.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HVE2DShape.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HVE2DShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>
 #pragma once
 
 BEGIN_IMAGEPP_NAMESPACE

@@ -9,9 +9,7 @@
 // Methods for class HRAReferenceToRasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <Imagepp/all/h/HRAReferenceToRasterEditor.h>
-
+#include <ImageppInternal.h>#include <ImagePP/all/h/HRAReferenceToRasterEditor.h>
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

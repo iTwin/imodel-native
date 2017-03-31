@@ -9,14 +9,9 @@
 // Methods for exception classes.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-#include <Imagepp/h/ImagePPExceptionMessages.xliff.h>
-#include <Imagepp/all/h/HFCMacros.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/h/ImagePPExceptionMessages.xliff.h>#include <ImagePP/all/h/HFCMacros.h>
 //-----------------------------------------------------------------------------
 // public
 // Default Constructor

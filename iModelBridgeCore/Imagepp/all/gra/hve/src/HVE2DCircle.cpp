@@ -9,18 +9,13 @@
 // Methods for class HVE2DCircle
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DCircle.h>
-
+#include <ImagePP/all/h/HVE2DCircle.h>
 HPM_REGISTER_CLASS(HVE2DCircle, HVE2DSimpleShape)
 
 
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HVE2DArc.h>
-
+#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HVE2DArc.h>
 
 //-----------------------------------------------------------------------------
 // operator==

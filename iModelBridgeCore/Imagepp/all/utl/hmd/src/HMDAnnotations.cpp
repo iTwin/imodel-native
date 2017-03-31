@@ -5,11 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>ayer
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDAnnotations.h>
-
+#include <ImagePP/all/h/HMDAnnotations.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

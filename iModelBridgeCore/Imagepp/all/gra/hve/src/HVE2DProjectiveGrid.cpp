@@ -8,18 +8,10 @@
 // Methods for class HVE2DProjectectiveGrid
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
-#include <Imagepp/all/h/HVE2DProjectectiveGrid.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <Imagepp/all/h/HVE2DProjectectiveGrid.h>
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------

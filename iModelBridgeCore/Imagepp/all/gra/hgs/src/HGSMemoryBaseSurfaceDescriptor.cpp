@@ -8,12 +8,9 @@
 // Class HGSMemoryBaseSurfaceDescriptor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGSMemoryBaseSurfaceDescriptor.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-
+#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HRPPixelType.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

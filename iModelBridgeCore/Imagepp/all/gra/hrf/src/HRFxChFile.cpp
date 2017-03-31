@@ -8,45 +8,18 @@
 // Class HRFxChFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
+#include <ImagePP/all/h/HRFxChFile.h>#include <ImagePP/all/h/HRFxChEditor.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFHMRFile.h>
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRPPixelType.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
+#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>
 
-#include <Imagepp/all/h/HRFxChFile.h>
-#include <Imagepp/all/h/HRFxChEditor.h>
-
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-
-#include <Imagepp/all/h/HFCStat.h>
-
-#include <Imagepp/all/h/HRPPixelType.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
-
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include <BeXml/BeXml.h>
-
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <BeXml/BeXml.h>
 
 
 /** ---------------------------------------------------------------------------

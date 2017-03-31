@@ -8,21 +8,9 @@
 // Class HRFSLOStripAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFSLOStripAdapter.h>
-#include <Imagepp/all/h/HRFSLOStripEditor.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HCDCodecFactory.h>
-
+#include <ImagePP/all/h/HRFSLOStripAdapter.h>#include <ImagePP/all/h/HRFSLOStripEditor.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HCDCodecFactory.h>
 #define HRF_SLO_ADAPTER_STRIP_HEIGHT 512
 
 //-----------------------------------------------------------------------------

@@ -6,62 +6,21 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HIMOnDemandMosaic.h>
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DExtent.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
+#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRARepPalParms.h>
+#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRPMessages.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
+#include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
 
-#include <Imagepp/all/h/HIMOnDemandMosaic.h>
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DExtent.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRSObjectStore.h>
-#include <ImagePP/all/h/HRPMessages.h>
-#include <ImagePP/all/h/HMDContext.h>
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <ImagePPInternal/gra/HRACopyToOptions.h>
-
-#include <Imagepp/all/h/HUTImportFromRasterExportToFile.h>
-
-#include <ImagePP/all/h/HRAMessages.h>
-
-#include <ImagePPInternal/gra/HRAImageNode.h>
-
-
-#include <BeXml/BeXml.h>
-
+#include <BeXml/BeXml.h>
 
 #ifdef __HMR_DEBUG
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#endif
+#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#endif
 
 HPM_REGISTER_CLASS(HIMOnDemandMosaic, HRARaster)
 

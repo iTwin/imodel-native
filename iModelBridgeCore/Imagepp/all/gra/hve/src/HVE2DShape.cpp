@@ -8,28 +8,15 @@
 // Methods for class HVE2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DShape.h>
-
+#include <ImagePP/all/h/HVE2DShape.h>
 
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DShape, HVE2DVector)
 
 
-#include <Imagepp/all/h/HVE2DSimpleShape.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-
+#include <ImagePP/all/h/HVE2DSimpleShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>
 //-----------------------------------------------------------------------------
 // Rasterize
 // This method rasterizes (generates scanlines) for the shape.

@@ -9,12 +9,8 @@
 //:> Methods for class HRFGeoTiffProjectionTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFGeoTiffProjectionTable.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFGeoTiffProjectionTable.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HFCURL.h>
 /**----------------------------------------------------------------------------
  HRFGeoTiffProjectionTable.tbl
 
@@ -36,8 +32,7 @@
  @see HRFGeoTiffCompressedTable::ColumnInfo
  @see epsg.mdb
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffProjectionTable.tbl"
-
+#include "HRFGeoTiffProjectionTable.tbl"
 /**----------------------------------------------------------------------------
  HRFGeoTiffProjectionTable.dat
 
@@ -52,8 +47,7 @@
  @see HRFGeoTiffCompressedTable
  @see HRFGeoTiffCompressTable application
 -----------------------------------------------------------------------------*/
-#include "HRFGeoTiffProjectionTable.dat"
-
+#include "HRFGeoTiffProjectionTable.dat"
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------

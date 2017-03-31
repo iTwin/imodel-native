@@ -9,13 +9,9 @@
 // Methods for class HRAReferenceToRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAReferenceToRasterIterator.h>
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-
+#include <ImagePP/all/h/HRAReferenceToRasterIterator.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRPPixelType.h>
 
 //-----------------------------------------------------------------------------
 // The constructor.  It takes a pointer to the raster to scan completely.

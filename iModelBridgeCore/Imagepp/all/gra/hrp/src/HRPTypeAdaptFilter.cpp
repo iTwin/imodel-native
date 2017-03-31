@@ -9,11 +9,9 @@
 // Methods for class HRPTypeAdaptFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPTypeAdaptFilter.h>
-
+#include <ImagePP/all/h/HRPTypeAdaptFilter.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

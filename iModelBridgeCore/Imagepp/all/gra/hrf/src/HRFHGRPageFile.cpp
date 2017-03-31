@@ -9,27 +9,11 @@
 // Class HRFHGRPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HRFHGRPageFile.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCIniFileBrowser.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
+#include <ImagePP/all/h/HRFHGRPageFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCIniFileBrowser.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFUtility.h>
 // HGR SPECIFIC DEFINE
 #define ID                  "ID"
 #define FILE                "File"

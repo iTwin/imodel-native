@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DPosition.h>
-
+#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DPosition.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HGF2DLiteQuadrilateral
     {
@@ -87,5 +85,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include <Imagepp/all/h/HGF2DLiteQuadrilateral.hpp>
-
+#include <ImagePP/all/h/HGF2DLiteQuadrilateral.hpp>

@@ -5,11 +5,8 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFUSgsFastL7ALineEditor.h>
-#include <Imagepp/all/h/HRFUSgsFastL7AFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFUSgsFastL7ALineEditor.h>#include <ImagePP/all/h/HRFUSgsFastL7AFile.h>
 
 
 //-----------------------------------------------------------------------------

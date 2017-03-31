@@ -9,18 +9,9 @@
 // Inline methods for HRPFunctionFilters
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPFunctionFilters.h>
-#include <Imagepp/all/h/HRAImageOp.h>
-#include <ImagePPInternal/gra/HRAImageSampler.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePPInternal/gra/HRAImageSampler.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HFCMath.h>
 #define CLAMP(A)((A)<=(0) ? (0) : (A)<(256) ? (A) : (255))
 
 typedef list<HGFRGBSet>  RGBSetList;

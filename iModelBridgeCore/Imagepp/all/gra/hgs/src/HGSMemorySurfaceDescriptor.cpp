@@ -8,13 +8,9 @@
 // Class HGSMemorySurfaceDescriptor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

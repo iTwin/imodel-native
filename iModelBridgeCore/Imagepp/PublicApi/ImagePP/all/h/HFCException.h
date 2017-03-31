@@ -56,9 +56,7 @@
 #pragma once
 
 
-#include <Imagepp/all/h/HFCMacros.h>
-#include <Imagepp/h/ImagePPExceptionMessages.xliff.h>
-
+#include <ImagePP/all/h/HFCMacros.h>#include <ImagePP/h/ImagePPExceptionMessages.xliff.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPANode;

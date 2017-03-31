@@ -9,12 +9,8 @@
 // Class HRFBilLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFBilLineEditor.h>
-#include <Imagepp/all/h/HRFBilFile.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFBilLineEditor.h>#include <ImagePP/all/h/HRFBilFile.h>#include <ImagePP/all/h/HTIFFUtils.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

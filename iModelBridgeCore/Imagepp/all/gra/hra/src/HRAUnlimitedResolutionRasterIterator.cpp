@@ -9,12 +9,9 @@
 // Methods for class HRAUnlimitedResolutionRasterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAUnlimitedResolutionRasterIterator.h>
-#include <Imagepp/all/h/HRAUnlimitedResolutionRaster.h>
-
+#include <ImagePP/all/h/HRAUnlimitedResolutionRasterIterator.h>#include <ImagePP/all/h/HRAUnlimitedResolutionRaster.h>
 
 //-----------------------------------------------------------------------------
 // public

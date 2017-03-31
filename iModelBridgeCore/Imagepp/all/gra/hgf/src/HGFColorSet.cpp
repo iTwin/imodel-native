@@ -9,10 +9,8 @@
 // Methods for class : HGFRGBSet
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGFColorSet.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGFColorSet.h>
 HGFColorSet::HGFColorSet()
     {
     // Nothing to do!

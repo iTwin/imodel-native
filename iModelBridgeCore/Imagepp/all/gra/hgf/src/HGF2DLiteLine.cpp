@@ -9,12 +9,8 @@
 // Methods for class HGF2DLiteLine
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DLiteLine.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DLiteLine.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
 
 /** -----------------------------------------------------------------------------
     Constructor by bearing

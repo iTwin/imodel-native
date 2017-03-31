@@ -8,14 +8,8 @@
 // Class HRFPngImageEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFPngImageEditor.h>
-#include <Imagepp/all/h/HRFPngFile.h>
-#include <png/png.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFPngImageEditor.h>#include <ImagePP/all/h/HRFPngFile.h>#include <png/png.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 
 #define PNG_RASTERFILE  static_cast<HRFPngFile*>(GetRasterFile().GetPtr())
 

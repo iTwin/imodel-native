@@ -11,12 +11,9 @@
 //-----------------------------------------------------------------------------
 
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIDXSearchCriteria.h>
-#include <Imagepp/all/h/HIDXCriteria.h>
-
+#include <ImagePP/all/h/HIDXSearchCriteria.h>#include <ImagePP/all/h/HIDXCriteria.h>
 
 
 //-----------------------------------------------------------------------------

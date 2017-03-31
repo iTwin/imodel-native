@@ -8,10 +8,8 @@
 // Methods for class HFCURLOracleFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLOracleFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLOracleFile.h>
 
 // This is the creator that registers itself in the scheme list.
 struct URLOracleFileCreator : public HFCURL::Creator

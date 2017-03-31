@@ -8,16 +8,10 @@
 // Methods for class HTIFFDirectory
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFDirectory.h>
-#include <Imagepp/all/h/HTIFFTagEntry.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFGeoKey.h>
-
-#include <ImagePP/all/h/HTagIdIterator.h>
-
+#include <ImagePP/all/h/HTIFFDirectory.h>#include <ImagePP/all/h/HTIFFTagEntry.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFGeoKey.h>
+#include <ImagePP/all/h/HTagIdIterator.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor, Create an empty entry.

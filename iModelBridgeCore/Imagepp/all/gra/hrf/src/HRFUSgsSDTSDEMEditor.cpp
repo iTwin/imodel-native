@@ -9,14 +9,11 @@
 // Class HRFUSgsSDTSDEMEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 #ifdef IPP_HAVE_GDAL_SUPPORT
-#include <Imagepp/all/h/HRFUSgsSDTSDEMEditor.h>
-
+#include <ImagePP/all/h/HRFUSgsSDTSDEMEditor.h>
 /*
-#include <ImagePP-GdalLib_priv.h>
-
+#include <ImagePP-GdalLib_priv.h>
 #define BAND_1 0
 #define BAND_2 1
 #define BAND_3 2

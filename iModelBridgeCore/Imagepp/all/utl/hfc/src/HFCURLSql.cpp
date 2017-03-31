@@ -8,10 +8,8 @@
 // Methods for class HFCURLSql
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLSql.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLSql.h>
 
 // This is the creator that registers itself in the scheme list.
 struct URLSqlCreator : public HFCURL::Creator

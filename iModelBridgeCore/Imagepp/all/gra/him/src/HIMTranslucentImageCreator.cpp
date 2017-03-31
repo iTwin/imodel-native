@@ -6,18 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HIMTranslucentImageCreator.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRAPixelTypeReplacer.h>
-#include <Imagepp/all/h/HRPFunctionFilters.h>
-#include <Imagepp/all/h/HIMFilteredImage.h>
-
+#include <ImagePP/all/h/HIMTranslucentImageCreator.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRAPixelTypeReplacer.h>#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HIMFilteredImage.h>
 
 //-----------------------------------------------------------------------------
 // public

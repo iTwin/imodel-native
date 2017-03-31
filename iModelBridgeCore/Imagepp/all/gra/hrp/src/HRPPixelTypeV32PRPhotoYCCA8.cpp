@@ -8,23 +8,12 @@
 // Methods for class HRPPixelTypeV32PRPhotoYCCA8.cpp
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
-
-#include <Imagepp/all/h/HRPPaletteOctreeR8G8B8.h>
-#include <Imagepp/all/h/HRPChannelOrgPRPhotoYCCA8.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include "v24rgb.h" // for YCC conversion factor
-
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8.h>#include <ImagePP/all/h/HRPChannelOrgPRPhotoYCCA8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include "v24rgb.h" // for YCC conversion factor
+#include <ImagePP/all/h/HFCMath.h>
 HPM_REGISTER_CLASS(HRPPixelTypeV32PRPhotoYCCA8, HRPPixelType)
 
 // STL typeDef

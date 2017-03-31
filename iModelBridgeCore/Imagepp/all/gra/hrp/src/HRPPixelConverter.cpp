@@ -8,11 +8,8 @@
 // Methods for class HRPPixelConverter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPPixelType.h>
 //-----------------------------------------------------------------------------
 // Constructor with source and dest pixel type pointers
 //-----------------------------------------------------------------------------

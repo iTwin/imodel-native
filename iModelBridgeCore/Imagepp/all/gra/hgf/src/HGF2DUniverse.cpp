@@ -8,16 +8,10 @@
 // Methods for class HGF2DUniverse
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DUniverse.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
-#include <Imagepp/all/h/HGF2DSegment.h>
-#include <Imagepp/all/h/HGF2DPolySegment.h>
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-
+#include <ImagePP/all/h/HGF2DUniverse.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DSegment.h>#include <ImagePP/all/h/HGF2DPolySegment.h>#include <ImagePP/all/h/HGF2DHoledShape.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor

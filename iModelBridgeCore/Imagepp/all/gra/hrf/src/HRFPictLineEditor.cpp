@@ -8,18 +8,11 @@
 // Class HRFPictLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFPictFile.h>
-#include <Imagepp/all/h/HRFPictLineEditor.h>
-
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
+#include <ImagePP/all/h/HRFPictFile.h>#include <ImagePP/all/h/HRFPictLineEditor.h>
+#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------

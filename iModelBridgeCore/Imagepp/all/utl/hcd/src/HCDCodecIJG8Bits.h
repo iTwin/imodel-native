@@ -13,8 +13,7 @@
 #ifndef HCDCodecIJG8Bits_H           // Don't use #pragma once here, See HCDCodecIJG12Bits.h and .cpp
 #define HCDCodecIJG8Bits_H
 
-#include <Imagepp/all/h/HCDCodecIJG.h>
-
+#include <ImagePP/all/h/HCDCodecIJG.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 #ifndef IJG12BITS

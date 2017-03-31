@@ -12,12 +12,10 @@
 // Class : HRFGeoreferenceContext
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HRFGeoreferenceContext.h>
-
+#include <ImagePP/all/h/HRFGeoreferenceContext.h>
 
 HRFGeoreferenceContext::HRFGeoreferenceContext(double pi_defaultRatioToMeterForRaster,
                                                double pi_defaultRatioToMeterForSisterFile,

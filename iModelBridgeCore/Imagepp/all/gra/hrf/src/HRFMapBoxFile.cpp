@@ -8,29 +8,13 @@
 // Class HRFMapBoxFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFMapBoxFile.h>
-#include <Imagepp/all/h/HRFMapBoxTileEditor.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecJpeg.h>
-#include <ImagePP/all/h/HCDCodecIJG.h>
-
-#include <ImagePP/all/h/HGF2DStretch.h>
-
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-#include <Imagepp/all/h/HFCURLHTTP.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFMapboxFile.h>#include <ImagePP/all/h/HRFMapboxTileEditor.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecJPEG.h>#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/all/h/HFCURLHTTP.h>
 #define MB_MAP_RESOLUTION       19
 #define MB_MAP_WIDTH            (256 * (1 << MB_MAP_RESOLUTION))
 #define MB_MAP_HEIGHT           (256 * (1 << MB_MAP_RESOLUTION))

@@ -9,20 +9,11 @@
 // Class HRFRasterFileBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-#include <Imagepp/all/h/HRFBlockAdapterFactory.h>
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFCacheFileCreator.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFBlockAdapterFactory.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFCacheFileCreator.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
 //-----------------------------------------------------------------------------
 // HRFRasterFileBlockAdapterBlockCapabilities
 //-----------------------------------------------------------------------------

@@ -10,10 +10,7 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP/all/h/HGFException.h>
-#include <ImagePP/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-
+#include <ImagePP/all/h/HGFException.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;

@@ -10,12 +10,8 @@
 // Methods for class HRFURLInternetImagingHTTP
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLHttp.h>
-#include <Imagepp/all/h/HFCURLHttps.h>
-#include <Imagepp/all/h/HRFURLInternetImagingHTTP.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>#include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>
 //-----------------------------------------------------------------------------
 // This constructor configures the object from the detached parts of the URL
 // specification.

@@ -8,12 +8,8 @@
 // Methods for class HCDCodecFlashpix
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HFCMath.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HCDCodecIJG.h>
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------

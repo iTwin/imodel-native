@@ -8,20 +8,11 @@
 // Class HRFSRTMFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRFSRTMFile.h>#include <ImagePP/all/h/HRFSRTMEditor.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HRFSRTMFile.h>
-#include <Imagepp/all/h/HRFSRTMEditor.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 // Constant initialization
 const uint32_t HRFSRTMFile::SRTM1_SIZE = 25934402;
 const uint32_t HRFSRTMFile::SRTM3_SIZE = 2884802;

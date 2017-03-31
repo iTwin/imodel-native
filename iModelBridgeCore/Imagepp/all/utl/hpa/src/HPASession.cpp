@@ -8,10 +8,8 @@
 // Methods for class HPASession
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPASession.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPASession.h>
 HPASession::~HPASession()
     {
     // Nothing to do!

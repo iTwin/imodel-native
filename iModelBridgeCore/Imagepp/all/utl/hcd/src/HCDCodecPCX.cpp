@@ -8,10 +8,8 @@
 // Methods for class HCDCodecPCX
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecPCX.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecPCX.h>
 
 #define HCD_CODEC_NAME "PCX"
 

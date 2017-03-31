@@ -8,11 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DLiteQuadrilateral.h>
-#include <Imagepp/all/h/HGF2DTriangle.h>
-
+#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>#include <ImagePP/all/h/HGF2DTriangle.h>
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     QuadrilateralFacet
@@ -119,4 +115,4 @@ public:
     };
 
 END_IMAGEPP_NAMESPACE
-#include <Imagepp/all/h/HGF2DPieceWiseModel.hpp>
+#include <ImagePP/all/h/HGF2DPieceWiseModel.hpp>

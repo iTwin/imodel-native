@@ -5,15 +5,7 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <Imagepp/all/h/HRAImageOpDensitySlicingFilter.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <Imagepp/all/h/HGFLightnessColorSpace.h>
-
+#include <ImageppInternal.h>#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HGFLightnessColorSpace.h>
 
 
 

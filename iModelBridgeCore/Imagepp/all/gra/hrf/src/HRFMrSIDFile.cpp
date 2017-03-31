@@ -7,57 +7,17 @@
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMrSIDFile
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFMrSIDFile.h>
-#include <Imagepp/all/h/HRFMrSIDEditor.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-
-#include <Imagepp/all/h/HVETileIDIterator.h>
-#include <Imagepp/all/h/HTIFFTag.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFMrSIDFile.h>#include <ImagePP/all/h/HRFMrSIDEditor.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DAffine.h>
+#include <ImagePP/all/h/HVETileIDIterator.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HCPGCoordUtility.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 #if defined(IPP_HAVE_MRSID_SUPPORT) 
 
-#include <MrSid/lt_base.h>
-#include <MrSid/lt_fileSpec.h>
-#include <MrSid/lt_types.h>
-#include <MrSid/lti_navigator.h>
-#include <MrSid/lti_geoCoord.h>
-#include <MrSid/lti_Pixel.h>
-#include <MrSid/lti_SceneBuffer.h>
-#include <MrSid/lti_Navigator.h>
-#include <MrSid/lti_metadataReader.h>
-#include <MrSid/lti_metadataDatabase.h>
-#include <MrSid/lti_metadataRecord.h>
-#include <MrSid/lti_types.h>
-#include <MrSid/lti_viewerImageFilter.h>
-#include <MrSid/lti_imageReader.h>
-#include <MrSid/MrSIDImageReader.h>
-#include <MrSid/lti_dynamicRangeFilter.h>
-#include <MrSid/lti_bandSelectFilter.h>
-
+#include <MrSid/lt_base.h>#include <MrSid/lt_fileSpec.h>#include <MrSid/lt_types.h>#include <MrSid/lti_navigator.h>#include <MrSid/lti_geoCoord.h>#include <MrSid/lti_Pixel.h>#include <MrSid/lti_SceneBuffer.h>#include <MrSid/lti_Navigator.h>#include <MrSid/lti_metadataReader.h>#include <MrSid/lti_metadataDatabase.h>#include <MrSid/lti_metadataRecord.h>#include <MrSid/lti_types.h>#include <MrSid/lti_viewerImageFilter.h>#include <MrSid/lti_imageReader.h>#include <MrSid/MrSIDImageReader.h>#include <MrSid/lti_dynamicRangeFilter.h>#include <MrSid/lti_bandSelectFilter.h>
 using namespace LizardTech;
 
 #ifndef HGLOBAL_EPSILON

@@ -9,50 +9,12 @@
 // Class HUTExportFile.
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HIMStoredRasterEquivalentTransfo.h>
-#include <Imagepp/all/h/HRADrawProgressIndicator.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRAPyramidRaster.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HRAUpdateSubResProgressIndicator.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-#include <Imagepp/all/h/HRFImportExport.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFLRDFile.h>
-#include <Imagepp/all/h/HRFPageFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-#include <Imagepp/all/h/HRFRasterFileResBooster.h>
-#include <Imagepp/all/h/HRFSloStripAdapter.h>
-#include <Imagepp/all/h/HRPConvFiltersV24R8G8B8.h>
-#include <Imagepp/all/h/HRSObjectStore.h>
-#include <Imagepp/all/h/HUTExportProgressIndicator.h>
-#include <Imagepp/all/h/HUTExportToFile.h>
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HRAClearOptions.h>
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HIMStripAdapter.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-
-#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFHMRFile.h>#include <ImagePP/all/h/HRFImportExport.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFLRDFile.h>#include <ImagePP/all/h/HRFPageFileFactory.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>#include <ImagePP/all/h/HRFRasterFileResBooster.h>#include <ImagePP/all/h/HRFSLOStripAdapter.h>#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HUTExportProgressIndicator.h>#include <ImagePP/all/h/HUTExportToFile.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HRAClearOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HIMStripAdapter.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HRFErMapperSupportedFile.h>
 
 
 

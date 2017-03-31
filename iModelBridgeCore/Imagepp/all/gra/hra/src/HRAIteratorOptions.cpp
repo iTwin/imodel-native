@@ -9,13 +9,9 @@
 // Methods for class HRAIteratorOptions
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAIteratorOptions.h>
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HVEShape.h>
-
+#include <ImagePP/all/h/HRAIteratorOptions.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HVEShape.h>
 
 //-----------------------------------------------------------------------------
 // Constructor

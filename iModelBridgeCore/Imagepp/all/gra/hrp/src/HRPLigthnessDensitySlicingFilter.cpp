@@ -9,13 +9,9 @@
 // Methods for class HRPLigthnessDensitySlicingFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPLigthnessDensitySlicingFilter.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HGFLightnessColorSpace.h>
-
+#include <ImagePP/all/h/HRPLigthnessDensitySlicingFilter.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HGFLightnessColorSpace.h>
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
 //-----------------------------------------------------------------------------

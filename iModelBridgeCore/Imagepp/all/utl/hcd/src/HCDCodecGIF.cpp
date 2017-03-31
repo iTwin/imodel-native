@@ -8,10 +8,8 @@
 // Methods for class HCDCodecGIF
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecGIF.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecGIF.h>
 #define HCD_CODEC_NAME     "LZWGif"
 
 // Estimation of the compression ratio (to be adjusted by Dominic if required)

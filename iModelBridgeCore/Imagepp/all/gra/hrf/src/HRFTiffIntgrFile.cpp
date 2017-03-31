@@ -8,51 +8,13 @@
 // Class HRFTiffIntgrFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <ImagePP/all/h/ImageppLib.h>
-
-#include <Imagepp/all/h/HRFTiffIntgrFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFTiffTileEditor.h>
-#include <Imagepp/all/h/HRFTiffStripEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HCDCodecLZW.h>
-
-#include <Imagepp/all/h/HRFGeoTiffFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8X8.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32Float32.h>
-#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/ImageppLib.h>
+#include <ImagePP/all/h/HRFTiffIntgrFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFTiffTileEditor.h>#include <ImagePP/all/h/HRFTiffStripEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HCDCodecLZW.h>
+#include <ImagePP/all/h/HRFGeoTiffFile.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 
 //-----------------------------------------------------------------------------

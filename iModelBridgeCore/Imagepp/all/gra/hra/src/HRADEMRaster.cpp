@@ -9,28 +9,9 @@
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRADEMRaster.h>
-#include <Imagepp/all/h/HFCGrid.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRABlitter.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HRAStoredRaster.h>
-#include <Imagepp/all/h/HRAReferenceToStoredRaster.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRPDEMFilter.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HRATransaction.h>
-#include <ImagePPInternal/gra/HRAImageNode.h>
-#include <ImagePPInternal/gra/HRACopyToOptions.h>
-
+#include <ImagePP/all/h/HRADEMRaster.h>#include <ImagePP/all/h/HFCGrid.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPDEMFilter.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePPInternal/gra/HRAImageNode.h>#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 
 HPM_REGISTER_CLASS(HRADEMRaster, HRAImageView)

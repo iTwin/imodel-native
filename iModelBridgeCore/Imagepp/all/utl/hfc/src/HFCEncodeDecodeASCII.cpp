@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCEncodeDecodeASCII.h>
-
+#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
 //-----------------------------------------------------------------------------
 // Static method...
 //-----------------------------------------------------------------------------

@@ -9,27 +9,11 @@
 // Class HRAWarper
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAWarper.h>
-
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HGSMemoryBaseSurfaceDescriptor.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRASampler.h>
-#include <Imagepp/all/h/HRPFilter.h>
-#include <Imagepp/all/h/HGSRegion.h>
-#include <Imagepp/all/h/HGFScanlines.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-
+#include <ImagePP/all/h/HRAWarper.h>
+#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRASampler.h>#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HGSRegion.h>#include <ImagePP/all/h/HGFScanlines.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 /**----------------------------------------------------------------------------
  Constructor for this class
 

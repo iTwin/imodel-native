@@ -8,12 +8,9 @@
 // Methods for class HTIFFTagDefinition
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFTagDefinition.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-
+#include <ImagePP/all/h/HTIFFTagDefinition.h>#include <ImagePP/all/h/HTIFFUtils.h>
 
 
 

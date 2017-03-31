@@ -9,12 +9,9 @@
 // Methods for class HRPConvFilterV24R8G8B8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPConvFilterV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
+#include <ImagePP/all/h/HRPConvFilterV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

@@ -9,19 +9,8 @@
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPDEMFilter.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRAEditor.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HRAImageOp.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPDEMFilter.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRAEditor.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HRAImageOp.h>
 
 // [a, b, c]
 // [d, e, f]

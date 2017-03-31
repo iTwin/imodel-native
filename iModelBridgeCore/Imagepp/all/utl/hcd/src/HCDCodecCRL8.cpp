@@ -8,10 +8,8 @@
 // Methods for class HCDCodecCRL8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecCRL8.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecCRL8.h>
 
 #define HCD_CODEC_NAME "CRL8bits"
 

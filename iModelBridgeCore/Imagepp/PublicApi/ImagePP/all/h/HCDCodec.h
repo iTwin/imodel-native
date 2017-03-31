@@ -13,8 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCExclusiveKey.h>
-
+#include <ImagePP/all/h/HFCExclusiveKey.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HCDPacketRLE;

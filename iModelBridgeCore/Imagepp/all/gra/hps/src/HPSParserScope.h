@@ -13,9 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include "HPSInternalNodes.h"
-
+#include <ImagePP/all/h/HFCPtr.h>#include "HPSInternalNodes.h"
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;
@@ -69,5 +67,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HPSParserScope.hpp"
-
+#include "HPSParserScope.hpp"

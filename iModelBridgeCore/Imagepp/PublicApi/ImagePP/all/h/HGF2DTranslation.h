@@ -11,9 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-
+#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>
 BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -144,4 +142,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "hgf2dTranslation.hpp"
+#include "HGF2DTranslation.hpp"

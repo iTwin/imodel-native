@@ -9,14 +9,10 @@
 // Class HRFAdaptStripToLine
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptStripToLine.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptStripToLine.h>
 HFC_IMPLEMENT_SINGLETON(HRFAdaptStripToLineCapabilities)
 
 //-----------------------------------------------------------------------------

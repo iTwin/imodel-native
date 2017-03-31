@@ -6,14 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HRACachedHistogramRaster.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRAMessages.h>
-#include <Imagepp/all/h/HRPMessages.h>
-
+#include <ImagePP/all/h/HRACachedHistogramRaster.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPMessages.h>
 
 
 HPM_REGISTER_CLASS(HRACachedHistogramRaster, HRAImageView)

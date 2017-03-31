@@ -11,9 +11,7 @@
 
 //----------------------------------------------------------------------------
 
-#include <Imagepp/all/h/HFCProgressIndicator.h>
-#include <Imagepp/all/h/HFCMacros.h>
-
+#include <ImagePP/all/h/HFCProgressIndicator.h>#include <ImagePP/all/h/HFCMacros.h>
 //----------------------------------------------------------------------------
 
 BEGIN_IMAGEPP_NAMESPACE

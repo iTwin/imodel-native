@@ -8,33 +8,13 @@
 // Class HRFCalsFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFCalsLineEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFSLOModelComposer.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-
+#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HRFCalsLineEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFSLOModelComposer.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>
+#include <ImagePP/all/h/HCDCodecHMRCCITT.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
 
 //-----------------------------------------------------------------------------
 // HRFCalsBlockCapabilities

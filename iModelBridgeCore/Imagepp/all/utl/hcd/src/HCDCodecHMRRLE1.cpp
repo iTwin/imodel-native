@@ -8,11 +8,8 @@
 // Methods for class HCDCodecHMRRLE1
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacketRLE.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

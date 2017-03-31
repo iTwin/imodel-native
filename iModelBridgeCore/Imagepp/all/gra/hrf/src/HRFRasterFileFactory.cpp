@@ -8,16 +8,9 @@
 // Class: HRFRasterFileFactory
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCAccessMode.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-
+#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>
 
 // **** Kept here for history purpose only **********
 #ifdef _HRF_COM_SUPPORT

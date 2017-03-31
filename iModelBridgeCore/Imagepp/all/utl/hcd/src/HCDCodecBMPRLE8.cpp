@@ -9,10 +9,8 @@
 // Methods for class HCDCodecBMPRLE8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecBMPRLE8.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecBMPRLE8.h>
 #define HCD_CODEC_NAME "BMP RLE8bits"
 
 //-----------------------------------------------------------------------------

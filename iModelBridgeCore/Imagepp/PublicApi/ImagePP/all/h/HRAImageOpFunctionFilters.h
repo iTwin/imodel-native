@@ -7,12 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HRAImageOp.h>
-#include "HRPAlphaRange.h"
-#include "HGFRGBCube.h"
-#include "HGFRGBSet.h"
-#include "HGFLUVCube.h"
-
+#include <ImagePP/all/h/HRAImageOp.h>#include "HRPAlphaRange.h"#include "HGFRGBCube.h"#include "HGFRGBSet.h"#include "HGFLUVCube.h"
 IMAGEPP_REF_COUNTED_PTR(HRAImageOpPixelReplacerFilter)
 
 BEGIN_IMAGEPP_NAMESPACE

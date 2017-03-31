@@ -11,23 +11,10 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-#include <Imagepp/all/h/HFCMemoryLineStream.h>
-
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGFLUVCube.h>
-#include <Imagepp/all/h/HGFRGBCube.h>
-
-#include <Imagepp/all/h/HMDContext.h>
-
-#include <Imagepp/all/h/HPSNode.h>
-#include <Imagepp/all/h/HPSValueNode.h>
-#include "HPSSession.h"
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HRFGeoreferenceContext.h>
-#include <Imagepp/all/h/HRPFilter.h>
-#include <Imagepp/all/h/HRPAlphaRange.h>
-
+#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCMemoryLineStream.h>
+#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGFLUVCube.h>#include <ImagePP/all/h/HGFRGBCube.h>
+#include <ImagePP/all/h/HMDContext.h>
+#include <ImagePP/all/h/HPSNode.h>#include <ImagePP/all/h/HPSValueNode.h>#include "HPSSession.h"#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRFGeoreferenceContext.h>#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HRPAlphaRange.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;

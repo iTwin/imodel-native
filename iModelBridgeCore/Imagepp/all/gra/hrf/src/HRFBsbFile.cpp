@@ -10,39 +10,18 @@
 // This class describes a File Raster image.
 
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 #ifdef IPP_HAVE_GDAL_SUPPORT
-#include <Imagepp/all/h/HRFBsbFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFBsbFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 
 
 //GDAL
-#include <ImagePP-GdalLib/gdal_priv.h>
-#include <ImagePP-GdalLib/cpl_string.h>
-
+#include <ImagePP-GdalLib/gdal_priv.h>#include <ImagePP-GdalLib/cpl_string.h>
 
 //-----------------------------------------------------------------------------
 // HRFBsbBlockCapabilities

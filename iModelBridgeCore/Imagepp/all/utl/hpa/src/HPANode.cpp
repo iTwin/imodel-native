@@ -8,11 +8,8 @@
 // Methods for class HPANode
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPANode.h>
-#include <Imagepp/all/h/HPAGrammarObject.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HPAGrammarObject.h>
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 HPANode::HPANode(HPAGrammarObject* pi_pObj,

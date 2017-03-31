@@ -12,12 +12,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DShape.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HFCMatrix.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModelAdapter.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HFCMatrix.h>
 
 
 #define POLYNOMIAL_DEGREE 3

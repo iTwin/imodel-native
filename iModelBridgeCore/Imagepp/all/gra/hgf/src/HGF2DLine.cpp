@@ -9,10 +9,8 @@
 // Methods for class HGF2DLine
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DLine.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DLine.h>
 /** -----------------------------------------------------------------------------
     Constructor by bearing
 

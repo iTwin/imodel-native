@@ -5,14 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImageppInternal.h>
-#include <ImagePPInternal/gra/DownSampling.h>
-#include <Imagepp/all/h/HPMPool.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPChannelType.h>
-#include <Imagepp/all/h/HRAImageOp.h>
-#include <ImagePP/all/h/HGSTypes.h>
-
+#include <ImageppInternal.h>#include <ImagePPInternal/gra/DownSampling.h>#include <ImagePP/all/h/HPMPool.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPChannelType.h>#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePP/all/h/HGSTypes.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Supported type definitions for down sampling

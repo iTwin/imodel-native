@@ -8,10 +8,8 @@
 // Methods for class HFCURLECWP
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLECWP.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLECWP.h>
 // Constants
 
 static const Utf8String s_DefaultPort("80");

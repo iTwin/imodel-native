@@ -8,11 +8,9 @@
 // Methods for class HCDCodecIdentity
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImagePP/all/h/HCDCodecIdentity.h>
 #define HCD_CODEC_NAME "Uncompressed"
 //-----------------------------------------------------------------------------
 // public

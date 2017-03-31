@@ -9,11 +9,9 @@
 // Class HGSSurfaceDescriptor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
-
+#include <ImagePP/all/h/HGSSurfaceDescriptor.h>
 //-----------------------------------------------------------------------------
 // public
 // Default Constructor

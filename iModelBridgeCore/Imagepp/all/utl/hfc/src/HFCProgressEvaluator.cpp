@@ -7,10 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCProgressEvaluator
 //----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCProgressEvaluator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCProgressEvaluator.h>
 //----------------------------------------------------------------------------
 // HFCProgressEvaluator
 // Constructor

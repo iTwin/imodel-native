@@ -6,16 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <ImagePPInternal/gra/HRAImageNearestSamplerN1.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <ImagePPInternal/gra/HRAImageSurface.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-
+#include <ImageppInternal.h>
+#include <ImagePPInternal/gra/HRAImageNearestSamplerN1.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePPInternal/gra/HRAImageSurface.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 
     
 /*---------------------------------------------------------------------------------**//**

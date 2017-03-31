@@ -5,12 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DBoundaryModelBooster.h>
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
-
+#include <ImagePP/all/h/HGF2DBoundaryModelBooster.h>#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>
 //-----------------------------------------------------------------------------
 // HGF2DBoundaryModelBooster
 //-----------------------------------------------------------------------------

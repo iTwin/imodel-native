@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGF2DPosition.h>
-
+#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGF2DPosition.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DTriangle
@@ -83,5 +81,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include <Imagepp/all/h/HGF2DTriangle.hpp>
-
+#include <ImagePP/all/h/HGF2DTriangle.hpp>

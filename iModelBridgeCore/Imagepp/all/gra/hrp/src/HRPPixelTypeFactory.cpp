@@ -9,47 +9,10 @@
 // Methods for class HRPPixelTypeFactory
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8VA8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16B5G5R5.h>
-#include <Imagepp/all/h/HRPPixelTypeV16R5G6B5.h>
-#include <Imagepp/all/h/HRPPixelTypeV16PRGray8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32A8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32B8G8R8X8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8X8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32CMYK.h>
-#include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeV32Float32.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8Mask.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16X16.h>
-#include <Imagepp/all/h/HRPPixelTypeV96R32G32B32.h>
-
+#include <ImagePP/all/h/HRPPixelTypeFactory.h>
+#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>#include <ImagePP/all/h/HRPPixelTypeV16PRGray8A8.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32A8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32B8G8R8X8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>#include <ImagePP/all/h/HRPPixelTypeV32CMYK.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>#include <ImagePP/all/h/HRPPixelTypeV96R32G32B32.h>
 HFC_IMPLEMENT_SINGLETON(HRPPixelTypeFactory)
 
 

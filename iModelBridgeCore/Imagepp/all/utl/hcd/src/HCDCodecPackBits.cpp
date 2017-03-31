@@ -8,11 +8,9 @@
 // Methods for class HCDCodecPackBits
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecPackBits.h>
-
+#include <ImagePP/all/h/HCDCodecPackBits.h>
 #define HCD_CODEC_NAME "PackBits"
 
 //-----------------------------------------------------------------------------

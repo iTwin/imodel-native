@@ -6,11 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDContext.h>
-
+#include <ImagePP/all/h/HMDContext.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

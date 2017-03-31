@@ -9,11 +9,9 @@
 // Methods for class HRPConvFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPConvFilter.h>
-
+#include <ImagePP/all/h/HRPConvFilter.h>
 //-----------------------------------------------------------------------------
 // protected
 // Constructor.

@@ -8,10 +8,8 @@
 // Methods for class HCDCodecECW
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecECW.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecECW.h>
 #define HCD_CODEC_NAME     "ECW"
 
 //-----------------------------------------------------------------------------

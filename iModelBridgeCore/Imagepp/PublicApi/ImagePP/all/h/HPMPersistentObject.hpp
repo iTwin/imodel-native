@@ -8,7 +8,7 @@
 // Inline methods for class HPMPersistentObject
 //-----------------------------------------------------------------------------
 
-#include <Imagepp/all/h/HPMObjectStore.h>
+#include <ImagePP/all/h/HPMObjectStore.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------

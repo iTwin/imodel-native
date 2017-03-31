@@ -5,11 +5,8 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFUSgsNDFLineEditor.h>
-#include <Imagepp/all/h/HRFUSgsNDFFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFUSgsNDFLineEditor.h>#include <ImagePP/all/h/HRFUSgsNDFFile.h>
 
 
 //-----------------------------------------------------------------------------

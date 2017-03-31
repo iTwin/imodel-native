@@ -8,14 +8,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-#include <Imagepp/all/h/HGFQuadTree.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DTriangle.h>
-#include <Imagepp/all/h/HGF2DGridModel.h>
-#include <Imagepp/all/h/HGF2DPieceWiseModel.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HGF2DLiteExtent.h>#include <ImagePP/all/h/HGFQuadTree.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DTriangle.h>#include <ImagePP/all/h/HGF2DGridModel.h>#include <ImagePP/all/h/HGF2DPieceWiseModel.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
@@ -82,4 +75,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include <Imagepp/all/h/HGF2DBoundaryModel.hpp>
+#include <ImagePP/all/h/HGF2DBoundaryModel.hpp>

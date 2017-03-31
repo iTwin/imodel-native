@@ -9,17 +9,8 @@
 // Class HRFPageDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFThumbnail.h>
-#include <Imagepp/all/h/HRFResolutionDescriptor.h>
-#include <Imagepp/all/h/HRFPageDescriptor.h>
-#include <Imagepp/all/h/HGFResolutionDescriptor.h>
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HCPGeotiffKeys.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFThumbnail.h>#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HRFPageDescriptor.h>#include <ImagePP/all/h/HGFResolutionDescriptor.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
 
 /** -----------------------------------------------------------------------------
     This constructor should @b{not be used}.

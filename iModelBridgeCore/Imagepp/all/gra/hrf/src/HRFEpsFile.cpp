@@ -5,22 +5,11 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFEpsFile.h>
-#include <Imagepp/all/h/HRFEpsLineEditor.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFEPSFile.h>#include <ImagePP/all/h/HRFEpsLineEditor.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 static const string   s_EndOfLine("\r\n");
 static const string   s_FileHeader("%!PS-Adobe-3.0 EPSF-3.0");

@@ -9,11 +9,9 @@
 // Methods for class HRACopyFromOptions
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-
+#include <ImagePP/all/h/HRACopyFromOptions.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass

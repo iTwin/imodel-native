@@ -8,16 +8,11 @@
 // Methods for class HTIFFTagEntry
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HTIFFTagEntry.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFDirectory.h>
-
-#include <Imagepp/all/h/HTIFFRational.h>
-
+#include <ImagePP/all/h/HTIFFTagEntry.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFDirectory.h>
+#include <ImagePP/all/h/HTIFFRational.h>
 #define MAX_SPP     48      // Maximun number of sample by pixels
 
 

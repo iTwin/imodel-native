@@ -8,12 +8,8 @@
 // Class HRFLRDLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFLRDLineEditor.h>
-#include <Imagepp/all/h/HRFLRDFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFLRDLineEditor.h>#include <ImagePP/all/h/HRFLRDFile.h>#include <ImagePP/all/h/HCDPacket.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

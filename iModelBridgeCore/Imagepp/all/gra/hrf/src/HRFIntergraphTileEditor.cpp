@@ -8,18 +8,8 @@
 // Class HRFIntergraphTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFIntergraphTileEditor.h>
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecCRL8.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HGFTileIDDescriptor.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFIntergraphTileEditor.h>#include <ImagePP/all/h/HRFIntergraphFile.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecCRL8.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HFCMath.h>
 const uint32_t JPegTileTrailerSize     =   2;
 const uint32_t JPegColorTileHeaderSize =  33;
 const uint32_t JPegGrayTileHeaderSize  =  23;

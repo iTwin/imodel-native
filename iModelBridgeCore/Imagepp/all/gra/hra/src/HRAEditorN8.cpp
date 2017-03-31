@@ -8,15 +8,10 @@
 // Class HRAEditorN8
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAEditorN8.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRATransaction.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImagePP/all/h/HRAEditorN8.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HCDPacket.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

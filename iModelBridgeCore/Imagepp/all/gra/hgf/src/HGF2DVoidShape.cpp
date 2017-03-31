@@ -8,12 +8,9 @@
 // Methods for class HGF2DVoidShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HGF2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 //-----------------------------------------------------------------------------
 // CalculateSpatialPositionOf

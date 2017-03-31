@@ -7,9 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGF2DWorld.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-
+#include <ImagePP/all/h/HGF2DWorld.h>#include <ImagePP/all/h/HGF2DStretch.h>
 //
 // Temp World .....
 //

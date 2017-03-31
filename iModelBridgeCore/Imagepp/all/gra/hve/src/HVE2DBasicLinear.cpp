@@ -8,11 +8,9 @@
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DBasicLinear.h>
-
+#include <ImagePP/all/h/HVE2DBasicLinear.h>
 HPM_REGISTER_ABSTRACT_CLASS(HVE2DBasicLinear, HVE2DLinear)
 
 

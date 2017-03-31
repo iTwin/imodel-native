@@ -8,18 +8,13 @@
 // Methods for class HVE2DUniverse
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DUniverse, HVE2DSimpleShape)
 
 
-#include <Imagepp/all/h/HVE2DSegment.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-
+#include <ImagePP/all/h/HVE2DSegment.h>#include <ImagePP/all/h/HVE2DHoledShape.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor

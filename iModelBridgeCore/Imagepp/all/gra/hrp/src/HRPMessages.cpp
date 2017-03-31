@@ -9,11 +9,9 @@
 // Methods for HRP message classes
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPMessages.h>
-
+#include <ImagePP/all/h/HRPMessages.h>
 
 // Constructor
 //-----------------------------------------------------------------------------

@@ -9,15 +9,10 @@
 // Class HRFBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFBlockAdapter.h>
-#include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFBlockAdapter.h>#include <ImagePP/all/h/HRFRasterFileBlockAdapter.h>
 //-----------------------------------------------------------------------------
 // This ancestor class define the standard
 // interface to query about the supported thing.

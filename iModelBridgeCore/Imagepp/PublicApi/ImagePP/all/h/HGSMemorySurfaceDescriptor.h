@@ -11,11 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGSMemoryBaseSurfaceDescriptor.h"
-#include "HRPPixelType.h"
-#include "HCDPacket.h"
-#include "HGFScanlineOrientation.h"
-
+#include "HGSMemoryBaseSurfaceDescriptor.h"#include "HRPPixelType.h"#include "HCDPacket.h"#include "HGFScanLineOrientation.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HGSMemorySurfaceDescriptor : public HGSMemoryBaseSurfaceDescriptor
     {

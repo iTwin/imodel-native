@@ -7,24 +7,13 @@
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFPWRasterFile.h>
-#include <Imagepp/all/h/HRFPWEditor.h>
-
+#include <ImagePP/all/h/HRFPWRasterFile.h>#include <ImagePP/all/h/HRFPWEditor.h>
 #if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
 
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/interface/IHRFPWFileHandler.h>
-
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/interface/IHRFPWFileHandler.h>
 //-----------------------------------------------------------------------------
 // class HRFPWCapabilities
 //-----------------------------------------------------------------------------

@@ -8,76 +8,19 @@
 // Methods for internal HPS nodes
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DLiteSegment.h>
-#include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DWorldCluster.h>
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGFLUVCube.h>
-#include <Imagepp/all/h/HGFRGBCube.h>
-
-#include <Imagepp/all/h/HIMMosaic.h>
-#include <Imagepp/all/h/HIMOnDemandMosaic.h>
-#include <Imagepp/all/h/HIMTranslucentImageCreator.h>
-#include <Imagepp/all/h/HIMFilteredImage.h>
-
-#include <Imagepp/all/h/HMDAnnotationIconsPDF.h>
-#include <Imagepp/all/h/HMDVolatileLayerInfo.h>
-#include <Imagepp/all/h/HMDVolatileLayers.h>
-
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRAPixelTypeReplacer.h>
-#include <Imagepp/all/h/HRAPyramidRaster.h>
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HRAReferenceToRaster.h>
-#include <Imagepp/all/h/HRASamplingOptions.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFRasterFileExtender.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/HRPAlphaRange.h>
-#include <Imagepp/all/h/HRPCustomConvFilter.h>
-#include <Imagepp/all/h/HRPMapFilters8.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
-#include <Imagepp/all/h/HRSObjectStore.h>
-
-#include <Imagepp/all/h/HPSException.h>
-
-#include "HPSInternalNodes.h"
-#include "HPSParserScope.h"
-#include "HPSSession.h"
-
-#include <Imagepp/all/h/HPSNode.h>
-#include <Imagepp/all/h/HPSParser.h>
-#include <Imagepp/all/h/HPSTokenizer.h>
-#include <Imagepp/all/h/HPSValueNode.h>
-
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HVE2DPolySegment.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DLocalProjectiveGrid.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>#include <ImagePP/all/h/HGFLUVCube.h>#include <ImagePP/all/h/HGFRGBCube.h>
+#include <ImagePP/all/h/HIMMosaic.h>#include <ImagePP/all/h/HIMOnDemandMosaic.h>#include <ImagePP/all/h/HIMTranslucentImageCreator.h>#include <ImagePP/all/h/HIMFilteredImage.h>
+#include <ImagePP/all/h/HMDAnnotationIconsPDF.h>#include <ImagePP/all/h/HMDVolatileLayerInfo.h>#include <ImagePP/all/h/HMDVolatileLayers.h>
+#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRAPixelTypeReplacer.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRAReferenceToRaster.h>#include <ImagePP/all/h/HRASamplingOptions.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRPAlphaRange.h>#include <ImagePP/all/h/HRPCustomConvFilter.h>#include <ImagePP/all/h/HRPMapFilters8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HPSException.h>
+#include "HPSInternalNodes.h"#include "HPSParserScope.h"#include "HPSSession.h"
+#include <ImagePP/all/h/HPSNode.h>#include <ImagePP/all/h/HPSParser.h>#include <ImagePP/all/h/HPSTokenizer.h>#include <ImagePP/all/h/HPSValueNode.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DPolySegment.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #define SESSION (static_cast<HPSSession*>(GetSession().GetPtr()))
 #define PARSER ((HPSParser*)(SESSION->GetParser()))
 

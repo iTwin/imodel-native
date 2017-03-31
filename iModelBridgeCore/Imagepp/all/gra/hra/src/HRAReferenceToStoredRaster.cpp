@@ -7,12 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRAReferenceToRaster
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRAReferenceToStoredRaster.h>
-#include <Imagepp/all/h/HRAStoredRaster.h>
-#include <Imagepp/all/h/HMGMessage.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRAReferenceToStoredRaster.h>#include <ImagePP/all/h/HRAStoredRaster.h>#include <ImagePP/all/h/HMGMessage.h>
 
 HPM_REGISTER_CLASS(HRAReferenceToStoredRaster, HRAReferenceToRaster)
 

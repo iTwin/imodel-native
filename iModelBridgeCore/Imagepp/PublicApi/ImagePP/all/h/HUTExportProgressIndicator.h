@@ -11,11 +11,8 @@
 
 //----------------------------------------------------------------------------
 
-#include <Imagepp/all/h/HFCProgressIndicator.h>
-#include <Imagepp/all/h/HFCMacros.h>
-
-#include "HRFRasterFile.h"
-//----------------------------------------------------------------------------
+#include <ImagePP/all/h/HFCProgressIndicator.h>#include <ImagePP/all/h/HFCMacros.h>
+#include "HRFRasterFile.h"//----------------------------------------------------------------------------
 
 BEGIN_IMAGEPP_NAMESPACE
 class HUTExportProgressIndicator : public HFCProgressIndicator
@@ -44,6 +41,5 @@ private:
 END_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------
-#include "HUTExportProgressIndicator.hpp"
-
+#include "HUTExportProgressIndicator.hpp"
 

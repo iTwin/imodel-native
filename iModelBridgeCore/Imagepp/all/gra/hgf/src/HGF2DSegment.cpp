@@ -8,15 +8,10 @@
 // Methods for class HGF2DSegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-
-#include <Imagepp/all/h/HGF2DSegment.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DSimilitude.h>
+#include <ImagePP/all/h/HGF2DSegment.h>
 
 
 //-----------------------------------------------------------------------------

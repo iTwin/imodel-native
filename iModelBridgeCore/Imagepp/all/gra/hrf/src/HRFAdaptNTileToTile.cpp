@@ -9,14 +9,10 @@
 // Class HRFAdaptNTileToTile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFAdaptNTileToTile.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HRFAdaptNTileToTile.h>
 
 HFC_IMPLEMENT_SINGLETON(HRFAdaptNTileToTileCapabilities)
 

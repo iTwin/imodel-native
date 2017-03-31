@@ -8,13 +8,9 @@
 // Methods for class HTIFFGeoKey
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFGeoKey.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HTIFFTagDefinition.h>
-
+#include <ImagePP/all/h/HTIFFGeoKey.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HTIFFTagDefinition.h>
 
 
 static const int32_t KEYVALUE       = 0;

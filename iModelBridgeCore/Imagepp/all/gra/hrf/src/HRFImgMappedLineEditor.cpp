@@ -6,15 +6,10 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-                //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>                //:> must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFImgMappedFile.h>
-#include <Imagepp/all/h/HRFImgMappedLineEditor.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFImgMappedFile.h>#include <ImagePP/all/h/HRFImgMappedLineEditor.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 
 /** ---------------------------------------------------------------------------
     Constructor.

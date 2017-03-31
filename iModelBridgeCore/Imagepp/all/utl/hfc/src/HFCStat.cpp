@@ -8,16 +8,8 @@
 // Methods for class HFCStat
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLHTTP.h>
-#include <Imagepp/all/h/HFCURLHTTPS.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCURLEmbedFile.h>
-#include <Imagepp/all/h/interface/IFileReaderHandler.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCURLEmbedFile.h>#include <ImagePP/all/h/interface/IFileReaderHandler.h>
 //-----------------------------------------------------------------------------
 // Static member Initialization
 //-----------------------------------------------------------------------------

@@ -9,11 +9,8 @@
 // Class : HRFThumbnail
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
-#include <Imagepp/all/h/HRFThumbnail.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-
+#include <ImageppInternal.h> // Must be the first include.
+#include <ImagePP/all/h/HRFThumbnail.h>#include <ImagePP/all/h/HRPPixelType.h>
 
 //-----------------------------------------------------------------------------
 // Public

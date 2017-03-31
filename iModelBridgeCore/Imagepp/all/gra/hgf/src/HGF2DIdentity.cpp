@@ -8,12 +8,9 @@
 // Methods for class HGF2DIdentity
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
 /** -----------------------------------------------------------------------------
     Default Constructor
     Initializes the model with units for all channels set to meters.

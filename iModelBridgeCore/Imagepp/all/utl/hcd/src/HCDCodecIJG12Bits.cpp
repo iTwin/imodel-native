@@ -8,9 +8,7 @@
 // Methods for class HCDCodecIJG12Bits
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 #define JPEGLIB_SUPPORT_12BITS
-#include "HCDCodecIJG8bits.cpp"
-
+#include "HCDCodecIJG8Bits.cpp"
 

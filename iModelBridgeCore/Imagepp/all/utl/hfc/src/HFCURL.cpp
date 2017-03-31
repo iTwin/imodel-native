@@ -8,10 +8,8 @@
 // Methods for class HFCURL
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURL.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURL.h>
 // Static member initialization
 
 HFCURL::SchemeList* HFCURL::s_pSchemeList = 0;

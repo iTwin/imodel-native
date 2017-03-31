@@ -9,12 +9,10 @@
 // Methods for class HIMBufferedImageIterator
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
 
-
-#include <Imagepp/all/h/HIMBufferedImageIterator.h>
-
+#include <ImagePP/all/h/HIMBufferedImageIterator.h>
 
 //-----------------------------------------------------------------------------
 // Shaped constructor.

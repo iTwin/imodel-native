@@ -12,115 +12,24 @@
 //
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HUTClassIDDescriptor.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HUTClassIDDescriptor.h>
 // Codec headers files
-#include <Imagepp/all/h/HCDCodec.h>
-#include <Imagepp/all/h/HCDCodecDeflate.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HCDCodecPackBits.h>
-#include <Imagepp/all/h/HCDCodecCCITT.h>
-#include <Imagepp/all/h/HCDCodecHMRCCITT.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecRLE8.h>
-#include <Imagepp/all/h/HCDCodecRLE1.h>
-#include <Imagepp/all/h/HCDCodecJPEG.h>
-//#include "HCDCodecPCX.h"
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDCodecFPXSingleColor.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDCodecFlashpix.h>
-#include <Imagepp/all/h/HCDCodecBMPRLE8.h>
-#include <Imagepp/all/h/HCDCodecBMPRLE4.h>
-#include <Imagepp/all/h/HCDCodecLZW.h>
-#include <Imagepp/all/h/HCDCodecHMRGIF.h>
-#include <Imagepp/all/h/HCDCodecHMRPackBits.h>
-#include <Imagepp/all/h/HCDCodecTgaRLE.h>
-#include <Imagepp/all/h/HCDCodecFLIRLE8.h>
-#include <Imagepp/all/h/HCDCodecLRDRLE.h>
-#include <Imagepp/all/h/HCDCodecJPEGAlpha.h>
-
-#include <Imagepp/all/h/HCDCodecJBIG.h>
-
-#include <Imagepp/all/h/HCDCodecJPEG2000.h>
-#include <Imagepp/all/h/HCDCodecECW.h>
-#include <Imagepp/all/h/HCDCodecCRL8.h>
-#include <Imagepp/all/h/HCDCodecCCITTFax4.h>
-
-#include <Imagepp/all/h/HCDCodecCCITTRLE.h>
-
+#include <ImagePP/all/h/HCDCodec.h>#include <ImagePP/all/h/HCDCodecDeflate.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecPackBits.h>#include <ImagePP/all/h/HCDCodecCCITT.h>#include <ImagePP/all/h/HCDCodecHMRCCITT.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecRLE8.h>#include <ImagePP/all/h/HCDCodecRLE1.h>#include <ImagePP/all/h/HCDCodecJPEG.h>//#include "HCDCodecPCX.h"
+#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDCodecFPXSingleColor.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDCodecFlashpix.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HCDCodecBMPRLE4.h>#include <ImagePP/all/h/HCDCodecLZW.h>#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HCDCodecHMRPackBits.h>#include <ImagePP/all/h/HCDCodecTgaRLE.h>#include <ImagePP/all/h/HCDCodecFLIRLE8.h>#include <ImagePP/all/h/HCDCodecLRDRLE.h>#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>
+#include <ImagePP/all/h/HCDCodecJBIG.h>
+#include <ImagePP/all/h/HCDCodecJPEG2000.h>#include <ImagePP/all/h/HCDCodecECW.h>#include <ImagePP/all/h/HCDCodecCRL8.h>#include <ImagePP/all/h/HCDCodecCCITTFax4.h>
+#include <ImagePP/all/h/HCDCodecCCITTRLE.h>
 // PixelType header files
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8Mask.h>
-#include <Imagepp/all/h/HRPPixelTypeI8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeRGB.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeV16B5G5R5.h>
-#include <Imagepp/all/h/HRPPixelTypeV16PRGray8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16R5G6B5.h>
-#include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
-#include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
-#include <Imagepp/all/h/HRPPixelTypeV32CMYK.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32A8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32B8G8R8X8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8X8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8VA8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32Float32.h>
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16X16.h>
-#include <Imagepp/all/h/HRPPixelTypeV96R32G32B32.h>
-
+#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI4R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h>#include <ImagePP/all/h/HRPPixelTypeI8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeRGB.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>#include <ImagePP/all/h/HRPPixelTypeV16B5G5R5.h>#include <ImagePP/all/h/HRPPixelTypeV16PRGray8A8.h>#include <ImagePP/all/h/HRPPixelTypeV16R5G6B5.h>#include <ImagePP/all/h/HRPPixelTypeV1Gray1.h>#include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>#include <ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h>#include <ImagePP/all/h/HRPPixelTypeV32CMYK.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32A8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV32B8G8R8X8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8X8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
+#include <ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32Float32.h>#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>#include <ImagePP/all/h/HRPPixelTypeV96R32G32B32.h>
 //TransfoModel header files
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HCPGCoordModel.h>
-#include <Imagepp/all/h/HGF2DLinearModelAdapter.h>
-#include <Imagepp/all/h/HGF2DProjectiveGrid.h>
-#include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
-#include <Imagepp/all/h/HGF2DHelmert.h>
-
+#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HGF2DLinearModelAdapter.h>#include <ImagePP/all/h/HGF2DProjectiveGrid.h>#include <ImagePP/all/h/HGF2DComplexTransfoModel.h>#include <ImagePP/all/h/HGF2DHelmert.h>
 //Filter header files
-#include <Imagepp/all/h/HRPFilter.h>
-#include <Imagepp/all/h/HRPComplexFilter.h>
-#include <Imagepp/all/h/HRPConvFiltersV24R8G8B8.h>
-#include <Imagepp/all/h/HRPFunctionFilters.h>
-#include <Imagepp/all/h/HRPMapFilters8.h>
-#include <Imagepp/all/h/HRPTypeAdaptFilters.h>
-#include <Imagepp/all/h/HRPFunctionFilters.h>
-#include <ImagePP/all/h/HRPCustomConvFilter.h>
-#include <ImagePP/all/h/HRPMapFilters16.h>
-
+#include <ImagePP/all/h/HRPFilter.h>#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HRPConvFiltersV24R8G8B8.h>#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HRPMapFilters8.h>#include <ImagePP/all/h/HRPTypeAdaptFilters.h>#include <ImagePP/all/h/HRPFunctionFilters.h>#include <ImagePP/all/h/HRPCustomConvFilter.h>#include <ImagePP/all/h/HRPMapFilters16.h>
 //Scan line Orientation header files
-#include <Imagepp/all/h/HRFTypes.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFTypes.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 HFC_IMPLEMENT_SINGLETON(HUTClassIDDescriptor)
 

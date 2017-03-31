@@ -8,35 +8,15 @@
 // Class HRFSpotFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
+
+#include <ImagePP/all/h/HRFFliFile.h>
+#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCMemoryBinStream.h>#include <ImagePP/all/h/HFCBuffer.h>
+#include <ImagePP/all/h/HRPChannelOrgGray.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRPHistogram.h>#include <ImagePP/all/h/HRFFliCompressLineEditor.h>#include <ImagePP/all/h/HRFFliLineEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HCDCodecFLIRLE8.h>#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 
-#include <Imagepp/all/h/HRFFliFile.h>
-
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCMemoryBinStream.h>
-#include <Imagepp/all/h/HFCBuffer.h>
-
-#include <Imagepp/all/h/HRPChannelOrgGray.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRPHistogram.h>
-#include <Imagepp/all/h/HRFFliCompressLineEditor.h>
-#include <Imagepp/all/h/HRFFliLineEditor.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecFLIRLE8.h>
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HRFUtility.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
 
 //////////////////////////////////////////////////////////////////////////
 #define FLIC_CEL_DATA       3       /*registration and transparency*/

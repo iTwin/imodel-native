@@ -6,23 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HRARasterIterator.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-#include <Imagepp/all/h/HRARepPalParms.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRADrawProgressIndicator.h>
-#include <Imagepp/all/h/HRAHistogramOptions.h>
-#include <Imagepp/all/h/HRACopyFromOptions.h>
-#include <Imagepp/all/h/HRAMessages.h>
-#include <Imagepp/all/h/HRPQuantizedPalette.h>
-#include <Imagepp/all/h/HMDContext.h>
-
+#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRARasterIterator.h>#include <ImagePP/all/h/HGF2DCoordSys.h>#include <ImagePP/all/h/HRARepPalParms.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRADrawProgressIndicator.h>#include <ImagePP/all/h/HRAHistogramOptions.h>#include <ImagePP/all/h/HRACopyFromOptions.h>#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRPQuantizedPalette.h>#include <ImagePP/all/h/HMDContext.h>
 
 
 

@@ -6,26 +6,11 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-    //:> must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>    //:> must be first for PreCompiledHeader Option
 
-#include <Imagepp/all/h/HRFImgMappedFile.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HRFImgMappedLineEditor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFImgMappedFile.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HRFImgMappedLineEditor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
 /** ---------------------------------------------------------------------------
     Block capabilities of the ImgMapped file format.

@@ -8,11 +8,8 @@
 // Methods for class HRPPixelTypeBGR
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPPixelTypeBGR.h>
-#include <Imagepp/all/h/HRPChannelOrgBGR.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPPixelTypeBGR.h>#include <ImagePP/all/h/HRPChannelOrgBGR.h>
 HPM_REGISTER_ABSTRACT_CLASS(HRPPixelTypeBGR, HRPPixelType)
 
 

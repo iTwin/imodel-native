@@ -8,18 +8,11 @@
 // Class HRFGeoRasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFGeoRasterEditor.h>
-#include <Imagepp/all/h/HRFGeoRasterFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HTIFFUtils.h>
-
-#include <Imagepp/all/h/SDOGeoRasterWrapper.h>
-
+#include <ImagePP/all/h/HRFGeoRasterEditor.h>#include <ImagePP/all/h/HRFGeoRasterFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HTIFFUtils.h>
+#include <ImagePP/all/h/SDOGeoRasterWrapper.h>
 #define GEORASTER_RASTERFILE      (static_cast<HRFGeoRasterFile*>(GetRasterFile().GetPtr()))
 
 //-----------------------------------------------------------------------------

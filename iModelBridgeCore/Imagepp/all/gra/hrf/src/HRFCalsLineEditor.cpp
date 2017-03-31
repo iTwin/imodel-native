@@ -8,14 +8,8 @@
 // Class HRFCalsLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFCalsLineEditor.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFCalsLineEditor.h>#include <ImagePP/all/h/HRFCalsFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

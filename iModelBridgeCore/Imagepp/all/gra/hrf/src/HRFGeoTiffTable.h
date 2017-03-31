@@ -11,10 +11,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HRFGeoTiffCoordSysTable.h>
-#include <Imagepp/all/h/HRFGeoTiffProjectionTable.h>
-#include <Imagepp/all/h/HRFGeoTiffUnitsTable.h>
-
+#include <ImagePP/all/h/HRFGeoTiffCoordSysTable.h>#include <ImagePP/all/h/HRFGeoTiffProjectionTable.h>#include <ImagePP/all/h/HRFGeoTiffUnitsTable.h>
 class HRFGeoTiffTable
     {
 public:

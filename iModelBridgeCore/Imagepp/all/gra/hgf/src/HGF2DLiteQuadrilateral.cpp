@@ -5,10 +5,8 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DLiteQuadrilateral.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DLiteQuadrilateral.h>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  07/2003
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -8,10 +8,8 @@
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecJPEG2000.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecJPEG2000.h>
 #define HCD_CODEC_NAME     "JPEG2000"
 
 //-----------------------------------------------------------------------------
@@ -57,12 +55,10 @@ HCDCodec* HCDCodecJPEG2000::Clone() const
 //JPEG 2000 in iTiff. This code would likely be used eventually
 //to replace the file creation code from HUTExportToFile.cpp
 
-#include <Imagepp/all/h/HFCBinStream.h>
-
+#include <ImagePP/all/h/HFCBinStream.h>
 #define NCSECW_STATIC_LIBS
 
-#include <Imagepp/all/h/NCSFile.h>
-
+#include <Imagepp/all/h/NCSFile.h>
 static bool IsPrototype2 = true;
 
 class JPEG2000Codec : public CNCSFile

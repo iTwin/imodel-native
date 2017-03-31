@@ -8,41 +8,14 @@
 // Class HRFOGCServiceEditor
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include "HRFOGCServiceEditor.h"
-#include <Imagepp/all/h/HRFOGCService.h>
-
-#include <Imagepp/all/h/HCDCodecImage.h>
-#include <Imagepp/all/h/HCDCodecIJG.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HRFPngFile.h>
-#include <Imagepp/all/h/HRFBmpFile.h>
-#include <Imagepp/all/h/HRFGifFile.h>
-#include <Imagepp/all/h/HRFJpegFile.h>
-#include <Imagepp/all/h/HRFGeoTiffFile.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCExceptionHandler.h>
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HMDLayerInfoWMS.h>
-#include <Imagepp/all/h/HMDVolatileLayers.h>
-
-#include <Imagepp/all/h/HRABlitter.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <ImagePPInternal/HttpConnection.h>
-
+#include "HRFOGCServiceEditor.h"#include <ImagePP/all/h/HRFOGCService.h>
+#include <ImagePP/all/h/HCDCodecImage.h>#include <ImagePP/all/h/HCDCodecIJG.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HRFGifFile.h>#include <ImagePP/all/h/HRFJpegFile.h>#include <ImagePP/all/h/HRFGeoTiffFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCExceptionHandler.h>#include <ImagePP/all/h/HCDCodecZlib.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HMDLayerInfoWMS.h>#include <ImagePP/all/h/HMDVolatileLayers.h>
+#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePPInternal/HttpConnection.h>
 #define OGC_RASTERFILE          static_cast<HRFOGCService*>(GetRasterFile().GetPtr())
 #define NB_BLOCK_READER_THREAD  4
 

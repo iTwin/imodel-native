@@ -8,18 +8,10 @@
 // Methods for class HGF2DSimpleShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DSimpleShape.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DUniverse.h>
-#include <Imagepp/all/h/HGF2DRectangle.h>
-#include <Imagepp/all/h/HGF2DVoidShape.h>
-
+#include <ImagePP/all/h/HGF2DSimpleShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DUniverse.h>#include <ImagePP/all/h/HGF2DRectangle.h>#include <ImagePP/all/h/HGF2DVoidShape.h>
 
 #if (0)
 

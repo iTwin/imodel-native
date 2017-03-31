@@ -8,15 +8,9 @@
 // Class HRFBmpCompressImageEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFBmpFile.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDCodecBMPRLE8.h>
-#include <Imagepp/all/h/HCDCodecBMPRLE4.h>
-#include <Imagepp/all/h/HRFBmpCompressImageEditor.h>
-
+#include <ImagePP/all/h/HRFBmpFile.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDCodecBMPRLE8.h>#include <ImagePP/all/h/HCDCodecBMPRLE4.h>#include <ImagePP/all/h/HRFBmpCompressImageEditor.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

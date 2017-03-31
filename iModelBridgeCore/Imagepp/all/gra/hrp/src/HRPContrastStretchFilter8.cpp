@@ -9,12 +9,9 @@
 // Methods for class HRPContrastStretchFilter8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPContrastStretchFilter8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
+#include <ImagePP/all/h/HRPContrastStretchFilter8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
 //-----------------------------------------------------------------------------

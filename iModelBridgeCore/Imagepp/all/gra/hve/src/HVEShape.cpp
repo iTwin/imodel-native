@@ -8,24 +8,10 @@
 // Methods for class HVEShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HVEShape.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>   // Coordinate systems
-#include <Imagepp/all/h/HVE2DUniverse.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-#include <Imagepp/all/h/HVE2DPolygon.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DComplexShape.h>
-
+#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HGF2DCoordSys.h>   // Coordinate systems#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePP/all/h/HVE2DRectangle.h>#include <ImagePP/all/h/HVE2DPolygon.h>#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTransfoModel.h>#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DComplexShape.h>
 HPM_REGISTER_CLASS(HVEShape, HGFGraphicObject)
 
 

@@ -8,36 +8,16 @@
 // Class HRFWMSFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFWMSFile.h>
-#include "HRFOGCServiceEditor.h"
-
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCURLHTTP.h>
-#include <Imagepp/all/h/HFCURLHTTPS.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HGF2DStretch.h>
-
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include <Imagepp/all/h/HMDLayersWMS.h>
-#include <Imagepp/all/h/HMDLayerInfoWMS.h>
-#include <Imagepp/all/h/HMDVolatileLayers.h>
-#include <Imagepp/all/h/HMDContext.h>
-#include <Imagepp/all/h/HRFException.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <BeXml/BeXml.h>
-#include <ImagePPInternal/HttpConnection.h>
-
+#include <ImagePP/all/h/HRFWMSFile.h>#include "HRFOGCServiceEditor.h"
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCURLMemFile.h>#include <ImagePP/all/h/HFCURLHTTP.h>#include <ImagePP/all/h/HFCURLHTTPS.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
+#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include <ImagePP/all/h/HMDLayersWMS.h>#include <ImagePP/all/h/HMDLayerInfoWMS.h>#include <ImagePP/all/h/HMDVolatileLayers.h>#include <ImagePP/all/h/HMDContext.h>#include <ImagePP/all/h/HRFException.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <BeXml/BeXml.h>#include <ImagePPInternal/HttpConnection.h>
 
 
 

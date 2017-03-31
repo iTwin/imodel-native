@@ -11,10 +11,8 @@
 //
 //----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HIMStripProgressIndicator.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HIMStripProgressIndicator.h>
 //----------------------------------------------------------------------------
 
 HFC_IMPLEMENT_SINGLETON(HIMStripProgressIndicator)

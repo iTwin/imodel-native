@@ -8,12 +8,8 @@
 // Methods for class HCDCodecJPEGAlpha
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecJPEGAlpha.h>
-#include <Imagepp/all/h/HFCBuffer.h>
-#include <Imagepp/all/h/HCDCodecRLE8.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecJPEGAlpha.h>#include <ImagePP/all/h/HFCBuffer.h>#include <ImagePP/all/h/HCDCodecRLE8.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

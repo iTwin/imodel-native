@@ -8,11 +8,8 @@
 // Methods for class HPADynamicParser
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HPADynamicParser.h>
-#include <Imagepp/all/h/HPASession.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HPADynamicParser.h>#include <ImagePP/all/h/HPASession.h>
 /////////////////////////////////////////////////////////////////////////////
 // Specialized node types.  When a rule is resolved a grammar object
 // is created or (for topmost rule) the parser is told to use the new

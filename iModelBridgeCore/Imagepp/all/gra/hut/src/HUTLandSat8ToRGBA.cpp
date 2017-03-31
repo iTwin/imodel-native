@@ -10,17 +10,8 @@
 // HRFUtility implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HUTLandSat8ToRGBA.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HIMFilteredImage.h>
-#include <Imagepp/all/h/HRFRasterFileExtender.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRPContrastStretchFilter16.h>
-#include <Imagepp/all/h/HRPFunctionFilters.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HUTLandSat8ToRGBA.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HIMFilteredImage.h>#include <ImagePP/all/h/HRFRasterFileExtender.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRPContrastStretchFilter16.h>#include <ImagePP/all/h/HRPFunctionFilters.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Donald.Morissette 08/16

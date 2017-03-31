@@ -8,13 +8,11 @@
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
+#include <ImageppInternal.h>
 
 
 // The class declaration must be the last include file.
-#include <Imagepp/all/h/HGF2DLiteExtent.h>
-
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
 // VC8 support
 // link warning LNK4221
 // because all method are inline, no public symbol was found into the object file

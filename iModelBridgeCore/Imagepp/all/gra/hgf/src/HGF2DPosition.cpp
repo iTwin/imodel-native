@@ -8,10 +8,8 @@
 //-----------------------------------------------------------------------------
 // Methods for class HGF2DPosition
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGF2DPosition.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGF2DPosition.h>
 
 
 

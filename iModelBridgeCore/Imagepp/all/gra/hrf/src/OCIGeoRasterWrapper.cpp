@@ -8,15 +8,10 @@
 //-----------------------------------------------------------------------------
 // Class OCIGeoRasterWrapper
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-#include <ImagePP/all/h/HFCMacros.h>
-
-#include <oracle/oci.h>
-
-#include <Imagepp/all/h/OCIGeoRasterWrapper.h>
-
-#include <sstream>
-using namespace std;
+#include <ImageppInternal.h>#include <ImagePP/all/h/HFCMacros.h>
+#include <oracle/oci.h>
+#include <ImagePP/all/h/OCIGeoRasterWrapper.h>
+#include <sstream>using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2012

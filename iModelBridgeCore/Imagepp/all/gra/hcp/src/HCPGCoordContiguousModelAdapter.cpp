@@ -6,9 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#include <Imagepp/all/h/HCPGCoordContiguousModelAdapter.h>
-
+#include <ImageppInternal.h>#include <ImagePP/all/h/HCPGCoordContiguousModelAdapter.h>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------

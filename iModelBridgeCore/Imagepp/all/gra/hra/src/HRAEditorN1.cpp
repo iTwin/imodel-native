@@ -9,18 +9,10 @@
 // Class HRAEditorN1
 //---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAEditorN1.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HGFScanlineOrientation.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HRATransaction.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRAEditorN1.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HGFScanLineOrientation.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HRATransaction.h>#include <ImagePP/all/h/HFCMath.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor

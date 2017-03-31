@@ -9,10 +9,8 @@
 // Methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPMedianFilter.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPMedianFilter.h>
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // HRPMedianFilter
 //-----------------------------------------------------------------------------

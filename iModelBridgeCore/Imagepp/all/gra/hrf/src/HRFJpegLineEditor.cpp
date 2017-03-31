@@ -8,15 +8,10 @@
 // Class HRFJpegLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFJpegLineEditor.h>
-#include <Imagepp/all/h/HRFJpegFile.h>
-
-#include <libjpeg-turbo/jpeglib.h>
-
-#include <Imagepp/all/h/HGFCMYKColorSpace.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFJpegLineEditor.h>#include <ImagePP/all/h/HRFJpegFile.h>
+#include <libjpeg-turbo/jpeglib.h>
+#include <ImagePP/all/h/HGFCMYKColorSpace.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

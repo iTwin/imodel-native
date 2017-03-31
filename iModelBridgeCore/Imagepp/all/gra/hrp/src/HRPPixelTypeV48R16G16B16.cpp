@@ -16,15 +16,9 @@
 // This pixel type work with channel set to 11 bits. We must re-design pixel type
 // to support most pixel channel
 //-----------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRPPixelTypeV48R16G16B16.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>#include <ImagePP/all/h/HFCMath.h>
 HPM_REGISTER_CLASS(HRPPixelTypeV48R16G16B16, HRPPixelTypeRGB)
 
 // STL typeDef

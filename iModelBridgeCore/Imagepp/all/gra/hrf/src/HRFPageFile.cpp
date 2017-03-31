@@ -9,16 +9,10 @@
 // Class HRFPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCStat.h>
-
-#include <Imagepp/all/h/HRFPageFile.h>
-#include <Imagepp/all/h/HRFResolutionEditor.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-
+#include <ImagePP/all/h/HFCStat.h>
+#include <ImagePP/all/h/HRFPageFile.h>#include <ImagePP/all/h/HRFResolutionEditor.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HCPGCoordUtility.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

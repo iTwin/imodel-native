@@ -9,12 +9,9 @@
 // Methods for class HGFCoordSysContainer
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFCoordSysContainer.h>
-#include <Imagepp/all/h/HGF2DCoordSys.h>
-
+#include <ImagePP/all/h/HGFCoordSysContainer.h>#include <ImagePP/all/h/HGF2DCoordSys.h>
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------

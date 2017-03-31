@@ -6,11 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPQuantizedPaletteR8G8B8.h>
-#include <Imagepp/all/h/HRPHistogram.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h>#include <ImagePP/all/h/HRPHistogram.h>
 
 /**----------------------------------------------------------------------------
    Constructor for HRPQuantizedPaletteR8G8B8

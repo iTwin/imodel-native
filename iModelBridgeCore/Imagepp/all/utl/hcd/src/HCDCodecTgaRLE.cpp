@@ -9,10 +9,8 @@
 // Methods for class HCDCodecTGARLE
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecTgaRLE.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecTgaRLE.h>
 #define HCD_CODEC_NAME "TGA RLE ENCODED"
 
 //-----------------------------------------------------------------------------

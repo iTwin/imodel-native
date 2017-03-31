@@ -12,10 +12,7 @@
 
 #pragma once
 
-#include "HFCBinStream.h"
-#include "HFCBuffer.h"
-#include "Imagepp/all/h/interface/IFileReaderHandler.h"
-
+#include "HFCBinStream.h"#include "HFCBuffer.h"#include "ImagePP/all/h/interface/IFileReaderHandler.h"
 BEGIN_IMAGEPP_NAMESPACE
 
 class HFCEmbedBinStream : public HFCBinStream

@@ -9,36 +9,15 @@
 // Class HRFDtedFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-#ifdef IPP_HAVE_GDAL_SUPPORT
+#include <ImageppInternal.h>#ifdef IPP_HAVE_GDAL_SUPPORT
 
-#include <Imagepp/all/h/HRFDtedFile.h>
-#include <Imagepp/all/h/HRFDtedEditor.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DTranslation.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HRFDtedFile.h>#include <ImagePP/all/h/HRFDtedEditor.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRPPixelTypeV16Int16.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DTranslation.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 //GDAL
-#include <ImagePP-GdalLib/gdal_priv.h>
-#include <ImagePP-GdalLib/cpl_string.h>
-
+#include <ImagePP-GdalLib/gdal_priv.h>#include <ImagePP-GdalLib/cpl_string.h>
 
 //-----------------------------------------------------------------------------
 // HRFDtedBlockCapabilities

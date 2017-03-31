@@ -5,11 +5,9 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDLayersWMS.h>
-
+#include <ImagePP/all/h/HMDLayersWMS.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

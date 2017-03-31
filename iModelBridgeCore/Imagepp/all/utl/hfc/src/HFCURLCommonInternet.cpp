@@ -8,12 +8,9 @@
 // Methods for class HFCURLCommonInternet
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCURLCommonInternet.h>
-#include <Imagepp/all/h/HFCEncodeDecodeASCII.h>
-
+#include <ImagePP/all/h/HFCURLCommonInternet.h>#include <ImagePP/all/h/HFCEncodeDecodeASCII.h>
 //:Ignore
 //-----------------------------------------------------------------------------
 // Little static function that is used by constructor

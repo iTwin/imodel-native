@@ -9,15 +9,10 @@
 //:> Method for class HRAEditorRLE1
 //:>---------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAEditorRLE1.h>
-
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HCDCodecHMRRLE1.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
+#include <ImagePP/all/h/HRAEditorRLE1.h>
+#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HCDCodecHMRRLE1.h>#include <ImagePP/all/h/HCDPacket.h>
 
 
 //:>---------------------------------------------------------------------------------------

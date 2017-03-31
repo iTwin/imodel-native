@@ -8,11 +8,9 @@
 // HPMAttributeSet
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
+#include <ImageppInternal.h> // Must be the first include.
 
-#include <Imagepp/all/h/HPMAttributeSet.h>
-
+#include <ImagePP/all/h/HPMAttributeSet.h>
 HPM_REGISTER_CLASS(HPMAttributeSet, HPMPersistentObject);
 
 

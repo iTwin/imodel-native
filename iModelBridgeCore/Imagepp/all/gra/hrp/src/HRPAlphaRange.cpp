@@ -9,12 +9,9 @@
 // Inline methods for HRPAlphaRange
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPAlphaRange.h>
-#include <Imagepp/all/h/HGFRGBCube.h>
-
+#include <ImagePP/all/h/HRPAlphaRange.h>#include <ImagePP/all/h/HGFRGBCube.h>
 //-----------------------------------------------------------------------------
 // public
 // default constructor.

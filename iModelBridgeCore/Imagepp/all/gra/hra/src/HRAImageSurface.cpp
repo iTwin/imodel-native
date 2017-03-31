@@ -6,24 +6,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <ImagePPInternal/gra/HRAImageSurface.h>
-#include <ImagePPInternal/gra/HRAImageEditor.h>
-#include <Imagepp/all/h/HRAImageOp.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HRPPixelConverter.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-
-#include <ImagePP/all/h/HCDPacket.h>    
-#include <ImagePP/all/h/HCDPacketRLE.h> 
-#include <ImagePP/all/h/HRABitmapRLE.h> 
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <ImagePP/all/h/HCDCodecIdentity.h>
-
+#include <ImageppInternal.h>
+#include <ImagePPInternal/gra/HRAImageSurface.h>#include <ImagePPInternal/gra/HRAImageEditor.h>#include <ImagePP/all/h/HRAImageOp.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
+#include <ImagePP/all/h/HCDPacket.h>    #include <ImagePP/all/h/HCDPacketRLE.h> #include <ImagePP/all/h/HRABitmapRLE.h> #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 
 
 /*---------------------------------------------------------------------------------**//**

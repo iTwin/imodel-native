@@ -8,10 +8,8 @@
 // Methods for class HCDCodecJPEG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecJPEG.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecJPEG.h>
 #define HCD_CODEC_NAME "JPEG"
 
 //-----------------------------------------------------------------------------

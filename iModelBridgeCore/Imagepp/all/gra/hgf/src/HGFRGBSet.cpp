@@ -9,10 +9,8 @@
 // Methods for class : HGFRGBSet
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HGFRGBSet.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HGFRGBSet.h>
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 HGFRGBSet::HGFRGBSet()

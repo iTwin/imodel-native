@@ -9,12 +9,8 @@
 // Methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPMedianFilterV24R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HGFLuvColorSpace.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPMedianFilterV24R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>#include <ImagePP/all/h/HGFLuvColorSpace.h>
 
 #define CHANNELS 3
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

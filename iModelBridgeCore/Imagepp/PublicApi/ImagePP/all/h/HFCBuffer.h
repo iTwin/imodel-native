@@ -11,8 +11,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-
+#include <ImagePP/all/h/HFCPtr.h>
 BEGIN_IMAGEPP_NAMESPACE
 /**
 
@@ -187,4 +186,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HFCBuffer.hpp"
+#include "HFCBuffer.hpp"

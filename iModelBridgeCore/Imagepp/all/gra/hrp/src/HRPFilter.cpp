@@ -9,14 +9,10 @@
 // Methods for class HRPFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPFilter.h>
-
-#include <Imagepp/all/h/HRPComplexFilter.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-
+#include <ImagePP/all/h/HRPFilter.h>
+#include <ImagePP/all/h/HRPComplexFilter.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>
 //-----------------------------------------------------------------------------
 // protected
 // Default constructor.

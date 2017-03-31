@@ -8,10 +8,8 @@
 // Methods for class HCDCodecCCITT
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecCCITT.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecCCITT.h>
 #define HCDCODECCCITT_WORSTCASEINFLATION            6
 
 // After some tests, 20:1 looks more realistic than 50:1

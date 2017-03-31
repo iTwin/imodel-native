@@ -8,10 +8,8 @@
 // Methods for class HRPHistogram
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPHistogram.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPHistogram.h>
 HPM_REGISTER_CLASS(HRPHistogram, HPMPersistentObject)
 
 //-----------------------------------------------------------------------------

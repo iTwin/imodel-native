@@ -9,15 +9,9 @@
 // Methods for class HTIFFUtils
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HFCLocalBinStream.h>
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HTIFFUtils.h>#include <ImagePP/all/h/HFCLocalBinStream.h>#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 // Class HTIFFByteOrdering
 //
 const Byte HTIFFByteOrdering::BitRevTable[256] = {

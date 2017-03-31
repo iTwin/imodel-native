@@ -11,9 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGSSurfaceDescriptor.h"
-#include "HGFScanlineOrientation.h"
-
+#include "HGSSurfaceDescriptor.h"#include "HGFScanLineOrientation.h"
 BEGIN_IMAGEPP_NAMESPACE
 
 class HRPPixelType;
@@ -58,5 +56,4 @@ protected:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HGSMemoryBaseSurfaceDescriptor.hpp"
-
+#include "HGSMemoryBaseSurfaceDescriptor.hpp"

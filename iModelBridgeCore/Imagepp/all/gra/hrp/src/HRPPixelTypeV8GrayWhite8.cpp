@@ -8,16 +8,10 @@
 // Methods for class HRPPixelTypeV8GrayWhite8
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HRPChannelOrgGrayWhite.h>
-#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
-
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPChannelOrgGrayWhite.h>#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HFCMath.h>
 HPM_REGISTER_CLASS(HRPPixelTypeV8GrayWhite8, HRPPixelType)
 
 // STL typeDef

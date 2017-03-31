@@ -8,31 +8,13 @@
 // Class HRFGifFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCMath.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-
-#include <Imagepp/all/h/HRFGifFile.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFGifLineEditor.h>
-#include <Imagepp/all/h/HRFGifImageEditor.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
-#include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HRPChannelOrgRGB.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HCDCodecHMRGIF.h>
-#include <Imagepp/all/h/HCDPacket.h>
-
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include <ImagePP/all/h/HFCMath.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFGifFile.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFGifLineEditor.h>#include <ImagePP/all/h/HRFGifImageEditor.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI8R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeFactory.h>#include <ImagePP/all/h/HRPChannelOrgRGB.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HCDCodecHMRGIF.h>#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 //-----------------------------------------------------------------------------
 // HRFGifBlockCapabilities
 //-----------------------------------------------------------------------------

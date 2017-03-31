@@ -7,15 +7,9 @@
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HGF2DVector.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DLinear.h>
-#include <Imagepp/all/h/HGFLiteTolerance.h>
-
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DVector.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DLinear.h>#include <ImagePP/all/h/HGFLiteTolerance.h>
 #define DEFAULT_STROKE_TOLERANCE_EXTENT_RATIO (100.0)
 
 //-----------------------------------------------------------------------------

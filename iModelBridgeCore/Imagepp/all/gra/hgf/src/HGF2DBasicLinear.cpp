@@ -8,12 +8,9 @@
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGF2DBasicLinear.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-
+#include <ImagePP/all/h/HGF2DBasicLinear.h>#include <ImagePP/all/h/HGF2DDisplacement.h>
 
 
 //-----------------------------------------------------------------------------

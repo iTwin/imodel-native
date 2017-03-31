@@ -8,10 +8,8 @@
 // Methods for class HFCURLFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLFile.h>
 //:Ignore
 // This is the creator that registers itself in the scheme list.
 struct URLFileCreator : public HFCURL::Creator

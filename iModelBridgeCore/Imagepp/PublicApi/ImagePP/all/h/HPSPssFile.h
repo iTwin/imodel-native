@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Imagepp/all/h/HFCPtr.h>
-#include <Imagepp/all/h/HPSPssToken.h>
-
+#include <ImagePP/all/h/HFCPtr.h>#include <ImagePP/all/h/HPSPssToken.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**

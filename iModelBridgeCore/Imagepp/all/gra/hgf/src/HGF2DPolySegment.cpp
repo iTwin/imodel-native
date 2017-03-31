@@ -8,16 +8,9 @@
 // Methods for class HGF2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFAngle.h>
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <Imagepp/all/h/HGF2DLiteSegment.h>
-#include <Imagepp/all/h/HGF2DPolySegment.h>
-#include <Imagepp/all/h/HGF2DSegment.h>
-
+#include <ImagePP/all/h/HGFAngle.h>#include <ImagePP/all/h/HGF2DDisplacement.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePP/all/h/HGF2DLiteSegment.h>#include <ImagePP/all/h/HGF2DPolySegment.h>#include <ImagePP/all/h/HGF2DSegment.h>
 /** -----------------------------------------------------------------------------
     Finds and returns all auto intersection points.
 

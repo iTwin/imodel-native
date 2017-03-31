@@ -8,22 +8,9 @@
 // Class : HCPGeoTiffKeys
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCPGCoordModel.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <ImagePP/all/h/HTIFFGeoKey.h>
-#include <ImagePP/all/h/HTIFFTag.h>
-#include <ImagePP/all/h/HRFRasterFile.h>
-#include <ImagePP/all/h/HGF2DWorldCluster.h>
-#include <ImagePP/all/h/HVE2DRectangle.h>
-
+#include <ImagePP/all/h/HCPGCoordModel.h>#include <ImagePP/all/h/HCPGCoordUtility.h>#include <ImagePP/all/h/HGF2DAffine.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DProjective.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/HTIFFGeoKey.h>#include <ImagePP/all/h/HTIFFTag.h>#include <ImagePP/all/h/HRFRasterFile.h>#include <ImagePP/all/h/HGF2DWorldCluster.h>#include <ImagePP/all/h/HVE2DRectangle.h>
 //-----------------------------------------------------------------------------
 // public
 // Constructor
@@ -736,10 +723,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
     }
 
 
-#include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HGF2DSimilitude.h>
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
+#include <ImagePP/all/h/HGF2DTranslation.h>#include <ImagePP/all/h/HGF2DSimilitude.h>#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
 /** -----------------------------------------------------------------------------
 This method create a HGF2DTransfoModel using the information found in the
 geo tiff file tag and geo reference information

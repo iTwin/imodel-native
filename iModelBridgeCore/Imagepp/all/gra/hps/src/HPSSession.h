@@ -13,12 +13,8 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HFCURL.h>
-
-#include <Imagepp/all/h/HPANode.h>
-#include <Imagepp/all/h/HPASession.h>
-#include <Imagepp/all/h/HPSWorldCluster.h>
-
+#include <ImagePP/all/h/HFCURL.h>
+#include <ImagePP/all/h/HPANode.h>#include <ImagePP/all/h/HPASession.h>#include <ImagePP/all/h/HPSWorldCluster.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPMPool;
@@ -90,4 +86,4 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include "HPSSession.hpp"
+#include "HPSSession.hpp"

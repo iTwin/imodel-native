@@ -9,26 +9,9 @@
 // Methods for class HPSObjectStore
 //---------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HIMOnDemandMosaic.H>
-#include <Imagepp/all/h/HPSObjectStore.h>
-#include <Imagepp/all/h/HPSParser.h>
-#include <Imagepp/all/h/HRAPyramidRaster.h>
-#include <Imagepp/all/h/HRARaster.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRSObjectStore.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include "HPSInternalNodes.h"
-#include "HPSParserScope.h"
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURL.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HIMOnDemandMosaic.h>#include <ImagePP/all/h/HPSObjectStore.h>#include <ImagePP/all/h/HPSParser.h>#include <ImagePP/all/h/HRAPyramidRaster.h>#include <ImagePP/all/h/HRARaster.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFRasterFileFactory.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRSObjectStore.h>#include <ImagePP/all/h/HRFException.h>
+#include "HPSInternalNodes.h"#include "HPSParserScope.h"
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------

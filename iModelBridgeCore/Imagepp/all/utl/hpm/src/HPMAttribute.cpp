@@ -8,11 +8,9 @@
 // HPMAttribute
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
+#include <ImageppInternal.h> // Must be the first include.
 
-#include <Imagepp/all/h/HPMAttribute.h>  
-
+#include <ImagePP/all/h/HPMAttribute.h>  
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

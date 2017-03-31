@@ -5,16 +5,10 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFAnnotationInfoPDF.h>
-#include <Imagepp/all/h/HRFAnnotationsPDF.h>
-
-#include <Imagepp/all/h/HVE2DComplexLinear.h>
-#include <Imagepp/all/h/HVE2DDisjointedComplexLinear.h>
-#include <Imagepp/all/h/HVE2DSimpleShape.h>
-
+#include <ImagePP/all/h/HRFAnnotationInfoPDF.h>#include <ImagePP/all/h/HRFAnnotationsPDF.h>
+#include <ImagePP/all/h/HVE2DComplexLinear.h>#include <ImagePP/all/h/HVE2DDisjointedComplexLinear.h>#include <ImagePP/all/h/HVE2DSimpleShape.h>
 
 //-----------------------------------------------------------------------------
 // Public

@@ -8,10 +8,8 @@
 // Methods for class HFCURLMemFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLMemFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLMemFile.h>
 //:Ignore
 // This is the creator that registers itself in the scheme list.
 struct URLMemoryCreator : public HFCURL::Creator

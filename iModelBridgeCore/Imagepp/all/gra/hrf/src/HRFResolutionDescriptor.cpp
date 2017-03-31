@@ -9,16 +9,10 @@
 // Class HRFCachedFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCAccessMode.h>
-
-#include <Imagepp/all/h/HRFResolutionDescriptor.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include <ImagePP/all/h/HRFResolutionDescriptor.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HCDCodecIdentity.h>
 //-----------------------------------------------------------------------------
 // Public
 // Default constructor.

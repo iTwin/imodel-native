@@ -8,12 +8,9 @@
 // Class : HGFScanLineOrientation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HGFScanLineOrientation.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
-
+#include <ImagePP/all/h/HGFScanLineOrientation.h>#include <ImagePP/all/h/HGF2DAffine.h>
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------

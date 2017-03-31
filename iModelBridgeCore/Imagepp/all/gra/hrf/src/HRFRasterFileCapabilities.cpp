@@ -8,13 +8,9 @@
 // Class : HRFRasterFileCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
- // Must be the first include.
+#include <ImageppInternal.h> // Must be the first include.
 
-#include <Imagepp/all/h/HFCAccessMode.h>
-#include <Imagepp/all/h/HRFCapability.h>
-#include <Imagepp/all/h/HRFRasterFileCapabilities.h>
-
+#include <ImagePP/all/h/HFCAccessMode.h>#include <ImagePP/all/h/HRFCapability.h>#include <ImagePP/all/h/HRFRasterFileCapabilities.h>
 /** -----------------------------------------------------------------------------
     This is the constructor. An empty capability set is created. Since capabilities
     cannot be added unless access is possible to the Add() protected method,

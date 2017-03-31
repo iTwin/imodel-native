@@ -8,11 +8,8 @@
 // Methods for class HCDCodecZlib
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecZlib.h>
-#include <zlib/zlib.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>#include <zlib/zlib.h>
 //-----------------------------------------------------------------------------
 // public
 // Default constructor

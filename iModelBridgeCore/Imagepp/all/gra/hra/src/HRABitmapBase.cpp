@@ -8,21 +8,9 @@
 // Class: HRABitmapBase
 // ----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRABitmapBase.h>
-#include <Imagepp/all/h/HRABitmapIterator.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HRABlitter.h>
-#include <Imagepp/all/h/HRAWarper.h>
-#include <Imagepp/all/h/HRASurface.h>
-#include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HRADrawOptions.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRATransaction.h>
-
+#include <ImagePP/all/h/HRABitmapBase.h>#include <ImagePP/all/h/HRABitmapIterator.h>#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HRABlitter.h>#include <ImagePP/all/h/HRAWarper.h>#include <ImagePP/all/h/HRASurface.h>#include <ImagePP/all/h/HGFMappedSurface.h>#include <ImagePP/all/h/HRADrawOptions.h>#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>#include <ImagePP/all/h/HRATransaction.h>
 HPM_REGISTER_ABSTRACT_CLASS(HRABitmapBase, HRAStoredRaster)
 
 //-----------------------------------------------------------------------------

@@ -11,11 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGFGraphicObject.h>
-#include "HGF2DExtent.h"
-#include "HVE2DShape.h"
-#include "HGF2DShape.h"
-
+#include <ImagePP/all/h/HGFGraphicObject.h>#include "HGF2DExtent.h"#include "HVE2DShape.h"#include "HGF2DShape.h"
 BEGIN_IMAGEPP_NAMESPACE
 class HGF2DCoordSys;
 class HVEShapeRasterLine;
@@ -152,8 +148,7 @@ END_IMAGEPP_NAMESPACE
 
 
 
-#include "HVEShape.hpp"
-
+#include "HVEShape.hpp"
 
 
 

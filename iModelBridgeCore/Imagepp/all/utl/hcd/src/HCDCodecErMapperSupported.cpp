@@ -8,10 +8,8 @@
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecErMapperSupported.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecErMapperSupported.h>
 #define HCD_CODEC_NAME     "ErMapperSupportedCodec"
 
 //-----------------------------------------------------------------------------

@@ -8,10 +8,8 @@
 // Methods for class HFCURLOracleFile
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCURLEmbedFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCURLEmbedFile.h>
 // This is the creator that registers itself in the scheme list.
 struct URLEmbedFileCreator : public HFCURL::Creator
     {

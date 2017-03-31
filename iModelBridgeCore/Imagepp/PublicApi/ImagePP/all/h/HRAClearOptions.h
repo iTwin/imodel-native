@@ -69,5 +69,4 @@ private:
 
 END_IMAGEPP_NAMESPACE
 
-#include "HRAClearOptions.hpp"
-
+#include "hraclearoptions.hpp"

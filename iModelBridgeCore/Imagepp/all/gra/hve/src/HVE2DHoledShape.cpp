@@ -8,20 +8,13 @@
 // Methods for class HVE2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HVE2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DHoledShape.h>
-#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
-
+#include <ImagePP/all/h/HVE2DHoledShape.h>#include <ImagePP/all/h/HGF2DHoledShape.h>#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 HPM_REGISTER_CLASS(HVE2DHoledShape, HVE2DShape)
 
 
-#include <Imagepp/all/h/HVE2DComplexShape.h>
-#include <Imagepp/all/h/HVE2DVoidShape.h>
-#include <Imagepp/all/h/HGFScanLines.h>
-
+#include <ImagePP/all/h/HVE2DComplexShape.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HGFScanlines.h>
 
 /** -----------------------------------------------------------------------------
     Default constructor for a holed shape. This constructor creates an empty

@@ -11,18 +11,8 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFLocalCacheFileCreator.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFCacheController.h>
-#include <Imagepp/all/h/HRFBilFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>#include <ImagePP/all/h/HRFcTiffFile.h>#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HRFRasterFileCache.h>#include <ImagePP/all/h/HRFLocalCacheFileCreator.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HRFCacheController.h>#include <ImagePP/all/h/HRFBilFile.h>
 // MakeDir and Access
 
 static const Utf8String s_cTiffExtensionCache = ".cache.cTIFF"; // ctiff extension

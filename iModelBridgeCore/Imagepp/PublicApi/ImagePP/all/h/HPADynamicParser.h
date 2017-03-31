@@ -12,8 +12,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HPAParser.h>
-
+#include <ImagePP/all/h/HPAParser.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPADynamicParser : public HPAParser

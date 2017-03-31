@@ -8,11 +8,9 @@
 // Methods for class HCDCodecVector
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HCDCodecVector.h>
-
+#include <ImagePP/all/h/HCDCodecVector.h>
 
 //-----------------------------------------------------------------------------
 // protected

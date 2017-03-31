@@ -7,10 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMath
 //----------------------------------------------------------------------------
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HFCMath.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HFCMath.h>
 
 HFC_IMPLEMENT_SINGLETON(HFCMath)
 

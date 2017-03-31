@@ -9,10 +9,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include "HFCAccessMode.h"
-#include "HFCPtr.h"
-#include <imagepp/all/h/HFCException.h>
-
+#include "HFCAccessMode.h"#include "HFCPtr.h"#include <ImagePP/all/h/HFCException.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HFCException;

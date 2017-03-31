@@ -9,12 +9,9 @@
 // Methods for HRA message classes
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRAMessages.h>
-#include <Imagepp/all/h/HRARaster.h>      // Got to...
-
+#include <ImagePP/all/h/HRAMessages.h>#include <ImagePP/all/h/HRARaster.h>      // Got to...
 //-----------------------------------------------------------------------------
 // Destructor
 //-----------------------------------------------------------------------------

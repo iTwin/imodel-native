@@ -9,11 +9,8 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGFTileIDDescriptor.h>
-#include <Imagepp/all/h/HRFResolutionEditor.h>
-
-#include <ImagePPInternal/gra/Task.h>
-
+#include <ImagePP/all/h/HGFTileIDDescriptor.h>#include <ImagePP/all/h/HRFResolutionEditor.h>
+#include <ImagePPInternal/gra/Task.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HRFVirtualEarthConnection;
 class HRFVirtualEarthFile;

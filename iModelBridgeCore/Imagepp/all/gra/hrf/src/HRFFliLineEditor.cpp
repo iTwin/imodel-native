@@ -8,11 +8,8 @@
 // Class HRFFliLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFFliLineEditor.h>
-#include <Imagepp/all/h/HRFFliFile.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFFliLineEditor.h>#include <ImagePP/all/h/HRFFliFile.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

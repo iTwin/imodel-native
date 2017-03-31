@@ -13,8 +13,7 @@
 
 #pragma once
 
-#include <Imagepp/all/h/HPATokenizer.h>
-
+#include <ImagePP/all/h/HPATokenizer.h>
 BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;

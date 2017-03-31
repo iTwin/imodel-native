@@ -6,37 +6,16 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HTIFFFile.h>
-#include <Imagepp/all/h/HRFUSgsFastL7AFile.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFUSgsFastL7ALineEditor.h>
-#include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HRFException.h>
-
-#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-
-#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
-
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HGF2DProjective.h>
-
-#include <Imagepp/all/h/HCDCodecIdentity.h>
-
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
-#include "HRFGeoTiffTable.h"
-
-#include <BeXml/BeXml.h>
-
+#include <ImagePP/all/h/HFCStat.h>#include <ImagePP/all/h/HTIFFFile.h>#include <ImagePP/all/h/HRFUSgsFastL7AFile.h>#include <ImagePP/all/h/HFCURLFile.h>#include <ImagePP/all/h/HFCBinStream.h>#include <ImagePP/all/h/HRFUtility.h>#include <ImagePP/all/h/HRFUSgsFastL7ALineEditor.h>#include <ImagePP/all/h/HFCException.h>#include <ImagePP/all/h/HRFException.h>
+#include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>#include <ImagePP/all/h/HGF2DStretch.h>#include <ImagePP/all/h/HGF2DProjective.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HCPGeoTiffKeys.h>#include <ImagePP/all/h/ImagePPMessages.xliff.h>
+#include "HRFGeoTiffTable.h"
+#include <BeXml/BeXml.h>
 
 
 //-----------------------------------------------------------------------------

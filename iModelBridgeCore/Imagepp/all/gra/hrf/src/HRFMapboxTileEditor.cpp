@@ -8,17 +8,10 @@
 // Class HRFMapBoxTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRFMapBoxFile.h>
-#include <Imagepp/all/h/HRFMapBoxTileEditor.h>
-#include <ImagePP/all/h/HRFPngFile.h>
-#include <ImagePPInternal/HttpConnection.h>
-#include <BeJpeg/BeJpeg.h>
-
-#include <ImagePP/all/h/HGF2DStretch.h>
-
+#include <ImagePP/all/h/HRFMapboxFile.h>#include <ImagePP/all/h/HRFMapboxTileEditor.h>#include <ImagePP/all/h/HRFPngFile.h>#include <ImagePPInternal/HttpConnection.h>#include <BeJpeg/BeJpeg.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
 #define MB_MAP_RESOLUTION       19
 
 BEGIN_IMAGEPP_NAMESPACE

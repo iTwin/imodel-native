@@ -8,13 +8,9 @@
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HCDCodecIJG.h>
-
-#include "HCDCodecIJG8Bits.h"       // The order is important
-#include "HCDCodecIJG12Bits.h"      // here
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include "HCDCodecIJG8Bits.h"       // The order is important#include "HCDCodecIJG12Bits.h"      // here
 //#define VALIDATE_ABBREVIATION_MODE 1    // Turn ON to validate that abbreviation mode doesn't add DHT and DQT.
 
 /*

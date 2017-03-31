@@ -8,11 +8,9 @@
 // Methods for class HMDLayers
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDLayers.h>
-
+#include <ImagePP/all/h/HMDLayers.h>
 
 //-----------------------------------------------------------------------------
 // Public

@@ -6,36 +6,14 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <ImagePPInternal/gra/ImageCommon.h>
-#include <ImagePPInternal/gra/HRAImageNode.h>
-// #include <ImagePPInternal/gra/HRAImageSampler.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <ImagePP/all/h/HVEShape.h>
-#include <ImagePP/all/h/HRPPixelConverter.h>
-#include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <ImagePP/all/h/HGF2DStretch.h>
-// #include <ImagePP/all/h/HPMPool.h>
+#include <ImageppInternal.h>
+#include <ImagePPInternal/gra/ImageCommon.h>#include <ImagePPInternal/gra/HRAImageNode.h>// #include <ImagePPInternal/gra/HRAImageSampler.h>
+#include <ImagePP/all/h/HRPPixelType.h>#include <ImagePP/all/h/HVEShape.h>#include <ImagePP/all/h/HRPPixelConverter.h>#include <ImagePP/all/h/HRPPixelNeighbourhood.h>#include <ImagePP/all/h/HGF2DStretch.h>// #include <ImagePP/all/h/HPMPool.h>
 // #include <ImagePP/all/h/HGF2DTransfoModel.h>
 // #include <ImagePP/all/h/HGF2DIdentity.h>
 // #include <Imagepp/all/h/HRABitmap.h>
 // #include <ImagePP/all/h/HCDPacket.h>
-#include <ImagePP/all/h/HGFScanLines.h>
-#include <ImagePPInternal/gra/HRAImageNearestSamplerN8.h>
-#include <ImagePPInternal/gra/HRAImageBilinearSamplerN8.h>
-#include <ImagePPInternal/gra/HRAImageBicubicSamplerN8.h>
-#include <ImagePPInternal/gra/HRAImageNearestSamplerRLE.h>
-#include <ImagePPInternal/gra/HRAImageNearestSamplerN1.h>
-#include <ImagePP/all/h/HVE2DVoidShape.h>
-#include <ImagePP/all/h/HVE2DUniverse.h>
-#include <ImagePPInternal/gra/HRAImageSurface.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <ImagePPInternal/gra/HRAImageEditor.h>
-
+#include <ImagePP/all/h/HGFScanlines.h>#include <ImagePPInternal/gra/HRAImageNearestSamplerN8.h>#include <ImagePPInternal/gra/HRAImageBilinearSamplerN8.h>#include <ImagePPInternal/gra/HRAImageBicubicSamplerN8.h>#include <ImagePPInternal/gra/HRAImageNearestSamplerRLE.h>#include <ImagePPInternal/gra/HRAImageNearestSamplerN1.h>#include <ImagePP/all/h/HVE2DVoidShape.h>#include <ImagePP/all/h/HVE2DUniverse.h>#include <ImagePPInternal/gra/HRAImageSurface.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>#include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>#include <ImagePPInternal/gra/HRAImageEditor.h>
 //#define _Mark_Contour 1
 
 #if defined __HMR_DEBUG && defined _Mark_Contour

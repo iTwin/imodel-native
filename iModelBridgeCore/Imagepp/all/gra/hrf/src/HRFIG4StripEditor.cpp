@@ -8,13 +8,8 @@
 // Class HRFIG4StripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRFIG4StripEditor.h>
-#include <Imagepp/all/h/HRFIG4File.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HCDPacketRLE.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRFIG4StripEditor.h>#include <ImagePP/all/h/HRFIG4File.h>#include <ImagePP/all/h/HCDPacket.h>#include <ImagePP/all/h/HCDPacketRLE.h>
 //-----------------------------------------------------------------------------
 // public
 // Construction

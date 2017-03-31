@@ -8,13 +8,9 @@
 // Methods for class HMGMessageSender
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMGMessageSender.h>
-#include <Imagepp/all/h/HMGMessage.h>
-#include <Imagepp/all/h/HMGSink.h>
-
+#include <ImagePP/all/h/HMGMessageSender.h>#include <ImagePP/all/h/HMGMessage.h>#include <ImagePP/all/h/HMGSink.h>
 //-----------------------------------------------------------------------------
 // The default constructor.
 //-----------------------------------------------------------------------------

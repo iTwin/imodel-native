@@ -8,11 +8,9 @@
 // Methods for class HMDLayerInfoWMS
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HMDLayerInfoWMS.h>
-
+#include <ImagePP/all/h/HMDLayerInfoWMS.h>
 //-----------------------------------------------------------------------------
 // Public
 // Constructor

@@ -6,10 +6,8 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
-
-#include <Imagepp/all/h/HRPPaletteOctreeR8G8B8A8.h>
-
+#include <ImageppInternal.h>
+#include <ImagePP/all/h/HRPPaletteOctreeR8G8B8A8.h>
 HRPPaletteOctreeR8G8B8A8 g_PaletteOctreeR8G8B8A8;
 
 

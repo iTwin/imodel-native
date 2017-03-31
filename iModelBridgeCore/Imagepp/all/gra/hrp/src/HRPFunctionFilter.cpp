@@ -9,11 +9,9 @@
 // Methods for class HRPFunctionFilter
 //-----------------------------------------------------------------------------
 
-#include <ImageppInternal.h>
+#include <ImageppInternal.h>
 
-
-#include <Imagepp/all/h/HRPFunctionFilter.h>
-
+#include <ImagePP/all/h/HRPFunctionFilter.h>
 //-----------------------------------------------------------------------------
 // protected
 // Constructor.

@@ -9,10 +9,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCMacros.h"
-#include "HPMClassKey.h"
-#include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
+#include "HFCMacros.h"#include "HPMClassKey.h"#include <ImagePP/all/h/ImagePPMessages.xliff.h>
 BEGIN_IMAGEPP_NAMESPACE
 class HCDCodec;
 class HRPPixelType;
