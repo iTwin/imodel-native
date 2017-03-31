@@ -38,8 +38,6 @@
     <ClInclude Include="NonPublished\QuantityTestFixture.h" />
     <ClInclude Include="NonPublished\UnitsTestFixture.h" />
     <ClInclude Include="NonPublished\UnitsTests.h" />
-    <ClInclude Include="Formatting\FormattingDefinitions.h" />
-    <ClInclude Include="Formatting\formatting.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0F533B32-AC1E-480A-BDC3-5B1B664D7843}</ProjectGuid>

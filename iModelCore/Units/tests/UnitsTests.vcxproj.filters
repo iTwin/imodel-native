@@ -53,7 +53,5 @@
     <ClInclude Include="NonPublished\UnitsTests.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
-    <ClInclude Include="Formatting\FormattingDefinitions.h" />
-    <ClInclude Include="Formatting\formatting.h" />
   </ItemGroup>
 </Project>

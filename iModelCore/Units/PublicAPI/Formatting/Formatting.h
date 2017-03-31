@@ -597,7 +597,6 @@ public:
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
     };
 
-
 //=======================================================================================
 // We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
 //   subquantities expressed in lesser UOM's. For example, a given length could be representes
@@ -747,9 +746,10 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
         UNITS_EXPORT FormatUnitSet(Utf8CP description);
-        bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-        FormatProblemCode GetProblemCode() { return m_problemCode; }
-        UNITS_EXPORT Utf8String ToText(bool useAlias);
+        bool HasProblem() const { return m_problemCode != FormatProblemCode::NoProblems; }
+        FormatProblemCode GetProblemCode() const { return m_problemCode; }
+        UNITS_EXPORT Utf8String ToText(bool useAlias) const;
+        BEU::UnitCP GetUnit() const { return m_unit; }
     };
 
 struct FormatUnitGroup

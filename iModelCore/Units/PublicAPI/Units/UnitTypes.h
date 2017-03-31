@@ -145,7 +145,7 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    uint32_t GetPhenomenonId() const;
+    uint32_t GetPhenomenonId() const override;
     UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
     bool    IsInverseUnit() const { return nullptr != m_parent; }
     
@@ -166,6 +166,8 @@ public:
     UnitCP MultiplyUnit (UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
     static bool IsNegligible(double dval) { return (1.0e-16 > dval); }
+    static bool AreEqual(UnitCP unitA, UnitCP unitB)
+        { return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId(); }
     };
 
 struct Phenomenon final : UnitsSymbol
@@ -178,9 +180,6 @@ friend struct Expression;
 private:
     bvector<UnitCP> m_units;
 
-
-
-
     void AddUnit(UnitCR unit);
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
@@ -190,7 +189,7 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    uint32_t GetPhenomenonId() const { return GetId(); }
+    uint32_t GetPhenomenonId() const override { return GetId(); }
 
 public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
@@ -200,6 +199,8 @@ public:
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
     bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
+    static bool AreEqual(PhenomenonCP phenA, PhenomenonCP phenB) 
+        { return nullptr == phenA || nullptr == phenB ? false : phenA->GetId() == phenB->GetId(); }
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

@@ -1413,6 +1413,9 @@ FormattingWord FormattingScannerCursor::ExtractWord()
     m_status = ScannerCursorStatus::Success;
     m_lastScannedCount = 0;
     m_isASCII = true;
+    if (m_cursorPosition > m_totalScanLength)
+        return FormattingWord(this, buff, buff, true);
+    
     Utf8CP c = &m_text.c_str()[m_cursorPosition];
 
     while (!m_dividers.IsDivider(*c))

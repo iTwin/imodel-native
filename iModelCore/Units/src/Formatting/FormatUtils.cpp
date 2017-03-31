@@ -890,7 +890,10 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
-    m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
+    if (Utf8String::IsNullOrEmpty(fnam.GetText()))
+        m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
+    else
+        m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.GetText());
     if (nullptr == m_formatSpec)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
@@ -904,7 +907,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Utf8String FormatUnitSet::ToText(bool useAlias)
+Utf8String FormatUnitSet::ToText(bool useAlias) const
     {
     if (HasProblem())
         return "";
