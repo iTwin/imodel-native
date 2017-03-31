@@ -44,7 +44,7 @@ void Dump (DPoint2d const &xy0, DPoint2d const &xy1)
 struct DRay2d
     {
     friend struct DPoint2d;
-    friend struct MConvexPolygon2d;
+    friend struct DConvexPolygon2d;
     private:
         DPoint2d m_origin;
         DVec2d m_direction;
@@ -138,21 +138,21 @@ struct DRay2d
 
 
 //! methods treating an array of DPoint2d as counterclockwise order around a convex polygon
-struct MConvexPolygon2d
+struct DConvexPolygon2d
     {
     private:
         // hull points in CCW order, WITHOUT final duplicate . ..
         bvector<DPoint2d> m_hullPoints;
     public:
         // Create the hull.
-        MConvexPolygon2d (bvector<DPoint2d> &points)
+        DConvexPolygon2d (bvector<DPoint2d> &points)
             {
             ComputeConvexHull (points, m_hullPoints);
             }
 
         // Create the hull.
         // First try to use the points as given.  Return isValid = true if that succeeded.
-        MConvexPolygon2d (bvector<DPoint2d> &points, bool &isValid)
+        DConvexPolygon2d (bvector<DPoint2d> &points, bool &isValid)
             {
             m_hullPoints = points;
             isValid = IsValidConvexHull ();
@@ -369,7 +369,7 @@ struct MConvexPolygon2d
 // For each hullPoints[i], form chord to hullPoints[i+step].
 // Compute points fractionally on the chord.
 // Evaluate 
-static bool CheckHullChords (MConvexPolygon2d hull, size_t step)
+static bool CheckHullChords (DConvexPolygon2d hull, size_t step)
     {
     auto hullPoints = hull.Points ();
     bvector<double> fractions{ -0.2, -0.01, 0.43, 0.96, 1.08 };
@@ -394,7 +394,7 @@ static bool CheckHullChords (MConvexPolygon2d hull, size_t step)
 // Form rays from centroid to each point.
 // Compute points fractionally on the chord.
 // Evaluate in/out
-static bool CheckHullRaysFromCentroid (MConvexPolygon2d hull)
+static bool CheckHullRaysFromCentroid (DConvexPolygon2d hull)
     {
     auto hullPoints = hull.Points ();
     DPoint2d centroid;
@@ -420,7 +420,7 @@ static bool CheckHullRaysFromCentroid (MConvexPolygon2d hull)
     return numError == 0;
     }
 
-size_t CountPointsInHull (MConvexPolygon2d const &hull, bvector<DPoint2d> const &points)
+size_t CountPointsInHull (DConvexPolygon2d const &hull, bvector<DPoint2d> const &points)
     {
     size_t n = 0;
     for (auto xy : points)
@@ -449,7 +449,7 @@ TEST (Geometry, ConvexHullQueries)
         DPoint2d::From (0, 20)
         };
 #endif
-    MConvexPolygon2d hull (points);
+    DConvexPolygon2d hull (points);
     Check::True (CheckHullRaysFromCentroid (hull));
 
     DRay2d rayA (DPoint2d::From (0, 5), DVec2d::From (2, 0));
@@ -543,7 +543,7 @@ TEST (Geometry, ConvexHullQueriesContstruction)
         DPoint2d::From (13, 5)
         };
     size_t insideBase = 5;
-    MConvexPolygon2d hull (points);
+    DConvexPolygon2d hull (points);
 
     for (size_t i = insideBase; i < points.size (); i++)
         {
@@ -572,7 +572,7 @@ TEST (Geometry, ConvexHullManyPoints)
         points.push_back (Lisajoue (theta * theta, a));
         }
 
-    MConvexPolygon2d hull (points);
+    DConvexPolygon2d hull (points);
 
     for (size_t i = 0; i < points.size (); i++)
         {
@@ -961,7 +961,7 @@ TEST (Geometry, ScanRays)
         DPoint2d::From (-8416002.202269, 4455176.636193)
         };
     bool validAsGiven = false;
-    MConvexPolygon2d hull (points, validAsGiven);
+    DConvexPolygon2d hull (points, validAsGiven);
     Check::True (validAsGiven);
     double angleInRadians = -1.882268;
     double distanceBetweenFlightLines = 14.471536;

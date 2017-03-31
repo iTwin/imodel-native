@@ -169,9 +169,9 @@ Utf8String MSXmlBinaryReader::ValueHandle::GetString()
         case ValueHandleType::Int32:
             return Utf8PrintfString("%d", ToInt());
         case ValueHandleType::Int64:
-            return Utf8PrintfString("%ld", GetInt64());
+            return Utf8PrintfString("%" PRId64, GetInt64());
         case ValueHandleType::UInt64:
-            return Utf8PrintfString("%lu", GetInt64());
+            return Utf8PrintfString("%" PRIu64, GetUInt64());
         case ValueHandleType::Single:
             return Utf8PrintfString("%f", GetFloat());
         case ValueHandleType::Double:
@@ -383,6 +383,18 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
         case XmlBinaryNodeType::DoubleTextWithEndElement:
             {
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Double, 8);
+            m_value = m_node->ValueAsString();
+            return READ_RESULT_Success;
+            }
+        case XmlBinaryNodeType::Int32TextWithEndElement:
+            {
+            ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Int32, 4);
+            m_value = m_node->ValueAsString();
+            return READ_RESULT_Success;
+            }
+        case XmlBinaryNodeType::Int64TextWithEndElement:
+            {
+            ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Int64, 8);
             m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }

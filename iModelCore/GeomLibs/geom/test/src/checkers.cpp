@@ -1404,6 +1404,27 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     SaveTransformed (IGeometry::Create (cv));
     }
 
+void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize)
+    {
+    for (auto &xyz : data)
+        {
+        auto cp = ICurvePrimitive::CreateLineString
+                (
+                bvector<DPoint3d>
+                    {
+                    DPoint3d::From (xyz.x - markerSize, xyz.y, xyz.z),
+                    DPoint3d::From (xyz.x + markerSize, xyz.y, xyz.z),
+                    DPoint3d::From (xyz.x, xyz.y + markerSize, xyz.z),
+                    DPoint3d::From (xyz.x , xyz.y - markerSize, xyz.z)
+                    }
+                );
+
+        SaveTransformed (IGeometry::Create (cp));
+        }
+    }
+
+
+
 void Check::SaveTransformed (bvector<bvector<DPoint3d>> const &data)
     {
     for (auto a : data)

@@ -38,3 +38,19 @@ MSBsplineSurfacePtr SimpleBilinearPatch (double u1, double v1, double w1);
 
 PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double edgeY, bool triangulate);
 
+// various arc samples, initially intended for use in creating point clouds .....
+extern bvector<DEllipse3d> s_arcSamples;
+
+// return a strip with arc points on one side, offset on the other.
+bvector<DPoint3d> CreateOffsetStrip (DEllipse3dCR arc, double offset0, double offset1, size_t numStroke, bool close = true);
+
+// return a "T" shape
+bvector<DPoint3d> CreateT (
+double dxTotal, //!< [in] total width of range box
+double dyTotal, //!< [in] total height of range box
+double dxLeft,  //!< [in] x distance under the left bar
+double dxRight, //!< [in] x distance under the right bar
+double dyLeft,  //!< [in] vertical width of left bar (measured from top down
+double dyRight,      //!< [in] vertical width of right bar (measuredFrom top down)
+bool close  = true  //!< [in] true to add closure point.
+);

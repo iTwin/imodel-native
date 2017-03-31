@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdpoint3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -159,6 +159,31 @@ DPoint3d DPoint3d::From (double xx, double yy, double zz)
     xyz.z = zz;
     return xyz;
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+DPoint3d DPoint3d::FromXY (DPoint3dCR xy, double zz)
+    {
+    DPoint3d xyz;
+    xyz.x = xy.x;
+    xyz.y = xy.y;
+    xyz.z = zz;
+    return xyz;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+DPoint3d DPoint3d::From (DPoint2dCR xy, double zz)
+    {
+    DPoint3d xyz;
+    xyz.x = xy.x;
+    xyz.y = xy.y;
+    xyz.z = zz;
+    return xyz;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     08/13
@@ -2528,6 +2553,24 @@ DPoint3dCR pointB
     return result;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      11/2016
++--------------------------------------------------------------------------------------*/
+DPoint3d DPoint3d::FromInterpolateAndPerpendicularXY
+(
+DPoint3dCR pointA,
+double     fraction,
+DPoint3dCR pointB,
+double fractionXYPerp
+)
+    {
+    DVec3d vector = pointB - pointA;
+    DPoint3d result;
+    result.Interpolate (pointA, fraction, pointB);
+    result.x -= fractionXYPerp * vector.y;
+    result.y += fractionXYPerp * vector.x;
+    return result;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2016
@@ -2873,5 +2916,29 @@ bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> c
     return true;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      03/2017
++--------------------------------------------------------------------------------------*/
+ValidatedDPoint3d DPoint3d::FromIntersectPerpendicularsXY
+(
+DPoint3dCR basePoint,   //!< [in] common point of rays
+DPoint3dCR targetA,     //!< [in] target point of first ray.
+double fractionA,       //!< [in] fractional position for perpendicular to first ray
+DPoint3dCR targetB,     //!< [in] target point of second ray
+double fractionB        //!< [in] fractional position for perpenedicular to second ray
+)
+    {
+    DVec3d U = targetA - basePoint;
+    DVec3d V = targetB - basePoint;
+    double dx, dy;
+    
+    if (bsiSVD_solve2x2 (&dx, &dy,
+            U.x, U.y,
+            V.x, V.y,
+            fractionA * U.DotProductXY (U), fractionB * V.DotProductXY (V)
+            ))
+        return ValidatedDPoint3d (DPoint3d::From (basePoint.x + dx, basePoint.y + dy, basePoint.z));
+    return ValidatedDPoint3d (basePoint, false);
+    }
 
 END_BENTLEY_NAMESPACE

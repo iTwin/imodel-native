@@ -35,6 +35,33 @@ TEST_F(CGBinarySerializationTests, TestSpecific)
     Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed><ListOfControlPoint><xyz>1,0,0</xyz><xyz>0.86602540378443871,0.49999999999999994,0</xyz></ListOfControlPoint><ListOfKnot><Knot>0</Knot><Knot>0</Knot><Knot>1</Knot><Knot>1</Knot></ListOfKnot></BsplineCurve>"));
     }
 
+TEST_F(CGBinarySerializationTests, WriterTestLargeWeight)
+    {
+    Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed>"
+        "<ListOfControlPoint>"
+            "<xyz>1,0,0</xyz>"
+            "<xyz>2,0,0</xyz>"
+            "<xyz>3,0,0</xyz>"
+            "<xyz>4,0,0</xyz>"
+            "<xyz>5,0,0</xyz>"
+            "<xyz>6,0,0</xyz>"
+        "</ListOfControlPoint>"
+        "<ListOfWeight>"
+            "<Weight>100000</Weight>"
+            "<Weight>20000000</Weight>"
+            "<Weight>300000000</Weight>"
+            "<Weight>400000000</Weight>"
+            "<Weight>5000000000</Weight>"
+            "<Weight>60000000000</Weight>"
+        "</ListOfWeight>"
+        "</BsplineCurve>"
+        ));
+    }
+
+TEST_F(CGBinarySerializationTests, WriterTestLargeRadius)
+    {
+        Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>110000000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
+    }
 TEST_F(CGBinarySerializationTests, WriterTest)
     {
     DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0, 
@@ -44,7 +71,7 @@ TEST_F(CGBinarySerializationTests, WriterTest)
 
     ICurvePrimitivePtr originalArc = ICurvePrimitive::CreateArc (ellipseData);
     ASSERT_EQ(true, originalArc->GetArcCP()->IsCircular());
-    //    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
+
 
     Roundtrip(Utf8String("<LineSegment xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><startPoint>0,0,0</startPoint><endPoint>1,0,0</endPoint></LineSegment>"));
     Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>1.125</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
@@ -64,6 +91,14 @@ TEST_F(CGBinarySerializationTests, WriterTest)
     Roundtrip(Utf8String("<BsplineSurface xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><OrderU>3</OrderU><ClosedU>false</ClosedU><NumUControlPoint>3</NumUControlPoint><OrderV>2</OrderV><ClosedV>false</ClosedV><NumVControlPoint>2</NumVControlPoint><ListOfControlPoint><xyz>0,0,0</xyz><xyz>1,0,0</xyz><xyz>2,0,0</xyz><xyz>0,1,0</xyz><xyz>1,1,0</xyz><xyz>3,1,0</xyz></ListOfControlPoint><ListOfWeight><Weight>1</Weight><Weight>1</Weight><Weight>1</Weight><Weight>1</Weight><Weight>1</Weight><Weight>1</Weight></ListOfWeight><ListOfKnotU><KnotU>0</KnotU><KnotU>0</KnotU><KnotU>0</KnotU><KnotU>1.5</KnotU><KnotU>1.5</KnotU><KnotU>1.5</KnotU></ListOfKnotU><ListOfKnotV><KnotV>1</KnotV><KnotV>1</KnotV><KnotV>2</KnotV><KnotV>2</KnotV></ListOfKnotV></BsplineSurface>"));
     Roundtrip(Utf8String("<Polygon xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ListOfPoint><xyz>0.90096886790241915,0.43388373911755812,0</xyz><xyz>0.22252093395631445,0.97492791218182362,0</xyz><xyz>-0.62348980185873382,0.78183148246802958,0</xyz><xyz>-1,1.2246063538223773E-16,0</xyz><xyz>-0.62348980185873371,-0.78183148246802969,0</xyz><xyz>0.22252093395631509,-0.9749279121818234,0</xyz><xyz>0.900968867902419,-0.43388373911755834,0</xyz><xyz>0.90096886790241915,0.43388373911755812,0</xyz></ListOfPoint></Polygon>"));
     Roundtrip(Utf8String("<SurfacePatch xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ExteriorLoop><CurveChain><ListOfCurve><LineString><ListOfPoint><xyz>-5,0,0</xyz><xyz>5,0,0</xyz><xyz>5,3,0</xyz><xyz>-5,3,0</xyz><xyz>-5,0,0</xyz></ListOfPoint></LineString></ListOfCurve></CurveChain></ExteriorLoop></SurfacePatch>"));
+    // This fails if 15000000.1 is 15000000, so data goes to binary as compressed form.
+    Roundtrip(Utf8String("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ListOfCurve><LineSegment><startPoint>41493467.282746471,22677668.343790106,0</startPoint><endPoint>45142389.39493861,23321071.7626733,0</endPoint></LineSegment><CircularArc><placement><origin>47747112.059942573,8548955.4674901869,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>15000000.1</radius><startAngle>100.00000000000004</startAngle><sweepAngle>-11.297762665017764</sweepAngle></CircularArc><LineSegment><startPoint>48086836.481108531,23545107.884615831,0</startPoint><endPoint>52134539.416273609,23453410.794692259,0</endPoint></LineSegment></ListOfCurve></CurveChain>"));
+    // various things with large integers in "double" spots.  This goes through previously unvisited code in the binary writer
+        Roundtrip(Utf8String("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ListOfCurve><LineSegment><startPoint>41493467.282746471,22677668.343790106,0</startPoint><endPoint>45142389.39493861,23321071.7626733,0</endPoint></LineSegment><CircularArc><placement><origin>47747112.059942573,8548955.4674901869,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>15000000</radius><startAngle>100.00000000000004</startAngle><sweepAngle>-11.297762665017764</sweepAngle></CircularArc><LineSegment><startPoint>48086836.481108531,23545107.884615831,0</startPoint><endPoint>52134539.416273609,23453410.794692259,0</endPoint></LineSegment></ListOfCurve></CurveChain>"));
+        Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>110</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
+        Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>11000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
+        Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>1100000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
+        Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>110000000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
     }
 
 TEST_F (CGBinarySerializationTests, DeserializeEllipticDisc)

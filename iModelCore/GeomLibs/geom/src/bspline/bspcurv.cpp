@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspcurv.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -2964,7 +2964,8 @@ MSBsplineCurve  *bspline               /* => Bspline curve */
     size_t iPole = 0;
     size_t iKnot = 0;
     size_t numSegmentHere = 0;
-    (*starts)[0] = 0;
+    if (starts != nullptr)
+        (*starts)[0] = 0;
     for (size_t i = 0; bspline->AdvanceToBezier (segment, i);)
         {
         numSegmentHere++;

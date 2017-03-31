@@ -81,6 +81,11 @@ static GEOMDLLIMPEXP T * MallocAndCopy (bvector<T> &source);
 //! @param [in] tolerance for comparison via AlmostEqual (a,b,tolerance)
 static GEOMDLLIMPEXP void Compress (bvector<T> &data, double tolerance);
 
+//! Inplace removal of near-duplicate points via Compress, followed by removal of trailing points that match source[0]
+//! @param [inout] data soure data.
+//! @param [in] tolerance for comparison via AlmostEqual (a,b,tolerance)
+static GEOMDLLIMPEXP void CompressCyclic (bvector<T> &data, double tolerance);
+
 //! Inplace removal of near-duplicate points.
 //! @param [inout] source soure data.
 //! @param [inout] dest array to be cleared and loaded.

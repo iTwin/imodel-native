@@ -175,7 +175,7 @@ static Json::Value const &TryFindArray (Json::Value const &source, Utf8CP longNa
     Json::Value const &target2 = source[longName];
     if (IsNonNullArray (target2))
         return target2;
-    return Json::Value::null;
+    return Json::Value::GetNull();
     }
 
 // Case insensetive property lookup ...

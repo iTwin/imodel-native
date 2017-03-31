@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dpoint3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,13 @@ double z;
 static DPoint3d From (double x, double y, double z = 0.0);
 //! Return a DPoint3d with given xy, z = 0;
 static DPoint3d From (DPoint2dCR xy);
+
+//! Return a DPoint3d with given 2d point and z
+static DPoint3d From (DPoint2dCR xy, double z);
+
+//! Return a DPoint3d from xy parts of given point, with z from optional parameter. (And z of the input point is ignored)
+static DPoint3d FromXY (DPoint3dCR xy, double z = 0.0);
+
 //! Return a DPoint3d with xyz = 0.
 static DPoint3d FromZero();
 //! Return a DPoint3d with xyz = 1.
@@ -872,6 +879,14 @@ static DPoint3d FromProduct (TransformCR transform, DPoint3dCR point);
 //! @param [in] pointB end point
 static DPoint3d FromInterpolate (DPoint3dCR pointA, double fraction, DPoint3dCR pointB);
 
+//! interpolate between points.  Then add a shift in the xy plane by a fraction of the XY projection perpendicular
+//! @param [in] pointA start point
+//! @param [in] fraction fractional parameter along the line from A to B
+//! @param [in] pointB end point
+//! @param [in] fractionXYPerp fractional parameter applied to vector that is the XY parts of (B-A), rotated CCW in plane.
+static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerp);
+
+
 //! return the centroid for points with specified weights
 static DPoint3d FromWeightedAverage
 (
@@ -966,6 +981,16 @@ static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, double x, dou
 //! @param [in] matrix 
 //! @param [in] vector vector part
 static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
+
+//! Return (if possible) the intesection of xy perpendiculars from fractional points on rays from a basePoint.  Returned point has z from basePoint
+static ValidatedDPoint3d FromIntersectPerpendicularsXY
+(
+DPoint3dCR basePoint,   //!< [in] common point of rays
+DPoint3dCR targetA,     //!< [in] target point of first ray.
+double fractionA,       //!< [in] fractional position for perpendicular to first ray
+DPoint3dCR targetB,     //!< [in] target point of second ray
+double fractionB        //!< [in] fractional position for perpenedicular to second ray
+);
 
 //! test if two points are equal.
 //! Uses library "small angle" as both absolute and relative tolerance.

@@ -370,7 +370,8 @@ void    ClipPlane::PolygonCrossings (bvector<DPoint3d> const &xyz, bvector<DPoin
 void    ClipPlane::ConvexPolygonSplitInsideOutside (
 bvector<DPoint3d> const &xyz,         //!< [in] original polygon
 bvector<DPoint3d> &xyzIn,             //!< [out] inside part
-bvector<DPoint3d> &xyzOut             //!< [out] outside part
+bvector<DPoint3d> &xyzOut,             //!< [out] outside part
+DRange1d &altitudeRange                 //!< [out] min and max altitude values.
 ) const
     {
     xyzOut.clear ();
@@ -380,12 +381,15 @@ bvector<DPoint3d> &xyzOut             //!< [out] outside part
     if (xyz.size () > 2)
         {
         DPoint3d xyz0 = xyz.back ();
+        altitudeRange = DRange1d::NullRange ();
         double a0 = EvaluatePoint (xyz0);
+        altitudeRange.Extend (a0);
 //        if (a0 >= 0.0)
 //            work.push_back (xyz0);
         for (auto &xyz1 : xyz)
             {
             double a1 = EvaluatePoint (xyz1);
+            altitudeRange.Extend (a1);
             bool nearZero = false;
             if (a0 * a1 < 0.0)
                 {

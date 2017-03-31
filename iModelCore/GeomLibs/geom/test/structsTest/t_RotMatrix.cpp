@@ -1502,3 +1502,37 @@ TEST(RotMatrix, ChangeRotation)
     Check::Near(rot, rot2);
     Check::Near(point, DPoint3d::From(-4, 4, 2));
     }
+
+TEST(RotMatrix,RotationFromStanadardView)
+    {
+    for (int viewIndex = 1; viewIndex < 9; viewIndex++)
+        {
+        Check::StartScope ("ViewIndex", (size_t)viewIndex);
+        for (int axis = 0; axis < 3; axis++)
+            {
+            Check::StartScope ("Axis", (size_t)axis);
+            for (double radians : bvector<double> {0.1, -0.2})
+                {
+                Check::StartScope ("Radians", radians);
+                RotMatrix matrix;
+                if (Check::True (bsiRotMatrix_initRotationFromStandardView (&matrix, axis, radians, viewIndex)))
+                    {
+                    double radians1;
+                    int axis1;
+                    int viewIndex1;
+                    bool expectedResult = (viewIndex >= 7 && axis != 2) ? false : true;
+                    bool actualResult = bsiRotMatrix_isRotationFromStandardView (&matrix, &axis1, &radians1, &viewIndex1, true, true, true);
+                    if (expectedResult && Check::Bool (expectedResult, actualResult, "isRotationFrmoStandardView"))
+                        {
+                        RotMatrix matrix1;
+                        bsiRotMatrix_initRotationFromStandardView (&matrix1, axis1, radians1, viewIndex1);
+                        Check::Near (matrix, matrix1, "Standard view round trip");
+                        }
+                    }
+                Check::EndScope ();
+                }
+            Check::EndScope ();
+            }
+        Check::EndScope ();
+        }
+    }
