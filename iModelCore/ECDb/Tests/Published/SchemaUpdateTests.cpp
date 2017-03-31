@@ -6288,7 +6288,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateKindOfQuantity)
         "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
-        "                    displayLabel='KindOfQuantity2' persistenceUnit='M' precision='.2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='M' relativeError='.2'"
         "                    presentationUnits='FT;IN' />"
         "  <ECEntityClass typeName='Foo' >"
         "    <ECProperty propertyName='Length' typeName='double' kindOfQuantity='KindOfQuantity2' />"
