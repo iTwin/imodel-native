@@ -172,7 +172,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will always represent user that is signed-in when authenticating.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
-        //! @param httpHandler optional custom HTTP handler to send all requests trough
+        //! @param httpHandler optional custom HTTP handler to send all given server authenticated requests trough. It will not be used for secure/sensitive token retrieval service.
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) const override;
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
