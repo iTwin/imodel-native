@@ -46,6 +46,7 @@ struct ColorIndex
         Zero = 0,   // uniform color
         One,        // only one row
         Two,        // more than one row
+        Background, // use background color.
         None,       // empty
     };
 private:
@@ -120,13 +121,14 @@ protected:
     bool                    m_overridesRgb = false;
     RgbFactor               m_rgbOverride;
     double                  m_alphaOverride;
+    bool                    m_adjustColorForBackground = false;
 
     TileMaterial(Utf8StringCR name) : m_name(name) { }
 
     void AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
     void AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
 
-    virtual std::string _GetVertexShaderString(bool is3d) const = 0;
+    virtual std::string _GetVertexShaderString() const = 0;
 
 public:
     Utf8StringCR GetName() const { return m_name; }
@@ -139,7 +141,7 @@ public:
     bool OverridesRgb() const { return m_overridesRgb; }
     double GetAlphaOverride() const { return m_alphaOverride; }
     RgbFactor const& GetRgbOverride() const { return m_rgbOverride; }
-    std::string GetVertexShaderString(bool is3d) const;
+    std::string GetVertexShaderString() const;
 };
 
 //=======================================================================================
@@ -161,9 +163,9 @@ private:
     double                  m_width;
     double                  m_textureLength;       // If positive, meters, if negative, pixels (Cosmetic).
 protected:
-    virtual std::string _GetVertexShaderString(bool is3d) const override;
+    virtual std::string _GetVertexShaderString() const override;
 public:
-    PolylineMaterial(TileMeshCR mesh, Utf8CP suffix);
+    PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix);
 
     PolylineType GetType() const { return m_type; }
 
@@ -191,9 +193,9 @@ private:
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
     bool                    m_ignoreLighting;
 protected:
-    virtual std::string _GetVertexShaderString(bool is3d) const override;
+    virtual std::string _GetVertexShaderString() const override;
 public:
-    MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db);
+    MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db);
 
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
