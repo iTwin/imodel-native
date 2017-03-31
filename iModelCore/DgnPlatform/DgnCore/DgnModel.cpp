@@ -329,7 +329,7 @@ PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialModel::AddLights(Render::LightListR lights, Render::TargetR target) const
+void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target) const
     {
     auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT JsonProperties,Origin,Yaw,Pitch,Roll FROM " BIS_SCHEMA(BIS_CLASS_LightLocation) " WHERE Model.Id=? AND Enabled=1");
     stmt->BindId(1, GetModelId());
@@ -343,7 +343,7 @@ void SpatialModel::AddLights(Render::LightListR lights, Render::TargetR target) 
 
         Json::Value json;
         if (Json::Reader::Parse(stmt->GetValueText(0), json))
-            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::str_Params()], &dir, &origin));
+            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::json_light()], &dir, &origin));
         }
     }
     
