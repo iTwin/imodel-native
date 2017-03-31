@@ -140,7 +140,7 @@ Utf8CP password
 /************************************************************************************//**
 * \brief Create root project storage (project share) for CONNECT Project
 * \param[in] apiHandle API object
-* \param[in] ProjectGuid
+* \param[in] projectGuid
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebSServiceClientC_CreateRootProjectShareStorage
