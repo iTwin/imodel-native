@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudSettings.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -38,14 +38,14 @@ static Utf8CP SETTINGCLASSIF_unclassVisible         = "unclassVisible";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController const& spatial)
+PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController& spatial)
     {
     static ViewController::AppData::Key s_key;
     PointCloudViewSettings* settings = (PointCloudViewSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
         settings = new PointCloudViewSettings;
-        settings->_Load(spatial.GetViewDefinition());
+        settings->_Load(spatial.GetViewDefinitionR());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -177,14 +177,14 @@ void PointCloudViewSettings::_Save(ViewDefinitionR view) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(SpatialViewController const& spatial)
+PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(SpatialViewController& spatial)
     {
     static ViewController::AppData::Key s_key;
     PointCloudClassificationSettings* settings = (PointCloudClassificationSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
         settings = new PointCloudClassificationSettings;
-        settings->_Load(spatial.GetViewDefinition());
+        settings->_Load(spatial.GetViewDefinitionR());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
