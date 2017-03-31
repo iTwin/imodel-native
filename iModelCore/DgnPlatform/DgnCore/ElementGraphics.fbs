@@ -173,8 +173,8 @@ table AreaFill
     {
     fill:FillDisplay;
     color:uint;
-    useColor:ubyte;  // color overrides sub-category appearance
-    isBgColor:ubyte; // color matches view background
+    useColor:ubyte; // color overrides sub-category appearance
+    backgroundFill:ubyte; // 0 - none, 1 - solid, 2 - outline.
     transparency:double;
     mode:GradientMode;
     flags:ushort;

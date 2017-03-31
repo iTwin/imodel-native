@@ -299,7 +299,7 @@ public:
 
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
-    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (Is3d() != (nullptr != acs.ToAuxCoordSystem3d())) return false; m_auxCoordSys = &acs; return true;}
+    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (!acs.IsValidForView(*this)) return false; m_auxCoordSys = &acs; return true;}
 
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
@@ -515,6 +515,7 @@ protected:
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
+    mutable Render::SceneLightsPtr m_lights;
 
     void QueryModelExtents(FitContextR);
 
@@ -548,6 +549,8 @@ public:
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
+    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off

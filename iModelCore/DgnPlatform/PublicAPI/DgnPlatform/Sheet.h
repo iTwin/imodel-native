@@ -46,6 +46,9 @@ public:
 
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
+
+    //! @private
+    DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
 };
 
 //=======================================================================================

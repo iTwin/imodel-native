@@ -24,6 +24,7 @@ namespace ACSElementHandler
 {
     HANDLER_DEFINE_MEMBERS(CoordSys2d);
     HANDLER_DEFINE_MEMBERS(CoordSys3d);
+    HANDLER_DEFINE_MEMBERS(CoordSysSpatial);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -91,98 +92,6 @@ bool IsEqual(ACSGrid const& otherData) const
 
 }; // ACSGrid
 
-/*=================================================================================**//**
-* NOTE: Persistent data structure! Only add to new members to end!!!
-*
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ACSData
-{
-ACSType         m_type;         // ACS_TYPE_RECT etc.
-ACSFlags        m_flags;        // option flags
-DPoint3d        m_origin;       // origin of acs
-double          m_scale;        // scale of acs
-RotMatrix       m_rotation;     // rotation of acs
-ACSGrid         m_grid;         // ACS grid settings...
-
-ACSData() {Init();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Init()
-    {
-    m_type      = ACSType::Rectangular;
-    m_flags     = ACSFlags::Default;
-    m_scale     = 1.0;
-
-    m_origin.Zero();
-    m_rotation.InitIdentity();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsEqual(ACSData const& otherData) const
-    {
-    if (m_type != otherData.m_type)
-        return false;
-
-    if (m_flags != otherData.m_flags)
-        return false;
-
-    if (!m_origin.IsEqual(otherData.m_origin))
-        return false;
-
-    if (m_scale != otherData.m_scale)
-        return false;
-
-    if (!m_rotation.IsEqual(otherData.m_rotation))
-        return false;
-
-    return m_grid.IsEqual(otherData.m_grid);
-    }
-
-}; // ACSData
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool    /*AuxCoordSys::*/_Equals(IAuxCoordSysCP other) const override
-    {
-    if (NULL == other)
-        return false;
-
-    if (this == other)
-        return true;
-
-    AuxCoordSys const * otherACS;
-
-    if (NULL == (otherACS = dynamic_cast <AuxCoordSys const *> (other)))
-        return false;
-
-    return m_acsData.IsEqual(otherACS->m_acsData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String /*AuxCoordSys::*/_GetTypeName() const override
-    {
-    L10N::StringId id;
-
-    switch (m_acsData.m_type)
-        {
-        case ACSType::None:        id = DgnCoreL10N::ACS_TYPE_NONE(); break;
-        case ACSType::Rectangular: id = DgnCoreL10N::ACS_TYPE_RECT();  break;
-        case ACSType::Cylindrical: id = DgnCoreL10N::ACS_TYPE_CYL();   break;
-        case ACSType::Spherical:   id = DgnCoreL10N::ACS_TYPE_SPHERE();  break;
-        case ACSType::Extended:    id = DgnCoreL10N::ACS_TYPE_EXTEND(); break;
-        };
-
-    return DgnCoreL10N::GetString(id);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -213,83 +122,73 @@ virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Poi
 
     return (0.0 == spacing.x || 0.0 == spacing.y || 0 == gridReps.x || 0 == gridReps.y) ? ERROR : SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAuxCoordSys::Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius)
-    {
-    // Going to have to create CurveVectors and locate similiar to edit manipulator locate code...
-    OutputP  output = vp.GetIViewOutput();
-
-    if (NULL == output)
-        return false;
-
-    IAuxCoordSysP   currentACS = IACSManager::GetManager().GetActive(vp);
-    bool            isCurrent = Equals(currentACS);
-    DPoint3d        drawOrigin;
-
-    GetOrigin(drawOrigin);
-
-    QvElem*     qvElem = _CreateQvElems(&vp, &drawOrigin, isCurrent ? ACS_SIZE_ACTIVE : ACS_SIZE_INACTIVE, isCurrent ? ACSDisplayOptions::Active : ACSDisplayOptions::Inactive, true);
-
-    if (NULL == qvElem)
-        return false;
-
-    DPoint3d    testPtView;
-
-    vp.WorldToView(&testPtView, &borePt, 1);
-    testPtView.z = 0.0;
-
-    bool        hitFound = output->LocateQvElem(qvElem, *((DPoint2dCP) &testPtView), 1.0, hitPt, NULL, NULL, NULL);
-
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-
-    return hitFound;
-    }
-
-//=======================================================================================
-//! An IAuxCoordSys is an object that holds the data which
-//! describes an auxiliary coordinate system
-//=======================================================================================
-struct IAuxCoordSys : RefCountedBase
-{
-public:
-    // Only for ACS's of type ACS_TYPE_GeoCoordinate is the rotation matrix position dependent, don't publish this yet.
-    RotMatrixR GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const {return _GetRotation(pRot, pPosition);}
-
-    //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
-    DGNPLATFORM_EXPORT bool Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-AuxCoordSystemCP IACSManager::GetActive(DgnViewportR vp)
-    {
-    SpatialViewControllerCP viewController = vp.GetSpatialViewControllerCP ();
-
-    if (nullptr == viewController)
-        return nullptr;
-
-    return viewController->GetAuxCoordinateSystem();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IACSManager::SetActive(AuxCoordSystemCP auxCoordSys, DgnViewportR vp)
-    {
-    SpatialViewControllerP viewController = vp.GetSpatialViewControllerP();
-
-    if (nullptr == viewController)
-        return ERROR;
-
-    viewController->SetAuxCoordinateSystem(auxCoordSys);
-
-    return SUCCESS;
-    }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+AuxCoordSystemPtr AuxCoordSystem::CreateNew(ViewDefinitionCR def, Utf8StringCR name)
+    {
+    if (def.IsSpatialView())
+        return new AuxCoordSystemSpatial(def.GetDgnDb(), name);
+    else if (def.IsView3d())
+        return new AuxCoordSystem3d(def.GetDgnDb(), name);
+    else
+        return new AuxCoordSystem2d(def.GetDgnDb(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode AuxCoordSystem::CreateCode(ViewDefinitionCR def, Utf8StringCR name)
+    {
+    if (def.IsSpatialView())
+        return AuxCoordSystemSpatial::CreateCode(def.GetDgnDb(), name);
+    else if (def.IsView3d())
+        return AuxCoordSystem3d::CreateCode(def.GetDgnDb(), name);
+    else
+        return AuxCoordSystem2d::CreateCode(def.GetDgnDb(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AuxCoordSystem::_IsValidForView(ViewControllerCR viewController) const
+    {
+    if (viewController.IsSpatialView())
+        return IsAuxCoordSystemSpatial();
+        
+    return (viewController.Is3d() == IsAuxCoordSystem3d());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AuxCoordSystem::GetTypeName() const
+    {
+    L10N::StringId id;
+
+    switch (_GetType())
+        {
+        case ACSType::None:
+            id = DgnCoreL10N::ACS_TYPE_NONE();
+            break;
+
+        case ACSType::Rectangular:
+            id = DgnCoreL10N::ACS_TYPE_RECT();
+            break;
+
+        case ACSType::Cylindrical:
+            id = DgnCoreL10N::ACS_TYPE_CYL();
+            break;
+
+        case ACSType::Spherical:
+            id = DgnCoreL10N::ACS_TYPE_SPHERE();
+            break;
+        };
+
+    return DgnCoreL10N::GetString(id);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03

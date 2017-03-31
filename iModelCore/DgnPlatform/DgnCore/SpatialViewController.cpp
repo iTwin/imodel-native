@@ -370,6 +370,40 @@ void SpatialViewController::_PickTerrain(PickContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLightsPtr SpatialViewController::GetLights() const
+    {
+    DgnDb::VerifyClientThread();
+    if (m_lights.IsValid())
+        return m_lights;
+        
+    Render::TargetP target = m_vp->GetRenderTarget();
+    if (nullptr == target)
+        return nullptr;
+
+    auto& displayStle = GetSpatialViewDefinition().GetDisplayStyle3d();
+    m_lights = displayStle.CreateSceneLights(*target); // lighting setup for the scene
+
+    if (!displayStle.GetViewFlags().ShowSourceLights())
+        return m_lights;
+
+    auto& models = GetDgnDb().Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto spatialModel = model->ToSpatialModelP();
+        if (nullptr != spatialModel)
+            spatialModel->AddLights(*m_lights, *target);
+        }
+
+    return m_lights;
 * Visit all of the elements in a SpatialViewController. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

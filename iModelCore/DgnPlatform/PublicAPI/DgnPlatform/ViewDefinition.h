@@ -26,7 +26,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 namespace ViewElementHandler
 {
     struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView2d; struct TemplateView3d;
-    struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle3d;
+    struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle2d; struct ViewDisplayStyle3d;
 }
 
 //=======================================================================================
@@ -50,7 +50,8 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static constexpr Utf8CP str_Styles() {return "styles";}
+    BE_JSON_NAME(styles);
+
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -58,19 +59,19 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+    virtual DisplayStyle2dCP _ToDisplayStyle2d() const {return nullptr;}
     virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
+    DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
-    JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
-    JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
+    JsonValueCR GetStyles() const {return m_jsonProperties[json_styles()];}
+    JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
 public:
+    DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
+    DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
     DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
     DisplayStyle3dP ToDisplayStyle3dP() {return const_cast<DisplayStyle3dP>(_ToDisplayStyle3d());}
-
-    //! Construct a new DisplayStyle.
-    //! @param[in] db The DgnDb to hold the DisplayStyle
-    //! @param[in] name The name of the DisplayStyle. Must be unique across all DisplayStyles
-    DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    bool Is3d() const {return nullptr != ToDisplayStyle3d();}
 
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
@@ -127,6 +128,28 @@ public:
 };
 
 //=======================================================================================
+//! The DisplayStyle for a 2d view.
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle2d : DisplayStyle
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle2d, DisplayStyle);
+    friend struct ViewElementHandler::ViewDisplayStyle2d;
+
+protected:
+    explicit DisplayStyle2d(CreateParams const& params) : T_Super(params) {}
+    DisplayStyle2dCP _ToDisplayStyle2d() const override final {return this;}
+
+public:
+    //! Construct a new DisplayStyle2d.
+    //! @param[in] db The DgnDb to hold the DisplayStyle2d
+    //! @param[in] name The name of the DisplayStyle2d. Must be unique across all DisplayStyles
+    DisplayStyle2d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle2d));}//!< @private
+};
+
+//=======================================================================================
 //! The DisplayStyle for a 3d view.
 // @bsiclass                                                    Keith.Bentley   10/16
 //=======================================================================================
@@ -175,10 +198,11 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
-    static constexpr Utf8CP str_HLine() {return "hline";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
+    BE_JSON_NAME(hline)
+
     //! Construct a new DisplayStyle3d.
     //! @param[in] db The DgnDb to hold the DisplayStyle3d
     //! @param[in] name The name of the DisplayStyle3d. Must be unique across all DisplayStyles
@@ -198,13 +222,14 @@ public:
     //! Turn the GroundPlane on or off.
     void SetGroundPlaneEnabled(bool val) {m_environment.m_groundPlane.m_enabled = val;}
 
-    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
-    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
+    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
+    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
 
-    Render::SceneLights CreateSceneLights(Render::TargetR);
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
     DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
+    DGNPLATFORM_EXPORT Render::SceneLights::Brightness GetSceneBrightness() const;
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -366,8 +391,9 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP str_Description() {return "Description";}
-    static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
+    static constexpr Utf8CP prop_Description() {return "Description";}
+    BE_JSON_NAME(viewDetails)
+
     static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);} 
@@ -407,8 +433,8 @@ protected:
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     void SetupDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
     Utf8String ToDetailJson();
-    JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
-    JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
+    JsonValueCR GetDetails() const {return m_jsonProperties[json_viewDetails()];}
+    JsonValueR GetDetailsR() {return m_jsonProperties[json_viewDetails()];}
     void AdjustAspectRatio(double windowAspect);
 
 public:
@@ -417,8 +443,8 @@ public:
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
-    Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
-    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
+    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
@@ -566,7 +592,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetAuxiliaryCoordinateSystemId() const;
 
     //! Set the AuxiliaryCoordinateSystem for this view.
-    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId); // NEEDWORK: Make protected, ViewDefinition2d/3d should take AuxiliaryCoordinateSystem2d/3d...
+    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId);
 
     //! Query if the specified model is displayed in this view
     bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
@@ -1117,11 +1143,11 @@ protected:
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyleR displayStyle) :
-            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle(displayStyle);}
+    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyle2dR displayStyle) :
+            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle2d(displayStyle);}
 
     //! Set the DisplayStyle for this view.
-    void SetDisplayStyle(DisplayStyleR style) {T_Super::SetupDisplayStyle(style);}
+    void SetDisplayStyle2d(DisplayStyle2dR style) {T_Super::SetupDisplayStyle(style);}
 
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
@@ -1152,11 +1178,11 @@ protected:
 
 public:
     //! Construct a DrawingViewDefinition subclass prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
 
     //! Construct a DrawingViewDefinition prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
     DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
@@ -1186,11 +1212,11 @@ protected:
 
 public:
     //! Construct a new SheetViewDefinition subclass prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
 
     //! Construct a new SheetViewDefinition prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
     DGNPLATFORM_EXPORT Sheet::ViewControllerPtr LoadViewController(bool allowOverrides=true) const;
@@ -1215,7 +1241,7 @@ protected:
     explicit TemplateViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyleP displayStyle=nullptr);
+    DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle2dP displayStyle=nullptr);
 };
 
 //=======================================================================================
@@ -1302,6 +1328,11 @@ namespace ViewElementHandler
     struct ViewDisplayStyle : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DisplayStyle, ViewDisplayStyle, Definition, DGNPLATFORM_EXPORT);
+    };
+
+    struct ViewDisplayStyle2d : ViewDisplayStyle
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle2d, DisplayStyle2d, ViewDisplayStyle2d, ViewDisplayStyle, DGNPLATFORM_EXPORT);
     };
 
     struct ViewDisplayStyle3d : ViewDisplayStyle

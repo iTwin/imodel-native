@@ -203,12 +203,14 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::ViewModels::GetHandler());
     RegisterHandler(ViewElementHandler::ViewCategories::GetHandler());
     RegisterHandler(ViewElementHandler::ViewDisplayStyle::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle2d::GetHandler());
     RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
     RegisterHandler(ACSElementHandler::CoordSys2d::GetHandler());
     RegisterHandler(ACSElementHandler::CoordSys3d::GetHandler());
+    RegisterHandler(ACSElementHandler::CoordSysSpatial::GetHandler());
 
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
     

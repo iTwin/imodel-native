@@ -709,6 +709,18 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         else
             {
             m_fillColor = elParams.GetFillColor();
+
+            bool outline = false;
+            if (elParams.IsFillColorFromViewBackground(&outline))
+                {
+                // NOTE: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
+                if (ColorDef::White() == m_fillColor)
+                    m_fillColor.SetRed(254);
+
+                // Set line color the same as fill color if an outline fill isn't being drawn...
+                if (!outline)
+                    m_lineColor = m_fillColor;
+                }
             }
 
         m_isFilled = true;
@@ -852,6 +864,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
+    m_backgroundFill        = rhs.m_backgroundFill;
     m_elmTransparency       = rhs.m_elmTransparency;
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
@@ -878,6 +891,7 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
+    m_backgroundFill        = rhs.m_backgroundFill;
     m_elmTransparency       = rhs.m_elmTransparency;
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
@@ -940,6 +954,7 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     // Don't compare m_weight unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_weight != other.m_appearanceOverrides.m_weight)
         return false;
+
     if (m_appearanceOverrides.m_weight && (m_weight != other.m_weight))
         return false;
 
@@ -976,24 +991,28 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     if (FillDisplay::Never != m_fillDisplay)
         {
         // Don't compare m_fillColor/m_gradient unless sub-category appearance override is set...
-        if (m_appearanceOverrides.m_bgFill != other.m_appearanceOverrides.m_bgFill)
-            return false;
         if (m_appearanceOverrides.m_fill != other.m_appearanceOverrides.m_fill)
             return false;
+
         if (m_appearanceOverrides.m_fill)
             {
             if (m_gradient.IsValid() != other.m_gradient.IsValid())
                 return false;
+
             if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
                 return false;
 
-            if (m_fillColor != other.m_fillColor)
+            if (m_backgroundFill != other.m_backgroundFill)
+                return false;
+
+            if (BackgroundFill::None == m_backgroundFill && m_fillColor != other.m_fillColor)
                 return false;
             }
         }
 
     if (m_pattern.IsValid() != other.m_pattern.IsValid())
         return false;
+
     if (m_pattern.IsValid() && !(*m_pattern == *other.m_pattern))
         return false;
 
@@ -1032,18 +1051,10 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();
 
-    if (m_appearanceOverrides.m_bgFill)
-        {
-        m_fillColor = (nullptr != vp ? vp->GetBackgroundColor() : ColorDef::Black());
-
-        // NOTE: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
-        if (ColorDef::White() == m_fillColor)
-            m_fillColor.SetRed(254);
-        }
-    else if (!m_appearanceOverrides.m_fill)
-        {
+    if (!m_appearanceOverrides.m_fill)
         m_fillColor = appearance.GetColor();
-        }
+    else if (BackgroundFill::None != m_backgroundFill)
+        m_fillColor = (nullptr != vp ? vp->GetBackgroundColor() : ColorDef::Black());
 
     if (!m_appearanceOverrides.m_weight)
         m_weight = appearance.GetWeight();

@@ -870,7 +870,7 @@ struct AreaFill : private flatbuffers::Table {
   FillDisplay fill() const { return static_cast<FillDisplay>(GetField<int8_t>(4, 0)); }
   uint32_t color() const { return GetField<uint32_t>(6, 0); }
   uint8_t useColor() const { return GetField<uint8_t>(8, 0); }
-  uint8_t isBgColor() const { return GetField<uint8_t>(10, 0); }
+  uint8_t backgroundFill() const { return GetField<uint8_t>(10, 0); }
   double transparency() const { return GetField<double>(12, 0); }
   GradientMode mode() const { return static_cast<GradientMode>(GetField<int8_t>(14, 0)); }
   uint16_t flags() const { return GetField<uint16_t>(16, 0); }
@@ -884,7 +884,7 @@ struct AreaFill : private flatbuffers::Table {
            VerifyField<int8_t>(verifier, 4 /* fill */) &&
            VerifyField<uint32_t>(verifier, 6 /* color */) &&
            VerifyField<uint8_t>(verifier, 8 /* useColor */) &&
-           VerifyField<uint8_t>(verifier, 10 /* isBgColor */) &&
+           VerifyField<uint8_t>(verifier, 10 /* backgroundFill */) &&
            VerifyField<double>(verifier, 12 /* transparency */) &&
            VerifyField<int8_t>(verifier, 14 /* mode */) &&
            VerifyField<uint16_t>(verifier, 16 /* flags */) &&
@@ -900,7 +900,7 @@ struct AreaFill : private flatbuffers::Table {
   bool has_fill() const { return CheckField(4); }
   bool has_color() const { return CheckField(6); }
   bool has_useColor() const { return CheckField(8); }
-  bool has_isBgColor() const { return CheckField(10); }
+  bool has_backgroundFill() const { return CheckField(10); }
   bool has_transparency() const { return CheckField(12); }
   bool has_mode() const { return CheckField(14); }
   bool has_flags() const { return CheckField(16); }
@@ -917,7 +917,7 @@ struct AreaFillBuilder {
   void add_fill(FillDisplay fill) { fbb_.AddElement<int8_t>(4, static_cast<int8_t>(fill), 0); }
   void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(6, color, 0); }
   void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(8, useColor, 0); }
-  void add_isBgColor(uint8_t isBgColor) { fbb_.AddElement<uint8_t>(10, isBgColor, 0); }
+  void add_backgroundFill(uint8_t backgroundFill) { fbb_.AddElement<uint8_t>(10, backgroundFill, 0); }
   void add_transparency(double transparency) { fbb_.AddElement<double>(12, transparency, 0); }
   void add_mode(GradientMode mode) { fbb_.AddElement<int8_t>(14, static_cast<int8_t>(mode), 0); }
   void add_flags(uint16_t flags) { fbb_.AddElement<uint16_t>(16, flags, 0); }
@@ -938,7 +938,7 @@ inline flatbuffers::Offset<AreaFill> CreateAreaFill(flatbuffers::FlatBufferBuild
    FillDisplay fill = FillDisplay_None,
    uint32_t color = 0,
    uint8_t useColor = 0,
-   uint8_t isBgColor = 0,
+   uint8_t backgroundFill = 0,
    double transparency = 0,
    GradientMode mode = GradientMode_None,
    uint16_t flags = 0,
@@ -957,7 +957,7 @@ inline flatbuffers::Offset<AreaFill> CreateAreaFill(flatbuffers::FlatBufferBuild
   builder_.add_color(color);
   builder_.add_flags(flags);
   builder_.add_mode(mode);
-  builder_.add_isBgColor(isBgColor);
+  builder_.add_backgroundFill(backgroundFill);
   builder_.add_useColor(useColor);
   builder_.add_fill(fill);
   return builder_.Finish();

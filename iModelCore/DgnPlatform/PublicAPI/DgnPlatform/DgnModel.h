@@ -835,8 +835,7 @@ protected:
 
 public:
     DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
-
-    void RemoveRangeIndex() {m_rangeIndex.reset();}
+    void RemoveRangeIndex() {BeMutexHolder lock(m_mutex); m_rangeIndex.reset();}
 
     RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
@@ -870,7 +869,7 @@ protected:
 };
 
 //=======================================================================================
-//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y.
+//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y5.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -914,6 +913,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT void AddLights(Render::LightListR, Render::TargetR) const;
 };
 
 //=======================================================================================

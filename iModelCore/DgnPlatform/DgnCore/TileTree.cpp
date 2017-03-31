@@ -1081,6 +1081,7 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
     BeAssert(IsReady());
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
+
     }
 
 /*---------------------------------------------------------------------------------**//**

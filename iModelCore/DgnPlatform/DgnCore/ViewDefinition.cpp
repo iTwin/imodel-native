@@ -25,6 +25,7 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(ViewModels);
     HANDLER_DEFINE_MEMBERS(ViewCategories);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle);
+    HANDLER_DEFINE_MEMBERS(ViewDisplayStyle2d);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle3d);
 }
 
@@ -63,13 +64,13 @@ namespace ViewProperties
     static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
     static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
     static constexpr Utf8CP str_ACS() {return "acs";}
-    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     static constexpr Utf8CP str_Ambient() {return "ambient";}
     static constexpr Utf8CP str_Flash() {return "flash";}
     static constexpr Utf8CP str_Portrait() {return "portrait";}
     static constexpr Utf8CP str_Sun() {return "sun";}
     static constexpr Utf8CP str_SunDir() {return "sunDir";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    BE_JSON_NAME(sceneLights);
+    BE_JSON_NAME(brightness);
 };
 
 using namespace ViewProperties;
@@ -236,6 +237,24 @@ ClipVectorPtr ViewDefinition::GetViewClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
     {
+    switch (orientation)
+        {
+        case GridOrientationType::WorldYZ:
+        case GridOrientationType::WorldXZ:
+            {
+            if (!IsView3d())
+                return;
+            break;
+            }
+
+        case GridOrientationType::GeoCoord:
+            {
+            if (!IsSpatialView())
+                return;
+            break;
+            }
+        }
+
     auto& details = GetDetailsR();
     details.SetOrRemoveUInt(str_GridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
     details.SetOrRemoveUInt(str_GridPerRef(), gridsPerRef, 10);
@@ -1190,27 +1209,33 @@ void DisplayStyle::SetMonochromeColor(ColorDef val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::SceneLights DisplayStyle3d::CreateSceneLights(Render::TargetR target)
+Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     {
-    JsonValueCR sceneLights = GetStyle(Json::StaticString(str_SceneLights()));
+    JsonValueCR sceneLights = GetStyle(json_sceneLights());
 
-    Render::SceneLights lights;
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
-
-    auto& sun = (Lighting::Parameters const&) sceneLights[str_Sun()];
-    if (sun.IsValid())
+    Render::SceneLightsPtr lights = new Render::SceneLights();
+    if (m_viewFlags.ShowCameraLights())
         {
-        DVec3d dir = DVec3d::UnitZ();
-        auto& sundir = sceneLights[str_SunDir()];
-        if (!sundir.isNull())
-            JsonUtils::DVec3dFromJson(dir, sundir);
-
-        lights.AddLight(target.CreateLight(sun, &dir));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
+        lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
         }
 
-    lights.m_brightness.FromJson(sceneLights[str_Brightness()]);
+    if (m_viewFlags.ShowSolarLight())
+        {
+        auto& sun = (Lighting::Parameters const&) sceneLights[str_Sun()];
+        if (sun.IsValid())
+            {
+            DVec3d dir = DVec3d::UnitZ();
+            auto& sundir = sceneLights[str_SunDir()];
+            if (!sundir.isNull())
+                JsonUtils::DVec3dFromJson(dir, sundir);
+
+            lights->AddLight(target.CreateLight(sun, &dir));
+            }
+        }
+
+    lights->m_brightness.FromJson(sceneLights[json_brightness()]);
     return lights;
     }
 
@@ -1222,7 +1247,7 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
     if (!params.IsValid())
         return;
 
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     switch (params.GetType())
         {
         case Lighting::LightType::Ambient:
@@ -1244,7 +1269,7 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR direction)
     {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     if (params.GetType() != Lighting::LightType::Solar || !params.IsValid())
         {
         sceneLights.removeMember(str_SunDir());
@@ -1258,15 +1283,25 @@ void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLights::Brightness DisplayStyle3d::GetSceneBrightness() const
+    {
+    Render::SceneLights::Brightness brightness;
+    brightness.FromJson(GetStyles()[json_sceneLights()][json_brightness()]);
+    return brightness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::SetSceneBrightness(Render::SceneLights::Brightness const& brightness)
     {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     if (!brightness.IsValid())
         {
-        sceneLights.removeMember(str_Brightness());
+        sceneLights.removeMember(json_brightness());
         return;
         }
-    sceneLights[str_Brightness()] = brightness.ToJson();
+    sceneLights[json_brightness()] = brightness.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1878,7 +1913,10 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
             else
                 {
                 auto view2d = viewDef.ToView2dP();
-                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                auto style2d = style->ToDisplayStyle2d();
+                if (nullptr == style2d)
+                    return DgnDbStatus::BadArg;
+                view2d->SetDisplayStyle2d(*style2d->MakeCopy<Dgn::DisplayStyle2d>());
                 }
 
             return DgnDbStatus::Success;
@@ -2152,64 +2190,64 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
 }
 
 #if defined(TODO_ELEMENT_TILE)
-static DgnHost::Key s_displayMetricsRecorderKey;
+static DgnHost::Key s_DisplayMetricsHandlerKey;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-IDisplayMetricsRecorder* IDisplayMetricsRecorder::GetRecorder()
+IDisplayMetricsHandler* IDisplayMetricsHandler::GetHandler()
     {
     // This is normally NULL. It is only used when playing back a DisplayBenchmark
-    return static_cast<IDisplayMetricsRecorder*> (T_HOST.GetHostObject (s_displayMetricsRecorderKey));
+    return static_cast<IDisplayMetricsHandler*> (T_HOST.GetHostObject (s_DisplayMetricsHandlerKey));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void IDisplayMetricsRecorder::SetRecorder(IDisplayMetricsRecorder*recorder)
+void IDisplayMetricsHandler::SetHandler(IDisplayMetricsHandler*handler)
     {
     //  This should happen 0 or 1 times.
-    BeAssert(GetRecorder() == nullptr);
+    BeAssert(GetHandler() == nullptr);
 
-    T_HOST.SetHostObject (s_displayMetricsRecorderKey, recorder);
+    T_HOST.SetHostObject (s_DisplayMetricsHandlerKey, handler);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-bool IDisplayMetricsRecorder::IsRecorderActive()
+bool IDisplayMetricsHandler::IsRecorderActive()
     {
-    IDisplayMetricsRecorder*recorder = GetRecorder();
-    return recorder ? recorder->_IsActive() : false;
+    IDisplayMetricsHandler*handler = GetHandler();
+    return handler ? handler->_IsRecorderActive() : false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void DisplayMetricsRecorder::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
+void DisplayMetricsHandler::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
     {
-    if (!IDisplayMetricsRecorder::IsRecorderActive())
+    if (!IDisplayMetricsHandler::IsRecorderActive())
         return;
 
-    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
     measurement["seconds"] = seconds;
     measurement["count"] = queryResults.GetCount();
     if (queryResults.m_incomplete)
         measurement["incomplete"] = 1;
         
-    recorder->_RecordMeasurement("QuerySceneFinished", measurement);
+    handler->_RecordMeasurement("QuerySceneFinished", measurement);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
+void DisplayMetricsHandler::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
     {
-    if (!IDisplayMetricsRecorder::IsRecorderActive())
+    if (!IDisplayMetricsHandler::IsRecorderActive())
         return;
 
-    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
     measurement["seconds"] = seconds;
     if (aborted)
@@ -2217,10 +2255,21 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     if (!complete)
         measurement["incomplete"] = 1;
         
-    recorder->_RecordMeasurement("CreateSceneComplete", measurement);
+    handler->_RecordMeasurement("CreateSceneComplete", measurement);
     }
 #endif
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2017
+//---------------------------------------------------------------------------------------
+bool DisplayMetricsHandler::HandleForceHealImmediate(DgnViewportP vp, UpdatePlan& plan)
+    {
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
+    if (nullptr == handler)
+        return false;   //  Not handled by IDisplayMetricsHandler
+
+    return handler->_HandleForceHealImmediate(vp, plan);
+    }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
@@ -2229,17 +2278,17 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle2dP displayStyleIn)
     {
     DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
     CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
+    auto displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle2d(db, "");
 
     TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
-    viewDef->SetDisplayStyle(*displayStyle);
+    viewDef->SetDisplayStyle2d(*displayStyle);
 
     if (nullptr == categorySelectorIn)
         {

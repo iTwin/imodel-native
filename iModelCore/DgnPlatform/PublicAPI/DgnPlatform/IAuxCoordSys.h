@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-/** @cond BENTLEY_SDK_Internal */
 
 #include "Render.h"
 #include "ValueFormat.h"
@@ -25,7 +24,6 @@ enum class ACSType
     Rectangular        = 1,
     Cylindrical        = 2,
     Spherical          = 3,
-    Extended           = 4,
     };
 
 enum class ACSDisplayOptions
@@ -40,7 +38,7 @@ enum class ACSDisplayOptions
 
 ENUM_IS_FLAGS (ACSDisplayOptions)
 
-namespace ACSElementHandler {struct CoordSys2d; struct CoordSys3d;}
+namespace ACSElementHandler {struct CoordSys2d; struct CoordSys3d; struct CoordSysSpatial;}
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  02/17
@@ -54,9 +52,12 @@ protected:
 
     virtual AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const = 0; // Either this method or _GetAsAuxCoordSystem3d must return non-null.
     virtual AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const = 0; // Either this method or _GetAsAuxCoordSystem2d must return non-null.
+    virtual AuxCoordSystemSpatialCP _GetAsAuxCoordSystemSpatial() const {return nullptr;}
 
-    virtual ACSType _GetType() const {return static_cast<ACSType>(GetPropertyValueInt32("Type"));};
-    virtual BentleyStatus _SetType(ACSType type) {SetPropertyValue("Type", static_cast<int32_t>(type)); return SUCCESS;};
+    DGNPLATFORM_EXPORT virtual bool _IsValidForView(ViewControllerCR viewController) const;
+
+    virtual ACSType _GetType() const {return static_cast<ACSType>(GetPropertyValueInt32("Type"));}
+    virtual BentleyStatus _SetType(ACSType type) {SetPropertyValue("Type", static_cast<int32_t>(type)); return SUCCESS;}
 
     virtual DPoint3d _GetOrigin() const = 0;
     virtual BentleyStatus _SetOrigin(DPoint3dCR) = 0;
@@ -85,18 +86,30 @@ protected:
 public:
     //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
     static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
+    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(ViewDefinitionCR def, Utf8StringCR name="");
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(ViewDefinitionCR def, Utf8StringCR name=""); //!< @private
 
     AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
     AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
+    AuxCoordSystemSpatialCP ToAuxCoordSystemSpatial() const {return _GetAsAuxCoordSystemSpatial();}
 
     AuxCoordSystem2dP ToAuxCoordSystem2dP() {return const_cast<AuxCoordSystem2dP>(ToAuxCoordSystem2d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem2dP>(el)
     AuxCoordSystem3dP ToAuxCoordSystem3dP() {return const_cast<AuxCoordSystem3dP>(ToAuxCoordSystem3d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem3dP>(el)
+    AuxCoordSystemSpatialP ToAuxCoordSystemSpatialP() {return const_cast<AuxCoordSystemSpatialP>(ToAuxCoordSystemSpatial());} //!< more efficient substitute for dynamic_cast<AuxCoordSystemSpatialP>(el)
+
+    bool IsAuxCoordSystem2d() const {return nullptr != _GetAsAuxCoordSystem2d();} //!< Determine whether this ACS is 2d or not
+    bool IsAuxCoordSystem3d() const {return nullptr != _GetAsAuxCoordSystem3d();} //!< Determine whether this ACS is 3d or not
+    bool IsAuxCoordSystemSpatial() const {return nullptr != _GetAsAuxCoordSystemSpatial();} //!< Determine whether this ACS is a spatial coordinate system or not
+    bool IsValidForView(ViewControllerCR viewController) const {return _IsValidForView(viewController);}
 
     //! Return type of the ACS object.
     ACSType GetType() const {return _GetType();}
 
     //! Change the type stored in the ACS object.
     BentleyStatus SetType(ACSType type) {return _SetType(type);}
+
+    //! Return a string for the ACS type name.
+    Utf8String GetTypeName() const;
 
     //! Return the origin point stored in the ACS object.
     DPoint3d GetOrigin() const {return _GetOrigin();}
@@ -119,7 +132,7 @@ public:
     //! Display a representation of the ACS in the given view.
     void Display(DecorateContextR context, ACSDisplayOptions options) const {return _Display(context, options);}
 
-    // NOTE: Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
+    // Optional grid settings for this ACS that override the view definition's grid settings when drawing a grid aligned with the ACS.
     bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...
     StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
     StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
@@ -188,7 +201,7 @@ protected:
 
     AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const override final {return nullptr;}
     AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const override final {return this;}
-    
+
     DPoint3d _GetOrigin() const override {return GetOrigin3d();}
     BentleyStatus _SetOrigin(DPoint3dCR origin) override {SetOrigin3d(origin); return SUCCESS;}
 
@@ -215,6 +228,30 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  02/17
 //=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystemSpatial : AuxCoordSystem3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystemSpatial, AuxCoordSystem3d);
+    friend struct ACSElementHandler::CoordSysSpatial;
+
+protected:
+    explicit AuxCoordSystemSpatial(CreateParams const& params) : T_Super(params) {}
+
+    AuxCoordSystemSpatialCP _GetAsAuxCoordSystemSpatial() const override final {return this;}
+
+public:
+    //! Construct a new spatial Auxiliary Coordinate System.
+    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all spatial Auxiliary Coordinate Systems.
+    AuxCoordSystemSpatial(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateSpatialCode(db, name))) {SetOrigin3d(db.GeoLocation().GetGlobalOrigin());}
+
+    static DgnCode CreateSpatialCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystemSpatial, name);} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystemSpatial));} //!< @private
+
+}; // AuxCoordSystemSpatial
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  02/17
+//=======================================================================================
 namespace ACSElementHandler
 {
     struct CoordSys2d : dgn_ElementHandler::Definition
@@ -226,10 +263,13 @@ namespace ACSElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem3d, AuxCoordSystem3d, CoordSys3d, Definition, DGNPLATFORM_EXPORT);
     };
+
+    struct CoordSysSpatial : CoordSys3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystemSpatial, AuxCoordSystemSpatial, CoordSysSpatial, CoordSys3d, DGNPLATFORM_EXPORT);
+    };
  };
 
 /** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE
-
-/** @endcond */

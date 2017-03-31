@@ -353,8 +353,9 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteNonNavigationRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
-    //! Gets a cached and prepared ECSqlStatement.
+    //! Gets a cached and prepared ECSqlStatement that can be used only for select.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
+    //! Gets a cached and prepared ECSqlStatement that can be used to modify the Db. This should be used only for aspects.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, BeSQLite::EC::ECCrudWriteToken const*) const;
 
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
