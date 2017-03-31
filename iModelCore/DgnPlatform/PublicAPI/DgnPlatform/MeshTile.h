@@ -89,6 +89,7 @@ struct TileTextureImage : RefCountedBase
     public:
         static TileTextureImagePtr Create(ImageSource&& imageSource) { return new TileTextureImage(std::move(imageSource)); }
         static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
+        static TileTextureImagePtr Create(GradientSymbCR gradient);
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
 
         ImageSourceCR GetImageSource() const { return m_imageSource; }
@@ -112,6 +113,7 @@ private:
     // Mesh only...
     DgnMaterialId                   m_materialId;
     bool                            m_ignoreLighting;
+    GradientSymbPtr                 m_gradient;
     // Polyline only...
     uint32_t                        m_rasterWidth;  
     uint32_t                        m_linePixels;   
@@ -148,7 +150,9 @@ public:
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
+    GradientSymbCP GetGradient() const { return m_gradient.get(); }
     DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
+    bool HasTexture(DgnDbR db) const { return m_gradient.IsValid() || m_textureImage.IsValid() || QueryTexture(db).IsValid(); }
 
     // These comparisons ignore category, subcategory, and class.
     DGNPLATFORM_EXPORT bool IsStrictlyLessThan(TileDisplayParamsCR rhs) const;
