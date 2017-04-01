@@ -647,9 +647,12 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
         fn.FormTextParts(true);
         size_t locBufL = sizeof(locBuf);
-        if (m_signOption == ShowSignOption::SignAlways ||
-            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
-            locBuf[ind++] = sign;
+        if (!fn.IsZero())
+            {
+            if (m_signOption == ShowSignOption::SignAlways ||
+                ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+                locBuf[ind++] = sign;
+            }
         ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
         if (fn.HasFractionPart())
             {

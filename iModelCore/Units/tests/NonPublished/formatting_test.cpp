@@ -149,6 +149,9 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("546yrd(s) 2' 5\"", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
     EXPECT_STREQ ("1640' 5\"", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
 
+    BEU::Quantity ang90 = BEU::Quantity(89.9999999986, *degUOM);
+    LOG.infov("DMS-90 %s", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang90).c_str());
+
    /* LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
     LOG.infov("yfi8 %s", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
     LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());*/

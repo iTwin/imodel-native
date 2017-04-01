@@ -480,6 +480,7 @@ public:
     UNITS_EXPORT Utf8CP GetNumeratorText();
     UNITS_EXPORT void FormTextParts(bool reduce);
     bool HasFractionPart() { return 1 < m_textParts.size(); }
+    bool IsZero() { return (0 == m_numerator); }
     };
 
 //=======================================================================================
@@ -1089,8 +1090,10 @@ struct KindOfQuantity
         ////Quantity m_persistenceResolution;     // 1.0e-6 M   100.000003 1.100001
         double m_relativeError;   // a parameter related to the accuracy of the measurement methods.
         // Certainty, Accuracy, MarginOfError, Error, Tolerance, 
+
         FormatUnitSet m_persistenceFUS;
         bvector<FormatUnitSet> m_presentationFUS;  
+
         mutable KindOfQuantityId m_kindOfQuantityId;
 */
 
