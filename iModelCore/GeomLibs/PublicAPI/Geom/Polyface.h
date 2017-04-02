@@ -1901,11 +1901,20 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateXYTriangulation (bvector <DPoint3d>
 GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
 (
 bvector <DPoint3d> const &points,   //!< [in] points to triangulate
-PolyfaceHeaderPtr &delauney,        //!< [in] delauney triangulation of the points.
-PolyfaceHeaderPtr &voronoi          //!< [in] voronoi regions around the points.
+PolyfaceHeaderPtr &delauney,        //!< [out] delauney triangulation of the points.
+PolyfaceHeaderPtr &voronoi          //!< [out] voronoi regions around the points.
 );
 
-
+//! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces, using optional non-euclidean metric for distance in the voronoi.
+//! @return true if meshes created.
+GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
+(
+bvector<DPoint3d> const &points, //!< [in] points to triangulate
+bvector<double> const &radii,    //!< [in] point radii, for use in metric function
+int voronoiMetric,               //!< [in] 0 for euclidean distance, 1 for effectiveDistance = euclideanDistance - radius.
+PolyfaceHeaderPtr &delauney,    //!< [out] delauney triangulation of the points.
+PolyfaceHeaderPtr &voronoi      //!< [out] voronoi regions around the points.
+);
 //! Create a triangulation of regions as viewed in xy
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateConstrainedTriangulation
 (

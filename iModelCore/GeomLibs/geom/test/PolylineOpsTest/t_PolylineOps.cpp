@@ -445,11 +445,14 @@ TEST(Vu,SpineContextBridgePier)
         double dyFillet = f * dxFillet;
         auto section = CreateFilletedSymmetricT (dxTotal, dyTotal, dxBar, dyBar, dxFillet, dyFillet);
         SaveAndRestoreCheckTransform shifter (2.0 * dxTotal, 0,0);
-        for (double maxEdgeLength : bvector<double> {1000.0, 5.0, 2.0, 1.0, 0.5})
+        //for (double maxEdgeLength : bvector<double> {1000.0, 5.0, 2.0, 1.0, 0.5})
+        double maxEdgeLength = 20.0;
+        for (double strokeDegrees : bvector<double> {90,45,30,20})
             {
             SaveAndRestoreCheckTransform shifter (0, 2.0 * dyTotal, 0);
             bvector<DPoint3d> xyz;
             options->SetMaxEdgeLength (maxEdgeLength);
+            options->SetAngleTolerance (Angle::DegreesToRadians (strokeDegrees));
             section->AddStrokePoints (xyz, *options);
                 {
                 Check::SaveTransformedMarkers (xyz, markerSize);
