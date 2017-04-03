@@ -69,7 +69,7 @@ namespace Json {
    private:
       Utf8CP m_str;
 
-   public:
+   public:          
       constexpr explicit StaticString(Utf8CP czstring) : m_str(czstring) {}
       operator Utf8CP() const {return m_str;}
       Utf8CP c_str() const {return m_str;}
