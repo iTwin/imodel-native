@@ -683,7 +683,7 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
     _VuSet::TempMask visited (graph);
     ConvexClipPlaneSet planes;
     DRange3d range = graph->Range ();
-    static double s_rangeExpansionFactor = 3.0;
+    static double s_rangeExpansionFactor = 1.0;
     double dx = range.XLength () * s_rangeExpansionFactor;
     double dy = range.YLength () * s_rangeExpansionFactor;
     range.low.x -= dx;
