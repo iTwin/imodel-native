@@ -2901,7 +2901,12 @@ struct WhereLoopBuilder {
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
+  unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
 };
+
+/* Allowed values for WhereLoopBuider.bldFlags */
+#define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
+#define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -7063,14 +7068,16 @@ static LogEst estLog(LogEst N){
 ** value stored in its output register.
 */
 static void translateColumnToCopy(
-  Vdbe *v,            /* The VDBE containing code to translate */
+  Parse *pParse,      /* Parsing context */
   int iStart,         /* Translate from this opcode to the end */
   int iTabCur,        /* OP_Column/OP_Rowid references to this table */
   int iRegister,      /* The first column is in this register */
   int bIncrRowid      /* If non-zero, transform OP_rowid to OP_AddImm(1) */
 ){
+  Vdbe *v = pParse->pVdbe;
   VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
   int iEnd = sqlite3VdbeCurrentAddr(v);
+  if( pParse->db->mallocFailed ) return;
   for(; iStart<iEnd; iStart++, pOp++){
     if( pOp->p1!=iTabCur ) continue;
     if( pOp->opcode==OP_Column ){
@@ -7348,7 +7355,9 @@ static void constructAutomaticIndex(
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   if( pTabItem->fg.viaCoroutine ){
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
-    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult, 1);
+    testcase( pParse->db->mallocFailed );
+    translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
+                          pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
     pTabItem->fg.viaCoroutine = 0;
   }else{
@@ -8933,6 +8942,11 @@ static int whereLoopAddBtreeIndex(
       continue;
     }
 
+    if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
+      pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+    }else{
+      pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
+    }
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->u.btree.nBtm = saved_nBtm;
@@ -9480,7 +9494,15 @@ static int whereLoopAddBtree(
       }
     }
 
+    pBuilder->bldFlags = 0;
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
+    if( pBuilder->bldFlags==SQLITE_BLDF_INDEXED ){
+      /* If a non-unique index is used, or if a prefix of the key for
+      ** unique index is used (making the index functionally non-unique)
+      ** then the sqlite_stat1 data becomes important for scoring the
+      ** plan */
+      pTab->tabFlags |= TF_StatsUsed;
+    }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3Stat4ProbeFree(pBuilder->pRec);
     pBuilder->nRecValid = 0;
@@ -11453,8 +11475,9 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
-    if( pTabItem->fg.viaCoroutine && !db->mallocFailed ){
-      translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
+    if( pTabItem->fg.viaCoroutine ){
+      testcase( pParse->db->mallocFailed );
+      translateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
                             pTabItem->regResult, 0);
       continue;
     }
@@ -14447,7 +14470,7 @@ static void yy_reduce(
   yylhsminor.yy190.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &yymsp[0].minor.yy0, 1);
   yylhsminor.yy190.zStart = yymsp[0].minor.yy0.z;
   yylhsminor.yy190.zEnd = yymsp[0].minor.yy0.z + yymsp[0].minor.yy0.n;
-  if( yylhsminor.yy190.pExpr ) yylhsminor.yy190.pExpr->flags |= EP_Leaf;
+  if( yylhsminor.yy190.pExpr ) yylhsminor.yy190.pExpr->flags |= EP_Leaf|EP_Resolved;
 }
   yymsp[0].minor.yy190 = yylhsminor.yy190;
         break;
@@ -16069,14 +16092,14 @@ SQLITE_PRIVATE int sqlite3GetToken(const unsigned char *z, int *tokenType){
 */
 SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;                   /* Number of errors encountered */
-  int i;                          /* Loop counter */
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
+  int n = 0;                      /* Length of the next token token */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  unsigned char zSpace[sizeof(yyParser)];  /* Space for parser engine object */
+  yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
 
   assert( zSql!=0 );
@@ -16086,11 +16109,10 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
   }
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
-  i = 0;
   assert( pzErrMsg!=0 );
   /* sqlite3ParserTrace(stdout, "parser: "); */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  pEngine = zSpace;
+  pEngine = &sEngine;
   sqlite3ParserInit(pEngine);
 #else
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
@@ -16104,12 +16126,10 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
   assert( pParse->nVar==0 );
   assert( pParse->pVList==0 );
   while( 1 ){
-    assert( i>=0 );
-    if( zSql[i]!=0 ){
-      pParse->sLastToken.z = &zSql[i];
-      pParse->sLastToken.n = sqlite3GetToken((u8*)&zSql[i],&tokenType);
-      i += pParse->sLastToken.n;
-      if( i>mxSqlLen ){
+    if( zSql[0]!=0 ){
+      n = sqlite3GetToken((u8*)zSql, &tokenType);
+      mxSqlLen -= n;
+      if( mxSqlLen<0 ){
         pParse->rc = SQLITE_TOOBIG;
         break;
       }
@@ -16123,6 +16143,7 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
       }else{
         tokenType = TK_SEMI;
       }
+      zSql -= n;
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
@@ -16131,18 +16152,21 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
         break;
       }
       if( tokenType==TK_ILLEGAL ){
-        sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"",
-                        &pParse->sLastToken);
+        sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
         break;
       }
+      zSql += n;
     }else{
+      pParse->sLastToken.z = zSql;
+      pParse->sLastToken.n = n;
       sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
       lastTokenParsed = tokenType;
+      zSql += n;
       if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
   }
   assert( nErr==0 );
-  pParse->zTail = &zSql[i];
+  pParse->zTail = zSql;
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
   sqlite3StatusHighwater(SQLITE_STATUS_PARSER_STACK,
@@ -17515,6 +17539,21 @@ SQLITE_API sqlite_int64 sqlite3_last_insert_rowid(sqlite3 *db){
   }
 #endif
   return db->lastRowid;
+}
+
+/*
+** Set the value returned by the sqlite3_last_insert_rowid() API function.
+*/
+SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3 *db, sqlite3_int64 iRowid){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  db->lastRowid = iRowid;
+  sqlite3_mutex_leave(db->mutex);
 }
 
 /*
@@ -22267,8 +22306,9 @@ SQLITE_PRIVATE int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 ** Return the number of bytes read, or 0 on error.
 ** The value is stored in *v.
 */
-SQLITE_PRIVATE int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
-  const char *pStart = p;
+SQLITE_PRIVATE int sqlite3Fts3GetVarint(const char *pBuf, sqlite_int64 *v){
+  const unsigned char *p = (const unsigned char*)pBuf;
+  const unsigned char *pStart = p;
   u32 a;
   u64 b;
   int shift;
@@ -23315,7 +23355,9 @@ static int fts3InitVtab(
     char *z; 
     int n = 0;
     z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
-    memcpy(zCsr, z, n);
+    if( n>0 ){
+      memcpy(zCsr, z, n);
+    }
     zCsr[n] = '\0';
     sqlite3Fts3Dequote(zCsr);
     p->azColumn[iCol] = zCsr;
@@ -25326,8 +25368,10 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
   const u32 nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
 
   Fts3Table *p = (Fts3Table*)pVtab;
-  int rc = sqlite3Fts3PendingTermsFlush(p);
+  int rc;
+  i64 iLastRowid = sqlite3_last_insert_rowid(p->db);
 
+  rc = sqlite3Fts3PendingTermsFlush(p);
   if( rc==SQLITE_OK 
    && p->nLeafAdd>(nMinMerge/16) 
    && p->nAutoincrmerge && p->nAutoincrmerge!=0xff
@@ -25342,6 +25386,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
     if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, p->nAutoincrmerge);
   }
   sqlite3Fts3SegmentsClose(p);
+  sqlite3_set_last_insert_rowid(p->db, iLastRowid);
   return rc;
 }
 
