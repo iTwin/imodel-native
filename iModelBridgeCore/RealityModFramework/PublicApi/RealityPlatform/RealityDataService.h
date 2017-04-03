@@ -14,6 +14,7 @@
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
+#include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
@@ -383,9 +384,12 @@ enum class RealityDataField
     Size,
     Classification,
     Type,
+    Streamed,
     Footprint,
     ThumbnailDocument,
     MetadataURL,
+    Copyright,
+    TermsOfUse,
     ResolutionInMeters,
     AccuracyInMeters,
     Visibility,
@@ -638,6 +642,7 @@ struct TransferResult
     size_t                  progress; //a percentage of how much of the file was successfully downloaded
     time_t                  timeSpent;
     Utf8String              name;
+    RawServerResponse       response;
     };
 
 struct TransferReport
@@ -665,6 +670,9 @@ struct RealityDataServiceTransfer : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT RealityDataServiceTransfer(){}
 
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataServiceTransfer();
+
+    //! Set proxy informations
+    //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
 
     //! Set certificate path for https upload.
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
@@ -713,6 +721,9 @@ protected:
     void*                       m_pCurlHandle;
 
     Utf8String                  m_id;
+    Utf8String                  m_proxyUrl;
+    Utf8String                  m_proxyCreds;
+    BeFileName                  m_certPath;
     RealityDataServiceTransfer_ProgressCallBack m_pProgressFunc;
     double                      m_progressStep;
     double                      m_progress;

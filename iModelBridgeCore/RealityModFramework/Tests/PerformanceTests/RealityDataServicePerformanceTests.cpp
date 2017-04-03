@@ -89,10 +89,13 @@ RealityDataServicePerformanceTests::RealityDataServicePerformanceTests()
     m_newRealityData->SetVisibility(RealityDataBase::Visibility::PRIVATE);
     m_newRealityData->SetDataset("INTERNAL-ONLY TEST DATASET");
     m_newRealityData->SetRealityDataType("TEST_ONLY");
+    m_newRealityData->SetStreamed(false);
     m_newRealityData->SetThumbnailDocument("Thumnail.jpg");
     m_newRealityData->SetRootDocument("root.test");
     m_newRealityData->SetListable(true);
     m_newRealityData->SetMetadataURL("metadata.xml");
+    m_newRealityData->SetCopyright("belongs to every one");
+    m_newRealityData->SetTermsOfUse("use wisely");
     m_newRealityData->SetGroup("TestGroup-185a9dbe-d9ed-4c87-9289-57beb3c94a1a");
     m_newRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vestibulum nunc quis malesuada varius. Donec at molestie enim, sit amet interdum mauris.\
                                     Sed dapibus ultricies orci, id dictum ligula consectetur vitae. Quisque eu ipsum in urna molestie ultricies. Nullam fringilla erat vitae placerat semper. Nulla consectetur justo lacinia, \
@@ -172,15 +175,24 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName)
                 relationshipCreated = true;
                 }
 
-            if (SUCCESS == UploadTest())
+            if (SUCCESS == UploadTest1())
                 {
                 DownloadTest();
 
                 InformationExtractionTest();
 
-                ListTest();
+                GetRealityData();
+
+                GetRealityDataWithFilter();
+
+                GetRelationship();
 
                 UpdateTest();
+                }
+
+            if (UploadTest2())
+                {
+                GetFolderTest();
                 }
 
             if (relationshipCreated)
@@ -369,7 +381,7 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::UploadTest()
+StatusInt RealityDataServicePerformanceTests::UploadTest1()
     {
     RawServerResponse response;
 
@@ -406,6 +418,45 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
     return SUCCESS;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::UploadTest2()
+    {
+    RawServerResponse response;
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Upload file
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, m_newRealityData->GetName());
+    properties.Insert(RealityDataField::Classification, m_newRealityData->GetClassificationTag());
+    properties.Insert(RealityDataField::Type, m_newRealityData->GetRealityDataType());
+    properties.Insert(RealityDataField::Visibility, m_newRealityData->GetVisibilityTag());
+    properties.Insert(RealityDataField::RootDocument, m_newRealityData->GetRootDocument());
+
+    Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(BeFileName(m_tempFileName), m_newRealityData->GetIdentifier(), formatedProps, true, true, statusFunc);
+    upload.SetProgressCallBack(uploadProgressFunc);
+    upload.SetProgressStep(0.1);
+    upload.OnlyReportErrors(true);
+    const TransferReport& tReport = upload.Perform();
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (tReport.results.size() != 0)
+        std::cout << "Upload Test error: file failed to upload" << std::endl;
+    else
+        std::cout << "Upload Test: " << ((endTime - startTime) / 1000.0) << std::endl;
+
+    return SUCCESS;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
@@ -529,6 +580,42 @@ StatusInt RealityDataServicePerformanceTests::UpdateTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetRelationship()
+    {
+    RawServerResponse response;
+
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    
+    RealityDataProjectRelationshipByRealityDataIdRequest myRequest(m_newRealityData->GetIdentifier());
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    bvector<RealityDataProjectRelationshipPtr> listOfRel = RealityDataService::Request(myRequest, response);
+    
+    if (listOfRel.size() == 0 && OK == response.status)
+        {
+        std::cout << "Get Relaitionships Test: No error returned but no relationship fetched " << std::endl;
+        return ERROR;
+        }
+
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (OK != response.status)
+        std::cout << "Relationships Get Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "Relationships Get Test: " << (endTime - startTime) / 1000.0 << std::endl;
+    
+    return (StatusInt)response.status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
     {
     RawServerResponse response;
@@ -590,11 +677,49 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(bool silent)
     return (StatusInt)response.status;    
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetRealityData()
+    {
+
+    RealityDataByIdRequest request = RealityDataByIdRequest(m_newRealityData->GetIdentifier());
+
+    RawServerResponse response;
+
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataPtr otherRealityData = RealityDataService::Request(request, response);
+
+    if (otherRealityData.IsNull() && OK == response.status)
+        {
+        std::cout << "GetRealityData Test: No error returned but no reality data fetched " << std::endl;
+        return ERROR;
+        }
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "GetRealityData Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "GetRealityData Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::ListTest()
+StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
     {
 
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
@@ -618,7 +743,178 @@ StatusInt RealityDataServicePerformanceTests::ListTest()
     return SUCCESS;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon()
+    {
 
+    double min_lon = 12.402;
+    double min_lat = 23.502;
+    double max_lon = 12.403;
+    double max_lat = 23.503;
+
+
+    bvector<GeoPoint2d> myFootprint;
+    myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+    myFootprint.push_back(GeoPoint2d::From(min_lon, max_lat));
+    myFootprint.push_back(GeoPoint2d::From(max_lon, max_lat));
+    myFootprint.push_back(GeoPoint2d::From(max_lon, min_lat));
+    myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+
+
+
+
+    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
+
+    bvector<Utf8String> properties = bvector<Utf8String>();
+    properties.push_back(RealityDataFilterCreator::FilterSpatial(myFootprint, 4326));
+
+    enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+
+    RawServerResponse enterpriseResponse = RawServerResponse();
+    enterpriseResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    bvector<RealityDataPtr> partialVec;
+
+    while(enterpriseResponse.status == RequestStatus::OK)
+        {//When LASTPAGE has been added, loop will exit
+        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
+        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        }
+
+    return SUCCESS;
+    }
+
+
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetDocumentTest()
+    {
+
+
+
+    RawServerResponse response;
+
+    BeFileName beFile(m_tempFileName.c_str());
+
+    Utf8String namePart = Utf8String(beFile.GetFileNameAndExtension().c_str());
+
+    Utf8String documentId = m_newRealityData->GetIdentifier() + "/" + namePart;
+    RealityDataDocumentByIdRequest request = RealityDataDocumentByIdRequest(documentId);
+
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataDocumentPtr otherRealityDataDocument = RealityDataService::Request(request, response);
+
+    if (otherRealityDataDocument.IsNull() && OK == response.status)
+        {
+        std::cout << "GetDocument Test: No error returned but no reality data fetched " << std::endl;
+        return ERROR;
+        }
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "GetDocument Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "GetDocument Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetFolderTest()
+    {
+    RawServerResponse response;
+
+    BeFileName beFile(m_tempFileName.c_str());
+
+    Utf8String namePart = Utf8String(beFile.GetFileNameAndExtension().c_str());
+
+    Utf8String folderId = m_newRealityData->GetIdentifier() + "/" + namePart;
+    RealityDataFolderByIdRequest request = RealityDataFolderByIdRequest(folderId);
+
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataFolderPtr otherRealityDataFolder = RealityDataService::Request(request, response);
+
+    if (otherRealityDataFolder.IsNull() && OK == response.status)
+        {
+        std::cout << "GetFolder Test: No error returned but no folder fetched " << std::endl;
+        return ERROR;
+        }
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "GetFolder Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "GetFolder Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest()
+    {
+    RawServerResponse response;
+
+    BeFileName beFile(m_tempFileName.c_str());
+
+    Utf8String namePart = Utf8String(beFile.GetFileNameAndExtension().c_str());
+
+    Utf8String documentId = m_newRealityData->GetIdentifier() + "/" + namePart;
+    RealityDataDeleteDocument request = RealityDataDeleteDocument(documentId);
+
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataService::Request(request, response);
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "DeleteDocument Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "DeleteDocument Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017

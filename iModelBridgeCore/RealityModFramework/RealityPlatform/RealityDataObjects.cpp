@@ -615,6 +615,8 @@ void RealityData::SetThumbnailDocument(Utf8CP thumbnailDocument) { m_thumbnailDo
 Utf8StringCR RealityData::GetRealityDataType() const { return m_realityDataType; }
 void RealityData::SetRealityDataType(Utf8CP realityDataType) { m_realityDataType = realityDataType; }
 
+bool RealityData::IsStreamed() const { return m_streamed; }
+void RealityData::SetStreamed(bool streamed) { m_streamed = streamed; }
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
@@ -632,6 +634,12 @@ void RealityData::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDo
 
 Utf8StringCR RealityData::GetMetadataURL() const { return m_metadataURL; }
 void RealityData::SetMetadataURL(Utf8CP metadataURL) { m_metadataURL = metadataURL; }
+
+Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
+void RealityData::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
+
+Utf8StringCR RealityData::GetTermsOfUse() const { return m_termsOfUse; }
+void RealityData::SetTermsOfUse(Utf8CP termsOfUse) { m_termsOfUse = termsOfUse; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
@@ -653,6 +661,7 @@ void RealityData::SetTotalSize(uint64_t totalSize) { m_totalSize = totalSize; }
 //-------------------------------------------------------------------------------------
 RealityData::RealityData()
     {
+    m_streamed = true;
     m_listable = true;
     m_totalSize = 0;
     }

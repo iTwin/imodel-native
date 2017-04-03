@@ -352,6 +352,10 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataType() const;
     REALITYDATAPLATFORM_EXPORT void SetRealityDataType(Utf8CP realityDataType);
 
+    //! [Optional | default is true] Indicates if the reality data is meant to be streamed or if the data set is meant to be downloaded to use.  
+    REALITYDATAPLATFORM_EXPORT bool IsStreamed() const;
+    REALITYDATAPLATFORM_EXPORT void SetStreamed(bool streamed);
+
     //! Get/Set
     //! URL to the thumbnail
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetThumbnailDocument() const;
@@ -401,6 +405,17 @@ public:
     //! A reference to a metadata object. This object can be used by many spatial entities.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataURL() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataURL(Utf8CP metadataURL);
+
+
+    //! A text indicating the copyright to the data or a URL to a web page containing 
+    //! information. The text can be a mix of text and URL. 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCopyright() const;
+    REALITYDATAPLATFORM_EXPORT void SetCopyright(Utf8CP copyright);
+
+    //! If known or different from Legal field, a text indicating the terms of use applicable to the data
+    //! or a URL to a web page containing the information. The text can be a mix of text and URL. 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetTermsOfUse() const;
+    REALITYDATAPLATFORM_EXPORT void SetTermsOfUse(Utf8CP termsOfUse);
   
 
     //! The Group code. This field can be used to group many data together if another key other than the dataset is required.
@@ -411,6 +426,7 @@ protected:
     RealityData();
 
     Utf8String m_realityDataType;
+    bool     m_streamed;
     DateTime m_creationDate;
     DateTime m_modifiedDate;
 
@@ -420,6 +436,8 @@ protected:
     Utf8String m_containerName;
     Utf8String m_rootDocument;
     Utf8String m_metadataURL;
+    Utf8String m_copyright;
+    Utf8String m_termsOfUse;
 
     bool m_listable;
 
