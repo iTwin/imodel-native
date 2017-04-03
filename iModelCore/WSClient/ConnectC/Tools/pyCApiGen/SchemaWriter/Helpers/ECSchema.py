@@ -1,6 +1,9 @@
 from SchemaWriter.Helpers.ECClass import ECClass
 from SchemaWriter.Helpers.PropertyTypeError import PropertyTypeError
-
+from SchemaWriter.Helpers.ECRelationshipClass import ECRelObject
+from SchemaWriter.Helpers.ECRelationshipClass import ECRelSource
+from SchemaWriter.Helpers.ECRelationshipClass import ECRelTarget
+from SchemaWriter.Helpers.ECRelationshipClass import ECRelationshipClass
 
 class ECSchema(object):
     def __init__(self, url_descriptor, repository_id, filename, name, api, status_codes):
@@ -11,6 +14,7 @@ class ECSchema(object):
         self.__api = api
         self.__status_codes = status_codes
         self.__ecclasses = []
+        self.__ecRelationshipclasses = []
         self.__ecschema_xmldoc = None
 
     def get_filename(self):
@@ -54,6 +58,53 @@ class ECSchema(object):
         ecclasses = self.__ecschema_xmldoc.getElementsByTagName('ECClass')
         for ecclass in ecclasses:
             self.__get_ecclass_from_name(ecclass.attributes['typeName'].value).init_xml(ecclass)
+        self._read_ecrelationshipclasses_from_xml()
+
+    def _read_ecrelationshipclasses_from_xml(self):        
+        #init relationship class
+        ecRelationshipclasses = self.__ecschema_xmldoc.getElementsByTagName('ECRelationshipClass')
+        if (None is ecRelationshipclasses):
+            return            
+        for xml_ecrclass in ecRelationshipclasses:
+            self.__ecRelationshipclasses.append(self._create_ecrelationship_class(xml_ecrclass))
+
+    def _create_ecrelationship_class(self, xml):
+            source_xml = xml.getElementsByTagName('Source')
+            target_xml = xml.getElementsByTagName('Target')
+            if (source_xml is None or target_xml is None):
+                return None
+            
+            # source info
+            src_cardinality = source_xml[0].attributes["cardinality"].value
+            src_polymorphic = source_xml[0].attributes["polymorphic"].value
+            # get the relationship object (only supporting classes right now. Refactor for more)
+            # there can only be one source, I believe. so just need the first one.
+            rel_object_xml = source_xml[0].getElementsByTagName('Class')
+            src_rel_object = ECRelObject(rel_object_xml[0].attributes["class"].value, "class")
+            ec_rel_source = ECRelSource(src_cardinality, src_polymorphic, src_rel_object)
+
+            # target info
+            tgt_cardinality = target_xml[0].attributes["cardinality"].value
+            tgt_polymorphic = target_xml[0].attributes["polymorphic"].value
+            # you can definitely have multiple target objects
+            rel_object_xml = target_xml[0].getElementsByTagName('Class')
+            tgt_rel_objects = []
+            for obj_xml in rel_object_xml:
+                tgt_rel_objects.append(ECRelObject(obj_xml.attributes["class"].value, "class"))
+            ec_rel_target = ECRelTarget(tgt_cardinality, tgt_polymorphic, tgt_rel_objects);
+
+            # now set up the class
+            name = xml.attributes["typeName"].value
+            is_domain_class = xml.attributes["typeName"].value
+            strength = xml.attributes["typeName"].value
+            strenth_direction = xml.attributes["typeName"].value
+            ec_rel_class = ECRelationshipClass( name, 
+                                                is_domain_class, 
+                                                strength, 
+                                                strenth_direction, 
+                                                ec_rel_source, 
+                                                ec_rel_target);
+
 
     def __get_ecclass_from_name(self, name):
         for ecclass in self.__ecclasses:
