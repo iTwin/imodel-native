@@ -8,11 +8,11 @@
         </SchemaMap>
     </ECCustomAttributes>
     
-    <KindOfQuantity typeName="Length" description="My Length" displayLabel="My Length" persistenceUnit="CENTIMETRE" precision="10"
-        defaultPresentationUnit="FOOT" alternativePresentationUnits="INCH;YARD" />
+    <KindOfQuantity typeName="Length" description="My Length" displayLabel="My Length" persistenceUnit="CM" relativeError="1E-3"
+                                        presentationUnits="FT;IN" />
 
-    <KindOfQuantity typeName="Volume" description="My Volumne" displayLabel="My Length" persistenceUnit="CM^3" precision="5"
-        defaultPresentationUnit="CM^3" />
+    <KindOfQuantity typeName="Volume" description="My Volumne" displayLabel="My Volume" persistenceUnit="LITRE" relativeError="1E-2"
+        presentationUnits="GALLON" />
         
     <ECStructClass typeName="PStruct" description="Struct with primitive props (default mappings)">
         <ECProperty propertyName="b" typeName="boolean"/>

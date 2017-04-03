@@ -89,9 +89,8 @@
         <ECProperty propertyName="DisplayLabel" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="PersistenceUnit" typeName="string"/>
-        <ECProperty propertyName="PersistencePrecision" typeName="int"/>
-        <ECProperty propertyName="DefaultPresentationUnit" typeName="string"/>
-        <ECArrayProperty propertyName="AlternativePresentationUnits" typeName="string"/>
+        <ECProperty propertyName="RelativeError" typeName="double"/>
+        <ECArrayProperty propertyName="PresentationUnits" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="ECPropertyDef" description="ECProperty" displayLabel="ECProperty" modifier="Sealed">
         <ECCustomAttributes>

@@ -707,7 +707,7 @@ BentleyStatus SchemaComparer::CompareECEnumerations(ECEnumerationChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
+BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
     {
     std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (KindOfQuantityCP enumCP : a)
@@ -1005,27 +1005,29 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     if (a.GetDescription() != b.GetDescription())
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
 
-    if (a.GetPersistenceUnit() != b.GetPersistenceUnit())
-        change.GetPersistenceUnit().SetValue(a.GetPersistenceUnit(), b.GetPersistenceUnit());
+    Utf8String aPersUnitStr = a.GetPersistenceUnit().ToText(false);
+    Utf8String bPersUnitStr = b.GetPersistenceUnit().ToText(false);
+    if (!aPersUnitStr.Equals(bPersUnitStr))
+        change.GetPersistenceUnit().SetValue(aPersUnitStr, bPersUnitStr);
 
-    if (a.GetPrecision() != b.GetPrecision())
-        change.GetPrecision().SetValue(a.GetPrecision(), b.GetPrecision());
+    if (a.GetRelativeError() != b.GetRelativeError())
+        change.GetRelativeError().SetValue(a.GetRelativeError(), b.GetRelativeError());
 
-    if (a.GetDefaultPresentationUnit() != b.GetDefaultPresentationUnit())
-        change.GetDefaultPresentationUnit().SetValue(a.GetDefaultPresentationUnit(), b.GetDefaultPresentationUnit());
+    bset<Utf8String> aMap, bMap, cMap;
+    for (Formatting::FormatUnitSet const& fus : a.GetPresentationUnitList())
+        {
+        aMap.insert(fus.ToText(false));
+        }
 
+    for (Formatting::FormatUnitSet const& fus : b.GetPresentationUnitList())
+        {
+        bMap.insert(fus.ToText(false));
+        }
 
-    std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
-    for (Utf8StringCR unit : a.GetAlternativePresentationUnitList())
-        aMap.insert(unit.c_str());
+    cMap.insert(aMap.begin(), aMap.end());
+    cMap.insert(bMap.begin(), bMap.end());
 
-    for (Utf8StringCR unit : b.GetAlternativePresentationUnitList())
-        bMap.insert(unit.c_str());
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto u : cMap)
+    for (Utf8StringCR u : cMap)
         {
         auto itorA = aMap.find(u);
         auto itorB = bMap.find(u);
@@ -1036,28 +1038,29 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
             {
             }
         else if (existInA && !existInB)
-            change.GetAlternativePresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
+            change.GetPresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
         else if (!existInA && existInB)
-            change.GetAlternativePresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
+            change.GetPresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
     {
-    std::set<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    bset<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP classCP : a)
         aMap.insert(classCP->GetFullName());
 
     for (ECClassCP classCP : b)
         bMap.insert(classCP->GetFullName());
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    cMap.insert(aMap.begin(), aMap.end());
+    cMap.insert(bMap.begin(), bMap.end());
 
-    for (auto& u : cMap)
+    for (Utf8CP u : cMap)
         {
         auto itorA = aMap.find(u);
         auto itorB = bMap.find(u);
@@ -1081,17 +1084,17 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
     {
-    std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (auto& ref : a)
+    bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    for (bpair<SchemaKey, ECSchemaPtr> const& ref : a)
         aMap[ref.first.GetName().c_str()] = ref.second.get();
 
-    for (auto& ref : b)
+    for (bpair<SchemaKey, ECSchemaPtr> const& ref : b)
         bMap[ref.first.GetName().c_str()] = ref.second.get();
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    cMap.insert(aMap.begin(), aMap.end());
+    cMap.insert(bMap.begin(), bMap.end());
 
-    for (auto& u : cMap)
+    for (bpair<Utf8CP, ECSchemaCP> const& u : cMap)
         {
         auto itorA = aMap.find(u.first);
         auto itorB = bMap.find(u.first);
@@ -1269,19 +1272,18 @@ BentleyStatus SchemaComparer::AppendECEnumeration(ECEnumerationChanges& changes,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     KindOfQuantityChange& kindOfQuantityChange = changes.Add(state, v.GetName().c_str());
     kindOfQuantityChange.GetName().SetValue(appendType, v.GetName());
     kindOfQuantityChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     kindOfQuantityChange.GetDescription().SetValue(appendType, v.GetDescription());
-    kindOfQuantityChange.GetPersistenceUnit().SetValue(appendType, v.GetPersistenceUnit());
-    kindOfQuantityChange.GetPrecision().SetValue(appendType, v.GetPrecision());
-    kindOfQuantityChange.GetDefaultPresentationUnit().SetValue(appendType, v.GetDefaultPresentationUnit());
-    for (Utf8StringCR unitstr : v.GetAlternativePresentationUnitList())
+    kindOfQuantityChange.GetPersistenceUnit().SetValue(appendType, v.GetPersistenceUnit().ToText(false));
+    kindOfQuantityChange.GetRelativeError().SetValue(appendType, v.GetRelativeError());
+    for (Formatting::FormatUnitSet const& fus : v.GetPresentationUnitList())
         {
-        kindOfQuantityChange.GetAlternativePresentationUnitList().Add(state).SetValue(appendType, unitstr);
+        kindOfQuantityChange.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText(false));
         }
 
     return SUCCESS;
@@ -1300,7 +1302,7 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
     propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
 
-    if (auto prop = v.GetAsNavigationProperty())
+    if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {
         propertyChange.IsNavigation().SetValue(appendType, true);
         NavigationChange& navigationChange = propertyChange.GetNavigation();
@@ -1337,9 +1339,9 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
             propertyChange.GetKindOfQuantity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());
         }
     else
-        {
         return ERROR;
-        }
+
+
     //if (v.IsMaximumValueDefined())
     //    propertyChange.GetMaximumValue().SetValue(appendType, v.GetMaximumValue());
 
@@ -1522,93 +1524,11 @@ void ECChange::AppendBegin(Utf8StringR str, ECChange const& change, int currentI
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-SystemId ECChange::StringToSystemId(Utf8CP idString)
-    {
-    if (Utf8String::IsNullOrEmpty(idString))
-        return SystemId::None;
-
-    if (strcmp(idString, "AlternativePresentationUnitList") == 0)  return SystemId::AlternativePresentationUnitList;
-    if (strcmp(idString, "Alias") == 0) return SystemId::Alias;
-    if (strcmp(idString, "Array") == 0) return SystemId::Array;
-    if (strcmp(idString, "BaseClass") == 0) return SystemId::BaseClass;
-    if (strcmp(idString, "BaseClasses") == 0) return SystemId::BaseClasses;
-    if (strcmp(idString, "Classes") == 0) return SystemId::Classes;
-    if (strcmp(idString, "Class") == 0) return SystemId::Class;
-    if (strcmp(idString, "ConstantKey") == 0) return SystemId::ConstantKey;
-    if (strcmp(idString, "ClassFullName") == 0) return SystemId::ClassFullName;
-    if (strcmp(idString, "ClassModifier") == 0) return SystemId::ClassModifier;
-    if (strcmp(idString, "ConstraintClass") == 0) return SystemId::ConstraintClass;
-    if (strcmp(idString, "ConstraintClasses") == 0) return SystemId::ConstraintClasses;
-    if (strcmp(idString, "Constraint") == 0) return SystemId::Constraint;
-    if (strcmp(idString, "CustomAttributes") == 0) return SystemId::CustomAttributes;
-    if (strcmp(idString, "DefaultPresentationUnit") == 0) return SystemId::DefaultPresentationUnit;
-    if (strcmp(idString, "Description") == 0) return SystemId::Description;
-    if (strcmp(idString, "Direction") == 0) return SystemId::Direction;
-    if (strcmp(idString, "PropertyValue") == 0) return SystemId::PropertyValue;
-    if (strcmp(idString, "PropertyValues") == 0) return SystemId::PropertyValues;
-    if (strcmp(idString, "DisplayLabel") == 0) return SystemId::DisplayLabel;
-    if (strcmp(idString, "Enumeration") == 0) return SystemId::Enumeration;
-    if (strcmp(idString, "Enumerations") == 0) return SystemId::Enumerations;
-    if (strcmp(idString, "Enumerator") == 0) return SystemId::Enumerator;
-    if (strcmp(idString, "Enumerators") == 0) return SystemId::Enumerators;
-    if (strcmp(idString, "ExtendedTypeName") == 0) return SystemId::ExtendedTypeName;
-    if (strcmp(idString, "Instance") == 0) return SystemId::Instance;
-    if (strcmp(idString, "Instances") == 0) return SystemId::Instances;
-    if (strcmp(idString, "Integer") == 0) return SystemId::Integer;
-    if (strcmp(idString, "ClassType") == 0) return SystemId::ClassType;
-    if (strcmp(idString, "IsPolymorphic") == 0) return SystemId::IsPolymorphic;
-    if (strcmp(idString, "IsReadonly") == 0) return SystemId::IsReadonly;
-    if (strcmp(idString, "IsStrict") == 0) return SystemId::IsStrict;
-    if (strcmp(idString, "IsStruct") == 0) return SystemId::IsStruct;
-    if (strcmp(idString, "IsStructArray") == 0) return SystemId::IsStructArray;
-    if (strcmp(idString, "IsPrimitive") == 0) return SystemId::IsPrimitive;
-    if (strcmp(idString, "IsPrimitiveArray") == 0) return SystemId::IsPrimitiveArray;
-    if (strcmp(idString, "IsNavigation") == 0) return SystemId::IsNavigation;
-    if (strcmp(idString, "KindOfQuantities") == 0) return SystemId::KindOfQuantities;
-    if (strcmp(idString, "KindOfQuantity") == 0) return SystemId::KindOfQuantity;
-    if (strcmp(idString, "MaximumValue") == 0) return SystemId::MaximumValue;
-    if (strcmp(idString, "MaxOccurs") == 0) return SystemId::MaxOccurs;
-    if (strcmp(idString, "MinimumValue") == 0) return SystemId::MinimumValue;
-    if (strcmp(idString, "MinOccurs") == 0) return SystemId::MinOccurs;
-    if (strcmp(idString, "Multiplicity") == 0) return SystemId::Multiplicity;
-    if (strcmp(idString, "Name") == 0) return SystemId::Name;
-    if (strcmp(idString, "Navigation") == 0) return SystemId::Navigation;
-    if (strcmp(idString, "PersistenceUnit") == 0) return SystemId::PersistenceUnit;
-    if (strcmp(idString, "Precision") == 0) return SystemId::Precision;
-    if (strcmp(idString, "Properties") == 0) return SystemId::Properties;
-    if (strcmp(idString, "Property") == 0) return SystemId::Property;
-    if (strcmp(idString, "PropertyType") == 0) return SystemId::PropertyType;
-    if (strcmp(idString, "Reference") == 0) return SystemId::Reference;
-    if (strcmp(idString, "References") == 0) return SystemId::References;
-    if (strcmp(idString, "Relationship") == 0) return SystemId::Relationship;
-    if (strcmp(idString, "RelationshipName") == 0) return SystemId::RelationshipName;
-    if (strcmp(idString, "RoleLabel") == 0) return SystemId::RoleLabel;
-    if (strcmp(idString, "Schema") == 0) return SystemId::Schema;
-    if (strcmp(idString, "Schemas") == 0) return SystemId::Schemas;
-    if (strcmp(idString, "Source") == 0) return SystemId::Source;
-    if (strcmp(idString, "StrengthDirection") == 0) return SystemId::StrengthDirection;
-    if (strcmp(idString, "StrengthType") == 0) return SystemId::StrengthType;
-    if (strcmp(idString, "String") == 0) return SystemId::String;
-    if (strcmp(idString, "Target") == 0) return SystemId::Target;
-    if (strcmp(idString, "TypeName") == 0) return SystemId::TypeName;
-    if (strcmp(idString, "VersionRead") == 0) return SystemId::VersionRead;
-    if (strcmp(idString, "VersionMinor") == 0) return SystemId::VersionMinor;
-    if (strcmp(idString, "VersionWrite") == 0) return SystemId::VersionWrite;
-
-    BeAssert(false && "Unknown SystemId");
-    return SystemId::None;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
 Utf8CP ECChange::SystemIdToString(SystemId id)
     {
     switch (id)
         {
             case SystemId::None: return "";
-            case SystemId::AlternativePresentationUnitList: return "AlternativePresentationUnitList";
             case SystemId::Alias: return "Alias";
             case SystemId::Array: return "Array";
             case SystemId::BaseClass: return "BaseClass";
@@ -1622,7 +1542,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::ConstraintClasses: return "ConstraintClasses";
             case SystemId::Constraint: return "Constraint";
             case SystemId::CustomAttributes: return "CustomAttributes";
-            case SystemId::DefaultPresentationUnit: return "DefaultPresentationUnit";
             case SystemId::Description: return "Description";
             case SystemId::Direction: return "Direction";
             case SystemId::PropertyValue: return "PropertyValue";
@@ -1647,6 +1566,9 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::IsNavigation: return "IsNavigation";
             case SystemId::KindOfQuantities: return "KindOfQuantities";
             case SystemId::KindOfQuantity: return "KindOfQuantity";
+            case SystemId::KoqPersistenceUnit: return "KoqPersistenceUnit";
+            case SystemId::KoqPresentationUnitList: return "KoqPresentationUnitList";
+            case SystemId::KoqRelativeError: return "KoqRelativeError";
             case SystemId::MaximumValue: return "MaximumValue";
             case SystemId::MaxOccurs: return "MaxOccurs";
             case SystemId::MinimumValue: return "MinimumValue";
@@ -1654,8 +1576,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
             case SystemId::Navigation: return "Navigation";
-            case SystemId::PersistenceUnit: return "PersistenceUnit";
-            case SystemId::Precision: return "Precision";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
             case SystemId::PropertyType: return "PropertyType";
@@ -1728,23 +1648,6 @@ void ECObjectChange::_Optimize()
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-template<typename T>
-T& ECObjectChange::Get(SystemId systemId)
-    {
-    static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
-    Utf8CP id = SystemIdToString(systemId);
-    auto itor = m_changes.find(id);
-    if (itor != m_changes.end())
-        return *(static_cast<T*>(itor->second.get()));
-
-    ECChangePtr changePtr = new T(GetState(), systemId, this, nullptr);
-    ECChange* changeP = changePtr.get();
-    m_changes[changePtr->GetId()] = changePtr;
-    return *(static_cast<T*>(changeP));
-    }
 //======================================================================================>
 //StringChange
 //======================================================================================>
@@ -2244,38 +2147,40 @@ ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void  ECPropertyValueChange::GetFlatListOfChildren(std::vector<ECPropertyValueChange*>& childrens)
+void ECPropertyValueChange::GetFlatListOfChildren(std::vector<ECPropertyValueChange const*>& childrens) const
     {
-    if (HasChildren())
+    if (m_children != nullptr)
         {
-        ECChangeArray<ECPropertyValueChange>& children = GetChildren();
-        for (size_t i = 0; i < children.Count(); i++)
+        for (size_t i = 0; i < m_children->Count(); i++)
             {
-            children.At(i).GetFlatListOfChildren(childrens);
+            m_children->At(i).GetFlatListOfChildren(childrens);
             }
         }
     else
         childrens.push_back(this);
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECPropertyValueChange::HasValue() const { return m_value != nullptr; }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECPropertyValueChange::HasChildren() const { return m_children != nullptr; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren()
+std::vector<ECPropertyValueChange const*> ECPropertyValueChange::GetFlatListOfChildren() const
+    {
+    std::vector<ECPropertyValueChange const*> v;
+    GetFlatListOfChildren(v);
+    return v;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren() const
     {
     if (m_children == nullptr)
         m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId(), SystemId::PropertyValue));
 
     return *m_children;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2301,7 +2206,7 @@ ECPropertyValueChange& ECPropertyValueChange::GetOrCreate(ChangeState stat, std:
 //+---------------+---------------+---------------+---------------+---------------+------
 ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath) 
     {
-    Utf8String ap = accessPath;
+    Utf8String ap(accessPath);
     std::vector<Utf8String> path = SchemaComparer::Split(ap);
     if (path.empty())
         return nullptr;
@@ -2315,18 +2220,16 @@ ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath)
         }
 
     ECPropertyValueChange* c = this;
-    for (auto& str : path)
+    for (Utf8StringCR str : path)
         {
         if (!c->HasChildren())
             return nullptr;
 
         auto m = c->GetChildren().Find(str.c_str());
         if (m == nullptr)
-            {
             return nullptr;
-            }
-        else
-            c = m;
+
+        c = m;
         }
 
     return c;
@@ -2338,26 +2241,19 @@ ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-CustomAttributeValidator::Rule::Rule(Policy policy, Utf8CP pattren)
-    :m_policy(policy), m_pattren(SchemaComparer::Split(pattren))
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& source) const
     {
     if (source.empty())
         return false;
 
-    if (m_pattren.size() == 1)//Foo:*
-        if (m_pattren.front().EndsWith("*"))
+    if (m_pattern.size() == 1)//Foo:*
+        if (m_pattern.front().EndsWith("*"))
             return true;
 
     auto sb = source.begin();
-    auto pb = m_pattren.begin();
+    auto pb = m_pattern.begin();
     auto se = source.end();
-    auto pe = m_pattren.end();
+    auto pe = m_pattern.end();
     while (sb != se && pb != pe)
         {
         if (*sb == *pb)
@@ -2425,20 +2321,20 @@ bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& source
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-CustomAttributeValidator::RuleList const& CustomAttributeValidator::GetRelaventRules(ECPropertyValueChange& change) const
+std::vector<std::unique_ptr<CustomAttributeValidator::Rule>> const& CustomAttributeValidator::GetRelevantRules(ECPropertyValueChange& change) const
     {
     if (!change.IsDefinition())
-        return m_rules.find(m_wilfCard)->second;
+        return m_rules.find(m_wildCard)->second;
 
     Utf8String prefix = GetPrefix(change.GetAccessString());
     if (prefix.empty())
-        return m_rules.find(m_wilfCard)->second;;
+        return m_rules.find(m_wildCard)->second;;
 
     auto itor = m_rules.find(prefix);
     if (itor != m_rules.end())
         return itor->second;
 
-    return m_rules.find(m_wilfCard)->second;
+    return m_rules.find(m_wildCard)->second;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2459,12 +2355,12 @@ Utf8String CustomAttributeValidator::GetPrefix(Utf8StringCR path)
 CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyValueChange& change) const
     {
     BeAssert(change.IsDefinition());
-    std::vector<ECPropertyValueChange*> flatListOfChanges = change.GetFlatListOfChildren();
-    RuleList const& rules = GetRelaventRules(change);
+    std::vector<ECPropertyValueChange const*> flatListOfChanges = change.GetFlatListOfChildren();
+    std::vector<std::unique_ptr<Rule>> const& rules = GetRelevantRules(change);
     if (rules.empty())
         return GetDefaultPolicy();
 
-    for (ECPropertyValueChange* v : flatListOfChanges)
+    for (ECPropertyValueChange const* v : flatListOfChanges)
         {
         if (v->HasChildren())
             continue;
@@ -2488,14 +2384,6 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
     return GetDefaultPolicy();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-CustomAttributeValidator::CustomAttributeValidator()
-            :m_defaultPolicy(Policy::Accept), m_wilfCard("*")
-            {
-            Reset();
-            }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -2503,7 +2391,7 @@ CustomAttributeValidator::CustomAttributeValidator()
 void CustomAttributeValidator::Reset()
     {
     m_rules.clear();
-    m_rules[m_wilfCard] = RuleList();
+    m_rules[m_wildCard].clear();
     }
 
 //---------------------------------------------------------------------------------------

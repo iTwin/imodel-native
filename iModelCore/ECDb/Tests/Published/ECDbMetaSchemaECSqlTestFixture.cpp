@@ -553,38 +553,28 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("PersistenceUnit"))
             {
-            ASSERT_STREQ(expectedKoq.GetPersistenceUnit().c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
+            ASSERT_STREQ(expectedKoq.GetPersistenceUnit().ToText(false).c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
             continue;
             }
 
-        if (colName.EqualsI("PersistencePrecision"))
+        if (colName.EqualsI("RelativeError"))
             {
-            ASSERT_EQ((int) expectedKoq.GetPrecision(), val.GetInt()) << "KindOfQuantityDef.PersistencePrecision";
+            ASSERT_DOUBLE_EQ(expectedKoq.GetRelativeError(), val.GetDouble()) << "KindOfQuantityDef.RelativeError";
             continue;
             }
 
-        if (colName.EqualsI("DefaultPresentationUnit"))
+        if (colName.EqualsI("PresentationUnits"))
             {
-            if (!expectedKoq.GetDefaultPresentationUnit().empty())
-                ASSERT_STREQ(expectedKoq.GetDefaultPresentationUnit().c_str(), val.GetText()) << "KindOfQuantityDef.DefaultPresentationUnit";
-            else
-                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.DefaultPresentationUnit";
-
-            continue;
-            }
-
-        if (colName.EqualsI("AlternativePresentationUnits"))
-            {
-            if (expectedKoq.GetAlternativePresentationUnitList().empty())
-                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.AlternativePresentationUnits";
+            if (expectedKoq.GetPresentationUnitList().empty())
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.PresentationUnits";
             else
                 {
-                ASSERT_EQ((int) expectedKoq.GetAlternativePresentationUnitList().size(), val.GetArrayLength()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                ASSERT_EQ((int) expectedKoq.GetPresentationUnitList().size(), val.GetArrayLength()) << "KindOfQuantityDef.PresentationUnits";
 
                 size_t i = 0;
                 for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                    ASSERT_STREQ(expectedKoq.GetPresentationUnitList()[i].ToText(false).c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationUnits";
                     i++;
                     }
                 }

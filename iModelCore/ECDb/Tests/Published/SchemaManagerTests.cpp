@@ -951,34 +951,34 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         {
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("CENTIMETRE", actualKoq.GetPersistenceUnit().c_str());
-        ASSERT_STREQ("FOOT", actualKoq.GetDefaultPresentationUnit().c_str());
-        bvector<Utf8String> const& actualAltUnits = actualKoq.GetAlternativePresentationUnitList();
-        ASSERT_EQ(2, actualAltUnits.size());
-        ASSERT_STREQ("INCH", actualAltUnits[0].c_str());
-        ASSERT_STREQ("YARD", actualAltUnits[1].c_str());
+        ASSERT_STREQ("CM(real)", actualKoq.GetPersistenceUnit().ToText(true).c_str());
+        ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
+        bvector<Formatting::FormatUnitSet> const& actualPresentationUnits = actualKoq.GetPresentationUnitList();
+        ASSERT_EQ(2, actualPresentationUnits.size());
+        ASSERT_STREQ("FT(real)", actualPresentationUnits[0].ToText(true).c_str());
+        ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
         };
 
     Utf8String ecdbPath;
     {
     std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
-                                     "<ECSchema schemaName='Schema1' nameSpacePrefix='s1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                     "<KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
-                                     "                displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
-                                     "                defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
-                                     "</ECSchema>"));
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
+                                                     presentationUnits="FT;IN" />
+                                     </ECSchema>)xml"));
 
-    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
-                                     "<ECSchema schemaName='Schema2' nameSpacePrefix='s2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                     "<ECSchemaReference name='Schema1' version='01.00.00' prefix='s1' />"
-                                     "  <ECEntityClass typeName='Foo' >"
-                                     "    <ECProperty propertyName='Length' typeName='double' kindOfQuantity='s1:MyKindOfQuantity' />"
-                                     "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
-                                     "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity='s1:MyKindOfQuantity'/>"
-                                     "    <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
-                                     "  </ECEntityClass>"
-                                     "</ECSchema>"));
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
+                                       <ECEntityClass typeName="Foo" >
+                                         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
+                                         <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                                         <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="s1:MyKindOfQuantity"/>
+                                         <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+                                       </ECEntityClass>
+                                     </ECSchema>)xml"));
 
     ECDb ecdb;
     bool asserted = false;

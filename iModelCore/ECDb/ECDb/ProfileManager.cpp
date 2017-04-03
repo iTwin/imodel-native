@@ -316,9 +316,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "PersistenceUnit TEXT NOT NULL,"
-                           "PersistencePrecision INTEGER NOT NULL,"
-                           "DefaultPresentationUnit TEXT,"
-                           "AlternativePresentationUnits TEXT)");
+                           "RelativeError REAL NOT NULL,"
+                           "PresentationUnits TEXT)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
