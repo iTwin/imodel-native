@@ -47,6 +47,18 @@ struct PerformanceOverflowTablesResearchTestFixture : ECDbTestFixture
             int TernaryTableColCount() const;
             int EightyPercentTernaryTableColCount() const { return (m_eightyPercentClassColCount < TernaryTableColCount()) ? m_eightyPercentClassColCount - m_primaryTableColCount - SecondaryTableColCount() : TernaryTableColCount(); }
             bool HasTernaryTable() const { return TernaryTableColCount() > 0; }
+
+            int GetTableForColumn(int colIx) const 
+                {
+                if (colIx < m_primaryTableColCount)
+                    return 0;
+
+                if (colIx < (m_primaryTableColCount + SecondaryTableColCount()))
+                    return 1;
+
+                return 2;
+                }
+
             int TableCount() const { if (!HasSecondaryTable()) return 1;  return HasTernaryTable() ? 3 : 2; }
             Utf8String ToCsvString() const;
             Utf8String ToFileNameString() const;
@@ -80,21 +92,17 @@ struct PerformanceOverflowTablesResearchTestFixture : ECDbTestFixture
     private:
         static int ComputeValue(int rowId, int colIndex);
         static Utf8String GetColumnName(int colIndex);
-        static int GetSingleColIndex(StatementInfo& stmtInfo) { return GetSingleColIndex(stmtInfo.m_colMode, stmtInfo.m_colCount); }
-        static int GetSingleColIndex(ColumnMode, int colCount);
+        static int GetSingleColIndex(ColumnMode, Scenario const&);
         void LogTiming(StopWatch&, Scenario const&, Utf8CP operation, int initialRowCount, int opCount) const;
         static void SetupTestDb(Db&, Scenario const&);
 
-        static DbResult BindValues(StatementInfo&, int rowId, bool bindToId);
+        static DbResult BindValues(StatementInfo&, int rowId);
         static Utf8CP ColumnModeToString(ColumnMode);
 
     protected:
         void RunInsertAllCols(Scenario const&) const;
         void RunInsertSingleCol(Scenario const&, ColumnMode) const;
         void RunSelectAllCols(Scenario const&) const;
-        void RunSelectSingleCol(Scenario const&, ColumnMode) const;
-        void RunSelectWhereSingleCol(Scenario const&, ColumnMode) const;
-        void RunUpdateSingleCol(Scenario const&, ColumnMode) const;
         void RunUpdateAllCols(Scenario const&) const;
         void RunDelete(Scenario const&) const;
     };
@@ -115,12 +123,12 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertAllCols(Scenario con
 
     std::vector<std::unique_ptr<StatementInfo>> stmts;
 
-    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.PrimaryTableColCount());
+    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentPrimaryTableColCount());
 
     Utf8String insertSql("INSERT INTO t1(");
     Utf8String insertValuesSql(") VALUES(");
     int paramIndex = 0;
-    for (int i = 0; i < scenario.EightyPercentPrimaryTableColCount(); i++)
+    for (int i = 0; i < stmt->m_colCount; i++)
         {
         if (i > 0)
             {
@@ -140,16 +148,17 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertAllCols(Scenario con
     ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str();
     stmts.push_back(std::move(stmt));
 
-    if (scenario.HasSecondaryTable())
+    //if has secondary table but it would only be filled with the id, we will not create the row
+    if (scenario.HasSecondaryTable() && scenario.EightyPercentSecondaryTableColCount() > 0)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.SecondaryTableColCount());
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentSecondaryTableColCount());
         stmt->m_idParamIndex = 1;
         insertSql.assign("INSERT INTO t2(Id");
         insertValuesSql.assign(") VALUES(?");
 
         const int colOffset = scenario.PrimaryTableColCount();
         paramIndex = 1;
-        for (int i = 0; i < scenario.EightyPercentSecondaryTableColCount(); i++)
+        for (int i = 0; i < stmt->m_colCount; i++)
             {
             insertSql.append(",").append(GetColumnName(colOffset + i));
             insertValuesSql.append(",").append("?");
@@ -164,16 +173,17 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertAllCols(Scenario con
         stmts.push_back(std::move(stmt));
         }
 
-    if (scenario.HasTernaryTable())
+    //if has ternary table but it would only be filled with the id, we will not create the row
+    if (scenario.HasTernaryTable() && scenario.EightyPercentTernaryTableColCount() > 0)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.TernaryTableColCount());
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentTernaryTableColCount());
         stmt->m_idParamIndex = 1;
         insertSql.assign("INSERT INTO t3(Id");
         insertValuesSql.assign(") VALUES(?");
 
         const int colOffset = scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount();
         paramIndex = 1;
-        for (int i = 0; i < scenario.EightyPercentTernaryTableColCount(); i++)
+        for (int i = 0; i < stmt->m_colCount; i++)
             {
             insertSql.append(",").append(GetColumnName(colOffset + i));
             insertValuesSql.append(",").append("?");
@@ -190,17 +200,14 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertAllCols(Scenario con
     for (int opNo = 0; opNo < s_opCount; opNo++)
         {
         int rowId = s_initialRowCount + opNo + 1;
-        bool isFirstStmt = true;
         for (std::unique_ptr<StatementInfo>& stmt : stmts)
             {
-            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, !isFirstStmt)) << stmt->GetSql() << " " << db.GetLastError().c_str();
+            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
 
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
-
-            isFirstStmt = false;
             }
         }
 
@@ -221,42 +228,50 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertSingleCol(Scenario c
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
 
+    const int colIx = GetSingleColIndex(colMode, scenario);
+    const int tableIx = scenario.GetTableForColumn(colIx);
     StopWatch timer(true);
 
     std::vector<std::unique_ptr<StatementInfo>> stmts;
 
-    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.PrimaryTableColCount());
-    int colIx = GetSingleColIndex(*stmt);
+    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.EightyPercentPrimaryTableColCount());
+    stmt->m_idParamIndex = 1;
     Utf8String insertSql;
-    insertSql.Sprintf("INSERT INTO t1(%s) VALUES(?)", GetColumnName(colIx).c_str());
-    stmt->m_colIxParamIxMap[colIx] = 1;
+    if (tableIx == 0)
+        {
+        insertSql.Sprintf("INSERT INTO t1(Id,%s) VALUES(?,?)", GetColumnName(colIx).c_str());
+        stmt->m_colIxParamIxMap[colIx] = 2;
+        }
+    else
+        insertSql.assign("INSERT INTO t1(Id) VALUES(?)");
+
     ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str() << " " << db.GetLastError().c_str();
     stmts.push_back(std::move(stmt));
 
-    if (scenario.HasSecondaryTable())
+    if (scenario.HasSecondaryTable() && scenario.EightyPercentSecondaryTableColCount() > 0 && tableIx > 0)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.SecondaryTableColCount());
-        colIx = GetSingleColIndex(*stmt);
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.EightyPercentSecondaryTableColCount());
         stmt->m_idParamIndex = 1;
-        stmt->m_colIxParamIxMap[colIx] = 2;
 
-        insertSql.Sprintf("INSERT INTO t2(Id,%s) VALUES(?,?)",
-                          GetColumnName(scenario.PrimaryTableColCount() + colIx).c_str());
+        if (tableIx == 1)
+            {
+            stmt->m_colIxParamIxMap[colIx] = 2;
+            insertSql.Sprintf("INSERT INTO t2(Id,%s) VALUES(?,?)", GetColumnName(colIx).c_str());
+            }
+        else
+            insertSql.assign("INSERT INTO t2(Id) VALUES(?)");
 
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str() << " " << db.GetLastError().c_str();
+        ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, insertSql.c_str())) << scenario.ToFileNameString().c_str() << " " << insertSql.c_str() << " " << db.GetLastError().c_str();
         stmts.push_back(std::move(stmt));
         }
 
-    if (scenario.HasTernaryTable())
+    if (scenario.HasTernaryTable() && scenario.EightyPercentTernaryTableColCount() > 0 && tableIx == 2)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.TernaryTableColCount());
-        colIx = GetSingleColIndex(*stmt);
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.EightyPercentTernaryTableColCount());
         stmt->m_idParamIndex = 1;
         stmt->m_colIxParamIxMap[colIx] = 2;
 
-        insertSql.Sprintf("INSERT INTO t3(Id,%s) VALUES(?,?)",
-                          GetColumnName(scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount() + colIx).c_str());
+        insertSql.Sprintf("INSERT INTO t3(Id,%s) VALUES(?,?)", GetColumnName(colIx).c_str());
 
         ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str() << " " << db.GetLastError().c_str();
         stmts.push_back(std::move(stmt));
@@ -266,24 +281,21 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertSingleCol(Scenario c
     for (int opNo = 0; opNo < s_opCount; opNo++)
         {
         int rowId = s_initialRowCount + opNo + 1;
-        bool isFirstStmt = true;
         for (std::unique_ptr<StatementInfo>& stmt : stmts)
             {
-            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, !isFirstStmt)) << stmt->GetSql() << " " << db.GetLastError().c_str();
+            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
 
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
-
-            isFirstStmt = false;
             }
         }
 
     timer.Stop();
     db.AbandonChanges();
     Utf8String opStr;
-    opStr.Sprintf("INSERT %s col in each table", ColumnModeToString(colMode));
+    opStr.Sprintf("INSERT %s col", ColumnModeToString(colMode));
     LogTiming(timer, scenario, opStr.c_str(), s_initialRowCount, s_opCount);
     }
 
@@ -302,10 +314,10 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
 
     std::vector<std::unique_ptr<StatementInfo>> stmts;
 
-    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.PrimaryTableColCount());
+    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentPrimaryTableColCount());
     Utf8String sql("UPDATE t1 SET ");
     int paramIndex = 0;
-    for (int i = 0; i < scenario.EightyPercentPrimaryTableColCount(); i++)
+    for (int i = 0; i < stmt->m_colCount; i++)
         {
         if (i > 0)
             sql.append(",");
@@ -322,12 +334,12 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
 
     if (scenario.HasSecondaryTable() && scenario.EightyPercentSecondaryTableColCount() > 0)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.SecondaryTableColCount());
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentSecondaryTableColCount());
 
         sql.assign("UPDATE t2 SET ");
         const int colOffset = scenario.PrimaryTableColCount();
         paramIndex = 0;
-        for (int i = 0; i < scenario.EightyPercentSecondaryTableColCount(); i++)
+        for (int i = 0; i < stmt->m_colCount; i++)
             {
             if (i > 0)
                 sql.append(",");
@@ -346,12 +358,12 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
 
     if (scenario.HasTernaryTable() && scenario.EightyPercentTernaryTableColCount() > 0)
         {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.TernaryTableColCount());
+        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(ColumnMode::AllColumns, scenario.EightyPercentTernaryTableColCount());
 
         sql.assign("UPDATE t3 SET ");
         const int colOffset = scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount();
         paramIndex = 0;
-        for (int i = 0; i < scenario.EightyPercentTernaryTableColCount(); i++)
+        for (int i = 0; i < stmt->m_colCount; i++)
             {
             if (i > 0)
                 sql.append(",");
@@ -374,7 +386,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
         const int rowId = opNo * rowIdIncrement + 1;
         for (std::unique_ptr<StatementInfo>& stmt : stmts)
             {
-            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, true)) << stmt->GetSql() << " " << db.GetLastError().c_str();
+            ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
             stmt->m_stmt.Reset();
@@ -387,82 +399,6 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
     LogTiming(timer, scenario, "UPDATE all cols", s_initialRowCount, s_opCount);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearchTestFixture::RunUpdateSingleCol(Scenario const& scenario, ColumnMode colMode) const
-    {
-    ASSERT_TRUE(scenario.IsValid()) << scenario.ToCsvString().c_str();
-
-    Db db;
-    SetupTestDb(db, scenario);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    StopWatch timer(true);
-
-    std::vector<std::unique_ptr<StatementInfo>> stmts;
-
-    std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.PrimaryTableColCount());
-    int colIndex = GetSingleColIndex(*stmt);
-    stmt->m_colIxParamIxMap[colIndex] = 1;
-    stmt->m_idParamIndex = 2;
-    Utf8String sql;
-    sql.Sprintf("UPDATE t1 SET %s=? WHERE Id=?", GetColumnName(colIndex).c_str());
-    ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, sql.c_str())) << sql.c_str();
-    stmts.push_back(std::move(stmt));
-
-    if (scenario.HasSecondaryTable())
-        {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.SecondaryTableColCount());
-        int colIndex = GetSingleColIndex(*stmt);
-        stmt->m_colIxParamIxMap[colIndex] = 1;
-        stmt->m_idParamIndex = 2;
-
-        sql.Sprintf("UPDATE t2 SET %s=? WHERE Id=?",
-                          GetColumnName(scenario.PrimaryTableColCount() + colIndex).c_str());
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, sql.c_str())) << sql.c_str();
-        stmts.push_back(std::move(stmt));
-        }
-
-    if (scenario.HasTernaryTable())
-        {
-        std::unique_ptr<StatementInfo> stmt = std::make_unique<StatementInfo>(colMode, scenario.TernaryTableColCount());
-        int colIndex = GetSingleColIndex(*stmt);
-        stmt->m_colIxParamIxMap[colIndex] = 1;
-        stmt->m_idParamIndex = 2;
-
-        sql.Sprintf("UPDATE t3 SET %s=? WHERE Id=?",
-                          GetColumnName(scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount() + colIndex).c_str());
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.Prepare(db, sql.c_str())) << sql.c_str();
-        stmts.push_back(std::move(stmt));
-        }
-
-
-    const int rowIdIncrement = s_initialRowCount / s_opCount;
-    for (int opNo = 0; opNo < s_opCount; opNo++)
-        {
-        const int rowId = opNo * rowIdIncrement + 1;
-        for (std::unique_ptr<StatementInfo>& stmt : stmts)
-            {
-            const int colIx = GetSingleColIndex(*stmt);
-
-            ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.BindInt(1, ComputeValue(rowId, colIx)));
-            ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.BindInt(stmt->m_idParamIndex, rowId));
-            ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step());
-            ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
-            stmt->m_stmt.Reset();
-            stmt->m_stmt.ClearBindings();
-            }
-        }
-
-    timer.Stop();
-    db.AbandonChanges();
-    Utf8String opStr;
-    opStr.Sprintf("UPDATE %s col in each table", ColumnModeToString(colMode));
-    LogTiming(timer, scenario, opStr.c_str(), s_initialRowCount, s_opCount);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
@@ -478,7 +414,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunSelectAllCols(Scenario con
     Utf8String selectClause("SELECT ");
     Utf8String fromClause(" FROM t1");
     Utf8String whereClause(" WHERE ");
-    for (int i = 0; i < scenario.PrimaryTableColCount(); i++)
+    for (int i = 0; i < scenario.EightyPercentPrimaryTableColCount(); i++)
         {
         if (i > 0)
             selectClause.append(",");
@@ -488,7 +424,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunSelectAllCols(Scenario con
     if (scenario.HasSecondaryTable())
         {
         int colOffset = scenario.PrimaryTableColCount();
-        for (int i = 0; i < scenario.SecondaryTableColCount(); i++)
+        for (int i = 0; i < scenario.EightyPercentSecondaryTableColCount(); i++)
             {
             selectClause.append(",t2.").append(GetColumnName(colOffset + i));
             }
@@ -499,7 +435,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunSelectAllCols(Scenario con
         if (scenario.HasTernaryTable())
             {
             int colOffset = scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount();
-            for (int i = 0; i < scenario.TernaryTableColCount(); i++)
+            for (int i = 0; i < scenario.EightyPercentTernaryTableColCount(); i++)
                 {
                 selectClause.append(",t3.").append(GetColumnName(colOffset + i));
                 }
@@ -531,113 +467,6 @@ void PerformanceOverflowTablesResearchTestFixture::RunSelectAllCols(Scenario con
     LogTiming(timer, scenario, "SELECT all columns from each table", s_initialRowCount, s_opCount);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearchTestFixture::RunSelectSingleCol(Scenario const& scenario, ColumnMode colMode) const
-    {
-    ASSERT_TRUE(scenario.IsValid()) << scenario.ToCsvString().c_str();
-
-    Db db;
-    SetupTestDb(db, scenario);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    Utf8String selectClause("SELECT ");
-    Utf8String fromClause(" FROM ");
-    Utf8String whereClause(" WHERE ");
-    int primaryTableColIndex = GetSingleColIndex(colMode, scenario.PrimaryTableColCount());
-    selectClause.append("t1.").append(GetColumnName(primaryTableColIndex));
-    fromClause.append("t1");
-    if (scenario.HasSecondaryTable())
-        {
-        const int secTableColIndex = GetSingleColIndex(colMode, scenario.SecondaryTableColCount());
-        selectClause.append(",t2.").append(GetColumnName(scenario.PrimaryTableColCount() + secTableColIndex));
-        fromClause.append(",t2");
-        whereClause.append("t1.Id=t2.Id");
-        if (scenario.HasTernaryTable())
-            {
-            const int ternTableColIndex = GetSingleColIndex(colMode, scenario.TernaryTableColCount());
-            selectClause.append(",t3.").append(GetColumnName(scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount() + ternTableColIndex));
-            fromClause.append(",t3");
-            whereClause.append(" AND t2.Id=t3.Id");
-            }
-        }
-
-    whereClause.append(" AND t1.Id=?");
-    Utf8String sql(selectClause);
-    sql.append(fromClause).append(whereClause);
-
-    StopWatch timer(true);
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str();
-
-    const int rowIdIncrement = s_initialRowCount / s_opCount;
-    for (int opNo = 0; opNo < s_opCount; opNo++)
-        {
-        const int rowId = opNo * rowIdIncrement + 1;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(1, rowId)) << "Id: " << rowId << " SQL: " << sql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Id: " << rowId << " SQL: " << sql.c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
-        }
-
-    timer.Stop();
-    Utf8String opStr;
-    opStr.Sprintf("SELECT %s col from each table", ColumnModeToString(colMode));
-    LogTiming(timer, scenario, opStr.c_str(), s_initialRowCount, s_opCount);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearchTestFixture::RunSelectWhereSingleCol(Scenario const& scenario, ColumnMode colMode) const
-    {
-    ASSERT_TRUE(scenario.IsValid()) << scenario.ToCsvString().c_str();
-
-    Db db;
-    SetupTestDb(db, scenario);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    Utf8String sql("SELECT t1.Id FROM t1");
-    //where clause will always evaluate to true so that we have a predictive result set count
-    Utf8String whereClause(" WHERE ");
-    whereClause.append("abs(t1.").append(GetColumnName(GetSingleColIndex(colMode, scenario.PrimaryTableColCount()))).append(")>=0");
-    if (scenario.HasSecondaryTable())
-        {
-        const int colIndex = GetSingleColIndex(colMode, scenario.SecondaryTableColCount());
-        sql.append(",t2");
-        Utf8String colName = GetColumnName(scenario.PrimaryTableColCount() + colIndex);
-        whereClause.append(" AND t1.Id=t2.Id AND (t2.").append(colName).append(" IS NULL OR abs(t2.").append(colName).append(")>=0)");
-        if (scenario.HasTernaryTable())
-            {
-            const int colIndex = GetSingleColIndex(colMode, scenario.TernaryTableColCount());
-            Utf8String colName = GetColumnName(scenario.PrimaryTableColCount() + scenario.SecondaryTableColCount() + colIndex);
-            sql.append(",t3");
-            whereClause.append(" AND t2.Id=t3.Id AND (t3.").append(colName).append(" IS NULL OR abs(t3.").append(colName).append(")>=0)");
-            }
-        }
-    sql.append(whereClause);
-    Utf8String limitClause;
-    limitClause.Sprintf(" LIMIT %d", s_opCount);
-    sql.append(limitClause);
-
-    StopWatch timer(true);
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str();
-
-    int resultRowCount = 0;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        resultRowCount++;
-        }
-    timer.Stop();
-
-    ASSERT_EQ(s_opCount, resultRowCount) << ColumnModeToString(colMode) << " " << scenario.ToFileNameString().c_str() << " " << sql.c_str();
-
-    Utf8String opStr;
-    opStr.Sprintf("SELECT WHERE %s col on each table", ColumnModeToString(colMode));
-    LogTiming(timer, scenario, opStr.c_str(), s_initialRowCount, s_opCount);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2017
@@ -674,15 +503,9 @@ void PerformanceOverflowTablesResearchTestFixture::RunDelete(Scenario const& sce
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
 //static
-DbResult PerformanceOverflowTablesResearchTestFixture::BindValues(StatementInfo& stmt, int rowId, bool bindToId)
+DbResult PerformanceOverflowTablesResearchTestFixture::BindValues(StatementInfo& stmt, int rowId)
     {
-    if (stmt.m_idParamIndex >= 1 && !bindToId)
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    if (bindToId)
+    if (stmt.m_idParamIndex >= 0)
         {
         DbResult stat = stmt.m_stmt.BindInt(stmt.m_idParamIndex, rowId);
         if (BE_SQLITE_OK != stat)
@@ -704,7 +527,7 @@ DbResult PerformanceOverflowTablesResearchTestFixture::BindValues(StatementInfo&
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
 //static
-int PerformanceOverflowTablesResearchTestFixture::GetSingleColIndex(ColumnMode colMode, int colCount)
+int PerformanceOverflowTablesResearchTestFixture::GetSingleColIndex(ColumnMode colMode, Scenario const& scenario)
     {
     switch (colMode)
         {
@@ -712,10 +535,10 @@ int PerformanceOverflowTablesResearchTestFixture::GetSingleColIndex(ColumnMode c
                 return 0;
 
             case ColumnMode::Middle:
-                return colCount / 2;
+                return scenario.EightyPercentClassColCount() / 2;
 
             case ColumnMode::Last:
-                return colCount - 1;
+                return scenario.EightyPercentClassColCount() - 1;
 
             default:
                 BeAssert(false && "ColumnMode::All not allowed for GetSingleColIndex");
@@ -864,6 +687,7 @@ void PerformanceOverflowTablesResearchTestFixture::SetupTestDb(Db& db, Scenario 
     if (scenario.TernaryTableColCount() > 0)
         {
         createTableSql.assign("CREATE TABLE t3(Id INTEGER PRIMARY KEY REFERENCES t2(Id) ON DELETE CASCADE");
+
         insertSql.assign("INSERT INTO t3(Id");
         insertValuesSql.assign(") VALUES(?");
         for (int i = 0; i < scenario.TernaryTableColCount(); i++)

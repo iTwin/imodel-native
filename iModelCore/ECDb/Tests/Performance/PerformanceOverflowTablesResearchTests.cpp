@@ -18,7 +18,7 @@ struct PerformanceOverflowTables_PhysicalElementTests : PerformanceOverflowTable
             {
             //col counts don't include the id col
             const int primaryTableColCount = 11; //bis_Element
-            const int secondaryTableUnsharedColCount = 18; // bis_GeometricElement3d
+            const int secondaryTableUnsharedColCount = 19; // bis_GeometricElement3d (in reality only 18, but it is easier to compute with 19)
             const int eightyPercentClassColCount = 40; //assumed for now. Might have to test with different ones
             std::vector<int> maxClassColCounts {50, 75, 100, 125, 150, 200};
             std::vector<int> sharedColCounts {10, 20, 30, 40, 70, 110};
@@ -68,7 +68,7 @@ TEST_F(PerformanceOverflowTables_PhysicalElementTests, InsertAll)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle 03/2017
 //---------------------------------------------------------------------------------------
-TEST_F(PerformanceOverflowTables_PhysicalElementTests, InsertSingleColumnPerTable)
+TEST_F(PerformanceOverflowTables_PhysicalElementTests, InsertSingleColumn)
     {
     std::vector<Scenario> scenarios = CreateScenarios();
     for (Scenario const& scenario : scenarios)
@@ -94,54 +94,12 @@ TEST_F(PerformanceOverflowTables_PhysicalElementTests, UpdateAllColumns)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle 03/2017
 //---------------------------------------------------------------------------------------
-TEST_F(PerformanceOverflowTables_PhysicalElementTests, UpdateSingleColumnPerTable)
-    {
-    std::vector<Scenario> scenarios = CreateScenarios();
-    for (Scenario const& scenario : scenarios)
-        {
-        RunUpdateSingleCol(scenario, ColumnMode::First);
-        RunUpdateSingleCol(scenario, ColumnMode::Middle);
-        RunUpdateSingleCol(scenario, ColumnMode::Last);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                  Krischan.Eberle 03/2017
-//---------------------------------------------------------------------------------------
 TEST_F(PerformanceOverflowTables_PhysicalElementTests, SelectAllColumns)
     {
     std::vector<Scenario> scenarios = CreateScenarios();
     for (Scenario const& scenario : scenarios)
         {
         RunSelectAllCols(scenario);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                  Krischan.Eberle 03/2017
-//---------------------------------------------------------------------------------------
-TEST_F(PerformanceOverflowTables_PhysicalElementTests, SelectSingleColumnPerTable)
-    {
-    std::vector<Scenario> scenarios = CreateScenarios();
-    for (Scenario const& scenario : scenarios)
-        {
-        RunSelectSingleCol(scenario, ColumnMode::First);
-        RunSelectSingleCol(scenario, ColumnMode::Middle);
-        RunSelectSingleCol(scenario, ColumnMode::Last);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                  Krischan.Eberle 03/2017
-//---------------------------------------------------------------------------------------
-TEST_F(PerformanceOverflowTables_PhysicalElementTests, SelectWhereSingleColumnPerTable)
-    {
-    std::vector<Scenario> scenarios = CreateScenarios();
-    for (Scenario const& scenario : scenarios)
-        {
-        RunSelectWhereSingleCol(scenario, ColumnMode::First);
-        RunSelectWhereSingleCol(scenario, ColumnMode::Middle);
-        RunSelectWhereSingleCol(scenario, ColumnMode::Last);
         }
     }
 
