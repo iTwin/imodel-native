@@ -160,6 +160,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">

@@ -2,13 +2,12 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectAuthenticationPersistence.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-
-using namespace ::testing;
+#include <gmock/gmock.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
