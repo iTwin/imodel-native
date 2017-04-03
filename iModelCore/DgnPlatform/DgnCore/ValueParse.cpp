@@ -484,7 +484,7 @@ BentleyStatus DoubleParser::ToValue(double& outValue, Utf8CP input) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AngleParser::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetAngleMode(displayInfo.GetAngularMode());
     }
@@ -628,7 +628,7 @@ void            DirectionParser::InitModelSettings(GeometricModelCR model)
     {
     m_angleParser->InitModelSettings(model);
 
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetDirectionMode(displayInfo.GetDirectionMode());
     SetClockwise(displayInfo.GetDirectionClockwise());
@@ -821,7 +821,7 @@ BentleyStatus DirectionParser::ToValue(double& outDirection, Utf8CP input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DistanceParser::Init()
+void DistanceParser::Init()
     {
     m_masterUnitScale = 1.0;
     m_subUnitScale    = 1.0;
@@ -831,9 +831,9 @@ void            DistanceParser::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DistanceParser::InitModelSettings(GeometricModelCR model)
+void DistanceParser::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     UnitDefinitionCR  subUnit = displayInfo.GetSubUnits();
     UnitDefinitionCR  masterUnit = displayInfo.GetMasterUnits();
@@ -850,7 +850,7 @@ void            DistanceParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        DistanceParser::DistanceParser(DistanceParserCR source)
+DistanceParser::DistanceParser(DistanceParserCR source)
     {
     m_masterUnitLabel   = source.m_masterUnitLabel;
     m_subUnitLabel      = source.m_subUnitLabel;
@@ -862,9 +862,9 @@ void            DistanceParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create()           { return new DistanceParser(); }
-/* ctor */              DistanceParser::DistanceParser()   { Init(); }
-DistanceParserPtr       DistanceParser::Clone() const       { return new DistanceParser(*this); }
+DistanceParserPtr DistanceParser::Create() { return new DistanceParser(); }
+DistanceParser::DistanceParser()   { Init(); }
+DistanceParserPtr DistanceParser::Clone() const { return new DistanceParser(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
@@ -1092,9 +1092,9 @@ BentleyStatus PointParser::ToValue(DPoint3dR outPoint, Point3dR relativeFlags, U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
+void AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     UnitDefinition  masterUnit = displayInfo.GetMasterUnits();
     double          uorPerMast = masterUnit.ToMeters();

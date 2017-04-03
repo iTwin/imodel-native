@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/WebMercator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,7 +105,7 @@ public:
         void SetTransparency(double val) {m_transparency=std::max(0.0, std::min(val, .9));} // limit range bewteen 0 and .9
         double GetTransparency() const {return m_transparency;}
         bool IsTransparent() const {return 0.0 < m_transparency;}
-        void ToJson(Json::Value&) const;
+        Json::Value ToJson() const;
         void FromJson(Json::Value const&);
     };
 
@@ -130,8 +130,8 @@ public:
     WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
 
     void _AddTerrainGraphics(TerrainContextR) const override;
-    void _WriteJsonProperties(Json::Value&) const override;
-    void _ReadJsonProperties(Json::Value const&) override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_properties.m_groundBias;}
 
     //! Call this after creating a new model, to set up properties.

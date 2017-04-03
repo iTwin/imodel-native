@@ -999,6 +999,7 @@ public:
         {
         DEFINE_T_SUPER(UniqueAspect)
         friend struct UniqueAspect;
+
      protected:
         ECN::IECInstancePtr m_instance;
         Utf8String m_ecclassName;
@@ -1009,12 +1010,8 @@ public:
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
-
-        GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
-            {}
-
-        GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName())
-            {}
+        GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName()) {}
+        GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName()) {}
 
      public:
 
@@ -3155,24 +3152,25 @@ public:
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 
-    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
-    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
+    BE_PROP_NAME(Description)
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
+    void SetDescription(Utf8CP description) {SetPropertyValue(prop_Description(), description);}
 
-    static Utf8CP JsonNamespace() {return "Subject";}   //<! The namespace reserved for Subject Json properties
-    static Utf8CP JsonJobNamespace() {return "Job";}    //<! The sub-namespace reserved for Job Subject Json properties
-    static Utf8CP JsonModelNamespace() {return "Model";}//<! The sub-namespace reserved for Model Subject Json properties
+    BE_JSON_NAME(Subject);   //<! The namespace reserved for Subject Json properties
+    BE_JSON_NAME(Job); //<! The sub-namespace reserved for Job Subject Json properties
+    BE_JSON_NAME(Model); //<! The sub-namespace reserved for Model Subject Json properties
 
     //! Get Json properties
-    ECN::AdHocJsonValueCR GetSubjectJsonProperties() const {return GetJsonProperties(JsonNamespace());}
+    ECN::AdHocJsonValueCR GetSubjectJsonProperties() const {return GetJsonProperties(json_Subject());}
 
     //! Get Json properties from a particular sub-namespace
-    ECN::AdHocJsonValue GetSubjectJsonProperties(Utf8CP sns) const {return GetJsonProperties(JsonNamespace()).GetMember(sns);}
+    ECN::AdHocJsonValue GetSubjectJsonProperties(Utf8CP sns) const {return GetJsonProperties(json_Subject()).GetMember(sns);}
 
     //! Set Json properties
-    void SetSubjectJsonProperties(JsonValueCR props) {SetJsonProperties(JsonNamespace(), props);}
+    void SetSubjectJsonProperties(JsonValueCR props) {SetJsonProperties(json_Subject(), props);}
 
     //! Set Json properties from a particular sub-namespace
-    void SetSubjectJsonProperties(Utf8CP sns, JsonValueCR props) {m_jsonProperties.GetMemberR(JsonNamespace())[sns] = props;}
+    void SetSubjectJsonProperties(Utf8CP sns, JsonValueCR props) {m_jsonProperties.GetMemberR(json_Subject())[sns] = props;}
 };
 
 //=======================================================================================
