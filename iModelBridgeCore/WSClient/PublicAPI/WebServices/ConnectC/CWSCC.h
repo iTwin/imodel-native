@@ -54,6 +54,11 @@ The response from the server contained a 400, Bad Request, http error
 */
 
 /*!
+\def ERROR_ALREADY_EXISTS
+Object already exists at location
+*/
+
+/*!
 \def SUCCESS
 Successful operation
 */
@@ -144,8 +149,8 @@ To many unsuccessful login attempts have happened.
 #define ERROR403                                 403
 #define ERROR401                                 401
 #define ERROR400                                 400
-#ifndef winNT
-#define ERROR_ALREADY_EXISTS                     183
+#ifndef ERROR_ALREADY_EXISTS
+    #define ERROR_ALREADY_EXISTS                 183
 #endif
 #define SUCCESS                                  0
 #define INVALID_PARAMETER                        -100
