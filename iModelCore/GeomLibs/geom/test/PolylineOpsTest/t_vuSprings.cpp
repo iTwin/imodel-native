@@ -713,11 +713,11 @@ size_t numConvergedRequired = 2
     size_t numXYZ = m_points.size ();
     static double s_distanceFactor = 1000.0;
     double distanceTol = DoubleOps::SmallMetricDistance () * s_distanceFactor;
-    size_t numConverged = 0;
+    // unused - size_t numConverged = 0;
     for (size_t numIteration = 0; numIteration < maxIterations; numIteration++)
         {
         ClearSystem ();
-        size_t numFail = 0;
+        // unused - size_t numFail = 0;
         for (size_t i = 0; i < numXYZ; i++)
             {
             if (m_fixity[i].IsFree())
@@ -884,7 +884,7 @@ double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI,
 TEST(Vu,CreateDelauneySkew)
     {
 
-    double dy = 80.0;
+    // unused - double dy = 80.0;
     double a = 1.0;
     double r0 = 0.2 * a, r1 = 0.7 * a;
     size_t numX = 7;
