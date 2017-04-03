@@ -684,8 +684,37 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
         auto subcatId = stmt->GetValueId<DgnSubCategoryId>(0);
         auto appearance = view.GetSubCategoryAppearance(subcatId);
         if (appearance.IsVisible())
+            {
             m_visibleSubCategories.insert(subcatId);
+            auto ovr = view.GetSubCategoryOverride(subcatId);
+            if (ovr.IsAnyOverridden())
+                {
+                Appearance app;
+                app.InitFrom(ovr);
+                if (app.OverridesSymbology())
+                    m_subcategoryOverrides.Insert(subcatId, app);
+                }
+            }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::Appearance::InitFrom(DgnSubCategory::Override const& ovr)
+    {
+    Init();
+    uint32_t weight;
+    if (ovr.GetWeight(weight))
+        SetWeight(weight);
+
+    double trans;
+    if (ovr.GetTransparency(trans))
+        SetTransparency(trans);
+
+    ColorDef rgb;
+    if (ovr.GetColor(rgb))
+        SetRgb(rgb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -701,7 +730,7 @@ bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
     if (elemId.IsValid() && m_neverDrawn.end() != m_neverDrawn.find(elemId))
         return false;
 
-    if (feat.GetSubCategoryId().IsValid() && m_visibleSubCategories.end() == m_visibleSubCategories.find(feat.GetSubCategoryId()))
+    if (feat.GetSubCategoryId().IsValid() && !IsSubCategoryVisible(feat.GetSubCategoryId()))
         return false;
 
     switch (feat.GetClass())
@@ -710,6 +739,58 @@ bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
         case DgnGeometryClass::Dimension:       return m_dimensions;
         case DgnGeometryClass::Pattern:         return m_patterns;
         default:                                return true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FeatureSymbologyOverrides::IsSubCategoryVisible(DgnSubCategoryId subcatId) const
+    {
+    return m_visibleSubCategories.end() != m_visibleSubCategories.find(subcatId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::OverrideSubCategory(DgnSubCategoryId id, Appearance app)
+    {
+    if (!id.IsValid() || !IsSubCategoryVisible(id))
+        return;
+
+    auto iter = m_subcategoryOverrides.find(id);
+    if (iter != m_subcategoryOverrides.end())
+        {
+        if (!app.OverridesSymbology())
+            m_subcategoryOverrides.erase(iter);
+        else
+            iter->second = app;
+        }
+    else
+        {
+        m_subcategoryOverrides.Insert(id, app);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
+    {
+    if (!id.IsValid() || m_neverDrawn.end() != m_neverDrawn.find(id))
+        return;
+
+    auto iter = m_elementOverrides.find(id);
+    if (iter != m_elementOverrides.end())
+        {
+        if (!app.OverridesSymbology())
+            m_elementOverrides.erase(iter);
+        else
+            iter->second = app;
+        }
+    else
+        {
+        m_elementOverrides.Insert(id, app);
         }
     }
 

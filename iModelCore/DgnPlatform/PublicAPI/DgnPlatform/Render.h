@@ -1932,18 +1932,61 @@ public:
 //=======================================================================================
 struct FeatureSymbologyOverrides
 {
-    DgnElementIdSet     m_alwaysDrawn;
-    DgnElementIdSet     m_neverDrawn;
-    DgnSubCategoryIdSet m_visibleSubCategories;
-    bool                m_constructions;
-    bool                m_dimensions;
-    bool                m_patterns;
-    bool                m_alwaysDrawnExclusive;
+    struct Appearance
+    {
+    private:
+        ColorDef        m_color;
+        uint32_t        m_weight;
+        struct
+            {
+            uint32_t        m_rgb:1;
+            uint32_t        m_alpha:1;
+            uint32_t        m_weight:1;
+            }           m_flags;
+    public:
+        Appearance() { Init(); }
+        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0; }
+        void InitFrom(DgnSubCategory::Override const& ovr);
+
+        void SetTransparency(double t) { SetAlpha(static_cast<uint8_t>((1.0-t)*255.0)); }
+        void SetAlpha(uint8_t alpha) { m_flags.m_alpha = true; m_color.SetAlpha(alpha); }
+        void SetRgba(ColorDef color) { SetRgb(color); SetAlpha(color.GetAlpha()); }
+        void SetWeight(uint32_t weight) { m_flags.m_weight = true; m_weight = weight; }
+        void SetRgb(ColorDef color)
+            {
+            m_flags.m_rgb = true;
+            if (m_flags.m_alpha)
+                color.SetAlpha(m_color.GetAlpha());
+
+            m_color = color;
+            }
+
+        ColorDef GetRgb() const { return m_color; }
+        uint8_t GetAlpha() const { return m_color.GetAlpha(); }
+        double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
+        uint32_t GetWeight() const { return m_weight; }
+
+        bool OverridesSymbology() const { return m_flags.m_rgb || m_flags.m_alpha || m_flags.m_weight; }
+    };
+
+    DgnElementIdSet                     m_alwaysDrawn;
+    DgnElementIdSet                     m_neverDrawn;
+    bmap<DgnElementId, Appearance>      m_elementOverrides; // for any element for which at least one aspect of symbology is overridden
+    DgnSubCategoryIdSet                 m_visibleSubCategories;
+    bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
+    bool                                m_constructions;
+    bool                                m_dimensions;
+    bool                                m_patterns;
+    bool                                m_alwaysDrawnExclusive;
 
     FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
 
     DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
+    DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
+
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
+    DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance);
 };
 
 //=======================================================================================

@@ -321,6 +321,10 @@ public:
     //! Drop the override of the appearance of a SubCategory from this view's DisplayStyle
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
 
+    //! Look up the appearance overrides for the given SubCategory from this view's DisplayStyle
+    //! If no such overides are defined, returns an empty Override
+    DgnSubCategory::Override GetSubCategoryOverride(DgnSubCategoryId id) const { return m_definition->GetDisplayStyle().GetSubCategoryOverride(id); }
+
     //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
 

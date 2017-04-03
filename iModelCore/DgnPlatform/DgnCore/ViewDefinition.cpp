@@ -1072,6 +1072,15 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Override DisplayStyle::GetSubCategoryOverride(DgnSubCategoryId id) const
+    {
+    auto iter = m_subCategoryOverrides.find(id);
+    return m_subCategoryOverrides.end() != iter ? iter->second : DgnSubCategory::Override();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::Appearance DisplayStyle::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
