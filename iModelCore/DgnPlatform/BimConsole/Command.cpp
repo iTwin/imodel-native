@@ -1736,7 +1736,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         return;
         }
 
-    //compute 80% quantile
+    //compute stats metrics
     std::vector<uint32_t> sortedClassColCounts;
     for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
         {
@@ -1750,7 +1750,14 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
     BimConsole::WriteLine("Maximum: %" PRIu32, sortedClassColCounts.back());
     BimConsole::WriteLine("Median: %.1f", ComputeQuantile(sortedClassColCounts, .5));
     BimConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(sortedClassColCounts, .8));
-    BimConsole::WriteLine("Mean: %.1f:", std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) * 1.0 / sortedClassColCounts.size());
+    //Mean
+    const double mean = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) * 1.0 / sortedClassColCounts.size();
+    BimConsole::WriteLine("Mean: %.1f:", mean);
+
+    //stddev
+    const double variance = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0.0,
+                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); });
+    BimConsole::WriteLine("Standard Deviation: %.1f:", std::sqrt(variance));
 
     for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
         {

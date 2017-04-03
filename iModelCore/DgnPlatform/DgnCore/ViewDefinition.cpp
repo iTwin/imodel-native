@@ -624,23 +624,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
     return DgnDbStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  10/2016
-//---------------------------------------------------------------------------------------
-DgnElementIdSet CategorySelector::QuerySelectors(DgnDbR db)
-    {
-    DgnElementIdSet ids;
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_CategorySelector));
-    if (stmt.IsValid())
-        {
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.insert(stmt->GetValueId<DgnElementId>(0));
-        }
-
-    return ids;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2230,16 +2213,17 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle2dP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle2dP displayStyleIn)
     {
+    DgnDbR db = definitionModel.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
-    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    auto displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle2d(db, "");
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(definitionModel, "");
+    DisplayStyle2dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle2d(definitionModel, "");
 
-    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
+    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, definitionModel.GetModelId(), classId, CreateCode(definitionModel, name), *categorySelector));
     viewDef->SetDisplayStyle2d(*displayStyle);
 
     if (nullptr == categorySelectorIn)
@@ -2254,16 +2238,17 @@ TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
+TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
     {
+    DgnDbR db = definitionModel.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
-    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(definitionModel, "");
+    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(definitionModel, "");
 
-    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
+    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, definitionModel.GetModelId(), classId, CreateCode(definitionModel, name), *categorySelector, *displayStyle));
     if (nullptr == categorySelectorIn)
         {
         for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))

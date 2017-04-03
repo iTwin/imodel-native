@@ -848,6 +848,8 @@ public:
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
+    ColorDef MapColor(double value) const;
+    Image   GetImage(uint32_t width, uint32_t height) const;
 };
 
 //=======================================================================================

@@ -56,8 +56,18 @@ protected:
 
 public:
     //! Create a DgnGeometryPart
-    //! @see DgnGeometryParts::InsertGeometryPart
+    //! @param[in] model Create the DgnGeometryPart in this model
+    //! @param[in] name Create the DgnCode for the DgnGeometryPart using this name and the specified model as the uniqueness scope for the name
+    DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DefinitionModelR model, Utf8StringCR name);
+    //! @private
+    //! @deprecated
     DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DgnDbR db, DgnCodeCR code=DgnCode::CreateEmpty());
+
+    //! Create a DgnCode for a DgnGeometryPart given a name that is meant to be unique within the scope of the specified model
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scope, name);}
+    //! @private
+    //! @deprecated
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
 
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
@@ -71,9 +81,6 @@ public:
 
     //! Get the cached set of Render::Graphics for this DgnGeometryPart.
     Render::GraphicSet& Graphics() const {return m_graphics;}
-
-    //! Create a DgnCode suitable for assigning to a DgnGeometryPart
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);

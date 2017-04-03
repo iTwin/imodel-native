@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-//----------------------------------------------------------------------------------------
+//========================================================================================
 // @bsiclass                                    Shaun.Sewall                    01/2016
-//----------------------------------------------------------------------------------------
+//========================================================================================
 struct BisCoreDomainTests : public DgnDbTestFixture
-    {
+{
     Utf8String GetDDL(Utf8CP tableName);
-    };
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2016
@@ -245,13 +245,14 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
     }
 
 //---------------------------------------------------------------------------------------
+// Validate that CodeSpecs were properly inserted by DgnDb::CreateCodeSpecs
 // @betest                                      Shaun.Sewall                    03/2016
 //---------------------------------------------------------------------------------------
 TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     {
     SetupSeedProject();
 
-    // validate that CodeSpecs were properly inserted by DgnDb::CreateCodeSpecs
+    // Validate CodeSpecs of RepositoryScope
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_NullCodeSpec)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationFrameStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationLeaderStyle)->IsRepositoryScope());
@@ -259,28 +260,30 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystem2d)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystem3d)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystemSpatial)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LineStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialCategory)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TextAnnotationSeed)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TrueColor)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ViewDefinition)->IsRepositoryScope());
 
+    // Validate CodeSpecs of ModelScope
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Drawing)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DrawingCategory)->IsModelScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LinkElement)->IsModelScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Sheet)->IsModelScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_PhysicalType)->IsModelScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe3d)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GraphicalType2d)->IsModelScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe2d)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LinkElement)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_PhysicalType)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Sheet)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialLocationType)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe2d)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe3d)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ViewDefinition)->IsModelScope());
 
+    // Validate CodeSpecs of ParentElementScope
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_InformationPartitionElement)->IsParentElementScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SubCategory)->IsParentElementScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Subject)->IsParentElementScope());
