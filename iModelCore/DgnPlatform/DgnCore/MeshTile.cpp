@@ -430,12 +430,12 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
         return m_isColorFromBackground != rhs.m_isColorFromBackground;
 
     if (m_linePixels != rhs.m_linePixels)
-        return m_linePixels != rhs.m_linePixels;
-    
+        return m_linePixels < rhs.m_linePixels;                                                                                        
+
     if (m_gradient.get() != rhs.m_gradient.get())
         {
         if (!m_gradient.IsValid() || !rhs.m_gradient.IsValid() || ! (*m_gradient == *rhs.m_gradient))
-            return m_gradient.get() != rhs.m_gradient.get();  // I don't think is it necessary to do a real less than comparison if both valid but not equal??
+            return m_gradient.get() < rhs.m_gradient.get();
         }
 
     if (m_color != rhs.m_color)
@@ -455,9 +455,6 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
 
     if (m_rasterWidth != rhs.m_rasterWidth)
         return m_rasterWidth < rhs.m_rasterWidth;
-
-    if (m_linePixels != rhs.m_linePixels)
-        return m_linePixels < rhs.m_linePixels;                                                                                        
 
     if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
         return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();

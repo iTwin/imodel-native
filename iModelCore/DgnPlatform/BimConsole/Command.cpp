@@ -1699,6 +1699,11 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         return;
         }
     
+    /*
+    "SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
+                                                                 "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
+                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True " AND CH.ClassId=? "
+                                                                 "WHERE RCC.ClassId=?"*/
     std::map<ECClassCP, ClassColumnStats> classStats;
     std::function<BentleyStatus(std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)> gatherClassStats;
     gatherClassStats = [&gatherClassStats] (std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)
@@ -1736,6 +1741,12 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         return;
         }
 
+    if (classStats.empty())
+        {
+        BimConsole::WriteLine("No class hierarchy stats available for root class %s. The class hierarchy only consists of abstract classes.", rootClass->GetFullName());
+        return;
+        }
+
     //compute stats metrics
     std::vector<uint32_t> sortedClassColCounts;
     for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
@@ -1756,7 +1767,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
 
     //stddev
     const double variance = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0.0,
-                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); });
+                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); }) * 1.0 / sortedClassColCounts.size();
     BimConsole::WriteLine("Standard Deviation: %.1f:", std::sqrt(variance));
 
     for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
