@@ -615,9 +615,9 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
         return nullptr;
         }
 
-    UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
-    UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
-    rdlModel->GetDisplayInfoR().SetUnits(mu, su);
+    UnitDefinition mu = subjectViewTargetModel.GetFormatter().GetMasterUnits();
+    UnitDefinition su = subjectViewTargetModel.GetFormatter().GetSubUnits();
+    rdlModel->GetFormatterR().SetUnits(mu, su);
     return rdlModel;
     }
 

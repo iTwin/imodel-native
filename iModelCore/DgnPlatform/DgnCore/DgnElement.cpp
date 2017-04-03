@@ -1492,7 +1492,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
+ElementImporter::ElementImporter(DgnImportContext& context) : m_context(context), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -2517,7 +2517,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                            \
+            {                                                                           \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2616,21 +2616,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     T_Super::_RegisterPropertyAccessors(params, layout);
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                            \
+            {                                                                           \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \

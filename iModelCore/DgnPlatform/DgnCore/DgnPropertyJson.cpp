@@ -2,30 +2,11 @@
 |
 |     $Source: DgnCore/DgnPropertyJson.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-
-static Utf8CP DGNPROPERTYJSON_LinearUnitMode        = "linMode";
-static Utf8CP DGNPROPERTYJSON_LinearPrecType        = "linType";
-static Utf8CP DGNPROPERTYJSON_LinearPrecision       = "linPrec";
-static Utf8CP DGNPROPERTYJSON_AngularMode           = "angMode";
-static Utf8CP DGNPROPERTYJSON_AngularPrecision      = "angPrec";
-static Utf8CP DGNPROPERTYJSON_DirectionMode         = "dirMode";
-static Utf8CP DGNPROPERTYJSON_DirectionClockwise    = "clockwise";
-static Utf8CP DGNPROPERTYJSON_FormatterFlags        = "fmtFlags";
-static Utf8CP DGNPROPERTYJSON_MasterUnit            = "mastUnit";
-static Utf8CP DGNPROPERTYJSON_SubUnit               = "subUnit";
-static Utf8CP DGNPROPERTYJSON_RoundoffUnit          = "rndUnit";
-static Utf8CP DGNPROPERTYJSON_RoundoffRatio         = "rndRatio";
-static Utf8CP DGNPROPERTYJSON_FormatterBaseDir      = "fmtDir";
-static Utf8CP DGNPROPERTYJSON_Base                  = "base";
-static Utf8CP DGNPROPERTYJSON_System                = "sys";
-static Utf8CP DGNPROPERTYJSON_Numerator             = "num";
-static Utf8CP DGNPROPERTYJSON_Denominator           = "den";
-static Utf8CP DGNPROPERTYJSON_Label                 = "label";
 
 
 //---------------------------------------------------------------------------------------
@@ -33,12 +14,13 @@ static Utf8CP DGNPROPERTYJSON_Label                 = "label";
 //---------------------------------------------------------------------------------------
 void UnitDefinition::FromJson(JsonValueCR inValue)
     {
-    UnitBase base      = (UnitBase) inValue.get(DGNPROPERTYJSON_Base,(uint32_t)UnitBase::Meter).asUInt();
-    UnitSystem system  = (UnitSystem) inValue.get(DGNPROPERTYJSON_System,(uint32_t)UnitSystem::Metric).asUInt();
-    double numerator   = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Numerator], 1.0);
-    double denominator = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Denominator], 1.0);
+    UnitBase base = (UnitBase) inValue[json_base()].asUInt((uint32_t)UnitBase::Meter);
+    UnitSystem system  = (UnitSystem) inValue[json_sys()].asUInt((uint32_t)UnitSystem::Metric);
 
-    Init(base, system, numerator, denominator, BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"));
+    double numerator   = inValue[json_num()].asDouble(1.0);
+    double denominator = inValue[json_den()].asDouble(1.0);
+
+    Init(base, system, numerator, denominator, BeJsonUtilities::CStringFromStringValue(inValue[json_label()], "m"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -46,67 +28,73 @@ void UnitDefinition::FromJson(JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 void UnitDefinition::ToJson(JsonValueR outValue) const
     {
-    outValue[DGNPROPERTYJSON_Base] = (uint32_t) GetBase();
-    outValue[DGNPROPERTYJSON_System] = (uint32_t) GetSystem();
-    outValue[DGNPROPERTYJSON_Label] = Utf8String(GetLabel());
-    outValue[DGNPROPERTYJSON_Numerator] = GetNumerator();
-    outValue[DGNPROPERTYJSON_Denominator] = GetDenominator();
+    outValue.SetOrRemoveUInt(json_base(), (uint32_t) GetBase(), (uint32_t)UnitBase::Meter);
+    outValue.SetOrRemoveUInt(json_sys(), (uint32_t) GetSystem(), (uint32_t)UnitSystem::Metric);
+    outValue[json_label()] = Utf8String(GetLabel());
+    outValue.SetOrRemoveDouble(json_num(), GetNumerator(), 1.0);
+    outValue.SetOrRemoveDouble(json_den(), GetDenominator(), 1.0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void GeometricModel::DisplayInfo::FormatterFlags::FromJson(JsonValueCR inValue)
+void GeometricModel::Formatter::FormatterFlags::FromJson(JsonValueCR inValue)
     {
-    m_linearUnitMode     = inValue[DGNPROPERTYJSON_LinearUnitMode].asUInt();
-    m_linearPrecType     = inValue[DGNPROPERTYJSON_LinearPrecType].asUInt();
-    m_linearPrecision    = inValue[DGNPROPERTYJSON_LinearPrecision].asUInt();
-    m_angularMode        = inValue[DGNPROPERTYJSON_AngularMode].asUInt();
-    m_angularPrecision   = inValue[DGNPROPERTYJSON_AngularPrecision].asUInt();
-    m_directionMode      = inValue[DGNPROPERTYJSON_DirectionMode].asUInt();
-    m_directionClockwise = inValue[DGNPROPERTYJSON_DirectionClockwise].asBool();
+    m_linearUnitMode     = inValue[json_linMode()].asUInt();
+    m_linearPrecType     = inValue[json_linType()].asUInt();
+    m_linearPrecision    = inValue[json_linPrec()].asUInt();
+    m_angularMode        = inValue[json_angMode()].asUInt();
+    m_angularPrecision   = inValue[json_angPrec()].asUInt();
+    m_directionMode      = inValue[json_dirMode()].asUInt();
+    m_directionClockwise = inValue[json_clockwise()].asBool();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void GeometricModel::DisplayInfo::FormatterFlags::ToJson(JsonValueR outValue) const
+Json::Value GeometricModel::Formatter::FormatterFlags::ToJson() const
     {
-    outValue[DGNPROPERTYJSON_LinearUnitMode]     = (uint32_t) m_linearUnitMode;
-    outValue[DGNPROPERTYJSON_LinearPrecType]     = (uint32_t) m_linearPrecType;
-    outValue[DGNPROPERTYJSON_LinearPrecision]    = (uint32_t) m_linearPrecision;
-    outValue[DGNPROPERTYJSON_AngularMode]        = (uint32_t) m_angularMode;
-    outValue[DGNPROPERTYJSON_AngularPrecision]   = (uint32_t) m_angularPrecision;
-    outValue[DGNPROPERTYJSON_DirectionMode]      = (uint32_t) m_directionMode;
-    outValue[DGNPROPERTYJSON_DirectionClockwise] = m_directionClockwise;
+    Json::Value outValue;
+    outValue.SetOrRemoveUInt(json_linMode(), m_linearUnitMode, 0);
+    outValue.SetOrRemoveUInt(json_linType(), m_linearPrecType, 0);
+    outValue.SetOrRemoveUInt(json_linPrec(), m_linearPrecision, 0);
+    outValue.SetOrRemoveUInt(json_angMode(), m_angularMode, 0);
+    outValue.SetOrRemoveUInt(json_angPrec(), m_angularPrecision, 0);
+    outValue.SetOrRemoveUInt(json_dirMode(), m_directionMode, 0);
+    outValue.SetOrRemoveBool(json_clockwise(), m_directionClockwise, false);
+    return outValue;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void GeometricModel::DisplayInfo::FromJson(JsonValueCR inValue)
+void GeometricModel::Formatter::FromJson(JsonValueCR inValue)
     {
-    m_formatterFlags.FromJson(inValue[DGNPROPERTYJSON_FormatterFlags]);
+    m_formatterFlags.FromJson(inValue[json_fmtFlags()]);
 
-    m_masterUnit.FromJson(inValue[DGNPROPERTYJSON_MasterUnit]);
-    m_subUnit.FromJson(inValue[DGNPROPERTYJSON_SubUnit]);
+    m_masterUnit.FromJson(inValue[json_mastUnit()]);
+    m_subUnit.FromJson(inValue[json_subUnit()]);
 
-    m_roundoffUnit      = inValue[DGNPROPERTYJSON_RoundoffUnit].asDouble();
-    m_roundoffRatio     = inValue[DGNPROPERTYJSON_RoundoffRatio].asDouble();
-    m_formatterBaseDir  = inValue[DGNPROPERTYJSON_FormatterBaseDir].asDouble();
+    m_roundoffUnit      = inValue[json_rndUnit()].asDouble();
+    m_roundoffRatio     = inValue[json_rndRatio()].asDouble();
+    m_formatterBaseDir  = inValue[json_fmtDir()].asDouble();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void GeometricModel::DisplayInfo::ToJson(JsonValueR outValue) const
+Json::Value GeometricModel::Formatter::ToJson() const
     {
-    m_formatterFlags.ToJson(outValue[DGNPROPERTYJSON_FormatterFlags]);
+    Json::Value outValue;
+    Json::Value fmtJson = m_formatterFlags.ToJson();
+    if (!fmtJson.isNull())
+        outValue[json_fmtFlags()] = fmtJson;
+     
+    m_masterUnit.ToJson(outValue[json_mastUnit()]);
+    m_subUnit.ToJson(outValue[json_subUnit()]);
 
-    m_masterUnit.ToJson(outValue[DGNPROPERTYJSON_MasterUnit]);
-    m_subUnit.ToJson(outValue[DGNPROPERTYJSON_SubUnit]);
-
-    outValue[DGNPROPERTYJSON_RoundoffUnit] = m_roundoffUnit;
-    outValue[DGNPROPERTYJSON_RoundoffRatio]    = m_roundoffRatio;
-    outValue[DGNPROPERTYJSON_FormatterBaseDir] = m_formatterBaseDir;
+    outValue.SetOrRemoveDouble(json_rndUnit(), m_roundoffUnit, 0.0);
+    outValue.SetOrRemoveDouble(json_rndRatio(), m_roundoffRatio, 0.0);
+    outValue.SetOrRemoveDouble(json_fmtDir(), m_formatterBaseDir, 0.0);
+    return outValue;
     }
