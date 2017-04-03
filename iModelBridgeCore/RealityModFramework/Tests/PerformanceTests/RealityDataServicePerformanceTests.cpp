@@ -839,6 +839,49 @@ StatusInt RealityDataServicePerformanceTests::GetDocumentTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::GetFolderTest()
+    {
+    RawServerResponse response;
+
+    BeFileName beFile(m_tempFileName.c_str());
+
+    Utf8String namePart = Utf8String(beFile.GetFileNameAndExtension().c_str());
+
+    Utf8String folderId = m_newRealityData->GetIdentifier() + "/" + namePart;
+    RealityDataFolderByIdRequest request = RealityDataFolderByIdRequest(folderId);
+
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataFolderPtr otherRealityDataFolder = RealityDataService::Request(request, response);
+
+    if (otherRealityDataFolder.IsNull() && OK == response.status)
+        {
+        std::cout << "GetFolder Test: No error returned but no folder fetched " << std::endl;
+        return ERROR;
+        }
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "GetFolder Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "GetFolder Test: " << (endTime - startTime) / 1000.0 << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest()
     {
     RawServerResponse response;

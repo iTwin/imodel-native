@@ -920,14 +920,11 @@ RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
     m_id = realityData.GetIdentifier(); 
     m_validRequestString = false;
 
-
-
-
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, realityData.GetName());
     properties.Insert(RealityDataField::Classification, realityData.GetClassificationTag());
     properties.Insert(RealityDataField::Type, realityData.GetRealityDataType());
-    properties.Insert(RealityDataField::Streamed, (realityData.GetStreamed() ? "true", "false"));
+    properties.Insert(RealityDataField::Streamed, (realityData.IsStreamed() ? "true": "false"));
     properties.Insert(RealityDataField::Visibility, realityData.GetVisibilityTag());
     properties.Insert(RealityDataField::RootDocument, realityData.GetRootDocument());
 
