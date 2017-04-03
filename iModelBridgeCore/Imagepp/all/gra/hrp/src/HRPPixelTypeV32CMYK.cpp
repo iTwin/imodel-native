@@ -21,7 +21,7 @@
 HPM_REGISTER_CLASS(HRPPixelTypeV32CMYK, HRPPixelType)
 
 // STL typeDef
-typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
+typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HRPPixelConverter*> > >
 MapHRPPixelTypeToConverter;
 
 #if oldCMYK

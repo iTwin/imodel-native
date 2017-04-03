@@ -21,7 +21,7 @@
 
 HPM_REGISTER_CLASS(HRPPixelTypeI8Gray8, HRPPixelTypeI8R8G8B8)
 
-typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
+typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HRPPixelConverter*> > >
 MapHRPPixelTypeToConverter;
 
 static Byte s_BitMask[8]    = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };

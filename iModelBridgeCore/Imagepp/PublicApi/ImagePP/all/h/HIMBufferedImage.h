@@ -412,7 +412,7 @@ private:
     typedef map<HIMBufferedImageTileID,
             HIMBufferedImageTile*,
             less<HIMBufferedImageTileID>,
-            allocator< HIMBufferedImageTile* > > TileMap;
+            allocator<std::pair<const HIMBufferedImageTileID, HIMBufferedImageTile*> > > TileMap;
 
     mutable TileMap         m_TileMap;
 

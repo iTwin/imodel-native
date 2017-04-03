@@ -78,7 +78,7 @@ private:
     // Members.
 
     // List of Resolution
-    typedef map<double, ResolutionDescriptor*, less<double>, allocator<ResolutionDescriptor*> > HGFListOfResolution;
+    typedef map<double, ResolutionDescriptor*, less<double>, allocator<std::pair<const double, ResolutionDescriptor*> > > HGFListOfResolution;
     HGFListOfResolution m_ListOfResolution;
     };
 

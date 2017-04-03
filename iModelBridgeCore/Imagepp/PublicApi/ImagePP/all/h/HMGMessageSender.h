@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMessageSender.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGMessageSender
@@ -91,7 +91,7 @@ protected:
     typedef map< HFCPtr<HMGSink>,
             HMGNotifieeInfo,
             less<HFCPtr<HMGSink> >,
-            allocator<HMGNotifieeInfo> > NotifieesList;
+            allocator<std::pair<const HFCPtr<HMGSink>, HMGNotifieeInfo> > > NotifieesList;
 
     NotifieesList*
     m_pNonPersistentNotifiees;

@@ -122,7 +122,7 @@ public:
     IMAGEPP_EXPORT const Utf8String& GetNotfoundString() const;
 
 private:
-    typedef map<HCLASS_ID , HFCClassDescriptor, less<HCLASS_ID>, allocator<HFCClassDescriptor> > IDDescriptorMap;
+    typedef map<HCLASS_ID , HFCClassDescriptor, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HFCClassDescriptor> > > IDDescriptorMap;
     IDDescriptorMap     m_CodecClassIDDescriptorMap;
     IDDescriptorMap     m_PixelClassIDDescriptorMap;
     IDDescriptorMap     m_TransfoClassIDDescriptorMap;

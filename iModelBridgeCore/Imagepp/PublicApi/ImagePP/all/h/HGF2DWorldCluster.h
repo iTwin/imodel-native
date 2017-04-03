@@ -91,7 +91,7 @@ private:
 
     // STL typeDef
     typedef map<HGF2DWorldIdentificator, HFCPtr<HGF2DWorld>,
-            less<HGF2DWorldIdentificator>, allocator<HFCPtr<HGF2DWorld> > >    ListOfWorlds;
+            less<HGF2DWorldIdentificator>, allocator<std::pair<const HGF2DWorldIdentificator, HFCPtr<HGF2DWorld> > > >    ListOfWorlds;
 
     // Attribute
     ListOfWorlds  m_ListOfWorlds;

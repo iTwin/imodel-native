@@ -35,7 +35,7 @@ static const Byte s_NotBitMask[8] = {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0
 HPM_REGISTER_CLASS(HRPPixelTypeI1R8G8B8A8RLE, HRPPixelTypeRGB)
 
 // STL typeDef
-typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
+typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HRPPixelConverter*> > >
 MapHRPPixelTypeToConverter;
 
 

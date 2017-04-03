@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXIndexable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ private:
     HIDXIndexable(const HIDXIndexable<T>& pi_rObj);
     HIDXIndexable<T>& operator=(const HIDXIndexable<T>& pi_rObj);
 
-    typedef map < void const*, HIDXAttribute*, less<void const*>, allocator<HIDXAttribute*> >
+    typedef map < void const*, HIDXAttribute*, less<void const*>, allocator<std::pair<void const* const, HIDXAttribute*> > >
     AttributeMap;
 
     // The list of attributes for the indexable object

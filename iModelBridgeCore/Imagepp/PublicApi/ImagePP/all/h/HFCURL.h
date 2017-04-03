@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURL.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ public:
 
 //DM-Android     Not able to build if private members
     // The type of the scheme list
-    typedef map<Utf8String, Creator*, CaseInsensitiveStringCompareUtf8, allocator<Creator*> > SchemeList;    // The scheme list.
+    typedef map<Utf8String, Creator*, CaseInsensitiveStringCompareUtf8, allocator<std::pair<const Utf8String, Creator*> > > SchemeList;    // The scheme list.
     static SchemeList*      s_pSchemeList;
     //:> Scheme list access
     IMAGEPP_EXPORT static SchemeList&         GetSchemeList();     // from protected

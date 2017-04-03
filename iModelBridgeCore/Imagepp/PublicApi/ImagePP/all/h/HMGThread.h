@@ -83,7 +83,7 @@ private:
 
         };
 
-    typedef map< HMGThreadID, HMGThread*, less<HMGThreadID>, allocator<HMGThread*> > HMGThreadMap;
+    typedef map< HMGThreadID, HMGThread*, less<HMGThreadID>, allocator<std::pair<const HMGThreadID, HMGThread*> > > HMGThreadMap;
 
     typedef list< MessageEntry*, allocator<MessageEntry*> > MessageList;
 

@@ -27,7 +27,7 @@
 HPM_REGISTER_CLASS(HRPPixelTypeV24B8G8R8, HRPPixelTypeBGR)
 
 // STL typeDef
-typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
+typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HRPPixelConverter*> > >
 MapHRPPixelTypeToConverter;
 
 static ConverterV24R8G8B8_V24R8G8B8<BGR_RED,BGR_BLUE,BGR_RED,BGR_BLUE> s_V24B8G8R8_V24B8G8R8;

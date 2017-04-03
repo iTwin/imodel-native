@@ -266,7 +266,7 @@ private:
 
     // STL typeDef
     typedef map<HFCPtr<HGF2DCoordSysImpl>, HGF2DTransfoModel*,
-            less<HFCPtr<HGF2DCoordSysImpl> >, allocator<HGF2DTransfoModel*> >    ListCoordSysToModel;
+            less<HFCPtr<HGF2DCoordSysImpl> >, allocator<std::pair<const HFCPtr<HGF2DCoordSysImpl>, HGF2DTransfoModel*> > > ListCoordSysToModel;
 
     mutable HFCExclusiveKey         m_ListsKey;
     mutable ListCoordSysToModel     m_ListIsRefTo;

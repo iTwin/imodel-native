@@ -24,7 +24,7 @@
 HPM_REGISTER_CLASS(HRPPixelTypeV16Gray16, HRPPixelTypeGray)
 
 // STL typeDef
-typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
+typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<std::pair<const HCLASS_ID, HRPPixelConverter*> > >
 MapHRPPixelTypeToConverter;
 
 //-----------------------------------------------------------------------------

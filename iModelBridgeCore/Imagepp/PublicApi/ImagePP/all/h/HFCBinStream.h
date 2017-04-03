@@ -82,7 +82,7 @@ public:
 
 //DM-Android     Not able to build if private member
     // The type of the stream-type list, based on URL scheme type.
-    typedef map<Utf8String, Creator*, CaseInsensitiveStringCompareUtf8, allocator<Creator*> >  // From protected
+    typedef map<Utf8String, Creator*, CaseInsensitiveStringCompareUtf8, allocator<std::pair<const Utf8String, Creator*> > >  // From protected
         StreamTypeList;
     // Scheme list access
     static StreamTypeList&  GetStreamTypeList();                // From protected

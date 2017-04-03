@@ -41,7 +41,7 @@ private:
     HIDXSearchCriteria(const HIDXSearchCriteria& pi_rObj);
     HIDXSearchCriteria& operator=(const HIDXSearchCriteria& pi_rObj);
 
-    typedef map < void const*, HIDXCriteria*, less<void const*>, allocator<HIDXCriteria*> >
+    typedef map < void const*, HIDXCriteria*, less<void const*>, allocator<std::pair<void const* const, HIDXCriteria*> > >
     CriteriaMap;
 
     // The list of criterias
