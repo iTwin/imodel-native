@@ -632,7 +632,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     if (m_order.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("%s&", m_order));
 
-    m_httpRequestString.append(Utf8PrintfString("'$skip=%u&$top=%u", m_startIndex, m_pageSize));
+    m_httpRequestString.append(Utf8PrintfString("$skip=%u&$top=%u", m_startIndex, m_pageSize));
     
     if (m_query.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
@@ -800,10 +800,8 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_id));
 
-    m_httpRequestString.append(Utf8PrintfString("%s'", m_id));
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
     if (m_order.length() > 0)
@@ -824,10 +822,8 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'%s'", m_id));
 
-    m_httpRequestString.append(Utf8PrintfString("%s'", m_id));
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
     if (m_order.length() > 0)
@@ -1949,7 +1945,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
     else
         {
         RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
-        if ((uint8_t)entities.size() < request.GetPageSize())
+        if ((uint16_t)entities.size() < request.GetPageSize())
             rawResponse.status = RequestStatus::LASTPAGE;
         }
 

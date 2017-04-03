@@ -21,6 +21,16 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+
+//! The classification codes. The high level interface only supports the four base classification
+enum class Classification
+    {
+    Imagery = 0x1,
+    Terrain = 0x2,
+    Model = 0x4,
+    Pinned = 0x8
+    };
+
 //=====================================================================================
 //! Overview:
 //! The present classes serve as interfaces to the GeoCoordination Service.
@@ -390,15 +400,6 @@ public:
 
     //! Returns the name of the schema defining the classes exposed by the Service.
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
-
-    //! The classification codes. The high level interface only supports the four base classification
-    enum class Classification
-        {
-        Imagery = 0x1,
-        Terrain = 0x2,
-        Model = 0x4,
-        Pinned = 0x8
-        };
 
     enum class InformationSource
         {
