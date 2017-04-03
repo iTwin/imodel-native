@@ -84,8 +84,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["ContactInformation"].StringValue = "Owned by " + owner;
                 }
             //instance["Keywords"]
-            //instance["Legal"]
-            //instance["TermsOfUse"]
+            instance["Legal"].StringValue = properties.TryToGetString("Copyright");
+            instance["TermsOfUse"].StringValue = properties.TryToGetString("TermsOfUse");
             instance["DataSourceType"].StringValue = properties.TryToGetString("Type");
             instance["AccuracyInMeters"].StringValue = properties.TryToGetString("AccuracyInMeters");
             DateTime date;
@@ -99,7 +99,11 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["FileSize"].NativeValue = filesize;
                 }
-            instance["Streamed"].NativeValue = true;
+            if(properties["Streamed"] != null)
+                {
+                instance["Streamed"].NativeValue = properties.Value<bool>("Streamed");
+                }
+            
 
             instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
@@ -212,8 +216,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["ContactInformation"].StringValue = "Owned by " + owner;
                 }
             //Keywords
-            //Legal
-            //TermsOfUse
+            instance["Legal"].StringValue = properties.TryToGetString("Copyright");
+            instance["TermsOfUse"].StringValue = properties.TryToGetString("TermsOfUse");
             //Lineage
             //Provenance
 
@@ -264,7 +268,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["FileSize"].NativeValue = filesize;
                 }
 
-            instance["Streamed"].NativeValue = true;
+            if ( properties["Streamed"] != null )
+                {
+                instance["Streamed"].NativeValue = properties.Value<bool>("Streamed");
+                }
 
             //Metadata
 
@@ -295,7 +302,10 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Id"].StringValue = sourceID;
 
             instance["CommunicationProtocol"].StringValue = m_rdsDataFetcher.RdsUrlBase.Split(':')[0];
-            instance["Streamed"].NativeValue = true;
+            if ( properties["Streamed"] != null )
+                {
+                instance["Streamed"].NativeValue = properties.Value<bool>("Streamed");
+                }
             instance["LoginKey"].StringValue = IndexConstants.RdsLoginKey;
             instance["LoginMethod"].StringValue = IndexConstants.RdsLoginMethod;
             instance["RegistrationPage"].StringValue = IndexConstants.RdsRegistrationPage;
