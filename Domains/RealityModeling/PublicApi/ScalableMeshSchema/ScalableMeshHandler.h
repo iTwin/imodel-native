@@ -139,6 +139,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         DMatrix4d                               m_storageToUorsTransfo; 
         bool m_forceRedraw;
         bset<uint64_t>                          m_activeClips;
+        bset<uint64_t>                          m_notActiveClips;
 
         BeFileName                              m_path;
         bool                                    m_isProgressiveDisplayOn;    

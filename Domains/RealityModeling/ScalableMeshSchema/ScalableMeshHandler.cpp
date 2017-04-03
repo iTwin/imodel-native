@@ -651,7 +651,7 @@ virtual Completion _Process(ViewContextR viewContext) override
     else    
     if (s_drawInProcess)
         {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache, m_activeClips);
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache,  m_activeClips);
         }
             
     return completionStatus;
@@ -853,7 +853,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_activeClips);
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips);
             
             return;                        
             }   
@@ -1014,13 +1014,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }                         
 
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_activeClips);
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips);
 
 
     if (needProgressive)
         {
         IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());        
-        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_activeClips);
+        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_smPtr->ShouldInvertClips() ? m_notActiveClips :m_activeClips);
         }
 
     }                 
@@ -1574,18 +1574,22 @@ void ScalableMeshModel::RefreshClips()
     {
 
     bset<uint64_t> toActivate;
+    bset<uint64_t> notActivated;
     for (auto& it : m_currentClips)
         {
         if (it.second.first == ClipMode::Mask && it.second.second != m_smPtr->ShouldInvertClips())
             {
               toActivate.insert(it.first);
             }
+        else notActivated.insert(it.first);
 
         if (it.second.first == ClipMode::Clip && it.second.second && m_smPtr->ShouldInvertClips())
             toActivate.insert(it.first);
+        else notActivated.insert(it.first);
 
         }
 
+    m_notActiveClips = notActivated;
     SetActiveClipSets(toActivate, toActivate);
     }
 
