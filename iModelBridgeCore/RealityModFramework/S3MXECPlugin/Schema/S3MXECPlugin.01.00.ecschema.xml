@@ -53,8 +53,8 @@
         <!-- [Optional] Mainly used for PUBLIC data. The Copyright field contains the mention of the ownership of the data. It can contain text or link or both -->
         <ECProperty propertyName="Copyright" typeName="string" />
 
-        <!-- [Optional] Mainly used for PUBLIC data. The term of use indicates limitations to the use of the data. It can contain text of link or both.  -->
-        <ECProperty propertyName="TermOfUse" typeName="string" />
+        <!-- [Optional] Mainly used for PUBLIC data. The terms of use indicates limitations to the use of the data. It can contain text of link or both.  -->
+        <ECProperty propertyName="TermsOfUse" typeName="string" />
 
         <!-- [Optional] The AccuracyInMeters is a text containing a floating point value. It represents the positionnal accuracy of samples relative to the real world objects it represents -->
         <ECProperty propertyName="AccuracyInMeters" typeName="string" />

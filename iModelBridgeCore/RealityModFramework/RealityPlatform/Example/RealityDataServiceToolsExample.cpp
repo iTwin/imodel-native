@@ -312,6 +312,8 @@ void ListCmd()
                 assert(entity->GetApproximateFileSize() == pData->GetApproximateFileSize());
                 assert(entity->GetOwner() == pData->GetOwner());
                 assert(entity->GetRootDocument() == pData->GetRootDocument());
+                assert(entity->GetCopyright() == pData->GetCopyright());
+                assert(entity->GetTermsOfUse() == pData->GetTermsOfUse());
 
 #endif
                 if (FilterByProject(pData->GetIdentifier(), relationships))
@@ -327,9 +329,11 @@ void ListCmd()
                         " Owner          : " << pData->GetOwner() << std::endl << "  " <<
                         " Created        : " << pData->GetCreationDateTime().ToString() << std::endl << "  " <<
                         " Modification   : " << pData->GetModifiedDateTime().ToString() << std::endl << "  " <<
-                        " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
+                        " RootDocument   : " << pData->GetRootDocument() << std::endl << "  " <<
                         " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
                         " Enterprise     : " << pData->GetEnterpriseId() << std::endl << "  " <<
+                        " Copyright      : " << pData->GetCopyright() << std::endl << "  " <<
+                        " TermsOfUse     : " << pData->GetTermsOfUse() << std::endl << "  " <<
                         " Description    : " << pData->GetDescription() << std::endl;
                     }
                 }

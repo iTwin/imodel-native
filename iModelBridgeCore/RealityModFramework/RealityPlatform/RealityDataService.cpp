@@ -679,6 +679,9 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::Type:
         order.append("Type");
         break;
+    case RealityDataField::Streamed:
+        order.append("Streamed");
+        break;
     case RealityDataField::Footprint:
         order.append("Footprint");
         break;
@@ -687,6 +690,12 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
         break;
     case RealityDataField::MetadataURL:
         order.append("MetadataURL");
+        break;
+    case RealityDataField::Copyright:
+        order.append("Copyright");
+        break;
+    case RealityDataField::TermsOfUse:
+        order.append("TermsOfUse");
         break;
     case RealityDataField::ResolutionInMeters:
         order.append("ResolutionInMeters");
@@ -918,6 +927,7 @@ RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
     properties.Insert(RealityDataField::Name, realityData.GetName());
     properties.Insert(RealityDataField::Classification, realityData.GetClassificationTag());
     properties.Insert(RealityDataField::Type, realityData.GetRealityDataType());
+    properties.Insert(RealityDataField::Streamed, (realityData.GetStreamed() ? "true", "false"));
     properties.Insert(RealityDataField::Visibility, realityData.GetVisibilityTag());
     properties.Insert(RealityDataField::RootDocument, realityData.GetRootDocument());
 
@@ -1255,9 +1265,12 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Size, "Size");
     m.Insert(RealityDataField::Classification, "Classification");
     m.Insert(RealityDataField::Type, "Type");
+    m.Insert(RealityDataField::Streamed, "Streamed");
     m.Insert(RealityDataField::Footprint, "Footprint");
     m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
     m.Insert(RealityDataField::MetadataURL, "MetadataURL");
+    m.Insert(RealityDataField::Copyright, "Copyright");
+    m.Insert(RealityDataField::TermsOfUse, "TermsOfUse");
     m.Insert(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
     m.Insert(RealityDataField::AccuracyInMeters, "AccuracyInMeters");
     m.Insert(RealityDataField::Visibility, "Visibility");

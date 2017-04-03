@@ -481,6 +481,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetName().c_str(), "");
     EXPECT_STREQ(myRealityData->GetResolution().c_str(), "");
     EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "");
+    EXPECT_TRUE(myRealityData->GetStreamed() == true);
     EXPECT_TRUE(myRealityData->GetClassification() == RealityData::Classification::UNDEFINED_CLASSIF);
     ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Undefined"); // Default is preset
     EXPECT_STREQ(myRealityData->GetDataset().c_str(), "");
@@ -506,6 +507,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
 
     EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetTersmOfUse().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "");
 
@@ -523,6 +526,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
 
     myRealityData->SetRealityDataType("3mx"); 
     EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "3mx");
+    myRealityData->SetStreamed(false); 
+    ASSERT_TRUE(myRealityData->GetStreamed() == false);
     myRealityData->SetClassification(RealityData::Classification::MODEL); 
     ASSERT_TRUE(myRealityData->GetClassification() == RealityData::Classification::MODEL);
     ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Model");
@@ -573,7 +578,15 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
 
-    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+    myRealityData->SetMetadataURL("http:\\www.bidon.com\AgoodURL.html"); 
+    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "http:\\www.bidon.com\AgoodURL.html");
+
+
+    myRealityData->SetCopyright("Owned by Pinocchio"); 
+    EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "Owned by Pinocchio");
+
+    myRealityData->SetTermsOfUse("Use with permisison of Tinkerbell"); 
+    EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "Use with permisison of Tinkerbell");
 
     // myRealityData->SetModifiedTimestamp(DateTime::GetCurrentTime()); 
     // EXPECT_TRUE(!myRealityData->GetModifiedTimestamp().IsValid()); // Time not set should be invalid

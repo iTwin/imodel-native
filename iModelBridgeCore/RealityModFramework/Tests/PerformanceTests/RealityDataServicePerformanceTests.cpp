@@ -89,10 +89,13 @@ RealityDataServicePerformanceTests::RealityDataServicePerformanceTests()
     m_newRealityData->SetVisibility(RealityDataBase::Visibility::PRIVATE);
     m_newRealityData->SetDataset("INTERNAL-ONLY TEST DATASET");
     m_newRealityData->SetRealityDataType("TEST_ONLY");
+    m_newRealityData->SetStreamed(false);
     m_newRealityData->SetThumbnailDocument("Thumnail.jpg");
     m_newRealityData->SetRootDocument("root.test");
     m_newRealityData->SetListable(true);
     m_newRealityData->SetMetadataURL("metadata.xml");
+    m_newRealityData->SetCopyright("belongs to every one");
+    m_newRealityData->SetTermsOfUse("use wisely");
     m_newRealityData->SetGroup("TestGroup-185a9dbe-d9ed-4c87-9289-57beb3c94a1a");
     m_newRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vestibulum nunc quis malesuada varius. Donec at molestie enim, sit amet interdum mauris.\
                                     Sed dapibus ultricies orci, id dictum ligula consectetur vitae. Quisque eu ipsum in urna molestie ultricies. Nullam fringilla erat vitae placerat semper. Nulla consectetur justo lacinia, \

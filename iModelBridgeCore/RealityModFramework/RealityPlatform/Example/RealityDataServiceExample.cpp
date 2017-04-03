@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     properties.Insert(RealityDataField::Name, "exampleUpload");
     properties.Insert(RealityDataField::Classification, "Terrain");
     properties.Insert(RealityDataField::Type, "3mx");
+    properties.Insert(RealityDataField::Streamed, "false");
     properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[-112.101512,40.700246],[-111.7394581,40.700246],[-111.7394581,40.8529699],[-112.101512,40.8529699],[-112.101512,40.700246]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
     properties.Insert(RealityDataField::OwnedBy, "francis.boily@bentley.com");
 
