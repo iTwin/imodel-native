@@ -126,5 +126,5 @@
         <ECEnumerator value="2" displayLabel="Tapered" />
     </ECEnumeration>
     <KindOfQuantity typeName="LengthKind" description="Kind of a Description here" persistenceUnit="CM(real)" relativeError="10e-3"
-        presentationUnits="FT(DefaultReal);IN(real);MILLIINCH(real8)"/>
+        presentationUnits="FT(DefaultReal);IN(real);MILLIINCH(real4)"/>
 </ECSchema>
