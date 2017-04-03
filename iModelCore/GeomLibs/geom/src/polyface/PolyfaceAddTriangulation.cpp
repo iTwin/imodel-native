@@ -646,6 +646,21 @@ ValidatedDPlane3d ComputeVoronoiSplitPlane (DPoint3dCR xyzA, double rA, DPoint3d
             {
             origin = DPoint3d::FromWeightedAverage (xyzA, rB, xyzB, rA);    // yes, switch the radii to make large one get more space.
             }
+        else if (voronoiMetric == 3)
+            {
+            // distance = distance to tangency = sqrt (euclideandistance^2 - radius^2)
+            // equal distance split of chord is
+            //    x = distance from A
+            //    c-x = distance from B (c == distance A to B)
+            //  x^2 - rA^2 = (c-x)^2 - rB^2
+            //  x = (c^2-rB^2+rA^2)/(2c)
+            // fractional    x=x/c = (c^2-rB^2+rA^2)/(2c^2)
+            double cc = xyzA.DistanceSquared (xyzB);
+            //double c = sqrt (cc);
+            double numerator = (cc + rA * rA - rB * rB);
+            auto f = DoubleOps::ValidatedDivide (numerator, 2.0 * cc, 0.5);
+            origin = DPoint3d::FromInterpolate (xyzA, f.Value (), xyzB);
+            }
         else
             origin = DPoint3d::FromInterpolate (xyzA, 0.5, xyzB);
         return ValidatedDPlane3d (DPlane3d::FromOriginAndNormal (origin, unitAB.Value ()), true);
@@ -697,6 +712,7 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
     outerBox.push_back (DPoint3d::From (range.low.x, range.high.y));
     static bool s_interior = false;
     static double s_sign = -1.0;
+    size_t errors = 0;
     VU_SET_LOOP (vertexSeed, graph)
         {
         if (!visited.IsSetAtNode (vertexSeed))
@@ -706,9 +722,12 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
                 {
                 size_t indexA = (size_t)outboundEdge->GetUserData1 ();
                 size_t indexB = (size_t)outboundEdge->FSucc ()->GetUserData1 ();
-                if (indexA >= 0 && indexB >= 0)
+                if (indexA < points.size () && indexB < points.size ())
                     {
                     auto plane = ComputeVoronoiSplitPlane (points[indexA], radii[indexA], points[indexB], radii[indexB], voronoiMetric);
+                    auto plane1 = ComputeVoronoiSplitPlane (points[indexB], radii[indexB], points[indexA], radii[indexA], voronoiMetric);
+                    if (!plane.Value ().origin.AlmostEqual (plane1.Value ().origin))
+                        errors++;
                     if (plane.IsValid ())
                         {
                         DPlane3d plane1 = plane.Value ();
