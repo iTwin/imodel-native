@@ -311,8 +311,8 @@ typedef ChannelBufferPool<PointCloudIntensityChannel>   PointCloudIntensityChann
 typedef ChannelBufferPool<PointCloudNormalChannel>      PointCloudNormalChannelPool;
 typedef ChannelBufferPool<PointCloudByteChannel>        PointCloudByteChannelPool;
 
-// To satisfy clang 8.1.0 -- must be careful since MSVC 14 doesn't like this.
-#if defined (__APPLE__) && defined (__clang__)
+// Satisfy newer clangs (e.g. Apple 8.1.0) -- must be careful since MSVC 14 doesn't like this.
+#if ((defined (__APPLE__) && defined (__clang__)) || (defined (ANDROID) && defined (__clang__)))
     template <> PointCloudRgbChannelPool PointCloudRgbChannel::m_pool;
     template <> PointCloudXyzChannelPool PointCloudXyzChannel::m_pool;
     template <> PointCloudIntensityChannelPool PointCloudIntensityChannel::m_pool;
