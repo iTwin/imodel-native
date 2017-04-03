@@ -706,7 +706,7 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
                 {
                 size_t indexA = (size_t)outboundEdge->GetUserData1 ();
                 size_t indexB = (size_t)outboundEdge->FSucc ()->GetUserData1 ();
-                if (indexA >= 0 && indexB >= 0)
+                if (indexA < points.size () && indexB < points.size ())
                     {
                     auto plane = ComputeVoronoiSplitPlane (points[indexA], radii[indexA], points[indexB], radii[indexB], voronoiMetric);
                     if (plane.IsValid ())
