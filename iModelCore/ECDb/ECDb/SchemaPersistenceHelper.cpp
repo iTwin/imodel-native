@@ -317,7 +317,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
     {
     BeAssert(!koq.GetPresentationUnitList().empty());
     rapidjson::Document presUnitsJson(rapidjson::kArrayType);
@@ -326,10 +326,18 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
     for (Formatting::FormatUnitSet const& presUnit : koq.GetPresentationUnitList())
         {
         if (presUnit.HasProblem())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), Formatting::Utils::FormatProblemDescription(presUnit.GetProblemCode()).c_str());
             return ERROR;
+            }
 
         Utf8String presUnitStr = presUnit.ToText(false);
-        BeAssert(!presUnitStr.empty());
+        if (presUnitStr.empty())
+            {
+            BeAssert(!presUnitStr.empty());
+            return ERROR;
+            }
+
         presUnitsJson.PushBack(rapidjson::Value(presUnitStr.c_str(), (rapidjson::SizeType) presUnitStr.size(), jsonAllocator).Move(), jsonAllocator);
         }
 

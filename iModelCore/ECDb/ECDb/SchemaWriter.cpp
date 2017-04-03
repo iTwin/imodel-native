@@ -384,7 +384,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     if (koq.GetPersistenceUnit().HasProblem())
         {
-        Issues().Report("Failed to import KindOfQuantity '%s'. It has an invalid persistence unit.", koq.GetFullName().c_str());
+        Issues().Report("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), Formatting::Utils::FormatProblemDescription(koq.GetPersistenceUnit().GetProblemCode()).c_str());
         return ERROR;
         }
 
@@ -400,11 +400,8 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     Utf8String presUnitsJsonStr;
     if (!koq.GetPresentationUnitList().empty())
         {
-        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, koq))
-            {
-            Issues().Report("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid.", koq.GetFullName().c_str());
+        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, m_ecdb, koq))
             return ERROR;
-            }
 
         if (BE_SQLITE_OK != stmt->BindText(8, presUnitsJsonStr.c_str(), Statement::MakeCopy::No))
             return ERROR;

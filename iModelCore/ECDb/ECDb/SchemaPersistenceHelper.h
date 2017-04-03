@@ -66,7 +66,7 @@ public:
     static BentleyStatus SerializeEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
     static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
 
-    static BentleyStatus SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECN::KindOfQuantityCR);
+    static BentleyStatus SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
     static BentleyStatus DeserializeKoqPresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
 
     static bool ContainsSchemaWithAlias(ECDbCR, Utf8CP alias);
