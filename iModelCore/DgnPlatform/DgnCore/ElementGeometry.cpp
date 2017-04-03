@@ -1757,7 +1757,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
     //                          I assume we'll still need optional uv settings even when using sub-category material.
     //                          So we need a way to check for that case as we can't call GetMaterial
     //                          when !useMaterial because GeometryParams::Resolve hasn't been called...
-    bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
+    bool useMaterial = is3d && !elParams.IsMaterialFromSubCategoryAppearance();
 
     if (useMaterial)
         {
@@ -4937,45 +4937,53 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    bool allowAreaFill  = false;
+    bool allowPatGradnt = false;
     bool allowSolidFill = false;
     bool allowLineStyle = false;
+    bool allowMaterial  = false;
 
     switch (opCode)
         {
+        case GeometryStreamIO::OpCode::GeometryPartInstance:
+            allowSolidFill = allowPatGradnt = allowLineStyle = allowMaterial = true; // Don't reject anything...
+            break;
+
         case GeometryStreamIO::OpCode::CurvePrimitive:
             allowLineStyle = true;
             break;
 
         case GeometryStreamIO::OpCode::CurveVector:
-            allowSolidFill = allowAreaFill = allowLineStyle = true;
+            allowSolidFill = allowPatGradnt = allowLineStyle = allowMaterial = true;
             break;
 
         case GeometryStreamIO::OpCode::Polyface:
-            allowSolidFill = true;
+            allowSolidFill = allowMaterial = true;
+            break;
+
+        case GeometryStreamIO::OpCode::SolidPrimitive:
+        case GeometryStreamIO::OpCode::BsplineSurface:
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            allowMaterial = true;
             break;
 
         case GeometryStreamIO::OpCode::Image:
             allowSolidFill = true;
             break;
-
-        case GeometryStreamIO::OpCode::GeometryPartInstance:
-            allowSolidFill = allowAreaFill = allowLineStyle = true; // Can't reject anything...
-            break;
         }
 
-    bool hasInvalidAreaFill  = false;
+    bool hasInvalidPatGradnt = false;
     bool hasInvalidSolidFill = false;
     bool hasInvalidLineStyle = false;
+    bool hasInvalidMaterial  = false;
 
-    if (!allowAreaFill || !allowSolidFill || !allowLineStyle)
+    if (!allowPatGradnt || !allowSolidFill || !allowLineStyle || !allowMaterial)
         {
         if (FillDisplay::Never != m_elParams.GetFillDisplay())
             {
             if (nullptr != m_elParams.GetGradient())
                 {
-                if (!allowAreaFill)
-                    hasInvalidAreaFill = true;
+                if (!allowPatGradnt)
+                    hasInvalidPatGradnt = true;
                 }
             else
                 {
@@ -4984,31 +4992,37 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
                 }
             }
 
-        if (!allowAreaFill && nullptr != m_elParams.GetPatternParams())
-            hasInvalidAreaFill = true;
+        if (!allowPatGradnt && nullptr != m_elParams.GetPatternParams())
+            hasInvalidPatGradnt = true;
 
         if (!allowLineStyle && !m_elParams.IsLineStyleFromSubCategoryAppearance() && m_elParams.HasStrokedLineStyle())
             hasInvalidLineStyle = true;
+
+        if (!allowMaterial && !m_elParams.IsMaterialFromSubCategoryAppearance() && m_elParams.GetMaterialId().IsValid())
+            hasInvalidMaterial = true;
         }
 
-    if (hasInvalidAreaFill || hasInvalidSolidFill || hasInvalidLineStyle)
+    if (hasInvalidPatGradnt || hasInvalidSolidFill || hasInvalidLineStyle || hasInvalidMaterial)
         {
         // NOTE: We won't change m_elParams in case some caller is doing something like appending a single symbology
         //       that includes fill, and then adding a series of open and closed elements expecting the open elements
         //       to ignore the fill.
         GeometryParams localParams(m_elParams);
 
-        if (hasInvalidAreaFill)
+        if (hasInvalidPatGradnt)
             {
             localParams.SetGradient(nullptr);
             localParams.SetPatternParams(nullptr);
             }
 
-        if (hasInvalidSolidFill || hasInvalidAreaFill)
+        if (hasInvalidSolidFill || hasInvalidPatGradnt)
             localParams.SetFillDisplay(FillDisplay::Never);
 
         if (hasInvalidLineStyle)
             localParams.SetLineStyle(nullptr);
+
+        if (hasInvalidMaterial)
+            localParams.SetMaterialId(DgnMaterialId());
 
         if (!m_appearanceModified || !m_elParamsModified.IsEquivalent(localParams))
             {
