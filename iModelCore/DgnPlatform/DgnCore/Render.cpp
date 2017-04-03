@@ -696,6 +696,17 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
                 }
             }
         }
+
+    // NB: DgnDisplay will register an ISelectionEvents listener to mark view controller's feature symbology dirty when selection set changes...
+    auto vp = view.GetViewport();
+    if (nullptr != vp)
+        {
+        ColorDef hiliteColor = vp->AdjustColorForContrast(vp->GetHiliteColor(), vp->GetBackgroundColor());
+        Appearance hilite;
+        hilite.SetRgba(hiliteColor);
+        for (auto const& hiliteId : view.GetDgnDb().Elements().GetSelectionSet())
+            OverrideElement(hiliteId, hilite);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -791,19 +802,6 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         if (m_subcategoryOverrides.end() != subcatIter)
             app = subcatIter->second.Extend(app);
         }
-
-#define TEST_FEATURE_SYMBOLOGY
-#if defined(TEST_FEATURE_SYMBOLOGY)
-    switch (feat.GetClass())
-        {
-        case DgnGeometryClass::Primary:
-            app.SetRgb(ColorDef::Orange());
-            break;
-        case DgnGeometryClass::Construction:
-            app.SetTransparency(0.25);
-            break;
-        }
-#endif
 
     return alwaysDrawn || IsClassVisible(feat.GetClass());
     }

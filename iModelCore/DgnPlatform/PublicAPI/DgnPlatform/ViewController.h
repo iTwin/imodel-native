@@ -211,6 +211,7 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
+    DgnViewportCP GetViewport() const;
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);

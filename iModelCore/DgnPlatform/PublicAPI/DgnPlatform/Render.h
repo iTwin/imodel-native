@@ -1966,7 +1966,7 @@ struct FeatureSymbologyOverrides
         double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
         uint32_t GetWeight() const { return m_weight; }
 
-        bool OverridesSymbology() const { OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
+        bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
         bool OverridesAlpha() const { return m_flags.m_alpha; }
         bool OverridesRgb() const { return m_flags.m_rgb; }
         bool OverridesWeight() const { return m_flags.m_weight; }
