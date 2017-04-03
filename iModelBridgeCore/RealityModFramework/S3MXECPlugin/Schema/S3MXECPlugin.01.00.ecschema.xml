@@ -35,6 +35,9 @@
         <!-- [Required] Classification in the same sense as the one in the GeoCoordination Services. This string classifies the nature of the content of the RealityData regardless of the format used (see the 'Type' attribute below). Typical values are 'Terrain', 'Imagery', 'Model' and 'Pinned' but may be, eventually complemented by a reference to schema and class definition especially for 'Model' classification. Refer to GeoCoordination Service documentation for details. -->
         <ECProperty propertyName="Classification" typeName="string" />
 
+        <!-- [Optional | default is true] Indicates if the reality data is meant to be streamed (downloaded relatively small portions at a time on use) or if the data set is meant to be downloaded to use. Default is true. -->
+        <ECProperty propertyName="Streamed" typeName="bool" />
+
         <!-- [Required] Type or format of the reality data. It is a string key indicating the format of the data such as 3SM, 3MX, tif, jpg, pdf, and so on. This string dictates the storage structure of the data. Notice that some of these can refer to a single file (jpg, tif for example) while others hint to the existence of many structured interrelated documents (3SM, 3MX,...). Note also that the file format does not necessariy imply the Classification of the RealityData. A TIF file can store Imagery (a raster), Terrain (DEM file which is a TIF with a numeric pixel type), Pinned (A scan from a textual document). -->
         <ECProperty propertyName="Type" typeName="string" />
 
@@ -46,6 +49,12 @@
 
         <!-- [Optional] Contains the Metadata URL  -->
         <ECProperty propertyName="MetadataURL" typeName="string" />
+
+        <!-- [Optional] Mainly used for PUBLIC data. The Copyright field contains the mention of the ownership of the data. It can contain text or link or both -->
+        <ECProperty propertyName="Copyright" typeName="string" />
+
+        <!-- [Optional] Mainly used for PUBLIC data. The term of use indicates limitations to the use of the data. It can contain text of link or both.  -->
+        <ECProperty propertyName="TermOfUse" typeName="string" />
 
         <!-- [Optional] The AccuracyInMeters is a text containing a floating point value. It represents the positionnal accuracy of samples relative to the real world objects it represents -->
         <ECProperty propertyName="AccuracyInMeters" typeName="string" />

@@ -14,6 +14,7 @@
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
+#include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
@@ -49,8 +50,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
 protected:
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override; 
-    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -267,7 +267,6 @@ public:
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
 
     mutable AzureHandshake*             m_handshakeRequest;
 
@@ -430,7 +429,6 @@ public:
 protected:
     REALITYDATAPLATFORM_EXPORT void _PrepareBaseRequestString() const;
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-    REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;
@@ -666,8 +664,11 @@ struct RealityDataServiceTransfer : public CurlConstructor
 
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataServiceTransfer();
 
+    //! Set proxy informations
+    //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+
     //! Set certificate path for https upload.
-    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
+    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; }
 
     //! Set callback to follow progression of the upload.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceTransfer_ProgressCallBack pi_func)
@@ -713,6 +714,9 @@ protected:
     void*                       m_pCurlHandle;
 
     Utf8String                  m_id;
+    Utf8String                  m_proxyUrl;
+    Utf8String                  m_proxyCreds;
+    BeFileName                  m_certPath;
     RealityDataServiceTransfer_ProgressCallBack m_pProgressFunc;
     double                      m_progressStep;
     double                      m_progress;
@@ -914,7 +918,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RawServerResponse& rawResponse);
 
     //! Returns a RealityDataFolder or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, RawServerResponse& rawResponse);
@@ -957,10 +961,10 @@ public:
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse PagedBasicRequest(const RealityDataPagedRequest* request, Utf8StringCR keyword = "instances");
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse PagedBasicRequest(const RealityDataPagedRequest* request, Utf8String keyword = "instances");
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const RealityDataUrl* request, Utf8StringCR keyword = "instances");
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const RealityDataUrl* request, Utf8String keyword = "instances");
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse);

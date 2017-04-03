@@ -1302,7 +1302,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     if(m_id.length() == 0)
         {
         RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
-    RawServerResponse createResponse = RawServerResponse();
+        RawServerResponse createResponse = RawServerResponse();
         WSGRequest::GetInstance().PerformRequest(createRequest, createResponse, RealityDataService::GetVerifyPeer());
     
         Json::Value instance(Json::objectValue);
