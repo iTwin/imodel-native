@@ -1531,7 +1531,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                     else
                         {
                         ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-                        ReportStatus(0, nullptr, -1, Utf8PrintfString("\nServer returned code %ld\n", code).c_str());
+                        ReportStatus(0, nullptr, -1, Utf8PrintfString("\nServer returned code %ld\n", fileTrans->GetResponse().responseCode).c_str());
                         }
                     }
                            
