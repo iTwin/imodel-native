@@ -427,7 +427,7 @@ void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
         {
         // Second feature - back-fill uniform for existing verts
         m_indices.resize(numVerts - 1);
-        std::fill(m_indices.begin(), m_indices.end(), uint16_t(0));
+        std::fill(m_indices.begin(), m_indices.end(), m_uniform);
         m_indices.push_back(index);
         }
     }
