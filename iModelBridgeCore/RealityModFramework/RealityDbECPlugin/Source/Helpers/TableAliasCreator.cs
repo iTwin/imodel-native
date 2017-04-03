@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/TableAliasCreator.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -14,9 +14,17 @@ using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source.Helpers
     {
-    internal class TableAliasCreator
+    /// <summary>
+    /// Utilitary class for managing the aliases used in Sql queries commands.
+    /// </summary>
+    public class TableAliasCreator
         {        
         int m_tabNumber = 0;
+
+        /// <summary>
+        /// Gets a new alias for a table.
+        /// </summary>
+        /// <returns></returns>
         public string GetNewTableAlias ()
             {
             return String.Format("tab{0}", m_tabNumber++);

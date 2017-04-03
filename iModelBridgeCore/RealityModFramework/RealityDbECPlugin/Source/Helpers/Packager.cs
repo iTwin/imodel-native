@@ -625,9 +625,14 @@ namespace IndexECPlugin.Source.Helpers
 
         IECInstance firstSpatialDataSource = dataSourceRel.Target;
 
-        IECRelationshipInstance serverRel = firstSpatialDataSource.GetRelationshipInstances().First(relServ => relServ.ClassDefinition.Name == "ServerToSpatialDataSource" &&
+        IECRelationshipInstance serverRel = firstSpatialDataSource.GetRelationshipInstances().FirstOrDefault(relServ => relServ.ClassDefinition.Name == "ServerToSpatialDataSource" &&
                                                                                                                relServ.Source.ClassDefinition.Name == "Server");
-        IECInstance server = serverRel.Source;
+        
+        IECInstance server = null;
+        if ( serverRel != null )
+            {
+            server = serverRel.Source;
+            }
 
         long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
         genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;

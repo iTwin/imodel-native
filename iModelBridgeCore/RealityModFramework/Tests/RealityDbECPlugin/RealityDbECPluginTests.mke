@@ -79,6 +79,7 @@ ASSEMBLY_STRONGNAME = 1
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
+			$(baseDir)Tests/IDbQuerierTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
             $(baseDir)Tests/InstanceCacheManagerTests.cs \

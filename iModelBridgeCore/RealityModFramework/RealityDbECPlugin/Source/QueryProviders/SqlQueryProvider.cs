@@ -43,22 +43,22 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private bool m_instanceCount = false;
 
-        private string m_connectionString;
+        private IDbQuerier m_dbQuerier;
 
         private PolygonDescriptor m_polygonDescriptor;
 
         private IECSchema m_schema;
 
-        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, String connectionString, IECSchema schema)
+        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema)
             {
             if ( query == null )
                 {
                 throw new ArgumentNullException("query");
                 }
 
-            if ( connectionString == null )
+            if ( dbQuerier == null )
                 {
-                throw new ArgumentNullException("connectionString");
+                throw new ArgumentNullException("dbQuerier");
                 }
 
             if ( schema == null )
@@ -68,7 +68,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             m_query = query;
             m_querySettings = querySettings;
-            m_connectionString = connectionString;
+            m_dbQuerier = dbQuerier;
             m_schema = schema;
             m_polygonDescriptor = null;
 
@@ -141,9 +141,6 @@ namespace IndexECPlugin.Source.QueryProviders
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap, out propertyList);
 
-
-            IDbQuerier dbQuerier = new DbQuerier(m_connectionString);
-
 #if BBOXQUERY
             bool removeSpatial = false;
             if(m_polygonDescriptor != null && !m_query.SelectClause.SelectAllProperties && !m_query.SelectClause.SelectedProperties.Any(prop => prop.IsSpatial()))
@@ -158,7 +155,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 #endif
 
-            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList);
+            List<IECInstance> instanceList = m_dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList);
 
 #if BBOXQUERY
             if ( m_polygonDescriptor != null )
@@ -223,7 +220,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
 
-                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_connectionString, m_schema);
+                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbQuerier, m_schema);
 
                     var relInstList = queryHelper.CreateInstanceList();
                     foreach ( var relInst in relInstList )
@@ -287,7 +284,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
 
-                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_connectionString, m_schema);
+                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbQuerier, m_schema);
 
 
 

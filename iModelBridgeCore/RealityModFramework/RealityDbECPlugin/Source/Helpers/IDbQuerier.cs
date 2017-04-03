@@ -60,13 +60,15 @@ namespace IndexECPlugin.Source.Helpers
     {
 
         private string m_connectionString;
+        private IDbConnectionCreator m_dbConnectionCreator;
 
         /// <summary>
         /// Default constructor
         /// </summary>
-        public DbQuerier(string connectionString)
+        public DbQuerier(string connectionString, IDbConnectionCreator dbConnectionCreator)
         {
             m_connectionString = connectionString;
+            m_dbConnectionCreator = dbConnectionCreator;
         }
 
 
@@ -95,7 +97,7 @@ namespace IndexECPlugin.Source.Helpers
             List<IECInstance> instanceList = new List<IECInstance>();
 
             //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            using ( IDbConnection dbConnection = new SqlConnection(m_connectionString) )
+            using ( IDbConnection dbConnection = m_dbConnectionCreator.CreateDbConnection(m_connectionString) )
                 {
 
                 dbConnection.Open();
@@ -235,8 +237,7 @@ namespace IndexECPlugin.Source.Helpers
             IParamNameValueMap paramNameValueMap
             )
             {
-            //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            using ( IDbConnection dbConnection = new SqlConnection(m_connectionString) )
+            using ( IDbConnection dbConnection = m_dbConnectionCreator.CreateDbConnection(m_connectionString) )
                 {
                 dbConnection.Open();
 
