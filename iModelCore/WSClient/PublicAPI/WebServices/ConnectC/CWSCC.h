@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/ConnectC/CWSCC.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -144,6 +144,9 @@ To many unsuccessful login attempts have happened.
 #define ERROR403                                 403
 #define ERROR401                                 401
 #define ERROR400                                 400
+#ifndef winNT
+#define ERROR_ALREADY_EXISTS                     183
+#endif
 #define SUCCESS                                  0
 #define INVALID_PARAMETER                        -100
 #define PROPERTY_HAS_NOT_BEEN_SET                -101

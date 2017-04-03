@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Upgrade/UpgraderFromV11ToV12.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 

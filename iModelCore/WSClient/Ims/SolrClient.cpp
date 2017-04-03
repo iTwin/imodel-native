@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ClientInternal.h"
-#include <WebServices/IMS/SolrClient.h>
+#include <WebServices/Ims/SolrClient.h>
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    David.Jones     03/2016

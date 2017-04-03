@@ -33,7 +33,6 @@ typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRep
 struct DgnDbCodeLockSetResultInfo;
 struct DgnDbCodeTemplate;
 struct DgnDbCodeTemplateSetResultInfo;
-typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 
 typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallback;
 typedef std::shared_ptr<DgnDbServerEventCallback> DgnDbServerEventCallbackPtr;
@@ -52,7 +51,7 @@ DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerString);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
-DEFINE_TASK_TYPEDEFS(DgnDbCodeTemplateSetResultInfo, DgnDbServerCodeTemplateSet);
+DEFINE_TASK_TYPEDEFS(DgnDbCodeTemplate, DgnDbServerCodeTemplate);
 DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
 
 //=======================================================================================
@@ -121,26 +120,6 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate() : m_value(""), m_scope(""), m_valuePattern("") {};
     DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_valuePattern(valuePattern), m_scope(scope), m_value("") {};
     DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_value(value), m_scope(scope), m_valuePattern(valuePattern) {};
-    };
-
-//=======================================================================================
-//! DgnDbCodeTemplate results.
-//@bsiclass                                    Algirdas.Mikoliunas              08/2016
-//=======================================================================================
-struct DgnDbCodeTemplateSetResultInfo
-    {
-//__PUBLISH_SECTION_END__
-    private:
-        DgnDbCodeTemplateSet m_codeTemplates;
-
-    public:
-        DgnDbCodeTemplateSetResultInfo() {};
-        void AddCodeTemplate(const DgnDbCodeTemplate codeTemplate);
-
-//__PUBLISH_SECTION_START__
-    public:
-        //! Returns the set of code templates.
-        DGNDBSERVERCLIENT_EXPORT const DgnDbCodeTemplateSet& GetTemplates() const;
     };
 
 //=======================================================================================
@@ -592,16 +571,14 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Returns maximum used code value by the given pattern.
-    //! @param[in] codeTemplates
+    //! @param[in] codeSpec
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(DgnDbCodeTemplateSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateTaskPtr QueryCodeMaximumIndex(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns next available code by the given pattern, index start and increment by value.
-    //! @param[in] codeTemplates
-    //! @param[in] startIndex
-    //! @param[in] incrementBy
+    //! @param[in] codeSpec
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateTaskPtr QueryCodeNextAvailable(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken=nullptr) const;
 
     //! Checks if RepositoryConnection is subscribed to EventService
     DGNDBSERVERCLIENT_EXPORT bool IsSubscribedToEvents() const;

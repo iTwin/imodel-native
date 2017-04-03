@@ -4,7 +4,7 @@
 #include <string>
 #include <list>
 #include <Bentley/Bentley.h>
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 #include <WebServices/ConnectC/CWSCCPublic.h>
 #include <WebServices/ConnectC/CWSCCBufferPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h>

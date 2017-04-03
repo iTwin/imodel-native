@@ -260,3 +260,7 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
 ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
     # bim0200dev, x64 & x86, DEBUG, 
     # hangs
+
+
+CachingDataSourceTests.OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue
+
