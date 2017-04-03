@@ -235,6 +235,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         BeFileName url(settings.GetURL().c_str());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
         account_prefix = DataSourceURL(settings.GetGUID().c_str());
+        account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
         account_identifier = settings.GetServerID().c_str();
         }
     else if (settings.IsDataFromAzure() && settings.IsUsingCURL())
@@ -395,42 +396,42 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     if (s_stream_using_cesium_3d_tiles_format) groupMode = SMNodeGroup::StrategyType::CESIUM;
     if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMNodeGroup::StrategyType::BIMCESIUM;
     bool isGrouped = true;
-    wchar_t buffer[10000];
-    swprintf(buffer, m_masterFileName.c_str());
-    switch (groupMode)
-        {
-        case SMNodeGroup::StrategyType::NONE:
-        {
-        swprintf(buffer, L"MasterHeader.sscm");
-        isGrouped = false;
-        break;
-        }
-        case SMNodeGroup::StrategyType::NORMAL:
-        {
-        swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
-        break;
-        }
-        case SMNodeGroup::StrategyType::VIRTUAL:
-        {
-        swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
-        break;
-        }
-        case SMNodeGroup::StrategyType::CESIUM:
-        {
-        swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
-        break;
-        }
-        case SMNodeGroup::StrategyType::BIMCESIUM:
-        {
-        swprintf(buffer, L"graz/graz_AppData.json");
-        break;
-        }
-        default:
-        {
-        assert(!"Unknown grouping type");
-        return 0;
-        }
-        }
+    //wchar_t buffer[10000];
+    //swprintf(buffer, m_masterFileName.c_str());
+    //switch (groupMode)
+    //    {
+    //    case SMNodeGroup::StrategyType::NONE:
+    //    {
+    //    swprintf(buffer, L"MasterHeader.sscm");
+    //    isGrouped = false;
+    //    break;
+    //    }
+    //    case SMNodeGroup::StrategyType::NORMAL:
+    //    {
+    //    swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
+    //    break;
+    //    }
+    //    case SMNodeGroup::StrategyType::VIRTUAL:
+    //    {
+    //    swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
+    //    break;
+    //    }
+    //    case SMNodeGroup::StrategyType::CESIUM:
+    //    {
+    //    swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
+    //    break;
+    //    }
+    //    case SMNodeGroup::StrategyType::BIMCESIUM:
+    //    {
+    //    swprintf(buffer, L"graz/graz_AppData.json");
+    //    break;
+    //    }
+    //    default:
+    //    {
+    //    assert(!"Unknown grouping type");
+    //    return 0;
+    //    }
+    //    }
 
 
     if (m_settings.IsCesium3DTiles())
@@ -468,7 +469,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         DataSource                                *      dataSource;
         DataSource::DataSize                             readSize;
         DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
-        DataSourceURL dataSourceURL(buffer);
+        DataSourceURL dataSourceURL(m_masterFileName.c_str());
 
         dataSource = this->InitializeDataSource(dest, destSize);
         if (dataSource == nullptr)

@@ -5,6 +5,8 @@
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
 #include "include\DataSourceAccountAzure.h"
+#include <Bentley\BeStringUtilities.h>
+#include <Bentley/WString.h>
 
 #ifdef SM_STREAMING_PERF
 #include <iostream>
@@ -303,7 +305,8 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
 
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
-    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
+    auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str()).c_str()));
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();

@@ -572,7 +572,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             return 0; // Error opening file
             }
         }
-    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
+    else if (BeFileName::IsUrl(filePath) && BeFileName(filePath).ContainsI(L"json"))
         { // Open json streaming format
         auto directory = BeFileName::GetDirectoryName(filePath);
         isLocal = BeFileName::DoesPathExist(directory.c_str());
@@ -950,18 +950,29 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                 auto& server_settings = config_server["settings"];
                                 assert(m_path.substr(0, 8) == L"https://");
                                 auto firstSeparatorPos = m_path.find(L".");
-                                auto utf16ServerID = m_path.substr(8, firstSeparatorPos - 8);
-                                auto utf8ServerID = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16ServerID.c_str());
-                                server_settings["id"] = Json::Value(utf8ServerID.c_str());
+                                auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                                server_settings["id"] = Json::Value(serverID.c_str());
                                 server_settings["authentication"]["public"] = true;
+
+                                // compute positions and lengths for guid, root file and azure token
                                 auto guidPos = m_path.find(L"/", 8) + 1;
                                 auto guidLength = m_path.find(L"/", guidPos) - guidPos;
-                                auto utf16GUID = m_path.substr(guidPos, guidLength);
-                                auto utf8GUID = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16GUID.c_str());
-                                auto utf16RootTilesetPath = m_path.substr(guidPos + guidLength + 1, WString::npos);
-                                auto utf8RootTilesetPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16RootTilesetPath.c_str());
-                                server_settings["url"] = Json::Value(utf8RootTilesetPath.c_str());
-                                config["guid"] = Json::Value(utf8GUID.c_str());
+                                auto rootTilesetPathPos = guidPos + guidLength + 1;
+                                auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
+                                auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
+                                auto azureTokenLength = m_path.size() - azureTokenPos;
+
+                                // guid
+                                auto guid = Utf8String(m_path.substr(guidPos, guidLength));
+
+                                // root file
+                                auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+
+                                // azure token
+                                auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+
+                                server_settings["url"] = Json::Value(rootTilesetPath.c_str());
+                                config["guid"] = Json::Value(guid.c_str());
                                 }
                             }
 

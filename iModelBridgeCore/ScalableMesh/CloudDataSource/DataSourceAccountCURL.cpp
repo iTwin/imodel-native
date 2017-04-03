@@ -148,13 +148,12 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         {
         url = L"file:///" + url;
         }
-
     struct CURLHandle::CURLDataMemoryBuffer buffer;
 
     buffer.data = dest;
     buffer.size = 0;
 
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    Utf8String utf8URL (url.c_str());
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
