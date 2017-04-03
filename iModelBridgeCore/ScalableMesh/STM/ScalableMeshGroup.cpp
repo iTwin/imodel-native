@@ -396,7 +396,7 @@ bool                               ScalableMeshGroup::_ModifySkirt(const bvector
         {
         if (m_regions[i].hasRestrictedRegion)
             {
-            bool allPointsInRegion = true;
+            //bool allPointsInRegion = true;
             auto curvePtr = ICurvePrimitive::CreateLineString(m_regions[i].region);
             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
            /* for (auto& lineString : skirt)
@@ -432,7 +432,7 @@ bool                               ScalableMeshGroup::_AddSkirt(const bvector<bv
         {
         if (m_regions[i].hasRestrictedRegion)
             {
-            bool allPointsInRegion = true;
+            //bool allPointsInRegion = true;
             auto curvePtr = ICurvePrimitive::CreateLineString(m_regions[i].region);
             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
           /*  for (auto& lineString : skirt)
