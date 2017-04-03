@@ -921,8 +921,7 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
 //----------------------------------------------------------------------------------------
 Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty)
     {
-    Utf8String txt;
-
+    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, " ");
     return txt;
     }
 

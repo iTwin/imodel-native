@@ -126,7 +126,7 @@ void CompositeValueSpec::SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab, Utf8CP
 // returns the smallest partial unit or null if no units were defined
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-BEU::UnitCP CompositeValueSpec::GetSmallestUnit()
+BEU::UnitCP CompositeValueSpec::GetSmallestUnit() const
     {
     switch (m_type)
         {
@@ -244,7 +244,7 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     }
 
 
-Utf8CP CompositeValueSpec::GetProblemDescription()
+Utf8CP CompositeValueSpec::GetProblemDescription() const
     {
     return Utils::FormatProblemDescription(m_problemCode).c_str();
     }

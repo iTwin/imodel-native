@@ -67,6 +67,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_formatTraits = FormatConstant::DefaultFormatTraits();
     m_barType = FractionBarType::None;
+    m_uomSeparator = FormatConstant::BlankString();
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -157,7 +158,7 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetKeepTrailingZeroes(bool keep)
+void NumericFormatSpec::SetKeepTrailingZeroes(bool keep) 
     {
     size_t temp = static_cast<int>(m_formatTraits);
 
@@ -264,7 +265,7 @@ void NumericFormatSpec::SetExponentZero(bool empty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-double NumericFormatSpec::RoundedValue(double dval, double round)
+double NumericFormatSpec::RoundedValue(double dval, double round) const
     {
     round = fabs(round);
     if (round < FormatConstant::FPV_MinTreshold())
@@ -302,7 +303,7 @@ int NumericFormatSpec::RightAlignedCopy(Utf8P dest, int destLen, bool termZero, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::IntPartToText (double n, Utf8P bufOut, int bufLen, bool useSeparator)
+int NumericFormatSpec::IntPartToText (double n, Utf8P bufOut, int bufLen, bool useSeparator) const
     {
     char sign = '+';
     char buf[64];
@@ -472,7 +473,7 @@ int NumericFormatSpec::FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index)
+int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index) const
     {
     if (nullptr == buf)
         return index;
@@ -498,7 +499,7 @@ int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num)
+size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num) const
     {
     if (nullptr != buf && 0 < num)
         {
@@ -510,7 +511,7 @@ size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-double NumericFormatSpec::GetDecimalPrecisionFactor(int prec = -1) 
+double NumericFormatSpec::GetDecimalPrecisionFactor(int prec = -1) const
     { 
     return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
     }
@@ -518,7 +519,7 @@ double NumericFormatSpec::GetDecimalPrecisionFactor(int prec = -1)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1) 
+int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1) const
     { 
     if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
         return prec;
@@ -528,7 +529,7 @@ int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec, double round)
+size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec, double round) const
     {
     double ival;
     Utf8Char sign = '+';
@@ -677,7 +678,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
+Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round) const
     {
     char buf[64];
     FormatDoubleBuf(dval, buf, sizeof(buf), prec, round);
@@ -722,7 +723,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
+    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -733,25 +734,108 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
+//Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
+//    {
+//    NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
+//    // there are two major options here: the format is a pure Numeric or it has a composite specification
+//    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
+//    bool composite = (nullptr == namF) ? false : namF->HasComposite();
+//    BEU::Quantity temp = qty.ConvertTo(useUnit); 
+//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()): useLabel;
+//    Utf8String majT, midT, minT, subT;
+//
+//
+//    if (composite)  // procesing composite parts
+//        {
+//        CompositeValueSpecP compS = namF->GetCompositeSpec();
+//        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(),temp.GetUnit());
+//        Utf8CP spacer = Utils::IsNameNullOrEmpty(space)? compS->GetSpacer().c_str() : space;
+//        // for all parts but the last one we need to format an integer 
+//        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(), 
+//                                                  FormatConstant::DefaultFormatTraits(), 0);
+//        fmtI.SetKeepSingleZero(false);
+//
+//        switch (compS->GetType())
+//            {
+//            case CompositeSpecType::Single: // there is only one value to report
+//                majT = fmtP->FormatDouble(dval.GetMajor(), prec, round);
+//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+//                break;
+//
+//            case CompositeSpecType::Double: 
+//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+//                midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
+//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+//                majT += " " + midT;
+//                break;
+//
+//            case CompositeSpecType::Triple:
+//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+//                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
+//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+//                minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
+//                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+//                majT += " " + midT + " " + minT;
+//                break;
+//
+//            case CompositeSpecType::Quatro:
+//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+//                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
+//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+//                minT = fmtI.FormatDouble(dval.GetMinor(), prec, round);
+//                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+//                subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
+//                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel(nullptr).c_str(), spacer);
+//                majT += midT + " " + minT + " " + subT;
+//                break;
+//            }
+//        }
+//    else
+//        {
+//        if (nullptr == fmtP)  // invalid name
+//            fmtP = StdFormatSet::DefaultDecimal();
+//        if (nullptr == fmtP)
+//            return "";
+//        majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
+//        majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
+//        /*if (nullptr != uomName)
+//            {
+//            if (!Utils::IsNameNullOrEmpty(space))
+//                majT += Utf8String(space);
+//            majT += Utf8String(uomName);
+//            }*/
+//        }
+//    return majT;
+//    }
+
 Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
-    NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
+    NamedFormatSpecCP namF = StdFormatSet::FindFormatSpec(stdName);
+    return StdFormatQuantity(*namF, qty, useUnit, space, useLabel, prec, round);
+    }
+
+Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
+    {
+    //NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
     // there are two major options here: the format is a pure Numeric or it has a composite specification
-    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
-    bool composite = (nullptr == namF) ? false : namF->HasComposite();
-    BEU::Quantity temp = qty.ConvertTo(useUnit); 
-    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()): useLabel;
+    NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
+    bool composite = nfs.HasComposite();
+    BEU::Quantity temp = qty.ConvertTo(useUnit);
+    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
 
     if (composite)  // procesing composite parts
         {
-        CompositeValueSpecP compS = namF->GetCompositeSpec();
-        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(),temp.GetUnit());
-        Utf8CP spacer = Utils::IsNameNullOrEmpty(space)? compS->GetSpacer().c_str() : space;
+        CompositeValueSpecP compS = (CompositeValueSpecP)nfs.GetCompositeSpec();
+        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+        Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
-        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(), 
-                                                  FormatConstant::DefaultFormatTraits(), 0);
+        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
+            FormatConstant::DefaultFormatTraits(), 0);
         fmtI.SetKeepSingleZero(false);
 
         switch (compS->GetType())
@@ -761,7 +845,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR 
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
                 break;
 
-            case CompositeSpecType::Double: 
+            case CompositeSpecType::Double:
                 majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
                 midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
@@ -801,14 +885,15 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR 
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
         /*if (nullptr != uomName)
-            {
-            if (!Utils::IsNameNullOrEmpty(space))
-                majT += Utf8String(space);
-            majT += Utf8String(uomName);
-            }*/
+        {
+        if (!Utils::IsNameNullOrEmpty(space))
+        majT += Utf8String(space);
+        majT += Utf8String(uomName);
+        }*/
         }
     return majT;
     }
+
 
 //---------------------------------------------------------------------------------------
 //  arg 'space' contains a separator between value and the unit name It also is an indicator
@@ -847,7 +932,7 @@ Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Ut
 
 Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
+    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -1122,7 +1207,7 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecP namedFormat)
+Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFormat)
     {
     Utf8String str;
 
@@ -1130,7 +1215,7 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecP namedFor
     // Names section
     str.append(*ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', ""));
     str.append(" " + *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', ""));
-    NumericFormatSpecP format = namedFormat->GetNumericSpec();
+    NumericFormatSpecCP format = namedFormat->GetNumericSpec();
     // formating type/mode
     str.append(" " + Utils::PresentationTypeName(format->GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
     // precision
@@ -1173,14 +1258,14 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecP namedFor
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias)
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias)
     {
-    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, compS, alias);
+    NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS, alias);
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
 
-NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
     {
     NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias);
     m_formatSet.push_back(nfs);
@@ -1235,9 +1320,9 @@ void StdFormatSet::StdInit()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::DefaultDecimal()
+NumericFormatSpecCP StdFormatSet::DefaultDecimal()
     {
-    NamedFormatSpecP fmtP;
+    NamedFormatSpecCP fmtP;
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
@@ -1251,9 +1336,9 @@ NumericFormatSpecP StdFormatSet::DefaultDecimal()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::GetNumericFormat(Utf8CP name)
+NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
     {
-    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
@@ -1265,9 +1350,9 @@ NumericFormatSpecP StdFormatSet::GetNumericFormat(Utf8CP name)
     return nullptr;
     }
 
-NamedFormatSpecP StdFormatSet::FindFormatSpec(Utf8CP name)
+NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
     {
-    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
@@ -1284,7 +1369,7 @@ NamedFormatSpecP StdFormatSet::FindFormatSpec(Utf8CP name)
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {
     bvector<Utf8CP> vec;
-    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
     Utf8CP name;
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
@@ -1302,7 +1387,7 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
 Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
     {
     Utf8String  txt;
-    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
     Utf8CP name;
     int i = 0;
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)

@@ -40,14 +40,14 @@ TEST(FormattingTest, Preliminary)
     //size_t skipped = curs.SkipBlanks();
     //LOG.infov("Skipped blanks: %d", skipped);
 
-    size_t cod = curs.GetNextSymbol();
-    int i = 0;
-    while (0 != cod)
-        {
-        LOG.infov("cod[%d]: %d Ascii(%s) EffBytes=%d", ++i, cod, FormatConstant::BoolText(curs.IsASCII()), curs.GetEffectiveBytes());
-        LOG.infov(numFmt.IntToBinaryText((int)cod, true).c_str());
-        cod = curs.GetNextSymbol();
-        }
+    //size_t cod = curs.GetNextSymbol();
+    //int i = 0;
+    //while (0 != cod)
+    //    {
+    //    LOG.infov("cod[%d]: %d Ascii(%s) EffBytes=%d", ++i, cod, FormatConstant::BoolText(curs.IsASCII()), curs.GetEffectiveBytes());
+    //    LOG.infov(numFmt.IntToBinaryText((int)cod, true).c_str());
+    //    cod = curs.GetNextSymbol();
+    //    }
 
 
     //CharCP p = fdiv.GetMarkers();
@@ -78,6 +78,9 @@ TEST(FormattingTest, Preliminary)
    
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
+
+
+
     }
 
 TEST(FormattingTest, PhysValues)
@@ -116,6 +119,9 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("74 15/32 FT", NumericFormatSpec::StdFormatQuantity("fract32", len, ftUOM, " ").c_str());
     EXPECT_STREQ ("24 7/8 YRD", NumericFormatSpec::StdFormatQuantity("fract8", len, yardUOM, " ").c_str());
     EXPECT_STREQ ("24 7/8-YRD", NumericFormatSpec::StdFormatQuantity("fract8", len, yrdsdUOM, "-").c_str());
+
+    FormatUnitSet fusYF = FormatUnitSet("FT(fract32)");
+    LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
 
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -271,7 +277,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble("sci", 2.0*testV, 5).c_str());
     EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
-    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat("real");
+    NumericFormatSpecP fmtP = (NumericFormatSpecP)StdFormatSet::GetNumericFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
     fmtP->SetUse1000Separator(true);
 
@@ -514,7 +520,7 @@ TEST(FormattingTest, DictionaryValidation)
 
     Utf8CP name = *vec.begin();
     Utf8String nameL = StdFormatSet::StdFormatNameList(true);
-    NamedFormatSpecP fmtP;
+    NamedFormatSpecCP fmtP;
     Utf8String serT;
     LOG.infov("Aliases:  %s", nameL.c_str());
     nameL = StdFormatSet::StdFormatNameList(false);
