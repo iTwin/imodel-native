@@ -61,12 +61,11 @@ BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(BeFileNameR e
 AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     {
     AxisAlignedBox3d range;
-
     if (m_smPtr.IsValid()) 
-        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(range));
-
-    m_smPtr->GetReprojectionTransform().Multiply(range, range);
-                
+        {
+        m_smPtr->GetRange(range);
+        m_smPtr->GetReprojectionTransform().Multiply(range, range);
+        }
     return range;
     }
 
@@ -806,7 +805,9 @@ void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
         }
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
@@ -833,7 +834,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     //On first draw, we make sure all models know which of the rendered models "belong" to each other and set the groups accordingly.
     if (!m_loadedAllModels)
         {
-        InitializeTerrainRegions();
+        InitializeTerrainRegions(context);
         }
     
 
@@ -1025,7 +1026,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     }                 
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models)
     {
     DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
@@ -1037,7 +1040,9 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
         }
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain)
     {    
     has3D = false; 
@@ -1396,13 +1401,7 @@ void ScalableMeshModel::CloseFile()
 * @bsimethod                                    Simon.Normand                   03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
-    {
-    if (!m_tryOpen || !GetPath().IsEmpty())
-        {
-        BeAssert(!"We can only reload a file which we have failed to open");
-        return ERROR;
-        }
-
+    {    
     if (!BeFileName::DoesPathExist(newFilename))
         return ERROR;
     
@@ -1410,6 +1409,7 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
     OpenFile(newFilename, GetDgnDb());
+    m_tryOpen = true;
 
     Update();
 
@@ -1417,6 +1417,51 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ScalableMeshModel::UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation)
+    {
+    assert(m_tryOpen == true);
+
+    if (m_smPtr == nullptr)
+        return ERROR;
+
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
+    
+    bvector<uint64_t> coverageIds;
+    m_smPtr->GetCoverageIds(coverageIds);
+
+    for (auto& pMeshModel : allScalableMeshes)
+        {        
+        BeFileName coveragePath = oldLocation;
+        coveragePath.AppendString(m_basePath.GetFileNameAndExtension().c_str());
+
+         //m_basePath;
+        //coveragePath.AppendString(L"_terrain");
+        ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
+        if (this == pScalableMesh)
+            continue;
+
+        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
+            {            
+            for (uint64_t coverageId : coverageIds)
+                {
+                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
+                    {                    
+                    BeFileName newFileName(newLocation); 
+                    newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
+                    pScalableMesh->CloseFile();
+                    pScalableMesh->UpdateFilename(newFileName);                                                            
+                    }
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -1593,31 +1638,45 @@ void ScalableMeshModel::RefreshClips()
     SetActiveClipSets(toActivate, toActivate);
     }
 
-
-void ScalableMeshModel::InitializeTerrainRegions()
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
     {
     bvector<IMeshSpatialModelP> allScalableMeshes;
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
-    if (!m_subModel) SetDefaultClipsActive();
+    if (!m_subModel)
+        SetDefaultClipsActive();
 
-    bvector<uint64_t> ids;
-    m_smPtr->GetCoverageIds(ids);
+    bvector<uint64_t> coverageIds;
+    m_smPtr->GetCoverageIds(coverageIds);
 
-    for (auto& sm : allScalableMeshes)
+    for (auto& pMeshModel : allScalableMeshes)
         {
         BeFileName coveragePath = m_basePath;
         //coveragePath.AppendString(L"_terrain");
-        ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
-        if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
+        ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
+        if (this == pScalableMesh)
+            continue;
+
+        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
             {
-            smP->GetScalableMesh()->SetInvertClip(true);
-            for(auto& id: ids)
-                if (smP->GetPath().ContainsI(std::to_wstring(id).c_str()))
+            pScalableMesh->GetScalableMesh()->SetInvertClip(true);
+            for (uint64_t coverageId : coverageIds)
                 {
+                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
+                    {
                     bvector<DPoint3d> regionData;
-                    m_smPtr->GetClip(id, regionData);
-                    AddTerrainRegion(id, smP, regionData);
+                    if (m_smPtr->GetClip(coverageId, regionData))
+                        AddTerrainRegion(coverageId, pScalableMesh, regionData);
+                    }
                 }
+            }
+
+        if (nullptr != context.GetViewport())
+            {
+            bool isDisplayed = context.GetViewport()->GetViewController().IsModelViewed(pScalableMesh->GetModelId());
+            SetRegionVisibility(pScalableMesh->GetAssociatedRegionId(), isDisplayed);
             }
         }
     m_loadedAllModels = true;
@@ -1632,10 +1691,8 @@ void ScalableMeshModel::InitializeTerrainRegions()
 
     for (auto& smP : m_terrainParts)
         {
-        for (auto& id : ids)
-            {
+        for (auto& id : coverageIds)
             smP->ActivateClip(id, ClipMode::Clip);
-            }
         }
     }
 

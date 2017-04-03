@@ -168,7 +168,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
-        void InitializeTerrainRegions();        
+        void InitializeTerrainRegions(Dgn::ViewContextR);        
 
     protected:
 
@@ -229,6 +229,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
+
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation);
 
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 

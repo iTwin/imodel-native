@@ -85,12 +85,13 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Daniel.McKenzie                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, double scaleFactor)
+void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, double scaleFactor, bool calculateAtOrigin)
     {
     RotMatrix rotMatrix = pose.GetRotMatrix();
     DPoint3d center = pose.GetCenter();
 
-    double zOff = (1.10 * center.Distance(target)) * scaleFactor;
+
+    double zOff = center.Distance(target) * scaleFactor;
     double xOff = zOff * tan(fieldofView.x);
     double yOff = zOff * tan(fieldofView.y);
 
@@ -103,7 +104,8 @@ void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dC
     zCameraAxis.ScaleToLength(zOff);
 
     DPoint3d corner = center;
-    corner.Add(zCameraAxis);
+    if (!calculateAtOrigin)
+        corner.Add(zCameraAxis);
 
     corner.Add(xCameraAxis);
     corner.Add(yCameraAxis);
