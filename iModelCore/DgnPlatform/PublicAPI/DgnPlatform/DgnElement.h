@@ -2758,6 +2758,9 @@ protected:
 public:
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
+
+    //! Return the DefinitionModel that contains (or will contain) this DefinitionElement
+    DGNPLATFORM_EXPORT DefinitionModelPtr GetDefinitionModel() const;
 };
 
 //=======================================================================================

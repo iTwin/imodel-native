@@ -336,13 +336,15 @@ protected:
     explicit DrawingCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Create a DgnCode for a DrawingCategory
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnModelCR model, Utf8StringCR categoryName);
-    //! Create a DgnCode for a DrawingCategory
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR Db, DgnModelId modelId, Utf8StringCR categoryName);
+    //! Create a DgnCode for a DrawingCategory given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, scope, name);}
 
-    DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
-    DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
+    //! Construct a new DrawingCategory
+    DrawingCategory(DefinitionModelR model, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name)))
+        {
+        m_rank = rank;
+        m_descr = descr;
+        }
 
     //! Inserts this DrawingCategory into the DgnDb and initializes its default sub-category with the specified appearance.
     //! @param[in] appearance The appearance associated with the default sub-category

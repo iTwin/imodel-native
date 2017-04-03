@@ -257,7 +257,7 @@ DgnCategoryId DgnDbTestUtils::InsertDrawingCategory(DgnDbR db, Utf8CP categoryNa
     {
     MUST_HAVE_HOST(DgnCategoryId());
 
-    DrawingCategory category(db, categoryName, rank);
+    DrawingCategory category(db.GetDictionaryModel(), categoryName, rank);
     DrawingCategoryCPtr persistentCategory = category.Insert(appearance);
     EXPECT_TRUE(persistentCategory.IsValid());
 
