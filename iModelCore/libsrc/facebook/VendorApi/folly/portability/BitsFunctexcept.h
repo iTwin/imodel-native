@@ -25,7 +25,7 @@
 #include <folly/Portability.h>
 FOLLY_NAMESPACE_STD_BEGIN
 
-#if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 3900
+#if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 4000
 [[noreturn]] void __throw_length_error(const char* msg);
 [[noreturn]] void __throw_logic_error(const char* msg);
 [[noreturn]] void __throw_out_of_range(const char* msg);

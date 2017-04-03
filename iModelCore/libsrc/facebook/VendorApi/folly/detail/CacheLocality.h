@@ -333,8 +333,8 @@ struct AccessSpreader {
 template <>
 Getcpu::Func AccessSpreader<std::atomic>::pickGetcpuFunc();
 
-// To satisfy clang 8.1.0 -- must be careful since MSVC 14 doesn't like this.
-#if defined (__APPLE__) && defined (__clang__)
+// Satisfy newer clangs (e.g. Apple 8.1.0) -- must be careful since MSVC 14 doesn't like this.
+#if ((defined (__APPLE__) && defined (__clang__)) || (defined (ANDROID) && defined (__clang__)))
     template <>
     Getcpu::Func AccessSpreader<std::atomic>::getcpuFunc;
     template <>
