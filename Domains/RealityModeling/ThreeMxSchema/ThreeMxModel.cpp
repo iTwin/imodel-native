@@ -291,39 +291,41 @@ void ThreeMxModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
     }
 
-BE_JSON_NAME(SceneFile)
-BE_JSON_NAME(Location)
-BE_JSON_NAME(Clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
+void ThreeMxModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(val);
+    T_Super::_OnSaveJsonProperties();
 
-    val[Json::StaticString(json_SceneFile())] = m_sceneFile;
+    Json::Value val;
+    val[json_sceneFile()] = m_sceneFile;
     if (!m_location.IsIdentity())
-        JsonUtils::TransformToJson(val[json_Location()], m_location);
+        JsonUtils::TransformToJson(val[json_location()], m_location);
 
     if (m_clip.IsValid())
-        val[json_Clip()] = m_clip->ToJson();
+        val[json_clip()] = m_clip->ToJson();
+
+    SetJsonProperties(json_threemx(), val);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
+void ThreeMxModel::_OnLoadedJsonProperties()
     {
-    T_Super::_ReadJsonProperties(val);
-    m_sceneFile = val[json_SceneFile()].asString();
+    T_Super::_OnLoadedJsonProperties();
 
-    if (val.isMember(json_Location()))
-        JsonUtils::TransformFromJson(m_location, val[json_Location()]);
+    JsonValueCR val = GetJsonProperties(json_threemx());
+    m_sceneFile = val[json_sceneFile()].asString();
+
+    if (val.isMember(json_location()))
+        JsonUtils::TransformFromJson(m_location, val[json_location()]);
     else
         m_location.InitIdentity();
 
-    if (val.isMember(json_Clip()))
-        m_clip = ClipVector::FromJson(val[json_Clip()]);
+    if (val.isMember(json_clip()))
+        m_clip = ClipVector::FromJson(val[json_clip()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

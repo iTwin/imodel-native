@@ -197,6 +197,10 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
 
+    BE_JSON_NAME(threemx)
+    BE_JSON_NAME(sceneFile)
+    BE_JSON_NAME(location)
+    BE_JSON_NAME(clip)
 private:
     Utf8String m_sceneFile;
     Transform m_location;
@@ -213,8 +217,8 @@ public:
 
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
-    THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
-    THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    THREEMX_EXPORT void _OnSaveJsonProperties() override;
+    THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;

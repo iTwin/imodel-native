@@ -515,25 +515,22 @@ void RasterModelHandler::_GetClassParams(ECSqlClassParamsR params)
     params.Add(RASTER_MODEL_PROP_Clip, ECSqlClassParams::StatementType::All);
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-void RasterModel::_WriteJsonProperties(Json::Value& v) const
+void RasterModel::_OnSaveJsonProperties()
     {
-    v["depthBias"] = m_depthBias;
-
-    T_Super::_WriteJsonProperties(v);
+    SetJsonProperties(json_depthBias(), m_depthBias);
+    T_Super::_OnSaveJsonProperties();
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-void RasterModel::_ReadJsonProperties(Json::Value const& v)
+void RasterModel::_OnLoadedJsonProperties()
     {
-    m_depthBias = v.isMember("depthBias") ? v["depthBias"].asDouble() : 0.0;
-
-    T_Super::_ReadJsonProperties(v);
+    m_depthBias = GetJsonProperties(json_depthBias()).asDouble();
+    T_Super::_OnLoadedJsonProperties();
     }
 
 //----------------------------------------------------------------------------------------
