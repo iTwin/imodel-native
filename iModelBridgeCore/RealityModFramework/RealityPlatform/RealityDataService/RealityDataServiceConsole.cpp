@@ -490,7 +490,7 @@ void RealityDataConsole::List()
     }
 
 void RealityDataConsole::ListRoots()
-{
+    {
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
     bvector<Utf8String> properties = bvector<Utf8String>();
@@ -517,29 +517,29 @@ void RealityDataConsole::ListRoots()
     bvector<RealityDataPtr> partialVec;
 
     while (enterpriseResponse.status == RequestStatus::OK)
-    {//When LASTPAGE has been added, loop will exit
+        {//When LASTPAGE has been added, loop will exit
         partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
-    }
+        }
     bvector<Utf8String> nodes = bvector<Utf8String>();
 
     Utf8String schema = RealityDataService::GetSchemaName();
     for (RealityDataPtr rData : enterpriseVec)
-    {
+        {
         nodes.push_back(Utf8PrintfString("%-30s (%s) %s", rData->GetName(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier()));
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
-    }
+        }
 
     PrintResults(nodes);
-}
+    }
 
 void RealityDataConsole::ListAll()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Please navigate to a RealityData or Folder before using this command\n", DisplayOption::Tip);
         return;
-    }
+        }
 
     AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
     RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
@@ -549,10 +549,10 @@ void RealityDataConsole::ListAll()
     BentleyStatus handshakeStatus = handshake->ParseResponse(handshakeResponse.body, azureServer, azureToken, tokenTimer);
     delete handshake;
     if (handshakeStatus != BentleyStatus::SUCCESS)
-    {
+        {
         DisplayInfo("Failure retrieving Azure token\n", DisplayOption::Error);
         return;
-    }
+        }
 
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_currentNode->node.GetInstanceId());
 
@@ -567,64 +567,64 @@ void RealityDataConsole::ListAll()
     size_t step;
     size_t size = filesInRepo.size();
     while (m_lastCommand != Command::Cancel && placeholder < size)
-    {
+        {
         std::getline(std::cin, str);
         if (Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
         else
-        {
+            {
             step = (size < (placeholder + 20)) ? size : placeholder + 20;
             DisplayInfo("Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
             for (; placeholder < step; ++placeholder)
-            {
+                {
                 DisplayInfo(Utf8String(WPrintfString(L"%s %lu bytes \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
+                }
             }
         }
-    }
     DisplayInfo("----------------\nexiting listing\n----------------\n", DisplayOption::Tip);
-}
+    }
 
 void RealityDataConsole::ChangeDir()
-{
-    if (m_lastInput == "..")
     {
-        if (m_currentNode == nullptr)
+    if (m_lastInput == "..")
         {
+        if (m_currentNode == nullptr)
+            {
             DisplayInfo("Already at root\n", DisplayOption::Tip);
             return;
-        }
+            }
         if (m_currentNode->parentNode != nullptr)
-        {
+            {
             m_currentNode = m_currentNode->parentNode;
             delete m_currentNode->childNode;
-        }
+            }
         else
-        {
+            {
             delete m_currentNode;
             m_currentNode = nullptr;
-        }
+            }
         List();
         return;
-    }
+        }
 
     uint64_t choice;
     if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) != BentleyStatus::SUCCESS)
-    {
+        {
         DisplayInfo("Could not extract integer from provided input...\n", DisplayOption::Error);
         return;
-    }
+        }
 
     if (m_serverNodes.size() == 0)
-    {
+        {
         DisplayInfo("Need to use \"List\" or \"Dir\" before using this command\n", DisplayOption::Error);
         DisplayInfo("If you have already done this, there may be no listable locations to navigate to\n", DisplayOption::Error);
         return;
-    }
+        }
 
     choice -= 1; //Adjusted for how navnodes are displayed
 
     if (choice < (uint64_t)m_serverNodes.size())
-    {
+        {
         NodeList* newNode = new NodeList();
         newNode->node = m_serverNodes[choice];
         newNode->parentNode = m_currentNode;
@@ -632,13 +632,13 @@ void RealityDataConsole::ChangeDir()
             m_currentNode->childNode = newNode;
         m_currentNode = newNode;
         m_serverNodes.clear();
-    }
+        }
     else
         DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 1 and %lu\n", m_serverNodes.size()), DisplayOption::Error);
-}
+    }
 
 void RealityDataConsole::EnterpriseStat()
-{
+    {
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
     uint64_t NbRealityData;
@@ -648,30 +648,30 @@ void RealityDataConsole::EnterpriseStat()
     DisplayInfo("Enterprise statistics: \n");
     DisplayInfo(Utf8PrintfString("   NbRealityData: %lu\n", NbRealityData));
     DisplayInfo(Utf8PrintfString("   TotalSize(KB): %lu\n\n", TotalSizeKB));
-}
+    }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
-{
+    {
     char progressString[1024];
     sprintf(progressString, "percentage of files downloaded : %f\r", repoProgress * 100.0);
     std::cout << progressString;
-}
+    }
 
 static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
-{
+    {
     char progressString[1024];
     //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
     sprintf(progressString, "upload percent : %f\r", repoProgress * 100.0);
     std::cout << progressString;
-}
+    }
 
 void RealityDataConsole::Download()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Please navigate to a RealityData or Folder before using this command\n", DisplayOption::Tip);
         return;
-    }
+        }
 
     DisplayInfo(Utf8PrintfString("Downloading from %s\n", m_currentNode->node.GetLabel()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
@@ -683,14 +683,14 @@ void RealityDataConsole::Download()
 
     BeFileName fileName = BeFileName(m_lastInput);
     if (!fileName.DoesPathExist())
-    {
+        {
         DisplayInfo("Could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Error);
         return;
-    }
+        }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId());
     if (download.IsValidTransfer())
-    {
+        {
         download.SetProgressCallBack(downloadProgressFunc);
         download.SetProgressStep(0.1);
         download.OnlyReportErrors(true);
@@ -699,11 +699,11 @@ void RealityDataConsole::Download()
         tReport.ToXml(report);
         DisplayInfo("If any files failed to download, they will be listed here: \n");
         DisplayInfo(Utf8PrintfString("%s\n", report));
+        }
     }
-}
 
 void RealityDataConsole::Upload()
-{
+    {
     DisplayInfo("Please enter the source folder on the local machine (must be existing folder)\n  ?", DisplayOption::Question);
 
     InterpretCommand();
@@ -712,16 +712,16 @@ void RealityDataConsole::Upload()
 
     BeFileName fileName = BeFileName(m_lastInput);
     if (!fileName.DoesPathExist())
-    {
+        {
         DisplayInfo("Could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Question);
         return;
-    }
+        }
 
     Utf8String guid = "";
     Utf8String propertyString = "";
     Utf8String option;
     if (m_currentNode == nullptr)
-    {
+        {
         std::string input;
         bmap<RealityDataField, Utf8String> properties;
         DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
@@ -745,15 +745,15 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
         propertyString = RealityDataServiceUpload::PackageProperties(properties);
-    }
+        }
     else
-    {
+        {
         guid = m_currentNode->node.GetInstanceId();
-    }
+        }
 
     RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true, statusFunc);
     if (upload.IsValidTransfer())
-    {
+        {
         upload.SetProgressCallBack(uploadProgressFunc);
         upload.SetProgressStep(0.1);
         upload.OnlyReportErrors(true);
@@ -762,16 +762,16 @@ void RealityDataConsole::Upload()
         tReport.ToXml(report);
         DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
         DisplayInfo(report);
+        }
     }
-}
 
 void RealityDataConsole::Details()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
-    }
+        }
     RawServerResponse rawResponse = RawServerResponse();
     Utf8String className = m_currentNode->node.GetClassName();
 
@@ -779,15 +779,15 @@ void RealityDataConsole::Details()
     instanceId.ReplaceAll("/", "~2F");
 
     if (className == "Document")
-    {
+        {
         RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(instanceId);
         RealityDataDocumentPtr document = RealityDataService::Request(documentReq, rawResponse);
 
         if (document == nullptr)
-        {
+            {
             DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
             return;
-        }
+            }
 
         DisplayInfo(Utf8PrintfString(" Document       : %s\n", document->GetName()));
         DisplayInfo(Utf8PrintfString(" Container name : %s\n", document->GetContainerName()));
@@ -797,32 +797,32 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" RealityData Id : %s\n", document->GetRealityDataId()));
         DisplayInfo(Utf8PrintfString(" ContentType    : %s\n", document->GetContentType()));
         DisplayInfo(Utf8PrintfString(" Size           : %lu\n", document->GetSize()));
-    }
+        }
     else if (className == "Folder")
-    {
+        {
         RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(instanceId);
         RealityDataFolderPtr folder = RealityDataService::Request(folderReq, rawResponse);
 
         if (folder == nullptr)
-        {
+            {
             DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
             return;
-        }
+            }
 
         DisplayInfo(Utf8PrintfString("Folder         : %s\n", folder->GetName()));
         DisplayInfo(Utf8PrintfString("Parent folder  : %s\n", folder->GetParentId()));
         DisplayInfo(Utf8PrintfString("RealityData Id : %s\n", folder->GetRealityDataId()));
-    }
+        }
     else if (className == "RealityData")
-    {
+        {
         RealityDataByIdRequest idReq = RealityDataByIdRequest(instanceId);
         RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
 
         if (entity == nullptr)
-        {
+            {
             DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
             return;
-        }
+            }
 
         DisplayInfo(Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
         DisplayInfo(Utf8PrintfString(" EnterpriseId       : %s\n", entity->GetEnterpriseId()));
@@ -848,16 +848,16 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
         DisplayInfo(Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
         DisplayInfo(Utf8PrintfString(" OwnedBy            : %s\n", entity->GetOwner()));
+        }
     }
-}
 
 void RealityDataConsole::FileAccess()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
-    }
+        }
 
     AzureHandshake* handshake;
     if (m_lastInput.ContainsI("w"))
@@ -866,15 +866,15 @@ void RealityDataConsole::FileAccess()
         handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
     DisplayInfo(Utf8PrintfString("%s\n", handshake->GetHttpRequestString()));
     delete handshake;
-}
+    }
 
 void RealityDataConsole::AzureAddress()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
-    }
+        }
 
     AzureHandshake* handshake;
     if (m_lastInput.ContainsI("w"))
@@ -887,10 +887,10 @@ void RealityDataConsole::AzureAddress()
     RealityDataPtr entity = RealityDataService::Request(idReq, idResponse);
 
     if (entity == nullptr)
-    {
+        {
         DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
         return;
-    }
+        }
 
     RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
     Utf8String azureServer;
@@ -901,28 +901,28 @@ void RealityDataConsole::AzureAddress()
     Utf8String rootDocument = entity->GetRootDocument();
 
     if (handshakeStatus != BentleyStatus::SUCCESS)
-    {
+        {
         DisplayInfo("Failure retrieving Azure adress\n", DisplayOption::Error);
         return;
-    }
+        }
     else if (rootDocument.length() > 0)
         DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, rootDocument, azureToken));
     else
         DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer, azureToken));
-}
+    }
 
 void RealityDataConsole::ChangeProps()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
-    }
+        }
     else if (m_currentNode->node.GetClassName() != "RealityData")
-    {
+        {
         DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
         return;
-    }
+        }
 
     Utf8String input;
     DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
@@ -931,12 +931,12 @@ void RealityDataConsole::ChangeProps()
     Utf8String propertyString = "";
     Utf8String value;
     while (input != "-Finish-")
-    {
+        {
         Choice(m_realityDataProperties, input);
         if (input == "-Finish-")
             break;
         else
-        {
+            {
             DisplayInfo(Utf8PrintfString("Input value for %s\n", input));
 
             std::getline(std::cin, str);
@@ -945,18 +945,18 @@ void RealityDataConsole::ChangeProps()
 
             value = Utf8String(str.c_str()).Trim();
             if (input == "Listable")
-            {
+                {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
                     propertyString.append("\"Listable\" : false");
                 else if (value.EqualsI("true"))
                     propertyString.append("\"Listable\" : true");
                 else
                     DisplayInfo("Listable is boolean. Value must be true or false\n", DisplayOption::Error);
-            }
+                }
             else
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
+            }
         }
-    }
 
     RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
@@ -968,15 +968,15 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Details();
-}
+    }
 
 void RealityDataConsole::Delete()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
-    }
+        }
     Utf8String className = m_currentNode->node.GetClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
@@ -985,7 +985,7 @@ void RealityDataConsole::Delete()
     RawServerResponse rawResponse = RawServerResponse();
 
     if (className == "Document")
-    {
+        {
         DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(std::cin, str);
         if (str != "y")
@@ -993,9 +993,9 @@ void RealityDataConsole::Delete()
 
         RealityDataDeleteDocument documentReq = RealityDataDeleteDocument(instanceId);
         rawResponse = RealityDataService::BasicRequest(&documentReq);
-    }
+        }
     else if (className == "Folder")
-    {
+        {
         DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(std::cin, str);
         if (str != "y")
@@ -1003,9 +1003,9 @@ void RealityDataConsole::Delete()
 
         RealityDataDeleteFolder folderReq = RealityDataDeleteFolder(instanceId);
         rawResponse = RealityDataService::BasicRequest(&folderReq);
-    }
+        }
     else if (className == "RealityData")
-    {
+        {
         DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(std::cin, str);
@@ -1014,30 +1014,30 @@ void RealityDataConsole::Delete()
 
         RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
-    }
+        }
 
     if (rawResponse.body.Contains("errorMessage"))
-    {
+        {
         Json::Value instances(Json::objectValue);
         if (Json::Reader::Parse(rawResponse.body, instances) && instances.isMember("errorMessage"))
             rawResponse.body = instances["errorMessage"].asString();
         DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", rawResponse.body), DisplayOption::Error);
-    }
+        }
     else
-    {
+        {
         DisplayInfo("item deleted\n", DisplayOption::Tip);
         m_lastInput = "..";
         ChangeDir();
+        }
     }
-}
 
 void RealityDataConsole::Filter()
-{
+    {
     Utf8String filter = "";
     Utf8String value;
     std::string str;
     while (filter != "-Finish-")
-    {
+        {
         DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
         DisplayInfo("Current Filters:\n", DisplayOption::Tip);
         DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
@@ -1072,16 +1072,16 @@ void RealityDataConsole::Filter()
             m_queryFilter = value;
         else if (filter.Equals("ProjectId"))
             m_projectFilter = value;
+        }
     }
-}
 
 void RealityDataConsole::Relationships()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
-    }
+        }
     RawServerResponse projectResponse = RawServerResponse();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
@@ -1091,23 +1091,23 @@ void RealityDataConsole::Relationships()
     bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, projectResponse);
 
     if (projectResponse.status == RequestStatus::BADREQ)
-    {
+        {
         DisplayInfo("There was an error retrieving this information\n", DisplayOption::Error);
         return;
-    }
+        }
     else if (entities.size() == 0)
-    {
+        {
         DisplayInfo("There seems to be no projects attached to this RealityData\n", DisplayOption::Error);
         return;
-    }
+        }
 
     DisplayInfo("Projects attached to this RealityData\n\n");
     for (RealityDataProjectRelationshipPtr entity : entities)
         DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
-}
+    }
 
 void RealityDataConsole::CreateRD()
-{
+    {
     std::string input;
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
@@ -1140,23 +1140,23 @@ void RealityDataConsole::CreateRD()
     Json::Value instance(Json::objectValue);
     Json::Reader::Parse(createResponse.body, instance);
     if (createResponse.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
-    {
+        {
         DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name, instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString()), DisplayOption::Info);
-    }
+        }
     else
-    {
+        {
         DisplayInfo("There was an error creating a new RealityData.", DisplayOption::Error);
         DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body), DisplayOption::Error);
+        }
     }
-}
 
 void RealityDataConsole::Link()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Please navigate to a RealityData before using this command\n", DisplayOption::Tip);
         return;
-    }
+        }
 
     DisplayInfo(Utf8PrintfString("Creating a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
@@ -1176,15 +1176,15 @@ void RealityDataConsole::Link()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();
-}
+    }
 
 void RealityDataConsole::Unlink()
-{
-    if (m_currentNode == nullptr)
     {
+    if (m_currentNode == nullptr)
+        {
         DisplayInfo("Please navigate to a RealityData before using this command\n", DisplayOption::Tip);
         return;
-    }
+        }
 
     DisplayInfo(Utf8PrintfString("Removing a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
@@ -1205,17 +1205,17 @@ void RealityDataConsole::Unlink()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();
-}
+    }
 
 void RealityDataConsole::InputError()
-{
+    {
     DisplayInfo("Unrecognized Command. Type \"help\" for usage\n", DisplayOption::Error);
-}
+    }
 
 void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
-{
-    switch (option)
     {
+    switch (option)
+        {
     case DisplayOption::Question:
         SetConsoleTextAttribute(m_hConsole, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
         break;
@@ -1232,11 +1232,11 @@ void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
     default:
         SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
         break;
-    }
+        }
 
     if (!msg.empty())
         std::cout << msg;
 
     // commande
     SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-}
+    }
