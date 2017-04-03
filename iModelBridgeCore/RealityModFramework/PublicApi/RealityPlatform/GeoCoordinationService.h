@@ -385,16 +385,16 @@ public:
     REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(GeoCoordinationService_ErrorCallBack errorCallback) { s_errorCallback = errorCallback; }
 
     //! Returns the current name of the server
-    static Utf8StringCR GetServerName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServerName();
 
     //! Results the string containing the WSG protocol version number
-    static Utf8StringCR GetWSGProtocol();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetWSGProtocol();
 
     //! Returns the name of the WSG repository containing the GeoCoordination Service objects
-    static Utf8StringCR GetRepoName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetRepoName();
 
     //! Returns the name of the schema defining the classes exposed by the GeoCoordination Service.
-    static Utf8StringCR GetSchemaName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetSchemaName();
 
     //! Returns the name of the schema defining the classes exposed by the Service.
     REALITYDATAPLATFORM_EXPORT static const bool GetVerifyPeer();

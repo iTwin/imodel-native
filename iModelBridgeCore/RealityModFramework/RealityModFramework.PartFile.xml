@@ -240,7 +240,7 @@
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="WSGServicesExample"/>
-        <!--<SubPart PartName="GeoCoordinationServiceExample"/>-->
+        <SubPart PartName="GeoCoordinationServiceExample"/>
         <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDataServiceErrorReportingExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
