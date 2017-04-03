@@ -510,6 +510,17 @@ void IScalableMesh::RemoveFromGroup(IScalableMeshPtr& sMesh)
     return _RemoveFromGroup(sMesh);
     }
 
+void IScalableMesh::SetGroupSelectionFromPoint(DPoint3d firstPoint)
+    {
+    return _SetGroupSelectionFromPoint(firstPoint);
+    }
+
+
+void  IScalableMesh::ClearGroupSelection()
+    {
+    return _ClearGroupSelection();
+    }
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
     {

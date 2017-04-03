@@ -112,6 +112,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         bvector<IScalableMesh*> m_members;
         bvector<RegionInfo> m_regions;
 
+        IScalableMesh* m_selection;
+
         RefCountedPtr<ScalableMeshGroupDTM>  m_smGroupsDTM[DTMAnalysisType::Qty];
 
     protected:
@@ -246,6 +248,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void                          _RemoveFromGroup(IScalableMeshPtr& sMesh) override {}
 
+        virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override;
+        virtual void                          _ClearGroupSelection() override;
+
      public:
 
          ScalableMeshGroup();
@@ -259,6 +264,12 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
          void AddMember(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0);
 
          void RemoveMember(IScalableMeshPtr& sMesh);
+
+         void SelectMember(IScalableMesh* sMesh);
+
+         void ClearSelection();
+
+         IScalableMesh* GetSelection();
 
          static IScalableMeshPtr Create()
              {
