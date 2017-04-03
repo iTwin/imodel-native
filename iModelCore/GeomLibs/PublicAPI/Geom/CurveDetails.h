@@ -536,6 +536,12 @@ GEOMDLLIMPEXP void SetArcAngle (double valueRadians);
 GEOMDLLIMPEXP void SetChamferAngle (double value);
 GEOMDLLIMPEXP void SetForceClosure (bool value);
 GEOMDLLIMPEXP void SetBCurvePointsPerKnot (int n);
+//! Select the method to be used to offset bspline curves in MSBsplineCurve::CreateCopyOffsetXY and ICurvePrimitive::CloneAsSingleOffsetPrimitiveXY
+//!<ul>
+//!<li>1 -- offset with fit points at offsets of the Greville knots.  (Moving averages of (order-1) knots)  This is appropriate (and strongly preferred) when the input curve is smooth.
+//!<li>0 -- (and other) offset to multiple fit points within each bezier span.   Use SetBCurfvePointsPerKnot () to control fit point counts.  This method significantly increases number of knots.  This
+//         may be more accurate for a single offset, but leads to overly dense curves if offset is repeated.
+//!</ul>
 GEOMDLLIMPEXP void SetBCurveMethod (int n);
 GEOMDLLIMPEXP double GetTolerance () const;
 GEOMDLLIMPEXP double GetOffsetDistance () const;
