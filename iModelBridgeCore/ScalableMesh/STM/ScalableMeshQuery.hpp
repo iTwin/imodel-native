@@ -1922,6 +1922,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
 
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
+    if (clipsToShow.empty()) return true;
     assert(IsLoaded() == true);
 
     bvector<uint64_t> appliedClips;
