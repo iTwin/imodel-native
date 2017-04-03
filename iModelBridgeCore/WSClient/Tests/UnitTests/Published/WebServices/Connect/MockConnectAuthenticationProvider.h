@@ -1,25 +1,24 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h $
+|     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectAuthenticationProvider.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IConnectAuthenticationProvider.h>
 #include <gmock/gmock.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #if defined (USE_GTEST)
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    08/2014
+* @bsiclass                                                     Vincas.Razma    04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockConnectTokenProvider : public IConnectTokenProvider
+struct MockConnectAuthenticationProvider : public IConnectAuthenticationProvider
     {
     public:
-        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<SamlTokenPtr>());
-        MOCK_METHOD0(GetToken, SamlTokenPtr());
+        MOCK_CONST_METHOD2(GetAuthenticationHandler, AuthenticationHandlerPtr(Utf8StringCR, IHttpHandlerPtr));
     };
 #endif
 
