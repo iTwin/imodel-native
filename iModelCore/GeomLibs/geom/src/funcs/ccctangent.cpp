@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/ccctangent.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -122,8 +122,7 @@ double     radiusC
 @param rB IN signed radius of second circle.
 * @bsimethod                                    Earlin.Lutz                     10/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool bsiDConic4d_initSignedCircleTangentCenters
-
+bool bsiDConic4d_initSignedCircleTangentCenters
 (
 DConic4dP pConic,
 DPoint3dP pCenterA,

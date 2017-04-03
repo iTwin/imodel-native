@@ -1394,6 +1394,11 @@ void Check::SaveTransformed(PolyfaceHeaderCR data)
 void Check::SaveTransformed(ISolidPrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}
+void Check::SaveTransformed(DEllipse3dCR data)
+    {
+    SaveTransformed(*ICurvePrimitive::CreateArc (data));
+    }
+
 void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
     SaveTransformed(IGeometry::Create (data->Clone ()));}

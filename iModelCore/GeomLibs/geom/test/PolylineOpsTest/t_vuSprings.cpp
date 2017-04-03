@@ -713,3 +713,59 @@ TEST(Vu,CreateClippedVornoi)
 
     Check::ClearGeometry ("Vu.CreateClippedVornoi");
     }
+void Stroke (DConic4dCR conic, bvector<DPoint3d> &strokes, double theta0, double theta1, int numPoint)
+    {
+    strokes.clear ();
+    DPoint3d xyz;
+    for (int i = 0; i <= numPoint; i++)
+        {
+        double theta =
+            DoubleOps::Interpolate (theta0, (double)i / (double)numPoint, theta1);
+        bsiDConic4d_angleParameterToDPoint3d (&conic, &xyz, theta);
+        strokes.push_back (xyz);
+        }
+    }
+
+void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double theta0, double theta1)
+    {
+    int s_numPoints = 17;
+    DConic4d conic;
+    bvector<DPoint3d> strokes;
+    bsiDConic4d_initSignedCircleTangentCenters (&conic, &xyz0, r0, &xyz1, -r1);
+    Stroke (conic, strokes, theta0, theta1, s_numPoints);
+    Check::SaveTransformed (strokes);
+    }
+
+TEST(Voronoi,Hyperbolas6)
+    {
+    bvector<DPoint3d> xyzOuter;
+    DPoint3d origin = DPoint3d::FromZero ();
+    bvector<double> radiusOuter {1.0, 2.0, 2.1, 3.0, 1.5, 1.1};
+    double a = 10.0;
+    bvector<DSegment3d> segments;
+    // In a smooth triangulation, expect 6 points around each central point
+    for (int i = 0; i < 7; i++)
+        {
+        double theta = i * Angle::DegreesToRadians (60.0);
+        xyzOuter.push_back (DPoint3d::From (a * cos (theta), a * sin (theta)));
+        segments.push_back (DSegment3d::From (origin, xyzOuter.back ()));
+        }
+    segments.pop_back ();
+    static double theta0 = Angle::DegreesToRadians (60.0);
+    static double theta1 = Angle::DegreesToRadians (120.0);
+    for (double r0 : bvector<double> {0.5, 1.0, 4.0})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0 * a, 0, 0);
+        Check::SaveTransformed (xyzOuter);
+        Check::SaveTransformed (segments);
+        Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (origin, r0));
+        for (size_t i0 = 0; i0 + 1 < xyzOuter.size (); i0++)
+            {
+            Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (xyzOuter[i0], radiusOuter[i0]));
+            size_t i1 = i0 + 1;
+            ShowConic (origin, r0, xyzOuter[i0], radiusOuter[i0], theta0, theta1);
+            ShowConic (xyzOuter[i0], radiusOuter[i0], xyzOuter[i1], radiusOuter[i1], theta0, theta1);
+            }
+        }
+    Check::ClearGeometry ("Voronoi.Hyperbolas");
+    }
