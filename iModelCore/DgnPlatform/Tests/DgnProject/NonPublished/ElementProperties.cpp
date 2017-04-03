@@ -98,7 +98,6 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
-    ep.SetDisplayPriority(2);
 
     DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
@@ -117,6 +116,5 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
         EXPECT_EQ(21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE(weight);
-        EXPECT_EQ(2, params.GetDisplayPriority());
         }
     }
