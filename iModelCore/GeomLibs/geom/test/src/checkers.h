@@ -391,6 +391,7 @@ static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double marker
 static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
 static void SaveTransformed (bvector<DSegment3d> const &data);
+static void SaveTransformed (DEllipse3dCR data);
 static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void Shift (double dx, double dy, double dz = 0.0);
 static void Shift (DVec3dCR shift);

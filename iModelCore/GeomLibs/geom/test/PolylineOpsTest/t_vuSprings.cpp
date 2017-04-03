@@ -531,36 +531,64 @@ TEST(Vu,CreateDelauney)
     Check::ClearGeometry ("Vu.CreateDelauney");
     }
 
-
+double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI, size_t numJ)
+    {
+    return DoubleOps::Interpolate (a0, j/(double)numJ, a1);
+    }
 TEST(Vu,CreateDelauneySkew)
     {
 
-    double dy = 30.0;
+    double dy = 80.0;
     double a = 1.0;
+    double r0 = 0.2 * a, r1 = 0.7 * a;
     size_t numX = 7;
     size_t numY = 5;
-    for (double degrees : bvector<double> {60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
+    size_t s_iPeriod = 5;
+    size_t s_jPeriod = 3;
+    for (int distanceSelect = 0; distanceSelect < 2; distanceSelect++)
         {
-        Angle theta = Angle::FromDegrees (degrees);
-        DPoint3dDVec3dDVec3d frame (0,0,0, a,0,0,  a * theta.Cos (), a * theta.Sin (), 0);
-        bvector<DPoint3d> points;
-        for (size_t j = 0; j <= numY; j++)
-            for (size_t i = 0; i <= numX; i++)
-                points.push_back (frame.Evaluate ((double) i, (double) j));
+        double yMax = 10.0;
+        SaveAndRestoreCheckTransform shifter0 (0.0, yMax, 0.0);
 
-        SaveAndRestoreCheckTransform shifter (points.back ().x + 3.0 * a,0,0);
-        Check::SaveTransformed (points);
-        PolyfaceHeaderPtr delauney, voronoi;
-        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+        for (double degrees : bvector<double> {60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
             {
-            Check::Shift (0,dy,0);
-            Check::SaveTransformed (*delauney);
-            Check::SaveTransformed (*voronoi);
+            Angle theta = Angle::FromDegrees (degrees);
+            bvector<double> radii;
+            DPoint3dDVec3dDVec3d frame (0,0,0, a,0,0,  a * theta.Cos (), a * theta.Sin (), 0);
+            bvector<DPoint3d> points;
+            for (size_t j = 0; j <= numY; j++)
+                for (size_t i = 0; i <= numX; i++)
+                    {
+                    points.push_back (frame.Evaluate ((double) i, (double) j));
+                    radii.push_back (AssignRadiusByRow (r0, r1, (i % s_iPeriod), (j % s_jPeriod), numX, numY));
+                    }
+
+            SaveAndRestoreCheckTransform shifter (points.back ().x + 50.0 * a,0,0);
+            yMax = DoubleOps::Max (yMax, points.back ().y);
+            Check::SaveTransformed (points);
+            PolyfaceHeaderPtr delauney, voronoi;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi)))
+                {
+                Check::Shift (0,dy,0);
+                Check::SaveTransformed (*delauney);
+                Check::SaveTransformed (*voronoi);
+                if (distanceSelect == 1)
+                    {
+                    for (size_t i = 0; i < points.size (); i++)
+                        {
+                        Check::SaveTransformed (
+                                *ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (points[i], radii[i])));
+                        }
+                    }
+
+
+
+                }
+            shifter0.SetShift (0, yMax * 3.0 + 5.0, 0.0);
             }
         }
     Check::ClearGeometry ("Vu.CreateDelauneySkew");
     }
-
 
 TEST(Vu,CreateDelauneyCircle)
     {
@@ -684,4 +712,60 @@ TEST(Vu,CreateClippedVornoi)
     DoClips (clipT);
 
     Check::ClearGeometry ("Vu.CreateClippedVornoi");
+    }
+void Stroke (DConic4dCR conic, bvector<DPoint3d> &strokes, double theta0, double theta1, int numPoint)
+    {
+    strokes.clear ();
+    DPoint3d xyz;
+    for (int i = 0; i <= numPoint; i++)
+        {
+        double theta =
+            DoubleOps::Interpolate (theta0, (double)i / (double)numPoint, theta1);
+        bsiDConic4d_angleParameterToDPoint3d (&conic, &xyz, theta);
+        strokes.push_back (xyz);
+        }
+    }
+
+void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double theta0, double theta1)
+    {
+    int s_numPoints = 17;
+    DConic4d conic;
+    bvector<DPoint3d> strokes;
+    bsiDConic4d_initSignedCircleTangentCenters (&conic, &xyz0, r0, &xyz1, -r1);
+    Stroke (conic, strokes, theta0, theta1, s_numPoints);
+    Check::SaveTransformed (strokes);
+    }
+
+TEST(Voronoi,Hyperbolas6)
+    {
+    bvector<DPoint3d> xyzOuter;
+    DPoint3d origin = DPoint3d::FromZero ();
+    bvector<double> radiusOuter {1.0, 2.0, 2.1, 3.0, 1.5, 1.1};
+    double a = 10.0;
+    bvector<DSegment3d> segments;
+    // In a smooth triangulation, expect 6 points around each central point
+    for (int i = 0; i < 7; i++)
+        {
+        double theta = i * Angle::DegreesToRadians (60.0);
+        xyzOuter.push_back (DPoint3d::From (a * cos (theta), a * sin (theta)));
+        segments.push_back (DSegment3d::From (origin, xyzOuter.back ()));
+        }
+    segments.pop_back ();
+    static double theta0 = Angle::DegreesToRadians (60.0);
+    static double theta1 = Angle::DegreesToRadians (120.0);
+    for (double r0 : bvector<double> {0.5, 1.0, 4.0})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0 * a, 0, 0);
+        Check::SaveTransformed (xyzOuter);
+        Check::SaveTransformed (segments);
+        Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (origin, r0));
+        for (size_t i0 = 0; i0 + 1 < xyzOuter.size (); i0++)
+            {
+            Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (xyzOuter[i0], radiusOuter[i0]));
+            size_t i1 = i0 + 1;
+            ShowConic (origin, r0, xyzOuter[i0], radiusOuter[i0], theta0, theta1);
+            ShowConic (xyzOuter[i0], radiusOuter[i0], xyzOuter[i1], radiusOuter[i1], theta0, theta1);
+            }
+        }
+    Check::ClearGeometry ("Voronoi.Hyperbolas");
     }
