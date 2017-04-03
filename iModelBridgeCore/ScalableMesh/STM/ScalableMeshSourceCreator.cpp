@@ -680,7 +680,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         delete RasterUtilities::s_rasterMemPool;
         RasterUtilities::s_rasterMemPool = nullptr;
         }
-            
+           
     return BSISUCCESS;
     }
 
