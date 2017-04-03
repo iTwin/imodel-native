@@ -50,7 +50,7 @@ namespace IndexECPlugin.Tests
 
             m_RDSDataFetcherMock = (IRDSDataFetcher) m_mock.StrictMock(typeof(IRDSDataFetcher));
 
-            m_rdsArray = JArray.Parse("[{\"instanceId\":\"\",\"schemaName\":\"S3MX\",\"className\":\"RealityData\",\"properties\":{\"Id\":\"05610e4c-79d4-43ef-a9e5-e02e6328d843\",\"Enterprise\":\"5e41126f-6875-400f-9f75-4492c99ee544\",\"ContainerName\":\"05610e4c-79d4-43ef-a9e5-e02e6328d843\",\"Name\":\"Salt Lake City\",\"Dataset\":\"Landsat 8\",\"Description\":\"Lorem ipsum dolor sit amet.\",\"RootDocument\":\"Graz/Scene/Production_Graz_3MX.3mx\",\"Size\":4418267,\"Classification\":\"Terrain\",\"Type\":\"3mx\",\"Footprint\":\"{ \\\"points\\\" : [[-112.101512,40.700246],[-111.7394581,40.700246],[-111.7394581,40.8529699],[-112.101512,40.8529699],[-112.101512,40.700246]], \\\"coordinate_system\\\" : \\\"4326\\\" }\",\"ThumbnailDocument\":\"Testdir/TestFile\",\"MetadataURL\":null,\"AccuracyInMeters\":\"16.147\",\"ResolutionInMeters\":null,\"PublicAccess\":true,\"Listable\":true,\"ModifiedTimestamp\":\"2017-01-18T18:42:58.7622253Z\",\"CreatedTimestamp\":\"2016-12-13T15:23:54.1431052Z\",\"OwnedBy\":\"francis.boily@bentley.com\"},\"eTag\":\"\\\"eGIOVrqUoUuzm+NmmddfsE7VGkQ=\\\"\"}]");
+            m_rdsArray = JArray.Parse("[{\"instanceId\":\"\",\"schemaName\":\"S3MX\",\"className\":\"RealityData\",\"properties\":{\"Id\":\"05610e4c-79d4-43ef-a9e5-e02e6328d843\",\"Enterprise\":\"5e41126f-6875-400f-9f75-4492c99ee544\",\"ContainerName\":\"05610e4c-79d4-43ef-a9e5-e02e6328d843\",\"Name\":\"Salt Lake City\",\"Dataset\":\"Landsat 8\",\"Description\":\"Lorem ipsum dolor sit amet.\",\"RootDocument\":\"Graz/Scene/Production_Graz_3MX.3mx\",\"Size\":4418267,\"Classification\":\"Terrain\",\"Streamed\":true,\"Type\":\"3mx\",\"Footprint\":\"{ \\\"points\\\" : [[-112.101512,40.700246],[-111.7394581,40.700246],[-111.7394581,40.8529699],[-112.101512,40.8529699],[-112.101512,40.700246]], \\\"coordinate_system\\\" : \\\"4326\\\" }\",\"ThumbnailDocument\":\"Testdir/TestFile\",\"MetadataURL\":null,\"Copyright\":\"TestCopyright\",\"TermsOfUse\":\"TestTermsOfUse\",\"AccuracyInMeters\":\"16.147\",\"ResolutionInMeters\":null,\"PublicAccess\":true,\"Listable\":true,\"ModifiedTimestamp\":\"2017-01-18T18:42:58.7622253Z\",\"CreatedTimestamp\":\"2016-12-13T15:23:54.1431052Z\",\"OwnedBy\":\"francis.boily@bentley.com\"},\"eTag\":\"\\\"eGIOVrqUoUuzm+NmmddfsE7VGkQ=\\\"\"}]");
             m_rdsSingleObject = (JObject) m_rdsArray.First();
 
             SetupResult.For(m_RDSDataFetcherMock.RdsUrlBase).Return(m_rdsUrlBaseTest);
@@ -135,8 +135,8 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("Lorem ipsum dolor sit amet.", instance.GetPropertyValue("Description").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("Owned by francis.boily@bentley.com", instance.GetPropertyValue("ContactInformation").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("Keywords").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("Legal").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("TermsOfUse").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestCopyright", instance.GetPropertyValue("Legal").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestTermsOfUse", instance.GetPropertyValue("TermsOfUse").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("Lineage").IsNull, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("Provenance").IsNull, "The content of the instance was not set properly.");
                 }
@@ -267,8 +267,8 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("Lorem ipsum dolor sit amet.", instance.GetPropertyValue("Description").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("Owned by francis.boily@bentley.com", instance.GetPropertyValue("ContactInformation").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("Keywords").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("Legal").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("TermsOfUse").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestCopyright", instance.GetPropertyValue("Legal").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestTermsOfUse", instance.GetPropertyValue("TermsOfUse").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("3mx", instance.GetPropertyValue("DataSourceType").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("16.147", instance.GetPropertyValue("AccuracyInMeters").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("ResolutionInMeters").IsNull, "The content of the instance was not set properly.");
@@ -322,8 +322,8 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("Lorem ipsum dolor sit amet.", instance.GetPropertyValue("Description").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("Owned by francis.boily@bentley.com", instance.GetPropertyValue("ContactInformation").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("Keywords").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("Legal").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("TermsOfUse").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestCopyright", instance.GetPropertyValue("Legal").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("TestTermsOfUse", instance.GetPropertyValue("TermsOfUse").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("3mx", instance.GetPropertyValue("DataSourceType").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("16.147", instance.GetPropertyValue("AccuracyInMeters").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("ResolutionInMeters").IsNull, "The content of the instance was not set properly.");
