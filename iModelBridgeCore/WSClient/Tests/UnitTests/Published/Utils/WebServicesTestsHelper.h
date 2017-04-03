@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,6 +120,8 @@ HttpResponse StubWSInfoHttpResponseWebApi22();
 HttpResponse StubWSInfoHttpResponseWebApi23();
 //! Stub WebApi 2.4 and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi24();
+//! Stub WebApi 2.5 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi25();
 //! Stub WebApi version and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
