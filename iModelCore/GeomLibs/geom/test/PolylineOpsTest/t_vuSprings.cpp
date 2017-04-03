@@ -754,71 +754,6 @@ size_t numConvergedRequired = 2
     return false;
     }
 
-// Iteratively move each point to stable point.
-bool Solve_greedy (
-size_t maxIterations = 100,
-double fractionalStep = 1.0e-3,
-double fractionalStepTolerance = 1.0e-4,
-double frictionFactor = 0.8,
-size_t numConvergedRequired = 2
-)
-    {
-    size_t numXYZ = m_points.size ();
-
-    size_t numConverged = 0;
-    for (size_t numIteration = 0; numIteration < maxIterations; numIteration++)
-        {
-        size_t numFail = 0;
-        for (size_t i = 0; i < numXYZ; i++)
-            {
-            if (m_fixity[i].IsFree())
-                {
-                DRange3d neighborRange = NeighborRange (i);
-                double deltaRef = neighborRange.low.DistanceXY (neighborRange.high);
-                double delta = fractionalStep * deltaRef;
-                if (delta == 0.0)
-                    return false;
-                double divDelta = 0.5 / delta;  // central differencing
-                DVec3d F = SumForces (i);
-                DVec3d dFx = divDelta * (SumForces (i, delta, 0) - SumForces (i, -delta, 0));
-                DVec3d dFy = divDelta * (SumForces (i, 0, delta) - SumForces (i, 0, -delta));
-                double dx, dy;
-                if (!bsiSVD_solve2x2 (&dx, &dy,
-                        dFx.x, dFx.y,
-                        dFy.x, dFy.y,
-                        F.x, F.y))
-                    return false;
-                double fx = dx / neighborRange.XLength ();
-                double fy = dy / neighborRange.YLength ();
-                double f = DoubleOps::MaxAbs (fx, fy);
-                static double maxStepFraction = 0.25;
-                if (f < maxStepFraction)
-                    frictionFactor = 1.0;
-                else
-                    frictionFactor = maxStepFraction;
-                ShiftWithFrictionFactor (frictionFactor, i, -dx, -dy, 0.0);
-                double d = DoubleOps::Hypotenuse (dx, dy);
-                if (d >= fractionalStepTolerance * delta)
-                    numFail++;
-                }
-            }
-
-        if (numFail == 0)
-            {
-            numConverged++;
-            if (numConverged >= numConvergedRequired)
-                return true; 
-            }
-        else
-            numConverged = 0;
-        }
-    return false;
-    }
-
-
-
-
-
 
 
 void EmitSprings ()
@@ -843,32 +778,31 @@ void EmitSprings ()
 
 TEST(BubblePhysics,Triangle1)
     {
-    for (double r1 : bvector<double> {1, 0.9, 0.5})
+    for (double mu : bvector<double> {1.0, 1.2, 1.5})
         {
-        for (double r3 : bvector<double> {1,0.9, 0.6, 0.4})
+        SaveAndRestoreCheckTransform shifter (0, 30.0, 00);
+        for (double r1 : bvector<double> {1, 0.9, 0.5})
             {
-            SaveAndRestoreCheckTransform shifter (10.0,0,0);
-            SpringPhysics physics;
-            BubbleNetwork network (physics);
-            size_t i0 = network.AddPoint (0,0,  r1, Fixity (Fixity::Type::Fixed));
-            size_t i1 = network.AddPoint (2,0,  r1, Fixity (Fixity::Type::Fixed));
-            size_t i2 = network.AddPoint (1,2,  r1, Fixity (Fixity::Type::Fixed));
-            size_t i3 = network.AddPoint (1.1, 1, r3, Fixity (Fixity::Type::Free));
-            network.Connect (i0, i3);
-            network.Connect (i1, i3);
-            network.Connect (i2, i3);
-            network.EmitSprings ();
-            static int s_solver = 1;
-            bool stat = false;
-            if (s_solver == 1)
-                stat = network.Solve_global ();
-            else if (stat == 0)
-                stat = network.Solve_greedy ();
+            for (double r3 : bvector<double> {1,0.9, 0.6, 0.4})
+                {
+                SaveAndRestoreCheckTransform shifter (10.0,0,0);
+                SpringPhysics physics;
+                BubbleNetwork network (physics);
+                size_t i0 = network.AddPoint (0,0,  r1, Fixity (Fixity::Type::Fixed));
+                size_t i1 = network.AddPoint (2,0,  mu * r1, Fixity (Fixity::Type::Fixed));
+                size_t i2 = network.AddPoint (1,2,  mu * mu * r1, Fixity (Fixity::Type::Fixed));
+                size_t i3 = network.AddPoint (1.1, 1, r3, Fixity (Fixity::Type::Free));
+                network.Connect (i0, i3);
+                network.Connect (i1, i3);
+                network.Connect (i2, i3);
+                network.EmitSprings ();
+                bool stat = network.Solve_global ();
 
-            Check::Shift (0,10,0);
-            network.EmitSprings ();
-            if (!stat)
-                Check::SaveTransformed (*ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1.1, 1.0), 5)));
+                Check::Shift (0,10,0);
+                network.EmitSprings ();
+                if (!stat)
+                    Check::SaveTransformed (*ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1.1, 1.0), 5)));
+                }
             }
         }
     Check::ClearGeometry ("BubblePhysics.Triangele1");
@@ -900,12 +834,7 @@ TEST(BubblePhysics,Quad2)
 
             network.EmitSprings ();
 
-            static int s_solver = 1;
-            bool stat = false;
-            if (s_solver == 1)
-                stat = network.Solve_global ();
-            else if (stat == 0)
-                stat = network.Solve_greedy ();
+            bool stat = network.Solve_global ();
 
             Check::Shift (0,10,0);
             network.EmitSprings ();
