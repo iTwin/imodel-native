@@ -653,7 +653,7 @@ void RealityDataConsole::EnterpriseStat()
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
     char progressString[1024];
-    sprintf(progressString, "percentage of files downloaded : %f\r", repoProgress * 100.0);
+    sprintf(progressString, "percentage of files downloaded : %.1f\r", repoProgress * 100.0);
     std::cout << progressString;
     }
 
@@ -661,7 +661,7 @@ static void uploadProgressFunc(Utf8String filename, double fileProgress, double 
     {
     char progressString[1024];
     //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
-    sprintf(progressString, "upload percent : %f\r", repoProgress * 100.0);
+    sprintf(progressString, "upload percent : %.1f\r", repoProgress * 100.0);
     std::cout << progressString;
     }
 
