@@ -136,6 +136,7 @@
     <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
+    <Compile Include="Source\Helpers\DbConnectionCreator.cs" />
     <Compile Include="Source\Helpers\DbConnectionHelper.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\DownloadReportHelper.cs" />
@@ -200,6 +201,9 @@
     <Content Include="External\Assemblies\Bentley.GeometryNET.Structs.dll" />
     <Content Include="External\Assemblies\Bentley.logging-2.0.dll" />
     <Content Include="External\Assemblies\Bentley.Platform.dll" />
+    <EmbeddedResource Include="Images\NoImage.jpg">
+      <LogicalName>NoImage.jpg</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="External\ECSchemaDB.xml">
       <LogicalName>ECSchemaDB.xml</LogicalName>
     </EmbeddedResource>

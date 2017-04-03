@@ -81,9 +81,9 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
+        /// <param name="dbQuerier">The IDbQuerier object used to communicate with the database</param>
         /// <param name="schemaModule">The schema of the ECPlugin</param>
-        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schemaModule)
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schemaModule)
             {
             m_query = query;
             m_querySettings = querySettings;
@@ -97,7 +97,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 daysCacheIsValid = 10;
                 }
-            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, querySettings, new DbQuerier(connectionString));
+            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, querySettings, dbQuerier);
 
             }
 

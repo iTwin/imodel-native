@@ -68,27 +68,32 @@ namespace IndexECPlugin.Source.Helpers
             m_base64token = base64token;
 
             string buddiRegionCode = ConfigurationRoot.GetAppSetting("RECPBuddiRegionCode");
-
-            string rdsBaseName;
             BUDDIClient buddiClient = new BUDDIClient();
+
+            int buddiRegionCodeInt; 
+            bool successfulParse = int.TryParse(buddiRegionCode, out buddiRegionCodeInt);
+
             try
                 {
-                if ( buddiRegionCode == null )
+                string rdsBaseName;
+                if ( successfulParse )
                     {
-                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName);
+                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName, buddiRegionCodeInt);
                     }
                 else
                     {
-                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName, int.Parse(buddiRegionCode));
+                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName);
                     }
+                m_rdsUrlBase = rdsBaseName + "v2.3/repositories/S3MXECPlugin--Server/S3MX/";
                 }
             catch ( Exception )
                 {
-                throw new OperationFailedException("There was an error fetching RDS url with BUDDI.");
+                m_rdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase");
+                if ( m_rdsUrlBase == null )
+                    {
+                    throw new OperationFailedException("There was an error getting RDS url.");
+                    }
                 }
-
-            m_rdsUrlBase = rdsBaseName + "v2.3/repositories/S3MXECPlugin--Server/S3MX/";
-
             }
 
         private string GetHttpResponse (string url)

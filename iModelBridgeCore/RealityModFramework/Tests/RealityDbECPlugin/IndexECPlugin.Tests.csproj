@@ -93,6 +93,7 @@
     <Compile Include="Tests\MimicTableAccessorTests.cs" />
     <Compile Include="Tests\MimicTableWriterTests.cs" />
     <Compile Include="Tests\PackagerTests.cs" />
+    <Compile Include="Tests\IDbQuerierTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -108,69 +109,69 @@
     <EmbeddedResource Include="Ressources\ScienceBaseJsonNED1m.txt">
       <LogicalName>ScienceBaseJsonNED1m.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNED1as.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNED1as.txt">
       <LogicalName>ScienceBaseJsonNED1as.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNED1_3as.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNED1_3as.txt">
       <LogicalName>ScienceBaseJsonNED1_3as.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNED1_9as.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNED1_9as.txt">
       <LogicalName>ScienceBaseJsonNED1_9as.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2001.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2001.txt">
       <LogicalName>ScienceBaseJsonNLCD2001.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2006.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2006.txt">
       <LogicalName>ScienceBaseJsonNLCD2006.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2011.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNLCD2011.txt">
       <LogicalName>ScienceBaseJsonNLCD2011.txt</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Ressources\ScienceBaseJsonParent.txt">
       <LogicalName>ScienceBaseJsonParent.txt</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonLIDAR.txt">
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonLIDAR.txt">
       <LogicalName>ScienceBaseJsonLIDAR.txt</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Ressources\USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml">
       <LogicalName>USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonHRO.txt"> 
-	  <LogicalName>ScienceBaseJsonHRO.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\ScienceBaseJsonNAIP.txt"> 
-	  <LogicalName>ScienceBaseJsonNAIP.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNED1m.txt"> 
-	  <LogicalName>TnmApiNED1m.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNED1as.txt"> 
-	  <LogicalName>TnmApiNED1as.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNED1_3as.txt"> 
-	  <LogicalName>TnmApiNED1_3as.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNED1_9as.txt"> 
-	  <LogicalName>TnmApiNED1_9as.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNLCD2001.txt"> 
-	  <LogicalName>TnmApiNLCD2001.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNLCD2006.txt"> 
-	  <LogicalName>TnmApiNLCD2006.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNLCD2011.txt"> 
-	  <LogicalName>TnmApiNLCD2011.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiHRO.txt"> 
-	  <LogicalName>TnmApiHRO.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiLIDAR.txt"> 
-	  <LogicalName>TnmApiLIDAR.txt</LogicalName>
-	</EmbeddedResource>
-	<EmbeddedResource Include="Ressources\TnmApiNAIP.txt"> 
-	  <LogicalName>TnmApiNAIP.txt</LogicalName>
-	</EmbeddedResource>
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonHRO.txt">
+      <LogicalName>ScienceBaseJsonHRO.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\ScienceBaseJsonNAIP.txt">
+      <LogicalName>ScienceBaseJsonNAIP.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNED1m.txt">
+      <LogicalName>TnmApiNED1m.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNED1as.txt">
+      <LogicalName>TnmApiNED1as.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNED1_3as.txt">
+      <LogicalName>TnmApiNED1_3as.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNED1_9as.txt">
+      <LogicalName>TnmApiNED1_9as.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNLCD2001.txt">
+      <LogicalName>TnmApiNLCD2001.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNLCD2006.txt">
+      <LogicalName>TnmApiNLCD2006.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNLCD2011.txt">
+      <LogicalName>TnmApiNLCD2011.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiHRO.txt">
+      <LogicalName>TnmApiHRO.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiLIDAR.txt">
+      <LogicalName>TnmApiLIDAR.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiNAIP.txt">
+      <LogicalName>TnmApiNAIP.txt</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

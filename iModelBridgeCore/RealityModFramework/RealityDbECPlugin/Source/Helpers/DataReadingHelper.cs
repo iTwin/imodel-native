@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/DataReadingHelper.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -49,6 +49,10 @@ namespace IndexECPlugin.Source.Helpers
         ///   As an example, for SQL Server, the spatial query is returned in two columns, one for the WKT, and one for the SRID</param>
         public void AddColumn (ColumnCategory columnCategory, IECProperty property, int numberOfColumn = 1)
             {
+            if ( columnCategory == ColumnCategory.nonPropertyData)
+                {
+                throw new ProgrammerException("AddColumn should not be called for nonPropertyData columns");
+                }
             if ( (columnCategory == ColumnCategory.instanceData) || (columnCategory == ColumnCategory.spatialInstanceData) )
                 {
                 instanceDataColumnList.Add(property, m_currentIndex);

@@ -173,11 +173,11 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
+        /// <param name="dbQuerier">The IDbQuerier object used to communicate with the database</param>
         /// <param name="schema">The schema of the ECPlugin</param>
         /// <param name="dataSource">The data source representing the sub API</param>
         /// <param name="activateCache">If the sub API uses the cache, set to true, otherwise, false.</param>
-        public SubAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema, DataSource dataSource, bool activateCache)
+        public SubAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema, DataSource dataSource, bool activateCache)
             {
             Query = query;
             QuerySettings = querySettings;
@@ -197,7 +197,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
 
                 m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
-                InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, querySettings, new DbQuerier(connectionString));
+                InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, querySettings, dbQuerier);
                 }
 
             }
