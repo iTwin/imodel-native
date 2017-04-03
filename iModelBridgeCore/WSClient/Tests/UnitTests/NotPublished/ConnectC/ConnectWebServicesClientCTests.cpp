@@ -280,8 +280,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateOrganization_ValidOrganizationParam
     CallStatus status = ConnectWebServicesClientC_CreateOrganization_V2(api, Name.c_str(), Number.c_str());
     ASSERT_TRUE(status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(api);
-    EXPECT_STREQ("testInstanceId", instanceId);
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_STREQ("testInstanceId", instanceId.c_str());
 
     status = ConnectWebServicesClientC_FreeApi(api);
     ASSERT_TRUE(status == SUCCESS);
@@ -513,8 +514,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectV4_ValidProjectParameters_Pr
                                                                nullptr, Location.c_str(), nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(api);
-    EXPECT_STREQ("testInstanceId", instanceId);
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_STREQ("testInstanceId", instanceId.c_str());
 
     status = ConnectWebServicesClientC_FreeApi(api);
     ASSERT_TRUE(status == SUCCESS);
@@ -887,8 +889,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectFavorite_V4_ValidProjectPara
     CallStatus status = ConnectWebServicesClientC_CreateProjectFavorite_V4(api, L"testInstanceId");
     ASSERT_TRUE(status == SUCCESS);
 
-    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(api);
-    EXPECT_STREQ("testInstanceId", instanceId);
+    Utf8String instanceId;
+    ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api, instanceId);
+    EXPECT_STREQ("testInstanceId", instanceId.c_str());
 
     status = ConnectWebServicesClientC_FreeApi(api);
     ASSERT_TRUE(status == SUCCESS);

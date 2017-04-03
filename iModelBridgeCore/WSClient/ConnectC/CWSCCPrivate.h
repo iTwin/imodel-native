@@ -14,7 +14,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
-#include <WebServices/IMS/SolrClient.h>
+#include <WebServices/Ims/SolrClient.h>
 #include <WebServices/ConnectC/CWSCC.h>
 #include "WSLocalState.h"
 
@@ -119,7 +119,7 @@ class ConnectWebServicesClientC_internal
 
         Utf8StringCR GetLastStatusMessage();
         Utf8StringCR GetLastStatusDescription();
-        CharCP       GetLastCreatedObjectInstanceId ();
+        void         GetLastCreatedObjectInstanceId (Utf8String& instanceId);
         void SetStatusMessage(Utf8String message);
         void SetStatusDescription(Utf8String desc);
         void SetCreatedObjectResponse (WSUploadResponse response);
