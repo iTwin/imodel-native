@@ -1967,6 +1967,9 @@ struct FeatureSymbologyOverrides
         uint32_t GetWeight() const { return m_weight; }
 
         bool OverridesSymbology() const { return m_flags.m_rgb || m_flags.m_alpha || m_flags.m_weight; }
+
+        // Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
+        Appearance Extend(Appearance const& base) const;
     };
 
     DgnElementIdSet                     m_alwaysDrawn;
@@ -1982,8 +1985,12 @@ struct FeatureSymbologyOverrides
     FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
 
+    // Returns false if the feature is invisible.
+    // Otherwise, populates the feature's Appearance overrides
+    DGNPLATFORM_EXPORT bool GetAppearance(Appearance&, FeatureCR) const;
     DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
     DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
+    DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
 
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
     DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance);

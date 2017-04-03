@@ -718,6 +718,24 @@ void FeatureSymbologyOverrides::Appearance::InitFrom(DgnSubCategory::Override co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Extend(Appearance const& base) const
+    {
+    Appearance app = base;
+    if (m_flags.m_rgb && !app.m_flags.m_rgb)
+        app.SetRgb(GetRgb());
+
+    if (m_flags.m_alpha && !app.m_flags.m_alpha)
+        app.SetAlpha(GetAlpha());
+
+    if (m_flags.m_weight && !app.m_flags.m_weight)
+        app.SetWeight(GetWeight());
+
+    return app;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
@@ -733,7 +751,69 @@ bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
     if (feat.GetSubCategoryId().IsValid() && !IsSubCategoryVisible(feat.GetSubCategoryId()))
         return false;
 
+    return IsClassVisible(feat.GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) const
+    {
+    app.Init();
+
+    // Is the element visible?
+    auto elemId = feat.GetElementId();
+    bool alwaysDrawn = false;
+    if (elemId.IsValid())
+        {
+        alwaysDrawn = m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
+        if (!alwaysDrawn)
+            {
+            if (m_alwaysDrawnExclusive)
+                return false;
+            else if (m_neverDrawn.end() != m_neverDrawn.find(elemId))
+                return false;
+            }
+
+        // Element overrides take precedence
+        auto elemIter = m_elementOverrides.find(elemId);
+        if (m_elementOverrides.end() != elemIter)
+            app = elemIter->second;
+        }
+
+    auto subcatId = feat.GetSubCategoryId();
+    if (subcatId.IsValid())
+        {
+        if (!alwaysDrawn && !IsSubCategoryVisible(subcatId))
+            return false;
+
+        auto subcatIter = m_subcategoryOverrides.find(subcatId);
+        if (m_subcategoryOverrides.end() != subcatIter)
+            app = subcatIter->second.Extend(app);
+        }
+
+#define TEST_FEATURE_SYMBOLOGY
+#if defined(TEST_FEATURE_SYMBOLOGY)
     switch (feat.GetClass())
+        {
+        case DgnGeometryClass::Primary:
+            app.SetRgb(ColorDef::Orange());
+            break;
+        case DgnGeometryClass::Construction:
+            app.SetTransparency(0.25);
+            break;
+        }
+#endif
+
+    return alwaysDrawn || IsClassVisible(feat.GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FeatureSymbologyOverrides::IsClassVisible(DgnGeometryClass geomClass) const
+    {
+    switch (geomClass)
         {
         case DgnGeometryClass::Construction:    return m_constructions;
         case DgnGeometryClass::Dimension:       return m_dimensions;
