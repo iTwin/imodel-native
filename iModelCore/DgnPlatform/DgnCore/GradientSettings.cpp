@@ -80,8 +80,7 @@ Byte    roundToByte(double f) { return (Byte) std::min (f + .5, 255.0); }
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef GradientSymb::MapColor(double value) const
     {
-    double  d, w0, w1, col[4];
-    int     i, k;
+    double  d, w0, w1;
 
     if (value < 0.0)
         value = 0.0;
