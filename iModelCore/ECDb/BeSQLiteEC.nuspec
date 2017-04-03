@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>BeSQLiteEC</id>
+        <version>$version$</version>
+        <title>BeSQLiteEC</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Bentley ECSql library</description>
+        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+        <dependencies>
+            <group>
+                <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="Assemblies\BeSQLiteB02.dll" target="lib\native\BeSQLiteB02.dll" />
+        <file src="Assemblies\BeSQLiteECB02.dll" target="lib\native\BeSQLiteECB02.dll" />
+    </files>
+</package>
