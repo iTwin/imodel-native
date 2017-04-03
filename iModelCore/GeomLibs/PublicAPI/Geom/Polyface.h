@@ -1911,6 +1911,7 @@ PolyfaceHeaderPtr &voronoi          //!< [out] voronoi regions around the points
 //!<li>0 is simple bisector
 //!<li>1 is split the distance between circles of specified radii.
 //!<li>2 is ratio of radii.
+//!<li>3 is the power method (https://en.wikipedia.org/wiki/Power_diagram).  This produces the best intersection points !!!
 //!</ul>
 //! @return true if meshes created.
 GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY

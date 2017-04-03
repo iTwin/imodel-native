@@ -877,9 +877,9 @@ TEST(Vu,CreateDelauney)
     Check::ClearGeometry ("Vu.CreateDelauney");
     }
 
-double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI, size_t numJ)
+double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI, size_t numJ, size_t period)
     {
-    return DoubleOps::Interpolate (a0, j/(double)numJ, a1);
+    return DoubleOps::Interpolate (a0, ((j * numI + i ) % period) / (double) period, a1);
     }
 TEST(Vu,CreateDelauneySkew)
     {
@@ -889,9 +889,8 @@ TEST(Vu,CreateDelauneySkew)
     double r0 = 0.2 * a, r1 = 0.7 * a;
     size_t numX = 7;
     size_t numY = 5;
-    size_t s_iPeriod = 5;
-    size_t s_jPeriod = 3;
-    for (int distanceSelect = 0; distanceSelect < 3; distanceSelect++)
+    static size_t s_period = 11;
+    for (int distanceSelect = 0; distanceSelect < 4; distanceSelect++)
         {
         double yMax = 10.0;
         SaveAndRestoreCheckTransform shifter0 (0.0, yMax, 0.0);
@@ -906,7 +905,7 @@ TEST(Vu,CreateDelauneySkew)
                 for (size_t i = 0; i <= numX; i++)
                     {
                     points.push_back (frame.Evaluate ((double) i, (double) j));
-                    radii.push_back (AssignRadiusByRow (r0, r1, (i % s_iPeriod), (j % s_jPeriod), numX, numY));
+                    radii.push_back (AssignRadiusByRow (r0, r1, i, j, numX, numY, s_period));
                     }
 
             SaveAndRestoreCheckTransform shifter (points.back ().x + 50.0 * a,0,0);
