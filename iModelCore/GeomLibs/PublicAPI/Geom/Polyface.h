@@ -1906,6 +1906,12 @@ PolyfaceHeaderPtr &voronoi          //!< [out] voronoi regions around the points
 );
 
 //! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces, using optional non-euclidean metric for distance in the voronoi.
+//! The voronoiMetric selects the assignment of "bisectors"
+//!<ul>
+//!<li>0 is simple bisector
+//!<li>1 is split the distance between circles of specified radii.
+//!<li>2 is ratio of radii.
+//!</ul>
 //! @return true if meshes created.
 GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
 (

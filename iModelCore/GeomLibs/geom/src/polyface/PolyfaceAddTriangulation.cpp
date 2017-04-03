@@ -642,6 +642,10 @@ ValidatedDPlane3d ComputeVoronoiSplitPlane (DPoint3dCR xyzA, double rA, DPoint3d
             DPoint3d shiftB = xyzB - rB * unitAB.Value ();
             origin = DPoint3d::FromInterpolate (shiftA, 0.5, shiftB);
             }
+        else if (voronoiMetric == 2)
+            {
+            origin = DPoint3d::FromWeightedAverage (xyzA, rB, xyzB, rA);    // yes, switch the radii to make large one get more space.
+            }
         else
             origin = DPoint3d::FromInterpolate (xyzA, 0.5, xyzB);
         return ValidatedDPlane3d (DPlane3d::FromOriginAndNormal (origin, unitAB.Value ()), true);

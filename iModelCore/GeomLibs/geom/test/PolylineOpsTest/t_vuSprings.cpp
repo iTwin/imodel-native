@@ -545,7 +545,7 @@ TEST(Vu,CreateDelauneySkew)
     size_t numY = 5;
     size_t s_iPeriod = 5;
     size_t s_jPeriod = 3;
-    for (int distanceSelect = 0; distanceSelect < 2; distanceSelect++)
+    for (int distanceSelect = 0; distanceSelect < 3; distanceSelect++)
         {
         double yMax = 10.0;
         SaveAndRestoreCheckTransform shifter0 (0.0, yMax, 0.0);
@@ -565,19 +565,16 @@ TEST(Vu,CreateDelauneySkew)
 
             SaveAndRestoreCheckTransform shifter (points.back ().x + 50.0 * a,0,0);
             yMax = DoubleOps::Max (yMax, points.back ().y);
-            Check::SaveTransformed (points);
             PolyfaceHeaderPtr delauney, voronoi;
             if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi)))
                 {
-                Check::Shift (0,dy,0);
                 Check::SaveTransformed (*delauney);
                 Check::SaveTransformed (*voronoi);
-                if (distanceSelect == 1)
+                if (distanceSelect != 0)
                     {
                     for (size_t i = 0; i < points.size (); i++)
                         {
-                        Check::SaveTransformed (
-                                *ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (points[i], radii[i])));
+                        Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (points[i], radii[i]));
                         }
                     }
 
@@ -750,7 +747,7 @@ TEST(Voronoi,Hyperbolas6)
         xyzOuter.push_back (DPoint3d::From (a * cos (theta), a * sin (theta)));
         segments.push_back (DSegment3d::From (origin, xyzOuter.back ()));
         }
-    segments.pop_back ();
+    segments.pop_back ();   // eliminate redundant radius
     static double theta0 = Angle::DegreesToRadians (60.0);
     static double theta1 = Angle::DegreesToRadians (120.0);
     for (double r0 : bvector<double> {0.5, 1.0, 4.0})
