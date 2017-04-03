@@ -270,6 +270,10 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     if (properties.isMember("Classification") && !properties["Classification"].isNull())
         data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
+    // Streamed
+    if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
+        data->SetStreamed(properties["Streamed"].asBool());
+
     // Thumbnail Document
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
         data->SetThumbnailDocument(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
@@ -277,7 +281,16 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     // MetadataURL
     if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
         data->SetMetadataURL(Utf8CP(properties["MetadataURL"].asString().c_str()));
+
+    // Copyright
+    if (properties.isMember("Copyright") && !properties["Copyright"].isNull())
+        data->SetCopyright(Utf8CP(properties["Copyright"].asString().c_str()));
+
+    // TermsOfUse
+    if (properties.isMember("TermsOfUse") && !properties["TermsOfUse"].isNull())
+        data->SetTermsOfUse(Utf8CP(properties["TermsOfUse"].asString().c_str()));
  
+    // Accuracy
     if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
         data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
 

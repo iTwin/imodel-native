@@ -45,9 +45,12 @@ int main(int argc, char *argv[])
     properties.Insert(RealityDataField::RootDocument, "Production_8.json");
     properties.Insert(RealityDataField::Classification, "Model");
     properties.Insert(RealityDataField::Type, "3DTiles");
+//    properties.Insert(RealityDataField::Streamed, "true");
 //    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
 //    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
 //    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
+//    properties.Insert(RealityDataField::Copyright, "data owned by a human");
+//    properties.Insert(RealityDataField::TermsOfUse, "Do not use unless born in March or July");
 //    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
     properties.Insert(RealityDataField::OwnedBy, "Jean-Philippe.Pons@bentley.com");

@@ -40,14 +40,24 @@ public:
     StatusInt ConfigureServerTest(Utf8String serverName, bool silent = false);
     StatusInt CreateRealityDataTest();
     StatusInt CreateRelationshipToProject();
-    StatusInt UploadTest();
+    StatusInt UploadTest1();
+    StatusInt UploadTest2();
+    StatusInt GetDocumentTest();
     StatusInt DownloadTest();
+    StatusInt DeleteDocumentTest();
     StatusInt InformationExtractionTest();
     StatusInt UpdateTest();
     StatusInt DeleteRelationship();
+    StatusInt GetRelationship();
     StatusInt DeleteRealityDataTest(bool silent = false);
-    StatusInt ListTest();
+    StatusInt GetRealityDataWithFilter();
+    StatusInt GetRealityDataWithPolygon();
+    StatusInt GetRealityData();
     StatusInt EnterpriseStatTest();
+    StatusInt GetFolderTest();
+
+    
+
 
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
