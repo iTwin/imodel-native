@@ -79,16 +79,19 @@ struct RealityDataFileTransfer : public RealityDataUrl
 
         REALITYDATAPLATFORM_EXPORT virtual void UpdateTransferedSize() {}
 
+        REALITYDATAPLATFORM_EXPORT RawServerResponse& GetResponse() { return m_response; }
+
         size_t                  nbRetry;
         size_t                  m_index;
     protected:
 
         REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override
             {
-            m_fileUrl = BeStringUtilities::UriEncode(m_fileUrl.c_str());
+            m_encodedFileUrl = BeStringUtilities::UriEncode(m_fileUrl.c_str());
             }
 
-        mutable Utf8String              m_fileUrl;
+        Utf8String              m_fileUrl;
+        mutable Utf8String      m_encodedFileUrl;
         Utf8String              m_filename;
 
         BeFile                  m_fileStream;
@@ -102,6 +105,8 @@ struct RealityDataFileTransfer : public RealityDataUrl
         mutable Utf8String      m_requestWithToken;
 
         time_t                  m_startTime;
+
+        RawServerResponse       m_response;
     };
 
 //=====================================================================================
@@ -124,8 +129,7 @@ public:
         m_validRequestString = false;
         Utf8String fileFromRoot = filename.GetNameUtf8();
         fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
-        m_fileUrl = "/";
-        m_fileUrl.append(fileFromRoot);
+        m_fileUrl = fileFromRoot;
         m_fileUrl.ReplaceAll("\\","/");
 
         m_requestType = HttpRequestType::PUT_Request;
@@ -260,6 +264,12 @@ static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, voi
         byteWritten = 0;
 
     return byteWritten;
+    }
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+    {
+    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
     }
 
 //=====================================================================================
@@ -1069,7 +1079,7 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
         addon.append("/");
 
     EncodeId();
-    addon.append(m_fileUrl);
+    addon.append(m_encodedFileUrl);
     addon.append("?");
 
     m_httpRequestString.append(addon);
@@ -1178,7 +1188,7 @@ void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     {
     EncodeId();
     m_httpRequestString = m_azureServer;
-    m_httpRequestString.append(m_fileUrl);
+    m_httpRequestString.append(m_encodedFileUrl);
     m_httpRequestString.append("?");
     m_validRequestString = true;
 
@@ -1234,6 +1244,13 @@ void TransferReport::ToXml(Utf8StringR report) const
                 writer->WriteAttribute("timeSpent", Utf8PrintfString("%lu", tr->timeSpent).c_str());
                 writer->WriteAttribute("CURLcode",  Utf8PrintfString("%u", tr->errorCode).c_str());
                 writer->WriteAttribute("progress", Utf8PrintfString("%u", tr->progress).c_str());
+                if(tr->errorCode != CURLE_OK && tr->response.header.length() > 0)
+                    {
+                    writer->WriteElementStart("Response");
+                    writer->WriteAttribute("ResponseCode", Utf8PrintfString("%u", tr->response.responseCode).c_str());
+                    writer->WriteAttribute("Header", Utf8PrintfString("%s", tr->response.header).c_str());
+                    writer->WriteElementEnd();
+                    }
                 }
             writer->WriteElementEnd();
             }
@@ -1466,7 +1483,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                 RealityDataUrl *request = reinterpret_cast<RealityDataUrl*>(pClient);
                 RealityDataFileTransfer *fileTrans = dynamic_cast<RealityDataFileTransfer*>(request);
                 RealityDataFileUpload *fileUp = dynamic_cast<RealityDataFileUpload*>(request);
-                
+
                 // Retry on error
                 if (msg->data.result == 56 || msg->data.result == 28)     // Recv failure, try again
                     {
@@ -1487,6 +1504,8 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                     }
                 else if(fileTrans != nullptr)
                     {
+                    curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &(fileTrans->GetResponse().responseCode));
+                    fileTrans->GetResponse().curlCode = msg->data.result;
                     if(msg->data.result == CURLE_OK)
                         {
                         if(fileUp != nullptr && !fileUp->FinishedSending())
@@ -1511,8 +1530,6 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                         }
                     else
                         {
-                        long code;
-                        curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &code);
                         ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                         ReportStatus(0, nullptr, -1, Utf8PrintfString("\nServer returned code %ld\n", code).c_str());
                         }
@@ -1581,7 +1598,8 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
     RealityDataFileUpload* fileUpload = dynamic_cast<RealityDataFileUpload*>(request);
     RealityDataFileDownload* fileDownload = dynamic_cast<RealityDataFileDownload*>(request);
 
-    RawServerResponse rawResponse= RawServerResponse();
+    RawServerResponse& rawResponse = fileTransfer->GetResponse();
+    rawResponse.clear();
     rawResponse.curlCode = ServerType::Azure;
 
     CURL *pCurl = PrepareCurl(*request, rawResponse, verifyPeer, nullptr);
@@ -1606,6 +1624,9 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
         curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(pCurl, CURLOPT_LOW_SPEED_LIMIT, 1L); // B/s
         curl_easy_setopt(pCurl, CURLOPT_LOW_SPEED_TIME, 60); //60s
+
+        curl_easy_setopt(pCurl, CURLOPT_HEADERFUNCTION, WriteCallback);
+        curl_easy_setopt(pCurl, CURLOPT_HEADERDATA, &(rawResponse.header));
 
         if(fileUpload != nullptr)
             {
@@ -1660,6 +1681,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
             tr->progress = 100;
         tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
         tr->name = pEntry->GetFilename();
+        tr->response = pEntry->GetResponse();
         m_report.results.push_back(tr);
         }
 

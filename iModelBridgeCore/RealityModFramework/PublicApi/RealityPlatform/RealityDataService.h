@@ -638,6 +638,7 @@ struct TransferResult
     size_t                  progress; //a percentage of how much of the file was successfully downloaded
     time_t                  timeSpent;
     Utf8String              name;
+    RawServerResponse       response;
     };
 
 struct TransferReport

@@ -11,6 +11,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/WSGServices.h>
+#include <RealityPlatform/SpatialEntity.h>
 
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
@@ -23,7 +24,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 
 //! The classification codes. The high level interface only supports the four base classification
-enum class Classification
+enum Classification
     {
     Imagery = 0x1,
     Terrain = 0x2,

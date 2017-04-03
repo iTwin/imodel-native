@@ -207,6 +207,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="GeoCoordinationServiceExample" BentleyBuildMakeFile="RealityPlatform\Example\GeoCoordinationServiceExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/GeoCoordinationServiceExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -230,6 +240,7 @@
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="WSGServicesExample"/>
+        <!--<SubPart PartName="GeoCoordinationServiceExample"/>-->
         <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDataServiceErrorReportingExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
