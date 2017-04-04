@@ -38,6 +38,7 @@ private:
         kClass_Element,
         kClass_SubCategory,
         kClass_Category,
+        kClass_Assembly,
 
         kClass_COUNT,
         kClass_FEATURE_COUNT = kClass_Pattern+1,
@@ -45,13 +46,14 @@ private:
 
     static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        "Primary", "Construction", "Dimension", "Pattern", "Element", "SubCategory", "Category"
+        "Primary", "Construction", "Dimension", "Pattern", "Element", "SubCategory", "Category", "Assembly"
         };
 
     Json::Value                         m_json; // "HIERARCHY": object
     DgnDbR                              m_db;
     FeatureAttributesMapCR              m_attrs;
     bmap<DgnElementId, ElemInfo>        m_elems;
+    bmap<DgnElementId, uint32_t>        m_assemblies;
     bmap<DgnSubCategoryId, SubcatInfo>  m_subcats;
     bmap<DgnCategoryId, uint32_t>       m_cats;
 
@@ -78,6 +80,8 @@ private:
 
     ElemInfo MapElementInfo(DgnElementId id);
     ElemInfo GetElementInfo(DgnElementId id);
+    uint32_t MapAssemblyIndex(DgnElementId id) { return FindOrInsert(m_assemblies, id); }
+    uint32_t GetAssembly(DgnElementId id) { return GetIndex(m_assemblies, id); }
     uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
     uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
     SubcatInfo MapSubCategoryInfo(DgnSubCategoryId id);
@@ -86,11 +90,12 @@ private:
     Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
     static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
 
-    DgnElementId QueryParentElementId(DgnElementId) const;
+    DgnElementId QueryAssemblyId(DgnElementId) const;
     void DefineClasses();
     void MapFeatures();
     void MapParents();
-    void MapElements(uint32_t offset);
+    void MapElements(uint32_t offset, uint32_t assembliesOffset);
+    void MapAssemblies(uint32_t offset);
     void MapSubCategories(uint32_t offset, uint32_t categoriesOffset);
     void MapCategories(uint32_t offset);
 
@@ -176,7 +181,7 @@ void BatchTableBuilder::MapSubCategories(uint32_t offset, uint32_t categoriesOff
 
         classIds[index + offset] = kClass_SubCategory;
         parentCounts[index + offset] = 1;
-        parentIds[index + parentIdsOffset] = kvp.second.m_catIndex + categoriesOffset;
+        parentIds.append(kvp.second.m_catIndex + categoriesOffset);
         }
     }
 
@@ -204,7 +209,7 @@ void BatchTableBuilder::MapCategories(uint32_t offset)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapElements(uint32_t offset)
+void BatchTableBuilder::MapElements(uint32_t offset, uint32_t assembliesOffset)
     {
     Json::Value& elements = GetClass(kClass_Element);
     elements["length"] = m_elems.size();
@@ -221,15 +226,29 @@ void BatchTableBuilder::MapElements(uint32_t offset)
         elem_id[index] = kvp.first.ToString();
 
         classIds[offset + index] = kClass_Element;
-        if (-1 != kvp.second.m_parentIndex)
-            {
-            parentCounts[offset + index] = 1;
-            parentIds.append(kvp.second.m_parentIndex + offset);
-            }
-        else
-            {
-            parentCounts[offset + index] = 0;
-            }
+        parentCounts[offset + index] = 1;
+        parentIds.append(kvp.second.m_parentIndex + assembliesOffset);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapAssemblies(uint32_t offset)
+    {
+    Json::Value& assems = GetClass(kClass_Assembly);
+    assems["length"] = m_assemblies.size();
+
+    Json::Value &instances = (assems["instances"] = Json::objectValue),
+                &assem_id = (instances["assembly"] = Json::arrayValue),
+                &classIds = m_json["classIds"],
+                &parentCounts = m_json["parentCounts"];
+
+    for (auto const& kvp : m_assemblies)
+        {
+        classIds[offset+kvp.second] = kClass_Assembly;
+        parentCounts[offset+kvp.second] = 0;
+        assem_id[kvp.second] = kvp.first.ToString();
         }
     }
 
@@ -239,7 +258,8 @@ void BatchTableBuilder::MapElements(uint32_t offset)
 void BatchTableBuilder::MapParents()
     {
     uint32_t elementsOffset = static_cast<uint32_t>(m_attrs.size());
-    uint32_t subcatsOffset = elementsOffset + static_cast<uint32_t>(m_elems.size());
+    uint32_t assembliesOffset = elementsOffset + static_cast<uint32_t>(m_elems.size());
+    uint32_t subcatsOffset = assembliesOffset + static_cast<uint32_t>(m_assemblies.size());
     uint32_t catsOffset = subcatsOffset + static_cast<uint32_t>(m_subcats.size());
     uint32_t totalInstances = catsOffset + static_cast<uint32_t>(m_cats.size());
 
@@ -256,12 +276,13 @@ void BatchTableBuilder::MapParents()
         parentIds[index+1] = subcatsOffset + GetSubCategoryInfo(attr.GetSubCategoryId()).m_index;
         }
 
+    // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
+    MapElements(elementsOffset, assembliesOffset);
+    MapAssemblies(assembliesOffset);
+
     // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
     MapSubCategories(subcatsOffset, catsOffset);
     MapCategories(catsOffset);
-
-    // Set "instances" and "length" to Element class, and add elements to "classIds" and parent elements to "parentIds"
-    MapElements(elementsOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,14 +365,10 @@ auto BatchTableBuilder::MapElementInfo(DgnElementId id) -> ElemInfo
     if (iter != m_elems.end())
         return iter->second;
 
-    DgnElementId parentId = QueryParentElementId(id);
+    DgnElementId parentId = QueryAssemblyId(id);
     ElemInfo info;
-    if (parentId.IsValid())
-        info.m_parentIndex = MapElementInfo(parentId).m_index;
-    else
-        info.m_parentIndex = -1;
-
     info.m_index = static_cast<uint32_t>(m_elems.size());
+    info.m_parentIndex = MapAssemblyIndex(parentId);
     m_elems[id] = info;
     return info;
     }
@@ -369,19 +386,19 @@ auto BatchTableBuilder::GetElementInfo(DgnElementId id) -> ElemInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId BatchTableBuilder::QueryParentElementId(DgnElementId childId) const
+DgnElementId BatchTableBuilder::QueryAssemblyId(DgnElementId childId) const
     {
-    DgnElementId parentId;
-    if (!childId.IsValid())
-        return parentId;
-
     // ###TODO: Apparently plant is weird and has arbitrary non-geometric parents of geometric elements...must check parent is actually geometric
     BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) " WHERE ECInstanceId=?");
     stmt->BindId(1, childId);
     if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
-        parentId = stmt->GetValueId<DgnElementId>(0);
+        {
+        auto parentId = stmt->GetValueId<DgnElementId>(0);
+        if (parentId.IsValid())
+            return parentId;
+        }
 
-    return parentId;
+    return childId;
     }
 
 /*---------------------------------------------------------------------------------**//**
