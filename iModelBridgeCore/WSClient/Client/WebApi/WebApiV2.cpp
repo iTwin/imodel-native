@@ -46,27 +46,32 @@ bool WebApiV2::IsSupported(WSInfoCR info)
         info.GetType() == WSInfo::Type::BentleyWSG;
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BeVersion WebApiV2::GetMaxWebApiVersion() const
+    {
+    BeVersion webApiVersion = m_info.GetWebApiVersion();
+    if (webApiVersion > s_maxTestedWebApi)
+        webApiVersion = s_maxTestedWebApi; // Limit queries to tested WebApi version
+    return webApiVersion;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
     {
-    BeVersion webApiVersionToUse = m_info.GetWebApiVersion();
-    if (!webApiVersion.IsEmpty())
-        {
-        webApiVersionToUse = webApiVersion;
-        }
-    else if (webApiVersionToUse > s_maxTestedWebApi)
-        {
-        webApiVersionToUse = s_maxTestedWebApi; // Limit queries to tested WebApi version
-        }
+    if (webApiVersion.IsEmpty())
+        webApiVersion = GetMaxWebApiVersion();
 
     Utf8PrintfString url
         (
         "%s/v%d.%d/",
         m_configuration->GetServerUrl().c_str(),
-        webApiVersionToUse.GetMajor(),
-        webApiVersionToUse.GetMinor()
+        webApiVersion.GetMajor(),
+        webApiVersion.GetMinor()
         );
 
     return url;
@@ -357,12 +362,9 @@ ICancellationTokenPtr ct
     if (!objectId.IsValid() || filePath.empty())
         return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
-    BeVersion webApiVersion;
-    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
-    if (isExternalFileAccessSupported)
-        webApiVersion = BeVersion(2, 4);
+    bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
-    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
+    Utf8String url = GetUrl(CreateFileSubPath(objectId));
     HttpRequest request = CreateFileDownloadRequest(url, filePath, eTag, downloadProgressCallback, ct);
 
     if (isExternalFileAccessSupported)
@@ -490,7 +492,7 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (m_info.GetWebApiVersion() < BeVersion(2, 1))
+    if (GetMaxWebApiVersion() < BeVersion(2, 1))
         {
         return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
@@ -564,7 +566,7 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (!filePath.empty() && m_info.GetWebApiVersion() < BeVersion(2, 4))
+    if (!filePath.empty() && GetMaxWebApiVersion() < BeVersion(2, 4))
         {
         BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
@@ -636,15 +638,12 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    BeVersion webApiVersion;
-    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
-    if (isExternalFileAccessSupported)
-        webApiVersion = BeVersion(2, 4);
+    bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     BeFile beFile;
     beFile.Open(filePath, BeFileAccess::Read);
 
-    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
+    Utf8String url = GetUrl(CreateFileSubPath(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));

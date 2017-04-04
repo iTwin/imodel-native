@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <WebServices/Connect/IConnectTokenProvider.h>
-#include <gmock/gmock.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
