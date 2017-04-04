@@ -12,7 +12,7 @@ DataSourceService::DataSourceService(DataSourceManager &manager, const ServiceNa
 DataSourceService::~DataSourceService(void)
 {
                                                             // Delete all accounts
- //   destroyAll(true);
+    destroyAll();
 }
 
 

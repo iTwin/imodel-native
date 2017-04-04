@@ -25,6 +25,7 @@ public:
 protected:
 
     DataSourceManager *                 dataSourceManager;
+    DataSourceTransferScheduler::Ptr    dataSourceTransferScheduler;
 
     ServiceName                         serviceName;
     AccountName                         accountName;
@@ -33,11 +34,9 @@ protected:
     AccountSSLCertificatePath           accountSSLCertificatePath;
     DataSourceURL                       prefixPath;
 
-    DataSourceTransferScheduler         transferScheduler;
-
 protected:
 
-    DataSourceTransferScheduler &       getTransferScheduler            (void);
+    DataSourceTransferScheduler::Ptr    getTransferScheduler            (void);
 
     virtual unsigned int                getDefaultNumTransferTasks      (void);
 

@@ -52,6 +52,16 @@ void SetThreadName(DWORD dwThreadID, char* threadName)
 //std::mutex s_consoleMutex;
 
 
+DataSourceTransferScheduler* DataSourceTransferScheduler::m_dataSourceTransferScheduler = nullptr;
+
+DataSourceTransferScheduler::Ptr DataSourceTransferScheduler::Get(void)
+    {
+    if (m_dataSourceTransferScheduler == nullptr)
+        m_dataSourceTransferScheduler = new DataSourceTransferScheduler();
+
+    return DataSourceTransferScheduler::Ptr(m_dataSourceTransferScheduler);
+    }
+
 void DataSourceTransferScheduler::setMaxTasks(TaskIndex numTasks)
     {
     maxTasks = numTasks;
@@ -72,6 +82,7 @@ DataSourceTransferScheduler::DataSourceTransferScheduler(void)
 DataSourceTransferScheduler::~DataSourceTransferScheduler(void)
     {
     this->shutDown();
+    delete m_dataSourceTransferScheduler;
     }
 
 
@@ -88,6 +99,7 @@ void DataSourceTransferScheduler::shutDown(void)
         };
                                                             // Wait for all threads to complete
     std::for_each(transferThreads.begin(), transferThreads.end(), transferThreadJoin);
+    transferThreads.clear();
     }
 
 
@@ -185,7 +197,7 @@ DataSourceBuffer *DataSourceTransferScheduler::getNextSegmentJob(DataSourceBuffe
 DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned int numTasks)
     {
                                                             // If not configured to use multi-threaded transfers
-    if (numTasks == 0)
+    if (numTasks == 0 || !transferThreads.empty())
         {
                                                             // Just return OK
         return DataSourceStatus();

@@ -49,7 +49,7 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
     setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
 
     curl_global_init(CURL_GLOBAL_ALL);
 

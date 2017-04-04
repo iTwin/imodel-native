@@ -971,6 +971,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                 // azure token
                                 auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
 
+                                // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+
                                 server_settings["url"] = Json::Value(rootTilesetPath.c_str());
                                 config["guid"] = Json::Value(guid.c_str());
                                 }

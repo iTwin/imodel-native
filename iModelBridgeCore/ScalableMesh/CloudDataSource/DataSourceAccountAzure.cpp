@@ -21,7 +21,7 @@ DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const A
     setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
 }
 
 
