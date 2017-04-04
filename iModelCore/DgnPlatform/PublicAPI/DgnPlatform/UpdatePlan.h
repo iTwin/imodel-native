@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UpdatePlan.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,9 +23,9 @@ private:
 
 public:
     bool InitAborted(bool val) {return m_aborted = val;}
-    bool ClearAborted() {return m_aborted = false;}
+    bool ClearAborted() {m_aborted = false; return false;}
     bool WasAborted()  {return m_aborted;}
-    bool SetAborted() {return m_aborted = true;}
+    bool SetAborted() {m_aborted = true; return true;}
     bool AddAbortTest(bool val) {return  m_aborted |= val;}
 
     CheckStop() {m_aborted=false;}
