@@ -1,3 +1,11 @@
+#!Python
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ConnectC/Tools/pyCApiGen/SchemaWriter/Helpers/ECSchema.py $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
 from SchemaWriter.Helpers.ECClass import ECClass
 from SchemaWriter.Helpers.PropertyTypeError import PropertyTypeError
 from SchemaWriter.Helpers.ECRelationshipClass import ECRelObject
@@ -5,6 +13,9 @@ from SchemaWriter.Helpers.ECRelationshipClass import ECRelSource
 from SchemaWriter.Helpers.ECRelationshipClass import ECRelTarget
 from SchemaWriter.Helpers.ECRelationshipClass import ECRelationshipClass
 
+#-------------------------------------------------------------------------------------------
+# bsiclass                                                            2016
+#-------------------------------------------------------------------------------------------
 class ECSchema(object):
     def __init__(self, url_descriptor, repository_id, filename, name, api, status_codes):
         self.__url_descriptor = url_descriptor
@@ -17,49 +28,97 @@ class ECSchema(object):
         self.__ecRelationshipclasses = []
         self.__ecschema_xmldoc = None
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_filename(self):
         return self.__filename
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_name(self):
         return self.__name
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_upper_name(self):
         return self.get_name().upper()
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_lower_name(self):
         return self.get_name().lower()
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_url_descriptor(self):
         return self.__url_descriptor
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_repository_id(self):
         return self.__repository_id
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def add_ecclass(self, autogenclass_row):
         self.__ecclasses.append(ECClass(autogenclass_row, self.__api, self.__status_codes))
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_classes(self):
         return self.__ecclasses
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def has_ecclass_with_property_type(self, property_type):
         for ecclass in self.get_classes():
             if ecclass.does_contain_property_type(property_type):
                 return True
         return False
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def has_included_ecclass_with_property_type(self, property_type):
         for ecclass in self.get_classes():
             if not ecclass.should_exclude_entire_class() and ecclass.does_contain_property_type(property_type) :
                 return True
         return False
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def init_xml(self, xmldoc):
         self.__ecschema_xmldoc = xmldoc
-        ecclasses = self.__ecschema_xmldoc.getElementsByTagName('ECClass')
-        for ecclass in ecclasses:
-            self.__get_ecclass_from_name(ecclass.attributes['typeName'].value).init_xml(ecclass)
         self._read_ecrelationshipclasses_from_xml()
-
+        ecclasses = self.__ecschema_xmldoc.getElementsByTagName('ECClass')
+        for ecclass_xml in ecclasses:
+            ecclass = self.__get_ecclass_from_name(ecclass_xml.attributes['typeName'].value)
+            ecclass.init_xml(ecclass_xml)
+            ecclass.set_relationship_class_list(self.__get_relationships_that_target_class(ecclass.get_name()))
+        
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def __get_relationships_that_target_class(self, target_class_name):
+            relationships = []
+            matching = [s for s in self.__ecRelationshipclasses if s.get_target().relates_to_object(target_class_name) ]                                    
+            if (len(matching) > 0):
+                return matching
+            return relationships
+            
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
     def _read_ecrelationshipclasses_from_xml(self):        
         #init relationship class
         ecRelationshipclasses = self.__ecschema_xmldoc.getElementsByTagName('ECRelationshipClass')
@@ -68,6 +127,9 @@ class ECSchema(object):
         for xml_ecrclass in ecRelationshipclasses:
             self.__ecRelationshipclasses.append(self._create_ecrelationship_class(xml_ecrclass))
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
     def _create_ecrelationship_class(self, xml):
             source_xml = xml.getElementsByTagName('Source')
             target_xml = xml.getElementsByTagName('Target')
@@ -104,8 +166,12 @@ class ECSchema(object):
                                                 strenth_direction, 
                                                 ec_rel_source, 
                                                 ec_rel_target);
+            return ec_rel_class
 
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_ecclass_from_name(self, name):
         for ecclass in self.__ecclasses:
             if ecclass.get_name() == name:
@@ -114,6 +180,9 @@ class ECSchema(object):
                         " ecclasses which are to be generated from the schemaFile ({0}), exist as a row in the autoGenClasses.xlsx file."
                         .format(self.get_name()))
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_buffer_accessor_function_def(self, property_type):
         if property_type is 'StringLength':
             accessor_str = "CallStatus " + self.get_name() + "_GetStringLength\n"
@@ -147,9 +216,15 @@ class ECSchema(object):
         accessor_str += ")"
         return accessor_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_accessor_function_definition(self, property_type):
         return self.__get_buffer_accessor_function_def(property_type) + ';\n'
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_accessor_function_implementation(self, property_type):
         accessor_str = self.__get_buffer_accessor_function_def(property_type) + "\n"
         accessor_str += "    {\n"
@@ -191,6 +266,9 @@ class ECSchema(object):
         accessor_str += "    }\n"
         return accessor_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_buffer_free_function_def(self):
         free_str = "CallStatus {0}_DataBufferFree\n".format(self.get_name())
         free_str += "(\n"
@@ -198,6 +276,9 @@ class ECSchema(object):
         free_str += ")"
         return free_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_free_function_implementation(self):
         free_str = self.__get_buffer_free_function_def() + '\n'
         free_str += "    {\n"
