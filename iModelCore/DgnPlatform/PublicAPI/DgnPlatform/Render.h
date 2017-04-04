@@ -1648,7 +1648,7 @@ struct HiddenLineParams
     };
 
     Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
-    Style m_hidden = Style(true, ColorDef::Black(), GraphicParams::LinePixels::HiddenLine, 1);
+    Style m_hidden = Style(false, ColorDef(), GraphicParams::LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
