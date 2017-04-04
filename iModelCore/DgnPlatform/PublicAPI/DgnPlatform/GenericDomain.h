@@ -30,7 +30,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericCallout)
 DGNPLATFORM_REF_COUNTED_PTR(GenericDetailingSymbol)
 DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 
-#define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
+#define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.ecschema.xml"
 #define GENERIC_DOMAIN_NAME                 "Generic"
 #define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
 

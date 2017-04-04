@@ -150,6 +150,7 @@ ECSchemaPtr DgnDomain::ReadSchema(ECSchemaReadContextR schemaContext) const
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, GetSchemaPathname().GetName(), schemaContext);
 
+    // CreateSearchPathSchemaFileLocater
     if (SchemaReadStatus::Success != status)
         {
         LOG.errorv("Error reading schema %ls", GetSchemaPathname().GetName());
@@ -361,7 +362,7 @@ void DgnDomains::OnDbClose()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(false/*=acceptLegacyImperfectLatestCompatibleMatch*/, true/*=includeFilesWithNoVerExt*/);
 
     BeFileName standardSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     standardSchemaPath.AppendToPath(L"ECSchemas/Standard");
