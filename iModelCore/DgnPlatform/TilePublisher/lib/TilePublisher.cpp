@@ -28,6 +28,8 @@ struct BatchTableBuilder
 private:
     struct SubcatInfo { uint32_t m_index; uint32_t m_catIndex; };
     struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
+    struct AssemInfo { uint32_t m_index; uint32_t m_catIndex; };
+    struct Assembly { DgnElementId m_elemId; DgnCategoryId m_catId; };
 
     enum ClassIndex
     {
@@ -53,9 +55,10 @@ private:
     DgnDbR                              m_db;
     FeatureAttributesMapCR              m_attrs;
     bmap<DgnElementId, ElemInfo>        m_elems;
-    bmap<DgnElementId, uint32_t>        m_assemblies;
+    bmap<DgnElementId, AssemInfo>       m_assemblies;
     bmap<DgnSubCategoryId, SubcatInfo>  m_subcats;
     bmap<DgnCategoryId, uint32_t>       m_cats;
+    bool                                m_is3d;
 
     template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
         {
@@ -80,8 +83,7 @@ private:
 
     ElemInfo MapElementInfo(DgnElementId id);
     ElemInfo GetElementInfo(DgnElementId id);
-    uint32_t MapAssemblyIndex(DgnElementId id) { return FindOrInsert(m_assemblies, id); }
-    uint32_t GetAssembly(DgnElementId id) { return GetIndex(m_assemblies, id); }
+    AssemInfo MapAssemblyInfo(Assembly assem);
     uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
     uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
     SubcatInfo MapSubCategoryInfo(DgnSubCategoryId id);
@@ -90,19 +92,19 @@ private:
     Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
     static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
 
-    DgnElementId QueryAssemblyId(DgnElementId) const;
+    Assembly QueryAssembly(DgnElementId) const;
     void DefineClasses();
     void MapFeatures();
     void MapParents();
     void MapElements(uint32_t offset, uint32_t assembliesOffset);
-    void MapAssemblies(uint32_t offset);
+    void MapAssemblies(uint32_t offset, uint32_t categoriesOffset);
     void MapSubCategories(uint32_t offset, uint32_t categoriesOffset);
     void MapCategories(uint32_t offset);
 
     void Build();
 public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db)
-        : m_json(Json::objectValue), m_db(db), m_attrs(attrs)
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d)
+        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d)
         {
         Build();
         }
@@ -234,7 +236,7 @@ void BatchTableBuilder::MapElements(uint32_t offset, uint32_t assembliesOffset)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapAssemblies(uint32_t offset)
+void BatchTableBuilder::MapAssemblies(uint32_t offset, uint32_t categoriesOffset)
     {
     Json::Value& assems = GetClass(kClass_Assembly);
     assems["length"] = m_assemblies.size();
@@ -242,13 +244,16 @@ void BatchTableBuilder::MapAssemblies(uint32_t offset)
     Json::Value &instances = (assems["instances"] = Json::objectValue),
                 &assem_id = (instances["assembly"] = Json::arrayValue),
                 &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"];
+                &parentCounts = m_json["parentCounts"],
+                &parentIds = m_json["parentIds"];
 
     for (auto const& kvp : m_assemblies)
         {
-        classIds[offset+kvp.second] = kClass_Assembly;
-        parentCounts[offset+kvp.second] = 0;
-        assem_id[kvp.second] = kvp.first.ToString();
+        Json::Value::ArrayIndex index = kvp.second.m_index;
+        classIds[offset+index] = kClass_Assembly;
+        assem_id[index] = kvp.first.ToString();
+        parentCounts[offset+index] = 1;
+        parentIds.append(kvp.second.m_catIndex + categoriesOffset);
         }
     }
 
@@ -278,7 +283,7 @@ void BatchTableBuilder::MapParents()
 
     // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
     MapElements(elementsOffset, assembliesOffset);
-    MapAssemblies(assembliesOffset);
+    MapAssemblies(assembliesOffset, catsOffset);
 
     // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
     MapSubCategories(subcatsOffset, catsOffset);
@@ -365,11 +370,27 @@ auto BatchTableBuilder::MapElementInfo(DgnElementId id) -> ElemInfo
     if (iter != m_elems.end())
         return iter->second;
 
-    DgnElementId parentId = QueryAssemblyId(id);
+    Assembly assem = QueryAssembly(id);
     ElemInfo info;
     info.m_index = static_cast<uint32_t>(m_elems.size());
-    info.m_parentIndex = MapAssemblyIndex(parentId);
+    info.m_parentIndex = MapAssemblyInfo(assem).m_index;
     m_elems[id] = info;
+    return info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+auto BatchTableBuilder::MapAssemblyInfo(Assembly assem) -> AssemInfo
+    {
+    auto iter = Find(m_assemblies, assem.m_elemId);
+    if (iter != m_assemblies.end())
+        return iter->second;
+
+    AssemInfo info;
+    info.m_index = static_cast<uint32_t>(m_assemblies.size());
+    info.m_catIndex = MapCategoryIndex(assem.m_catId);
+    m_assemblies[assem.m_elemId] = info;
     return info;
     }
 
@@ -386,19 +407,46 @@ auto BatchTableBuilder::GetElementInfo(DgnElementId id) -> ElemInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId BatchTableBuilder::QueryAssemblyId(DgnElementId childId) const
+auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
     {
-    // ###TODO: Apparently plant is weird and has arbitrary non-geometric parents of geometric elements...must check parent is actually geometric
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) " WHERE ECInstanceId=?");
+    Assembly assem;
+    assem.m_elemId = childId;
+    if (!childId.IsValid())
+        return assem;
+
+    // NB: Per Brien - and code in dgnplatform - we do not recurse up through nested assembly parents - only select direct parent.
+    static constexpr Utf8CP s_3dsql = "SELECT Parent.Id,Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
+    static constexpr Utf8CP s_2dsql = "SELECT Parent.Id,Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
+
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(m_is3d ? s_3dsql : s_2dsql);
     stmt->BindId(1, childId);
     if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
+        // We now have the *child* element's category and parent ID.
+        assem.m_catId = stmt->GetValueId<DgnCategoryId>(1);
+
+        // Try to get the parent's category.
+        // Apparently plant models tend to have arbitrary non-geometric parent elements...in that case, this statement will not produce results
+        // and we will use the child as the assembly.
         auto parentId = stmt->GetValueId<DgnElementId>(0);
         if (parentId.IsValid())
-            return parentId;
+            {
+            static constexpr Utf8CP s_3dParentSql = "SELECT Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
+            static constexpr Utf8CP s_2dParentSql = "SELECT Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
+
+            stmt = m_db.GetPreparedECSqlStatement(m_is3d ? s_3dParentSql : s_2dParentSql);
+            stmt->BindId(1, parentId);
+            if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+                {
+                // Parent is a valid geometric element.
+                assem.m_elemId = parentId;
+                assem.m_catId = stmt->GetValueId<DgnCategoryId>(0);
+                }
+            }
         }
 
-    return childId;
+    BeAssert(assem.m_catId.IsValid());
+    return assem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -967,7 +1015,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb());
+    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d());
     Utf8String      batchTableStr = batchTableBuilder.ToString();
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
@@ -1024,7 +1072,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(attributes, m_context.GetDgnDb());
+        BatchTableBuilder batchTableBuilder(attributes, m_context.GetDgnDb(), m_tile.GetModel().Is3d());
         batchTableStr = batchTableBuilder.ToString();
         }
 
