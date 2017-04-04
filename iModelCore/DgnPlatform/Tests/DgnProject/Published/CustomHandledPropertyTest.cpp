@@ -510,7 +510,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
        {
         DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
-        DrawingCategory category(*m_db, "TestCategory");
+        DrawingCategory category(m_db->GetDictionaryModel(), "TestCategory");
         ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Description"));
         ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(catindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Description")));

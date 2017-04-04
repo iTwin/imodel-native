@@ -518,7 +518,7 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
 
-    GeometricModel::DisplayInfo  displayInfo = model->GetDisplayInfoR();
+    GeometricModel::Formatter displayInfo = model->GetFormatterR();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
     EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
     Utf8String name = "Invalid*Name";
@@ -533,7 +533,7 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     EXPECT_TRUE(check);
 
     // Try Update model unit definition with wrong values
-    GeometricModel::DisplayInfo  displayInfo2 = model->GetDisplayInfoR();
+    GeometricModel::Formatter displayInfo2 = model->GetFormatterR();
     UnitDefinition newMasterUnitw(UnitBase::Meter, UnitSystem::Metric, 100.0, 10.0, "newMasterUnit");
     UnitDefinition newSubUnit(UnitBase::Meter, UnitSystem::Metric, 25.0, 25.0, "newSubUnit");
     ASSERT_TRUE(BentleyStatus::ERROR == displayInfo2.SetUnits(newMasterUnitw, newSubUnit));
@@ -542,12 +542,12 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     // Update model unit definition with correct values
     UnitDefinition newMasterUnit(UnitBase::Meter, UnitSystem::Metric, 10.0, 10.0, "newMasterUnit");
     ASSERT_TRUE(BentleyStatus::SUCCESS == displayInfo2.SetUnits(newMasterUnit, newSubUnit));
-    model->GetDisplayInfoR() = displayInfo2;
+    model->GetFormatterR() = displayInfo2;
     ASSERT_TRUE(DgnDbStatus::Success == model->Update());
     m_db->SaveChanges();
     m_db->CloseDb();
     OpenDb(m_db,outFileName, BeSQLite::Db::OpenMode::Readonly);
-    displayInfo = model->GetDisplayInfoR();
+    displayInfo = model->GetFormatterR();
     ASSERT_STREQ("newMasterUnit", displayInfo.GetMasterUnits().GetLabel().c_str());
     ASSERT_STREQ("newSubUnit", displayInfo.GetSubUnits().GetLabel().c_str());
     ASSERT_TRUE(25 == displayInfo.GetSubUnits().GetNumerator());

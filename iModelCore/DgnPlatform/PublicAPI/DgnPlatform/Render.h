@@ -1182,7 +1182,7 @@ public:
 };
 
 //=======================================================================================
-//! A renderer-specific object which can be placed into a display list.
+//! A renderer-specific object that can be placed into a display list.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct Graphic : RefCounted<NonCopyableClass>
@@ -1233,8 +1233,10 @@ public:
     void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
     void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
         {
-        m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
-        m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
+        if (newMin > 0.0)
+            m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
+        if (newMax > 0.0)
+            m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
         }
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
@@ -1243,7 +1245,7 @@ public:
 };
 
 //=======================================================================================
-//! Interface adopted by an object which can build a Graphic from the Graphic primitives.
+//! Interface adopted by an object that can build a Graphic from the Graphic primitives.
 // @bsiclass
 //=======================================================================================
 struct IGraphicBuilder
@@ -1555,7 +1557,7 @@ public:
 };
 
 //=======================================================================================
-// An ordered list of RefCountedPtrs to a Render::Graphics, plus an override.
+//! An ordered list of RefCountedPtrs to a Render::Graphics, plus an override for each one.
 // @bsiclass
 //=======================================================================================
 struct GraphicList : RefCounted<NonCopyableClass>
@@ -1662,7 +1664,7 @@ struct HiddenLineParams
 };
 
 //=======================================================================================
-//! A Light that illuminates Graphics in a scene.
+//! A Light that illuminates Graphics in a scene. Render::Lights are created from Lighting::Parameters
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct Light : RefCounted<NonCopyableClass>
@@ -1671,7 +1673,7 @@ struct Light : RefCounted<NonCopyableClass>
 DEFINE_REF_COUNTED_PTR(Light)
 
 //=======================================================================================
-//! A list of Render::Lights
+//! A list of Render::Lights, plus the f-stop setting for the camera 
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct SceneLights : RefCounted<NonCopyableClass>
@@ -1683,10 +1685,8 @@ struct SceneLights : RefCounted<NonCopyableClass>
 };
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
-
 //=======================================================================================
-//! A Render::Plan holds a Frustum and the render settings for displaying
-//! a Render::Scene into a Render::Target.
+//! A Render::Plan holds a Frustum and the render settings for displaying a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Plan
@@ -1703,7 +1703,7 @@ struct Plan
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
     ClipVectorPtr m_activeVolume;
-    SceneLightsCPtr m_lights;
+    SceneLightsCPtr m_lights;   //! if not valid, render with default lighting
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -1754,14 +1754,7 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct TransClip : RefCounted<NonCopyableClass>
-{
-};
-
-//=======================================================================================
-//! An array of GraphicPtrs.
+//! An array of GraphicPtrs, plus an optional ViewFlags that control how this set of graphics are to be rendered.
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
@@ -1858,7 +1851,7 @@ public:
 };
 
 //=======================================================================================
-//! A Render::Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
+//! A Render::Target holds the current scene, the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render::Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.

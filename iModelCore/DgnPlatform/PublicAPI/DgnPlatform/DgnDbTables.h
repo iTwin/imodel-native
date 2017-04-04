@@ -12,7 +12,7 @@
 // Macros associated with the BisCore ECSchema
 //-----------------------------------------------------------------------------------------
 #define BIS_ECSCHEMA_NAME       "BisCore"
-#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.01.00.ecschema.xml"
+#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.ecschema.xml"
 #define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)         "bis_" name
 #define BE_PROP_NAME(__val__) static constexpr Utf8CP prop_##__val__() {return #__val__;}
