@@ -9,6 +9,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
+#include <Bentley/BeThread.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
@@ -21,6 +22,7 @@ private:
     DgnDbRepositoryConnectionP m_repositoryConnectionP;
     DgnDbServerEventManagerP m_managerP;
     SimpleCancellationTokenPtr m_cancellationTokenPtr;
+    mutable BeConditionVariable m_cv;
 
 public:
     DgnDbServerEventManagerContext(DgnDbRepositoryConnectionP repositoryConnectionPtr, DgnDbServerEventManagerP manager, SimpleCancellationTokenPtr cancellationToken)
@@ -29,6 +31,7 @@ public:
     DgnDbServerEventManagerP GetEventManagerP() const {return m_managerP;}
     SimpleCancellationTokenPtr GetCancellationTokenPtr() const {return m_cancellationTokenPtr;}
     void StopManager() {m_cancellationTokenPtr->SetCanceled();}
+    BeConditionVariable& GetConditionVariable() const {return m_cv;}
 };
 
 //=======================================================================================
