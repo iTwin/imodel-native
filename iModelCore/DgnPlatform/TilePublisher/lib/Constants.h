@@ -109,7 +109,7 @@ static std::string s_texturedVertexShader = R"RAW_STRING(
     }
 )RAW_STRING";
 
-static std::string s_computeIndexedColor[3] =
+static std::string s_computeIndexedColor[4] =
     {
     R"RAW_STRING(
         uniform vec4 u_color;
@@ -153,7 +153,13 @@ static std::string s_computeIndexedColor[3] =
             }
 
         vec4 computeColor() { return texture2D(u_tex, computeColorSt(a_colorIndex)); }
-    )RAW_STRING"
+    )RAW_STRING",
+
+    R"RAW_STRING(
+        varying vec4 v_color;
+        vec4 computeColor() { return czm_backgroundColor; }
+    )RAW_STRING",
+
     };
 
 static std::string s_assignIndexedColor = R"RAW_STRING(
@@ -161,11 +167,12 @@ static std::string s_assignIndexedColor = R"RAW_STRING(
         }
 )RAW_STRING";
 
-static std::string s_untexturedVertexShaders[3] =
+static std::string s_untexturedVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_litVertexCommon + s_assignIndexedColor,
     s_computeIndexedColor[1] + s_litVertexCommon + s_assignIndexedColor,
     s_computeIndexedColor[2] + s_litVertexCommon + s_assignIndexedColor,
+    s_computeIndexedColor[3] + s_litVertexCommon + s_assignIndexedColor,
     };
 
 // Used for reality meshes.
@@ -273,11 +280,12 @@ static std::string s_unlitVertexMain = R"RAW_STRING(
         }
 )RAW_STRING";
 
-static std::string s_unlitVertexShaders[3] =
+static std::string s_unlitVertexShaders[4] =
     {
     s_unlitVertexCommon + s_computeIndexedColor[0] + s_unlitVertexMain,
     s_unlitVertexCommon + s_computeIndexedColor[1] + s_unlitVertexMain,
     s_unlitVertexCommon + s_computeIndexedColor[2] + s_unlitVertexMain,
+    s_unlitVertexCommon + s_computeIndexedColor[3] + s_unlitVertexMain,
     };
 
 static std::string s_unlitFragmentShader = R"RAW_STRING(
@@ -295,8 +303,8 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
         if (abs(a_param.x) > .1)
             {
             vec4    projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
-            vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_prev), 1.0));
-            vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_next), 1.0));
+            vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_pos + .1 * gltf_octDecode(a_prev), 1.0));
+            vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_pos + .1 * gltf_octDecode(a_next), 1.0));
             vec2    prevDir    = normalize(projPos.xy - projPrev.xy);
             vec2    nextDir    = normalize(projNext.xy - projPos.xy);
             vec2    thisDir    = (a_param.y < 3.5) ? nextDir : prevDir;
@@ -325,7 +333,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                     }
                 else
                     {
-                    jointParam -= 1.0;
+                    jointParam -= 2.0;
                     delta = normalize((1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp) * dist;
                     }
                 }
@@ -338,7 +346,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
             gl_Position.y += delta.y * 2.0 * gl_Position.w / czm_viewport.w;
 )RAW_STRING";
 
-static std::string s_adjustPolylineContrast = R"RAW_STRING(
+static std::string s_adjustBackgroundColorContrast = R"RAW_STRING(
     
     vec4 adjustContrast(vec4 color)
         {
@@ -358,6 +366,7 @@ static std::string s_adjustPolylineContrast = R"RAW_STRING(
 )RAW_STRING";
 
 static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RAW_STRING(
+    // Tesselated textured polyline
     attribute vec3  a_pos;
     attribute vec2  a_prev;
     attribute vec2  a_next;
@@ -402,6 +411,7 @@ R"RAW_STRING(
 )RAW_STRING";
 
 static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + R"RAW_STRING(
+    // Tesselated solid polyline
     attribute vec3 a_pos;
     attribute vec2 a_prev;
     attribute vec2 a_next;
@@ -422,6 +432,7 @@ R"RAW_STRING(
 
 
 static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
+    // Simple solid polyline
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
@@ -434,6 +445,7 @@ static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
 )RAW_STRING";
 
 static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
+    // Simple textured polyline
     attribute vec3  a_pos;
     attribute vec3  a_texScalePnt; 
     attribute float a_distance;
@@ -465,37 +477,42 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
 )RAW_STRING";
 
 
-static std::string s_tesselatedTexturedPolylineVertexShaders[3] =
+static std::string s_tesselatedTexturedPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_tesselatedTexturedPolylineVertexCommon,
     s_computeIndexedColor[1] + s_tesselatedTexturedPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_tesselatedTexturedPolylineVertexCommon
+    s_computeIndexedColor[2] + s_tesselatedTexturedPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_tesselatedTexturedPolylineVertexCommon
     };
 
-static std::string s_tesselatedSolidPolylineVertexShaders[3] =
+static std::string s_tesselatedSolidPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_tesselatedSolidPolylineVertexCommon,
     s_computeIndexedColor[1] + s_tesselatedSolidPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_tesselatedSolidPolylineVertexCommon
+    s_computeIndexedColor[2] + s_tesselatedSolidPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_tesselatedSolidPolylineVertexCommon
     };
 
-static std::string s_simpleTexturedPolylineVertexShaders[3] =
+static std::string s_simpleTexturedPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_simpleTexturedPolylineVertexCommon,
     s_computeIndexedColor[1] + s_simpleTexturedPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_simpleTexturedPolylineVertexCommon
+    s_computeIndexedColor[2] + s_simpleTexturedPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_simpleTexturedPolylineVertexCommon
     };
 
-static std::string s_simpleSolidPolylineVertexShaders[3] =
+static std::string s_simpleSolidPolylineVertexShaders[4] =
     {
     s_computeIndexedColor[0] + s_simpleSolidPolylineVertexCommon,
     s_computeIndexedColor[1] + s_simpleSolidPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_simpleSolidPolylineVertexCommon
+    s_computeIndexedColor[2] + s_simpleSolidPolylineVertexCommon,
+    s_computeIndexedColor[3] + s_simpleSolidPolylineVertexCommon
     };
 
 
 
 static std::string s_texturedPolylineFragmentShader = R"RAW_STRING(
+// Textured polyline
 varying vec2        v_texc;  
 uniform sampler2D   u_tex;
 varying vec4        v_color;
@@ -511,6 +528,7 @@ void main(void)
 )RAW_STRING";
 
 static std::string s_solidPolylineFragmentShader = R"RAW_STRING(
+// Solid polyline
 varying vec4 v_color;
 
 void main(void)

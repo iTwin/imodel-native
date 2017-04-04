@@ -354,7 +354,7 @@ CodeSpecId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP codeSpecName)
 //---------------------------------------------------------------------------------------
 ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
     {
-    ModelSelector modSel(db, name);
+    ModelSelector modSel(db.GetDictionaryModel(), name);
     modSel.AddModel(model);
     auto modSelPersist = db.Elements().Insert(modSel);
     if (!modSelPersist.IsValid())
@@ -366,17 +366,17 @@ ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, Dg
     auto& models = modSelPersist->GetModels();
     EXPECT_EQ(1, models.size());
     EXPECT_EQ(model, *models.begin());
-
     return modSelPersist;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewName)
+DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR drawingModel, Utf8CP viewName)
     {
-    DgnDbR db = model.GetDgnDb();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    DgnDbR db = drawingModel.GetDgnDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(dictionary, viewName ? viewName : drawingModel.GetName(), DrawingViewDefinition::QueryClassId(db), drawingModel.GetModelId(), *new CategorySelector(dictionary,""), *new DisplayStyle2d(dictionary,""));
     EXPECT_TRUE(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
@@ -392,10 +392,11 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
 DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
     {
     DgnDbR db = model.GetDgnDb();
-    ModelSelectorPtr modelSelector = new ModelSelector(db, "");
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    SpatialViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    SpatialViewDefinition viewDef(dictionary, viewName ? viewName : model.GetName(), *new CategorySelector(dictionary,""), *new DisplayStyle3d(dictionary,""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());

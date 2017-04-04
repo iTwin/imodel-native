@@ -22,14 +22,14 @@ struct TypeTests : public DgnDbTestFixture
     static const bool GEOMETRY3D = true;
     static const bool GEOMETRY2D = false;
 
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnBoxDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnConeDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnSphereDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnTorusPipeDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DEllipse3dCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ICurvePrimitiveCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, CurveVectorCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, GeometricPrimitiveCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, DgnBoxDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, DgnConeDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, DgnSphereDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, DgnTorusPipeDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, DEllipse3dCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, ICurvePrimitiveCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, CurveVectorCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DefinitionModelR, Utf8StringCR, GeometricPrimitiveCR, bool);
 
     TemplateRecipe2dCPtr InsertTemplateRecipe2d(DefinitionModelR, Utf8CP);
     GraphicalType2dCPtr InsertType2d(DefinitionModelR, Utf8CP, TemplateRecipe2dCR);
@@ -66,8 +66,8 @@ struct TypeTests : public DgnDbTestFixture
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
-    DgnViewId InsertTemplateView2d(DgnDbR, Utf8CP);
-    DgnViewId InsertTemplateView3d(DgnDbR, Utf8CP);
+    DgnViewId InsertTemplateView2d(DefinitionModelR, Utf8CP);
+    DgnViewId InsertTemplateView3d(DefinitionModelR, Utf8CP);
 };
 
 //---------------------------------------------------------------------------------------
@@ -95,15 +95,21 @@ TemplateRecipe3dCPtr TypeTests::InsertTemplateRecipe3d(DefinitionModelR model, U
 //---------------------------------------------------------------------------------------
 DrawingModelPtr TypeTests::InsertRectangleAndLinesTemplate2d(TemplateRecipe2dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double width = 0.2;
-    DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(recipe, "Rectangle", *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
+    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(*definitionModel, rectanglePartName, *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
     if (!rectanglePart.IsValid())
         return nullptr;
 
     bvector<DSegment3d> segments;
     segments.push_back(DSegment3d::From(DPoint2d::From(-width/2, -width/2), DPoint2d::From(width/2, width/2)));
     segments.push_back(DSegment3d::From(DPoint2d::From(-width/2, width/2), DPoint2d::From(width/2, -width/2)));
-    DgnGeometryPartCPtr linesPart = InsertGeometryPart(recipe, "Lines", *CurveVector::Create(segments), GEOMETRY2D);
+    Utf8PrintfString linesPartName("%s-Lines", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr linesPart = InsertGeometryPart(*definitionModel, linesPartName, *CurveVector::Create(segments), GEOMETRY2D);
     if (!linesPart.IsValid())
         return nullptr;
 
@@ -132,15 +138,21 @@ DrawingModelPtr TypeTests::InsertRectangleAndLinesTemplate2d(TemplateRecipe2dCR 
 //---------------------------------------------------------------------------------------
 DrawingModelPtr TypeTests::InsertCircleAndCrossTemplate2d(TemplateRecipe2dCR recipe, GraphicalType2dCR nestedType)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double radius = 1.0;
-    DgnGeometryPartCPtr circlePart = InsertGeometryPart(recipe, "Circle", DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
+    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr circlePart = InsertGeometryPart(*definitionModel, circlePartName, DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
     if (!circlePart.IsValid())
         return nullptr;
 
     bvector<DSegment3d> segments;
     segments.push_back(DSegment3d::From(DPoint2d::From(-radius, 0), DPoint2d::From(radius, 0)));
     segments.push_back(DSegment3d::From(DPoint2d::From(0, -radius), DPoint2d::From(0, radius)));
-    DgnGeometryPartCPtr crossPart = InsertGeometryPart(recipe, "Cross", *CurveVector::Create(segments), GEOMETRY2D);
+    Utf8PrintfString crossPartName("%s-Cross", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr crossPart = InsertGeometryPart(*definitionModel, crossPartName, *CurveVector::Create(segments), GEOMETRY2D);
     if (!crossPart.IsValid())
         return nullptr;
 
@@ -174,8 +186,13 @@ DrawingModelPtr TypeTests::InsertCircleAndCrossTemplate2d(TemplateRecipe2dCR rec
 //---------------------------------------------------------------------------------------
 DrawingModelPtr TypeTests::InsertCircleTemplate2d(TemplateRecipe2dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double radius = 1.0;
-    DgnGeometryPartCPtr circlePart = InsertGeometryPart(recipe, "Circle", DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
+    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr circlePart = InsertGeometryPart(*definitionModel, circlePartName, DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
     if (!circlePart.IsValid())
         return nullptr;
 
@@ -198,8 +215,13 @@ DrawingModelPtr TypeTests::InsertCircleTemplate2d(TemplateRecipe2dCR recipe)
 //---------------------------------------------------------------------------------------
 DrawingModelPtr TypeTests::InsertTriangleTemplate2d(TemplateRecipe2dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double length = 1.0;
-    DgnGeometryPartCPtr trianglePart = InsertGeometryPart(recipe, "Triangle", *ICurvePrimitive::CreateRegularPolygonXY(DPoint3d::FromZero(), length, 3, true), GEOMETRY2D);
+    Utf8PrintfString trianglePartName("%s-Triangle", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr trianglePart = InsertGeometryPart(*definitionModel, trianglePartName, *ICurvePrimitive::CreateRegularPolygonXY(DPoint3d::FromZero(), length, 3, true), GEOMETRY2D);
     if (!trianglePart.IsValid())
         return nullptr;
 
@@ -222,8 +244,13 @@ DrawingModelPtr TypeTests::InsertTriangleTemplate2d(TemplateRecipe2dCR recipe)
 //---------------------------------------------------------------------------------------
 DrawingModelPtr TypeTests::InsertRectangleTemplate2d(TemplateRecipe2dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double width = 1.0;
-    DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(recipe, "Rectangle", *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
+    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(*definitionModel, rectanglePartName, *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
     if (!rectanglePart.IsValid())
         return nullptr;
 
@@ -530,81 +557,80 @@ DgnDbStatus TypeTests::InstantiateTemplate3d(PhysicalModelR instanceModel, Physi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DEllipse3dCR ellipse, bool is3d)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, DEllipse3dCR ellipse, bool is3d)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(ellipse);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, is3d) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, is3d) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, ICurvePrimitiveCR curve, bool is3d)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, ICurvePrimitiveCR curve, bool is3d)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(curve);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, is3d) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, is3d) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, CurveVectorCR curveVector, bool is3d)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, CurveVectorCR curveVector, bool is3d)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(curveVector);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, is3d) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, is3d) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnBoxDetailCR boxDetail)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, DgnBoxDetailCR boxDetail)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(boxDetail);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnConeDetailCR coneDetail)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, DgnConeDetailCR coneDetail)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(coneDetail);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnSphereDetailCR sphereDetail)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, DgnSphereDetailCR sphereDetail)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(sphereDetail);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnTorusPipeDetailCR torusPipeDetail)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, DgnTorusPipeDetailCR torusPipeDetail)
     {
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(torusPipeDetail);
     BeAssert(geometry.IsValid());
-    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
+    return geometry.IsValid() ? InsertGeometryPart(model, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, GeometricPrimitiveCR geometry, bool is3d)
+DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DefinitionModelR model, Utf8StringCR geometryPartName, GeometricPrimitiveCR geometry, bool is3d)
     {
-    DgnDbR db = geometryPartScope.GetDgnDb();
-    DgnCode geometryPartCode = CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, geometryPartScope, geometryPartName);
-    DgnGeometryPartPtr geometryPart = DgnGeometryPart::Create(db, geometryPartCode);
+    DgnDbR db = model.GetDgnDb();
+    DgnGeometryPartPtr geometryPart = DgnGeometryPart::Create(model, geometryPartName);
     GeometryBuilderPtr geometryPartBuilder = GeometryBuilder::CreateGeometryPart(db, is3d);
     BeAssert(geometryPart.IsValid() && geometryPartBuilder.IsValid());
     if (!geometryPart.IsValid() || !geometryPartBuilder.IsValid())
@@ -622,7 +648,12 @@ DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope
 //---------------------------------------------------------------------------------------
 PhysicalModelPtr TypeTests::InsertTorusPipeTemplate(TemplateRecipe3dCR recipe)
     {
-    DgnGeometryPartCPtr torusPipePart = InsertGeometryPart(recipe, "TorusPipe", DgnTorusPipeDetail(DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 1.0), 0.1, CAPPED));
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    Utf8PrintfString torusPipePartName("%s-TorusPipe", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr torusPipePart = InsertGeometryPart(*definitionModel, torusPipePartName, DgnTorusPipeDetail(DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 1.0), 0.1, CAPPED));
     if (!torusPipePart.IsValid())
         return nullptr;
 
@@ -646,14 +677,20 @@ PhysicalModelPtr TypeTests::InsertTorusPipeTemplate(TemplateRecipe3dCR recipe)
 //---------------------------------------------------------------------------------------
 PhysicalModelPtr TypeTests::InsertCubeAndCylindersTemplate(TemplateRecipe3dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double cubeWidth = 1.0;
-    DgnGeometryPartCPtr cubePart = InsertGeometryPart(recipe, "Cube", DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(cubeWidth/2, cubeWidth/2, cubeWidth/2), DPoint3d::From(cubeWidth, cubeWidth, cubeWidth), CAPPED));
+    Utf8PrintfString cubePartName("%s-Cube", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr cubePart = InsertGeometryPart(*definitionModel, cubePartName, DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(cubeWidth/2, cubeWidth/2, cubeWidth/2), DPoint3d::From(cubeWidth, cubeWidth, cubeWidth), CAPPED));
     if (!cubePart.IsValid())
         return nullptr;
 
     const double cylinderRadius = 0.05;
     const double cylinderHeight = 0.1;
-    DgnGeometryPartCPtr cylinderPart = InsertGeometryPart(recipe, "Cylinder", DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, cylinderHeight), cylinderRadius, cylinderRadius, CAPPED));
+    Utf8PrintfString cylinderPartName("%s-Cylinder", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr cylinderPart = InsertGeometryPart(*definitionModel, cylinderPartName, DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, cylinderHeight), cylinderRadius, cylinderRadius, CAPPED));
     if (!cylinderPart.IsValid())
         return nullptr;
 
@@ -685,8 +722,13 @@ PhysicalModelPtr TypeTests::InsertCubeAndCylindersTemplate(TemplateRecipe3dCR re
 //---------------------------------------------------------------------------------------
 PhysicalModelPtr TypeTests::InsertThreeSpheresTemplate(TemplateRecipe3dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double radius = 0.25;
-    DgnGeometryPartCPtr spherePart = InsertGeometryPart(recipe, "Sphere", DgnSphereDetail(DPoint3d::FromZero(), radius));
+    Utf8PrintfString spherePartName("%s-Sphere", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr spherePart = InsertGeometryPart(*definitionModel, spherePartName, DgnSphereDetail(DPoint3d::FromZero(), radius));
     if (!spherePart.IsValid())
         return nullptr;
 
@@ -715,15 +757,21 @@ PhysicalModelPtr TypeTests::InsertThreeSpheresTemplate(TemplateRecipe3dCR recipe
 //---------------------------------------------------------------------------------------
 PhysicalModelPtr TypeTests::InsertSlabAndColumnsTemplate(TemplateRecipe3dCR recipe)
     {
+    DefinitionModelPtr definitionModel = recipe.GetModel()->ToDefinitionModelP();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
     const double slabWidth = 1.0;
     const double slabHeight = 0.1;
-    DgnGeometryPartCPtr slabPart = InsertGeometryPart(recipe, "Slab", DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(slabWidth/2, slabWidth/2, slabHeight/2), DPoint3d::From(slabWidth, slabWidth, slabHeight), CAPPED));
+    Utf8PrintfString slabPartName("%s-Slab", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr slabPart = InsertGeometryPart(*definitionModel, slabPartName, DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(slabWidth/2, slabWidth/2, slabHeight/2), DPoint3d::From(slabWidth, slabWidth, slabHeight), CAPPED));
     if (!slabPart.IsValid())
         return nullptr;
 
     const double columnRadius = 0.1;
     const double columnHeight = 0.25;
-    DgnGeometryPartCPtr columnPart = InsertGeometryPart(recipe, "Column", DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, columnHeight), columnRadius, columnRadius, CAPPED));
+    Utf8PrintfString columnPartName("%s-Column", recipe.GetCode().GetValueCP());
+    DgnGeometryPartCPtr columnPart = InsertGeometryPart(*definitionModel, columnPartName, DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, columnHeight), columnRadius, columnRadius, CAPPED));
     if (!columnPart.IsValid())
         return nullptr;
 
@@ -893,9 +941,9 @@ DgnDbStatus TypeTests::DropSpatialElementToGeometry(SpatialModelR model, Spatial
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2017
 //---------------------------------------------------------------------------------------
-DgnViewId TypeTests::InsertTemplateView2d(DgnDbR db, Utf8CP name)
+DgnViewId TypeTests::InsertTemplateView2d(DefinitionModelR model, Utf8CP name)
     {
-    TemplateViewDefinition2dPtr view = TemplateViewDefinition2d::Create(db, name);
+    TemplateViewDefinition2dPtr view = TemplateViewDefinition2d::Create(model, name);
     if (view.IsValid())
         {
         view->SetStandardViewRotation(StandardView::Top);
@@ -909,9 +957,9 @@ DgnViewId TypeTests::InsertTemplateView2d(DgnDbR db, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnViewId TypeTests::InsertTemplateView3d(DgnDbR db, Utf8CP name)
+DgnViewId TypeTests::InsertTemplateView3d(DefinitionModelR model, Utf8CP name)
     {
-    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(db, name);
+    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(model, name);
     if (view.IsValid())
         {
         view->SetStandardViewRotation(StandardView::Iso);
@@ -928,11 +976,11 @@ DgnViewId TypeTests::InsertTemplateView3d(DgnDbR db, Utf8CP name)
 DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
-
-    ModelSelectorPtr modelSelector = new ModelSelector(db, "");
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinition view(db, name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    OrthographicViewDefinition view(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         view.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
@@ -1050,8 +1098,8 @@ TEST_F(TypeTests, CreateSampleBim)
     ASSERT_EQ(DgnDbStatus::Success, dropStatus);
     InsertSpatialView(*drop3B1, "Drop 3B1 View");
 
-    InsertTemplateView2d(*m_db, "2D Template View");
-    InsertTemplateView3d(*m_db, "3D Template View");
+    InsertTemplateView2d(*typeModel2d, "2D Template View");
+    InsertTemplateView3d(*typeModel3d, "3D Template View");
     }
 
 //---------------------------------------------------------------------------------------

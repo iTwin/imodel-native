@@ -18,7 +18,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 }
 namespace SheetStrings
 {
-static constexpr Utf8CP str_Clip() {return "Clip";}
+    BE_PROP_NAME(Clip)
 };
 END_SHEET_NAMESPACE
 
@@ -184,7 +184,7 @@ DgnDbStatus ViewAttachment::CheckValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetClip() const
     {
-    auto clipJsonStr = GetPropertyValueString(str_Clip());
+    auto clipJsonStr = GetPropertyValueString(prop_Clip());
     if (clipJsonStr.empty())
         return nullptr;
 
@@ -201,7 +201,7 @@ ClipVectorPtr ViewAttachment::GetClip() const
 DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
     Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(str_Clip(), clipJson.ToString().c_str());
+    return SetPropertyValue(prop_Clip(), clipJson.ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,7 +209,7 @@ DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewAttachment::ClearClip()
     {
-    SetPropertyValue(str_Clip(), ECValue());
+    SetPropertyValue(prop_Clip(), ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,4 +725,130 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
     auto findViewOfSheet = db.GetPreparedECSqlStatement("SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView WHERE (sheetView.BaseModel.Id=?)");
     findViewOfSheet->BindId(1, mid);
     return BE_SQLITE_ROW != findViewOfSheet->Step() ?  DgnElementId() : findViewOfSheet->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void printIndent(int indent)
+    {
+    for (int i=0; i<indent; ++i)
+        printf("  ");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpModel(DgnModel const& model, int indent)
+    {
+    printIndent(indent);
+    printf("Mdl: [%s] (%lld)\n", model.GetName().c_str(), model.GetModelId().GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String fmtPoint2d(DPoint2dCR pt)
+    {
+    return Utf8PrintfString("(%lg,%lg)", pt.x, pt.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String fmtAngle(double a)
+    {
+    return Utf8PrintfString("%lg", a);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpViewDefinition2d(ViewDefinition2d const& viewDef, int indent)
+    {
+    printIndent(indent);
+    printf("VDef2d: [%s] (%lld) org=%s delta=%s rot=%s\n", viewDef.GetCode().GetValue().c_str(), viewDef.GetElementId().GetValueUnchecked(),
+                fmtPoint2d(viewDef.GetOrigin2d()).c_str(),
+                fmtPoint2d((DPoint2dCR)viewDef.GetDelta2d()).c_str(),
+                fmtAngle(viewDef.GetRotAngle()).c_str());
+    auto& db = viewDef.GetDgnDb();
+    auto baseModel = db.Models().GetModel(viewDef.GetBaseModelId());
+    if (!baseModel.IsValid())
+        {
+        printIndent(indent+1);
+        printf("%lld -- broken link?!\n", viewDef.GetBaseModelId().GetValueUnchecked());
+        }
+    else
+        {
+        dumpModel(*baseModel, indent+1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpViewDefinition(ViewDefinition const& viewDef, int indent)
+    {
+    auto view2d = viewDef.ToView2d();
+    if (nullptr != view2d)
+        {
+        dumpViewDefinition2d(*view2d, indent);
+        return;
+        }
+    printIndent(indent);
+    printf("VDef [%s] (%lld)\n", viewDef.GetCode().GetValue().c_str(), viewDef.GetElementId().GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpSheetAttachment(Sheet::ViewAttachment const& attachment, int indent)
+    {
+    printIndent(indent);
+    printf("VA: %lld\n", attachment.GetElementId().GetValueUnchecked());
+
+    auto& db = attachment.GetDgnDb();
+    auto viewDef = db.Elements().Get<ViewDefinition>(attachment.GetAttachedViewId());
+    if (!viewDef.IsValid())
+        {
+        printIndent(indent+1);
+        printf("%lld -- broken link?!\n", attachment.GetAttachedViewId().GetValueUnchecked());
+        }
+    else
+        {
+        dumpViewDefinition(*viewDef, indent+1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpSheetAttachments(Sheet::Model const& sheet, int indent)
+    {
+    dumpModel(sheet, indent);
+
+    auto& db = sheet.GetDgnDb();
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    stmt->BindId(1, sheet.GetModelId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto attElm = db.Elements().Get<Sheet::ViewAttachment>(stmt->GetValueId<DgnElementId>(0));
+        if (!attElm.IsValid())
+            {
+            printIndent(indent+1);
+            printf("%lld -- broken link?!\n", stmt->GetValueId<DgnElementId>(0).GetValueUnchecked());
+            }
+        else
+            {
+            dumpSheetAttachment(*attElm, indent+1);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::Model::DumpAttachments(int indent)
+    {
+    dumpSheetAttachments(*this, indent);
     }

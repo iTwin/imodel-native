@@ -801,8 +801,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         FillDisplay: cxx_enum_class_uint32_t<RenderFillDisplay>;
         /** The geometry's fill color. */
         FillColor: ColorDefP;
-        /** Set the geometry's fill color to match the view background. */
-        SetFillColorToViewBackground(): void;
         /** The geometry class */
         GeometryClass: cxx_enum_class_uint32_t<RenderDgnGeometryClass>;
         /** The geometry's transparency. Must be a floating point number between ... */

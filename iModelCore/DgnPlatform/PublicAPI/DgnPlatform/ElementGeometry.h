@@ -272,7 +272,7 @@ struct GeometryStreamIO
         void Append(IBRepEntityCR);
         void Append(GeometricPrimitiveCR);
         void Append(DgnGeometryPartId, TransformCP geomToElem);
-        void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
+        void Append(Render::GeometryParamsCR, bool ignoreSubCategory, bool is3d); // Adds multiple op-codes...
         void Append(TextStringCR);
         void Append(ImageGraphicCR);
         void Append(DRange3dCR);
@@ -588,15 +588,17 @@ public:
 
 private:
 
-    bool                        m_appearanceChanged;
-    bool                        m_havePlacement;
-    bool                        m_isPartCreate;
-    bool                        m_is3d;
-    bool                        m_appendAsSubGraphics;
+    bool                        m_appearanceChanged = false;
+    bool                        m_appearanceModified = false;
+    bool                        m_havePlacement = false;
+    bool                        m_isPartCreate = false;
+    bool                        m_is3d = false;
+    bool                        m_appendAsSubGraphics = false;
     Placement3d                 m_placement3d;
     Placement2d                 m_placement2d;
     DgnDbR                      m_dgnDb;
     Render::GeometryParams      m_elParams;
+    Render::GeometryParams      m_elParamsModified;
     GeometryStreamIO::Writer    m_writer;
 
     GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
@@ -606,7 +608,7 @@ private:
     bool ConvertToLocal(GeometricPrimitiveR);
     bool AppendWorld(GeometricPrimitiveR);
     bool AppendLocal(GeometricPrimitiveCR);
-    void OnNewGeom(DRange3dCR localRange, bool isSubGraphic);
+    void OnNewGeom(DRange3dCR localRange, bool isSubGraphic, GeometryStreamIO::OpCode);
 
 public:
 

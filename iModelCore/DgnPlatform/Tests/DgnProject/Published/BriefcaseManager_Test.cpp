@@ -2755,7 +2755,7 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 
     void _InitMasterFile() override
         {
-        DisplayStyle style(*m_db, "MyDisplayStyle");
+        DisplayStyle2d style(m_db->GetDictionaryModel(), "MyDisplayStyle");
         style.Insert();
         m_displayStyleId = style.GetElementId();
         ASSERT_TRUE(m_displayStyleId.IsValid());
@@ -2777,7 +2777,8 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
     {
-    auto style = DisplayStyle::GetByName(db, "MyDisplayStyle");
+    DgnCode styleCode = DisplayStyle::CreateCode(db.GetDictionaryModel(), "MyDisplayStyle");
+    auto style = db.Elements().Get<DisplayStyle>(db.Elements().QueryElementIdByCode(styleCode));
     EXPECT_TRUE(style.IsValid());
     if (!style.IsValid())
         return false;
@@ -2791,17 +2792,17 @@ bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IndirectLocksTest::CreateView(DgnDbR db)
     {
-    CategorySelectorPtr categorySelector = new CategorySelector(db, "MyCategorySelector");
+    CategorySelectorPtr categorySelector = new CategorySelector(db.GetDictionaryModel(), "MyCategorySelector");
     Acquire(*categorySelector, BeSQLite::DbOpcode::Insert);
     if (!categorySelector->Insert().IsValid())
         return false;
 
-    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle>(m_displayStyleId);
+    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle2d>(m_displayStyleId);
     EXPECT_TRUE(displayStyleA.IsValid());
     if (!displayStyleA.IsValid())
         return false;
 
-    DrawingViewDefinition view(db, "MyView", Model2dId(), *categorySelector, *displayStyleA);
+    DrawingViewDefinition view(db.GetDictionaryModel(), "MyView", Model2dId(), *categorySelector, *displayStyleA);
     Acquire(view, BeSQLite::DbOpcode::Insert);
     return view.Insert().IsValid();
     }

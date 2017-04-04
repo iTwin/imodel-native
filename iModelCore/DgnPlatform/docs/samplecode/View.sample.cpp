@@ -18,51 +18,56 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-CategorySelectorCPtr createAndInsertCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const& categories)
+CategorySelectorCPtr createAndInsertCategorySelector(DefinitionModelR model, Utf8CP name, DgnCategoryIdSet const& categories)
     {
-    // CategorySelector is a definition element that is normally shared by many ViewDefinitions.
-    CategorySelector catSel(db, name);
-    catSel.GetCategoriesR() = categories;
-    return db.Elements().Insert(catSel);
+    // CategorySelector is a definition element that is potentially shared by many ViewDefinitions.
+    DgnDbR db = model.GetDgnDb();
+    CategorySelector categorySelector(model, name);
+    categorySelector.GetCategoriesR() = categories;
+    return db.Elements().Insert(categorySelector);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-ModelSelectorCPtr createAndInsertModelSelector(DgnDbR db, Utf8CP name, DgnModelIdSet const& models)
+ModelSelectorCPtr createAndInsertModelSelector(DefinitionModelR model, Utf8CP name, DgnModelIdSet const& modelsToSelect)
     {
-    // ModelSelector is a definition element that is normally shared by many ViewDefinitions.
-    ModelSelector modSel(db, name);
-    modSel.GetModelsR() = models;
-    return db.Elements().Insert(modSel);
+    // ModelSelector is a definition element that is potentially shared by many ViewDefinitions.
+    DgnDbR db = model.GetDgnDb();
+    ModelSelector modelSelector(model, name); // model is the container for the ModelSelector definition element
+    modelSelector.GetModelsR() = modelsToSelect; // modelsToSelect are the models that will be selected
+    return db.Elements().Insert(modelSelector);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DisplayStyleCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
+DisplayStyle2dCPtr createAndInsertDisplayStyle(DefinitionModelR model, Utf8CP name)
     {
-    // DisplayStyle is a definition element that is normally shared by many ViewDefinitions.
-    DisplayStyle dstyle(db, name);
-    Render::ViewFlags viewFlags = dstyle.GetViewFlags();
+    // DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
+    DgnDbR db = model.GetDgnDb();
+    DisplayStyle2d displayStyle(model, name);
+    Render::ViewFlags viewFlags = displayStyle.GetViewFlags();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
-    return db.Elements().Insert(dstyle);
+    return db.Elements().Insert(displayStyle);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, CategorySelectorR catSel, ModelSelectorR modSel, DisplayStyle3dR dstyle)
+DgnViewId createAndInsertView(DefinitionModelR model, Utf8CP name, DRange3dCR viewExtents, CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
     {
+    DgnDbR db = model.GetDgnDb();
+
     // Construct the ViewDefinition
-    // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
+    // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are potentially shared by many ViewDefinitions.
     // That is why they are inputs to this function. 
-    SpatialViewDefinition view(db, name, catSel, dstyle, modSel);
+    SpatialViewDefinition view(model, name, categorySelector, displayStyle, modelSelector);
 
     view.SetStandardViewRotation(StandardView::Iso);
     view.LookAtVolume(db.GeoLocation().GetProjectExtents());
 
-    // Write the ViewDefinition to the bim
+    // Write the ViewDefinition to the db
     return !view.Insert().IsValid() ? DgnViewId() : view.GetViewId();
     }
 //__PUBLISH_EXTRACT_END__
