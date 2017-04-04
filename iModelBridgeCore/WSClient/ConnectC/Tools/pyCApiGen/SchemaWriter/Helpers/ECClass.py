@@ -1,7 +1,17 @@
+#!Python
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ConnectC/Tools/pyCApiGen/SchemaWriter/Helpers/ECClass.py $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
 from SchemaWriter.Helpers.ECProperty import ECProperty
 from SchemaWriter.Helpers.PropertyTypeError import PropertyTypeError
 
-
+#-------------------------------------------------------------------------------------------
+# bsiclass                                                            06/2016
+#-------------------------------------------------------------------------------------------
 class ECClass(object):
     def __init__(self, row, api, status_codes):
         self.__url_descriptor = row[0].value
@@ -19,7 +29,11 @@ class ECClass(object):
         self.__status_codes = status_codes
         self.__ecproperties = []
         self.__is_domain_class = None
+        self.__ecRelationshipclasses = []
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def init_xml(self, ecclass_xmldoc):
         self.__is_domain_class = ecclass_xmldoc.attributes['isDomainClass'].value
         ecproperties = ecclass_xmldoc.getElementsByTagName('ECProperty')
@@ -30,44 +44,83 @@ class ECClass(object):
                                                   ecproperty.attributes["readOnly"].value,
                                                   ecproperty.attributes["propertyName"].value in self.__excluded_properties))
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_name(self):
         return self.__name
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_lower_name(self):
         return self.get_name().lower()
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_upper_name(self):
         return self.get_name().upper()
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_schema_name(self):
         return self.__ecschema_name
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_have_create(self):
         return self.__include_create
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_have_read(self):
         return self.__include_read
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_have_update(self):
         return self.__include_update
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_have_delete(self):
         return self.__include_delete
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_have_read_list(self):
         return self.__include_read_list
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_exclude_entire_class(self):
         return (not self.should_have_create()) and (not self.should_have_read()) and \
                (not self.should_have_update()) and (not self.should_have_delete() and
                                                     (not self.should_have_read_list()))
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def should_filter_property(self, property_to_filter):
         return property_to_filter in self.__excluded_properties
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_properties(self):
         return self.__ecproperties
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def _get_unique_property_types(self):
         unique_properties = []
         for ecproperty in self.get_properties():
@@ -77,32 +130,59 @@ class ECClass(object):
                 unique_properties.append(ecproperty.type)
         return unique_properties
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_property_type(self, property_type):
         if property_type == "StringLength":
             property_type = 'string'
         return property_type in self._get_unique_property_types()
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_string(self):
         return self.does_contain_property_type('string')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_guid(self):
         return self.does_contain_property_type('guid')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_boolean(self):
         return self.does_contain_property_type('boolean')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_int(self):
         return self.does_contain_property_type('int')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_double(self):
         return self.does_contain_property_type('double')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_long(self):
         return self.does_contain_property_type('long')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def does_contain_datetime(self):
         return self.does_contain_property_type('dateTime')
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_read_class_list_funtion_def(self):
         get_request_str = "CallStatus {0}_Read{1}List\n".format(self.__api.get_api_name(), self.get_name())
         get_request_str += "(\n"
@@ -111,9 +191,27 @@ class ECClass(object):
         get_request_str += ")"
         return get_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_read_class_list_definition(self):
         return "{0}_EXPORT ".format(self.__api.get_upper_api_acronym()) + self.__get_read_class_list_funtion_def() + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def set_relationship_class_list(self, ec_relationship_class_list):
+        self.__ecRelationshipclasses = ec_relationship_class_list
+    
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_relationship_class_list(self):
+        return self.__ecRelationshipclasses
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_read_class_list_implementation(self):
         get_request_str = self.__get_read_class_list_funtion_def() + "\n"
         get_request_str += "    {\n"
@@ -175,17 +273,41 @@ class ECClass(object):
         get_request_str += "    }\n"
         return get_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_create_class_function_def(self):
         create_request_str = "CallStatus {0}_Create{1}\n".format(self.__api.get_api_name(), self.get_name())
         create_request_str += "(\n"
         create_request_str += "{0}HANDLE apiHandle".format(self.__api.get_upper_api_acronym())
         create_request_str += self.__get_class_properties_for_function_def()
+        
+        #if we have any relationships, we need to allow for id for the source object to be passed in (for example:
+        # a parent object id under which this item will be created) 
+        #if (len (self.__ecRelationshipclasses) > 0):
+        #        for ecr in self.__ecRelationshipclasses):
+                    
         create_request_str += "\n)"
         return create_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def __get_relationship_source_id_for_function_def(self, ec_rel_class):
+        lowerCaseFirstLetter = lambda s: s[:1].lower() + s[1:] if s else ''
+        varName = ec_rel_class.get_source().get_name()
+        str = "WCharCP {0}Id,\n".format(lowerCaseFirstLetter(ec_rel_class.get_source().get_name()))
+        return str
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_create_class_definition(self):
         return "{0}_EXPORT ".format(self.__api.get_upper_api_acronym()) + self.__get_create_class_function_def() + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_create_class_implementation(self):
         create_request_str = self.__get_create_class_function_def() + "\n"
         create_request_str += "    {\n"
@@ -225,6 +347,9 @@ class ECClass(object):
         create_request_str += "    }\n"
         return create_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_read_class_function_def(self):
         read_request_str = "CallStatus {0}_Read{1}\n".format(self.__api.get_api_name(), self.get_name())
         read_request_str += "(\n"
@@ -234,9 +359,15 @@ class ECClass(object):
         read_request_str += ")"
         return read_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_read_class_definition(self):
         return "{0}_EXPORT ".format(self.__api.get_upper_api_acronym()) + self.__get_read_class_function_def() + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_read_class_implementation(self):
         get_request_str = self.__get_read_class_function_def() + "\n"
         get_request_str += "    {\n"
@@ -296,6 +427,9 @@ class ECClass(object):
         get_request_str += "    }\n"
         return get_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_update_class_function_def(self):
         update_request_str = "CallStatus {0}_Update{1}\n".format(self.__api.get_api_name(), self.get_name())
         update_request_str += "(\n"
@@ -305,9 +439,15 @@ class ECClass(object):
         update_request_str += "\n)"
         return update_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_update_class_definition(self):
         return "{0}_EXPORT ".format(self.__api.get_upper_api_acronym()) + self.__get_update_class_function_def() + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_update_class_implementation(self):
         update_request_str = self.__get_update_class_function_def() + "\n"
         update_request_str += "    {\n"
@@ -341,6 +481,9 @@ class ECClass(object):
         update_request_str += "    }\n"
         return update_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_delete_class_function_def(self):
         delete_request_str = "CallStatus {0}_Delete{1}\n".format(self.__api.get_api_name(), self.get_name())
         delete_request_str += "(\n"
@@ -349,9 +492,15 @@ class ECClass(object):
         delete_request_str += ")"
         return delete_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_delete_class_definition(self):
         return "{0}_EXPORT ".format(self.__api.get_upper_api_acronym()) + self.__get_delete_class_function_def() + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_delete_class_implementation(self):
         delete_request_str = self.__get_delete_class_function_def() + "\n"
         delete_request_str += "    {\n"
@@ -391,6 +540,9 @@ class ECClass(object):
         delete_request_str += "    }\n"
         return delete_request_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_class_properties_for_function_def(self):
         property_str = ""
         for ecproperty in self.get_properties():
@@ -417,6 +569,9 @@ class ECClass(object):
             property_str += ecproperty.name
         return property_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_class_properties_for_function_impl(self):
         properties_str = '    Json::Value propertiesJson;\n'
         for ecproperty in self.get_properties():
@@ -446,6 +601,9 @@ class ECClass(object):
                     "There were not any valid {0} properties passed in.".format(self.get_name()))
         return properties_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_buffer_accessor_functions_def(self, property_type):
         if not self.does_contain_property_type(property_type):
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
@@ -481,9 +639,15 @@ class ECClass(object):
         accessor_str += ")"
         return accessor_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_accessor_function_definition(self, property_type):
         return self.__get_buffer_accessor_functions_def(property_type) + ";\n"
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_accessor_function_implementation(self, property_type):
         accessor_str = self.__get_buffer_accessor_functions_def(property_type) + "\n"
         accessor_str += "    {\n"
@@ -604,6 +768,9 @@ class ECClass(object):
         accessor_str += "    }\n"
         return accessor_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_struct_typedef(self):
         struct_str = 'typedef struct _' + self.__api.get_api_acronym() + '_'
         struct_str += self.get_upper_name() + '_BUFFER \n'
@@ -632,6 +799,9 @@ class ECClass(object):
         struct_str += self.get_upper_name() + "BUFFER;\n"
         return struct_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_enum(self):
         enum_str = "typedef enum\n"
         enum_str += "    {\n"
@@ -646,6 +816,9 @@ class ECClass(object):
         enum_str += "    }} {0}_BUFF_PROPERTY;\n".format(self.get_upper_name())
         return enum_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def __get_buffer_stuffer_function_def(self):
         stuffer_str = "void {0}_BufferStuffer\n".format(self.get_name())
         stuffer_str += "(\n"
@@ -654,9 +827,15 @@ class ECClass(object):
         stuffer_str += ")"
         return stuffer_str
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_stuffer_function_definition(self):
         return self.__get_buffer_stuffer_function_def() + ';\n'
 
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
     def get_buffer_stuffer_function_implementation(self):
         stuffer_str = self.__get_buffer_stuffer_function_def() + '\n'
         stuffer_str += "    {\n"
