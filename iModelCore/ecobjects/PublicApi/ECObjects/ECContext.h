@@ -49,6 +49,7 @@ private:
     bool                                    m_preserveElementOrder = false;
     bool                                    m_preserveXmlComments = false;
     bool                                    m_resolveConflicts = false;
+    bool                                    m_includeFilesWithNoVerExt = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -57,13 +58,15 @@ protected:
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
-    ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt = false);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt);
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
@@ -111,11 +114,12 @@ public:
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(bool acceptLegacyImperfectLatestCompatibleMatch = false, bool includeFilesWithNoVerExt = false);
 
     //! Adds a schema locater to the current context
     //! @param[in] locater  Locater to add to the current context

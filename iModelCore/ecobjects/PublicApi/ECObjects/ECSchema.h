@@ -2977,12 +2977,15 @@ private:
 
     bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr> m_knownSchemas;
     bvector<WString> m_searchPaths;
-    SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
+    bool m_includeFilesWithNoVersionExt;
+
+    SearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
     void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
     void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
+    void AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
 
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
@@ -2993,7 +2996,7 @@ public:
     //! Get the search paths registered for this locater
     bvector<WString>const& GetSearchPath () const {return m_searchPaths;}
     //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
-    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths);
+    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
 };
 
 struct SupplementalSchemaInfo;
