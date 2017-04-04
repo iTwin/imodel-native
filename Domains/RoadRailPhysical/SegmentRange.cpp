@@ -2,7 +2,7 @@
 |
 |     $Source: SegmentRange.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -36,27 +36,26 @@ DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, A
     if (!roadRange.GetElementId().IsValid() || (alignment && !alignment->GetElementId().IsValid()))
         return DgnDbStatus::BadArg;
 
-    auto delStmtPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement(
-        "DELETE FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
-    BeAssert(delStmtPtr.IsValid());
+    auto stmtDelPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtDelPtr.IsValid());
 
-    delStmtPtr->BindId(1, roadRange.GetElementId());
-    if (DbResult::BE_SQLITE_DONE != delStmtPtr->Step())
-        return DgnDbStatus::WriteError;
+    stmtDelPtr->BindId(1, roadRange.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
+        {
+        if (DbResult::BE_SQLITE_OK != roadRange.GetDgnDb().DeleteNonNavigationRelationship(
+            ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
+            return DgnDbStatus::BadElement;
+        }
 
     if (alignment)
         {
-        auto insStmtPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement(
-            "INSERT INTO " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " (SourceECInstanceId, TargetECInstanceId) VALUES (?,?);");
-        BeAssert(insStmtPtr.IsValid());
-
-        insStmtPtr->BindId(1, roadRange.GetElementId());
-        insStmtPtr->BindId(2, alignment->GetElementId());
-
-        if (DbResult::BE_SQLITE_DONE != insStmtPtr->Step())
-            return DgnDbStatus::WriteError;
+        ECInstanceKey insKey;
+        if (DbResult::BE_SQLITE_OK != roadRange.GetDgnDb().InsertNonNavigationRelationship(insKey,
+            *roadRange.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeRefersToAlignment)->GetRelationshipClassCP(),
+            ECInstanceId(roadRange.GetElementId().GetValue()), ECInstanceId(alignment->GetElementId().GetValue())))
+            return DgnDbStatus::BadElement;
         }
-
+    
     return DgnDbStatus::Success;
     }
 

@@ -6,12 +6,12 @@
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
     <ECSchemaReference name="BridgePhysical" version="01.00.00" alias="bphys"/>
 
-    <KindOfQuantity typeName="CURRENCY" displayLabel="CURRENCY" persistenceUnit="DOLLAR" relativeError="1e-2" />
+    <KindOfQuantity typeName="CURRENCY" displayLabel="CURRENCY" persistenceUnit="ONE" relativeError="1e-2" />
     <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="M" relativeError="1e-2" />    
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />    
     <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH_SHORT" persistenceUnit="M" relativeError="1e-2" />
     <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RADIAN" relativeError="1e-2" />
-    <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT_PERCENT" relativeError="1e-2" />
+    <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT" relativeError="1e-2" />
 
     <!-- BEGIN CustomAttributes and Enums -->    
     <ECCustomAttributeClass typeName="PropertyPaneHint" appliesTo="Any">
