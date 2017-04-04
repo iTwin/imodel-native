@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/AllRelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/ChildNodeSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
@@ -42,6 +41,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this specification.
+        virtual ChildNodeSpecification* _Clone() const override {return new AllRelatedInstanceNodesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -89,5 +91,3 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

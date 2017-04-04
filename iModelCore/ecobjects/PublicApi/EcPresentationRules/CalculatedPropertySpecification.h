@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/HiddenPropertiesSpecification.h $
+|     $Source: PublicApi/EcPresentationRules/CalculatedPropertySpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,19 +14,20 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* Specification for specifying single property that should not be displayed.
-* @bsiclass                                     Grigas.Petraitis                07/2016
+* Specification for specifying single property that is Calculated.
+* @bsiclass                                     Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct HiddenPropertiesSpecification
+struct CalculatedPropertiesSpecification
     {
     private:
-        Utf8String m_fullClassName;
-        Utf8String m_propertyNames;
+        Utf8String m_label;
+        int32_t m_priority;
+        Utf8String m_value;
 
     public:
-        HiddenPropertiesSpecification() {}
-        HiddenPropertiesSpecification(Utf8String fullClassName, Utf8String propertyNames) 
-            : m_fullClassName(fullClassName), m_propertyNames(propertyNames) 
+        CalculatedPropertiesSpecification() {}
+        CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value)
+            : m_label(label), m_priority(priority), m_value(value)
             {}
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
@@ -34,12 +35,15 @@ struct HiddenPropertiesSpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
-                
-        //! Get the full class name of the hidden properties.
-        Utf8StringCR GetFullClassName() const {return m_fullClassName;}
 
-        //! Get the hidden property names.
-        Utf8StringCR GetPropertyNames() const {return m_propertyNames;}
+        //! Get label expression.
+        Utf8StringCR GetLabel() const {return m_label;}
+
+        //! Get property priority.
+        int GetPriority() const {return m_priority;}
+
+        //! Get property value expression.
+        Utf8StringCR GetValue() const {return m_value;}
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

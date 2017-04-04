@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/UserSettingsGroup.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -27,6 +27,15 @@ UserSettingsGroup::UserSettingsGroup ()
 UserSettingsGroup::UserSettingsGroup (Utf8StringCR categoryLabel)
     : PresentationKey (1000), m_categoryLabel (categoryLabel)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroup::UserSettingsGroup(UserSettingsGroupCR other)
+    {
+    CommonTools::CopyRules(m_nestedSettings, other.m_nestedSettings);
+    CommonTools::CopyRules(m_settingsItems, other.m_settingsItems);
     }
 
 /*---------------------------------------------------------------------------------**//**

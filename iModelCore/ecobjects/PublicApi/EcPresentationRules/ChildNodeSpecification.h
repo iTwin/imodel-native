@@ -2,19 +2,19 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef bvector<struct ChildNodeRule*> ChildNodeRuleList;
+typedef bvector<struct ChildNodeRule*>          ChildNodeRuleList;
+typedef bvector<RelatedInstanceSpecificationP>  RelatedInstanceSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ChildNodeSpecifications.
@@ -30,6 +30,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         bool               m_hideIfNoChildren;
         bool               m_doNotSort;
         Utf8String            m_extendedData;
+        RelatedInstanceSpecificationList m_relatedInstances;
         ChildNodeRuleList  m_nestedRules;
 
         static int GetNewSpecificationId ();
@@ -40,6 +41,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Constructor.
         ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
+        
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () const = 0;
@@ -49,6 +53,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const = 0;
+        
+        //! Clones this specification.
+        virtual ChildNodeSpecification* _Clone() const = 0;
 
     public:
         //! Destructor.
@@ -59,6 +66,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Writes specification to xml node.
         ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
+        
+        //! Clones this specification.
+        ChildNodeSpecification* Clone() const {return _Clone();}
 
         //! Priority of the specification, defines the order in which specifications are evaluated and executed.
         ECOBJECTS_EXPORT int                          GetPriority (void) const;
@@ -93,7 +103,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECOBJECTS_EXPORT void                         SetHideIfNoChildren (bool value);
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
-        ECOBJECTS_EXPORT Utf8StringCR                    GetExtendedData (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetExtendedData (void) const;
 
         //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
         ECOBJECTS_EXPORT void                         SetExtendedData (Utf8StringCR extendedData);
@@ -106,10 +116,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! in the order they were stored, or the order PersistenceProvider returns them.
         ECOBJECTS_EXPORT void                         SetDoNotSort (bool doNotSort);
 
+        //! A writable list of related instance specifications.
+        RelatedInstanceSpecificationList& GetRelatedInstances() {return m_relatedInstances;}
+
+        //! A const list of related instance specifications.
+        RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}
+
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
         ECOBJECTS_EXPORT ChildNodeRuleList&           GetNestedRules (void);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

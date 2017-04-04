@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -93,6 +93,8 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)HiddenPropertiesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)CalculatedPropertySpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
                                 $(ECPresentationHeaders)
 
 
@@ -224,6 +226,10 @@ $(o)ContentRelatedInstancesSpecification$(oext)            : $(baseDir)presentat
 $(o)SelectedNodeInstancesSpecification$(oext)              : $(baseDir)presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)HiddenPropertiesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/HiddenPropertiesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)CalculatedPropertySpecification$(oext)                 : $(baseDir)presentation/PresentationRules/CalculatedPropertySpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)RelatedInstanceSpecification$(oext)                    : $(baseDir)presentation/PresentationRules/RelatedInstanceSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)CommonTools$(oext)                                     : $(baseDir)presentation/PresentationRules/CommonTools.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 

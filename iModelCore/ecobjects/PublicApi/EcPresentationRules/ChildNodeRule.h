@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeRule.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRule.h>
 #include <ECPresentationRules/PresentationRulesTypes.h>
@@ -36,6 +35,9 @@ struct SubCondition
 
         //! Constructor.
         ECOBJECTS_EXPORT SubCondition (Utf8StringCR condition);
+        
+        //! Copy constructor.
+        ECOBJECTS_EXPORT SubCondition(SubConditionCR);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~SubCondition (void);
@@ -87,6 +89,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
 
         //! Constructor.
         ECOBJECTS_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
+
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ChildNodeRule(ChildNodeRuleCR);
 
         //! Destructor.
         ECOBJECTS_EXPORT virtual ~ChildNodeRule (void);
@@ -144,5 +149,3 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

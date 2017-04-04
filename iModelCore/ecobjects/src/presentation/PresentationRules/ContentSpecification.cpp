@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -27,6 +27,18 @@ ContentSpecification::ContentSpecification(int priority, bool showImages)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecification::ContentSpecification(ContentSpecificationCR other)
+    : m_priority(other.m_priority), m_showImages(other.m_showImages)
+    {
+    CommonTools::CopyRules(m_relatedPropertiesSpecification, other.m_relatedPropertiesSpecification);
+    CommonTools::CopyRules(m_hiddenPropertiesSpecification, other.m_hiddenPropertiesSpecification);
+    CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
+    CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSpecification::~ContentSpecification ()
@@ -34,6 +46,7 @@ ContentSpecification::~ContentSpecification ()
     CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
     CommonTools::FreePresentationRules (m_hiddenPropertiesSpecification);
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
+    CommonTools::FreePresentationRules(m_calculatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,6 +64,9 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (xmlNode, m_hiddenPropertiesSpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
+    BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    if (xmlPropertyNode)
+        CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList> (xmlPropertyNode, m_calculatedPropertiesSpecification, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
 
     return _ReadXml (xmlNode);
     }
@@ -68,6 +84,11 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
     CommonTools::WriteRulesToXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (specificationNode, m_hiddenPropertiesSpecification);
     CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
+    if (!m_calculatedPropertiesSpecification.empty())
+        {
+        BeXmlNodeP calculatedPropertiesNode = specificationNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+        CommonTools::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedPropertiesSpecification);
+        }
 
     //Make sure we call protected override
     _WriteXml (specificationNode);

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification () 
-    : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (""), 
+    : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (""), m_isRecursive(false),
     m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames ("")
     {
     }
@@ -30,11 +30,12 @@ ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification
 (
 int                        priority,
 int                        skipRelatedLevel,
+bool                       isRecursive,
 Utf8String                 instanceFilter,
 RequiredRelationDirection  requiredDirection,
 Utf8String                 relationshipClassNames,
 Utf8String                 relatedClassNames
-) : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
+) : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), m_isRecursive(isRecursive),
     m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
     m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
     {
@@ -60,6 +61,9 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_skipRelatedLevel, COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL))
         m_skipRelatedLevel = 0;
+    
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isRecursive, CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ISRECURSIVE))
+        m_isRecursive = false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
         m_instanceFilter = "";
@@ -85,6 +89,7 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeInt32Value  (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
+    xmlNode->AddAttributeBooleanValue (CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ISRECURSIVE, m_isRecursive);
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());

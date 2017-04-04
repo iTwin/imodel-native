@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SearchResultInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -42,7 +42,7 @@ bool groupByLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification()
     {
-    for (SearchQuerySpecification* spec : m_querySpecifications)
+    for (QuerySpecification* spec : m_querySpecifications)
         delete spec;
     }
 
@@ -70,18 +70,8 @@ bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
         m_groupByLabel = true;
 
-    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME))
-            {
-            SearchQuerySpecification* spec = new SearchQuerySpecification();
-            if (spec->ReadXml(child))
-                m_querySpecifications.push_back(spec);
-            else
-                delete spec;
-            }
-        }
-
+    CommonTools::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME);
     return true;
     }
 
@@ -93,8 +83,8 @@ void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) cons
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     
-    for (SearchQuerySpecification* spec : m_querySpecifications)
-        spec->WriteXml(xmlNode);
+    CommonTools::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
+    CommonTools::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,26 +110,8 @@ void SearchResultInstanceNodesSpecification::SetGroupByLabel (bool value) { m_gr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<SearchQuerySpecification*>& SearchResultInstanceNodesSpecification::GetQuerySpecificationsR() {return m_querySpecifications;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<SearchQuerySpecification*> const& SearchResultInstanceNodesSpecification::GetQuerySpecifications() const {return m_querySpecifications;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SearchQuerySpecification::GetXmlElementName() const {return SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchQuerySpecification::ReadXml (BeXmlNodeP xmlNode)
-    {    
-    if (BEXML_Success != xmlNode->GetContent(m_query))
-        return false;
-
+bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
+    {
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME))
         return false;
 
@@ -152,9 +124,64 @@ bool SearchQuerySpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SearchQuerySpecification::WriteXml (BeXmlNodeP xmlNode) const
+void QuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
     xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
     xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP StringQuerySpecification::_GetXmlElementName() const {return STRING_QUERY_SPECIFICATION_XML_NODE_NAME;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
+    {
+    if (!QuerySpecification::_ReadXml(xmlNode))
+        return false;
+
+    if (BEXML_Success != xmlNode->GetContent(m_query))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    QuerySpecification::_WriteXml(xmlNode);
+    xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ECPropertyValueQuerySpecification::_GetXmlElementName() const {return ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECPropertyValueQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
+    {
+    if (!QuerySpecification::_ReadXml(xmlNode))
+        return false;
+
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_parentPropertyName, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    QuerySpecification::_WriteXml(xmlNode);
+    xmlNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
     }

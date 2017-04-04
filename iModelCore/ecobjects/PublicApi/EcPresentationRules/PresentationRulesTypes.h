@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRulesTypes.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjectsAPI.h>
 
@@ -35,6 +34,7 @@ EC_TYPEDEFS (PropertyRangeGroupSpecification);
 EC_TYPEDEFS (LocalizationResourceKeyDefinition);
 EC_TYPEDEFS (UserSettingsGroup);
 EC_TYPEDEFS (UserSettingsItem);
+EC_TYPEDEFS (RelatedInstanceSpecification);
 EC_TYPEDEFS (ChildNodeSpecification);
 EC_TYPEDEFS (AllInstanceNodesSpecification);
 EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
@@ -42,9 +42,13 @@ EC_TYPEDEFS (CustomNodeSpecification);
 EC_TYPEDEFS (InstanceNodesOfSpecificClassesSpecification);
 EC_TYPEDEFS (RelatedInstanceNodesSpecification);
 EC_TYPEDEFS (SearchResultInstanceNodesSpecification);
+EC_TYPEDEFS (QuerySpecification);
+EC_TYPEDEFS (StringQuerySpecification);
+EC_TYPEDEFS (ECPropertyValueQuerySpecification);
 EC_TYPEDEFS (ContentSpecification);
 EC_TYPEDEFS (RelatedPropertiesSpecification);
 EC_TYPEDEFS (HiddenPropertiesSpecification);
+EC_TYPEDEFS (CalculatedPropertiesSpecification);
 EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
 EC_TYPEDEFS (ContentRelatedInstancesSpecification);
 EC_TYPEDEFS (SelectedNodeInstancesSpecification);
@@ -69,5 +73,3 @@ typedef bvector<RenameNodeRuleP>                    RenameNodeRuleList;
 typedef bvector<SortingRuleP>                       SortingRuleList;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

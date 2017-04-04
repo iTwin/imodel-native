@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRule.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRule.h>
 
@@ -43,6 +42,9 @@ struct ContentRule : public PresentationRule
         //! Constructor.
         ECOBJECTS_EXPORT ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ContentRule(ContentRuleCR);
+
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ContentRule (void);
 
@@ -60,5 +62,3 @@ struct ContentRule : public PresentationRule
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

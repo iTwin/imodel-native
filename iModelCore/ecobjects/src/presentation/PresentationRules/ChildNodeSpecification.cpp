@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -40,11 +40,24 @@ ChildNodeSpecification::ChildNodeSpecification (int priority, bool alwaysReturns
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
+    : m_priority(other.m_priority), m_id(other.m_id), m_alwaysReturnsChildren(other.m_alwaysReturnsChildren),
+    m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
+    m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
+    {
+    CommonTools::CopyRules(m_relatedInstances, other.m_relatedInstances);
+    CommonTools::CopyRules(m_nestedRules, other.m_nestedRules);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::~ChildNodeSpecification ()
     {
-    CommonTools::FreePresentationRules (m_nestedRules);
+    CommonTools::FreePresentationRules(m_relatedInstances);
+    CommonTools::FreePresentationRules(m_nestedRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,7 +84,8 @@ bool ChildNodeSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_doNotSort, SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
         m_doNotSort = false;
 
-    CommonTools::LoadRulesFromXmlNode<ChildNodeRule, ChildNodeRuleList> (xmlNode, m_nestedRules, CHILD_NODE_RULE_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode<ChildNodeRule, ChildNodeRuleList>(xmlNode, m_nestedRules, CHILD_NODE_RULE_XML_NODE_NAME);
 
     return _ReadXml (xmlNode);
     }
@@ -90,7 +104,8 @@ void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     specificationNode->AddAttributeStringValue  (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_EXTENDEDDATA, m_extendedData.c_str ());
     specificationNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_DONOTSORT, m_doNotSort);
 
-    CommonTools::WriteRulesToXmlNode<ChildNodeRule, ChildNodeRuleList> (specificationNode, m_nestedRules);
+    CommonTools::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(specificationNode, m_relatedInstances);
+    CommonTools::WriteRulesToXmlNode<ChildNodeRule, ChildNodeRuleList>(specificationNode, m_nestedRules);
 
     //Make sure we call protected override
     _WriteXml (specificationNode);

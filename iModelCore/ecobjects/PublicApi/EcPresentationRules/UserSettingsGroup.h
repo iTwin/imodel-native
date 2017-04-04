@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/UserSettingsGroup.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -42,6 +41,9 @@ struct UserSettingsGroup : public PresentationKey
 
         //! Constructor.
         ECOBJECTS_EXPORT UserSettingsGroup (Utf8StringCR categoryLabel);
+
+        //! Constructor.
+        ECOBJECTS_EXPORT UserSettingsGroup(UserSettingsGroupCR);
 
         //! Desctructor.
         ECOBJECTS_EXPORT                             ~UserSettingsGroup (void);
@@ -103,5 +105,3 @@ struct UserSettingsItem
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

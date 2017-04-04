@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/ContentSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
@@ -38,6 +37,9 @@ struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification :
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this content specification.
+        virtual ContentSpecification* _Clone() const override {return new ContentInstancesOfSpecificClassesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -67,5 +69,3 @@ struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification :
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

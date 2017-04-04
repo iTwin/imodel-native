@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRelatedInstancesSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -23,6 +22,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
     {
     private:
         int                        m_skipRelatedLevel;
+        bool                       m_isRecursive;
         Utf8String                 m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
         Utf8String                 m_relationshipClassNames;
@@ -40,6 +40,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this content specification.
+        virtual ContentSpecification* _Clone() const override {return new ContentRelatedInstancesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -50,6 +53,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
                                              (
                                               int                        priority,
                                               int                        skipRelatedLevel,
+                                              bool                       isRecursive,
                                               Utf8String                 instanceFilter,
                                               RequiredRelationDirection  requiredDirection,
                                               Utf8String                 relationshipClassNames,
@@ -61,6 +65,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
         //! Sets the SkipRelatedLevel of the specification.
         ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
+
+        //! Should the relationship be followed recursively
+        //! @note The followed relationship should be recursive (e.g. A to A)
+        bool IsRecursive() const {return m_isRecursive;}
+
+        //! Set whether the relationship be followed recursively
+        //! @note The followed relationship should be recursive (e.g. A to A)
+        void SetIsRecursive(bool value) {m_isRecursive = value;}
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
@@ -89,5 +101,3 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */
