@@ -148,7 +148,7 @@
             <xs:attribute name="ContextMenuCondition" type="xs:string"/>
             <xs:attribute name="ContextMenuLabel" type="xs:string"/>
             <xs:attribute name="SettingsId" type="xs:string"/>
-    </xs:complexType>
+        </xs:complexType>
     </xs:element>
     <xs:element name="ContentRule">
         <xs:complexType mixed="true">
@@ -179,6 +179,7 @@
             <xs:attribute name="PropertyName"             type="xs:string"/>
             <xs:attribute name="UseInversedPropertyValue" type="xs:boolean" default="false"/>
             <xs:attribute name="DefaultValue"             type="xs:boolean" use="required"/>
+            <xs:attribute name="IsEnabled"                type="xs:string"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="SortingRule">
@@ -200,125 +201,153 @@
         <xs:attribute name="Condition" type="xs:string"/>
         <xs:attribute default="false" name="OnlyIfNotHandled" type="xs:boolean"/>
     </xs:attributeGroup>
-    <xs:attributeGroup name="CommonChildNodeSpecificationAttributes">
-        <xs:attributeGroup ref="PriorityAttribute"/>
-        <xs:attribute name="AlwaysReturnsChildren" type="xs:boolean" default="false"/>
-        <xs:attribute name="HideIfNoChildren" type="xs:boolean" default="false"/>
-        <xs:attribute name="ExtendedData" type="xs:string"/>
-    </xs:attributeGroup>
+
+    <xs:complexType name="RelatedInstanceDef">
+        <xs:attribute name="ClassName" type="xs:string" use="required" />
+        <xs:attribute name="RelationshipName" type="xs:string" use="required" />
+        <xs:attribute name="RelationshipDirection" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="Forward"/>
+                    <xs:enumeration value="Backward"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="Alias" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="NavigationSpecificationDef" abstract="true">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element ref="ChildNodeRule"/>
+            <xs:element name="RelatedInstance" type="RelatedInstanceDef" />
+        </xs:choice>
+        <xs:attributeGroup ref="PriorityAttribute" />
+        <xs:attribute name="AlwaysReturnsChildren" type="xs:boolean" default="false" />
+        <xs:attribute name="HideIfNoChildren" type="xs:boolean" default="false" />
+        <xs:attribute name="ExtendedData" type="xs:string" />
+    </xs:complexType>
+    
     <xs:element name="AllInstances">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded" minOccurs="0">
-                <xs:element ref="ChildNodeRule"/>
-            </xs:sequence>
-            <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
-            <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
-            <xs:attribute name="SupportedSchemas" type="xs:string"/>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
+                    <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
+                    <xs:attribute name="SupportedSchemas" type="xs:string"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:element name="AllRelatedInstances">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded" minOccurs="0">
-                <xs:element ref="ChildNodeRule"/>
-            </xs:sequence>
-            <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
-            <xs:attribute default="false" name="GroupByRelationship" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
-            <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
-            <xs:attribute default="0" name="SkipRelatedLevel" type="xs:int"/>
-            <xs:attribute name="SupportedSchemas" type="xs:string"/>
-            <xs:attribute default="Both" name="RequiredDirection">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="Both"/>
-                        <xs:enumeration value="Forward"/>
-                        <xs:enumeration value="Backward"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
+                    <xs:attribute default="false" name="GroupByRelationship" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
+                    <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
+                    <xs:attribute default="0" name="SkipRelatedLevel" type="xs:int"/>
+                    <xs:attribute name="SupportedSchemas" type="xs:string"/>
+                    <xs:attribute default="Both" name="RequiredDirection">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="Both"/>
+                                <xs:enumeration value="Forward"/>
+                                <xs:enumeration value="Backward"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:element name="CustomNode">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded" minOccurs="0">
-                <xs:element ref="ChildNodeRule"/>
-            </xs:sequence>
-            <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
-            <xs:attribute name="Type" type="xs:string" use="required"/>
-            <xs:attribute name="Label" type="xs:string" use="required"/>
-            <xs:attribute name="Description" type="xs:string"/>
-            <xs:attribute name="ImageId" type="xs:string" use="required"/>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
+                    <xs:attribute name="Type" type="xs:string" use="required"/>
+                    <xs:attribute name="Label" type="xs:string" use="required"/>
+                    <xs:attribute name="Description" type="xs:string"/>
+                    <xs:attribute name="ImageId" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:element name="InstancesOfSpecificClasses">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded" minOccurs="0">
-                <xs:element ref="ChildNodeRule"/>
-            </xs:sequence>
-            <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
-            <xs:attribute default="false" name="ShowEmptyGroups" type="xs:boolean"/>
-            <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
-            <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
-            <xs:attribute name="ClassNames" type="xs:string" use="required"/>
-            <xs:attribute name="InstanceFilter" type="xs:string"/>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
+                    <xs:attribute default="false" name="ShowEmptyGroups" type="xs:boolean"/>
+                    <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
+                    <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
+                    <xs:attribute name="ClassNames" type="xs:string" use="required"/>
+                    <xs:attribute name="InstanceFilter" type="xs:string"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:element name="SearchResultInstances">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="Query"/>
-                <xs:element ref="ChildNodeRule"/>
-            </xs:choice>
-            <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
-            <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="Query">
-        <xs:complexType>
-            <xs:simpleContent>
-                <xs:extension base="xs:string">
-                    <xs:attribute name="SchemaName" type="xs:string" use="required" />
-                    <xs:attribute name="ClassName" type="xs:string" use="required" />
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="StringQuery" type="StringQueryDef" />
+                        <xs:element name="PropertyValueQuery" type="ECPropertyValueQueryDef" />
+                    </xs:choice>
+                    <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
+                    <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
                 </xs:extension>
-            </xs:simpleContent>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
+    <xs:attributeGroup name="QueryAttributesDef">
+        <xs:attribute name="SchemaName" type="xs:string" use="required" />
+        <xs:attribute name="ClassName" type="xs:string" use="required" />
+    </xs:attributeGroup>
+    <xs:complexType name="StringQueryDef">
+        <xs:simpleContent>
+            <xs:extension base="RequiredStringContentDef">
+                <xs:attributeGroup ref="QueryAttributesDef" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="ECPropertyValueQueryDef">
+        <xs:attributeGroup ref="QueryAttributesDef" />
+        <xs:attribute name="ParentPropertyName" type="xs:string" use="required"/>
+    </xs:complexType>
     <xs:element name="RelatedInstances">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded" minOccurs="0">
-                <xs:element ref="ChildNodeRule"/>
-            </xs:sequence>
-            <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
-            <xs:attribute default="false" name="GroupByRelationship" type="xs:boolean"/>
-            <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
-            <xs:attribute default="false" name="ShowEmptyGroups" type="xs:boolean"/>
-            <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
-            <xs:attribute default="0" name="SkipRelatedLevel" type="xs:int"/>
-            <xs:attribute default="Both" name="RequiredDirection">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="Both"/>
-                        <xs:enumeration value="Forward"/>
-                        <xs:enumeration value="Backward"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
-            <xs:attribute name="RelationshipClassNames" type="xs:string"/>
-            <xs:attribute name="RelatedClassNames" type="xs:string"/>
-            <xs:attribute name="InstanceFilter" type="xs:string"/>
-            <xs:attributeGroup ref="CommonChildNodeSpecificationAttributes"/>
+            <xs:complexContent>
+                <xs:extension base="NavigationSpecificationDef">
+                    <xs:attribute default="false" name="HideNodesInHierarchy" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
+                    <xs:attribute default="false" name="GroupByRelationship" type="xs:boolean"/>
+                    <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
+                    <xs:attribute default="false" name="ShowEmptyGroups" type="xs:boolean"/>
+                    <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
+                    <xs:attribute default="0" name="SkipRelatedLevel" type="xs:int"/>
+                    <xs:attribute default="Both" name="RequiredDirection">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="Both"/>
+                                <xs:enumeration value="Forward"/>
+                                <xs:enumeration value="Backward"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                    <xs:attribute name="RelationshipClassNames" type="xs:string"/>
+                    <xs:attribute name="RelatedClassNames" type="xs:string"/>
+                    <xs:attribute name="InstanceFilter" type="xs:string"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:attributeGroup name="CommonGroupingAttributes">
@@ -347,6 +376,22 @@
             <xs:attribute name="ImageId"                  type="xs:string"/>
             <xs:attribute name="CreateGroupForSingleItem" type="xs:boolean" default="false"/>
             <xs:attribute name="CreateGroupForUnspecifiedValues" type="xs:boolean" default="true"/>
+            <xs:attribute name="GroupingValue" default="DisplayLabel">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="DisplayLabel" />
+                        <xs:enumeration value="PropertyValue" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="SortingValue" default="DisplayLabel">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="DisplayLabel" />
+                        <xs:enumeration value="PropertyValue" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="Range">
@@ -357,82 +402,115 @@
             <xs:attribute name="ToValue" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
+    
+    <xs:complexType name="ContentSpecificationDef">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <!-- Not supported yet
+                <xs:element name="DisplayRelatedItems" type="DisplayRelatedItemsDef" />
+                -->
+                <xs:element name="ContentRelatedProperties" type="ContentRelatedPropertiesDef" />
+                <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
+            </xs:choice>
+            <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    
     <xs:element name="SelectedNodeInstances">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
-            <xs:attribute name="AcceptableSchemaName" type="xs:string"/>
-            <xs:attribute name="AcceptableClassNames" type="xs:string"/>
-            <xs:attribute name="AcceptablePolymorphically" type="xs:boolean" default="false"/>
-            <xs:attribute name="OnlyIfNotHandled" type="xs:boolean" default="false"/>
-            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
-            <xs:attributeGroup ref="PriorityAttribute"/>
+            <xs:complexContent>
+                <xs:extension base="ContentSpecificationDef">
+                    <xs:attribute name="AcceptableSchemaName" type="xs:string"/>
+                    <xs:attribute name="AcceptableClassNames" type="xs:string"/>
+                    <xs:attribute name="AcceptablePolymorphically" type="xs:boolean" default="false"/>
+                    <xs:attribute name="OnlyIfNotHandled" type="xs:boolean" default="false"/>
+                    <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
+                    <xs:attributeGroup ref="PriorityAttribute"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
+    
     <xs:element name="ContentInstancesOfSpecificClasses">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
-            <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
-            <xs:attribute name="InstanceFilter" type="xs:string"/>
-            <xs:attribute name="ClassNames" type="xs:string" use="required"/>
-            <xs:attributeGroup ref="PriorityAttribute"/>
-            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
+            <xs:complexContent>
+                <xs:extension base="ContentSpecificationDef">
+                    <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
+                    <xs:attribute name="InstanceFilter" type="xs:string"/>
+                    <xs:attribute name="ClassNames" type="xs:string" use="required"/>
+                    <xs:attributeGroup ref="PriorityAttribute"/>
+                    <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
-    <xs:element name="ContentRelatedInstances">
+    
+    <xs:element name="ContentRelatedInstances">        
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
-            <xs:attribute name="InstanceFilter" type="xs:string"/>
-            <xs:attribute name="RelationshipClassNames" type="xs:string"/>
-            <xs:attribute name="RelatedClassNames" type="xs:string"/>
-            <xs:attribute name="SkipRelatedLevel" type="xs:int"/>
-            <xs:attributeGroup ref="PriorityAttribute"/>
-            <xs:attribute default="Both" name="RequiredDirection">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="Both"/>
-                        <xs:enumeration value="Forward"/>
-                        <xs:enumeration value="Backward"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
-            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
+            <xs:complexContent>
+                <xs:extension base="ContentSpecificationDef">
+                    <xs:attribute name="InstanceFilter" type="xs:string"/>
+                    <xs:attribute name="RelationshipClassNames" type="xs:string"/>
+                    <xs:attribute name="RelatedClassNames" type="xs:string"/>
+                    <xs:attribute name="SkipRelatedLevel" type="xs:int"/>
+                    <xs:attribute name="IsRecursive" type="xs:boolean" default="false"/>
+                    <xs:attributeGroup ref="PriorityAttribute"/>
+                    <xs:attribute default="Both" name="RequiredDirection">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="Both"/>
+                                <xs:enumeration value="Forward"/>
+                                <xs:enumeration value="Backward"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                    <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
+                </xs:extension>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
-    <xs:element name="RelatedProperties">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="RelatedProperties"/>
-            </xs:sequence>
-            <xs:attribute default="Both" name="RequiredDirection">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="Both"/>
-                        <xs:enumeration value="Forward"/>
-                        <xs:enumeration value="Backward"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
-            <xs:attribute name="RelationshipClassNames" type="xs:string"/>
-            <xs:attribute name="RelatedClassNames" type="xs:string"/>
-            <xs:attribute name="PropertyNames" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="HiddenProperties">
-        <xs:complexType>
-            <xs:attribute name="ClassName" type="xs:string"/>
-            <xs:attribute name="PropertyNames" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
+
+    <xs:complexType name="ContentRelatedPropertiesDef">
+        <xs:sequence>
+            <xs:element name="ContentRelatedProperties" type="ContentRelatedPropertiesDef" maxOccurs="unbounded" minOccurs="0" />
+        </xs:sequence>
+        <xs:attribute default="Both" name="RequiredDirection">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="Both"/>
+                    <xs:enumeration value="Forward"/>
+                    <xs:enumeration value="Backward"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="RelationshipClassNames" type="xs:string"/>
+        <xs:attribute name="RelatedClassNames" type="xs:string"/>
+        <xs:attribute name="PropertyNames" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="HiddenPropertiesDef">
+        <xs:attribute name="ClassName" type="xs:string"/>
+        <xs:attribute name="PropertyNames" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="CalculatedPropertiesDef">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Property" type="CalculatedPropertyDef" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="CalculatedPropertyDef" mixed="true">
+        <xs:simpleContent>
+            <xs:extension base="RequiredStringContentDef">
+                <xs:attribute name="Label" type="xs:string" use="required"/>
+                <xs:attribute name="Priority" type="xs:int" use="optional" default="1000"/>
+            </xs:extension>
+        </xs:simpleContent>    
+    </xs:complexType>
+
+    <xs:simpleType name="RequiredStringContentDef">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1" />
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

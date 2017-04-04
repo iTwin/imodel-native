@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeRule.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -24,6 +24,16 @@ SubCondition::SubCondition () : m_condition ("")
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubCondition::SubCondition (Utf8StringCR condition) : m_condition (condition)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SubCondition::SubCondition(SubConditionCR other)
+    : m_condition(other.m_condition)
+    {
+    CommonTools::CopyRules(m_subConditions, other.m_subConditions);
+    CommonTools::CloneRules(m_specifications, other.m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,6 +117,16 @@ ChildNodeRule::ChildNodeRule () : PresentationRule (), m_targetTree (TargetTree_
 ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
     : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
+    : m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
+    {
+    CommonTools::CopyRules(m_subConditions, other.m_subConditions);
+    CommonTools::CloneRules(m_specifications, other.m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**

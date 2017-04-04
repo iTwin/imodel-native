@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -82,6 +82,7 @@
 #define CHECKBOX_RULE_XML_NODE_NAME                                                   "CheckBoxRule"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
+#define CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED                                         "IsEnabled"
 
 #define RENAMENODE_RULE_XML_NODE_NAME                                                 "RenameNodeRule"
 
@@ -103,6 +104,11 @@
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES                           "CreateGroupForUnspecifiedValues"
 #define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
 #define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
+
+#define PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE                                    "GroupingValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE                                     "SortingValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE                "PropertyValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL                 "DisplayLabel"
 
 #define PROPERTY_RANGE_GROUP_XML_NODE_NAME                                            "Range"
 #define PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL                                      "Label"
@@ -151,9 +157,17 @@
 
 #define SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                      "SearchResultInstances"
 
-#define SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME                                      "Query"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME                          "SchemaName"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME                           "ClassName"
+#define STRING_QUERY_SPECIFICATION_XML_NODE_NAME                                      "StringQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME                            "PropertyValueQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME       "ParentPropertyName"
+
+#define RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME                                  "RelatedInstance"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                        "ClassName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME                 "RelationshipName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION            "RelationshipDirection"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS                            "Alias"
 
 //ContentSpecifications
 #define CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES                                "ShowImages"
@@ -163,6 +177,7 @@
 #define CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME             "ContentInstancesOfSpecificClasses"
 
 #define CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME                         "ContentRelatedInstances"
+#define CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ISRECURSIVE             "IsRecursive"
 
 #define SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME                           "SelectedNodeInstances"
 #define SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME      "AcceptableSchemaName"
@@ -172,3 +187,8 @@
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                   "HiddenProperties"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                         "ClassName"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES                     "PropertyNames"
+
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME                               "CalculatedProperties"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME                              "Property"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL                         "Label"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY                      "Priority"

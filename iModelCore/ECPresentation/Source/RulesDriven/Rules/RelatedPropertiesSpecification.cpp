@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RelatedPropertiesSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -45,8 +45,7 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedProperties
     : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
     m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames)
     {
-    for (RelatedPropertiesSpecificationP spec : other.m_nestedRelatedPropertiesSpecification)
-        m_nestedRelatedPropertiesSpecification.push_back(new RelatedPropertiesSpecification(*spec));
+    CommonTools::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**

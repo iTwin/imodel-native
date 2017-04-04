@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CheckBoxRule.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CheckBoxRule::CheckBoxRule ()
-    : PresentationRule (), m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false)
+    : PresentationRule (), m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false), m_isEnabled ("")
     {
     }
 
@@ -30,9 +30,10 @@ int       priority,
 bool      onlyIfNotHandled,
 Utf8StringCR propertyName,
 bool      useInversedPropertyValue,
-bool      defaultValue
+bool      defaultValue,
+Utf8StringCR isEnabled
 ) : PresentationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
-    m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue)
+    m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue), m_isEnabled (isEnabled)
     {
     }
 
@@ -58,6 +59,9 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_defaultValue, CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE))
         m_defaultValue = false;
 
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_isEnabled, CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED))
+        m_isEnabled = "";
+
     return PresentationRule::_ReadXml (xmlNode);
     }
 
@@ -69,7 +73,7 @@ void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE, m_useInversedPropertyValue);
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE, m_defaultValue);
-
+    xmlNode->AddAttributeStringValue (CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED, m_isEnabled.c_str());
     PresentationRule::_WriteXml (xmlNode);
     }
 
@@ -87,3 +91,8 @@ bool CheckBoxRule::GetUseInversedPropertyValue (void) const { return m_useInvers
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CheckBoxRule::GetDefaultValue (void) const { return m_defaultValue; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR CheckBoxRule::GetIsEnabled(void) const { return m_isEnabled; }
