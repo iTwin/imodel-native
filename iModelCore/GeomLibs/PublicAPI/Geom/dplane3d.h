@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dplane3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -335,6 +335,23 @@ DPlane3dCR planeB,  //!< [in] first plane
 DPlane3dCR planeC  //!< [in] first plane
 );
 
+//! Compute a plane, perpendicular to the line between xyzA and xyzB.
+//! The voronoiMetric selects the assignment of "bisectors" by one of these rules.
+//!<ul>
+//!<li>0 is simple bisector
+//!<li>1 is split the distance between circles of specified radii.
+//!<li>2 is ratio of radii.
+//!<li>3 is the power method (https://en.wikipedia.org/wiki/Power_diagram).  This produces the best intersection points !!!
+//! Using these split planes "around a vertex" of a Delauney triangulation creates voronoi regions weighted by the radii.
+//!</ul>
+static ValidatedDPlane3d VoronoiSplitPlane
+(
+DPoint3dCR xyzA,    //!< [in] start point
+double rA,          //!< [in] start weight (radius)
+DPoint3dCR xyzB,    //!< [in] end point
+double rB,          //!< [in] 
+int voronoiMetric   //!< [in] method to place plane origin.  See list above.
+);
 #endif
 };
 END_BENTLEY_GEOMETRY_NAMESPACE
