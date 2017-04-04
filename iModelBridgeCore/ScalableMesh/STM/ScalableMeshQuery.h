@@ -551,6 +551,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
         int32_t*    m_pUvIndex;
         size_t      m_uvCount;
 
+        bvector<DRange3d> m_boxes;
+
         mutable PolyfaceQueryCarrier* m_polyfaceQueryCarrier; 
 
     protected : 
@@ -608,6 +610,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
         void ApplyClipMesh(const DifferenceSet& d);
 
         void RecalculateUVs(DRange3d& nodeRange);
+
+        void StoreTriangleBoxes();
 
         static ScalableMeshMeshPtr Create (DVec3d viewNormal);
         static ScalableMeshMeshPtr Create ();
@@ -1236,14 +1240,20 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
         bool m_loadGraph;
         bool m_loadIndices;
         bool m_loadTexture;
+        bool m_saveToCache;
+        bool m_precomputeBoxes;
 
         virtual bool _ShouldLoadTexture() const override;
         virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
+        virtual bool _ShouldSaveToCache() const override;
+        virtual bool _ShouldPrecomputeBoxes() const override;
 
         virtual void _SetLoadTexture(bool loadTexture) override;
         virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
+        virtual void _SetSaveToCache(bool saveToCache) override;
+        virtual void _SetPrecomputeBoxes(bool precomputeBoxes) override;
 
     public:
         ScalableMeshMeshFlags()
@@ -1251,6 +1261,8 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_loadGraph = false;
             m_loadTexture = false;
             m_loadIndices = true;
+            m_saveToCache = false;
+            m_precomputeBoxes = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}

@@ -788,6 +788,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
+    mutable SMMemoryPoolItemId m_smMeshPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);

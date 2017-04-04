@@ -62,6 +62,8 @@ enum class SMStoreDataType
     DisplayTexture,
     CoveragePolygon,
     CoverageName,
+    //Not persisted data type
+    Mesh3D,
     Unknown, 
     };
 
