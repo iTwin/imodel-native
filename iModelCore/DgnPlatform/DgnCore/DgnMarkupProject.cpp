@@ -615,9 +615,9 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
         return nullptr;
         }
 
-    UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
-    UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
-    rdlModel->GetDisplayInfoR().SetUnits(mu, su);
+    UnitDefinition mu = subjectViewTargetModel.GetFormatter().GetMasterUnits();
+    UnitDefinition su = subjectViewTargetModel.GetFormatter().GetSubUnits();
+    rdlModel->GetFormatterR().SetUnits(mu, su);
     return rdlModel;
     }
 
@@ -712,11 +712,12 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), 
-                                                              model.GetModelId(), *new CategorySelector(db, ""), *new DisplayStyle2d(db));
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValue().c_str(), 
+                                                              dictionary.GetModelId(), *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary));
 
     //  The view always has the same name as the redline and its model
-    DgnCode code = CreateCode(db, redline->GetCode().GetValue());
+    DgnCode code = CreateCode(db.GetDictionaryModel(), redline->GetCode().GetValue());
     if (!view->IsValidCode(code))
         {
         createStatus = DgnDbStatus::InvalidName;

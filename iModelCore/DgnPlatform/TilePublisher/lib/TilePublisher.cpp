@@ -1357,7 +1357,7 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (doBatchIds)
         vertexShaderString.append(s_batchIdShaderAttribute);
 
-    vertexShaderString.append(mat.GetVertexShaderString(m_tile.GetModel().Is3d()));
+    vertexShaderString.append(mat.GetVertexShaderString());
 
     data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
     data.AddBufferView(fragmentShaderBufferView.c_str(), mat.GetFragmentShaderString());
@@ -1372,7 +1372,7 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
+PolylineMaterial::PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix)
     : TileMaterial(Utf8String("PolylineMaterial_")+suffix)
     {
     TileDisplayParamsCR displayParams = mesh.GetDisplayParams();
@@ -1399,6 +1399,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
         m_texture = TileTextureImage::Create (Render::ImageSource(image, Render::ImageSource::Format::Png));
         m_textureLength = -32;          // Negated to denote cosmetic.
         }
+    m_adjustColorForBackground = !is3d;
 
 #ifdef  TEST_IMAGE 
     FILE*       pFile;
@@ -1444,7 +1445,7 @@ Utf8String PolylineMaterial::GetTechniqueNamePrefix() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string PolylineMaterial::_GetVertexShaderString(bool is3d) const
+std::string PolylineMaterial::_GetVertexShaderString() const
     {
     std::string const* list = nullptr;
     if (IsTextured())
@@ -1460,11 +1461,11 @@ std::string PolylineMaterial::_GetVertexShaderString(bool is3d) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string TileMaterial::GetVertexShaderString(bool is3d) const
+std::string TileMaterial::GetVertexShaderString() const
     {
-    std::string vs = _GetVertexShaderString(is3d);
+    std::string vs = _GetVertexShaderString();
 
-    if (is3d)
+    if (!m_adjustColorForBackground)
         return vs;
 
     Utf8String vs2d(s_adjustBackgroundColorContrast.c_str());
@@ -1494,7 +1495,7 @@ void PolylineMaterial::AddTechniqueParameters(Json::Value& tech, Json::Value& pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMaterial(Utf8String("Material_")+suffix)
+MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db) : TileMaterial(Utf8String("Material_")+suffix)
     {
     TileDisplayParamsCR params = mesh.GetDisplayParams();
     m_ignoreLighting = params.GetIgnoreLighting();
@@ -1502,15 +1503,15 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
     params.ResolveTextureImage(db);
     m_texture = params.GetTextureImage();
 
-    uint32_t rgbInt = params.GetFillColor();
+    uint32_t rgbInt = params.GetColor();
     double alpha = 1.0 - ((uint8_t*)&rgbInt)[3] / 255.0;
 
-    if (!m_ignoreLighting && params.GetMaterialId().IsValid())
+    if (params.GetMaterialId().IsValid())
         {
-        auto material = DgnMaterial::Get(db, params.GetMaterialId());
-        if (material.IsValid())
+        m_material = DgnMaterial::Get(db, params.GetMaterialId());
+        if (m_material.IsValid())
             {
-            auto jsonMat = &material->GetRenderingAsset();
+            auto jsonMat = &m_material->GetRenderingAsset();
             m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
             m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
@@ -1536,23 +1537,22 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
             constexpr double s_finishScale = 15.0;
             if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasFinish, false))
                 m_specularExponent = jsonMat->GetDouble(RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
-
-            m_material = DgnMaterial::Get(db, params.GetMaterialId());
             }
         }
 
     m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+    m_adjustColorForBackground = !is3d && !params.GetIsColorFromBackground();
 
     if (m_overridesAlpha && m_overridesRgb)
         m_colorDimension = ColorIndex::Dimension::Zero;
     else
-        m_colorDimension = ColorIndex::CalcDimension(mesh.GetColorIndexMap().GetNumIndices());
+        m_colorDimension = params.GetIsColorFromBackground() ? ColorIndex::Dimension::Background : ColorIndex::CalcDimension(mesh.GetColorIndexMap().GetNumIndices());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string MeshMaterial::_GetVertexShaderString(bool is3d) const
+std::string MeshMaterial::_GetVertexShaderString() const
     {
     if (IsTextured())
         return IgnoresLighting() ? s_unlitTextureVertexShader : s_texturedVertexShader;
@@ -1728,7 +1728,7 @@ void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat,
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
     {
-    MeshMaterial mat(mesh, suffix, m_context.GetDgnDb());
+    MeshMaterial mat(mesh,  m_tile.GetModel().Is3d(), suffix, m_context.GetDgnDb());
 
     Json::Value& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
 
@@ -1790,7 +1790,7 @@ PolylineMaterial TilePublisher::AddSimplePolylineMaterial (PublishTileData& tile
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
     {
-    PolylineMaterial mat(mesh, suffix);
+    PolylineMaterial mat(mesh,  m_tile.GetModel().Is3d(), suffix);
 
     auto& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
     matJson["technique"] = AddPolylineTechnique(tileData, mat, doBatchIds);
@@ -1859,7 +1859,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     if (doBatchIds)
         vertexShaderString.append(s_batchIdShaderAttribute);
 
-    vertexShaderString.append(mat.GetVertexShaderString(is3d));
+    vertexShaderString.append(mat.GetVertexShaderString());
     tileData.AddBufferView(vertexShaderBufferViewName.c_str(), vertexShaderString);
     tileData.AddBufferView(fragmentShaderBufferViewName.c_str(), mat.GetFragmentShaderString());
 
@@ -2359,10 +2359,13 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
+        if (polylinePoints.size() < 2)
+            continue;
 
         DRange3d        polylineRange = DRange3d::From(polylinePoints);
         DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
         double          cumulativeLength = 0.0;
+        bool            isClosed = polylinePoints.front().IsEqual(polylinePoints.back());
         
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
@@ -2375,10 +2378,10 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
             uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
             static double       s_extendDistance = .1;
             DVec3d              thisDir = DVec3d::FromStartEndNormalize(p0, p1), negatedThisDir = DVec3d::FromScale(thisDir, -1.0),
-                                prevDir0 = isStart ? negatedThisDir : DVec3d::FromStartEnd(p0,  polylinePoints[i-1]),
+                                prevDir0 = isStart ? (isClosed ?  DVec3d::FromStartEndNormalize(p0,  polylinePoints[last-1]) : negatedThisDir) : DVec3d::FromStartEndNormalize(p0,  polylinePoints[i-1]),
                                 nextDir0 = thisDir,
                                 prevDir1 = negatedThisDir,
-                                nextDir1 = isEnd ? thisDir : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
+                                nextDir1 = isEnd ? (isClosed ? DVec3d::FromStartEndNormalize(p1, polylinePoints[1]) : thisDir) : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
             size_t              baseIndex = tesselation.m_points.size();
                         
             if (doColors)
@@ -2414,11 +2417,12 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                       rangeCenter);
                 }
             
-            if (!isStart)
+            if (isClosed || !isStart)
                 tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
-            if (!isEnd)
+            if (isClosed || !isEnd)
                 tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
+
             }
         maxLength = std::max(maxLength, cumulativeLength);
         }

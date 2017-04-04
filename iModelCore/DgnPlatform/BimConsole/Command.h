@@ -348,6 +348,44 @@ struct ValidateCommand final : public Command
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    03/2017
+//---------------------------------------------------------------------------------------
+struct SchemaStatsCommand final : public Command
+    {
+    private:
+        struct ClassColumnStats final
+            {
+        private:
+            std::vector<std::pair<Utf8String, uint32_t>> m_columnCountPerTable;
+            uint32_t m_totalColumnCount = 0;
+
+        public:
+            ClassColumnStats() {}
+
+            void Add(Utf8CP tableName, uint32_t colCount)
+                { 
+                m_columnCountPerTable.push_back(std::make_pair(Utf8String(tableName), colCount));
+                m_totalColumnCount += colCount;
+                }
+
+            uint32_t GetTotalColumnCount() const { return m_totalColumnCount; }
+            std::vector<std::pair<Utf8String, uint32_t>> const& GetColCountPerTable() const { return m_columnCountPerTable; }
+            };
+
+        Utf8String _GetName() const override { return ".schemastats"; }
+        Utf8String _GetUsage() const override;
+        
+        void _Run(Session&, Utf8StringCR args) const override;
+        void ComputeClassHierarchyStats(Session&, std::vector<Utf8String> const& args) const;
+
+        static double ComputeQuantile(std::vector<uint32_t> const& sortedValues, double p);
+
+    public:
+        SchemaStatsCommand() : Command() {}
+        ~SchemaStatsCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle 10/2016
 //---------------------------------------------------------------------------------------
 struct DebugCommand final : public Command

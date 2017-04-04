@@ -45,7 +45,7 @@ AngleFormatter::AngleFormatter(AngleFormatterCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AngleFormatter::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetAngleMode(displayInfo.GetAngularMode());
     SetAnglePrecision(displayInfo.GetAngularPrecision());
@@ -399,7 +399,7 @@ void DirectionFormatter::InitModelSettings(GeometricModelCR model)
     {
     m_angleFormatter->InitModelSettings(model);
 
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetDirectionMode(displayInfo.GetDirectionMode());
     SetClockwise(displayInfo.GetDirectionClockwise());
@@ -413,7 +413,7 @@ void DirectionFormatter::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DirectionFormatter::SetDirectionModeFromLegacy(int legacyValue)
+StatusInt DirectionFormatter::SetDirectionModeFromLegacy(int legacyValue)
     {
     StatusInt   status = SUCCESS;
 
@@ -686,7 +686,7 @@ void DistanceFormatter::Init()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DistanceFormatter::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetUnitFormat(displayInfo.GetLinearUnitMode());
     SetPrecision(displayInfo.GetLinearPrecision());
@@ -1166,7 +1166,7 @@ void AreaOrVolumeFormatterBase::Init()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AreaOrVolumeFormatterBase::InitModelSettings(GeometricModelCR model)
     {
-    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = model.GetFormatter();
 
     SetPrecision(displayInfo.GetLinearPrecision());
 

@@ -423,7 +423,7 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, discardedCodes);
     
     expectedCodes.insert(subCat.GetCode());
-    expectedCodes.insert(ViewDefinition::CreateCode(db, "Default"));
+    expectedCodes.insert(ViewDefinition::CreateCode(db.GetDictionaryModel(), "Default"));
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create some new elements with codes, and delete one with a code

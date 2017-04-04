@@ -46,6 +46,9 @@ public:
 
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
+
+    //! @private
+    DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
 };
 
 //=======================================================================================
@@ -55,15 +58,15 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE Element : Document
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
-protected:
-    static constexpr Utf8CP str_Scale() {return "Scale";}
-    static constexpr Utf8CP str_Height() {return "Height";}
-    static constexpr Utf8CP str_Number() {return "Number";}
-    static constexpr Utf8CP str_Width() {return "Width";}
-    static constexpr Utf8CP str_Template() {return "Template";}
-    static constexpr Utf8CP str_Border() {return "Border";}
 
 public:
+    BE_PROP_NAME(Scale)
+    BE_PROP_NAME(Height)
+    BE_PROP_NAME(Number)
+    BE_PROP_NAME(Width)
+    BE_PROP_NAME(Template)
+    BE_PROP_NAME(Border)
+
     explicit Element(CreateParams const& params) : T_Super(params) {}
 
     //! Create a DgnCode for a Sheet in the specified DocumentListModel
@@ -91,40 +94,40 @@ public:
     DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
 
     //! Get the drawing scale of the sheet
-    double GetScale() const {return GetPropertyValueDouble(str_Scale());}
+    double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
 
     //! Set the drawing scale of the sheet.
     //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
-    DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
+    DgnDbStatus SetScale(double v) {return SetPropertyValue(prop_Scale(), v);}
 
     //! Get the height of the sheet
-    double GetHeight() const {return GetPropertyValueDouble(str_Height());}
+    double GetHeight() const {return GetPropertyValueDouble(prop_Height());}
 
     //! Set the height of the sheet.
     //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
-    DgnDbStatus SetHeight(double v) {return SetPropertyValue(str_Height(), v);}
+    DgnDbStatus SetHeight(double v) {return SetPropertyValue(prop_Height(), v);}
 
     //! Get the width of the sheet
-    double GetWidth() const {return GetPropertyValueDouble(str_Width());}
+    double GetWidth() const {return GetPropertyValueDouble(prop_Width());}
 
     //! Set the width of the sheet.
     //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
-    DgnDbStatus SetWidth(double v) {return SetPropertyValue(str_Width(), v);}
+    DgnDbStatus SetWidth(double v) {return SetPropertyValue(prop_Width(), v);}
 
     //! Get the sheet template, if any.
     //! @return an invalid ID if the sheet has no template.
-    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(str_Template());}
+    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(prop_Template());}
 
     //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v, ECN::ECClassId());}
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(prop_Template(), v, ECN::ECClassId());}
 
     //! Get the sheet border, if any.
     //! @return an invalid ID if the sheet has no border.
-    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(str_Border());}
+    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(prop_Border());}
 
         //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v, ECN::ECClassId());}
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(prop_Border(), v, ECN::ECClassId());}
 };
 
 //=======================================================================================
@@ -137,9 +140,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
 
 protected:
-    static constexpr Utf8CP str_View() {return "View";}
-    static constexpr Utf8CP str_DisplayPriority() {return "DisplayPriority";}
-    static constexpr Utf8CP str_Scale() {return "Scale";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
@@ -152,6 +152,10 @@ protected:
     static double ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR);
 
 public:
+    BE_PROP_NAME(View)
+    BE_PROP_NAME(DisplayPriority)
+    BE_PROP_NAME(Scale)
+
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
 
     //! Construct an attachment in the case where you know the size of the attachment. The view scale will be computed.
@@ -171,12 +175,12 @@ public:
     //! @param scale    The view scale
     DGNPLATFORM_EXPORT ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, DPoint2dCR origin, double scale);
 
-    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_View());} //!< Get the Id of the view definition to be drawn by this attachment
-    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
-    int32_t GetDisplayPriority() const {return GetPropertyValueInt32(str_DisplayPriority());}
-    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(str_DisplayPriority(), v);}
-    double GetScale() const {return GetPropertyValueDouble(str_Scale());}
-    DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
+    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(prop_View());} //!< Get the Id of the view definition to be drawn by this attachment
+    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(prop_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
+    int32_t GetDisplayPriority() const {return GetPropertyValueInt32(prop_DisplayPriority());}
+    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(prop_DisplayPriority(), v);}
+    double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
+    DgnDbStatus SetScale(double v) {return SetPropertyValue(prop_Scale(), v);}
 
     //! Get the clip to be applied to this attachment, if any. 
     //! @return a clip vector or an invalid ptr if the attachment is not clipped.

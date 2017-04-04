@@ -50,7 +50,6 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static constexpr Utf8CP str_Styles() {return "styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -60,20 +59,24 @@ protected:
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
     virtual DisplayStyle2dCP _ToDisplayStyle2d() const {return nullptr;}
     virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
-    DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    DisplayStyle(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
-    JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
-    JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
+    JsonValueCR GetStyles() const {return m_jsonProperties[json_styles()];}
+    JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
 public:
+    BE_JSON_NAME(styles);
+    BE_JSON_NAME(viewflags)
+    BE_JSON_NAME(backgroundColor)
+    BE_JSON_NAME(monochromeColor)
+    BE_JSON_NAME(subCategory)
+    BE_JSON_NAME(subCategoryOvr)
+
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
     DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
     DisplayStyle3dP ToDisplayStyle3dP() {return const_cast<DisplayStyle3dP>(_ToDisplayStyle3d());}
     bool Is3d() const {return nullptr != ToDisplayStyle3d();}
-
-    //! Get a DisplayStyle by name.
-    static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles(); _OnLoadedJsonProperties();}
 
@@ -121,8 +124,9 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
-    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this DisplayStyle's name
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_DisplayStyle, name);}//!< @private
+    //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
@@ -141,9 +145,9 @@ protected:
 
 public:
     //! Construct a new DisplayStyle2d.
-    //! @param[in] db The DgnDb to hold the DisplayStyle2d
+    //! @param[in] model The DefinitionModel to contain the DisplayStyle2d
     //! @param[in] name The name of the DisplayStyle2d. Must be unique across all DisplayStyles
-    DisplayStyle2d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    DisplayStyle2d(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
     
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle2d));}//!< @private
 };
@@ -197,14 +201,23 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
-    static constexpr Utf8CP str_HLine() {return "hline";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
+    BE_JSON_NAME(ambient)
+    BE_JSON_NAME(flash)
+    BE_JSON_NAME(portrait)
+    BE_JSON_NAME(sun)
+    BE_JSON_NAME(sunDir)
+    BE_JSON_NAME(sceneLights);
+    BE_JSON_NAME(brightness);
+    BE_JSON_NAME(hline)
+    BE_JSON_NAME(fstop);
+
     //! Construct a new DisplayStyle3d.
-    //! @param[in] db The DgnDb to hold the DisplayStyle3d
+    //! @param[in] model The DefinitionModel to contain the DisplayStyle3d
     //! @param[in] name The name of the DisplayStyle3d. Must be unique across all DisplayStyles
-    DisplayStyle3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {m_environment.Initialize();}
+    DisplayStyle3d(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {m_environment.Initialize();}
 
     /** @name Environment Display*/
     /** @{ */
@@ -220,13 +233,15 @@ public:
     //! Turn the GroundPlane on or off.
     void SetGroundPlaneEnabled(bool val) {m_environment.m_groundPlane.m_enabled = val;}
 
-    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
-    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
+    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
+    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
 
     DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
-    DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
+
+    void SetSceneBrightness(double fstop) {std::max(-3.0, std::min(fstop, 3.0)); GetStylesR()[json_sceneLights()].SetOrRemoveDouble(json_fstop(), fstop, 0.0);}
+    double GetSceneBrightness() const {return GetStyles()[json_sceneLights()][json_fstop()].asDouble();}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -267,14 +282,11 @@ protected:
 
 public:
     //! Construct a new ModelSelector.
-    //! @param[in] db The DgnDb to hold the ModelSelector
-    //! @param[in] name The name of the ModelSelector. Must be unique across all ModelSelectors
-    ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    //! @param[in] model The DefinitionModel that will contain this new ModelSelector (not the model or models that the ModelSelector will select)
+    //! @param[in] name The name of the ModelSelector.
+    ModelSelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ModelSelector
-
-    //! Get a ModelSelector by name.
-    static ModelSelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<ModelSelector>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     //! Query if the specified DgnModelId is selected by this ModelSelector
     bool ContainsModel(DgnModelId modelId) const {return m_models.Contains(modelId);}
@@ -291,7 +303,10 @@ public:
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_ModelSelector, name);}//!< @private
+
+    //! Create a DgnCode for a CategorySelector given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ModelSelector, scope, name);}
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
@@ -321,13 +336,10 @@ protected:
 
 public:
     //! Construct a new CategorySelector
-    CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    CategorySelector(DefinitionModelR model, Utf8CP name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
     //! Get the name of this CategorySelector
     Utf8String GetName() const {return GetCode().GetValue();} 
-
-    //! Get a CategorySelector by name.
-    static CategorySelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<CategorySelector>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     //! Get the set of currently displayed DgnCategories
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
@@ -346,11 +358,10 @@ public:
     //! Add or Drop a category to this CategorySelector
     void ChangeCategoryDisplay(DgnCategoryId categoryId, bool add) {if (add) AddCategory(categoryId); else DropCategory(categoryId);}
 
-    //! Query the list of category selectors
-    DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
-
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_CategorySelector, name);} //!< @private
+
+    //! Create a DgnCode for a CategorySelector given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_CategorySelector, scope, name);}
 };
 
 //=======================================================================================
@@ -375,8 +386,8 @@ public:
         CategorySelectorPtr m_categorySelector;
 
     public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector)
-            : T_Super(db, DgnModel::DictionaryId(), classId, code, nullptr, DgnElementId()), m_categorySelector(&categorySelector) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code, CategorySelectorR categorySelector)
+            : T_Super(db, modelId, classId, code, nullptr, DgnElementId()), m_categorySelector(&categorySelector) {}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
@@ -388,8 +399,9 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP str_Description() {return "Description";}
-    static constexpr Utf8CP str_ViewDetails() {return "viewDetails";}
+    static constexpr Utf8CP prop_Description() {return "Description";}
+    BE_JSON_NAME(viewDetails)
+
     static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);} 
@@ -429,22 +441,31 @@ protected:
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     void SetupDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
     Utf8String ToDetailJson();
-    JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
-    JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
+    JsonValueCR GetDetails() const {return m_jsonProperties[json_viewDetails()];}
+    JsonValueR GetDetailsR() {return m_jsonProperties[json_viewDetails()];}
     void AdjustAspectRatio(double windowAspect);
 
 public:
+    BE_JSON_NAME(width)
+    BE_JSON_NAME(height)
+    BE_JSON_NAME(format)
+    BE_JSON_NAME(clip)
+    BE_JSON_NAME(gridOrient)
+    BE_JSON_NAME(gridSpaceX)
+    BE_JSON_NAME(gridSpaceY)
+    BE_JSON_NAME(gridPerRef)
+    BE_JSON_NAME(acs)
+
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
 
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
-    Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
-    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
+    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
-    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this ViewDefinition's name
 
     /** @name ViewDefinition Details */
     /** @{ */
@@ -471,20 +492,16 @@ public:
     //! Create a ViewController for the ViewDefinition with the specified Id
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
-    //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_ViewDefinition, name);}
+    //! Create a DgnCode for a ViewDefinition given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ViewDefinition, scope, name); }
 
     //! Look up the Id of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnDbR db, DgnCodeCR code);
-
-    //! Look up the Id of the view with the specified name
-    static DgnViewId QueryViewId(DgnDbR db, Utf8StringCR name) {return QueryViewId(db, CreateCode(db, name));}
+    //! Look up the Id of the view with the specified name in the specified DefinitionModel
+    static DgnViewId QueryViewId(DefinitionModelCR model, Utf8StringCR name) {return QueryViewId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Look up a view by Id
     static ViewDefinitionCPtr Get(DgnDbR db, DgnViewId viewId) {return db.Elements().Get<ViewDefinition>(viewId);}
-
-    //! Look up a view by name
-    static ViewDefinitionCPtr Get(DgnDbR db, Utf8StringCR name) {return Get(db, QueryViewId(db, name));}
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry
@@ -841,8 +858,8 @@ public:
         Camera m_cameraDef;  //!< The camera used for this view.
         DisplayStyle3dPtr m_displayStyle;
 
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, Camera const* camera = nullptr)
-            : T_Super(db, classId, code, categorySelector), m_displayStyle(&displayStyle) {if (camera) {m_cameraDef = *camera; m_cameraOn=true;}}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, Camera const* camera = nullptr)
+            : T_Super(db, modelId, classId, code, categorySelector), m_displayStyle(&displayStyle) {if (camera) {m_cameraDef = *camera; m_cameraOn=true;}}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
@@ -1036,8 +1053,8 @@ public:
         ModelSelectorPtr m_modelSelector;
 
     public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector, Camera const* camera=nullptr)
-            : T_Super(db, classId, code, categorySelector, displayStyle, camera), m_modelSelector(&modelSelector) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector, Camera const* camera=nullptr)
+            : T_Super(db, modelId, classId, code, categorySelector, displayStyle, camera), m_modelSelector(&modelSelector) {}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
@@ -1060,11 +1077,12 @@ protected:
 public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition));} //!< private
 
-    //! Create a SpatialViewDefintion from CreateParams
+    //! Create a SpatialViewDefinition from CreateParams
     explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_modelSelector.IsValid()) SetModelSelector(*params.m_modelSelector);}
 
-    SpatialViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models, Camera const* camera = nullptr) :
-        T_Super(T_Super::CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, camera)) {SetModelSelector(models);}
+    //! Construct a SpatialViewDefinition in the specified DefinitionModel
+    SpatialViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector, Camera const* camera = nullptr) :
+        T_Super(T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, camera)) {SetModelSelector(modelSelector);}
 
     //! Get a writable reference to the ModelSelector for this SpatialViewDefinition
     DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector();
@@ -1094,14 +1112,9 @@ protected:
     bool _SupportsCamera() const override final {return false;}
 
 public:
-    //! Construct a new OrthographicViewDefinition prior to inserting it
-    //! @param db The DgnDb of this view definition
-    //! @param name A unique name for this view definition
-    //! @param categories The CategorySelector for this view
-    //! @param displayStyle The DisplayStyle for this view
-    //! @param models The ModelSelector for this view
-    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
+    //! Construct a new OrthographicViewDefinition in the specified DefinitionModel prior to inserting it
+    OrthographicViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector) :
+        T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, modelSelector)) {}
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
@@ -1139,8 +1152,8 @@ protected:
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyle2dR displayStyle) :
-            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle2d(displayStyle);}
+    ViewDefinition2d(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyle2dR displayStyle) :
+            T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, CreateCode(model, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle2d(displayStyle);}
 
     //! Set the DisplayStyle for this view.
     void SetDisplayStyle2d(DisplayStyle2dR style) {T_Super::SetupDisplayStyle(style);}
@@ -1173,13 +1186,15 @@ protected:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Construct a DrawingViewDefinition subclass prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
-        T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
+    BE_JSON_NAME(aspectSkew)
 
-    //! Construct a DrawingViewDefinition prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
-        T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
+    //! Construct a DrawingViewDefinition subclass in the specified DefinitionModel prior to inserting it
+    DrawingViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
+        T_Super(model, name, classId, baseModelId, categories, displayStyle) {}
+
+    //! Construct a DrawingViewDefinition in the specified DefinitionModel prior to inserting it
+    DrawingViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
+        T_Super(model, name, QueryClassId(model.GetDgnDb()), baseModelId, categories, displayStyle) {}
 
     DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
@@ -1208,12 +1223,12 @@ protected:
 
 public:
     //! Construct a new SheetViewDefinition subclass prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
-        T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
+    SheetViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
+        T_Super(model, name, classId, baseModelId, categories, displayStyle) {}
 
     //! Construct a new SheetViewDefinition prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
-        T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
+    SheetViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
+        T_Super(model, name, QueryClassId(model.GetDgnDb()), baseModelId, categories, displayStyle) {}
 
     DGNPLATFORM_EXPORT Sheet::ViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
@@ -1237,7 +1252,7 @@ protected:
     explicit TemplateViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle2dP displayStyle=nullptr);
+    DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle2dP displayStyle=nullptr);
 };
 
 //=======================================================================================
@@ -1256,7 +1271,7 @@ protected:
     explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
+    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
 };
 
 namespace ViewElementHandler

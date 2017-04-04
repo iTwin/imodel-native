@@ -10,7 +10,7 @@
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_ModeledElement "ModeledElement"
 #define MODEL_PROP_IsPrivate "IsPrivate"
-#define MODEL_PROP_Properties "Properties"
+#define MODEL_PROP_JsonProperties "JsonProperties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,7 +329,7 @@ PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialModel::AddLights(Render::LightListR lights, Render::TargetR target) const
+void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target) const
     {
     auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT JsonProperties,Origin,Yaw,Pitch,Roll FROM " BIS_SCHEMA(BIS_CLASS_LightLocation) " WHERE Model.Id=? AND Enabled=1");
     stmt->BindId(1, GetModelId());
@@ -343,7 +343,7 @@ void SpatialModel::AddLights(Render::LightListR lights, Render::TargetR target) 
 
         Json::Value json;
         if (Json::Reader::Parse(stmt->GetValueText(0), json))
-            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::str_Params()], &dir, &origin));
+            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::json_light()], &dir, &origin));
         }
     }
     
@@ -424,7 +424,7 @@ SpatialLocationModelPtr SpatialLocationModel::Create(DgnDbR db, DgnElementId mod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPortionCR modeledElement)
     {
-    return SpatialLocationModel::Create (modeledElement.GetDgnDb (), modeledElement.GetElementId ());
+    return SpatialLocationModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,7 +441,7 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPor
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR modeledElement)
     {
-    return SpatialLocationModel::Create (modeledElement.GetDgnDb (), modeledElement.GetElementId ());
+    return SpatialLocationModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,17 +641,16 @@ DgnDbStatus DgnModel::Read(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
     {
-    int propsIndex = params.GetSelectIndex(MODEL_PROP_Properties);
+    int propsIndex = params.GetSelectIndex(MODEL_PROP_JsonProperties);
     if (!statement.IsValueNull(propsIndex))
         {
-        Json::Value  propsJson(Json::objectValue);
-        if (!Json::Reader::Parse(statement.GetValueText(propsIndex), propsJson))
+        if (!Json::Reader::Parse(statement.GetValueText(propsIndex), m_jsonProperties))
             {
             BeAssert(false);
             return DgnDbStatus::ReadError;
             }
 
-        _ReadJsonProperties(propsJson);
+        _OnLoadedJsonProperties();
         }
 
     return DgnDbStatus::Success;
@@ -677,15 +676,9 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsPrivate), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
-    Json::Value propJson(Json::objectValue);
-    _WriteJsonProperties(propJson);
-    if (!propJson.isNull())
-        {
-        Utf8String val = propJson.ToString();
-        statement.BindText(statement.GetParameterIndex(MODEL_PROP_Properties), val.c_str(), IECSqlBinder::MakeCopy::Yes);
-        }
-    else
-        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_Properties));
+    _OnSaveJsonProperties();
+    if (!m_jsonProperties.isNull())
+        statement.BindText(statement.GetParameterIndex(MODEL_PROP_JsonProperties), m_jsonProperties.ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1173,31 +1166,29 @@ void DgnModel::_InitFrom(DgnModelCR other)
     m_isPrivate = other.m_isPrivate;
     m_isTemplate = other.m_isTemplate;
 
-    Json::Value otherProperties;
-    other._WriteJsonProperties(otherProperties);
-    _ReadJsonProperties(otherProperties);
+    auto& ncOther = const_cast<DgnModelR>(other);
+
+    ncOther._OnSaveJsonProperties();
+    m_jsonProperties = other.m_jsonProperties;
+    _OnLoadedJsonProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_WriteJsonProperties(Json::Value& val) const 
+void GeometricModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(val);
-    if (val.isNull())
-        val = Json::objectValue;
-    m_displayInfo.ToJson(val["DisplayInfo"]); 
+    T_Super::_OnSaveJsonProperties();
+    SetJsonProperties(json_formatter(), m_displayInfo.ToJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_ReadJsonProperties(Json::Value const& val) 
+void GeometricModel::_OnLoadedJsonProperties() 
     {
-    T_Super::_ReadJsonProperties(val);
-
-    BeAssert(val.isMember("DisplayInfo"));
-    m_displayInfo.FromJson(val["DisplayInfo"]);
+    T_Super::_OnLoadedJsonProperties();
+    m_displayInfo.FromJson(GetJsonProperties(json_formatter()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1290,7 +1281,7 @@ void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricModel::DisplayInfo::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
+BentleyStatus GeometricModel::Formatter::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
     if (!newMasterUnit.IsValid() || !newSubUnit.IsValid() || !newMasterUnit.AreComparable(newSubUnit))
         return ERROR;
@@ -1336,11 +1327,11 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
-    {   
+    {  
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
 
@@ -1388,15 +1379,14 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     //    }
 
     if (0 == strcmp("Id", name) || 0 == strcmp(MODEL_PROP_ECInstanceId, name))
-        {
         return DgnDbStatus::ReadOnly;
-        }
-    if (0 == strcmp(MODEL_PROP_Properties, name))
+
+    if (0 == strcmp(MODEL_PROP_JsonProperties, name))
         {
-        Json::Value  propsJson(Json::objectValue);
-        if (!Json::Reader::Parse(value.GetUtf8CP(), propsJson))
+        if (!Json::Reader::Parse(value.GetUtf8CP(), m_jsonProperties))
             return DgnDbStatus::BadArg;
-        _ReadJsonProperties(propsJson);
+
+        _OnLoadedJsonProperties();
         return DgnDbStatus::Success;
         }
 

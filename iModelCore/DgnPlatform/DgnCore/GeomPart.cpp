@@ -161,7 +161,18 @@ DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCodeCR code)
     {
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::GeometryPart::GetHandler());
+    return new DgnGeometryPart(CreateParams(db, modelId, classId, code));
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    03/2017
+//---------------------------------------------------------------------------------------
+DgnGeometryPartPtr DgnGeometryPart::Create(DefinitionModelR model, Utf8StringCR name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnModelId modelId = model.GetModelId();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::GeometryPart::GetHandler());
+    DgnCode code = name.empty() ? DgnCode() : DgnGeometryPart::CreateCode(model, name);
     return new DgnGeometryPart(CreateParams(db, modelId, classId, code));
     }
 

@@ -1057,6 +1057,110 @@ void GeometryStreamIO::Writer::Append(DEllipse3dCR arc, int8_t boundary)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasDisconnectPoint(DPoint3dCP pts, size_t nPts)
+    {
+    for (size_t iPt = 0; iPt < nPts; ++iPt)
+        {
+        if (pts[iPt].IsDisconnect())
+            {
+            BeAssert(false); // STOP USING THIS ABOMINATION! Create a BOUNDARY_TYPE_None CurveVector with disjoint pieces... 
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasDisconnectPoint(ICurvePrimitiveCR curve)
+    {
+    switch (curve.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            return hasDisconnectPoint(curve.GetLineCP()->point, 2);
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            return hasDisconnectPoint(&curve.GetLineStringCP()->front(), curve.GetLineStringCP()->size());
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            return hasDisconnectPoint(&curve.GetPointStringCP()->front(), curve.GetPointStringCP()->size());
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isInvalidCurveVector(CurveVectorCR curves)
+    {
+    if (curves.IsUnionRegion())
+        {
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (curve.IsNull())
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                return true; // Each loop must be a child curve bvector (a closed loop or parity region)...
+
+            CurveVectorCP childCurves = curve->GetChildCurveVectorCP();
+
+            if ((!childCurves->IsClosedPath() && !childCurves->IsParityRegion()) || isInvalidCurveVector(*childCurves))
+                return true;
+            }
+        }
+    else if (curves.IsParityRegion())
+        {
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (curve.IsNull())
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                return true; // Each loop must be a child curve bvector (a closed loop)...
+
+            CurveVectorCP childCurves = curve->GetChildCurveVectorCP();
+
+            if (!childCurves->IsClosedPath() || isInvalidCurveVector(*childCurves))
+                return true;
+            }
+        }
+    else
+        {
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (!curve.IsValid())
+                continue;
+
+            switch (curve->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+                    {
+                    if (isInvalidCurveVector(*curve->GetChildCurveVectorCP()))
+                        return true;
+                    break;
+                    }
+
+                default:
+                    {
+                    if (hasDisconnectPoint(*curve))
+                        return true;
+                    break;
+                    }
+                }
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive, bool isClosed, bool is3d)
@@ -1067,6 +1171,9 @@ bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
             {
             DSegment3dCP segment = curvePrimitive.GetLineCP();
+
+            if (hasDisconnectPoint(segment->point, 2))
+                return false;
 
             if (!is3d)
                 {
@@ -1089,6 +1196,9 @@ bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive
             {
             bvector<DPoint3d> const* points = curvePrimitive.GetLineStringCP();
 
+            if (hasDisconnectPoint(&points->front(), points->size()))
+                return false;
+
             if (!is3d)
                 {
                 int nPts = (int) points->size();
@@ -1110,6 +1220,9 @@ bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
             {
             bvector<DPoint3d> const* points = curvePrimitive.GetPointStringCP();
+
+            if (hasDisconnectPoint(&points->front(), points->size()))
+                return false;
 
             if (!is3d)
                 {
@@ -1139,7 +1252,12 @@ bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive
             }
 
         default:
-            return false;
+            {
+            BeAssert(!isClosed);
+            Append(curvePrimitive);
+
+            return true;
+            }
         }
     }
 
@@ -1148,11 +1266,20 @@ bool GeometryStreamIO::Writer::AppendSimplified(ICurvePrimitiveCR curvePrimitive
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Writer::AppendSimplified(CurveVectorCR curves, bool is3d)
     {
-    // Special case to avoid having to call new during draw...
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive())
-        return false;
+    // NOTE: Special case to avoid having to call new during draw...
+    switch (curves.HasSingleCurvePrimitive())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            return AppendSimplified(*curves.front(), false, is3d); // Never closed...
 
-    return AppendSimplified(*curves.front(), curves.IsClosedPath(), is3d);
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            return AppendSimplified(*curves.front(), curves.IsClosedPath(), is3d);
+
+        default:
+            if (isInvalidCurveVector(curves)) return false; Append(curves); return true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1169,7 +1296,7 @@ bool GeometryStreamIO::Writer::AppendSimplified(GeometricPrimitiveCR geom, bool 
             return AppendSimplified(*geom.GetAsCurveVector(), is3d);
 
         default:
-            return false;
+            Append(geom); return true;
         }
     }
 
@@ -1391,7 +1518,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
                     GeometryParams  faceParams, baseParamsIgnored;
 
                     params[i].ToGeometryParams(faceParams, baseParamsIgnored);
-                    Append(faceParams, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
+                    Append(faceParams, true, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
                     polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
                     Append(*polyfaces[i], OpCode::BRepPolyface);
                     }
@@ -1454,13 +1581,14 @@ void GeometryStreamIO::Writer::Append(DgnGeometryPartId geomPart, TransformCP ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubCategory)
+void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubCategory, bool is3d)
     {
-    bool useColor  = !elParams.IsLineColorFromSubCategoryAppearance();
-    bool useWeight = !elParams.IsWeightFromSubCategoryAppearance();
-    bool useStyle  = !elParams.IsLineStyleFromSubCategoryAppearance();
+    bool    useColor  = !elParams.IsLineColorFromSubCategoryAppearance();
+    bool    useWeight = !elParams.IsWeightFromSubCategoryAppearance();
+    bool    useStyle  = !elParams.IsLineStyleFromSubCategoryAppearance();
+    int32_t priority  = is3d ? 0 : elParams.GetDisplayPriority(); // Make sure we don't store a value for 3d geometry...
 
-    if (useColor || useWeight || useStyle || 0.0 != elParams.GetTransparency() || 0 != elParams.GetDisplayPriority() || DgnGeometryClass::Primary != elParams.GetGeometryClass())
+    if (useColor || useWeight || useStyle || 0.0 != elParams.GetTransparency() || 0 != priority || DgnGeometryClass::Primary != elParams.GetGeometryClass())
         {
         FlatBufferBuilder fbb;
 
@@ -1468,7 +1596,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
                                              useColor ? elParams.GetLineColor().GetValue() : 0,
                                              useWeight ? elParams.GetWeight() : 0,
                                              useStyle && nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId().GetValueUnchecked() : 0,
-                                             elParams.GetTransparency(), elParams.GetDisplayPriority(), (FB::GeometryClass) elParams.GetGeometryClass(),
+                                             elParams.GetTransparency(), priority, (FB::GeometryClass) elParams.GetGeometryClass(),
                                              useColor, useWeight, useStyle);
         fbb.Finish(mloc);
         Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1529,12 +1657,13 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             }
         else
             {
-            bool isBgFill = elParams.IsFillColorFromViewBackground();
+            bool outline = false;
+            bool isBgFill = elParams.IsFillColorFromViewBackground(&outline);
             bool useFillColor = !isBgFill && !elParams.IsFillColorFromSubCategoryAppearance();
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
-                                           useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor, isBgFill,
-                                           elParams.GetFillTransparency());
+                                           useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor,
+                                           isBgFill ? (outline ? 2 : 1) : 0, elParams.GetFillTransparency());
             fbb.Finish(mloc);
             }
 
@@ -1628,7 +1757,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
     //                          I assume we'll still need optional uv settings even when using sub-category material.
     //                          So we need a way to check for that case as we can't call GetMaterial
     //                          when !useMaterial because GeometryParams::Resolve hasn't been called...
-    bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
+    bool useMaterial = is3d && !elParams.IsMaterialFromSubCategoryAppearance();
 
     if (useMaterial)
         {
@@ -2082,11 +2211,15 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                             changed = true;
                             }
                         }
-                    else if (ppfb->isBgColor())
+                    else if (0 != ppfb->backgroundFill())
                         {
-                        if (!elParams.IsFillColorFromViewBackground())
+                        bool currOutline;
+                        bool currBgFill = elParams.IsFillColorFromViewBackground(&currOutline);
+                        bool useOutline = (2 == ppfb->backgroundFill());
+
+                        if (!currBgFill || useOutline != currOutline)
                             {
-                            elParams.SetFillColorToViewBackground();
+                            elParams.SetFillColorFromViewBackground(useOutline);
                             changed = true;
                             }
                         }
@@ -3031,7 +3164,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     break;
                     }
 
-                if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_isBgColor() || ppfb->has_transparency()))
+                if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_backgroundFill() || ppfb->has_transparency()))
                     break;
 
                 output._DoOutputLine(Utf8PrintfString("  ").c_str());
@@ -3041,10 +3174,14 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     ColorDef color(ppfb->color());
                     output._DoOutputLine(Utf8PrintfString("Fill: [Red:%d Green:%d Blue:%d Alpha:%d] ", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()).c_str());
                     }
-                else if (ppfb->has_isBgColor())
-                    output._DoOutputLine(Utf8PrintfString("Fill: View Background ").c_str());
+                else if (ppfb->has_backgroundFill())
+                    {
+                    output._DoOutputLine(Utf8PrintfString("Fill: View Background %s", 1 == ppfb->backgroundFill() ? "Solid" : "Outline").c_str());
+                    }
                 else
-                    output._DoOutputLine(Utf8PrintfString("Fill: Opaque ").c_str());
+                    {
+                    output._DoOutputLine(Utf8PrintfString("Fill: Single Color ").c_str());
+                    }
 
                 if (ppfb->has_transparency())
                     output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
@@ -3270,6 +3407,25 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsFillVisible(ViewContextR context, Render::GeometryParamsCR geomParams)
+    {
+    // NEEDSWORK Mesh tiles...will want to control fill with shader so that turning it on/off doesn't invalidate tiles...
+    switch (geomParams.GetFillDisplay())
+        {
+        case FillDisplay::Never:
+            return false;
+
+        case FillDisplay::ByView:
+            return context.GetViewFlags().ShowFill();
+
+        default:
+            return true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
@@ -3442,7 +3598,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
                             }
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3474,7 +3630,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddShape2d(nPts, pts, DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -3506,7 +3662,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3533,7 +3689,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
+                        currGraphic->AddShape(nPts, pts, DrawHelper::IsFillVisible(context, geomParams));
                         break;
                     }
                 break;
@@ -3564,7 +3720,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3582,14 +3738,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (FB::BoundaryType_Closed != boundary)
                         currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, true, DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
                     currGraphic->AddArc(arc, false, false);
                 else
-                    currGraphic->AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
+                    currGraphic->AddArc(arc, true, DrawHelper::IsFillVisible(context, geomParams));
                 break;
                 }
 
@@ -3675,7 +3831,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams, false);
                            
-                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                        if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
                     }
@@ -3690,11 +3846,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3716,7 +3872,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
+                currGraphic->AddPolyface(meshData, DrawHelper::IsFillVisible(context, geomParams));
                 break;
                 };
 
@@ -4704,7 +4860,7 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(partRange, false); // Parts are already handled as sub-graphics...
+    OnNewGeom(partRange, false, GeometryStreamIO::OpCode::GeometryPartInstance); // Parts are already handled as sub-graphics...
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
@@ -4748,11 +4904,11 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic)
+void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, GeometryStreamIO::OpCode opCode)
     {
-    /* BEGIN - ADD LSWIDTH TO RANGE - Hopefully this can be removed when/if we start doing locate from mesh tiles */
     DRange3d localRange = localRangeIn;
 
+    // NOTE: Expand range to include line style width. Maybe this should be removed when/if we start doing locate from mesh tiles...
     if (m_elParams.GetCategoryId().IsValid())
         {
         m_elParams.Resolve(m_dgnDb);
@@ -4775,17 +4931,110 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic)
                 }
             }
         }
-    /* END - ADD LSWIDTH TO RANGE */
 
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    if (m_appearanceChanged)
+    bool allowPatGradnt = false;
+    bool allowSolidFill = false;
+    bool allowLineStyle = false;
+    bool allowMaterial  = false;
+
+    switch (opCode)
         {
-        m_writer.Append(m_elParams, m_isPartCreate);
-        m_appearanceChanged = false;
+        case GeometryStreamIO::OpCode::GeometryPartInstance:
+            allowSolidFill = allowPatGradnt = allowLineStyle = allowMaterial = true; // Don't reject anything...
+            break;
+
+        case GeometryStreamIO::OpCode::CurvePrimitive:
+            allowLineStyle = true;
+            break;
+
+        case GeometryStreamIO::OpCode::CurveVector:
+            allowSolidFill = allowPatGradnt = allowLineStyle = allowMaterial = true;
+            break;
+
+        case GeometryStreamIO::OpCode::Polyface:
+            allowSolidFill = allowMaterial = true;
+            break;
+
+        case GeometryStreamIO::OpCode::SolidPrimitive:
+        case GeometryStreamIO::OpCode::BsplineSurface:
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            allowMaterial = true;
+            break;
+
+        case GeometryStreamIO::OpCode::Image:
+            allowSolidFill = true;
+            break;
+        }
+
+    bool hasInvalidPatGradnt = false;
+    bool hasInvalidSolidFill = false;
+    bool hasInvalidLineStyle = false;
+    bool hasInvalidMaterial  = false;
+
+    if (!allowPatGradnt || !allowSolidFill || !allowLineStyle || !allowMaterial)
+        {
+        if (FillDisplay::Never != m_elParams.GetFillDisplay())
+            {
+            if (nullptr != m_elParams.GetGradient())
+                {
+                if (!allowPatGradnt)
+                    hasInvalidPatGradnt = true;
+                }
+            else
+                {
+                if (!allowSolidFill)
+                    hasInvalidSolidFill = true;
+                }
+            }
+
+        if (!allowPatGradnt && nullptr != m_elParams.GetPatternParams())
+            hasInvalidPatGradnt = true;
+
+        if (!allowLineStyle && !m_elParams.IsLineStyleFromSubCategoryAppearance() && m_elParams.HasStrokedLineStyle())
+            hasInvalidLineStyle = true;
+
+        if (!allowMaterial && !m_elParams.IsMaterialFromSubCategoryAppearance() && m_elParams.GetMaterialId().IsValid())
+            hasInvalidMaterial = true;
+        }
+
+    if (hasInvalidPatGradnt || hasInvalidSolidFill || hasInvalidLineStyle || hasInvalidMaterial)
+        {
+        // NOTE: We won't change m_elParams in case some caller is doing something like appending a single symbology
+        //       that includes fill, and then adding a series of open and closed elements expecting the open elements
+        //       to ignore the fill.
+        GeometryParams localParams(m_elParams);
+
+        if (hasInvalidPatGradnt)
+            {
+            localParams.SetGradient(nullptr);
+            localParams.SetPatternParams(nullptr);
+            }
+
+        if (hasInvalidSolidFill || hasInvalidPatGradnt)
+            localParams.SetFillDisplay(FillDisplay::Never);
+
+        if (hasInvalidLineStyle)
+            localParams.SetLineStyle(nullptr);
+
+        if (hasInvalidMaterial)
+            localParams.SetMaterialId(DgnMaterialId());
+
+        if (!m_appearanceModified || !m_elParamsModified.IsEquivalent(localParams))
+            {
+            m_elParamsModified = localParams;
+            m_writer.Append(m_elParamsModified, m_isPartCreate, m_is3d);
+            m_appearanceChanged = m_appearanceModified = true;
+            }
+        }
+    else if (m_appearanceChanged)
+        {
+        m_writer.Append(m_elParams, m_isPartCreate, m_is3d);
+        m_appearanceChanged = m_appearanceModified = false;
         }
 
     if (isSubGraphic && !m_isPartCreate)
@@ -4878,12 +5127,50 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     if (!geom.GetRange(localRange))
         return false;
 
-    OnNewGeom(localRange, m_appendAsSubGraphics);
+    GeometryStreamIO::OpCode opCode; 
 
-    if (!m_writer.AppendSimplified(geom, m_is3d))
-        m_writer.Append(geom);
+    switch (geom.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:
+            opCode = GeometryStreamIO::OpCode::CurvePrimitive;
+            break;
 
-    return true;
+        case GeometricPrimitive::GeometryType::CurveVector:
+            opCode = geom.GetAsCurveVector()->IsAnyRegionType() ? GeometryStreamIO::OpCode::CurveVector : GeometryStreamIO::OpCode::CurvePrimitive;
+            break;
+
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+            opCode = GeometryStreamIO::OpCode::SolidPrimitive;
+            break;
+
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+            opCode = GeometryStreamIO::OpCode::BsplineSurface;
+            break;
+
+        case GeometricPrimitive::GeometryType::Polyface:
+            opCode = GeometryStreamIO::OpCode::Polyface;
+            break;
+
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            opCode = GeometryStreamIO::OpCode::ParasolidBRep;
+            break;
+
+        case GeometricPrimitive::GeometryType::TextString:
+            opCode = GeometryStreamIO::OpCode::TextString;
+            break;
+
+        case GeometricPrimitive::GeometryType::Image:
+            opCode = GeometryStreamIO::OpCode::Image;
+            break;
+
+        default:
+            opCode = GeometryStreamIO::OpCode::Invalid;
+            break;
+        }
+
+    OnNewGeom(localRange, m_appendAsSubGraphics, opCode);
+
+    return m_writer.AppendSimplified(geom, m_is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4938,12 +5225,9 @@ bool GeometryBuilder::Append(ICurvePrimitiveCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::CurvePrimitive);
 
-        if (!m_writer.AppendSimplified(geom, false, m_is3d))
-            m_writer.Append(geom);
-
-        return true;
+        return m_writer.AppendSimplified(geom, false, m_is3d);
         }
 
     GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(geom);
@@ -4963,12 +5247,9 @@ bool GeometryBuilder::Append(CurveVectorCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, geom.IsAnyRegionType() ? GeometryStreamIO::OpCode::CurveVector : GeometryStreamIO::OpCode::CurvePrimitive);
 
-        if (!m_writer.AppendSimplified(geom, m_is3d))
-            m_writer.Append(geom);
-
-        return true;
+        return m_writer.AppendSimplified(geom, m_is3d);
         }
 
     GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(geom);
@@ -4994,7 +5275,7 @@ bool GeometryBuilder::Append(ISolidPrimitiveCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::SolidPrimitive);
         m_writer.Append(geom);
 
         return true;
@@ -5023,7 +5304,7 @@ bool GeometryBuilder::Append(MSBsplineSurfaceCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::BsplineSurface);
         m_writer.Append(geom);
 
         return true;
@@ -5052,7 +5333,7 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::Polyface);
         m_writer.Append(geom);
 
         return true;
@@ -5103,7 +5384,7 @@ bool GeometryBuilder::Append(IBRepEntityCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::ParasolidBRep);
         m_writer.Append(geom);
 
         return true;
@@ -5132,7 +5413,7 @@ bool GeometryBuilder::Append(TextStringCR text, CoordSystem coord)
         if (!getRange(text, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::TextString);
         m_writer.Append(text);
 
         return true;
@@ -5245,7 +5526,7 @@ bool GeometryBuilder::Append(ImageGraphicCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics);
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::Image);
         m_writer.Append(geom);
 
         return true;
@@ -5282,8 +5563,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d)
-  : m_appearanceChanged(false), m_havePlacement(false), m_isPartCreate(!categoryId.IsValid()), m_is3d(is3d), m_appendAsSubGraphics(false),
-    m_dgnDb(dgnDb), m_writer(dgnDb) 
+  : m_isPartCreate(!categoryId.IsValid()), m_is3d(is3d), m_dgnDb(dgnDb), m_writer(dgnDb)
     {
     m_elParams.SetCategoryId(categoryId);
     }
