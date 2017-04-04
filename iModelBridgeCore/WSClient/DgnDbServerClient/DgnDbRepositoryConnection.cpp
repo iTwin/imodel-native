@@ -2409,11 +2409,21 @@ DgnDbServerEventTypeSet oldEventTypes
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::SetEventSASToken(ICancellationTokenPtr cancellationToken)
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::SetEventSASToken";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     auto sasToken = GetEventServiceSASToken(cancellationToken)->GetResult();
     if (!sasToken.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, sasToken.GetError().GetMessage().c_str());
         return false;
+        }
 
     m_eventSAS = sasToken.GetValue();
+
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
     return true;
     }
 
@@ -2560,9 +2570,27 @@ DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceSubscriptionId";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     SetEventSubscriptionJsonRequestToChangeSet(eventTypes, "", *changeset, WSChangeset::Created);
-    return SendEventChangesetRequest(changeset, cancellationToken);
+
+    return SendEventChangesetRequest(changeset, cancellationToken)
+        ->Then<DgnDbServerEventSubscriptionResult>([=] (DgnDbServerEventSubscriptionResultCR result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            }
+        return result;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -2574,9 +2602,27 @@ DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::UpdateEventServiceSubscriptionId";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     SetEventSubscriptionJsonRequestToChangeSet(eventTypes, m_eventSubscription->GetSubscriptionId(), *changeset, WSChangeset::Modified);
-    return SendEventChangesetRequest(changeset, cancellationToken);
+
+    return SendEventChangesetRequest(changeset, cancellationToken)
+        ->Then<DgnDbServerEventSubscriptionResult>([=] (DgnDbServerEventSubscriptionResultCR result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            }
+        return result;
+        });
     }
 
 //---------------------------------------------------------------------------------------
