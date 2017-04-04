@@ -25,7 +25,7 @@ SMSQLiteClipDefinitionExtOps::SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQ
 
 SMSQLiteClipDefinitionExtOps::~SMSQLiteClipDefinitionExtOps()
     {
-    }
+    }   
 
 void SMSQLiteClipDefinitionExtOps::GetMetadata(uint64_t id, double& importance, int& nDimensions)
     {

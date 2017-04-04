@@ -422,6 +422,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         dataSize = countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t);                
         needCompression = false;
         }
+    else
     if (m_dataType == SMStoreDataType::CoverageName)
         {
         needCompression = false;
