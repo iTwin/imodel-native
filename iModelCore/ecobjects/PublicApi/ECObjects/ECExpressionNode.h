@@ -842,6 +842,7 @@ public:
     void        PushArgument(NodeR node) {m_arguments.push_back(&node);}
     ECOBJECTS_EXPORT ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context) const;
     NodePtrVector&  GetArguments() {return m_arguments;}
+    NodePtrVector const&  GetArguments() const {return m_arguments;}
 };  //  End of struct ArgumentTreeNode
 
 /*=================================================================================**//**
