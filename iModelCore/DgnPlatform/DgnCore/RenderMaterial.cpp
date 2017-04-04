@@ -302,7 +302,7 @@ BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& pa
     switch (GetMode())
         {
         default:
-            BeAssert (false && "Material mapping mode not implemented - defaulting to parametric");
+            //BeAssert (false && "Material mapping mode not implemented - defaulting to parametric");
             // Fall through...
 
         case Render::Material::MapMode::Parametric:

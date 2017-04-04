@@ -27,6 +27,7 @@ struct BatchTableBuilder
 {
 private:
     struct SubcatInfo { uint32_t m_index; uint32_t m_catIndex; };
+    struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
 
     enum ClassIndex
     {
@@ -50,7 +51,7 @@ private:
     Json::Value                         m_json; // "HIERARCHY": object
     DgnDbR                              m_db;
     FeatureAttributesMapCR              m_attrs;
-    bmap<DgnElementId, uint32_t>        m_elems;
+    bmap<DgnElementId, ElemInfo>        m_elems;
     bmap<DgnSubCategoryId, SubcatInfo>  m_subcats;
     bmap<DgnCategoryId, uint32_t>       m_cats;
 
@@ -75,8 +76,8 @@ private:
         return iter->second;
         }
 
-    uint32_t MapElementIndex(DgnElementId id) { return FindOrInsert(m_elems, id); }
-    uint32_t GetElementIndex(DgnElementId id) { return GetIndex(m_elems, id); }
+    ElemInfo MapElementInfo(DgnElementId id);
+    ElemInfo GetElementInfo(DgnElementId id);
     uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
     uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
     SubcatInfo MapSubCategoryInfo(DgnSubCategoryId id);
@@ -85,6 +86,7 @@ private:
     Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
     static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
 
+    DgnElementId QueryParentElementId(DgnElementId) const;
     void DefineClasses();
     void MapFeatures();
     void MapParents();
@@ -211,11 +213,23 @@ void BatchTableBuilder::MapElements(uint32_t offset)
     Json::Value& elem_id = (instances["element"] = Json::arrayValue);
     Json::Value& classIds = m_json["classIds"];
     Json::Value& parentCounts = m_json["parentCounts"];
+    Json::Value& parentIds = m_json["parentIds"];
+
     for (auto const& kvp : m_elems)
         {
-        classIds[offset + kvp.second] = kClass_Element;
-        parentCounts[offset + kvp.second] = 0;
-        elem_id[kvp.second] = kvp.first.ToString();
+        Json::Value::ArrayIndex index = kvp.second.m_index;
+        elem_id[index] = kvp.first.ToString();
+
+        classIds[offset + index] = kClass_Element;
+        if (-1 != kvp.second.m_parentIndex)
+            {
+            parentCounts[offset + index] = 1;
+            parentIds.append(kvp.second.m_parentIndex + offset);
+            }
+        else
+            {
+            parentCounts[offset + index] = 0;
+            }
         }
     }
 
@@ -238,16 +252,16 @@ void BatchTableBuilder::MapParents()
         FeatureAttributesCR attr = kvp.first;
         uint32_t index = kvp.second * 2; // 2 parents per feature
 
-        parentIds[index] = elementsOffset + GetElementIndex(attr.GetElementId());
+        parentIds[index] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
         parentIds[index+1] = subcatsOffset + GetSubCategoryInfo(attr.GetSubCategoryId()).m_index;
         }
-
-    // Set "instances" and "length" to Element class, and add elements to "classIds"
-    MapElements(elementsOffset);
 
     // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
     MapSubCategories(subcatsOffset, catsOffset);
     MapCategories(catsOffset);
+
+    // Set "instances" and "length" to Element class, and add elements to "classIds" and parent elements to "parentIds"
+    MapElements(elementsOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,7 +286,7 @@ void BatchTableBuilder::MapFeatures()
         ++instanceCounts[classIndex];
 
         // Ensure all parent instances are mapped
-        MapElementIndex(attr.GetElementId());
+        MapElementInfo(attr.GetElementId());
         MapSubCategoryInfo(attr.GetSubCategoryId());
         }
 
@@ -319,6 +333,55 @@ auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
     auto iter = Find(m_subcats, id);
     BeAssert(iter != m_subcats.end());
     return iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+auto BatchTableBuilder::MapElementInfo(DgnElementId id) -> ElemInfo
+    {
+    auto iter = Find(m_elems, id);
+    if (iter != m_elems.end())
+        return iter->second;
+
+    DgnElementId parentId = QueryParentElementId(id);
+    ElemInfo info;
+    if (parentId.IsValid())
+        info.m_parentIndex = MapElementInfo(parentId).m_index;
+    else
+        info.m_parentIndex = -1;
+
+    info.m_index = static_cast<uint32_t>(m_elems.size());
+    m_elems[id] = info;
+    return info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+auto BatchTableBuilder::GetElementInfo(DgnElementId id) -> ElemInfo
+    {
+    auto iter = Find(m_elems, id);
+    BeAssert(iter != m_elems.end());
+    return iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId BatchTableBuilder::QueryParentElementId(DgnElementId childId) const
+    {
+    DgnElementId parentId;
+    if (!childId.IsValid())
+        return parentId;
+
+    // ###TODO: Apparently plant is weird and has arbitrary non-geometric parents of geometric elements...must check parent is actually geometric
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) " WHERE ECInstanceId=?");
+    stmt->BindId(1, childId);
+    if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        parentId = stmt->GetValueId<DgnElementId>(0);
+
+    return parentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
