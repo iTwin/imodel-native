@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(FunctionalPartition)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalPortion)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 
-#define FUNCTIONAL_DOMAIN_ECSCHEMA_PATH         L"ECSchemas/Domain/Functional.01.00.ecschema.xml"
+#define FUNCTIONAL_DOMAIN_ECSCHEMA_PATH         L"ECSchemas/Domain/Functional.ecschema.xml"
 #define FUNCTIONAL_DOMAIN_NAME                  "Functional"
 #define FUNCTIONAL_SCHEMA(className)            FUNCTIONAL_DOMAIN_NAME "." className
 

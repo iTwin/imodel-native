@@ -42,7 +42,7 @@
 */
 
 #define MARKUP_SCHEMA_NAME "Markup"
-#define MARKUP_SCHEMA_PATH L"ECSchemas/Dgn/Markup.01.00.ecschema.xml"
+#define MARKUP_SCHEMA_PATH L"ECSchemas/Dgn/Markup.ecschema.xml"
 #define MARKUP_SCHEMA(name) MARKUP_SCHEMA_NAME "." name
 
 #define MARKUP_CLASSNAME_MarkupExternalLink         "MarkupExternalLink"
