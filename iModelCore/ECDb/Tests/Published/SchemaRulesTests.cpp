@@ -522,7 +522,7 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "KOQ cannot be applied to a nav prop."),
 
-    SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="Bla" />
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Code" typeName="string" kindOfQuantity="MyKoq"/>
@@ -535,7 +535,7 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Code" typeName="string" kindOfQuantity="MyKoq"/>
                     </ECEntityClass>
-                   </ECSchema>)xml", true, "Should fail because of invalid KOQ presentation unit, but ECObjects just ignores invalid KOQ presentation units so that ECDb cannot verify them.")
+                   </ECSchema>)xml", false, "Invalid KOQ presentation unit")
         };
 
     AssertSchemaImport(invalidSchemas, "ecdbschemarules_koq.ecdb");

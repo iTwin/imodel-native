@@ -6127,12 +6127,12 @@ TEST_F(SchemaUpdateTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
         "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='.5'"
-        "                    presentationUnits='FT;IN;YD' />"
+        "                    presentationUnits='FT;IN;M' />"
         "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
-        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />" // extendedTypeName='URL'
-        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'
-        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />" // extendedTypeName='URL'
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
+        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />" 
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
         "    </ECEntityClass>"
         "</ECSchema>";
 
