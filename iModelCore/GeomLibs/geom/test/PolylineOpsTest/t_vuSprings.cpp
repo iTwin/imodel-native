@@ -1078,7 +1078,7 @@ void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double the
     Stroke (conic, strokes, theta0, theta1, s_numPoints);
     Check::SaveTransformed (strokes);
     }
-
+#ifdef TestHyperbolas
 TEST(Voronoi,Hyperbolas6)
     {
     bvector<DPoint3d> xyzOuter;
@@ -1112,3 +1112,4 @@ TEST(Voronoi,Hyperbolas6)
         }
     Check::ClearGeometry ("Voronoi.Hyperbolas");
     }
+#endif
