@@ -376,6 +376,18 @@ DgnDbStatus DefinitionElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionElement::GetDefinitionModel() const
+    {
+    DgnModelPtr model = GetModel();
+    BeAssert(model.IsValid());
+    DefinitionModelP definitionModel = model.IsValid() ? model->ToDefinitionModelP() : nullptr;
+    BeAssert(nullptr != definitionModel);
+    return definitionModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Subject::_OnInsert()

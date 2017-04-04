@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnStyles_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -52,7 +52,7 @@ struct TestStyleProperties
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnLineStyleTest, InsertnReadLineStyles)
+TEST_F(DgnLineStyleTest, InsertReadLineStyles)
     {
     Utf8CP dbFilePath;
     {
