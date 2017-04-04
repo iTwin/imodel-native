@@ -27,7 +27,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 20);} // we never expect to have more than 50 or so
     void Clear() {m_graphics.clear();}
     bool IsEmpty() const {return m_graphics.empty();}
 };
@@ -2755,6 +2755,9 @@ protected:
 public:
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
+
+    //! Return the DefinitionModel that contains (or will contain) this DefinitionElement
+    DGNPLATFORM_EXPORT DefinitionModelPtr GetDefinitionModel() const;
 };
 
 //=======================================================================================

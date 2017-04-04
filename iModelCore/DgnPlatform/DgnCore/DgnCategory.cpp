@@ -118,43 +118,6 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DrawingCategory::CreateCode(DgnModelCR model, Utf8StringCR categoryName)
-    {
-    return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, *model.GetModeledElement(), categoryName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DrawingCategory::CreateCode(DgnDbR db, DgnModelId modelId, Utf8StringCR categoryName)
-    {
-    DgnModelPtr model = db.Models().GetModel(modelId);
-    return model.IsValid() ? CreateCode(*model, categoryName) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrawingCategory::DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, DgnModel::DictionaryId(), name)))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrawingCategory::DrawingCategory(DgnDbR db, DgnCodeCR code, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), code))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
     DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status);

@@ -1049,7 +1049,7 @@ void            PointFormatter::InitModelSettings(GeometricModelCR model, bool a
         return;
 
     // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
-    AuxCoordSystemPtr acs = new AuxCoordSystem3d(spatialModel->GetDgnDb());
+    AuxCoordSystemPtr acs = new AuxCoordSystem3d(spatialModel->GetDgnDb().GetDictionaryModel());
 
     acs->SetOrigin(spatialModel->GetDgnDb().GeoLocation().GetGlobalOrigin());
     m_acs = acs;
