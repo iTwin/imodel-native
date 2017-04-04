@@ -102,13 +102,13 @@ protected:
     //! Destruct a PointCloudModel object.
     ~PointCloudModel();
 
-    virtual void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
-    virtual void _OnFitView(Dgn::FitContextR) override;
-    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
-    virtual void _WriteJsonProperties(Json::Value&) const override;
-    virtual void _ReadJsonProperties(Json::Value const&) override;
-    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-    virtual TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
+    void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
+    void _OnFitView(Dgn::FitContextR) override;
+    void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
+    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
 
 public:
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.

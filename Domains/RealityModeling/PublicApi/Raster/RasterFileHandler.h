@@ -30,6 +30,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterModel)
 
+    BE_JSON_NAME(srcToDb)
+
 public:
     struct CreateParams : T_Super::CreateParams
         {
@@ -71,9 +73,9 @@ protected:
     //! Destruct a RasterFileModel object.
     ~RasterFileModel();
 
-    virtual void            _WriteJsonProperties(Json::Value&) const override;
-    virtual void            _ReadJsonProperties(Json::Value const&) override;
-    virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
+    BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
 
     bool _IsParallelToGround() const override;
     

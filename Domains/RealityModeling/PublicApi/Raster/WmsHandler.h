@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/WmsHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,6 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
 {
 DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_WmsModel, RasterModel)
 
+    BE_JSON_NAME(wms)
 private:
     WmsMap m_map;
 
@@ -85,8 +86,8 @@ protected:
     //! Destruct a WmsModel object.
     ~WmsModel();
 
-    virtual void _WriteJsonProperties(Json::Value&) const override;
-    virtual void _ReadJsonProperties(Json::Value const&) override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
 
     bool _IsParallelToGround() const override { return true; }
 

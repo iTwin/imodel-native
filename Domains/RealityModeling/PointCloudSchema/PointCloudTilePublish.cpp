@@ -81,7 +81,8 @@ size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange,
 void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
     {
     static size_t       s_depthLimit = 20;
-    static size_t       s_minTilePointCount = 100;
+    static size_t       s_minTilePointCount = 100;
+
     static const double s_minToleranceRatio = 1000.0;       // This is key parameter - increasing it will make fewer, larger tiles.   Too low will produce small tiles and excessive draw calls degrading performance.
                                                             // 1000 will generate around a half million points per tile which seems to work well.
     double              tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;

@@ -240,19 +240,21 @@ BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_WriteJsonProperties(Json::Value& v) const
+void WmsModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(v);
-    m_map.ToJson(v);
+    T_Super::_OnSaveJsonProperties();
+    Json::Value val;
+    m_map.ToJson(val);
+    SetJsonProperties(json_wms(), val);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_ReadJsonProperties(Json::Value const& v)
+void WmsModel::_OnLoadedJsonProperties()
     {
-    T_Super::_ReadJsonProperties(v);
-    m_map.FromJson(v);
+    T_Super::_OnLoadedJsonProperties();
+    m_map.FromJson(GetJsonProperties(json_wms()));
     }
 
 //----------------------------------------------------------------------------------------
