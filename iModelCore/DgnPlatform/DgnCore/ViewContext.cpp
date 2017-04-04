@@ -398,9 +398,6 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
 void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
     {
     _AddViewOverrides(ovrMatSymb); // Modify ovrMatSymb for view flags...
-
-    if (nullptr != m_viewport)
-        m_viewport->GetViewControllerR()._OverrideGraphicParams(ovrMatSymb, source);
     }
 
 /*---------------------------------------------------------------------------------**//**

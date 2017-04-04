@@ -334,14 +334,6 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewportCP ViewController::GetViewport() const
-    {
-    return m_vp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)

@@ -185,7 +185,10 @@ protected:
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
 
-    virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
+    //! Override visibility and/or symbology of features. Base implementation handles hilite color.
+    //! Note: This function is invoked just before rendering a frame, if and only if ViewController::IsFeatureSymbologyDirty() returns true.
+    //! If you override this function, use SetFeatureSymbologyDirty() to set this flag whenever changes are made which will affect your symbology overrides.
+    DGNPLATFORM_EXPORT virtual void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const;
 
     //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
@@ -211,13 +214,13 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    DgnViewportCP GetViewport() const;
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
+    void AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const { _AddFeatureOverrides(overrides); }
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     virtual void _PickTerrain(PickContextR context) {}
 

@@ -697,16 +697,24 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
             }
         }
 
+    view.AddFeatureOverrides(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_AddFeatureOverrides(FeatureSymbologyOverrides& overrides) const
+    {
     // NB: DgnDisplay will register an ISelectionEvents listener to mark view controller's feature symbology dirty when selection set changes...
-    auto vp = view.GetViewport();
-    if (nullptr != vp)
-        {
-        ColorDef hiliteColor = vp->AdjustColorForContrast(vp->GetHiliteColor(), vp->GetBackgroundColor());
-        Appearance hilite;
-        hilite.SetRgb(hiliteColor);
-        for (auto const& hiliteId : view.GetDgnDb().Elements().GetSelectionSet())
-            OverrideElement(hiliteId, hilite);
-        }
+    auto vp = m_vp;
+    if (nullptr == vp)
+        return;
+
+    ColorDef hiliteColor = vp->AdjustColorForContrast(vp->GetHiliteColor(), vp->GetBackgroundColor());
+    FeatureSymbologyOverrides::Appearance hilite;
+    hilite.SetRgb(hiliteColor);
+    for (auto const& hiliteId : GetDgnDb().Elements().GetSelectionSet())
+        overrides.OverrideElement(hiliteId, hilite);
     }
 
 /*---------------------------------------------------------------------------------**//**
