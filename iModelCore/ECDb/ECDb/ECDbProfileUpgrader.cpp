@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1091,7 +1091,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    schemaKey = SchemaKey("MetaSchema", 3, 0, 1);
+    schemaKey = SchemaKey("MetaSchema", 3, 0, 2);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 

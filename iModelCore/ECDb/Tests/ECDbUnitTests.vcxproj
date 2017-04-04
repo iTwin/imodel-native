@@ -161,7 +161,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
+    <NMakeOutput>d:\dev\dgndb\61_16Q4\out\winx64\Product\ECDb-GTest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>
@@ -170,7 +170,7 @@
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)Winx64\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
+    <NMakeOutput>d:\dev\dgndb\61_16Q4\out\winx64\Product\ECDb-GTest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>
@@ -179,12 +179,12 @@
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)Winx64\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>d:\dev\dgndb\61_16Q4\out\winx64\Product\ECDb-GTest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Performance\;$(ProjectDir)\NonPublished\DgnDbECProvider\;$(ProjectDir)\NonPublished\PublicAPI\;$(ProjectDir)\NonPublished\ECDb\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\GUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\BUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>d:\dev\dgndb\61_16Q4\out\winx64\Product\ECDb-GTest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Performance\;$(ProjectDir)\NonPublished\DgnDbECProvider\;$(ProjectDir)\NonPublished\PublicAPI\;$(ProjectDir)\NonPublished\ECDb\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\GUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\BUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
