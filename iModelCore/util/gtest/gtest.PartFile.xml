@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <!-- Use part TestRunner instead. -->
-    <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86">
+    <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM*,AndroidX86">
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
@@ -29,7 +29,7 @@
 
     <!-- Use part TestRunnerPagalloc instead. -->
     <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
-                                         ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86" >
+                                         ExcludePlatforms="AndroidARM*,AndroidX86" >
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
