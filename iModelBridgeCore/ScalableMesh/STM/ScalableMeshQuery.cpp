@@ -1604,7 +1604,10 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
         pts[2] = m_points[m_faceIndexes[i + 2] - 1];
         if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
             {
-            if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            if(m_boxes.size() > 0)
+                if (!m_boxes[i/3].IsContainedXY(ray.origin)) continue;
+            else
+                if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
             }
 
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
@@ -1668,6 +1671,22 @@ void ScalableMeshMesh::_WriteToFile(WString& filePath)
     name.append(std::to_wstring(s_id++).c_str());
     name.append(L".m");
     LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, m_nbPoints, m_nbFaceIndexes, m_points, m_faceIndexes)
+    }
+
+void ScalableMeshMesh::StoreTriangleBoxes()
+    {
+    m_boxes.clear();
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return;
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        DRange3d range =  DRange3d::From(pts, 3);
+        m_boxes.push_back(range);
+        }
     }
 
 const Byte* ScalableMeshTexture::_GetData() const
@@ -2320,6 +2339,16 @@ bool IScalableMeshMeshFlags::ShouldLoadGraph() const
     return _ShouldLoadGraph();
     }
 
+bool IScalableMeshMeshFlags::ShouldSaveToCache() const
+{
+    return _ShouldSaveToCache();
+}
+
+bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
+{
+    return _ShouldPrecomputeBoxes();
+}
+
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
     _SetLoadTexture(loadTexture);
@@ -2334,6 +2363,17 @@ void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph)
     {
     _SetLoadGraph(loadGraph);
     }
+
+void IScalableMeshMeshFlags::SetSaveToCache(bool saveToCache)
+{
+    _SetSaveToCache(saveToCache);
+}
+
+void IScalableMeshMeshFlags::SetPrecomputeBoxes(bool precomputeBoxes)
+{
+    _SetPrecomputeBoxes(precomputeBoxes);
+}
+
 
 IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
     {
@@ -2363,6 +2403,16 @@ bool ScalableMeshMeshFlags::_ShouldLoadGraph() const
     return m_loadGraph;
     }
 
+bool ScalableMeshMeshFlags::_ShouldSaveToCache() const
+{
+    return m_saveToCache;
+}
+
+bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
+{
+    return m_precomputeBoxes;
+}
+
 void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
     {
     m_loadIndices = loadIndices;
@@ -2377,6 +2427,16 @@ void ScalableMeshMeshFlags::_SetLoadGraph(bool loadGraph)
     {
     m_loadGraph = loadGraph;
     }
+
+void ScalableMeshMeshFlags::_SetSaveToCache(bool saveToCache)
+{
+    m_saveToCache = saveToCache;
+}
+
+void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
+{
+    m_precomputeBoxes = precomputeBoxes;
+}
 
 bool IScalableMeshNode::ArePoints3d() const
     {

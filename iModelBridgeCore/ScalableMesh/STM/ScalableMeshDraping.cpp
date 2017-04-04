@@ -626,6 +626,8 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
     {
     DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    flags->SetSaveToCache(true);
+    flags->SetPrecomputeBoxes(true);
     auto meshP = target->GetMesh(flags);
     if (meshP != nullptr) return meshP->IntersectRay(pointOnDTM, ray);
     return false;
