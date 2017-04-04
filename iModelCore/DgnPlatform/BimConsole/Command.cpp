@@ -1762,12 +1762,12 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
     BimConsole::WriteLine("Median: %.1f", ComputeQuantile(sortedClassColCounts, .5));
     BimConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(sortedClassColCounts, .8));
     //Mean
-    const double mean = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) * 1.0 / sortedClassColCounts.size();
+    const double mean = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) / (1.0 * sortedClassColCounts.size());
     BimConsole::WriteLine("Mean: %.1f:", mean);
 
     //stddev
     const double variance = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0.0,
-                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); }) * 1.0 / sortedClassColCounts.size();
+                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); }) / (1.0 * sortedClassColCounts.size());
     BimConsole::WriteLine("Standard Deviation: %.1f:", std::sqrt(variance));
 
     for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
