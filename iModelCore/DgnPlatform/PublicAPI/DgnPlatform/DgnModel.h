@@ -211,6 +211,8 @@ private:
     void UnloadRangeIndex();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
+    BE_JSON_NAME(UserProps)
+    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[json_UserProps()];}
 
 protected:
     DgnDbR m_dgndb;
@@ -218,11 +220,12 @@ protected:
     DgnClassId m_classId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
+    BeMutex m_mutex;
     bool m_isPrivate;
     bool m_isTemplate;
-    BeMutex m_mutex;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+    ECN::AdHocJsonValue m_jsonProperties;
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -249,17 +252,16 @@ protected:
     //! Then you @em must call T_Super::_BindWriteParams
     DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
-    //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
-    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
-    //! writing your properties into a sub node of the value to avoid collisions with the 
+    //! Invoked on saving the JsonProperties field into the Db as part of an Insert or Update operation.
+    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties.
+    //! Put your properties into a sub node of m_jsonProperties to avoid collisions with the 
     //! super class properties.
-    virtual void _WriteJsonProperties(Json::Value& value) const {}
+    virtual void _OnSaveJsonProperties() {}
 
-    //! Invoked when reading the Properties field from the Db. 
-    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
-    //! writing your properties into a sub node of the value to avoid collisions with the 
-    //! super class properties.
-    virtual void _ReadJsonProperties(Json::Value const& value) {}
+    //! Invoked after the DgnModel is loaded so that subclasses can read from the m_jsonProperites field, if necessary. 
+    //! The properties will already have been loaded into the m_jsonProperties member.
+    //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties.
+    virtual void _OnLoadedJsonProperties() {}
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
@@ -672,6 +674,24 @@ public:
     //! @param[in] whereClause The optional where clause starting with WHERE (note, ModelId is already specified.)
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
+
+    //! @name JsonProperties 
+    //! @{
+    //! Get the current value of a set of Json Properties on this element
+    ECN::AdHocJsonValueCR GetJsonProperties(Utf8CP nameSpace) const {return m_jsonProperties.GetMember(nameSpace);}
+
+    //! Change the value of a set of Json Properties on this element
+    void SetJsonProperties(Json::StaticString nameSpace, JsonValueCR value) {m_jsonProperties.GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
+
+    //! Remove a set of Json Properties on this element
+    void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.RemoveMember(nameSpace);}
+
+    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(json_UserProps()).GetMember(nameSpace);}
+
+    void SetUserProperties(Utf8CP nameSpace, JsonValueCR value) {GetUserPropsR().GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
+
+    void RemoveUserProperties(Utf8CP nameSpace) {GetUserPropsR().RemoveMember(nameSpace);}
+    /** @} */
 }; // DgnModel
 
 //=======================================================================================
@@ -690,7 +710,7 @@ public:
     //! node of the JSON value that's serialized as a string in "Properties" column of the DgnModel table.
     //! @ingroup GROUP_DgnModel
     //=======================================================================================
-    struct DisplayInfo
+    struct Formatter
     {
     friend struct GeometricModel;
 
@@ -704,19 +724,28 @@ public:
             uint32_t m_angularPrecision : 8;
             uint32_t m_directionMode : 2;
             uint32_t m_directionClockwise : 1;
-            void FromJson(Json::Value const& inValue);
-            void ToJson(Json::Value& outValue) const;
+
+            BE_JSON_NAME(linMode)
+            BE_JSON_NAME(linType)
+            BE_JSON_NAME(linPrec)
+            BE_JSON_NAME(angMode)
+            BE_JSON_NAME(angPrec)
+            BE_JSON_NAME(dirMode)
+            BE_JSON_NAME(clockwise)
+
+            void FromJson(JsonValueCR);
+            Json::Value ToJson() const;
         };
 
-        FormatterFlags m_formatterFlags;               //!< format flags
-        UnitDefinition m_masterUnit;                   //!< Master Unit information
-        UnitDefinition m_subUnit;                      //!< Sub Unit information
-        double         m_roundoffUnit;                 //!< unit lock roundoff val
-        double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
-        double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+        FormatterFlags m_formatterFlags; //!< format flags
+        UnitDefinition m_masterUnit;  //!< Master Unit information
+        UnitDefinition m_subUnit; //!< Sub Unit information
+        double m_roundoffUnit; //!< unit lock roundoff val
+        double m_roundoffRatio; //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
+        double m_formatterBaseDir; //!< Base Direction used for Direction To/From String
 
     public:
-        DisplayInfo()
+        Formatter()
             {
             m_formatterFlags.m_linearUnitMode = 0;
             m_formatterFlags.m_linearPrecType = 0;
@@ -732,8 +761,15 @@ public:
             m_subUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMillimeters);
             }
 
-        void FromJson(Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
+        BE_JSON_NAME(fmtFlags)
+        BE_JSON_NAME(mastUnit)
+        BE_JSON_NAME(subUnit)
+        BE_JSON_NAME(rndUnit)
+        BE_JSON_NAME(rndRatio)
+        BE_JSON_NAME(fmtDir)
+
+        void FromJson(JsonValueCR);
+        Json::Value ToJson() const;
 
         //! Set master units and sub-units. Units must be valid and comparable.
         DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
@@ -783,7 +819,7 @@ public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricModel::T_Super::CreateParams);
-        DisplayInfo  m_displayInfo;
+        Formatter m_displayInfo;
 
         //! Parameters to create a new instance of a GeometricModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
@@ -791,7 +827,7 @@ public:
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] isPrivate Optional parameter specifying that this model should @em not appear in lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool isPrivate = false)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, Formatter displayInfo = Formatter(), bool isPrivate = false)
             : T_Super(dgndb, classId, modeledElementId, isPrivate), m_displayInfo(displayInfo)
             {}
 
@@ -799,13 +835,13 @@ public:
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
 
-        DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;} //!< Get the DisplayInfo
-        void SetDisplayInfo(DisplayInfo const& displayInfo) {m_displayInfo = displayInfo;} //!< Set the DisplayInfo
+        Formatter const& GetFormatter() const {return m_displayInfo;} //!< Get the Formatter
+        void SetFormatter(Formatter const& displayInfo) {m_displayInfo = displayInfo;} //!< Set the Formatter
     };
 
 protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
-    DisplayInfo  m_displayInfo;
+    Formatter m_displayInfo;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
@@ -830,13 +866,15 @@ protected:
     void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
     void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
     void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
-    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
+    DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
 public:
+    BE_JSON_NAME(formatter)
+
     DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
     void RemoveRangeIndex() {BeMutexHolder lock(m_mutex); m_rangeIndex.reset();}
 
@@ -845,11 +883,11 @@ public:
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get a writable reference to the DisplayInfo for this model.
-    DisplayInfo& GetDisplayInfoR() {return m_displayInfo;}
+    //! Get a writable reference to the Formatter for this model.
+    Formatter& GetFormatterR() {return m_displayInfo;}
 
-    //! Get the Properties for this model.
-    DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;}
+    //! Get the Formatter for this model.
+    Formatter const& GetFormatter() const {return m_displayInfo;}
 };
 
 //=======================================================================================

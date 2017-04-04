@@ -303,7 +303,7 @@ static void testModelUndoRedo(DgnDbR db)
     model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(model->IsPersistent());
 
-    auto& displayInfo = model->ToGeometricModelP()->GetDisplayInfoR();
+    auto& displayInfo = model->ToGeometricModelP()->GetFormatterR();
     displayInfo.SetRoundoffUnit(100.0, 200.0);
     ASSERT_TRUE(100.0 == displayInfo.GetRoundoffUnit());
     ASSERT_TRUE(200.0 == displayInfo.GetRoundoffRatio());
@@ -311,7 +311,7 @@ static void testModelUndoRedo(DgnDbR db)
     model->Update();
     db.SaveChanges("updated model");
     stat = txns.ReverseSingleTxn(); // undo update
-    ASSERT_TRUE(&displayInfo == &model->ToGeometricModelP()->GetDisplayInfoR());
+    ASSERT_TRUE(&displayInfo == &model->ToGeometricModelP()->GetFormatterR());
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(100.0 != displayInfo.GetRoundoffUnit());
     ASSERT_TRUE(200.0 != displayInfo.GetRoundoffRatio());

@@ -323,7 +323,7 @@ DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams c
 
 namespace WebMercatorStrings
 {
-static constexpr Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
+    BE_JSON_NAME(WebMercatorModel)
 static constexpr Utf8CP str_MapService() {return "service";}
 static constexpr Utf8CP str_MapType() {return "map_type";}
 static constexpr Utf8CP str_GroundBias() {return "groundBias";}
@@ -335,12 +335,14 @@ using namespace WebMercatorStrings;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Properties::ToJson(Json::Value& value) const
+Json::Value WebMercatorModel::Properties::ToJson() const
     {
+    Json::Value value;
     value[Json::StaticString(str_MapService())] = (uint32_t) m_mapService;
     value[Json::StaticString(str_MapType())] = (uint32_t) m_mapType;
     value[Json::StaticString(str_GroundBias())] = m_groundBias;
     value[Json::StaticString(str_Transparency())] = m_transparency;
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,20 +365,19 @@ void WebMercatorModel::Properties::FromJson(Json::Value const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
+void WebMercatorModel::_OnSaveJsonProperties() 
     {
-    m_properties.ToJson(val[str_WebMercatorModel()]);
-    T_Super::_WriteJsonProperties(val);
+    SetJsonProperties(json_WebMercatorModel(), m_properties.ToJson());
+    T_Super::_OnSaveJsonProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
+void WebMercatorModel::_OnLoadedJsonProperties()
     {
-    BeAssert(val.isMember(str_WebMercatorModel()));
-    m_properties.FromJson(val[Json::StaticString(str_WebMercatorModel())]);
-    T_Super::_ReadJsonProperties(val);
+    m_properties.FromJson(GetJsonProperties(json_WebMercatorModel()));
+    T_Super::_OnLoadedJsonProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**

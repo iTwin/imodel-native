@@ -2523,7 +2523,7 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
             return false;   // process as facets (optimization).
 
         CurveVectorPtr clone = curves.Clone();
-        return ProcessGeometry(*IGeometry::Create(clone), true, isRegion, gf);
+        return ProcessGeometry(*IGeometry::Create(clone), true, !isRegion, gf);
         }
     }
 

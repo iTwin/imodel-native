@@ -124,7 +124,7 @@ TEST_F (CategoryTests, InsertCategory)
     Utf8CP cat4_name = "Test Category 4";
     Utf8CP cat4_desc = "This is test category 4.";
 
-    DrawingCategory category4(*m_db, cat4_name, DgnCategory::Rank::User, cat4_desc);
+    DrawingCategory category4(m_db->GetDictionaryModel(), cat4_name, DgnCategory::Rank::User, cat4_desc);
     DrawingCategoryCPtr pCategory4 = category4.Insert(appearence);
     ASSERT_TRUE(pCategory4.IsValid());
 

@@ -2241,8 +2241,8 @@ bool AngleFormatTypeAdapter::_ConvertToDisplayType (ECValueR v, IDgnECTypeAdapte
     GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
     if (model)
         {
-        mode = model->GetDisplayInfo().GetAngularMode();
-        nDecimalPlaces = (int32_t) model->GetDisplayInfo().GetAngularPrecision();
+        mode = model->GetFormatter().GetAngularMode();
+        nDecimalPlaces = (int32_t) model->GetFormatter().GetAngularPrecision();
         }
     
     // DirectionFormatter doesn't have the "Format" property. Will use degrees by default.
@@ -2357,7 +2357,7 @@ bool AngleTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgnECTypeAda
     AngleParserPtr parser = AngleParser::Create();
     GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
     if (model)
-        parser->SetAngleMode(model->GetDisplayInfo().GetAngularMode());
+        parser->SetAngleMode(model->GetFormatter().GetAngularMode());
 
     double  angleVal;
     if (SUCCESS != parser->ToValue (angleVal, str))
@@ -2408,7 +2408,7 @@ bool DirectionAngleTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgn
     GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
     if (model)
         {
-        GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+        GeometricModel::Formatter const& displayInfo = model->GetFormatter();
 
         parser->SetDirectionMode(displayInfo.GetDirectionMode());
         parser->SetBaseDirection(displayInfo.GetDirectionBaseDir());
@@ -2455,7 +2455,7 @@ bool XyzRotationsTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgnEC
     GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
     AngleParserPtr parser = AngleParser::Create();
     if (model)
-        parser->SetAngleMode(model->GetDisplayInfo().GetAngularMode());
+        parser->SetAngleMode(model->GetFormatter().GetAngularMode());
 
     double  angleVal;
     if (SUCCESS != parser->ToValue (angleVal, str))
@@ -2495,7 +2495,7 @@ bool XyzRotationsTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgnEC
 //        GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
 //        if (nullptr != model)
 //            {
-//            GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+//            GeometricModel::DisplayInfo const& displayInfo = model->GetFormatter();
 //            PrecisionFormat prec = displayInfo.GetLinearPrecision();
 //            m_nDecimalPlaces = (((int32_t)prec) & 0x0000000F);
 //
@@ -2846,7 +2846,7 @@ void AreaOrVolumeTypeAdapter::InitFormatter(AreaOrVolumeFormatterBase& fmtr, Geo
         }
     else if (USE_ACTIVE_SUBUNITS == unitInt && NULL != model)
         {
-        UnitDefinitionCR subUnit = model->GetDisplayInfo().GetSubUnits();
+        UnitDefinitionCR subUnit = model->GetFormatter().GetSubUnits();
         fmtr.SetMasterUnit (subUnit);
         }
 

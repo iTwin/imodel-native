@@ -1562,7 +1562,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
     
 private:
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(db, BIS_CODESPEC_LineStyle, name); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_LineStyle, db.GetDictionaryModel(), name); }
 
 protected:
     DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }

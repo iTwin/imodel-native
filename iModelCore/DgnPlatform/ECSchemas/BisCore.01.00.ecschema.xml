@@ -139,11 +139,11 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
         </ECNavigationProperty>
-        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="A string property used by the system to persist ad-hoc JSON values.">
+       <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
-        </ECProperty>
+         </ECProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -452,7 +452,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist ad-hoc JSON values.">
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty>
