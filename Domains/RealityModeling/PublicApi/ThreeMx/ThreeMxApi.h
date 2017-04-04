@@ -18,7 +18,7 @@
 #define USING_NAMESPACE_BENTLEY_THREEMX      using namespace BentleyApi::ThreeMx;
 
 #define THREEMX_SCHEMA_NAME "ThreeMx"
-#define THREEMX_SCHEMA_FILE L"ThreeMx.01.00.ecschema.xml"
+#define THREEMX_SCHEMA_FILE L"ThreeMx.ecschema.xml"
 #define THREEMX_SCHEMA(className)   THREEMX_SCHEMA_NAME "." className
 
 #ifdef __THREEMX_BUILD__

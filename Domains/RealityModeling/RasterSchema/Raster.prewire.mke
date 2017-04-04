@@ -2,7 +2,7 @@
 #
 #     $Source: RasterSchema/Raster.prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -10,5 +10,5 @@
 $(BuildContext)PublicAPI/Raster : $(_MakeFilePath)../PublicAPI/Raster
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Domain/Raster.01.00.ecschema.xml : $(_MakeFilePath)Raster.01.00.ecschema.xml
+$(BuildContext)ECSchemas/Domain/Raster.ecschema.xml : $(_MakeFilePath)Raster.ecschema.xml
     $(LinkFirstDepToFirstTarget)
