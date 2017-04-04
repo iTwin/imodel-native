@@ -449,9 +449,9 @@ int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDa
     return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {    
-    return _CreateCoverage(coverageData, id);
+    return _CreateCoverage(coverageData, id, coverageName);
     }
 
 BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
@@ -2681,7 +2681,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
 
 static bool s_doGroundExtract = true; 
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id)
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {
    // if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
@@ -2690,7 +2690,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const
    // _AddSkirt(skirts, id, false);
 
 /*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
-    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
+    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size(), coverageName);
 
     //m_terrainP->AddClip(coverageData.data(), coverageData.size(), id);
 

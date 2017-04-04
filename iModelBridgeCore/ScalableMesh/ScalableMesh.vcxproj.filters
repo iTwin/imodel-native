@@ -1383,9 +1383,6 @@
     <ClCompile Include="STM\CGALEdgeCollapse.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMSQLiteFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\DrapeOnGraph.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1442,15 +1439,6 @@
     <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
@@ -1484,6 +1472,18 @@
       <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteFile.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
   </ItemGroup>

@@ -60,7 +60,8 @@ enum class SMStoreDataType
     DisplayMesh,
     //Not persisted data type
     DisplayTexture,
-    Coverage,
+    CoveragePolygon,
+    CoverageName,
     Unknown, 
     };
 
@@ -180,6 +181,7 @@ typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>>      ISMMTGGraphDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Byte>>          ISMTextureDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Utf8String>>    ISMCoverageNameDataStorePtr;
 
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
@@ -253,10 +255,13 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) = 0;
 
+        virtual bool GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        
+        
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
         virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
-        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;        
     };

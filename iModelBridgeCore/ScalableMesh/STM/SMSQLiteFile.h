@@ -203,6 +203,7 @@ public:
 
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize) { assert(false); }
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID) { assert(false); return 0; }
 
     virtual void GetAllCoverageIDs(bvector<uint64_t>& ids) { assert(false); }
