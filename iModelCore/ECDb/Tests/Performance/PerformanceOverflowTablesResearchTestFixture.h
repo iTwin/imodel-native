@@ -826,20 +826,43 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
     protected:
         struct Scenario final
             {
-            enum class ColumnMode
+            enum class Mode
                 {
-                First,
-                Middle,
-                Last
+                FirstColumn,
+                MiddleColumn,
+                LastColumn,
+                FirstEightyPercentColumns,
+                AllColumns
                 };
 
             int m_colCount = -1;
-            ColumnMode m_colMode;
+            Mode m_mode;
             
-            Scenario(int colCount, ColumnMode colMode) : m_colCount(colCount), m_colMode(colMode) {}
+            Scenario(int colCount, Mode mode) : m_colCount(colCount), m_mode(mode) {}
 
+            int GetOperationColCount() const 
+                {
+                switch (m_mode)
+                    {
+                        case Mode::FirstColumn:
+                        case Mode::LastColumn:
+                        case Mode::MiddleColumn:
+                            return 1;
+
+                        case Mode::AllColumns:
+                            return m_colCount;
+
+                        case Mode::FirstEightyPercentColumns:
+                            return m_colCount * 80 / 100;
+
+                        default:
+                            BeAssert(false);
+                            return -1;
+                    }
+                }
+            bool IsSingleColumnMode() const { return m_mode == Mode::FirstColumn || m_mode == Mode::LastColumn || m_mode == Mode::MiddleColumn; }
             int GetSingleColIndex() const;
-            Utf8CP ColumnModeToString() const;
+            Utf8CP ModeToString() const;
             };
 
     private:
@@ -847,7 +870,6 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
         static const int s_opCount = 50000;
 
         static void SetupTestDb(Db&, Scenario const&);
-        static int ComputeValue(int rowNo, int colNumber);
         static Utf8String GetColumnName(int colIndex);
         void LogTiming(StopWatch&, Utf8CP operation, Scenario const&, int initialRowCount, int opCount) const;
 
@@ -855,20 +877,20 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
         static std::vector<Scenario> GetTestScenarios()
             { 
             std::vector<Scenario> scenarios;
-            for (int colCount : {10, 20, 30, 50, 80, 130, 210, 340, 550})
+            for (int colCount : {30, 50, 80, 130, 210, 340, 550})
                 {
-                scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::Middle));
-                scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::First));
-                scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::Last));
+                scenarios.push_back(Scenario(colCount, Scenario::Mode::MiddleColumn));
+                scenarios.push_back(Scenario(colCount, Scenario::Mode::FirstEightyPercentColumns));
+                scenarios.push_back(Scenario(colCount, Scenario::Mode::AllColumns));
+                scenarios.push_back(Scenario(colCount, Scenario::Mode::FirstColumn));
+                scenarios.push_back(Scenario(colCount, Scenario::Mode::LastColumn));
                 }
 
             return scenarios;
             }
 
-        void RunInsertSingleCol(Scenario const&) const;
-        void RunSelectSingleCol(Scenario const&) const;
-        void RunSelectWhereSingleCol(Scenario const&) const;
-        void RunUpdateSingleCol(Scenario const&) const;
+        void RunInsert(Scenario const&) const;
+        void RunUpdate(Scenario const&) const;
         void RunDelete(Scenario const&) const;
 
     };
@@ -877,23 +899,43 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsertSingleCol(Scenario const& scenario) const
+void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsert(Scenario const& scenario) const
     {
     Db db;
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
 
-    const int colIx = scenario.GetSingleColIndex();
-
     Utf8String insertSql;
-    insertSql.Sprintf("INSERT INTO t(%s) VALUES(?)", GetColumnName(colIx).c_str());
+    if (scenario.IsSingleColumnMode())
+        {
+        const int colIx = scenario.GetSingleColIndex();
+        insertSql.Sprintf("INSERT INTO t(%s) VALUES(random()/1000)", GetColumnName(colIx).c_str());
+        }
+    else
+        {
+        insertSql.assign("INSERT INTO t(");
+        Utf8String valuesClause(") VALUES(");
+        for (int i = 0; i < scenario.GetOperationColCount(); i++)
+            {
+            if (i > 0)
+                {
+                insertSql.append(",");
+                valuesClause.append(",");
+                }
+
+            insertSql.append(GetColumnName(i));
+            valuesClause.append("random()/1000");
+            }
+
+        insertSql.append(valuesClause).append(")");
+        }
+
     StopWatch timer(true);
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str() << " " << db.GetLastError().c_str();
 
     for (int opNo = 0; opNo < s_opCount; opNo++)
         {
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(1, ComputeValue(opNo + 1, colIx))) << stmt.GetSql() << " " << db.GetLastError().c_str();
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetSql() << " " << db.GetLastError().c_str();
 
         stmt.Reset();
@@ -908,50 +950,32 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsertSingleCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdateSingleCol(Scenario const& scenario) const
+void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdate(Scenario const& scenario) const
     {
     Db db;
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
 
-    const int colIx = scenario.GetSingleColIndex();
-
     Utf8String sql;
-    sql.Sprintf("UPDATE t SET %s=? WHERE Id=?", GetColumnName(colIx).c_str());
-    StopWatch timer(true);
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
-
-    const int rowIdIncrement = s_initialRowCount / s_opCount;
-    for (int opNo = 0; opNo < s_opCount; opNo++)
+    if (scenario.IsSingleColumnMode())
         {
-        const int rowId = opNo * rowIdIncrement + 1;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(1, ComputeValue(rowId, colIx) + 1)) << stmt.GetSql() << " " << db.GetLastError().c_str();
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(2, rowId)) << stmt.GetSql() << " " << db.GetLastError().c_str();
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetSql() << " " << db.GetLastError().c_str();
-        ASSERT_EQ(1, db.GetModifiedRowCount()) << "Col Count: " << scenario.m_colCount << " Column Mode: " << scenario.ColumnModeToString() << " " << stmt.GetSql();
-        stmt.Reset();
-        stmt.ClearBindings();
+        const int colIx = scenario.GetSingleColIndex();
+        sql.Sprintf("UPDATE t SET %s=random()/1000 WHERE Id=?", GetColumnName(colIx).c_str());
+        }
+    else
+        {
+        sql.assign("UPDATE t SET ");
+        for (int i = 0; i < scenario.GetOperationColCount(); i++)
+            {
+            if (i > 0)
+                sql.append(",");
+
+            sql.append(GetColumnName(i)).append("=random()/1000");
+            }
+
+        sql.append(" WHERE Id=?");
         }
 
-    timer.Stop();
-    db.AbandonChanges();
-    LogTiming(timer, "UPDATE", scenario, s_initialRowCount, s_opCount);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunSelectSingleCol(Scenario const& scenario) const
-    {
-    Db db;
-    SetupTestDb(db, scenario);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    const int colIx = scenario.GetSingleColIndex();
-
-    Utf8String sql;
-    sql.Sprintf("SELECT %s FROM t WHERE Id=?", GetColumnName(colIx).c_str());
     StopWatch timer(true);
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
@@ -961,44 +985,17 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunSelectSingleCo
         {
         const int rowId = opNo * rowIdIncrement + 1;
         ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(1, rowId)) << stmt.GetSql() << " " << db.GetLastError().c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql() << " " << db.GetLastError().c_str();
-
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetSql() << " " << db.GetLastError().c_str();
+        ASSERT_EQ(1, db.GetModifiedRowCount()) << "Col Count: " << scenario.m_colCount << " Column Mode: " << scenario.ModeToString() << " " << stmt.GetSql();
         stmt.Reset();
         stmt.ClearBindings();
         }
 
     timer.Stop();
-    LogTiming(timer, "SELECT", scenario, s_initialRowCount, s_opCount);
+    db.AbandonChanges();
+    LogTiming(timer, "UPDATE WHERE rowid=?", scenario, s_initialRowCount, s_opCount);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunSelectWhereSingleCol(Scenario const& scenario) const
-    {
-    Db db;
-    SetupTestDb(db, scenario);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    const int colIx = scenario.GetSingleColIndex();
-    const int rowIdIncrement = s_initialRowCount / s_opCount;
-
-    Utf8String sql;
-    sql.Sprintf("SELECT Id FROM t WHERE %s IS NOT NULL AND Id %% %d = 0", GetColumnName(colIx).c_str(), rowIdIncrement);
-    StopWatch timer(true);
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
-
-    int rowCount = 0;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        rowCount++;
-        }
-    timer.Stop();
-    ASSERT_EQ(s_opCount, rowCount);
-
-    LogTiming(timer, "SELECT WHERE", scenario, s_initialRowCount, s_opCount);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
@@ -1026,7 +1023,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
 
     timer.Stop();
     db.AbandonChanges();
-    LogTiming(timer, "DELETE", scenario, s_initialRowCount, s_opCount);
+    LogTiming(timer, "DELETE WHERE rowid=?", scenario, s_initialRowCount, s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1035,31 +1032,8 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
 void PerformanceOverflowTablesResearch_NullColumnsTestFixture::LogTiming(StopWatch& timer, Utf8CP operation, Scenario const& scenario, int initialRowCount, int opCount) const
     {
     Utf8String descr;
-    descr.Sprintf("%s,%d,%s,%d", operation, scenario.m_colCount, scenario.ColumnModeToString(), initialRowCount);
+    descr.Sprintf("%s,%d,%s,%d", operation, scenario.m_colCount, scenario.ModeToString(), initialRowCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, descr.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     01/2017
-//---------------------------------------------------------------------------------------
-//static
-int PerformanceOverflowTablesResearch_NullColumnsTestFixture::ComputeValue(int rowNo, int colNumber)
-    {
-    switch (rowNo % 3)
-        {
-            case 0:
-                return 14352 * (colNumber + 1);
-
-            case 1:
-                return -4553232 / (colNumber + 1);
-
-            case 2:
-                return 9832423 + (1400305 + colNumber);
-
-            default:
-                BeAssert(false);
-                return 0;
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1082,7 +1056,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::SetupTestDb(Db& d
     Initialize();
 
     Utf8String fileName;
-    fileName.Sprintf("perfnullcols_%d_%s_initialrowcount%d_%d.db", scenario.m_colCount, scenario.ColumnModeToString(), s_initialRowCount,
+    fileName.Sprintf("perfnullcols_%d_%s_initialrowcount%d_%d.db", scenario.m_colCount, scenario.ModeToString(), s_initialRowCount,
                      DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
     BeFileName filePath = BuildECDbPath(fileName.c_str());
@@ -1104,7 +1078,27 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::SetupTestDb(Db& d
     createTableSql.append(")");
 
     Utf8String insertSql;
-    insertSql.Sprintf("INSERT INTO t(%s) VALUES(random()/1000)", GetColumnName(scenario.GetSingleColIndex()).c_str());
+    if (scenario.IsSingleColumnMode())
+        insertSql.Sprintf("INSERT INTO t(%s) VALUES(random()/1000)", GetColumnName(scenario.GetSingleColIndex()).c_str());
+    else
+        {
+        insertSql.assign("INSERT INTO t(");
+        Utf8String valuesClause(") VALUES(");
+        for (int i = 0; i < scenario.GetOperationColCount(); i++)
+            {
+            if (i > 0)
+                {
+                insertSql.append(",");
+                valuesClause.append(",");
+                }
+
+            Utf8String colName = GetColumnName(i);
+            insertSql.append(colName);
+            valuesClause.append("random()/1000");
+            }
+
+        insertSql.append(valuesClause).append(")");
+        }
 
     Db seedDb;
     ASSERT_EQ(BE_SQLITE_OK, seedDb.CreateNewDb(filePath)) << filePath.GetNameUtf8().c_str();
@@ -1132,15 +1126,15 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::SetupTestDb(Db& d
 //static
 int PerformanceOverflowTablesResearch_NullColumnsTestFixture::Scenario::GetSingleColIndex() const
     {
-    switch (m_colMode)
+    switch (m_mode)
         {
-            case ColumnMode::First:
+            case Mode::FirstColumn:
                 return 0;
 
-            case ColumnMode::Middle:
+            case Mode::MiddleColumn:
                 return m_colCount / 2;
 
-            case ColumnMode::Last:
+            case Mode::LastColumn:
                 return m_colCount - 1;
 
             default:
@@ -1152,16 +1146,20 @@ int PerformanceOverflowTablesResearch_NullColumnsTestFixture::Scenario::GetSingl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-Utf8CP PerformanceOverflowTablesResearch_NullColumnsTestFixture::Scenario::ColumnModeToString() const
+Utf8CP PerformanceOverflowTablesResearch_NullColumnsTestFixture::Scenario::ModeToString() const
     {
-    switch (m_colMode)
+    switch (m_mode)
         {
-            case ColumnMode::First:
-                return "First";
-            case ColumnMode::Last:
-                return "Last";
-            case ColumnMode::Middle:
-                return "Middle";
+            case Mode::FirstColumn:
+                return "FirstColumn";
+            case Mode::FirstEightyPercentColumns:
+                return "FirstEightyPercent";
+            case Mode::LastColumn:
+                return "LastColumn";
+            case Mode::MiddleColumn:
+                return "MiddleColumn";
+            case Mode::AllColumns:
+                return "AllColumns";
 
             default:
                 BeAssert(false);
