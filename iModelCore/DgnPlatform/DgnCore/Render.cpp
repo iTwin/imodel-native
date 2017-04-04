@@ -703,7 +703,7 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
         {
         ColorDef hiliteColor = vp->AdjustColorForContrast(vp->GetHiliteColor(), vp->GetBackgroundColor());
         Appearance hilite;
-        hilite.SetRgba(hiliteColor);
+        hilite.SetRgb(hiliteColor);
         for (auto const& hiliteId : view.GetDgnDb().Elements().GetSelectionSet())
             OverrideElement(hiliteId, hilite);
         }

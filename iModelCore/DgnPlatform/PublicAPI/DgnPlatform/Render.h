@@ -1928,10 +1928,24 @@ public:
 };
 
 //=======================================================================================
+//! Overrides visibility and symbology based on element ID, subcategory, and/or geometry class.
+//! Overrides applied to elements take priority over those applied to subcategories.
+//! The rules for determining visibility and symbology follow a priority:
+//! Visibility:
+//!     If an element is in the "always drawn" list, it is visible.
+//!     Else, if the "always drawn" list is exclusive, it is invisible.
+//!     Else, if it is in the "never drawn" list, it is invisible.
+//!     Else, any geometry not in the "visible subcategories" list is invisible
+//!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
+//!     Else, it is visible.
+//! Symbology:
+//!     Overrides defined for the element are applied, followed by any overrides defined
+//!     by the subcategory and not already overridden by the element.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct FeatureSymbologyOverrides
 {
+    //! Defines symbology overrides for a single element or subcategory.
     struct Appearance
     {
     private:
@@ -1948,10 +1962,15 @@ struct FeatureSymbologyOverrides
         void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0; }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
+        //! Override transparency
         void SetTransparency(double t) { SetAlpha(static_cast<uint8_t>((1.0-t)*255.0)); }
+        //! Override transparency
         void SetAlpha(uint8_t alpha) { m_flags.m_alpha = true; m_color.SetAlpha(alpha); }
+        //! Override RGB and transparency
         void SetRgba(ColorDef color) { SetRgb(color); SetAlpha(color.GetAlpha()); }
+        //! Override line weight
         void SetWeight(uint32_t weight) { m_flags.m_weight = true; m_weight = weight; }
+        //! Override RGB (alpha component of color is ignored)
         void SetRgb(ColorDef color)
             {
             m_flags.m_rgb = true;
@@ -1961,17 +1980,25 @@ struct FeatureSymbologyOverrides
             m_color = color;
             }
 
+        //! Get the RGB override (alpha component ignored)
         ColorDef GetRgb() const { return m_color; }
+        //! Get the transparency override as an alpha value from 0 (opaque) to 255 (transparent)
         uint8_t GetAlpha() const { return m_color.GetAlpha(); }
+        //! Get the transparency override as a float value from 0.0 (transparent) to 1.0 (opaque)
         double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
+        //! Get the line weight override
         uint32_t GetWeight() const { return m_weight; }
 
+        //! Returns true if any aspect of symbology is overridden.
         bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
+        //! Returns true if transparency is overridden. If it is not, the return values of GetTransparency() and GetAlpha() are meaningless
         bool OverridesAlpha() const { return m_flags.m_alpha; }
+        //! Returns true if RGB is overridden. If it is not, the return value of GetRgb() is meaningless
         bool OverridesRgb() const { return m_flags.m_rgb; }
+        //! Returns true if line weight is overridden. If it is not, the return value of GetWeight() is meaningless
         bool OverridesWeight() const { return m_flags.m_weight; }
 
-        // Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
+        //! Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
         Appearance Extend(Appearance const& base) const;
     };
 
