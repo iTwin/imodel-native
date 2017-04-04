@@ -827,6 +827,8 @@ protected:
     virtual void _ClearGeometry() { }
     virtual WString _GetFileExtension() const = 0;
 
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 0x00ffffff;} // A deep tree can trigger this assertion erroneously.
+
 public:
     DgnModelCR GetModel() const { return *m_model; }
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
@@ -881,9 +883,6 @@ private:
     bool                    m_isLeaf;
     TileGeometryList        m_geometries;
     mutable bool            m_containsParts;
-
-    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} // A deep tree can trigger this assertion erroneously.
-
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
 
