@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaVersionConverstionTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -143,15 +143,6 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema)
 
     bvector<Utf8CP> unexpectedClasses;
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
-
-TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_NoConversionSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"BadSchema.01.00.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_NE(SchemaReadStatus::Success, status) << "Expected BadSchema to fail to load without conversion schema";
     }
 
 TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSchema)

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/StrictSchemaTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -429,109 +429,6 @@ TEST_F(RelationshipClassTests, RelationshipClassBaseClass)
            << "Regular Class may not have RelationshipClass as a base class";
     }
 
-//---------------------------------------------------------------------------------------//
-// Test to check that isStruct is set to false for RelationshipClass as well  as
-// RelationshipConstraint classes
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, RelationshipClassIsStruct)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isStruct=\"True\" >"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isStruct=\"True\" >"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipA\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-        "        <Source cardinality=\"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) 
-           << "Schema should not have Struct class as RelationshipConstraint class";
-
-    CreateTestSchema();
-
-    ECRelationshipClassCP relClass = m_schema->GetClassP("RelationshipA")->GetRelationshipClassCP();
-    ASSERT_NE(nullptr, relClass) << "Cannot find 'RelationshipA' in test schema";
-
-    ASSERT_FALSE(relClass->IsStructClass()) << "IsStruct property must be false for RelationshipClass";
-
-    for (auto constraintClass : relClass->GetSource().GetConstraintClasses())
-        {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass()) 
-                  << "RelationshipConstraint may not have StructClasses";
-        }
-
-    for (auto constraintClass : relClass->GetTarget().GetConstraintClasses())
-        {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass())
-                  << "RelationshipConstraint may not have StructClasses";
-        }
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that isCustomAttributeClass is set to false for RelationshipClass 
-// as well RelationshipConstraint classes
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, RelationshipClassIsCustomAttribute)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isCustomAttributeClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isCustomAttributeClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"Property2\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipA\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-        "        <Source cardinality=\"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) 
-           << "Schema should not have CustomAttribute class as RelationshipConstraintClass";
-
-    CreateTestSchema();
-
-    ECRelationshipClassCP relClass = m_schema->GetClassP("RelationshipA")->GetRelationshipClassCP();
-    ASSERT_NE(nullptr, relClass) << "Cannot find 'RealtionshipA' in test schema";
-
-    ASSERT_FALSE(relClass->IsCustomAttributeClass()) 
-              << "IsCustomAttributeClass property must be false for RelationshipClass";
-
-    for (auto constraintClass : relClass->GetSource().GetConstraintClasses())
-        {
-        ASSERT_FALSE(constraintClass->GetClass().IsCustomAttributeClass())
-                  << "RelationshipConstraint may not have a CustomAttribute Class";
-        }
-
-    for (auto constraintClass : relClass->GetTarget().GetConstraintClasses())
-        {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass())
-                  << "RelationshipConstraint may not have a CustomAttribute Class";
-        }
-    }
 
 //---------------------------------------------------------------------------------------//
 // Test to check that Abstract RelationshipClass may not be instatiated
