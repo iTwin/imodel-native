@@ -618,9 +618,10 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);
-        BeFileName fileNameDir(fileNameStr.c_str());                
-        fileNameDir = fileNameDir.GetDirectoryName();
-        dataStore->SetProjectFilesPath(fileNameDir);
+        BeFileName fileNameDir(fileNameStr.c_str());
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -641,8 +642,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);
         BeFileName fileNameDir(fileNameStr.c_str());
-        fileNameDir = fileNameDir.GetDirectoryName();
-        dataStore->SetProjectFilesPath(fileNameDir);
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetGenerating(true);        
         }           
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());

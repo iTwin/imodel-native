@@ -2734,8 +2734,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) con
     {
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     if (m_meshNode == nullptr) return false;
-    if (m_meshNode->m_nbClips == 0) return false;
-    else return m_meshNode->HasClip(clip);
+    return m_meshNode->HasClip(clip);
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
