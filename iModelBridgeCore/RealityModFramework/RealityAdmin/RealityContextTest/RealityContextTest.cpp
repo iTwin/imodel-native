@@ -8,6 +8,7 @@
 
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <RealityPlatform/RealityConversionTools.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include <BentleyDesktopClient/CCApi/CCPublic.h>
@@ -47,32 +48,33 @@ static Stats s_stats = Stats();
 //* request per second class
 //* for each operation type, keep a cout of how many requests were sent at any given second
 //+---------------+---------------+---------------+---------------+---------------+------*/
-RPS::RPS():requestLog(bmap<OperationType, bmap<time_t, int>>())
+RPS::RPS() :requestLog(bmap<OperationType, bmap<uint64_t, int>>())
     {
-    requestLog.Insert(OperationType::SPATIAL, bmap<time_t, int>());
-    requestLog.Insert(OperationType::PACKID, bmap<time_t, int>());
-    requestLog.Insert(OperationType::PACKFILE, bmap<time_t, int>());
+    requestLog.Insert(OperationType::SPATIAL, bmap<uint64_t, int>());
+    requestLog.Insert(OperationType::PACKID, bmap<uint64_t, int>());
+    requestLog.Insert(OperationType::PACKFILE, bmap<uint64_t, int>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void RPS::AddRequest(OperationType type, time_t time)
+void RPS::AddRequest(OperationType type, uint64_t time)
     {
+    uint64_t timeInSeconds = time / 1000;
     std::lock_guard<std::mutex> lock(rpsMutex);
-    requestLog[type][time] += 1;
+    requestLog[type][timeInSeconds] += 1;
     }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-double RPS::GetRPS(OperationType type, time_t time)
+double RPS::GetRPS(OperationType type, uint64_t time)
     {
-    bmap<time_t, int> times = requestLog[type];
-
+    bmap<uint64_t, int> times = requestLog[type];
+    uint64_t timeInSeconds = time / 1000;
     int amount = 0;
     //get the average number of requests per second, over ten seconds
-    for(time_t i = (time - 12); i < (time - 2); i++)
+    for (uint64_t i = (timeInSeconds - 12); i < (timeInSeconds - 2); i++)
         amount += times[i];
     return amount/10.0;
     }
@@ -143,7 +145,7 @@ void Terminate()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void Stat::Update(bool isSuccess, time_t time)
+void Stat::Update(bool isSuccess, uint64_t time)
     {
     int total = success + failure;
     if(isSuccess)
@@ -171,7 +173,7 @@ Stats::Stats()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void Stats::InsertStats(OperationType type, bool success, time_t time, int activeUsers, Utf8String errorMsg)
+void Stats::InsertStats(OperationType type, bool success, uint64_t time, int activeUsers, Utf8String errorMsg)
     {
     std::lock_guard<std::mutex> lock(statMutex);
     m_activeUsers = activeUsers;
@@ -187,14 +189,14 @@ void Stats::PrintStats()
     {
     std::lock_guard<std::mutex> statlock(statMutex);
     std::lock_guard<std::mutex> rpslock(rpsMutex);
-    time_t currentTime = std::time(nullptr);
+    uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     system("cls");
 
     std::cout << "Type      Success    Failure   minTime   maxTime   avgTime  requests/second" << std::endl;
     char spatialLine[1024], idLine[1024], fileLine[1024];
-    sprintf(spatialLine, "Spatial %6d %10d %9d %10d %9d        %f", opStats[OperationType::SPATIAL]->success, opStats[OperationType::SPATIAL]->failure, (int)opStats[OperationType::SPATIAL]->minTime, (int)opStats[OperationType::SPATIAL]->maxTime, (int)opStats[OperationType::SPATIAL]->avgTime, s_rps.GetRPS(OperationType::SPATIAL, currentTime));
-    sprintf(idLine, "PackId  %6d %10d %9d %10d %9d        %f", opStats[OperationType::PACKID]->success, opStats[OperationType::PACKID]->failure, (int)opStats[OperationType::PACKID]->minTime, (int)opStats[OperationType::PACKID]->maxTime, (int)opStats[OperationType::PACKID]->avgTime, s_rps.GetRPS(OperationType::PACKID, currentTime));
-    sprintf(fileLine, "Package %6d %10d %9d %10d %9d        %f", opStats[OperationType::PACKFILE]->success, opStats[OperationType::PACKFILE]->failure, (int)opStats[OperationType::PACKFILE]->minTime, (int)opStats[OperationType::PACKFILE]->maxTime, (int)opStats[OperationType::PACKFILE]->avgTime, s_rps.GetRPS(OperationType::PACKFILE, currentTime));
+    sprintf(spatialLine, "Spatial %6d %10d %9.0f %10.0f %9.0f        %f", opStats[OperationType::SPATIAL]->success, opStats[OperationType::SPATIAL]->failure, (double) opStats[OperationType::SPATIAL]->minTime, (double) opStats[OperationType::SPATIAL]->maxTime, (double) opStats[OperationType::SPATIAL]->avgTime, s_rps.GetRPS(OperationType::SPATIAL, currentTime));
+    sprintf(idLine, "PackId  %6d %10d %9.0f %10.0f %9.0f        %f", opStats[OperationType::PACKID]->success, opStats[OperationType::PACKID]->failure, (double) opStats[OperationType::PACKID]->minTime, (double) opStats[OperationType::PACKID]->maxTime, (double) opStats[OperationType::PACKID]->avgTime, s_rps.GetRPS(OperationType::PACKID, currentTime));
+    sprintf(fileLine, "Package %6d %10d %9.0f %10.0f %9.0f        %f", opStats[OperationType::PACKFILE]->success, opStats[OperationType::PACKFILE]->failure, (double) opStats[OperationType::PACKFILE]->minTime, (double) opStats[OperationType::PACKFILE]->maxTime, (double) opStats[OperationType::PACKFILE]->avgTime, s_rps.GetRPS(OperationType::PACKFILE, currentTime));
     
     std::cout << spatialLine << std::endl;
     std::cout << idLine << std::endl;
@@ -210,6 +212,7 @@ void Stats::PrintStats()
 void Stats::WriteToFile(int userCount, Utf8String path)
     {
     time_t generatedFileName = std::time(nullptr);
+
     char name[64]; //the name given to the logfile is the system time upon exiting
     sprintf(name, "%d.log", (int)generatedFileName);
     path.append(name);
@@ -219,9 +222,9 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << "Type      Success    Failure   minTime   maxTime   avgTime" << std::endl;
 
     char spatialLine[1024], idLine[1024], fileLine[1024];
-    sprintf(spatialLine, "Spatial %6d %10d %9d %10d %9d", opStats[OperationType::SPATIAL]->success, opStats[OperationType::SPATIAL]->failure, (int)opStats[OperationType::SPATIAL]->minTime, (int)opStats[OperationType::SPATIAL]->maxTime, (int)opStats[OperationType::SPATIAL]->avgTime);
-    sprintf(idLine, "PackId  %6d %10d %9d %10d %9d", opStats[OperationType::PACKID]->success, opStats[OperationType::PACKID]->failure, (int)opStats[OperationType::PACKID]->minTime, (int)opStats[OperationType::PACKID]->maxTime, (int)opStats[OperationType::PACKID]->avgTime);
-    sprintf(fileLine, "Package %6d %10d %9d %10d %9d", opStats[OperationType::PACKFILE]->success, opStats[OperationType::PACKFILE]->failure, (int)opStats[OperationType::PACKFILE]->minTime, (int)opStats[OperationType::PACKFILE]->maxTime, (int)opStats[OperationType::PACKFILE]->avgTime);
+    sprintf(spatialLine, "Spatial %6d %10d %9.0f %10.0f %9.0f", opStats[OperationType::SPATIAL]->success, opStats[OperationType::SPATIAL]->failure, (double)opStats[OperationType::SPATIAL]->minTime, (double)opStats[OperationType::SPATIAL]->maxTime, (double)opStats[OperationType::SPATIAL]->avgTime);
+    sprintf(idLine, "PackId  %6d %10d %9.0f %10.0f %9.0f", opStats[OperationType::PACKID]->success, opStats[OperationType::PACKID]->failure, (double)opStats[OperationType::PACKID]->minTime, (double)opStats[OperationType::PACKID]->maxTime, (double)opStats[OperationType::PACKID]->avgTime);
+    sprintf(fileLine, "Package %6d %10d %9.0f %10.0f %9.0f", opStats[OperationType::PACKFILE]->success, opStats[OperationType::PACKFILE]->failure, (double)opStats[OperationType::PACKFILE]->minTime, (double)opStats[OperationType::PACKFILE]->maxTime, (double)opStats[OperationType::PACKFILE]->avgTime);
 
     file << spatialLine << std::endl;
     file << idLine << std::endl;
@@ -390,7 +393,7 @@ void User::SampleIds(Json::Value regionItems)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidateSpatial(int activeUsers)
     {
-    time_t currentTime = std::time(nullptr);
+    uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     bool retval = true;
     Json::Value regionItems(Json::objectValue);
     if (!Json::Reader::Parse(m_bench->GetSpatialEntityWithDetailsJson(), regionItems) || (!regionItems.isMember("errorMessage") && !regionItems.isMember("instances")))
@@ -424,7 +427,7 @@ bool User::ValidateSpatial(int activeUsers)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidatePackageId(int activeUsers)
     {
-    time_t currentTime = std::time(nullptr);
+    uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     bool retval = true;
     Json::Value packageInfos(Json::objectValue);
     Json::Reader::Parse(*(m_bench->GetPackageIdPointer()), packageInfos);
@@ -452,7 +455,8 @@ bool User::ValidatePackageId(int activeUsers)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidatePacakgeFile(int activeUsers)
     {
-    time_t currentTime = std::time(nullptr);
+    uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
     bool retval = true;
 
     fclose(m_packageFile);
@@ -832,7 +836,9 @@ void UserManager::Perform()
                     char error[256];
                     sprintf(error, "curl error number: %d", (int)msg->data.result);
                     //in case of curl failure, add error number to error list
-                    s_stats.InsertStats(user->m_currentOperation, false, std::time(nullptr) - user->m_downloadStart, still_running, Utf8String(error));
+                    uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+                    s_stats.InsertStats(user->m_currentOperation, false, currentTime - user->m_downloadStart, still_running, Utf8String(error));
                     s_stats.PrintStats();
                     if(s_keepRunning)
                         {
@@ -855,7 +861,9 @@ void UserManager::Perform()
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct User *user = (struct User *)pClient;
-                s_stats.InsertStats(user->m_currentOperation, false, std::time(nullptr) - user->m_downloadStart, still_running, "unhandled curl failure");
+                uint64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+                s_stats.InsertStats(user->m_currentOperation, false, currentTime - user->m_downloadStart, still_running, "unhandled curl failure");
                 }
             }
 
@@ -910,8 +918,7 @@ void UserManager::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString
 
         curl_easy_setopt(pCurl, CURLOPT_URL, url);
 
-        curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
-        //curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 1);
+        curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 0);
         curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
         curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(pCurl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
@@ -937,7 +944,7 @@ void UserManager::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString
         curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 1L);
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, user);
 
-        user->m_downloadStart = std::time(nullptr);
+        user->m_downloadStart = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         s_rps.AddRequest(user->m_currentOperation, user->m_downloadStart);

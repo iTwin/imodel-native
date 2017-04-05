@@ -41,10 +41,10 @@ struct Stat
     {
 public:
     int success, failure;
-    time_t minTime, maxTime, avgTime, startTime;
+    uint64_t minTime, maxTime, avgTime, startTime;
 
     Stat() : success(0), failure(0), minTime(1000), maxTime(0), avgTime(0), startTime(std::time(nullptr)) {}
-    void Update(bool success, time_t time);
+    void Update(bool success, uint64_t time);
     };
 
 struct Stats
@@ -54,18 +54,18 @@ struct Stats
     int                        m_activeUsers = 1;
 
     Stats();
-    void InsertStats(OperationType type, bool success, time_t time,int activeUsers, Utf8String errorMsg = "");
+    void InsertStats(OperationType type, bool success, uint64_t time, int activeUsers, Utf8String errorMsg = "");
     void PrintStats();
     void WriteToFile(int userCount, Utf8String path);
     };
 
 struct RPS
     {
-    bmap<OperationType, bmap<time_t, int>> requestLog;
+    bmap<OperationType, bmap<uint64_t, int>> requestLog;
 
     RPS();
-    void AddRequest(OperationType type, time_t time);
-    double GetRPS(OperationType type, time_t time);
+    void AddRequest(OperationType type, uint64_t time);
+    double GetRPS(OperationType type, uint64_t time);
     };
 
 struct User
@@ -74,7 +74,7 @@ public:
     RealityPlatform::ContextServicesWorkbench*   m_bench;
     Region                      m_region;
     Utf8StringP                 m_token;
-    std::time_t                 m_downloadStart;
+    uint64_t                     m_downloadStart;
     OperationType               m_currentOperation;
     FILE*                       m_packageFile;
     int                         m_retryCounter;
