@@ -414,35 +414,25 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
     if (!childId.IsValid())
         return assem;
 
-    // NB: Per Brien - and code in dgnplatform - we do not recurse up through nested assembly parents - only select direct parent.
+    // Get this element's category and parent element
+    // Recurse until no more parents (or we find a non-geometric parent)
     static constexpr Utf8CP s_3dsql = "SELECT Parent.Id,Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
     static constexpr Utf8CP s_2dsql = "SELECT Parent.Id,Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
 
     BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(m_is3d ? s_3dsql : s_2dsql);
     stmt->BindId(1, childId);
-    if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
-        // We now have the *child* element's category and parent ID.
         assem.m_catId = stmt->GetValueId<DgnCategoryId>(1);
+        assem.m_elemId = childId;
 
-        // Try to get the parent's category.
-        // Apparently plant models tend to have arbitrary non-geometric parent elements...in that case, this statement will not produce results
-        // and we will use the child as the assembly.
-        auto parentId = stmt->GetValueId<DgnElementId>(0);
-        if (parentId.IsValid())
-            {
-            static constexpr Utf8CP s_3dParentSql = "SELECT Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
-            static constexpr Utf8CP s_2dParentSql = "SELECT Category.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
+        childId = stmt->GetValueId<DgnElementId>(0);
+        if (!childId.IsValid())
+            break;
 
-            stmt = m_db.GetPreparedECSqlStatement(m_is3d ? s_3dParentSql : s_2dParentSql);
-            stmt->BindId(1, parentId);
-            if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
-                {
-                // Parent is a valid geometric element.
-                assem.m_elemId = parentId;
-                assem.m_catId = stmt->GetValueId<DgnCategoryId>(0);
-                }
-            }
+        // Try to get the parent's category. If parent is not geometric, this will fail and we will treat current child as the assembly root.
+        stmt->Reset();
+        stmt->BindId(1, childId);
         }
 
     BeAssert(assem.m_catId.IsValid());
