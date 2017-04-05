@@ -31,56 +31,26 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 TEST(FormattingTest, Preliminary)
     {
-    FormattingDividers fdiv = FormattingDividers(nullptr);
+    FormattingDividers fdiv = FormattingDividers("()[]{}");
     const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";
     NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
-    //LOG.infov("Initial string: %s", uni);
-    //size_t skipped = curs.SkipBlanks();
-    //LOG.infov("Skipped blanks: %d", skipped);
-
-    //size_t cod = curs.GetNextSymbol();
-    //int i = 0;
-    //while (0 != cod)
-    //    {
-    //    LOG.infov("cod[%d]: %d Ascii(%s) EffBytes=%d", ++i, cod, FormatConstant::BoolText(curs.IsASCII()), curs.GetEffectiveBytes());
-    //    LOG.infov(numFmt.IntToBinaryText((int)cod, true).c_str());
-    //    cod = curs.GetNextSymbol();
-    //    }
-
-
-    //CharCP p = fdiv.GetMarkers();
-    //for (int i = 0; i < 16; ++i)
-    //    {
-    //    LOG.infov(numFmt.ByteToBinaryText(p[i]).c_str());
-    //    }
-    //LOG.infov("( %s", FormatConstant::BoolText(fdiv.IsDivider('(')));
-    //LOG.infov(") %s", FormatConstant::BoolText(fdiv.IsDivider(')')));
-    //LOG.infov("{ %s", FormatConstant::BoolText(fdiv.IsDivider('{')));
-    //LOG.infov("} %s", FormatConstant::BoolText(fdiv.IsDivider('}')));
-    //LOG.infov("A %s", FormatConstant::BoolText(fdiv.IsDivider('A')));
+      
     EXPECT_TRUE(fdiv.IsDivider('('));
     EXPECT_TRUE(fdiv.IsDivider(')'));
     EXPECT_TRUE(fdiv.IsDivider('{'));
     EXPECT_FALSE(fdiv.IsDivider('A'));
 
-    /*curs = FormattingScannerCursor("MM(real4)", -1);
-    FormattingWord unit = curs.ExtractWord();
-    LOG.infov("Unit %s  %c", unit.GetText(), unit.GetDelim());
-    FormattingWord fnam = curs.ExtractWord();
-    LOG.infov("Format %s  %c", fnam.GetText(), fnam.GetDelim());
-    
-    LOG.infov("FUS  %s", fus.ToText(true).c_str());*/
-
+    FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
+    EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());
+    EXPECT_STREQ ("CUB.M(real)", fus1.ToText(true).c_str());
+   
     FormatUnitSet fus = FormatUnitSet("FT(fract8)");
     FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
    
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
-
-
-
     }
 
 TEST(FormattingTest, PhysValues)
@@ -158,14 +128,6 @@ TEST(FormattingTest, PhysValues)
     BEU::Quantity ang90 = BEU::Quantity(89.9999999986, *degUOM);
     LOG.infov("DMS-90 %s", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang90).c_str());
 
-   /* LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
-    LOG.infov("yfi8 %s", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
-    LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());*/
-    //LOG.infov("Distance %s", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());
-    //LOG.infov("dms8 %s", NumericFormatSpec::StdFormatQuantity("dms8", ang, degUOM).c_str());
-    //LOG.infov("dm8 %s", NumericFormatSpec::StdFormatQuantity("dm8", ang, degUOM).c_str());
-
-
     // Temperature
     EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
     EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue("real4", 100, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
@@ -221,16 +183,9 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("1.0 KG", NumericFormatSpec::StdFormatPhysValue("real", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
     EXPECT_STREQ ("4068.7986 OZM", NumericFormatSpec::StdFormatPhysValue("real4", 115.3485, "KG", "OZM", nullptr, " ").c_str());
 
-    CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
+    //CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
 
-    //if (cvs.NoProblem())
-    //    {
-    //    LOG.infov("MajorToMid %d", cvs.GetMajorToMiddleRatio());
-    //    LOG.infov("MidToMinor %d", cvs.GetMiddleToMinorRatio());
-    //    LOG.infov("MinorToSub %d", cvs.GetMinorToSubRatio());
-    //    }
-    //else
-    //    LOG.infov("Error: %s", cvs.GetProblemDescription());
+  
 
     }
 

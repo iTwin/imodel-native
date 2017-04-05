@@ -1453,7 +1453,7 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     m_totalScanLength = (nullptr == utf8Text)? 0 : strlen(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
-    //m_dividers = FormattingDividers(div);
+    m_dividers = FormattingDividers(div);
     }
 
 //---------------------------------------------------------------------------------------

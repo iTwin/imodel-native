@@ -887,7 +887,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
 FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
     m_problemCode = FormatProblemCode::NoProblems;
-    FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, "()[]{}");
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
     if (Utf8String::IsNullOrEmpty(fnam.GetText()))

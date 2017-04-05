@@ -755,6 +755,7 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet(Utf8CP description);
         bool HasProblem() const { return m_problemCode != FormatProblemCode::NoProblems; }
         FormatProblemCode GetProblemCode() const { return m_problemCode; }
+        Utf8String GetProblemDescription() const { return Utils::FormatProblemDescription(m_problemCode); }
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
     };
