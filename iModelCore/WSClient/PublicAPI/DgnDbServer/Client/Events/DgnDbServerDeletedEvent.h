@@ -14,34 +14,35 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
-    {
-    private:
-        Utf8String m_eventTopic;
-        Utf8String m_fromEventSubscriptionId;
-        int        m_briefcaseId;
-        DgnDbServerEvent::DgnDbServerEventType m_deletedEventType;
+{
+private:
+    Utf8String m_eventTopic;
+    Utf8String m_fromEventSubscriptionId;
+    int        m_briefcaseId;
+    DgnDbServerEvent::DgnDbServerEventType m_deletedEventType;
 
-        DgnDbServerDeletedEvent
-            (
-            Utf8String eventTopic,
-            Utf8String fromEventSubscriptionId,
-            int        briefcaseId,
-            DgnDbServerEvent::DgnDbServerEventType deletedEventType
-            );
+    DgnDbServerDeletedEvent
+        (
+        Utf8String eventTopic,
+        Utf8String fromEventSubscriptionId,
+        int        briefcaseId,
+        DgnDbServerEvent::DgnDbServerEventType deletedEventType
+        );
 
-    public:
-        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerDeletedEvent> Create
-            (
-            Utf8String eventTopic,
-            Utf8String fromEventSubscriptionId,
-            int        briefcaseId,
-            DgnDbServerEvent::DgnDbServerEventType deletedEventType
-            );
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT int GetBriefcaseId();
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetDeletedEventType();
-    };
+public:
+    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerDeletedEvent> Create
+        (
+        Utf8String eventTopic,
+        Utf8String fromEventSubscriptionId,
+        int        briefcaseId,
+        DgnDbServerEvent::DgnDbServerEventType deletedEventType
+        );
+
+    Utf8String GetEventTopic() override {return m_eventTopic;}
+    Utf8String GetFromEventSubscriptionId() override {return m_fromEventSubscriptionId;}
+    DgnDbServerEvent::DgnDbServerEventType GetEventType() override {return m_deletedEventType;}
+    int GetBriefcaseId() const {return m_briefcaseId;}
+    DgnDbServerEvent::DgnDbServerEventType GetDeletedEventType() const {return m_deletedEventType;}
+};
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

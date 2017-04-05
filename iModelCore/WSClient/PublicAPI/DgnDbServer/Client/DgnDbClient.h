@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGN
 
-typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
+typedef RefCountedPtr<struct DgnDbClient> DgnDbClientPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbClient);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
@@ -36,9 +36,8 @@ typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, Repository
 //! the required connection information to other DgnDbServer Client classes.
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbClient
+struct DgnDbClient : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
@@ -47,28 +46,25 @@ private:
     IHttpHandlerPtr             m_customHandler;
     DgnDbRepositoryAdmin        m_repositoryAdmin;
 
-    DgnDbClient(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
+    DgnDbClient(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
+        m_clientInfo(clientInfo), m_customHandler(customHandler), m_projectId(""), m_repositoryAdmin(this) {}
 
-    DgnDbServerRepositoryTaskPtr InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
-                                                                 ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
-                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerStatusResult DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                 FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
-    DgnDbRepositoryConnectionResult CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const;
+    DgnDbRepositoryConnectionResult CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const { return DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_customHandler); }
     IWSRepositoryClientPtr CreateProjectConnection() const;
-    DgnDbServerRepositoryTaskPtr GetRepositoryFromQuery(WSQueryCR query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
     //! Set custom handler.
     //! @param[in] customHandler
-    DGNDBSERVERCLIENT_EXPORT void SetHttpHandler(IHttpHandlerPtr customHandler);
+    void SetHttpHandler(IHttpHandlerPtr customHandler) {m_customHandler = customHandler;}
 
     //! Get custom handler.
     //! @return Returns HttpHandler
-    DGNDBSERVERCLIENT_EXPORT IHttpHandlerPtr GetHttpHandler();
+    IHttpHandlerPtr GetHttpHandler() {return m_customHandler;}
 
     //! Get the server URL
     Utf8StringCR GetServerUrl() const {return m_serverUrl;}
@@ -79,9 +75,19 @@ public:
     //! Get the client's credentials
     CredentialsCR GetCredentials() const {return m_credentials;}
 
-//__PUBLISH_SECTION_START__
-public:
-    DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback                       DefaultFileNameCallback;
+    //! Address of the server.
+    void SetServerURL(Utf8StringCR serverUrl) {m_serverUrl = serverUrl;}
+
+    //! Credentials used to authenticate to the on-premise server.
+    void SetCredentials(CredentialsCR credentials) {m_credentials = credentials;}
+
+    //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
+    void SetProject(Utf8StringCR projectId) {m_projectId = projectId;}
+
+    //! Returns repository admin that caches DgnDbRepositoryManager instances.
+    DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() { return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_repositoryAdmin); }
+
+    DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback DefaultFileNameCallback;
 
     //! Create new user. Use just for basic authorisation
     //! @param[in] credentials of the new user
@@ -100,15 +106,6 @@ public:
     //! @param[in] customHandler Http handler for connect authentication.
     //! @return Returns a shared pointer to the created instance.
     DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
-
-    //! Address of the server.
-    DGNDBSERVERCLIENT_EXPORT void SetServerURL (Utf8StringCR serverUrl);
-
-    //! Credentials used to authenticate to the on-premise server.
-    DGNDBSERVERCLIENT_EXPORT void SetCredentials(CredentialsCR credentials);
-
-    //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
-    DGNDBSERVERCLIENT_EXPORT void SetProject(Utf8StringCR projectId);
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
@@ -213,10 +210,6 @@ public:
     //! @return Asynchronous task that returns error if download has failed. See DgnDbBriefcase.
     //! @note Should be used if briefcase file has became invalid.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Returns repository admin that caches DgnDbRepositoryManager instances.
-    //! @return Returns pointer to DgnDbClient managed repository admin.
-    DGNDBSERVERCLIENT_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();
 
     //! Creates repository manager that is not managed by DgnDbClient.
     //! @param[in] repositoryInfo

@@ -59,7 +59,7 @@ void DgnDbServerPreDownloadManager::SubscribeRevisionsDownload(DgnDbRepositoryCo
             return;
             }
             
-        if (revisionEventPtr && repositoryConnectionP)
+        if (revisionEventPtr.IsValid() && repositoryConnectionP)
             {
             PreDownloadRevision(repositoryConnectionP, revisionId)->GetResult();
             }
@@ -235,15 +235,6 @@ ICancellationTokenPtr             cancellationToken
             {
             return *finalResult;
             });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
-//---------------------------------------------------------------------------------------
-FileLock::FileLock(BeFileName filePath)
-    {
-    m_lockFilePath = filePath;
-    m_lockFilePath.AppendExtension(L"lock");
     }
 
 //---------------------------------------------------------------------------------------
