@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/PresentationRulesTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -310,7 +310,7 @@ TEST_F(PresentationRulesTests, TestPresentationRules)
     groupingRule->GetGroupsR().push_back(propertyGroup);
     ruleSet->AddPresentationRule(*groupingRule);
 
-    CheckBoxRuleP checkBoxRule = new CheckBoxRule("checkBoxCondition", 9, true, "checkBoxProperty", false, false);
+    CheckBoxRuleP checkBoxRule = new CheckBoxRule("checkBoxCondition", 9, true, "checkBoxProperty", false, false, "");
     ASSERT_TRUE(nullptr != checkBoxRule);
 
     RenameNodeRuleP renameNodeRule = new RenameNodeRule("RenameRuleCondition", 10);
