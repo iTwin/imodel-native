@@ -1884,7 +1884,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
         "   </ECEntityClass>"
         "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
         "       displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3' "
-        "       presentationUnits='FT;INCH;MILLIINCH'/>"
+        "       presentationUnits='FT;IN;MILLIINCH'/>"
         "</ECSchema>";
 
     ECSchemaPtr schema;

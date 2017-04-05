@@ -19,8 +19,12 @@ struct SystemSymbolProvider : ECN::IECSymbolProvider
 private:
     mutable ECN::SymbolPtr  m_systemNamespaceSymbol;
 
-    virtual Utf8CP          _GetName() const override { return "SystemSymbolProvider"; }
+private:
+    virtual Utf8CP  _GetName() const override { return "SystemSymbolProvider"; }
     void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
+    static ExpressionStatus AnyMatches(EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args);
+    static ExpressionStatus AllMatch(EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args);
+
 public:
     SystemSymbolProvider();
 
