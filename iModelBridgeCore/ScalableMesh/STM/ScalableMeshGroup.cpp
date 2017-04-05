@@ -490,11 +490,11 @@ BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeF
     return SUCCESS;
     }
 
-BentleyStatus                   ScalableMeshGroup::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus                   ScalableMeshGroup::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {
     for (auto& member : m_members)
         {
-        if (!member->IsTerrain()) return member->CreateCoverage(coverageData, id);
+        if (!member->IsTerrain()) return member->CreateCoverage(coverageData, id, coverageName);
         }
 
     return SUCCESS;

@@ -197,7 +197,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;

@@ -89,6 +89,9 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
                 path = WString(L"file://") + rasterSource->GetPath();
                 }
 
+            //path = WString(L¨http://www.bing.com/maps//¨);
+            path = WString(L"http://www.bing.com/maps/aerial/");
+
             DRange2d extent2d = DRange2d::From(m_totalExtent);
             m_raster = RasterUtilities::LoadRaster(path, m_cs, extent2d);
             }
@@ -189,7 +192,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     {                   
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::Coverage)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon)
         {
         sqlFilePtr = GetSisterSQLiteFile(dataType);
         }
@@ -203,6 +206,19 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
 
     return true;    
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    SMSQLiteFilePtr sqlFilePtr;
+
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName);
+    
+    assert(sqlFilePtr.IsValid());
+
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+
+    return true;
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
@@ -390,8 +406,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
     bool needCompression = true;
 
-    size_t dataSize;
-    void* dataBuffer; 
+    size_t dataSize = 0;
+    void* dataBuffer = nullptr; 
 
     if (m_dataType == SMStoreDataType::Graph)
         {
@@ -404,6 +420,11 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         size_t countAsPts;
         dataBuffer = SerializeDiffSet(countAsPts, (DifferenceSet*)DataTypeArray, countData);        
         dataSize = countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t);                
+        needCompression = false;
+        }
+    else
+    if (m_dataType == SMStoreDataType::CoverageName)
+        {
         needCompression = false;
         }
     else
@@ -470,9 +491,15 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             m_smSQLiteFile->StoreMetadata(id, nodeData, countData*sizeof(DATATYPE));
             break;
 #endif
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
             m_smSQLiteFile->StoreCoveragePolygon(id, nodeData, countData*sizeof(DATATYPE));
             break;
+        case SMStoreDataType::CoverageName:
+            {
+            Utf8String name(*((Utf8String*)DataTypeArray));
+            m_smSQLiteFile->StoreCoverageName(id, name, 1);
+            }
+            break;            
         default : 
             assert(!"Unsupported type");
             break;
@@ -538,7 +565,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         case SMStoreDataType::ClipDefinition :
             blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
-        case SMStoreDataType::Coverage :
+        case SMStoreDataType::CoveragePolygon :
             blockDataCount = m_smSQLiteFile->GetCoveragePolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
 #ifdef WIP_MESH_IMPORT
@@ -789,7 +816,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             bool isActive;
             m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize, geom, type, isActive);           
             break;  
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
             m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);
             break;
         case SMStoreDataType::Texture:
@@ -814,7 +841,7 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
     {
     switch (m_dataType)
         {
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
             m_smSQLiteFile->DeleteCoveragePolygon(blockID.m_integerID);
             return true;
         case SMStoreDataType::ClipDefinition:
@@ -827,7 +854,7 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
     {
-    if (m_dataType != SMStoreDataType::ClipDefinition && m_dataType != SMStoreDataType::Coverage)
+    if (m_dataType != SMStoreDataType::ClipDefinition && m_dataType != SMStoreDataType::CoveragePolygon)
         {
         assert(!"Unexpected call");
         return false;

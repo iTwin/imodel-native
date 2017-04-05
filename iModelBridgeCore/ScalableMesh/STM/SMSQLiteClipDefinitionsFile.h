@@ -38,6 +38,7 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
 
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize);
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize);
+    virtual void StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize);
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID);
     virtual void DeleteCoveragePolygon(int64_t coverageID);
 

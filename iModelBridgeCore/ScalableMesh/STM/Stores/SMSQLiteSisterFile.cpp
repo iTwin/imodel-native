@@ -35,7 +35,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
@@ -125,7 +125,8 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
+        case SMStoreDataType::CoverageName:            
             {
             std::lock_guard<std::mutex> lock(m_defOpen);
             if (!m_smClipDefinitionSQLiteFile.IsValid())

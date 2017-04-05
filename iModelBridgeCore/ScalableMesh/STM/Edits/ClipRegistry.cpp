@@ -257,17 +257,22 @@ void ClipRegistry::SetAutoCommit(bool autoCommit)
     clipDefinitionExOpsPtr->SetAutoCommit(autoCommit);    
     }
 
-void ClipRegistry::ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize)
+void ClipRegistry::ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize, const Utf8String& coverageName)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
     dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
+    
+    ISMCoverageNameDataStorePtr nameDataStore;
+    m_smDataStore->GetNodeDataStore(nameDataStore, 0);    
+    Utf8String coverageNameStr(coverageName);
+    nameDataStore->StoreBlock(&coverageNameStr, 1, id);
     }
 
 void ClipRegistry::GetCoverage(uint64_t id, bvector<DPoint3d>& clip)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
     size_t nOfPts = dataStore->GetBlockDataCount(id);
     if (nOfPts == 0) return;
     else clip.resize(nOfPts);
@@ -277,7 +282,7 @@ void ClipRegistry::GetCoverage(uint64_t id, bvector<DPoint3d>& clip)
 bool ClipRegistry::HasCoverage(uint64_t id)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
     size_t nOfPts = dataStore->GetBlockDataCount(id);
     return nOfPts > 0;
     }
@@ -285,7 +290,7 @@ bool ClipRegistry::HasCoverage(uint64_t id)
 void ClipRegistry::GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
 
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
@@ -295,7 +300,7 @@ void ClipRegistry::GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys)
 void ClipRegistry::GetAllCoverageIds(bvector<uint64_t>& allIds)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
 
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
@@ -306,7 +311,7 @@ void ClipRegistry::GetAllCoverageIds(bvector<uint64_t>& allIds)
 void ClipRegistry::DeleteCoverage(uint64_t id)
     {
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::CoveragePolygon);
     dataStore->DestroyBlock(id);
     }
 
