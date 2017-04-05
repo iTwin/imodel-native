@@ -14,38 +14,38 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
-    {
-    private:
-        Utf8String m_eventTopic;
-        Utf8String m_fromEventSubscriptionId;
-        Utf8String m_revisionId;
-        Utf8String m_revisionIndex;
-        int        m_briefcaseId;
+{
+private:
+    Utf8String m_eventTopic;
+    Utf8String m_fromEventSubscriptionId;
+    Utf8String m_revisionId;
+    Utf8String m_revisionIndex;
+    int        m_briefcaseId;
 
-        DgnDbServerRevisionEvent
-                                (
-                                Utf8String eventTopic,
-                                Utf8String fromEventSubscriptionId,
-                                Utf8String revisionId, 
-                                Utf8String revisionIndex,
-                                int        briefcaseId
-                                );
+    DgnDbServerRevisionEvent
+                            (
+                            Utf8String eventTopic,
+                            Utf8String fromEventSubscriptionId,
+                            Utf8String revisionId, 
+                            Utf8String revisionIndex,
+                            int        briefcaseId
+                            );
 
-    public:
-        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerRevisionEvent> Create
-                                                                                               (
-                                                                                               Utf8String eventTopic,
-                                                                                               Utf8String fromEventSubscriptionId,
-                                                                                               Utf8String revisionId, 
-                                                                                               Utf8String revisionIndex,
-                                                                                               int        briefcaseId
-                                                                                               );
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionId();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionIndex();
-        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId();
-    };
+public:
+    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerRevisionEvent> Create
+                                                                                        (
+                                                                                        Utf8String eventTopic,
+                                                                                        Utf8String fromEventSubscriptionId,
+                                                                                        Utf8String revisionId, 
+                                                                                        Utf8String revisionIndex,
+                                                                                        int        briefcaseId
+                                                                                        );
+    Utf8String GetEventTopic() override {return m_eventTopic;}
+    Utf8String GetFromEventSubscriptionId() override {return m_fromEventSubscriptionId;}
+    DgnDbServerEvent::DgnDbServerEventType GetEventType() override {return DgnDbServerEvent::DgnDbServerEventType::RevisionEvent;}
+    Utf8String GetRevisionId() const {return m_revisionId;}
+    Utf8String GetRevisionIndex() const {return m_revisionIndex;}
+    int        GetBriefcaseId() const {return m_briefcaseId;}
+};
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

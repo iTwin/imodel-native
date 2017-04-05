@@ -36,7 +36,7 @@ int        briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
+RefCountedPtr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
@@ -47,8 +47,7 @@ int        state,
 int        briefcaseId
 )
     {
-    return std::shared_ptr<struct DgnDbServerCodeEvent>
-        (new DgnDbServerCodeEvent
+    return new DgnDbServerCodeEvent
                 (
                 eventTopic,
                 fromEventSubscriptionId,
@@ -56,5 +55,5 @@ int        briefcaseId
                 codeScope,
                 values,
                 state,
-                briefcaseId));
+                briefcaseId);
     }

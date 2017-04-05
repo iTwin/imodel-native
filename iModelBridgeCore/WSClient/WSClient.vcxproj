@@ -189,7 +189,6 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp" />
-    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerRevisionEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />

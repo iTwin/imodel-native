@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
-typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
+typedef RefCountedPtr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcase);
 
 DEFINE_TASK_TYPEDEFS(bool, DgnDbServerBool);
@@ -23,20 +23,21 @@ DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerEventString);
 //=======================================================================================
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbBriefcase
+struct DgnDbBriefcase : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
-    static const int              s_maxDelayTime = 5000;
+    friend struct DgnDbClient;
 
-    DgnDbRepositoryConnectionPtr  m_repositoryConnection;
-    Dgn::DgnDbPtr                 m_db;
-     
+    static const int                       s_maxDelayTime = 5000;
+    DgnDbRepositoryConnectionPtr           m_repositoryConnection;
+    Dgn::DgnDbPtr                          m_db;
     DgnDbServerEventCallbackPtr            m_pullMergeAndPushCallback;
     DgnDbServerEvent::DgnDbServerEventType m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
     bool                                   m_eventsAvailable;
 
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    //! Create an instance of a briefcase from previously downloaded briefcase file.
+    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection) { return new DgnDbBriefcase(db, connection); }
 
     DgnRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -48,25 +49,27 @@ private:
     void UnsubscribeRevisionEvents();
 
 public:
-    //! Create an instance of a briefcase from previously downloaded briefcase file.
-    //! @param[in] db Briefcase file. See DgnDbClient::AquireBriefcase.
-    //! @param[in] connection Connection to a repository on server.
-    //! @return Returns shared pointer of the created instance.
-    //! @note This method is called by DgnDbClient. See DgnDbClient::OpenBriefcase.
-    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
-    
+    //!< Briefcase file.
+    Dgn::DgnDbR GetDgnDb() const {return *m_db;} 
+
+    //!< Briefcase Id.
+    BeSQLite::BeBriefcaseId GetBriefcaseId() const {return GetDgnDb().GetBriefcaseId();}
+
+    //!< Last revision that was pulled by this briefcase.
+    Utf8String GetLastRevisionPulled() const {return GetDgnDb().Revisions().GetParentRevisionId();}
+
+    //!< Connection to a repository on server.
+    DgnDbRepositoryConnectionCR GetRepositoryConnection() const {return *m_repositoryConnection;}
+
     //! Gets used DgnDbRepositoryConnection
     //! @returns DgnDbRepositoryConnection
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr(); //!< Connection to a repository on server.
+    DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr() const {return m_repositoryConnection;}
 
-//__PUBLISH_SECTION_START__
-public:
     //! Pull incomming revisions.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and list of pulled revisions.
     DGNDBSERVERCLIENT_EXPORT DgnRevisionsTaskPtr Pull(Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
 
     //! Merge revisions.
     //! @param[in] revisions Revisions to merge.
@@ -113,12 +116,6 @@ public:
     //! Stops catching events and calling callback
     //! @param[in] callback   Callback that should be stopped calling
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeEventsCallback (DgnDbServerEventCallbackPtr callback) const;
-
-    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.
-    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId() const; //!< Briefcase Id.
-    DGNDBSERVERCLIENT_EXPORT Utf8String GetLastRevisionPulled() const; //!< Last revision that was pulled by this briefcase.
-
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -26,35 +26,11 @@ Utf8String fromEventSubscriptionId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionCreateEvent> DgnDbServerRevisionCreateEvent::Create
+RefCountedPtr<struct DgnDbServerRevisionCreateEvent> DgnDbServerRevisionCreateEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId
 )
     {
-    return std::shared_ptr<struct DgnDbServerRevisionCreateEvent> (new DgnDbServerRevisionCreateEvent(eventTopic, fromEventSubscriptionId));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionCreateEvent::GetEventTopic()
-    {
-    return m_eventTopic;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionCreateEvent::GetFromEventSubscriptionId()
-    {
-    return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerRevisionCreateEvent::GetEventType()
-    {
-    return DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent;
+    return new DgnDbServerRevisionCreateEvent(eventTopic, fromEventSubscriptionId);
     }

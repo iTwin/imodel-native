@@ -31,7 +31,7 @@ IRepositoryManagerP DgnDbRepositoryAdmin::_GetRepositoryManager(DgnDbR db) const
     RepositoryInfoPtr repositoryInfo = readResult.GetValue();
     DgnDbServerBriefcaseInfo briefcase(db.GetBriefcaseId());
     Utf8String repositoryId = repositoryInfo->GetId();
-    if (nullptr == (*m_managers)[repositoryId])
+    if ((*m_managers)[repositoryId].IsNull())
         {
         FileInfoPtr fileInfo = FileInfo::Create(db, "");
         auto managerResult = m_client->CreateRepositoryManager(*repositoryInfo, *fileInfo, briefcase)->GetResult();

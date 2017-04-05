@@ -32,7 +32,7 @@ int        briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create
+RefCountedPtr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId, 
@@ -41,60 +41,11 @@ Utf8String revisionIndex,
 int        briefcaseId
 )
     {
-    return std::shared_ptr<struct DgnDbServerRevisionEvent>
-        (new DgnDbServerRevisionEvent
+    return new DgnDbServerRevisionEvent
                (
                eventTopic,
                fromEventSubscriptionId,
                revisionId, 
                revisionIndex,
-			   briefcaseId));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetEventTopic()
-    {
-    return m_eventTopic;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetFromEventSubscriptionId()
-    {
-    return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetRevisionId()
-    {
-    return m_revisionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
-    {
-    return m_revisionIndex;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             08/2016
-//---------------------------------------------------------------------------------------
-int DgnDbServerRevisionEvent::GetBriefcaseId()
-    {
-    return m_briefcaseId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerRevisionEvent::GetEventType()
-    {
-    return DgnDbServerEvent::DgnDbServerEventType::RevisionEvent;
+			   briefcaseId);
     }

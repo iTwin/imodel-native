@@ -16,26 +16,24 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 //@bsiclass                                      Algirdas.Mikoliunas            01/2017
 //=======================================================================================
 struct DgnDbServerConfiguration
-    {
-    //__PUBLISH_SECTION_END__
-    private:
-        static bool s_preDownloadRevisionsEnabled;
-        static int  s_preDownloadCacheSize; //10 MB
+{
+private:
+    DGNDBSERVERCLIENT_EXPORT static bool s_preDownloadRevisionsEnabled;
+    DGNDBSERVERCLIENT_EXPORT static int  s_preDownloadCacheSize; //10 MB
 
-        //__PUBLISH_SECTION_START__
-    public:
-        //! Gets if pre-download feature is enabled for briefcases.
-        DGNDBSERVERCLIENT_EXPORT static bool GetPreDownloadRevisionsEnabled();
+public:
+    //! Gets if pre-download feature is enabled for briefcases.
+    static bool GetPreDownloadRevisionsEnabled() {return s_preDownloadRevisionsEnabled;}
 
-        //! Sets if pre-download feature is enabled for briefcases.
-        //! @param[in] enabled
-        DGNDBSERVERCLIENT_EXPORT static void SetPreDownloadRevisionsEnabled(bool enabled);
+    //! Sets if pre-download feature is enabled for briefcases.
+    //! @param[in] enabled
+    static void SetPreDownloadRevisionsEnabled(bool enabled) {s_preDownloadRevisionsEnabled = enabled;}
 
-        //! Gets maximum allowed pre-download cache size.
-        DGNDBSERVERCLIENT_EXPORT static int GetPreDownloadRevisionsCacheSize();
+    //! Gets maximum allowed pre-download cache size.
+    static int GetPreDownloadRevisionsCacheSize() {return s_preDownloadCacheSize;}
 
-        //! Sets maximum allowed pre-download cache size in bytes.
-        //! @param[in] cacheSize
-        DGNDBSERVERCLIENT_EXPORT static void SetPreDownloadRevisionsCacheSize(int cacheSize);
-    };
+    //! Sets maximum allowed pre-download cache size in bytes.
+    //! @param[in] cacheSize
+    static void SetPreDownloadRevisionsCacheSize(int cacheSize) {if (cacheSize > 0) s_preDownloadCacheSize = cacheSize;}
+};
 END_BENTLEY_DGNDBSERVER_NAMESPACE
