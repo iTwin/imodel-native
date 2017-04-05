@@ -378,6 +378,7 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] masterFileId
     //! @param[in] lastRevisionId Last pulled revision id
+    //! @param[in] options
     //! @param[in] cancellationToken
     //! @param[in] options
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
@@ -390,6 +391,7 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] masterFileId
     //! @param[in] lastRevisionId Last pulled revision id
+    //! @param[in] options
     //! @param[in] cancellationToken
     //! @param[in] options
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
