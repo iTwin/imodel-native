@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -74,9 +74,18 @@ void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR c
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ExpressionContextP> Stack(bvector<ExpressionContextP> stack, ExpressionContextR ctx)
+    {
+    stack.push_back(&ctx);
+    return stack;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR rootInstance)
+ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex, IECInstanceCR rootInstance)
     {
     BeAssert(m_initialized);
 
@@ -116,7 +125,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                     LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP>(primaryList.GetOperatorNode(index));
                     EvaluationResult accessorResult;
                     NodePtr accessorNode = lBracketNode->GetIndexNode();
-                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
+                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, *contextsStack.back());
                     if (ExpressionStatus::Success != exprStatus)
                         {
                         evalResult.Clear();
@@ -229,7 +238,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             EvaluationResult    indexResult;
             NodePtr             indexNode = lBracketNode->GetIndexNode();
 
-            ExpressionStatus exprStatus = indexNode->GetValue(indexResult, globalContext);
+            ExpressionStatus exprStatus = indexNode->GetValue(indexResult, *contextsStack.back());
             if (ExpressionStatus::Success != exprStatus)
                 {
                 evalResult.Clear();
@@ -368,12 +377,45 @@ static bool isPointArrayProperty (bool& is2d, ECPropertyCP prop)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool allowsTypeConversion(bvector<ExpressionContextP> const& contexts)
+    {
+    return std::any_of(contexts.begin(), contexts.end(), [](ExpressionContextCP ctx){return ctx->AllowsTypeConversion();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool enforceGlobalRepresentation(bvector<ExpressionContextP> const& contexts)
+    {
+    return std::any_of(contexts.begin(), contexts.end(), [](ExpressionContextCP ctx){return ctx->EnforceGlobalRepresentation();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool enforcesUnits(bvector<ExpressionContextP> const& contexts)
+    {
+    return std::any_of(contexts.begin(), contexts.end(), [](ExpressionContextCP ctx){return ctx->EnforcesUnits();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static EvaluationOptions getEvaluationOptions(bvector<ExpressionContextP> const& contexts)
+    {
+    EvaluationOptions opts = contexts[0]->GetEvaluationOptions();
+    for (size_t i = 1; i < contexts.size(); ++i)
+        opts = (EvaluationOptions)((int)opts | (int)contexts[i]->GetEvaluationOptions());
+    return opts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance)
+static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t& index, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, IECInstanceCR instance)
     {
-    BeAssert(m_initialized);
-
     ExpressionToken nextOperation = primaryList.GetOperation (index);
     if (TOKEN_Dot != nextOperation && TOKEN_Ident != nextOperation && TOKEN_LeftBracket != nextOperation)
         {
@@ -400,7 +442,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP> (primaryList.GetOperatorNode (index));
             EvaluationResult accessorResult;
             NodePtr accessorNode = lBracketNode->GetIndexNode();
-            ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
+            ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, *contextsStack.back());
             if (ExpressionStatus::Success != exprStatus)
                 { evalResult.Clear(); return exprStatus; }
             else if (accessorResult.GetValueType() != ValType_ECValue || !accessorResult.GetECValue()->IsString())
@@ -492,7 +534,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             ecval.SetDouble (*component);
             }
 
-        if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation () || globalContext.EnforcesUnits ())
+        if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack) || enforcesUnits(contextsStack))
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
             if (nullptr != typeAdapter)
@@ -500,10 +542,10 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance);
                 if (!context.IsValid())
                     return ExpressionStatus::UnknownError;
-                context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
-                if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
+                context->SetEvaluationOptions(getEvaluationOptions(contextsStack));
+                if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack))
                     {
-                    if (typeAdapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !typeAdapter->ConvertToExpressionType (ecval, *context))
+                    if (typeAdapter->RequiresExpressionTypeConversion (getEvaluationOptions(contextsStack)) && !typeAdapter->ConvertToExpressionType (ecval, *context))
                         return ExpressionStatus::UnknownError;
                     }
                 else if (typeAdapter->SupportsUnits () && !typeAdapter->GetUnits (units, *context))
@@ -542,7 +584,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         EvaluationResult indexResult;
         NodePtr indexNode = lBracketNode->GetIndexNode();
 
-        ExpressionStatus exprStatus = indexNode->GetValue (indexResult, globalContext);
+        ExpressionStatus exprStatus = indexNode->GetValue (indexResult, *contextsStack.back());
         if (ExpressionStatus::Success != exprStatus)
             { evalResult.Clear(); return exprStatus; }
         else if (indexResult.GetValueType() != ValType_ECValue || !indexResult.GetECValue()->ConvertToPrimitiveType (PRIMITIVETYPE_Integer) || indexResult.GetECValue()->IsNull())
@@ -563,17 +605,17 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             arrayVal.SetDouble (*component);
             }
 
-        if (isPrimitive && (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation () || globalContext.EnforcesUnits ()))
+        if (isPrimitive && (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack) || enforcesUnits(contextsStack)))
             {
             PrimitiveArrayECPropertyCP arrayProp = currentProperty->GetAsPrimitiveArrayProperty();
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)
                 {
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*arrayProp, instance);
-                context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
-                if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
+                context->SetEvaluationOptions (getEvaluationOptions(contextsStack));
+                if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack))
                     {
-                    if (adapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !adapter->ConvertToExpressionType (arrayVal, *context))
+                    if (adapter->RequiresExpressionTypeConversion (getEvaluationOptions(contextsStack)) && !adapter->ConvertToExpressionType (arrayVal, *context))
                         {
                         evalResult.Clear();
                         return ExpressionStatus::UnknownError;
@@ -611,7 +653,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             return ExpressionStatus::Success;
             }
         else
-            return GetInstanceValue (evalResult, index, primaryList, globalContext, *arrayVal.GetStruct());
+            return GetInstanceValue (evalResult, index, primaryList, contextsStack, *arrayVal.GetStruct());
         }
     else if (TOKEN_Dot == nextOperation || TOKEN_LParen == nextOperation)
         {
@@ -671,20 +713,18 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& startIndex, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList)
+static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t& startIndex, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ECInstanceListCR instanceList)
     {
-    BeAssert(m_initialized);
-
     ExpressionStatus status = ExpressionStatus::StructRequired;
     for (IECInstancePtr const& instance: instanceList)
         {
-        size_t index = startIndex;
+        uint32_t index = startIndex;
         if (instance.IsNull())
             {
             BeAssert (false); continue;
             }
 
-        status = GetInstanceValue (evalResult, index, primaryList, globalContext, *instance);
+        status = GetInstanceValue (evalResult, index, primaryList, contextsStack, *instance);
         if (ExpressionStatus::Success == status)
             {
             startIndex = index;
@@ -712,73 +752,61 @@ static bool convertResultToInstanceList (EvaluationResultR result, bool requireI
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
+* @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+static ExpressionStatus GetPrimaryListResult(EvaluationResultR evalResult, PrimaryListNodeR primaryList, uint32_t startIndex, bvector<ExpressionContextP> const& contextsStack, ExpressionContextP outerContext)
     {
-    Initialize();
-
-    evalResult.SetInstanceList (m_instances, false);
-
-    size_t      numberOfOperators = primaryList.GetNumberOfOperators();
-    size_t      index = startIndex;
+    uint32_t numberOfOperators = (uint32_t)primaryList.GetNumberOfOperators();
+    uint32_t index = startIndex;
 
     if (index == numberOfOperators)
         {
-        //  This is an instance expression
+        // already have the result 
         return ExpressionStatus::Success;
         }
 
-    ExpressionToken     nextOperation = primaryList.GetOperation(index);
-
+    ExpressionToken nextOperation = primaryList.GetOperation(index);
     while (TOKEN_None != nextOperation)
         {
         if (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation || TOKEN_LeftBracket == nextOperation)
             {
+            if (!convertResultToInstanceList(evalResult, true))
+                return ExpressionStatus::UnknownError;
+
             EvaluationResult valueResult;
-            ExpressionStatus instanceStatus = GetInstanceValue (valueResult, index, primaryList, globalContext, *evalResult.GetInstanceList());
+            ExpressionStatus instanceStatus = GetInstanceValue(valueResult, index, primaryList, contextsStack, *evalResult.GetInstanceList());
             if (ExpressionStatus::Success != instanceStatus)
                 {
                 if (0 == startIndex && 0 == index)
                     {
-                    ExpressionContextP  outer = GetOuterP();
-                    if (NULL != outer)
-                        return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
+                    if (NULL != outerContext)
+                        return outerContext->GetValue(evalResult, primaryList, contextsStack, startIndex);
                     }
-
                 evalResult.Clear();
                 return instanceStatus;
                 }
 
             evalResult = valueResult;
             nextOperation = primaryList.GetOperation (++index);
-            if (TOKEN_None == nextOperation)
-                {
-                convertResultToInstanceList (evalResult, false);
-                //  -- will we allow passing an struct t a method?
-                return ExpressionStatus::Success;
-                }
-            else if (!evalResult.IsValueList() && !convertResultToInstanceList (evalResult, true))
-                {
-                evalResult.Clear();
-                return ExpressionStatus::StructRequired;
-                }
             }
 
         if (TOKEN_LParen == nextOperation)
             {
-            CallNodeP               callNode = static_cast<CallNodeP>(primaryList.GetOperatorNode(index++));
-            nextOperation           = primaryList.GetOperation(index);
+            CallNodeP callNode = static_cast<CallNodeP>(primaryList.GetOperatorNode(index++));
+            nextOperation = primaryList.GetOperation(index);
 
-            EvaluationResult        methodResult;
+            EvaluationResult methodResult;
             ExpressionStatus exprStatus = ExpressionStatus::UnknownError;
             switch (evalResult.GetValueType())
                 {
+                case ValType_None:
+                    exprStatus = callNode->InvokeStaticMethod(methodResult, contextsStack);
+                    break;
                 case ValType_InstanceList:
-                    exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), globalContext);
+                    exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), contextsStack);
                     break;
                 case ValType_ValueList:
-                    exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), globalContext);
+                    exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), contextsStack);
                     break;
                 }
 
@@ -789,20 +817,20 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
                 }
 
             evalResult = methodResult;
-            if (TOKEN_None == nextOperation)
-                {
-                convertResultToInstanceList (evalResult, false);
-                return ExpressionStatus::Success;
-                }
-            else if (!convertResultToInstanceList (evalResult, true))
-                {
-                evalResult.Clear();
-                return ExpressionStatus::StructRequired;
-                }
             }
         }
 
-    return ExpressionStatus::UnknownError;
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
+    {
+    Initialize();
+    evalResult.SetInstanceList (m_instances, false);
+    return GetPrimaryListResult(evalResult, primaryList, startIndex, contextsStack, GetOuterP());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -906,7 +934,7 @@ MethodSymbolPtr MethodSymbol::Create (Utf8CP name, ExpressionValueListMethod_t m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
     //  We only get here if the symbol was resolved directly from a context. The context may be a global context, or a namespace context. If the
     //  context is a global context then startIndex is 1 and the callNode should be 0. If the context is a namespace context, then startIndex - 1
@@ -916,24 +944,8 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
     //  method receive a pointer to the context used to invoke it.
 
     BeAssert(1 <= startIndex);
-    ::uint32_t      callNodeIndex = startIndex - 1;
-
-    if (primaryList.GetOperation(callNodeIndex) != TOKEN_LParen)
-        {
-        evalResult.InitECValue().Clear();
-        return ExpressionStatus::UnknownError;    // Invalid operation on method
-        }
-
-    // NEEDSWORK: If a static method returns an ECInstanceList, we can never access properties of those instances??
-    if (primaryList.GetNumberOfOperators() != startIndex)
-        {
-        evalResult.InitECValue().Clear();
-        return ExpressionStatus::UnknownError;    // Invalid operation on method
-        }
-
-    CallNodeP   callNode = static_cast<CallNodeP>(primaryList.GetOperatorNode(callNodeIndex));
-
-    return callNode->InvokeStaticMethod(evalResult, *m_methodReference, globalContext);
+    uint32_t callNodeIndex = startIndex - 1;
+    return GetPrimaryListResult(evalResult, primaryList, callNodeIndex, contextsStack, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1007,7 +1019,7 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create(ExpressionContextP ou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
     Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
@@ -1017,12 +1029,12 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
         {
         SymbolP symbol = (*curr).get();
         if (0 == strcmp(ident, symbol->GetName()))
-            return symbol->GetValue(evalResult, primaryList, globalContext, startIndex + 1);
+            return symbol->GetValue(evalResult, primaryList, Stack(contextsStack, *this), startIndex + 1);
         }
 
     ExpressionContextP  outer = GetOuterP();
     if (NULL != outer)
-        return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
+        return outer->GetValue(evalResult, primaryList, Stack(contextsStack, *this), startIndex);
 
     return ExpressionStatus::UnknownSymbol;
     }
@@ -1030,7 +1042,7 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
     Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
@@ -1040,12 +1052,12 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
         {
         SymbolP symbol = (*curr).get();
         if (0 == strcmp(ident, symbol->GetName()))
-            return symbol->GetReference(evalResult, refResult, primaryList, globalContext, startIndex + 1);
+            return symbol->GetReference(evalResult, refResult, primaryList, Stack(contextsStack, *this), startIndex + 1);
         }
 
     ExpressionContextP  outer = GetOuterP();
     if (NULL != outer)
-        return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
+        return outer->GetValue(evalResult, primaryList, Stack(contextsStack, *this), startIndex);
 
     return ExpressionStatus::UnknownSymbol;
     }
@@ -1075,17 +1087,17 @@ ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
-    return m_context->GetValue(evalResult, primaryList, globalContext, startIndex);
+    return m_context->GetValue(evalResult, primaryList, contextsStack, startIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
-    return m_context->GetReference(evalResult, refResult, primaryList, globalContext, startIndex);
+    return m_context->GetReference(evalResult, refResult, primaryList, contextsStack, startIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,7 +1130,7 @@ ValueSymbol::ValueSymbol (Utf8CP name, EvaluationResultCR value) : Symbol(name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
@@ -1192,7 +1204,7 @@ RefCountedPtr<PropertySymbol> PropertySymbol::Create(Utf8CP name, PropertySymbol
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
     {
     if (m_valueEvaluator.IsValid())
         {
@@ -1216,8 +1228,13 @@ ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, Primar
         }
 
     BeAssert(m_contextEvaluator.IsValid());
-    BeAssert(m_contextEvaluator->_GetContext().IsValid());
-    return m_contextEvaluator->_GetContext()->GetValue(evalResult, primaryList, globalContext, startIndex);
+    ExpressionContextPtr context = m_contextEvaluator->_GetContext();
+    if (!context.IsValid())
+        {
+        BeAssert(false);
+        return ExpressionStatus::UnknownError;
+        }
+    return context->GetValue(evalResult, primaryList, Stack(contextsStack, *context), startIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1335,7 +1352,7 @@ void InstanceListExpressionContext::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, uint32_t startIndex)
+ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, uint32_t startIndex)
     {
     Initialize();
 
@@ -1351,7 +1368,7 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
         {
         for (IECInstancePtr const& instance: m_instances)
             {
-            if (instance.IsValid() && ExpressionStatus::Success == (status = GetReference (evalResult, refResult, primaryList, globalContext, startIndex, *instance)))
+            if (instance.IsValid() && ExpressionStatus::Success == (status = GetReference (evalResult, refResult, primaryList, contextsStack, startIndex, *instance)))
                 break;
             }
         }

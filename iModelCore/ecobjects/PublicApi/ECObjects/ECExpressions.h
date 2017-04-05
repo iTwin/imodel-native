@@ -214,8 +214,8 @@ protected:
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
     //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExpressionStatus::NotImpl; }
     //  The globalContext may be used to find instance methods
-    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
-    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) { return ExpressionStatus::NotImpl; }
+    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) { return ExpressionStatus::NotImpl; }
 #endif
 public:
 #ifndef DOCUMENTATION_GENERATOR
@@ -224,12 +224,12 @@ public:
     ExpressionStatus            ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
                                     { return _ResolveMethod(result, ident, useOuterIfNecessary); }
 
-    ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
-                                    { return _GetValue(evalResult, primaryList, globalContext, startIndex); }
+    ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex = 0)
+                                    { return _GetValue(evalResult, primaryList, contextsStack, startIndex); }
 
-    ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
+    ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex = 0)
 
-                                    { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
+                                    { return _GetReference(evalResult, refResult, primaryList, contextsStack, startIndex); }
 #endif
 
     //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
@@ -269,15 +269,12 @@ private:
 
     InstanceListExpressionContext (ECInstanceListCR instances, ExpressionContextP outer = NULL);
 
-    void                                        Initialize();
+    void Initialize();
 
-    ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance);
-    ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList);
+    ECOBJECTS_EXPORT ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
 
-    ECOBJECTS_EXPORT ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ECOBJECTS_EXPORT ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-
-    ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR instance);
+    ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex, IECInstanceCR instance);
 #ifndef DOCUMENTATION_GENERATOR
 protected:
     // The following protected methods are only relevant to derived classes, which may want to:
@@ -364,8 +361,8 @@ private:
 #ifndef DOCUMENTATION_GENERATOR
 protected:
     ECOBJECTS_EXPORT ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
-    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ECOBJECTS_EXPORT ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
 
     ECOBJECTS_EXPORT bool _IsNamespace() const override {return true;}
     
@@ -406,8 +403,8 @@ protected:
     Symbol (Utf8CP name) : m_name (name) { }
 
     virtual ExpressionStatus _CreateMethodResult (MethodReferencePtr& result) const {return ExpressionStatus::MethodRequired;}
-    virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
-    virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) = 0;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 10000;}
 
@@ -416,11 +413,11 @@ public:
 
     ExpressionStatus CreateMethodResult (MethodReferencePtr& result) const {return _CreateMethodResult(result);}
 
-    ExpressionStatus GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
-                        {return _GetValue(evalResult, primaryList, globalContext, startIndex);}
+    ExpressionStatus GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
+                        {return _GetValue(evalResult, primaryList, contextsStack, startIndex);}
 
-    ExpressionStatus GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
-                        {return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex);}
+    ExpressionStatus GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
+                        {return _GetReference(evalResult, refResult, primaryList, contextsStack, startIndex);}
 #endif
 
 };  // End of class Symbol
@@ -436,8 +433,8 @@ protected:
 
     ContextSymbol (Utf8CP name, ExpressionContextR context) : Symbol(name), m_context(&context) {}
 
-    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
 #endif
 
 public:
@@ -459,8 +456,8 @@ private:
 
 #ifndef DOCUMENTATION_GENERATOR
 protected:
-    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override {return ExpressionStatus::NeedsLValue;}
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override {return ExpressionStatus::NeedsLValue;}
     ExpressionStatus _CreateMethodResult(MethodReferencePtr& result) const override {result = m_methodReference.get(); return ExpressionStatus::Success;}
 
     MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
@@ -542,8 +539,8 @@ private:
 protected:
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, PropertyEvaluator& evaluator);
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, ContextEvaluator& evaluator);
-    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
+    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override 
                                 {return ExpressionStatus::NeedsLValue;}
 
 #endif
@@ -796,8 +793,8 @@ protected:
     ValueSymbol (Utf8CP name, EvaluationResultCR exprValue);
 
     virtual                         ~ValueSymbol();
-    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override
                                 {return ExpressionStatus::NeedsLValue;}
 #endif
 public:

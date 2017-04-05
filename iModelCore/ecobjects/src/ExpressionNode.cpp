@@ -1697,7 +1697,7 @@ ECN::PrimitiveECPropertyR primitiveProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
-    return context.GetValue(evalResult, *this, context, 0);
+    return context.GetValue(evalResult, *this, {&context}, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1834,16 +1834,30 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static ExpressionStatus ResolveMethod(MethodReferencePtr& methodReference, Utf8CP name, bool useOuter, bvector<ExpressionContextP> contexts)
+    {
+    // note: start looking from the topmost context on the stack
+    for (auto iter = contexts.rbegin(); iter != contexts.rend(); ++iter)
+        {
+        if (ExpressionStatus::Success == (*iter)->ResolveMethod(methodReference, name, useOuter))
+            return ExpressionStatus::Success;
+        }
+    return ExpressionStatus::MethodRequired;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context)
+ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, bvector<ExpressionContextP> const& contextsStack)
     {
     MethodReferencePtr methodRef;
-    ExpressionStatus status = context.ResolveMethod (methodRef, GetMethodName(), true);
+    ExpressionStatus status = ResolveMethod(methodRef, GetMethodName(), true, contextsStack);
     if (ExpressionStatus::Success == status)
         {
         EvaluationResultVector argsList;
-        status = m_arguments->EvaluateArguments (argsList, context);
+        status = m_arguments->EvaluateArguments (argsList, *contextsStack.front());
         if (ExpressionStatus::Success == status)
             status = methodRef->InvokeValueListMethod (evalResult, valueList, argsList);
         }
@@ -1854,12 +1868,12 @@ ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context)
+ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, bvector<ExpressionContextP> const& contextsStack)
     {
     MethodReferencePtr  methodReference;
 
     //  The lookup should include the instance data since that would be the most logical place to find the method reference
-    ExpressionStatus    exprStatus = context.ResolveMethod(methodReference, this->GetMethodName(), true);
+    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack);
     if (ExpressionStatus::Success != exprStatus)
         {
         evalResult = ECN::ECValue();
@@ -1868,7 +1882,7 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, EC
 
     EvaluationResultVector  argsVector;
 
-    ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
+    ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, *contextsStack.front());
     if (ExpressionStatus::Success != status)
         return status;
 
@@ -1878,11 +1892,11 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR methodReference, ExpressionContextR context)
+ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR methodReference, bvector<ExpressionContextP> const& contextsStack)
     {
     EvaluationResultVector  argsVector;
 
-    ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
+    ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, *contextsStack.front());
     if (ExpressionStatus::Success != status)
         return status;
 
@@ -1892,19 +1906,19 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, Meth
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context)
+ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, bvector<ExpressionContextP> const& contextsStack)
     {
     MethodReferencePtr  methodReference;
 
     //  The lookup should include the instance data since that would be the most logical place to find the method reference
-    ExpressionStatus    exprStatus = context.ResolveMethod(methodReference, this->GetMethodName(), true);
+    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack);
     if (ExpressionStatus::Success != exprStatus)
         {
         evalResult = ECN::ECValue();
         return exprStatus;
         }
 
-    return InvokeStaticMethod(evalResult, *methodReference, context);
+    return InvokeStaticMethod(evalResult, *methodReference, contextsStack);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1959,7 +1973,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     EvaluationResult    instanceResult;
     ReferenceResult     refResult;
 
-    ExpressionStatus    exprStatus = context.GetReference(instanceResult, refResult, *primaryList, context, 0);
+    ExpressionStatus    exprStatus = context.GetReference(instanceResult, refResult, *primaryList, {&context}, 0);
     if (ExpressionStatus::Success != exprStatus)
         return exprStatus;
 
@@ -4248,10 +4262,10 @@ private:
         m_primitive = ECValue (/*null*/);
         }
 
-    virtual ExpressionStatus        _GetValue (EvaluationResultR result, PrimaryListNodeR primaryList, ExpressionContextR context, uint32_t index) override
+    virtual ExpressionStatus        _GetValue (EvaluationResultR result, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, uint32_t index) override
         {
         if (m_struct.IsValid())
-            return m_struct->GetValue (result, primaryList, context, index);
+            return m_struct->GetValue(result, primaryList, contextsStack, index);
         else if (primaryList.GetNumberOfOperators() <= index)
             {
             result = m_primitive;
@@ -4260,7 +4274,7 @@ private:
         else
             return ExpressionStatus::UnknownError;
         }
-    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
+    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override
         {
         // not applicable
         return ExpressionStatus::UnknownError;
