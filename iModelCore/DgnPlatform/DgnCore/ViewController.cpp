@@ -685,13 +685,11 @@ static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMa
         {
         case GridOrientationType::View:
             {
-            DPoint3d    viewOrigin;
-            DPoint3d    centerWorld = vp.NpcToWorld(DPoint3d::From(0.5,0.5,0.5));
+            DPoint3d centerWorld = vp.NpcToWorld(DPoint3d::From(0.5,0.5,0.5));
 
             rMatrix = vp.GetRotMatrix();
-            rMatrix.Multiply(viewOrigin, *(vp.GetViewOrigin()));
             rMatrix.Multiply(origin);
-            origin.z = viewOrigin.z + centerWorld.z;
+            origin.z = centerWorld.z;
             rMatrix.MultiplyTranspose(origin, origin);
             break;
             }
@@ -836,10 +834,11 @@ void ViewController::_DrawGrid(DecorateContextR context)
     DPoint2d    spacing;
     DPoint3d    origin;
     RotMatrix   rMatrix;
+    Point2d     fixedRepsAuto = Point2d::From(0, 0);
 
     _GetGridSpacing(spacing, gridsPerRef);
     getGridOrientation(vp, origin, rMatrix, orientation);
-    context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
+    context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, GridOrientationType::View != orientation ? &fixedRepsAuto : nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

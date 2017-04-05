@@ -103,7 +103,7 @@ struct DgnSqlTestDomain : DgnDomain
     DOMAIN_DECLARE_MEMBERS(DgnSqlTestDomain, )
 
 private:
-    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".ecschema.xml"; }
 
 public:
     DgnSqlTestDomain();

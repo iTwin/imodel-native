@@ -129,12 +129,16 @@ virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Poi
 +---------------+---------------+---------------+---------------+---------------+------*/
 AuxCoordSystemPtr AuxCoordSystem::CreateNew(ViewDefinitionCR def, Utf8StringCR name)
     {
+    DefinitionModelPtr model = def.GetDefinitionModel();
+    if (!model.IsValid())
+        return nullptr;
+
     if (def.IsSpatialView())
-        return new AuxCoordSystemSpatial(def.GetDgnDb(), name);
+        return new AuxCoordSystemSpatial(*model, name);
     else if (def.IsView3d())
-        return new AuxCoordSystem3d(def.GetDgnDb(), name);
+        return new AuxCoordSystem3d(*model, name);
     else
-        return new AuxCoordSystem2d(def.GetDgnDb(), name);
+        return new AuxCoordSystem2d(*model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,12 +146,16 @@ AuxCoordSystemPtr AuxCoordSystem::CreateNew(ViewDefinitionCR def, Utf8StringCR n
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode AuxCoordSystem::CreateCode(ViewDefinitionCR def, Utf8StringCR name)
     {
+    DefinitionModelPtr model = def.GetDefinitionModel();
+    if (!model.IsValid())
+        return DgnCode();
+
     if (def.IsSpatialView())
-        return AuxCoordSystemSpatial::CreateCode(def.GetDgnDb(), name);
+        return AuxCoordSystemSpatial::CreateCode(*model, name);
     else if (def.IsView3d())
-        return AuxCoordSystem3d::CreateCode(def.GetDgnDb(), name);
+        return AuxCoordSystem3d::CreateCode(*model, name);
     else
-        return AuxCoordSystem2d::CreateCode(def.GetDgnDb(), name);
+        return AuxCoordSystem2d::CreateCode(*model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -750,7 +758,7 @@ void AuxCoordSystem::_DrawGrid(DecorateContextR context) const
         origin.SumOf(origin, xVec, -gridOffset.x, yVec, -gridOffset.y);
         }
 
-    context.DrawStandardGrid(origin, rMatrix, spacing, gridPerRef, false, (0 == gridReps.x || 0 == gridReps.y) ? NULL : &gridReps);
+    context.DrawStandardGrid(origin, rMatrix, spacing, gridPerRef, false, &gridReps);
     }
 
 /*---------------------------------------------------------------------------------**//**

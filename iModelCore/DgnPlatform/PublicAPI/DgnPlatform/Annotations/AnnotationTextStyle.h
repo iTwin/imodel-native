@@ -120,7 +120,7 @@ private:
     Utf8String m_description;
     AnnotationTextStylePropertyBag m_data;
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(db, BIS_CODESPEC_AnnotationTextStyle, name); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationTextStyle, db.GetDictionaryModel(), name); }
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;

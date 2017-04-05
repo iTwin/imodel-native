@@ -74,7 +74,7 @@ bool GradientSymb::operator==(GradientSymbCR rhs) const
     return true;
     }
 
-Byte    roundToByte(double f) { return (Byte) std::min (f + .5, 255.0); }
+static Byte roundToByte(double f) { return (Byte) std::min (f + .5, 255.0); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -144,7 +144,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                      if (d > dMax)
                          dMax = d;
                      }
-                    }
+                }
             for (size_t j = 0; j < height; j++)
                 {
                 y = (double) j / 255.0 - ys;
