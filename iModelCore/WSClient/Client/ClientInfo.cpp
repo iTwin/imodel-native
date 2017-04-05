@@ -2,12 +2,11 @@
 |
 |     $Source: Client/ClientInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/ClientInfo.h>
-#include <DgnClientFx/Device.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -46,41 +45,6 @@ m_primaryHeaderProvider(primaryHeaderProvider)
     BeAssert(!m_systemDescription.empty());
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClientInfoPtr ClientInfo::Create
-(
-Utf8String applicationName,
-BeVersion applicationVersion,
-Utf8String applicationGUID,
-Utf8String applicationProductId,
-IHttpHeaderProviderPtr primaryHeaderProvider
-)
-    {
-    Utf8String deviceId = Device::GetDeviceId();
-
-    Utf8String model = Device::GetModelName();
-    if (!model.empty())
-        {
-        model += "; ";
-        }
-
-    Utf8PrintfString systemDescription("%s%s %s",
-        model.c_str(),
-        Device::GetOSName().c_str(),
-        Device::GetOSVersion().c_str());
-
-    return std::shared_ptr<ClientInfo>(new ClientInfo(
-        applicationName,
-        applicationVersion,
-        applicationGUID,
-        deviceId,
-        systemDescription,
-        applicationProductId,
-        primaryHeaderProvider
-        ));
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015

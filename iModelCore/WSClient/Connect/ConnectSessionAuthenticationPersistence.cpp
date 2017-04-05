@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectSessionAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -10,7 +10,6 @@
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016

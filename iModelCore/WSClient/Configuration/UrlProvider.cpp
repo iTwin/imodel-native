@@ -193,11 +193,13 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
+void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocalState* localState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
+    BeAssert (nullptr != localState);
+
     s_thread = WorkerThread::Create("UrlProvider");
 
-    s_localState = customLocalState ? customLocalState : &DgnClientFxCommon::LocalState();
+    s_localState = localState;
     s_customHandler = customHandler;
     s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
     s_env = env;

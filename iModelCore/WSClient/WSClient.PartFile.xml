@@ -73,8 +73,7 @@
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
         <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
-        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
@@ -86,7 +85,7 @@
       <!--  Dependency was moved to DgnClientFx:DgnClientFxJar
         <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
       -->
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
             <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesClient.so</Assemblies>

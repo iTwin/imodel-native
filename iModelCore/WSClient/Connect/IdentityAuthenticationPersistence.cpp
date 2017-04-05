@@ -2,14 +2,13 @@
 |
 |     $Source: Connect/IdentityAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include "IdentityAuthenticationPersistence.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 #define LocalState_NameSpace        "Connect"
 #define LocalState_Token            "IdentityToken"
@@ -23,7 +22,7 @@ IdentityAuthenticationPersistence::IdentityAuthenticationPersistence
 IJsonLocalState* localState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
-m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
+m_localState(*localState),
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(m_localState))
     {}
 

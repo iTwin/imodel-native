@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ImsClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,6 @@
 // TODO: refactor to non-static class ImsClient
 //__PUBLISH_SECTION_START__
 
-#include <DgnClientFx/DgnClientApp.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Client/ClientInfo.h>
