@@ -56,11 +56,11 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext)
+ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt)
     :
     m_standaloneEnablerLocater(enablerLocater),
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
-    m_remapper (nullptr)
+    m_remapper(nullptr), m_includeFilesWithNoVerExt(includeFilesWithNoVerExt)
     {
     m_knownSchemas = ECSchemaCache::Create();
     m_locaters.push_back(m_knownSchemas.get());
@@ -74,7 +74,7 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         for (bvector<WString>::const_iterator iter = searchPaths.begin(); iter != searchPaths.end(); ++iter)
             m_searchPaths.insert(*iter);
 
-        SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+        SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths, m_includeFilesWithNoVerExt);
         m_locaters.push_back(locator.get());
         m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
@@ -85,7 +85,7 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         BeFileName conversionSchemasDirectory(s_rootDirectory);
         conversionSchemasDirectory.AppendToPath(EC_SCHEMAS_DIRECTORY);
         conversionSchemasDirectory.AppendToPath(EC_V3CONVERSION_DIRECTORY);
-        m_conversionSchemas = CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, false);
+        m_conversionSchemas = CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, false, m_includeFilesWithNoVerExt);
         m_conversionSchemas->AddSchemaPath(conversionSchemasDirectory.c_str());
         m_conversionSchemas->AddSchemaLocater(*m_knownSchemas);
         }
@@ -103,21 +103,21 @@ void ECSchemaReadContext::ResolveClassName (Utf8StringR className, ECSchemaCR sc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext)
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt)
     {
-    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, createConversionContext);
+    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, createConversionContext, includeFilesWithNoVerExt);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     {
-    return CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, true);
+    return CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, true, false /*=includeFilesWithNoVerExt*/);
     }
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext(bool acceptLegacyImperfectLatestCompatibleMatch, bool includeFilesWithNoVerExt)
     {
-    return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch);
+    return CreateContext (nullptr, acceptLegacyImperfectLatestCompatibleMatch, true, includeFilesWithNoVerExt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +167,7 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
 
     bvector<WString> pathVector;
     pathVector.push_back(pathStr.GetName());
-    SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (pathVector);
+    SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(pathVector, m_includeFilesWithNoVerExt);
 
     m_searchPaths.insert(pathStr.GetName());
     m_locaters.insert (m_locaters.begin() + m_userAddedLocatersCount + ++m_searchPathLocatersCount, locator.get());

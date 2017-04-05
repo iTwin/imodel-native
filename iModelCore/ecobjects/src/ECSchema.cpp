@@ -1811,7 +1811,7 @@ bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocater::SearchPathSchemaFileLocater (bvector<WString> const& searchPaths) : m_searchPaths(searchPaths) {};
+SearchPathSchemaFileLocater::SearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt) : m_searchPaths(searchPaths), m_includeFilesWithNoVersionExt(includeFilesWithNoVerExt) {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
@@ -1821,9 +1821,9 @@ SearchPathSchemaFileLocater::~SearchPathSchemaFileLocater () {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths)
+SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt)
     {
-    return new SearchPathSchemaFileLocater(searchPaths);
+    return new SearchPathSchemaFileLocater(searchPaths, includeFilesWithNoVerExt);
     }
 
 void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
@@ -1860,6 +1860,55 @@ void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& 
             candidate.Key = key;
             candidate.SearchPath = schemaPath;
             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
+    {
+    if (!m_includeFilesWithNoVersionExt)
+        return;
+
+    BeFileName schemaPathname(schemaPath.c_str());
+    schemaPathname.AppendUtf8(schemaName);
+    schemaPathname.AppendUtf8(".ecschema.xml");
+
+    LOG.debugv(L"Checking for existence of %ls...", schemaPathname.GetName());
+
+    if (!schemaPathname.DoesPathExist())
+        return;
+
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, schemaPathname);
+    if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
+        {
+        LOG.warningv(L"Failed to read schema from %ls", schemaPathname.c_str());
+        return;
+        }
+
+    SchemaKey key;
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+    BeXmlNodeP schemaNode;
+    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, *xmlDom))
+        {
+        LOG.warningv(L"Failed to read schema version from %ls", schemaPathname.c_str());
+        return;
+        }
+
+    SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionRead(), key.GetVersionWrite(), key.GetVersionMinor());
+    SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
+    //If key matches, OR the legacy compatible match evaluates true
+    if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
+        (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestWriteCompatible &&
+        0 == ciKey.m_schemaName.CompareTo(ciDesiredSchemaKey.m_schemaName) && key.m_versionRead == desiredSchemaKey.m_versionRead))
+        {
+        foundFiles.push_back(CandidateSchema());
+        auto& candidate = foundFiles.back();
+        candidate.FileName = schemaPathname;
+        candidate.Key = key;
+        candidate.SearchPath = schemaPath;
         }
     }
 
@@ -1903,6 +1952,7 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
         {
         LOG.debugv("(SearchPathSchemaFileLocater) Attempting to locate schema %s in path %ls", schemaName, schemaPathStr.c_str());
 
+        AddCandidateNoExtensionSchema(foundFiles, schemaPathStr, schemaName, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
         }

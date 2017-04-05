@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/ECUnitsClassLocater.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -47,7 +47,7 @@ bool ECUnitsClassLocater::Initialize()
     {
     if (!m_context.IsNull())
         return true;
-    m_context = ECSchemaReadContext::CreateContext (NULL, false);
+    m_context = ECSchemaReadContext::CreateContext (nullptr, false);
 
     if (!LoadUnitsSchemas (*m_context))
         {
