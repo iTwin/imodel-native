@@ -86,8 +86,10 @@ protected:
 public:
     //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
     static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
-    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(ViewDefinitionCR def, Utf8StringCR name="");
+    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(ViewDefinitionCR def, Utf8StringCR name=""); // Create default ACS for this type of view.
+    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name); // Create default ACS for this type of model.
     DGNPLATFORM_EXPORT static DgnCode CreateCode(ViewDefinitionCR def, Utf8StringCR name=""); //!< @private
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name); //!< @private
 
     AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
     AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
@@ -246,10 +248,10 @@ public:
     //! Construct a new spatial Auxiliary Coordinate System.
     //! @param[in] model The DefinitionModel to hold the Auxiliary Coordinate System
     //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all spatial Auxiliary Coordinate Systems.
-    AuxCoordSystemSpatial(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateSpatialCode(model, name))) {SetOrigin3d(model.GetDgnDb().GeoLocation().GetGlobalOrigin());}
+    AuxCoordSystemSpatial(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {SetOrigin3d(model.GetDgnDb().GeoLocation().GetGlobalOrigin());}
 
     //! Create a DgnCode for an AuxCoordSystemSpatial given a name that is meant to be unique within the scope of the specified DefinitionModel
-    static DgnCode CreateSpatialCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_AuxCoordSystemSpatial, scope, name);}
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_AuxCoordSystemSpatial, scope, name);}
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystemSpatial));} //!< @private
 
