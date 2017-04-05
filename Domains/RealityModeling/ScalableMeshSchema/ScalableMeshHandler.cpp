@@ -16,6 +16,8 @@
 
 #include <Bentley\BeDirectoryIterator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
+
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -1257,7 +1259,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     m_basePath = clipFileBase;
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
-    assert(m_smPtr != 0);
+
+    if (!m_smPtr.IsValid())
+        return;    
 
 #if SM_ACTIVATE_UPLOADER == 1 || SM_ACTIVATE_LOAD_TEST == 1
     WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
@@ -1763,11 +1767,11 @@ void ScalableMeshModel::RemoveRegion(uint64_t id)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id)
     {
-    WString newPath = m_basePath + L"_terrain_";
-    newPath.append(std::to_wstring(id).c_str());
-    newPath.append(L".3sm");
+    assert(m_smPtr.IsValid());
 
-    terrainName = BeFileName(newPath);
+    Utf8String coverageName;
+    GetScalableMesh(false)->GetCoverageName(coverageName, id);
+    GetCoverageTerrainAbsFileName(terrainName, m_basePath, coverageName);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1809,15 +1813,18 @@ void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
             }
         else
             {
-            BeFileName terrainPath;
-            GetPathForTerrainRegion(terrainPath, reg.id);
+            BeFileName terrainPath;            
             bvector<IMeshSpatialModelP> allScalableMeshes;
             ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
             ScalableMeshModelP terrainRegion = nullptr;
             for (auto& sm : allScalableMeshes)
-                {
-                if (sm != this && dynamic_cast<ScalableMeshModel*>(sm)->GetPath().CompareToI(terrainPath) == 0)
-                    {
+                {                        
+                if (sm == this || dynamic_cast<ScalableMeshModel*>(sm)->GetScalableMesh(false) == nullptr) continue;
+                
+                GetPathForTerrainRegion(terrainPath, reg.id);
+
+                if (dynamic_cast<ScalableMeshModel*>(sm)->GetPath().CompareToI(terrainPath) == 0)
+                    {                    
                     terrainRegion = dynamic_cast<ScalableMeshModel*>(sm);
                     }
                 }
