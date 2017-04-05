@@ -44,7 +44,7 @@ namespace Json {
       intValue,      ///< signed integer value
       uintValue,     ///< unsigned integer value
       realValue,     ///< double value
-      stringValue,   ///< UTF-8 string value
+      stringValue,   ///< Utf8 string value
       booleanValue,  ///< bool value
       arrayValue,    ///< array value (ordered list)
       objectValue    ///< object value (collection of name/value pairs).
@@ -348,8 +348,7 @@ class JSON_API Value
 
       int compare(const Value &other) const {if (*this < other) return -1; if (*this > other) return 1; return 0;}
 
-      Utf8CP asCString() const {BeAssert(type_ == stringValue); return value_.string_;}
-      Utf8String asString() const
+      Utf8CP asCString(Utf8CP defaultVal="") const
         {
         switch (type_)
            {
@@ -364,9 +363,10 @@ class JSON_API Value
            case objectValue:
               BeAssert(false);
            }
-        return Utf8String();
+        return defaultVal;
         }
 
+      Utf8String asString(Utf8CP defaultVal="") const {return Utf8String(asCString(defaultVal));}
       Int asInt(Int defaultVal=0) const;
       UInt asUInt(UInt defaultVal=0) const;
       Int64 asInt64(Int64 defaultVal=0) const;
@@ -394,7 +394,7 @@ class JSON_API Value
 
       /// \brief Return true if empty array, empty object, or null;
       /// otherwise, false.
-      bool empty() const {if (isNull() || isArray() || isObject()) return size() == 0u; else return false;}
+      bool empty() const {if (isNull() || isArray() || isObject()) return size() == 0u; return false;}
 
       /// Return isNull()
       bool operator!() const {return isNull();}

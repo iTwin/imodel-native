@@ -439,9 +439,9 @@ bool Value::isConvertibleTo(ValueType other) const
 }
 
 /*---------------------------------------------------------------------------------**//**
+/// Number of values in array or object
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-/// Number of values in array or object
 ArrayIndex Value::size() const
 {
    switch (type_)
