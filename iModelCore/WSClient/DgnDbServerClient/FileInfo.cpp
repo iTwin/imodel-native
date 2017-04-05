@@ -15,24 +15,6 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileInfo::FileInfo() : m_areFileDetailsAvailable(false)
-    {
-    m_index = -1;
-    m_fileSize = 0;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-FileInfo::FileInfo(BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false)
-    {
-    m_index = -1;
-    m_fileSize = 0;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
 FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(description), m_areFileDetailsAvailable(false)
     {
     BeFileName fileName = db.GetFileName();
@@ -55,78 +37,6 @@ FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Ut
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  10/2016
-//---------------------------------------------------------------------------------------
-FileInfoPtr FileInfo::Create(BeGuid fileId)
-    {
-    return FileInfoPtr(new FileInfo(fileId));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  10/2016
-//---------------------------------------------------------------------------------------
-FileInfoPtr FileInfo::Create(Dgn::DgnDbCR db, Utf8StringCR description)
-    {
-    return FileInfoPtr(new FileInfo(db, description));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-int32_t FileInfo::GetIndex() const
-    {
-    return m_index;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR FileInfo::GetFileName() const
-    {
-    return m_fileName;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-BeGuid FileInfo::GetFileId() const
-    {
-    return m_fileId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR FileInfo::GetMergedRevisionId() const
-    {
-    return m_mergedRevisionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR FileInfo::GetDescription() const
-    {
-    return m_description;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-uint64_t FileInfo::GetSize() const
-    {
-    return m_fileSize;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR FileInfo::GetUserUploaded() const
-    {
-    return m_userUploaded;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             10/2016
 //---------------------------------------------------------------------------------------
 Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
@@ -144,25 +54,9 @@ Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DateTimeCR FileInfo::GetUploadedDate() const
-    {
-    return m_uploadedDate;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Algirdas.Mikoliunas             10/2016
-//---------------------------------------------------------------------------------------
-InitializationState FileInfo::GetInitialized() const
-    {
-    return m_initialized;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo)
     {
-    auto info = std::make_shared<FileInfo>(fileInfo);
+    FileInfoPtr info = new FileInfo(fileInfo);
 
     info->m_index = -1;
     if (properties.HasMember(ServerSchema::Property::Index))
@@ -265,39 +159,6 @@ WebServices::ObjectId FileInfo::GetObjectId() const
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-bool FileInfo::AreFileDetailsAvailable() const
-    {
-    return m_areFileDetailsAvailable;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas            02/2017
-//---------------------------------------------------------------------------------------
-bool FileInfo::GetContainsFileAccessKey()
-    {
-    return m_containsFileAccessKey;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas            02/2017
-//---------------------------------------------------------------------------------------
-DgnDbServerFileAccessKeyPtr FileInfo::GetFileAccessKey() const
-    {
-    return m_fileAccessKey;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas            02/2017
-//---------------------------------------------------------------------------------------
-void FileInfo::SetFileAccessKey(DgnDbServerFileAccessKeyPtr fileAccessKey)
-    {
-    m_containsFileAccessKey = true;
-    m_fileAccessKey = fileAccessKey;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
 DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(JsonValueCR json)
@@ -370,7 +231,7 @@ Utf8String DgnDbServerFileAccessKey::GetProperty(RapidJsonValueCR properties, Ut
 //---------------------------------------------------------------------------------------
 DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::Parse(RapidJsonValueCR properties)
     {
-    auto result = std::make_shared<DgnDbServerFileAccessKey>();
+    DgnDbServerFileAccessKeyPtr result = new DgnDbServerFileAccessKey();
 
     Utf8String downloadUrl = GetProperty(properties, ServerSchema::Property::DownloadUrl);
     if (!downloadUrl.empty())
@@ -399,18 +260,3 @@ void DgnDbServerFileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString
     selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-Utf8StringCR DgnDbServerFileAccessKey::GetDownloadUrl() const
-    {
-    return m_downloadUrl;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-Utf8StringCR DgnDbServerFileAccessKey::GetUploadUrl() const
-    {
-    return m_uploadUrl;
-    }

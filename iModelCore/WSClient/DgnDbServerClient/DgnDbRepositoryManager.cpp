@@ -132,7 +132,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     if (req.Locks ().IsEmpty () && req.Codes().empty())
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
 
-    if (!m_connection)
+    if (m_connection.IsNull())
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
@@ -158,7 +158,7 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
 
-    if (!m_connection)
+    if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
@@ -181,7 +181,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
     if (Resources::None == which) 
         return RepositoryStatus::Success;
 
-    if (!m_connection)
+    if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
     auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), ResponseOptions::None, m_cancellationToken)->GetResult ();
@@ -200,7 +200,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
-    if (!m_connection)
+    if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
     auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken);
@@ -232,7 +232,7 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
 
-    if (!m_connection)
+    if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
     auto result = m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken)->GetResult ();
@@ -248,35 +248,3 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
         return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Karolis.Dziedzelis              12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRepositoryManager::DgnDbRepositoryManager (DgnDbRepositoryConnectionPtr connection) : m_connection(connection)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Karolis.Dziedzelis              12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (DgnDbRepositoryConnectionPtr connection)
-    {
-    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(connection));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Karolis.Dziedzelis              12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbRepositoryManager::SetCancellationToken (ICancellationTokenPtr cancellationToken)
-    {
-    m_cancellationToken = cancellationToken;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Algirdas.Mikoliunas             10/2016
-//---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionPtr DgnDbRepositoryManager::GetRepositoryConnectionPtr()
-    {
-    return m_connection;
-    }
-

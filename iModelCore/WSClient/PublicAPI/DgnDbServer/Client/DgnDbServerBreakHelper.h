@@ -39,15 +39,15 @@ enum DgnDbServerBreakpoints
 // @bsiclass                                    Algirdas.Mikoliunas             10/2016
 //=======================================================================================
 struct DgnDbServerBreakHelper
-    {
-    private:
-        static DgnDbServerBreakpoints s_breakpoint;
-    public:
-        //! Sets breakpoint, that should throw exception during execution
-        //! @param[in] breakpoint
-        DGNDBSERVERCLIENT_EXPORT static void SetBreakpoint(DgnDbServerBreakpoints breakpoint);
-        //! Hits breakpoint and throws exception if set breakpoint is equal to current
-        //! @param[in] breakpoint
-        DGNDBSERVERCLIENT_EXPORT static void HitBreakpoint(DgnDbServerBreakpoints breakpoint);
-    };
+{
+private:
+    static DgnDbServerBreakpoints s_breakpoint;
+public:
+    //! Sets breakpoint, that should throw exception during execution
+    //! @param[in] breakpoint
+    DGNDBSERVERCLIENT_EXPORT static void SetBreakpoint(DgnDbServerBreakpoints breakpoint);
+    //! Hits breakpoint and throws exception if set breakpoint is equal to current
+    //! @param[in] breakpoint
+    DGNDBSERVERCLIENT_EXPORT static void HitBreakpoint(DgnDbServerBreakpoints breakpoint);
+};
 END_BENTLEY_DGNDBSERVER_NAMESPACE

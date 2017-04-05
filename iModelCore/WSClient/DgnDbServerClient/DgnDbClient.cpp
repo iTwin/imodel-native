@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGN
+
 BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo)
     {
     baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetId()));
@@ -26,14 +27,6 @@ BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName b
     baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
     return baseDirectory;
     };
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2016
-//---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionResult DgnDbClient::CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const
-    {
-    return DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_customHandler);
-    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
@@ -48,7 +41,6 @@ IWSRepositoryClientPtr DgnDbClient::CreateProjectConnection() const
         client->GetWSClient()->EnableWsgServerHeader(true);
     return client;
     }
-
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
@@ -98,14 +90,6 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR r
             }
         return CreateRepositoryConnection(*result.GetValue());
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
-    : m_clientInfo(clientInfo), m_customHandler(customHandler), m_projectId(""), m_repositoryAdmin(this)
-    {
     }
 
 //---------------------------------------------------------------------------------------
@@ -206,31 +190,7 @@ DgnDbClientPtr DgnDbClient::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr cus
     {
     const Utf8String methodName = "DgnDbClient::Create";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return DgnDbClientPtr(new DgnDbClient(clientInfo, customHandler));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
-    {
-    m_serverUrl = serverUrl;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-void DgnDbClient::SetCredentials(CredentialsCR credentials)
-    {
-    m_credentials = credentials;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  06/2016
-//---------------------------------------------------------------------------------------
-void DgnDbClient::SetProject(Utf8StringCR projectId)
-    {
-    m_projectId = projectId;
+    return new DgnDbClient(clientInfo, customHandler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -450,22 +410,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
             {
             return *finalResult;
             });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             09/2016
-//---------------------------------------------------------------------------------------
-void DgnDbClient::SetHttpHandler(IHttpHandlerPtr customHandler)
-    {
-    m_customHandler = customHandler;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             09/2016
-//---------------------------------------------------------------------------------------
-IHttpHandlerPtr DgnDbClient::GetHttpHandler()
-    {
-    return m_customHandler;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1023,14 +967,6 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
             return DgnDbServerStatusResult::Success();
             }
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             07/2016
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::RepositoryAdmin* DgnDbClient::GetRepositoryAdmin()
-    {
-    return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_repositoryAdmin);
     }
 
 //---------------------------------------------------------------------------------------

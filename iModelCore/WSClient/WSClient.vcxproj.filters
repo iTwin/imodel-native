@@ -447,9 +447,6 @@
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
