@@ -5,7 +5,19 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ECObjects/ECObjectsAPI.h>#include <Bentley/BeFileName.h>#include <Bentley/stdcxx/bvector.h>#include <Bentley/stdcxx/rw/bpair.h>#include <BeXml/BeXml.h>#include <Bentley/BeStringUtilities.h>#include <Bentley/BeFileListIterator.h>#include <Logging/bentleylogging.h>#include <windows.h>#include <stdio.h>#include <stdlib.h>#include <wchar.h>
+#include <ECObjects/ECObjectsAPI.h>
+#include <Bentley/BeFileName.h>
+#include <Bentley/stdcxx/bvector.h>
+#include <Bentley/stdcxx/rw/bpair.h>
+#include <BeXml/BeXml.h>
+#include <Bentley/BeStringUtilities.h>
+#include <Bentley/BeFileListIterator.h>
+#include <Logging/bentleylogging.h>
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+
 USING_NAMESPACE_BENTLEY_EC
 
 
@@ -18,10 +30,10 @@ static void ShowUsage(char* str)
     {
     fprintf(stderr, "\n%s -i <inputSchemaPath> [-r directories] [-c directory] [-a]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n\n%s\t%s\n\n",
             str, "Tool to validate ECSchemas", "options:",
-            " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas", 
-            " -c --conversion DIR", "looks for the conversion schema file in this directory", 
+            " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
+            " -c --conversion DIR", "looks for the conversion schema file in this directory",
             " -u --include", "include the standard schemas in the converted schemas",
-            " -a --all", "validate the entire schema graph", 
+            " -a --all", "validate the entire schema graph",
             "Notes:",
             "if the input path is a directory, all files matching '*.ecschema.xml' will be validated");
     }
@@ -53,7 +65,7 @@ static int ValidateLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, 
             {
             if (refSchema.second->IsStandardSchema() && !options.IncludeStandards)
                 continue;
-            
+
             if (0 != ValidateLoadedSchema(context, *refSchema.second, options))
                 return -1;
             }
@@ -91,7 +103,7 @@ static int ValidateSchema(ConversionOptions options)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
 
-    for (auto const& refDir: options.ReferenceDirectories)
+    for (auto const& refDir : options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
 
     if (options.HasConversionDirectory)
@@ -175,7 +187,7 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
         else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
             options.IncludeAll = true;
         }
-    
+
     return inputDefined;
     }
 
@@ -185,7 +197,7 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
 int main(int argc, char** argv)
     {
     ConversionOptions options;
-    
+
     if (!TryParseInput(argc, argv, options))
         {
         ShowUsage(argv[0]);
@@ -198,7 +210,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "Could not load logging config file");
         return -1;
         }
-    
+
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
     BeFileName logFilePath(workingDirectory);
@@ -206,7 +218,7 @@ int main(int argc, char** argv)
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-    
+
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 

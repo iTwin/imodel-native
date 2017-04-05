@@ -2,10 +2,22 @@
 |
 |     $Source: tools/SchemaConverter/SchemaConverter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ECObjects/ECObjectsAPI.h>#include <Bentley/BeFileName.h>#include <Bentley/stdcxx/bvector.h>#include <Bentley/stdcxx/rw/bpair.h>#include <BeXml/BeXml.h>#include <Bentley/BeStringUtilities.h>#include <Bentley/BeFileListIterator.h>#include <Logging/bentleylogging.h>#include <windows.h>#include <stdio.h>#include <stdlib.h>#include <wchar.h>
+#include <ECObjects/ECObjectsAPI.h>
+#include <Bentley/BeFileName.h>
+#include <Bentley/stdcxx/bvector.h>
+#include <Bentley/stdcxx/rw/bpair.h>
+#include <BeXml/BeXml.h>
+#include <Bentley/BeStringUtilities.h>
+#include <Bentley/BeFileListIterator.h>
+#include <Logging/bentleylogging.h>
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+
 USING_NAMESPACE_BENTLEY_EC
 
 
@@ -17,18 +29,18 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 static void ShowUsage(char* str)
     {
     fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
-        str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
-        " -x --xml 2|3", "convert to the specified ecxmlversion",
-        " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
-        " -c --conversion DIR", "looks for the conversion schema file in this directory",
-        " -u --include", "include the standard schemas in the converted schemas",
-        " -a --all", "convert the entire schema graph",
-        " -s --sup", "convert all the supplemental schemas",
-        " -v --ver XX.XX.XX / XX.XX", "specify the schema version",
-        " --removeUnusedReferences", "remove all schema references that aren't referenced by elements of a schema",
-        "Notes:",
-        "if the input path is a directory, all files matching '*.ecschema.xml' will be converted",
-        "if output directory is the same as the input directory, the files will be overwritten");
+            str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
+            " -x --xml 2|3", "convert to the specified ecxmlversion",
+            " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
+            " -c --conversion DIR", "looks for the conversion schema file in this directory",
+            " -u --include", "include the standard schemas in the converted schemas",
+            " -a --all", "convert the entire schema graph",
+            " -s --sup", "convert all the supplemental schemas",
+            " -v --ver XX.XX.XX / XX.XX", "specify the schema version",
+            " --removeUnusedReferences", "remove all schema references that aren't referenced by elements of a schema",
+            "Notes:",
+            "if the input path is a directory, all files matching '*.ecschema.xml' will be converted",
+            "if output directory is the same as the input directory, the files will be overwritten");
     }
 
 struct ConversionOptions
@@ -60,9 +72,9 @@ struct ConversionOptions
 //---------------------------------------------------------------------------------------
 static void GetOutputFile
 (
-BeFileName          &outputFile,
-ECSchemaR          schema, 
-ConversionOptions   options
+    BeFileName          &outputFile,
+    ECSchemaR          schema,
+    ConversionOptions   options
 )
     {
     WString schemaName;
@@ -93,7 +105,7 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     ECVersion version;
     if (ECObjectsStatus::Success != ECSchema::CreateECVersion(version, options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor))
         return false;
-    
+
     SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), version);
     if (status != SchemaWriteStatus::Success)
         {
@@ -109,7 +121,7 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
 static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, ConversionOptions options)
     {
     if (!ECSchemaConverter::Convert(schema))
-        return -1; 
+        return -1;
 
     if (options.RemoveUnusedSchemaReferences)
         schema.RemoveUnusedSchemaReferences();
@@ -170,7 +182,7 @@ static int ConvertSchema(ConversionOptions& options, BeFileName& inputFile, ECSc
 //---------------------------------------------------------------------------------------
 static int ConvertSchema
 (
-ConversionOptions options
+    ConversionOptions options
 )
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
@@ -178,7 +190,7 @@ ConversionOptions options
     if (options.TargetECXmlVersionMajor == 3)
         context->SetPreserveElementOrder(true);
 
-    for (auto const& refDir: options.ReferenceDirectories)
+    for (auto const& refDir : options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
 
     if (options.HasConversionDirectory)
@@ -333,7 +345,7 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
             options.RemoveUnusedSchemaReferences = true;
             }
         }
-    
+
     return inputDefined && outputDefined;
     }
 
@@ -343,7 +355,7 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
 int main(int argc, char** argv)
     {
     ConversionOptions options;
-    
+
     if (!TryParseInput(argc, argv, options))
         {
         ShowUsage(argv[0]);
@@ -356,7 +368,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "Could not load logging config file");
         return -1;
         }
-    
+
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
     workingDirectory.AppendToPath(L"Assets");
@@ -365,7 +377,7 @@ int main(int argc, char** argv)
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-    
+
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
