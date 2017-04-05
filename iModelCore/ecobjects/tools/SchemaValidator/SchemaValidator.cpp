@@ -83,9 +83,8 @@ static int ValidateSchema(ConversionOptions& options, BeFileName& inputFile, ECS
     ECSchemaPtr schema;
 
     Utf8String fullName(inputFile.GetFileNameAndExtension());
-    SchemaKey key;
-    SchemaKey::ParseSchemaFullName(key, fullName.c_str());
-    schema = context.LocateSchema(key, SchemaMatchType::Exact);
+
+    schema = ECSchema::LocateSchema(inputFile.c_str(), context);
 
     if (!schema.IsValid())
         {
@@ -101,7 +100,7 @@ static int ValidateSchema(ConversionOptions& options, BeFileName& inputFile, ECS
 //---------------------------------------------------------------------------------------
 static int ValidateSchema(ConversionOptions options)
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true, true);
 
     for (auto const& refDir : options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
@@ -219,7 +218,9 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
 
-    ECSchemaReadContext::Initialize(workingDirectory);
+    BeFileName standardSchemaPath(workingDirectory);
+    standardSchemaPath.AppendToPath(L"Assets");
+    ECSchemaReadContext::Initialize(standardSchemaPath);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
