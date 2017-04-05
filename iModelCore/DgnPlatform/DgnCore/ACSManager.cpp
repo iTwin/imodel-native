@@ -144,6 +144,23 @@ AuxCoordSystemPtr AuxCoordSystem::CreateNew(ViewDefinitionCR def, Utf8StringCR n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+AuxCoordSystemPtr AuxCoordSystem::CreateNew(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name)
+    {
+    DefinitionModelPtr scope(defnModel);
+    if (!scope.IsValid())
+        scope = &model.GetDgnDb().GetDictionaryModel();
+
+    if (model.IsSpatialModel())
+        return new AuxCoordSystemSpatial(*scope, name);
+    else if (model.Is3dModel())
+        return new AuxCoordSystem3d(*scope, name);
+    else
+        return new AuxCoordSystem2d(*scope, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode AuxCoordSystem::CreateCode(ViewDefinitionCR def, Utf8StringCR name)
     {
     DefinitionModelPtr model = def.GetDefinitionModel();
@@ -156,6 +173,23 @@ DgnCode AuxCoordSystem::CreateCode(ViewDefinitionCR def, Utf8StringCR name)
         return AuxCoordSystem3d::CreateCode(*model, name);
     else
         return AuxCoordSystem2d::CreateCode(*model, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode AuxCoordSystem::CreateCode(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name)
+    {
+    DefinitionModelPtr scope(defnModel);
+    if (!scope.IsValid())
+        scope = &model.GetDgnDb().GetDictionaryModel();
+
+    if (model.IsSpatialModel())
+        return AuxCoordSystemSpatial::CreateCode(*scope, name);
+    else if (model.Is3dModel())
+        return AuxCoordSystem3d::CreateCode(*scope, name);
+    else
+        return AuxCoordSystem2d::CreateCode(*scope, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
