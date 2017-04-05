@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerError.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,107 +12,107 @@
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 struct DgnDbServerError : public Tasks::AsyncError
-    {
-    public:
-        enum class Id
-            {
-            Unknown = -1,
-            //DgnDbServer Errors
-            MissingRequiredProperties = 1,
-            InvalidPropertiesValues,
-            UserDoesNotHavePermission,
-            InvalidBriefcase,
-            BriefcaseDoesNotBelongToUser,
-            AnotherUserPushing,
-            RevisionAlreadyExists,
-            RevisionDoesNotExist,
-            FileIsNotUploaded,
-            RevisionExistsButNoBackingFile,
-            RepositoryIsNotInitialized,
-            RevisionPointsToBadBIM,
-            BIMCSOperationFailed,
-            PullIsRequired,
-            MaximumNumberOfBriefcasesPerUser,
-            MaximumNumberOfBriefcasesPerUserPerMinute,
-            DatabaseTemporarilyLocked,
-            RepositoryAlreadyExists,
-            RepositoryDoesNotExist,
-            LockDoesNotExist,
-            LocksExist,
-            LockOwnedByAnotherBriefcase,
-            UserAlreadyExists,
-            UserDoesNotExist,
-            CodeStateInvalid,
-            CodeStateRevisionDenied,
-            CodeReservedByAnotherBriefcase,
-            CodeAlreadyExists,
-            CodeDoesNotExist,
-            CodesExist,
-            FileDoesNotExist,
-            RepositoryIsLocked,
+{
+public:
+    enum class Id
+        {
+        Unknown = -1,
+        //DgnDbServer Errors
+        MissingRequiredProperties = 1,
+        InvalidPropertiesValues,
+        UserDoesNotHavePermission,
+        InvalidBriefcase,
+        BriefcaseDoesNotBelongToUser,
+        AnotherUserPushing,
+        RevisionAlreadyExists,
+        RevisionDoesNotExist,
+        FileIsNotUploaded,
+        RevisionExistsButNoBackingFile,
+        RepositoryIsNotInitialized,
+        RevisionPointsToBadBIM,
+        BIMCSOperationFailed,
+        PullIsRequired,
+        MaximumNumberOfBriefcasesPerUser,
+        MaximumNumberOfBriefcasesPerUserPerMinute,
+        DatabaseTemporarilyLocked,
+        RepositoryAlreadyExists,
+        RepositoryDoesNotExist,
+        LockDoesNotExist,
+        LocksExist,
+        LockOwnedByAnotherBriefcase,
+        UserAlreadyExists,
+        UserDoesNotExist,
+        CodeStateInvalid,
+        CodeStateRevisionDenied,
+        CodeReservedByAnotherBriefcase,
+        CodeAlreadyExists,
+        CodeDoesNotExist,
+        CodesExist,
+        FileDoesNotExist,
+        RepositoryIsLocked,
 
-            //WebServices Errors
-            LoginFailed,
-            SslRequired,
-            NotEnoughRights,
-            NoServerLicense,
-            NoClientLicense,
-            TooManyBadLoginAttempts,
-            InternalServerError,
-            WebServicesError,
-            ConnectionError,
-            Canceled,
+        //WebServices Errors
+        LoginFailed,
+        SslRequired,
+        NotEnoughRights,
+        NoServerLicense,
+        NoClientLicense,
+        TooManyBadLoginAttempts,
+        InternalServerError,
+        WebServicesError,
+        ConnectionError,
+        Canceled,
 
-            //DgnDbServer Client API Errors
-            NoRepositoriesFound,
-            FileIsNotBriefcase,
-            CredentialsNotSet,
-            FileNotFound,
-            FileAlreadyExists,
-            DgnDbServerClientNotInitialized,
-            InvalidServerURL,
-            InvalidRepositoryName,
-            InvalidRepositoryConnection,
-            InvalidRevision,
-            BriefcaseIsReadOnly,
-            TrackingNotEnabled,
+        //DgnDbServer Client API Errors
+        NoRepositoriesFound,
+        FileIsNotBriefcase,
+        CredentialsNotSet,
+        FileNotFound,
+        FileAlreadyExists,
+        DgnDbServerClientNotInitialized,
+        InvalidServerURL,
+        InvalidRepositoryName,
+        InvalidRepositoryConnection,
+        InvalidRevision,
+        BriefcaseIsReadOnly,
+        TrackingNotEnabled,
 
-            //Revision Manager Errors
-            MergeError,
-            RevisionManagerError,
+        //Revision Manager Errors
+        MergeError,
+        RevisionManagerError,
 
-            //Event Errors
-            NoEventsFound,
-            NoSubscriptionFound,
-            NoSASFound,
-            NotSubscribedToEventService,
-            EventServiceSubscribingError,
-            EventCallbackNotFound,
-            EventCallbackAlreadySubscribed,
-            EventCallbackNotSpecified,
+        //Event Errors
+        NoEventsFound,
+        NoSubscriptionFound,
+        NoSASFound,
+        NotSubscribedToEventService,
+        EventServiceSubscribingError,
+        EventCallbackNotFound,
+        EventCallbackAlreadySubscribed,
+        EventCallbackNotSpecified,
 			
-            AzureError,
-            DgnDbError
-            };
+        AzureError,
+        DgnDbError
+        };
 
-    private:
-        DgnDbServerError::Id m_id;
-        std::shared_ptr<WebServices::WSError> m_wsError;
-        bool RequiresExtendedData(DgnDbServerError::Id id);
-        DgnDbServerError::Id ErrorIdFromString(Utf8StringCR errorIdString);
-        DgnDbServerError::Id ErrorIdFromWSError(WebServices::WSErrorCR error);
+private:
+    DgnDbServerError::Id m_id;
+    std::shared_ptr<WebServices::WSError> m_wsError;
+    bool RequiresExtendedData(DgnDbServerError::Id id);
+    DgnDbServerError::Id ErrorIdFromString(Utf8StringCR errorIdString);
+    DgnDbServerError::Id ErrorIdFromWSError(WebServices::WSErrorCR error);
 
-    public:
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError();
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id);
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbCR db, BeSQLite::DbResult result);
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
+public:
+    DgnDbServerError() {m_id = Id::Unknown;}
+    DgnDbServerError(DgnDbServerError::Id id) {m_id = id;}
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbCR db, BeSQLite::DbResult result);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
 
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Http::HttpErrorCR error);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Http::HttpErrorCR error);
 
-        JsonValueCR GetExtendedData() const;
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId() const;
-    };
+    JsonValueCR GetExtendedData() const {return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();}
+    DgnDbServerError::Id GetId() const {return m_id;}
+};
 END_BENTLEY_DGNDBSERVER_NAMESPACE

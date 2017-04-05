@@ -33,14 +33,6 @@ DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr co
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
-    {
-    return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection));
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
 DgnRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
@@ -54,7 +46,7 @@ DgnRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallbackCR callb
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -103,7 +95,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(DgnRevisions const& revisions) co
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -156,7 +148,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -438,7 +430,7 @@ DgnRevisionsTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description,
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -502,7 +494,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -541,7 +533,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(DgnDbServerEven
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         return nullptr;
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         return nullptr;
 
     return m_repositoryConnection->SubscribeEventsCallback(eventTypes, callback);
@@ -559,7 +551,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEv
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_repositoryConnection)
+    if (m_repositoryConnection.IsNull())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
@@ -569,43 +561,3 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEv
     }
 
 /* EventService Methods End */
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-Dgn::DgnDbR DgnDbBriefcase::GetDgnDb() const
-    {
-    return *m_db;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionCR DgnDbBriefcase::GetRepositoryConnection() const
-    {
-    return *m_repositoryConnection;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Algirdas.Mikoliunas             09/2016
-//---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionPtr DgnDbBriefcase::GetRepositoryConnectionPtr()
-    {
-    return m_repositoryConnection;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Eligijus.Mauragas              01/2016
-//---------------------------------------------------------------------------------------
-BeBriefcaseId DgnDbBriefcase::GetBriefcaseId() const
-    {
-    return GetDgnDb().GetBriefcaseId();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Eligijus.Mauragas              01/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbBriefcase::GetLastRevisionPulled() const
-    {
-    return GetDgnDb().Revisions().GetParentRevisionId();
-    }

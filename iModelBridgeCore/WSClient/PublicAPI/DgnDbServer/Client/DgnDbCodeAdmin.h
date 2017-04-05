@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_DGN
 // @bsiclass                                      Algirdas.Mikoliunas            03/2017
 //=======================================================================================
 struct DgnDbCodeAdmin : public DgnPlatformLib::Host::CodeAdmin
-    {
+{
     DEFINE_T_SUPER(DgnPlatformLib::Host::CodeAdmin)
 private:
     bmap<Utf8CP, Utf8CP, ECN::less_str> m_classToCodeSpecMap;
@@ -29,6 +29,6 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbStatus _ReserveCode(DgnElementCR element, DgnCodeCR codeToReserve) const override;
     DGNDBSERVERCLIENT_EXPORT DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName) override;
     DGNDBSERVERCLIENT_EXPORT CodeSpecId _GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputClass) const override;
-    };
+};
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

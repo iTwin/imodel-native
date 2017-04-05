@@ -17,7 +17,7 @@ struct DgnDbServerLogHelper
 {
 private:
     static NativeLogging::ILogger* logger;
-    static void LogInternal(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, va_list args);
+    static void LogInternal(SEVERITY severity, Utf8String const methodName, float timeSpent, Utf8CP messageFormat, va_list args);
 public:
     //=======================================================================================
     //@param  severity       The severity level of the log message
@@ -27,11 +27,11 @@ public:
     //@param  ...            Arguments for the specified format
     //@bsimethod                                      Vytautas.Strimaitis           08/2016
     //=======================================================================================
-    static void Log(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, ...);
+    static void Log(SEVERITY severity, Utf8String const methodName, float timeSpent, Utf8CP messageFormat, ...);
 
     //=======================================================================================
     //@bsimethod                                      Vytautas.Strimaitis           08/2016
     //=======================================================================================
-    static void Log(SEVERITY severity, const Utf8String methodName, Utf8CP message, ...);
+    static void Log(SEVERITY severity, Utf8String const methodName, Utf8CP message, ...);
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
