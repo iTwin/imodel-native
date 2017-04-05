@@ -2316,6 +2316,31 @@ TEST_F(DgnElementTests, SimpleInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, NavigationPropertyOnTargetDelete)
+    {
+    SetupSeedProject();
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    auto analyticalPipeClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "AnalyticalPipe");
+    auto physicalPipeClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "PhysicalPipe");
+    ASSERT_TRUE(nullptr != analyticalPipeClass);
+    ASSERT_TRUE(nullptr != physicalPipeClass);
+    PhysicalElementPtr physical = TestElement::Create(*m_db, *physicalPipeClass, model->GetModelId(), categoryId);
+    ASSERT_TRUE(physical.IsValid());
+    ASSERT_TRUE(physical->Insert().IsValid());
+    PhysicalElementPtr analytical = TestElement::Create(*m_db, *analyticalPipeClass, model->GetModelId(), categoryId);
+    ASSERT_TRUE(analytical.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, analytical->SetPropertyValue("PhysicalPipe", physical->GetElementId()));
+    ASSERT_TRUE(analytical->Insert().IsValid());
+    m_db->SaveChanges();
+    ASSERT_TRUE(analytical->GetPropertyValueId<DgnElementId>("PhysicalPipe") == physical->GetElementId());
+    ASSERT_EQ(DgnDbStatus::Success, physical->Delete());
+    ASSERT_TRUE(analytical->GetPropertyValueId<DgnElementId>("PhysicalPipe") == DgnElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, CreateSubjectChildElemet)
