@@ -1939,8 +1939,10 @@ public:
 //!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
 //!     Else, it is visible.
 //! Symbology:
-//!     Overrides defined for the element are applied, followed by any overrides defined
+//!     - Overrides defined for the element are applied, followed by any overrides defined
 //!     by the subcategory and not already overridden by the element.
+//!     - If no overrides are defined for the element, any global overrides not supplied by
+//!     the subcategory are applied.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct FeatureSymbologyOverrides
@@ -2007,6 +2009,7 @@ struct FeatureSymbologyOverrides
     bmap<DgnElementId, Appearance>      m_elementOverrides; // for any element for which at least one aspect of symbology is overridden
     DgnSubCategoryIdSet                 m_visibleSubCategories;
     bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
+    Appearance                          m_defaultOverrides;
     bool                                m_constructions;
     bool                                m_dimensions;
     bool                                m_patterns;
@@ -2024,6 +2027,7 @@ struct FeatureSymbologyOverrides
 
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
     DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance);
+    void SetDefaultOverrides(Appearance appearance) { m_defaultOverrides = appearance; }
 };
 
 //=======================================================================================

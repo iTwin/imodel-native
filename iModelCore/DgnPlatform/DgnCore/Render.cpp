@@ -783,6 +783,7 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
     // Is the element visible?
     auto elemId = feat.GetElementId();
     bool alwaysDrawn = false;
+    bool haveElemOverrides = false;
     if (elemId.IsValid())
         {
         alwaysDrawn = m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
@@ -796,7 +797,8 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
 
         // Element overrides take precedence
         auto elemIter = m_elementOverrides.find(elemId);
-        if (m_elementOverrides.end() != elemIter)
+        haveElemOverrides = m_elementOverrides.end() != elemIter;
+        if (haveElemOverrides)
             app = elemIter->second;
         }
 
@@ -810,6 +812,9 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         if (m_subcategoryOverrides.end() != subcatIter)
             app = subcatIter->second.Extend(app);
         }
+
+    if (!haveElemOverrides)
+        app = m_defaultOverrides.Extend(app);
 
     return alwaysDrawn || IsClassVisible(feat.GetClass());
     }
