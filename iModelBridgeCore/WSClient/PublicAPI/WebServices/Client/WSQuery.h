@@ -10,7 +10,7 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/ObjectId.h>
-#include <ECObjects/ECSchema.h>
+//#include <ECObjects/ECSchema.h>
 #include <Bentley/WString.h>
 #include <deque>
 #include <map>

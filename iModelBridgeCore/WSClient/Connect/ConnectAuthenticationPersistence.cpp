@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -10,7 +10,6 @@
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 #define SecureStoreNameSpace_Connect    "Connect"
 #define SecureStoreKey_Token            "Token"
@@ -52,10 +51,10 @@ ConnectAuthenticationPersistencePtr ConnectAuthenticationPersistence::GetShared(
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectAuthenticationPersistence::ConnectAuthenticationPersistence
 (
-IJsonLocalState* customLocalState,
+IJsonLocalState* localState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
-m_localState(customLocalState ? *customLocalState : DgnClientFxCommon::LocalState()),
+m_localState(*localState),
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(m_localState)),
 m_onUserChangedKey(0)
     {}

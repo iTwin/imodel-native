@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Licensing/FeatureTracking.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,8 +13,6 @@
 #include <WebServices/Licensing/FeatureTrackingData.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

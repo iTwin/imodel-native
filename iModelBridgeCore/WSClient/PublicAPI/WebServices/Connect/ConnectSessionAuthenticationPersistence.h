@@ -2,20 +2,17 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectSessionAuthenticationPersistence.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <DgnClientFx/DgnClientApp.h>
 #include <BeSecurity/SecureStore.h>
 #include <mutex>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Vytautas.Barkauskas    01/2016

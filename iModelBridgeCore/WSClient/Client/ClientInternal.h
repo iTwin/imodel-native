@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientInternal.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __CLIENTINTERNAL_H__
@@ -10,8 +10,6 @@
 
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/Bentley.h>
-#include <DgnClientFx/DgnClientFxCommon.h>
-#include <DgnClientFx/Utils/Utils.h>
 
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/WebServicesClient.h>
@@ -29,7 +27,6 @@
 #include "ServerInfoProvider.h"
 #include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #endif // __CLIENTINTERNAL_H__

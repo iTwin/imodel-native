@@ -2,11 +2,11 @@
 |
 |     $Source: Configuration/BuddiError.xliff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <DgnClientFx/DgnClientFxL10N.h>
+#include <BeSQLite/L10N.h>
 
 //=======================================================================================
 // @bsiclass

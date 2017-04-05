@@ -81,22 +81,10 @@
     <ClCompile Include="Client\WSRepositoryClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\Authentication.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Connect\AuthenticationData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Connect\ConnectSetup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Connect\ConnectSpaces.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Connect\ConnectTokenProvider.cpp">
@@ -599,9 +587,6 @@
     <ClInclude Include="Client\ChunkedUploadRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -609,12 +594,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h">
@@ -636,9 +615,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Connect\AuthenticationData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Connect\Connect.xliff.h">

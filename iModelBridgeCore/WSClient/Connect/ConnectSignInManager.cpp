@@ -32,7 +32,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore) :
 m_client(client),
-m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
+m_localState(*localState),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(m_localState))
     {
     m_persistence = GetPersistenceMatchingAuthenticationType();
