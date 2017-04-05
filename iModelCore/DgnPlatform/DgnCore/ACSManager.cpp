@@ -758,7 +758,7 @@ void AuxCoordSystem::_DrawGrid(DecorateContextR context) const
         origin.SumOf(origin, xVec, -gridOffset.x, yVec, -gridOffset.y);
         }
 
-    context.DrawStandardGrid(origin, rMatrix, spacing, gridPerRef, false, (0 == gridReps.x || 0 == gridReps.y) ? NULL : &gridReps);
+    context.DrawStandardGrid(origin, rMatrix, spacing, gridPerRef, false, &gridReps);
     }
 
 /*---------------------------------------------------------------------------------**//**
