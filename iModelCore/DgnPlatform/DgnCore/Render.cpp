@@ -816,7 +816,11 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
     if (!haveElemOverrides)
         app = m_defaultOverrides.Extend(app);
 
-    return alwaysDrawn || IsClassVisible(feat.GetClass());
+    bool visible = alwaysDrawn || IsClassVisible(feat.GetClass());
+    if (visible && app.OverridesAlpha())
+        visible = app.GetAlpha() < 0xff; // don't bother rendering something with full transparency...
+
+    return visible;
     }
 
 /*---------------------------------------------------------------------------------**//**
