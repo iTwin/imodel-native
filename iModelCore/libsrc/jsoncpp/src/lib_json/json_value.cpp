@@ -546,41 +546,6 @@ JsonValueCR Value::operator[](ArrayIndex index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueR Value::resolveReference(const char *key, bool isStatic)
-{
-   JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);
-   if (type_ == nullValue)
-      *this = Value(objectValue);
-   CZString actualKey(key, isStatic ? CZString::noDuplication 
-                                     : CZString::duplicateOnCopy);
-   ObjectValues::iterator it = value_.map_->lower_bound(actualKey);
-   if (it != value_.map_->end()  &&  (*it).first == actualKey)
-      return (*it).second;
-
-   ObjectValues::value_type defaultValue(actualKey, GetNull());
-   it = value_.map_->insert(it, defaultValue);
-   JsonValueR value = (*it).second;
-   return value;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueCR Value::operator[](const char *key) const
-{
-   JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);
-   if (type_ == nullValue)
-      return GetNull();
-   CZString actualKey(key, CZString::noDuplication);
-   ObjectValues::const_iterator it = value_.map_->find(actualKey);
-   if (it == value_.map_->end())
-      return GetNull();
-   return (*it).second;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Value Value::removeMember(const char* key)
 {
    JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);

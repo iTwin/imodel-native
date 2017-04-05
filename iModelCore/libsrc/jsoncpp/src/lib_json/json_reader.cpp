@@ -21,32 +21,6 @@
 BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
-// Implementation of class Features
-// ////////////////////////////////
-
-Features::Features()
-   : allowComments_( true )
-   , strictRoot_( false )
-{
-}
-
-
-Features 
-Features::all()
-{
-   return Features();
-}
-
-
-Features 
-Features::strictMode()
-{
-   Features features;
-   features.allowComments_ = false;
-   features.strictRoot_ = true;
-   return features;
-}
-
 // Implementation of class Reader
 // ////////////////////////////////
 
@@ -67,26 +41,6 @@ static bool containsNewLine(Reader::Location begin, Reader::Location end)
       if ( *begin == '\n'  ||  *begin == '\r' )
          return true;
    return false;
-}
-
-
-// Class Reader
-// //////////////////////////////////////////////////////////////////
-Reader::Reader() : features_(Features::all())
-{
-}
-
-
-Reader::Reader(const Features &features) : features_(features)
-{
-}
-
-bool Reader::parse(const Utf8String &document, Value &root, bool collectComments)
-{
-   document_ = document;
-   const char *begin = document_.c_str();
-   const char *end = begin + document_.length();
-   return parse( begin, end, root, collectComments );
 }
 
 bool Reader::parse(const char *beginDoc, const char *endDoc, Value &root, bool collectComments)

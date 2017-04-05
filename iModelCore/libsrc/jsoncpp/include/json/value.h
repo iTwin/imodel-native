@@ -20,6 +20,8 @@
 #include <Bentley/WString.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
+#include <deque>
+#include <stack>
 #include <cmath>
 
 #define BE_JSON_NAME(__val__) static constexpr Json::StaticString json_##__val__() {return Json::StaticString(#__val__);}
@@ -30,50 +32,75 @@ typedef Json::Value& JsonValueR;
 typedef Json::Value const& JsonValueCR;
 typedef Json::Value const* JsonValueCP;
 
-typedef Utf8String Utf8StringAlias;
-
 /** \brief JsonCpp JSON (JavaScript Object Notation) library.
  */
 namespace Json {
 
-   /** \brief Type of the value held by a Value object.
-    */
-   enum ValueType : unsigned char
-   {
-      nullValue = 0, ///< 'null' value
-      intValue,      ///< signed integer value
-      uintValue,     ///< unsigned integer value
-      realValue,     ///< double value
-      stringValue,   ///< Utf8 string value
-      booleanValue,  ///< bool value
-      arrayValue,    ///< array value (ordered list)
-      objectValue    ///< object value (collection of name/value pairs).
-   };
+class Features
+{
+   public:
+      /** \brief A configuration that allows all features and assumes all strings are UTF-8.
+       * - C & C++ comments are allowed
+       * - Root object can be any JSON value
+       */
+      static Features all() {return Features();}
 
-   /** \brief Lightweight wrapper to tag static string.
-    *
-    * Value constructor and objectValue member assignement takes advantage of the
-    * StaticString and avoid the cost of string duplication when storing the
-    * string or the member name.
-    *
-    * Example of usage:
-    * \code
-    * Json::Value aValue(StaticString("some text"));
-    * Json::Value object;
-    * static const StaticString code("code");
-    * object[code] = 1234;
-    * \endcode
-    */
-   class StaticString
-   {
-   private:
-      Utf8CP m_str;
+      /** \brief A configuration that is strictly compatible with the JSON specification.
+       * - Comments are forbidden.
+       * - Root object must be either an array or an object value.
+       * - Assumes Value strings are encoded in UTF-8
+       */
+      static Features strictMode() {Features features; features.allowComments_ = false; features.strictRoot_ = true; return features;}
 
-   public:          
-      constexpr explicit StaticString(Utf8CP czstring) : m_str(czstring) {}
-      operator Utf8CP() const {return m_str;}
-      Utf8CP c_str() const {return m_str;}
-   };
+      /** \brief Initialize the configuration like JsonConfig::allFeatures;
+       */
+      Features() {}
+
+      /// \c true if comments are allowed. Default: \c true.
+      bool allowComments_ = true;
+
+      /// \c true if root must be either an array or an object value. Default: \c false.
+      bool strictRoot_ = false;
+};
+
+/** \brief Type of the value held by a Value object.
+*/
+enum ValueType : unsigned char
+{
+  nullValue = 0, ///< 'null' value
+  intValue,      ///< signed integer value
+  uintValue,     ///< unsigned integer value
+  realValue,     ///< double value
+  stringValue,   ///< Utf8 string value
+  booleanValue,  ///< bool value
+  arrayValue,    ///< array value (ordered list)
+  objectValue    ///< object value (collection of name/value pairs).
+};
+
+/** \brief Lightweight wrapper to tag static string.
+*
+* Value constructor and objectValue member assignement takes advantage of the
+* StaticString and avoid the cost of string duplication when storing the
+* string or the member name.
+*
+* Example of usage:
+* \code
+* Json::Value aValue(StaticString("some text"));
+* Json::Value object;
+* static const StaticString code("code");
+* object[code] = 1234;
+* \endcode
+*/
+class StaticString
+{
+private:
+  Utf8CP m_str;
+
+public:
+  constexpr explicit StaticString(Utf8CP str) : m_str(str) {}
+  operator Utf8CP() const {return m_str;}
+  Utf8CP c_str() const {return m_str;}
+};
 
 /** \brief Outputs a Value in <a HREF="http://www.json.org">JSON</a> format without formatting (not human friendly).
     *
@@ -90,6 +117,141 @@ private:
 public:
     JSON_API Utf8String write(JsonValueCR root);
     JSON_API static Utf8String ToString(JsonValueCR root);
+};
+
+/** Unserialize a <a HREF="http://www.json.org">JSON</a> document into a Value. */
+class Reader
+{
+   public:
+      typedef char Char;
+      typedef const Char *Location;
+
+      /** \brief Constructs a Reader allowing all features
+       * for parsing.
+       */
+      Reader() : features_(Features::all()) {}
+
+      /** \brief Constructs a Reader allowing the specified feature set
+       * for parsing.
+       */
+      Reader(Features const& features) : features_(features){}
+
+      /** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a> document.
+       * \param document UTF-8 encoded string containing the document to read.
+       * \param root [out] Contains the root value of the document if it was
+       *             successfully parsed.
+       * \param collectComments \c true to collect comment and allow writing them back during
+       *                        serialization, \c false to discard comments.
+       *                        This parameter is ignored if Features::allowComments_
+       *                        is \c false.
+       * \return \c true if the document was successfully parsed, \c false if an error occurred.
+       */
+      bool parse(Utf8StringCR document, Value& root, bool collectComments = true) 
+        {
+        document_ = document; 
+        Utf8CP begin = document_.c_str(); Utf8CP end = begin + document_.length();
+        return parse(begin, end, root, collectComments);
+        }
+
+      static bool Parse(Utf8StringCR document, Value& root, bool comments=true) {Reader reader; return reader.parse(document, root, comments);}
+
+      static Value DoParse(Utf8StringCR in, bool comments=true);
+
+      /** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a> document.
+       * \param beginDoc Pointer on the beginning of the UTF-8 encoded string of the document to read.
+       * \param endDoc Pointer on the end of the UTF-8 encoded string of the document to read. 
+       \               Must be >= beginDoc.
+       * \param root [out] Contains the root value of the document if it was
+       *             successfully parsed.
+       * \param collectComments \c true to collect comment and allow writing them back during
+       *                        serialization, \c false to discard comments.
+       *                        This parameter is ignored if Features::allowComments_
+       *                        is \c false.
+       * \return \c true if the document was successfully parsed, \c false if an error occurred.
+       */
+      JSON_API bool parse(Utf8CP beginDoc, Utf8CP endDoc, Value& root, bool collectComments=true);
+
+      /** \brief Returns a user friendly string that list errors in the parsed document.
+       * \return Formatted error message with the list of errors with their location in 
+       *         the parsed document. An empty string is returned if no error occurred
+       *         during parsing.
+       */
+      JSON_API Utf8String getFormattedErrorMessages() const;
+
+   private:
+      enum TokenType
+      {
+         tokenEndOfStream = 0,
+         tokenObjectBegin,
+         tokenObjectEnd,
+         tokenArrayBegin,
+         tokenArrayEnd,
+         tokenString,
+         tokenNumber,
+         tokenTrue,
+         tokenFalse,
+         tokenNull,
+         tokenArraySeparator,
+         tokenMemberSeparator,
+         tokenComment,
+         tokenError
+      };
+
+      class Token
+      {
+      public:
+         TokenType type_;
+         Location start_;
+         Location end_;
+      };
+
+      class ErrorInfo
+      {
+      public:
+         Token token_;
+         Utf8String message_;
+         Location extra_;
+      };
+
+      typedef std::deque<ErrorInfo> Errors;
+
+      bool expectToken( TokenType type, Token &token, const char *message );
+      bool readToken( Token &token );
+      void skipSpaces();
+      bool match( Location pattern, 
+                  int patternLength );
+      bool readComment();
+      bool readCStyleComment();
+      bool readCppStyleComment();
+      bool readString();
+      void readNumber();
+      bool readValue();
+      bool readObject(Token &token);
+      bool readArray(Token &token);
+      bool decodeNumber(Token &token);
+      bool decodeString(Token &token);
+      bool decodeString(Token &token, Utf8String &decoded);
+      bool decodeDouble(Token &token);
+      bool decodeUnicodeCodePoint(Token &token, Location &current, Location end, unsigned int &unicode);
+      bool decodeUnicodeEscapeSequence(Token &token, Location &current, Location end, unsigned int &unicode);
+      bool addError(const Utf8String &message, Token &token, Location extra = 0);
+      bool recoverFromError(TokenType skipUntilToken);
+      bool addErrorAndRecover(const Utf8String &message, Token &token, TokenType skipUntilToken);
+      void skipUntilSpace();
+      Value &currentValue();
+      Char getNextChar();
+      void getLocationLineAndColumn(Location location, int &line, int &column) const;
+      Utf8String getLocationLineAndColumn(Location location) const;
+      void skipCommentTokens(Token &token);
+
+      typedef std::stack<Value*> Nodes;
+      Nodes nodes_;
+      Errors errors_;
+      Utf8String document_;
+      Location begin_;
+      Location end_;
+      Location current_;
+      Features features_;
 };
 
    /** \brief Represents a <a HREF="http://www.json.org">JSON</a> value.
@@ -292,7 +454,7 @@ class JSON_API Value
               if (other.value_.string_)
               {
                  value_.string_ = CZString::Duplicate(other.value_.string_);
-                 allocated_ = 1;
+                 allocated_ = true;
               }
               else
                  value_.string_ = nullptr;
@@ -304,7 +466,7 @@ class JSON_API Value
            }
         }
 
-      Value(Value&& other) : type_(ValueType::nullValue), allocated_(0) {swap(other);}
+      Value(Value&& other) : type_(ValueType::nullValue), allocated_(false) {swap(other);}
       ~Value()
         {
         switch (type_)
@@ -325,6 +487,7 @@ class JSON_API Value
            }
         }
 
+      static Value From(Utf8StringCR document) {Value val; Reader reader; return reader.parse(document, val) ? val : GetNull();}
 
       JsonValueR operator= (JsonValueCR other) {Value temp(other); swap(temp); return *this;}
       JsonValueR operator= (Value&& other) {swap(other); return *this;}
@@ -394,7 +557,7 @@ class JSON_API Value
 
       /// \brief Return true if empty array, empty object, or null;
       /// otherwise, false.
-      bool empty() const {if (isNull() || isArray() || isObject()) return size() == 0u; return false;}
+      bool empty() const {if (isArray() || isObject()) return size() == 0u; return false;}
 
       /// Return isNull()
       bool operator!() const {return isNull();}
@@ -451,7 +614,20 @@ class JSON_API Value
       JsonValueR operator[](Utf8CP key) {return resolveReference(key, false);}
 
       /// Access an object value by name, returns null if there is no member with that name.
-      JsonValueCR operator[](Utf8CP key) const;
+      JsonValueCR operator[](Utf8CP key) const
+        {
+        if (isNull())
+            return GetNull();
+
+        if (type_ != objectValue)
+            {
+            BeAssert(false);
+            return GetNull();
+            }
+
+        auto it = value_.map_->find(CZString(key, CZString::noDuplication));
+        return (it == value_.map_->end()) ? GetNull() : (*it).second;
+        }
 
       /// Access an object value by name, create a null member if it does not exist.
       JsonValueR operator[](Utf8StringCR key) {return (*this)[key.c_str()];}
@@ -529,7 +705,24 @@ class JSON_API Value
       iterator end();
 
    private:
-      JsonValueR resolveReference(Utf8CP key, bool isStatic);
+      JsonValueR resolveReference(Utf8CP key, bool isStatic)
+        {
+        if (type_ != objectValue)
+            {
+            BeAssert(isNull()); // we're about to lose current value
+            BeAssert(this != &GetNull()); // somebody did a const_cast of GetNull()? That's a disaster
+            *this = Value(objectValue);
+            }
+
+        CZString actualKey(key, isStatic ? CZString::noDuplication : CZString::duplicateOnCopy);
+        auto it = value_.map_->lower_bound(actualKey);
+        if (it != value_.map_->end() && (*it).first == actualKey)
+            return (*it).second;
+
+        ObjectValues::value_type defaultValue(actualKey, GetNull());
+        it = value_.map_->insert(it, defaultValue);
+        return (*it).second;
+        }
 
       union ValueHolder
       {
@@ -558,20 +751,10 @@ class JSON_API Value
       ValueIteratorBase();
       explicit ValueIteratorBase(const Value::ObjectValues::iterator &current);
 
-      bool operator ==(const SelfType &other) const
-      {
-         return isEqual(other);
-      }
+      bool operator ==(const SelfType &other) const {return isEqual(other);}
+      bool operator !=(const SelfType &other) const {return !isEqual(other);}
 
-      bool operator !=(const SelfType &other) const
-      {
-         return !isEqual(other);
-      }
-
-      difference_type operator -(const SelfType &other) const
-      {
-         return computeDistance(other);
-      }
+      difference_type operator -(const SelfType &other) const {return computeDistance(other);}
 
       /// Return either the index or the member name of the referenced value as a Value.
       Value key() const;
@@ -708,6 +891,8 @@ class JSON_API Value
          return deref();
       }
    };
+
+    inline Value Reader::DoParse(Utf8StringCR in, bool comments) {Value val; return Parse(in, val, comments) ? val : Value::GetNull();}
 } // namespace Json
 
 END_BENTLEY_NAMESPACE

@@ -2,7 +2,7 @@
 // Distributed under MIT license, or public domain if desired and
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
-
+#pragma once
 #ifndef JSON_WRITER_H_INCLUDED
 # define JSON_WRITER_H_INCLUDED
 
@@ -20,13 +20,11 @@
 # include <Bentley/WString.h>
 # include <Bentley/bmap.h>
 # include <Bentley/bvector.h>
-  typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
-
 BEGIN_BENTLEY_NAMESPACE
-namespace Json {
-
+namespace Json 
+{
    class Value;
 
    /** \brief Writes a Value in <a HREF="http://www.json.org">JSON</a> format in a human friendly way.
@@ -54,36 +52,36 @@ namespace Json {
        * \param root Value to serialize.
        * \return String containing the JSON document that represents the root value.
        */
-      Utf8StringAlias write( const Value &root );
+      Utf8String write( const Value &root );
 
    private:
       void writeValue( const Value &value );
       void writeArrayValue( const Value &value );
       bool isMultineArray( const Value &value );
-      void pushValue( const Utf8StringAlias &value );
+      void pushValue( const Utf8String &value );
       void writeIndent();
-      void writeWithIndent( const Utf8StringAlias &value );
+      void writeWithIndent( const Utf8String &value );
       void indent();
       void unindent();
-      static Utf8StringAlias normalizeEOL( const Utf8StringAlias &text );
+      static Utf8String normalizeEOL( const Utf8String &text );
 
-      typedef BENTLEY_NAMESPACE_NAME::bvector<Utf8StringAlias> ChildValues;
+      typedef bvector<Utf8String> ChildValues;
 
       ChildValues childValues_;
-      Utf8StringAlias document_;
-      Utf8StringAlias indentString_;
+      Utf8String document_;
+      Utf8String indentString_;
       int rightMargin_;
       int indentSize_;
       bool addChildValues_;
    };
 
-   Utf8StringAlias JSON_API valueToString( Int value );
-   Utf8StringAlias JSON_API valueToString( UInt value );
-   Utf8StringAlias JSON_API valueToString( LargestInt value );
-   Utf8StringAlias JSON_API valueToString( LargestUInt value );
-   Utf8StringAlias JSON_API valueToString( double value );
-   Utf8StringAlias JSON_API valueToString( bool value );
-   Utf8StringAlias JSON_API valueToQuotedString( const char *value );
+   Utf8String JSON_API valueToString(Int value);
+   Utf8String JSON_API valueToString(UInt value);
+   Utf8String JSON_API valueToString(LargestInt value);
+   Utf8String JSON_API valueToString(LargestUInt value);
+   Utf8String JSON_API valueToString(double value);
+   Utf8String JSON_API valueToString(bool value);
+   Utf8String JSON_API valueToQuotedString(const char *value);
 
 } // namespace Json
 
