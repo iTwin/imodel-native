@@ -78,8 +78,8 @@ WSInfo::WSInfo(Utf8StringCR serialized) : WSInfo()
         return;
         }
 
-    m_serverVersion = BeVersion(json[INFO_Serialized_ServerVersion].asString().c_str());
-    m_webApiVersion = BeVersion(json[INFO_Serialized_WebApiVersion].asString().c_str());
+    m_serverVersion = BeVersion(json[INFO_Serialized_ServerVersion].asCString());
+    m_webApiVersion = BeVersion(json[INFO_Serialized_WebApiVersion].asCString());
     m_type = static_cast<Type>(json[INFO_Serialized_ServerType].asInt());
     }
 
