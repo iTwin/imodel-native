@@ -1233,8 +1233,10 @@ public:
     void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
     void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
         {
-        m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
-        m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
+        if (newMin > 0.0)
+            m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
+        if (newMax > 0.0)
+            m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
         }
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
@@ -1648,7 +1650,7 @@ struct HiddenLineParams
     };
 
     Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
-    Style m_hidden = Style(true, ColorDef::Black(), GraphicParams::LinePixels::HiddenLine, 1);
+    Style m_hidden = Style(false, ColorDef(), GraphicParams::LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}

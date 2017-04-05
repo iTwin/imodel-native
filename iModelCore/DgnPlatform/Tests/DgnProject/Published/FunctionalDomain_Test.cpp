@@ -30,7 +30,7 @@ private:
     DOMAIN_DECLARE_MEMBERS(FunctionalTestDomain, )
     FunctionalTestDomain();
 
-    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/FunctionalTest.01.00.ecschema.xml"; }
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/FunctionalTest.ecschema.xml"; }
 };
 
 //=======================================================================================
