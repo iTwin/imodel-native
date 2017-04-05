@@ -102,8 +102,7 @@ IHttpHandlerPtr            customHandler
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);
     wsRepositoryClient->SetCredentials(credentials);
-    if (repository.GetServerURL().Contains("azurewebsites.net"))
-        wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
+    wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
     }
