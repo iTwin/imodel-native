@@ -286,7 +286,7 @@ Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Ht
         return Http::HttpStatus::None;
 
     Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
-    Http::Request request(m_root->_ConstructTileName(*m_root->GetRootTile()));
+    Http::Request request(m_root->_ConstructTileResource(*m_root->GetRootTile()));
     request.SetResponseBody(responseBody);
 
     if (credentials.IsValid())

@@ -22,14 +22,14 @@ BentleyStatus Scene::ReadSceneFile()
 
     if (IsHttp())
         {
-        TileTree::HttpDataQuery query(m_rootUrl, nullptr);
+        TileTree::HttpDataQuery query(m_rootResource, nullptr);
         query.Perform().wait();
 
         rootStream = std::move(query.GetData());
         }
     else
         {
-        TileTree::FileDataQuery query(m_rootUrl, nullptr);
+        TileTree::FileDataQuery query(m_rootResource, nullptr);
         rootStream = std::move(query.Perform().get());
         }
 
@@ -511,7 +511,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
+//=======================================================================================
 struct Publish3mxScene : Scene
 {
     using Scene::Scene;
