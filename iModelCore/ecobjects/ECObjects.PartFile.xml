@@ -290,7 +290,7 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects.*.nupkg</Files>
         </Bindings>
     </Part>
 
