@@ -82,14 +82,20 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
 
 uint32_t SMMemoryPoolItemBase::AddRef() const
 {
-    TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_ACQUIRE : EventType::CACHED_TEX_ACQUIRE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
-    return RefCounted <IRefCounted>::AddRef();
+    if (m_dataType == SMStoreDataType::DisplayMesh || m_dataType == SMStoreDataType::DisplayTexture)
+    {
+        TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_ACQUIRE : EventType::CACHED_TEX_ACQUIRE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
+    }
+        return RefCounted <IRefCounted>::AddRef();
 }
 
 uint32_t SMMemoryPoolItemBase::Release() const
 {
-    TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_RELEASE : EventType::CACHED_TEX_RELEASE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
-    return RefCounted <IRefCounted>::Release();
+    if (m_dataType == SMStoreDataType::DisplayMesh || m_dataType == SMStoreDataType::DisplayTexture)
+    {
+        TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_RELEASE : EventType::CACHED_TEX_RELEASE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
+    }
+        return RefCounted <IRefCounted>::Release();
 }
    
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
@@ -254,7 +260,7 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
 
     size_t binId = id / s_binSize;
     size_t itemId = id % s_binSize;
-    assert(binId < m_nbBins);
+    assert(binId < m_nbBins); 
 
     std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
@@ -262,7 +268,9 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType,smId))
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();
-        memItemPtr = 0;
+        //Ensure the replaced item is not saved to file.
+        memItemPtr->SetDirty(false);
+        memItemPtr = 0;        
         m_memPoolItems[binId][itemId] = poolItem;
         m_currentPoolSizeInBytes += m_memPoolItems[binId][itemId]->GetSize();
         m_lastAccessTime[binId][itemId] = clock();
@@ -336,7 +344,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
                     m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize(); 
 
 
-                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), (uint64_t)-1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
+                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayMesh ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
 
 
                     m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
@@ -359,7 +367,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
                     {
                     m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();    
 
-                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), (uint64_t)-1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
+                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayMesh ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
 
                     m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
                     itemInd = itemIndToDelete;
@@ -419,7 +427,8 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
     poolItem->SetPoolItemId(binInd*s_binSize + itemInd);
 
-    TRACEPOINT(THREAD_ID(), EventType::POOL_ADDITEM, poolItem->GetNodeId(), (uint64_t)-1, poolItem->GetDataType() == SMStoreDataType::DisplayTexture ? poolItem->GetNodeId() : -1, poolItem->GetPoolItemId(), (uint64_t)&m_memPoolItems[binInd][itemInd], poolItem->GetRefCount())
+
+    TRACEPOINT(THREAD_ID(), EventType::POOL_ADDITEM, poolItem->GetNodeId(), poolItem->GetDataType() == SMStoreDataType::DisplayMesh ? poolItem->GetNodeId() : -1, poolItem->GetDataType() == SMStoreDataType::DisplayTexture ? poolItem->GetNodeId() : -1, poolItem->GetPoolItemId(), (uint64_t)&m_memPoolItems[binInd][itemInd], poolItem->GetRefCount())
 
 
     m_memPoolItemMutex[binInd][itemInd]->unlock();

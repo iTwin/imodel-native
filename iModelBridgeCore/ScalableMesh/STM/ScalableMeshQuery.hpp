@@ -1217,7 +1217,17 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
     IScalableMeshMeshPtr meshP;    
+    if (flags->ShouldSaveToCache())
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>> poolMemItemPtr;
+        if (SMMemoryPool::GetInstance()->GetItem<IScalableMeshMeshPtr>(poolMemItemPtr, m_meshNode->m_smMeshPoolItemId, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex))
+            {
+            return *(poolMemItemPtr->GetData());
+            }
+        }
+
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
+
     if (flags->ShouldLoadGraph())
         {
 //        m_meshNode->PinGraph();
@@ -1297,11 +1307,27 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
             assert(status == SUCCESS || m_node->GetNbPoints() ==0);        
 
+
+            if (flags->ShouldPrecomputeBoxes())
+                meshPtr->StoreTriangleBoxes();
             meshP = meshPtr.get();            
             }        
         }
     
     if (meshP == nullptr || ((meshP->GetNbFaces() == 0) && flags->ShouldLoadIndices())) return nullptr;
+
+    if (flags->ShouldSaveToCache())
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API   
+            new SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>(new IScalableMeshMeshPtr(meshP), 0, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>::CreateItem(new IScalableMeshMeshPtr(meshP), 0, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex)
+#endif
+        );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+        m_meshNode->m_smMeshPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        }
 
     return meshP;    
     }
@@ -1875,7 +1901,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
         if (!textureData.IsValid())
             return false;
         }    
-
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
@@ -1894,7 +1921,8 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
         if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr || textureData->GetData() == nullptr)
             return false;
         }
-
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
@@ -2676,13 +2704,27 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     return *m_meshNode->GetTileDTM()->GetData();
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
+
         if (d.toggledForID) continue;
+
+        bool isVisibleSkirt = false;
+
+        for (auto& activeClipId : activeClips)
+            { 
+            if (d.clientID == activeClipId)
+                { 
+                isVisibleSkirt = true;
+                break;
+                }            
+            }
+
+        if (!isVisibleSkirt) continue;
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
         
@@ -2720,8 +2762,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) con
     {
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     if (m_meshNode == nullptr) return false;
-    if (m_meshNode->m_nbClips == 0) return false;
-    else return m_meshNode->HasClip(clip);
+    return m_meshNode->HasClip(clip);
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const

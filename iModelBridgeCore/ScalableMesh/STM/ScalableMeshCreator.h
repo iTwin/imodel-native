@@ -108,28 +108,44 @@ struct ScalableMeshProgress : public IScalableMeshProgress
 
     private:
         std::atomic<bool> m_canceled;
-        std::atomic<int> m_currentStep;
+        std::atomic<ScalableMeshStep> m_currentStep;
 
         std::atomic<float> m_progressInStep;
+        std::atomic<int> m_progressStepIndex;
+        std::atomic<ScalableMeshStepProcess> m_progressStepProcess;
+        int m_totalNSteps;
 
     protected:
     virtual bool _IsCanceled() const override;
     virtual void _Cancel() override;
 
-    virtual std::atomic<int> const& _GetProgressStep() const override;
-    virtual int _GetTotalNumberOfSteps() const override { return STEP_QTY;  }
+    virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const override;
+    virtual int _GetTotalNumberOfSteps() const override { return m_totalNSteps; }
+
+    virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const override;
 
     virtual std::atomic<float> const& _GetProgress() const override; //Progress of current step ([0..1])
 
     virtual std::atomic<float>& _Progress() override;
-    virtual std::atomic<int>& _ProgressStep() override;
+    virtual std::atomic<ScalableMeshStep>& _ProgressStep() override;
+
+
+    virtual std::atomic<int> const& _GetProgressStepIndex() const override;
+
+    virtual void _SetTotalNumberOfSteps(int step) override;
+
+    virtual std::atomic<ScalableMeshStepProcess>& _ProgressStepProcess() override;
+    virtual std::atomic<int>& _ProgressStepIndex() override;
 
     public:
         ScalableMeshProgress()
             {
             m_canceled = false;
-            m_currentStep = 0;
+            m_progressStepIndex = 0;
+            m_currentStep = ScalableMeshStep::STEP_NOT_STARTED;
             m_progressInStep = 0;
+            m_totalNSteps = 0;
+            m_progressStepProcess = ScalableMeshStepProcess::PROCESS_INACTIVE;
             }
     };
 
@@ -214,7 +230,7 @@ struct IScalableMeshCreator::Impl
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
-          WString                             m_baseExtraFilesPath;
+          
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
@@ -236,9 +252,7 @@ struct IScalableMeshCreator::Impl
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
         StatusInt  SetTextureStreamFromUrl(WString url);
 
-        StatusInt                           Filter                         ();
-
-        void                               SetBaseExtraFilesPath(const WString& path);
+        StatusInt                           Filter                         ();        
 
         ScalableMeshProgress*            GetProgress();
 

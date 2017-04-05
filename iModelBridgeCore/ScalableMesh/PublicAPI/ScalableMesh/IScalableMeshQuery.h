@@ -399,20 +399,28 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         virtual bool _ShouldLoadTexture() const = 0;
         virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
+        virtual bool _ShouldSaveToCache() const = 0;
+        virtual bool _ShouldPrecomputeBoxes() const = 0;
 
         virtual void _SetLoadTexture(bool loadTexture) = 0;
         virtual void _SetLoadIndices(bool loadIndices) = 0;        
         virtual void _SetLoadGraph(bool loadGraph) = 0;
+        virtual void _SetSaveToCache(bool saveToCache) = 0;
+        virtual void _SetPrecomputeBoxes(bool precomputeBoxes) = 0;
 
     public:
         
         BENTLEY_SM_EXPORT bool ShouldLoadTexture() const;
         BENTLEY_SM_EXPORT bool ShouldLoadIndices() const;
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
+        BENTLEY_SM_EXPORT bool ShouldSaveToCache() const;
+        BENTLEY_SM_EXPORT bool ShouldPrecomputeBoxes() const;
 
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
         BENTLEY_SM_EXPORT void SetLoadIndices(bool loadIndices);
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
+        BENTLEY_SM_EXPORT void SetSaveToCache(bool saveToCache);
+        BENTLEY_SM_EXPORT void SetPrecomputeBoxes(bool precomputeBoxes);
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();
 
@@ -483,7 +491,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual void _UpdateData() = 0;
 
-        virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
+        virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const = 0;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const = 0;
 
@@ -562,7 +570,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT void UpdateData();
 
-        BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
+        BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const;
 
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
 
@@ -593,6 +601,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
     public : 
+
 
         BENTLEY_SM_EXPORT StatusInt GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const;
 

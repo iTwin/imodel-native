@@ -573,15 +573,13 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                                 }
                             ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
                                                                                                             WString(mapBoxPath.c_str(), true).c_str());
-                            newSourceCreatorP->EditSources().Add(sourceP);
-                            newSourceCreatorP->SetBaseExtraFilesPath(stmFileName);
+                            newSourceCreatorP->EditSources().Add(sourceP);                            
                             newSourceCreatorP->SaveToFile();
                             newSourceCreatorP = 0;
                             }
                         stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
                         StatusInt stat;
-                        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);
-                        meshCreator->SetBaseExtraFilesPath(stmFileName);
+                        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);                        
                         WString url = WString(mapBoxPath.c_str(), true);
                         if (stat == SUCCESS)
                             meshCreator->SetTextureStreamFromUrl(url);
@@ -5253,15 +5251,13 @@ void PerformMapboxTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
                                                                                             WString(mapBoxPath.c_str(), true).c_str());
-            newSourceCreatorP->EditSources().Add(sourceP);
-            newSourceCreatorP->SetBaseExtraFilesPath(stmFileName);
+            newSourceCreatorP->EditSources().Add(sourceP);            
             newSourceCreatorP->SaveToFile();
             newSourceCreatorP = 0;
             }
         StatusInt stat;
         auto stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, stat);
-        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);
-        meshCreator->SetBaseExtraFilesPath(stmFileName);
+        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);        
         WString url = WString(mapBoxPath.c_str(), true);
         if (stat == SUCCESS)
             meshCreator->SetTextureStreamFromUrl(url);

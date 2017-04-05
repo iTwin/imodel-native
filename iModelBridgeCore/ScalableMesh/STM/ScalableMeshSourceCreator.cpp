@@ -388,7 +388,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
 
-
+    GetProgress()->SetTotalNumberOfSteps(6);
+    GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_GENERATION;
 
    // std::list<ISMStore::Extent3d64f> listRemoveExtent;
     std::list<DRange3d> listRemoveExtent;
@@ -470,6 +471,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     // Import sources
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_IMPORT_SOURCE;
+    GetProgress()->ProgressStepIndex() = 1;
     GetProgress()->Progress() = 0.0;
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
@@ -509,6 +511,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_BALANCE;
+    GetProgress()->ProgressStepIndex() = 2;
     GetProgress()->Progress() = 0.0;
     if (pDataIndex->GetRootNode() == 0)
         {
@@ -541,6 +544,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     pDataIndex->GatherCounts();
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_MESH;
+    GetProgress()->ProgressStepIndex() = 3;
     GetProgress()->Progress() = 0.0;
     if (s_mesh)
         {
@@ -564,6 +568,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
         size_t depth = pDataIndex->GetDepth();
         GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
+        GetProgress()->ProgressStepIndex() = 4;
         GetProgress()->Progress() = 0.0;
 
         CachedDataEventTracer::GetInstance()->start();
@@ -641,6 +646,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
     GetProgress()->Progress() = 0.0;
+    GetProgress()->ProgressStepIndex() = 5;
     ImportRasterSourcesTo(pDataIndex);
     ApplyEditsFromSources(pDataIndex);
 
@@ -659,10 +665,11 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_SAVE;
+    GetProgress()->ProgressStepIndex() = 6;
     GetProgress()->Progress() = 0.0;
 
     pDataIndex->Store();
-    m_smSQLitePtr->CommitAll();
+    m_smSQLitePtr->Save();
 
     pDataIndex = 0;
 
@@ -673,7 +680,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         delete RasterUtilities::s_rasterMemPool;
         RasterUtilities::s_rasterMemPool = nullptr;
         }
-            
+           
     return BSISUCCESS;
     }
 

@@ -626,6 +626,8 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
     {
     DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    flags->SetSaveToCache(true);
+    flags->SetPrecomputeBoxes(true);
     auto meshP = target->GetMesh(flags);
     if (meshP != nullptr) return meshP->IntersectRay(pointOnDTM, ray);
     return false;
@@ -633,7 +635,7 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
 
 
 bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
-    {
+    {    
     DPoint3d transformedPt = testPoint;
     m_UorsToStorage.Multiply(transformedPt);
     DPoint3d startPt = transformedPt;
@@ -641,6 +643,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     DPoint3d endPt = DPoint3d::FromSumOf(testPoint, direction);
     m_UorsToStorage.Multiply(endPt);
     DVec3d newDirection = DVec3d::FromStartEndNormalize(transformedPt, endPt);
+
 
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
@@ -677,6 +680,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     }
     else if (nodes.empty()) QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
     bvector<bool> clips;
+    bool ret = false;
     for (auto& node : nodes)
         {
         if (!node->ArePoints3d())
@@ -685,16 +689,33 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, newDirection, transformedPt))
                 {
                 m_transform.Multiply(pointOnDTM);
-                return true;
+                ret = true;
+                break;
                 }
             }
         else if (IntersectRay3D(pointOnDTM, newDirection, transformedPt, node))
             {
             m_transform.Multiply(pointOnDTM);
-            return true;
+            ret =true;
+            break;
             }
         }
-        return false;
+
+
+        if (ret && !m_regionRestrictions.empty())
+        {
+            for (auto& region : m_regionRestrictions)
+            {
+
+                if ((region->PointInOnOutXY(pointOnDTM) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
+                    (region->PointInOnOutXY(pointOnDTM) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
+                {
+                    pointOnDTM.z = 0.0;
+                    ret = false;
+                }
+            }
+        }
+        return ret;
     }
 
 bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
@@ -872,6 +893,20 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
                 }
             }
         }
+
+    if (ret && !m_regionRestrictions.empty())
+    {
+        for (auto& region : m_regionRestrictions)
+        {
+
+            if ((region->PointInOnOutXY(*endPt) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
+                (region->PointInOnOutXY(*endPt) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
+            {
+                endPt->z = 0.0;
+                ret = false;
+            }
+        }
+    }
     return ret;
     }
 
@@ -962,6 +997,21 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
             }
         else result = DTM_ERROR;
         }
+
+
+    if (result == DTM_SUCCESS && !m_regionRestrictions.empty())
+    {
+        for (auto& region : m_regionRestrictions)
+        {
+
+            if ((region->PointInOnOutXY(transformedPt) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
+                (region->PointInOnOutXY(transformedPt) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
+            {
+                *elevationP = 0.0;
+                result = DTM_ERROR;
+            }
+        }
+    }
     return result;
     }
 
@@ -1083,10 +1133,9 @@ struct Location
 
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
-    //bvector<bvector<DPoint3d>> coverages;
+
     IScalableMeshPtr targetedMesh = m_scmPtr;
-   // m_scmPtr->GetAllCoverages(coverages);
-   // if (!coverages.empty() && m_type!= DTMAnalysisType::RawDataOnly) targetedMesh = m_scmPtr->GetTerrainSM();
+
 
     if (m_type == DTMAnalysisType::Fast)
         {
@@ -1098,6 +1147,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 
     bvector<DPoint3d> transformedLine(numPoints);
     memcpy(&transformedLine[0], pts, numPoints*sizeof(DPoint3d));
+
     m_UorsToStorage.Multiply(&transformedLine[0], numPoints);
     MeshTraversalQueue queue(&transformedLine[0], numPoints, m_levelForDrapeLinear);
     queue.UseScalableMesh(targetedMesh.get());
@@ -1211,6 +1261,21 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         }
 
     if(drapedLine.size() > 0) m_transform.Multiply(&drapedLine[0],(int) drapedLine.size());
+
+    if (!m_regionRestrictions.empty())
+    {
+        for (auto& region : m_regionRestrictions)
+        {
+            for (auto& pt : drapedLine)
+            {
+                if ((region->PointInOnOutXY(pt) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
+                    (region->PointInOnOutXY(pt) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
+                {
+                    pt.z = 0.0;
+                }
+            }
+        }
+    }
     ret = SMDrapedLine::Create(drapedLine, orderedList.empty()? 0 : orderedList.begin()->first);
     return DTMStatusInt::DTM_SUCCESS;
 #if 0

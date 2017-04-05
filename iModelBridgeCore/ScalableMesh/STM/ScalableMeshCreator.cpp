@@ -206,13 +206,6 @@ StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelFor
     return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
     }
 
-void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
-    {
-    return m_implP->SetBaseExtraFilesPath(path);
-    }
-
-
-
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
     {
     return GetAdvancedGCS().GetGeoRef().GetBasePtr();
@@ -371,7 +364,10 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
     m_progress.ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+    m_progress.ProgressStepIndex() = 0;
     m_progress.Progress() = 0;
+    m_progress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+    m_progress.SetTotalNumberOfSteps(0);
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -405,6 +401,9 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     if (m_scmPtr.get() == nullptr) return ERROR;
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+    GetProgress()->SetTotalNumberOfSteps(1);
+    GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_TEXTURING;
+    GetProgress()->ProgressStepIndex() = 1;
     GetProgress()->Progress() = 0.0;
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
@@ -605,9 +604,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create manager?
-			DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
+        DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
         
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
@@ -616,8 +615,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
+
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -635,9 +639,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher2_5d,
                                        pMesher3d);
 
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
-
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetGenerating(true);        
         }           
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
@@ -801,13 +808,6 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     return m_gcsDirty;
     }
 
-
-void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
-    {
-    m_baseExtraFilesPath = path;
-    }
-
-
 StatusInt IScalableMeshCreator::Impl::Load()
 {
     return BSISUCCESS == LoadGCS();
@@ -883,7 +883,7 @@ void IScalableMeshProgress::Cancel()
     return _Cancel();
     }
 
-std::atomic<int> const& IScalableMeshProgress::GetProgressStep() const
+std::atomic<ScalableMeshStep> const& IScalableMeshProgress::GetProgressStep() const
     {
     return _GetProgressStep();
     }
@@ -891,6 +891,22 @@ std::atomic<int> const& IScalableMeshProgress::GetProgressStep() const
 int IScalableMeshProgress::GetTotalNumberOfSteps() const
     {
     return _GetTotalNumberOfSteps();
+    }
+
+std::atomic<ScalableMeshStepProcess> const& IScalableMeshProgress::GetProgressStepProcess() const
+    {
+    return _GetProgressStepProcess();
+    }
+
+std::atomic<int> const& IScalableMeshProgress::GetProgressStepIndex() const
+    {
+    return _GetProgressStepIndex();
+    }
+
+
+void IScalableMeshProgress::SetTotalNumberOfSteps(int step)
+    {
+    return _SetTotalNumberOfSteps(step);
     }
 
 std::atomic<float> const& IScalableMeshProgress::GetProgress() const
@@ -903,11 +919,20 @@ std::atomic<float>& IScalableMeshProgress::Progress()
     return _Progress();
     }
 
-std::atomic<int>& IScalableMeshProgress::ProgressStep()
+std::atomic<ScalableMeshStep>& IScalableMeshProgress::ProgressStep()
     {
     return _ProgressStep();
     }
 
+std::atomic<ScalableMeshStepProcess>& IScalableMeshProgress::ProgressStepProcess()
+    {
+    return _ProgressStepProcess();
+    }
+
+std::atomic<int>& IScalableMeshProgress::ProgressStepIndex()
+    {
+    return _ProgressStepIndex();
+    }
 
 bool ScalableMeshProgress::_IsCanceled() const
     {
@@ -919,7 +944,7 @@ void ScalableMeshProgress::_Cancel()
     m_canceled = true;
     }
 
-std::atomic<int> const& ScalableMeshProgress::_GetProgressStep() const
+std::atomic<ScalableMeshStep> const& ScalableMeshProgress::_GetProgressStep() const
     {
     return m_currentStep;
     }
@@ -935,9 +960,35 @@ std::atomic<float>& ScalableMeshProgress::_Progress()
     return m_progressInStep;
     }
 
-std::atomic<int>& ScalableMeshProgress::_ProgressStep()
+std::atomic<ScalableMeshStep>& ScalableMeshProgress::_ProgressStep()
     {
     return m_currentStep;
+    }
+
+
+std::atomic<int> const& ScalableMeshProgress::_GetProgressStepIndex() const
+    {
+    return m_progressStepIndex;
+    }
+
+std::atomic<ScalableMeshStepProcess> const& ScalableMeshProgress::_GetProgressStepProcess() const
+    {
+    return m_progressStepProcess;
+    }
+
+void ScalableMeshProgress::_SetTotalNumberOfSteps(int step)
+    {
+    m_totalNSteps = step;
+    }
+
+std::atomic<ScalableMeshStepProcess>& ScalableMeshProgress::_ProgressStepProcess()
+    {
+    return m_progressStepProcess;
+    }
+
+std::atomic<int>& ScalableMeshProgress::_ProgressStepIndex()
+    {
+    return m_progressStepIndex;
     }
 /*==================================================================*/
 /*        MRDTM CREATOR SECTION - END                               */

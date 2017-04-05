@@ -271,11 +271,14 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         nodeGraphStore->DestroyBlock(GetBlockID());
         m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
-        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        ISDiffSetDataStorePtr nodeDiffsetStore;
-        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                                
-        if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        if (m_nbClips > 0)
+            {
+            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            ISDiffSetDataStorePtr nodeDiffsetStore;
+            result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);
+            if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
         ISMInt32DataStorePtr nodeFeatureStore;
@@ -716,8 +719,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
         std::cout << "Time to process tree: " << (clock() - t) / CLOCKS_PER_SEC << std::endl;
         //WaitForThreadStop();
         distributor = nullptr;
-        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
-        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
+        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
+        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
         std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
         }
 
@@ -2895,7 +2898,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     POINT splitPosition = GetDefaultSplitPosition();
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
         {
-
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -2939,7 +2943,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
                 return;
             }
 
-
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 1)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 1);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 8;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -3734,7 +3739,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         m_nodeHeader.m_textureID = GetBlockID();
         m_nodeHeader.m_nbTextures = 1;
     
-    UpdateNodeFromBcDTM();
+    //UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
 
     if (existingFaces->size() >= 4)
@@ -3840,12 +3845,17 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
 // @bsimethod                                                   Elenie.Godzaridis 02/16
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
-    {
+{
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid()) return false;
+    bool isUpToDate = false;
     for (const auto& diffSet : *diffsetPtr)
-        {
-        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
+    {
+        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) isUpToDate= true;
+    }
+    for (const auto& diffSet : *diffsetPtr)
+    {
+        if (diffSet.clientID == clipId && (!isUpToDate || !diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
         }
     return false;
     }
@@ -3900,19 +3910,27 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
     bvector<bpair<double, int>> metadata;
-    DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
+    //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
-    size_t indexOfBiggestPoly = 0;
+    bset<uint64_t> addedPolyIds;
+   // size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
         if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && diffSet.toggledForID)
             {
+            if (addedPolyIds.count(diffSet.clientID) > 0) continue;
+            addedPolyIds.insert(diffSet.clientID);
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            GetClipRegistry()->GetClipWithParameters(diffSet.clientID, polys.back(), geom, type, isActive);
+
+            if (type == SMNonDestructiveClipType::Boundary) polyInclusion = true;
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
-            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
+            /*if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
                 {
                 extentOfBiggestPoly = polyExtent;
                 indexOfBiggestPoly = polys.size() - 1;
@@ -3936,7 +3954,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     if (!intersection.IsNull())
                         polyInclusion = true;
                     }
-                }
+                }*/
 
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
@@ -3944,10 +3962,47 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 clipIds.resize(clipIds.size() - 1);
                 continue;
                 }
+
+            int nOfLoops = 0;
+            if (geom == SMClipGeometryType::ComplexPolygon)
+                {
+                //count loops
+                bvector<bvector<DPoint3d>> polyLoops;
+                bvector<DPoint3d> currentLoop;
+                for (auto& pt : polys.back())
+                    {
+                    if (pt.IsDisconnect())
+                        {
+                        nOfLoops++;
+                        polyLoops.push_back(currentLoop);
+                        currentLoop.clear();
+                        }
+                    else currentLoop.push_back(pt);
+                    }
+
+                if (!currentLoop.empty())
+                    {
+                    nOfLoops++;
+                    polyLoops.push_back(currentLoop);
+                    currentLoop.clear();
+                    }
+
+                polys.resize(polys.size() - 1);
+                clipIds.resize(clipIds.size() - 1);
+                for (auto& loop : polyLoops)
+                    {
+                    clipIds.push_back(diffSet.clientID);
+                    polys.push_back(loop);
+                    }
+
+                }
+            else nOfLoops = 1;
+
             double importance;
             int nDimensions;
             GetClipRegistry()->GetClipMetadata(diffSet.clientID, importance, nDimensions);
-            metadata.push_back(make_bpair(importance, nDimensions));
+            for (size_t i = 0; i < nOfLoops; ++i)
+                metadata.push_back(make_bpair(importance, nDimensions));
             }
         else if (!diffSet.toggledForID)
             {
@@ -3994,7 +4049,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
         bool hasClip = false;
         if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
-            {
+            {            
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)
                 {
@@ -4051,6 +4106,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         m_nbClips++;
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
+
     //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 
     }
@@ -4327,6 +4383,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 {
                 if (other.clientID == ((uint64_t)-1)) const_cast<DifferenceSet&>(other).upToDate = false;
                 }
+
+            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
             
             }
 
@@ -4375,7 +4434,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
             const_cast<DifferenceSet&>(*it).upToDate = false;
             }
         }
-    if(found) diffSetPtr->erase(indices);
+    if (found)
+    {
+        diffSetPtr->erase(indices);
+        //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    }
     return found;
     }
 
@@ -4414,6 +4479,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         found = ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent); //m_nodeExtent
         if (found) AddClip(clipId, isVisible, setToggledWhenIdIsOn);
         }
+    else
+    {
+        //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+    }
     return found;
     }
 //=======================================================================================
@@ -4860,7 +4932,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
 
         // The root node contains the spatial object ... add it
         nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->AddFeatureDefinition(type, points, extent, m_indexHeader.m_HasMaxExtent);
-        assert(nAddedPoints >= points.size());
+        //assert(nAddedPoints >= points.size());
         }
     }
 
@@ -5144,12 +5216,12 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }
                 set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
                 std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch) s_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
-                for (size_t i =0; i < 8; ++i)
+                for (auto& node : nodesToStitch) LightThreadPool::GetInstance()->m_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
+                for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
                     RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
                     {
                     vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
-                    size_t firstIdx = nNodes / 8 * threadId;
+                    size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
                     myNodes.push_back(vec[firstIdx]);
                     while (myNodes.size() > 0)
                         {
@@ -5160,7 +5232,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                         neighbors.push_back(current);
                         bool reservedNode = false;
 
-                        reservedNode = TryReserveNodes(s_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
+                        reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
 
                         if (reservedNode == true)
                             {
@@ -5178,10 +5250,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                             if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
                             unsigned int val = (unsigned int)-1;
                             unsigned int id = (unsigned int)threadId;
-                            s_nodeMap[current].compare_exchange_strong(id, val);
+                            LightThreadPool::GetInstance()->m_nodeMap[current].compare_exchange_strong(id, val);
                             }
                         myNodes.erase(myNodes.begin());
-                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / 8 * (threadId+1))
+                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
                             {
                             firstIdx += 1;
                             myNodes.push_back(vec[firstIdx]);
@@ -5191,7 +5263,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
 
                 WaitForThreadStop();
-                s_nodeMap.clear();
+                LightThreadPool::GetInstance()->m_nodeMap.clear();
                 for (auto& node : nodesToStitch)
                     {
                     if (stitchedNodes.count(node) == 0)

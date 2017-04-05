@@ -1115,9 +1115,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath, inCreation);
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
+    }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
+    {
+    __super::SaveSisterFiles();
     }
 
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
@@ -1658,7 +1663,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::Coverage)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon)
         {
         SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
         assert(sqlFilePtr.IsValid());
@@ -1674,6 +1679,18 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
 
     return true;    
     }
+
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName);
+    assert(sqlFilePtr.IsValid());
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+
+    return true;
+    }
+
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                

@@ -35,7 +35,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
@@ -73,7 +73,7 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool inCreation)
+SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType)
     {
     SMSQLiteFilePtr sqlFilePtr;
 
@@ -105,15 +105,16 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 {
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
-
-                if (inCreation)
-                    _wremove(sqlFileName.c_str());
                     
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
 
                 if (status == 0)
                     {
+                    BeFileName path(sqlFileName);
+                    if (!path.GetDirectoryName().DoesPathExist())
+                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+
                     m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
                     }
                 }
@@ -124,7 +125,8 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
-        case SMStoreDataType::Coverage:
+        case SMStoreDataType::CoveragePolygon:
+        case SMStoreDataType::CoverageName:            
             {
             std::lock_guard<std::mutex> lock(m_defOpen);
             if (!m_smClipDefinitionSQLiteFile.IsValid())
@@ -132,14 +134,15 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
-                if (inCreation)
-                    _wremove(sqlFileName.c_str());
-
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
 
                 if (status == 0)
                     {
+                    BeFileName path(sqlFileName);
+                    if (!path.GetDirectoryName().DoesPathExist())
+                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+
                     m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
                     }
                 }
@@ -156,19 +159,31 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     return sqlFilePtr;
     }
 
-bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath, bool inCreation)
+bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     {
     if (m_projectFilesPath.length() > 0)
         return false;
 
-    m_projectFilesPath = projectFilesPath;
-
-    //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
-    //Force the opening/creation of project file in main thread to avoid global mutex.
-    GetSisterSQLiteFile(SMStoreDataType::DiffSet, inCreation);
-    GetSisterSQLiteFile(SMStoreDataType::Skirt, inCreation);
-
+    m_projectFilesPath = projectFilesPath;    
     return true;
+    }
+
+void SMSQLiteSisterFile::SaveSisterFiles()
+    {
+    if (m_smFeatureSQLiteFile.IsValid())
+        { 
+        m_smFeatureSQLiteFile->Save();
+        }
+
+    if (m_smClipSQLiteFile.IsValid())
+        {
+        m_smClipSQLiteFile->Save();
+        }
+
+    if (m_smClipDefinitionSQLiteFile.IsValid())
+        {
+        m_smClipDefinitionSQLiteFile->Save();
+        }        
     }
 
 bool SMSQLiteSisterFile::IsProjectFilesPathSet()

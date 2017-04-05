@@ -193,7 +193,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
             
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
-        void SetDirty() { m_dirty = true; }
+        void SetDirty(bool dirty = true) { m_dirty = dirty; }
 
         bool IsCompressedType()
             {
