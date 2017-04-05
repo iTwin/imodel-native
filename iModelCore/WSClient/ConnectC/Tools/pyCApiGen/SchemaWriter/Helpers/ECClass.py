@@ -281,22 +281,23 @@ class ECClass(object):
         create_request_str += "(\n"
         create_request_str += "{0}HANDLE apiHandle".format(self.__api.get_upper_api_acronym())
         create_request_str += self.__get_class_properties_for_function_def()
-        
-        #if we have any relationships, we need to allow for id for the source object to be passed in (for example:
-        # a parent object id under which this item will be created) 
-        #if (len (self.__ecRelationshipclasses) > 0):
-        #        for ecr in self.__ecRelationshipclasses):
-                    
+        #create_request_str += self.__get_relationship_source_ids_for_function_def()
         create_request_str += "\n)"
         return create_request_str
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                     Robert.Priest    04/2017
     #-------------------------------------------------------------------------------------------
-    def __get_relationship_source_id_for_function_def(self, ec_rel_class):
-        lowerCaseFirstLetter = lambda s: s[:1].lower() + s[1:] if s else ''
-        varName = ec_rel_class.get_source().get_name()
-        str = "WCharCP {0}Id,\n".format(lowerCaseFirstLetter(ec_rel_class.get_source().get_name()))
+    def __get_relationship_source_ids_for_function_def(self):
+        str = ""        
+        #if we have any relationships, we need to allow for id for the source object to be passed in (for example:
+        # a parent object id under which this item will be created) 
+        # TODO: Re-examine whether we can make such an assumption (to add an id) for any relationship encountered.
+        #       It is not completely clear that is a safe make that assumption at this point.        
+        if (len (self.__ecRelationshipclasses) > 0):                
+                for ecr in self.__ecRelationshipclasses:                    
+                    str += ',\n'
+                    str += "WCharCP {0}Id".format(ecr.get_name())
         return str
 
     #-------------------------------------------------------------------------------------------

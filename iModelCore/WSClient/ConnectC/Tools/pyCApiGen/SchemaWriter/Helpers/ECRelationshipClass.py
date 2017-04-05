@@ -6,6 +6,7 @@
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+from SchemaWriter.Helpers.ECProperty import ECProperty
 
 #-------------------------------------------------------------------------------------------
 # bsiclass                                      Robert.Priest      04/2017
@@ -43,6 +44,12 @@ class ECRelSource(object):
         self.cardinality = cardinality
         self.polymorphic = polymorphic
         self.relationship_object = relationship_object
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_name(self):
+        return self.relationship_object.get_name()
 
 #-------------------------------------------------------------------------------------------
 # bsiclass                                      Robert.Priest      04/2017
@@ -88,7 +95,8 @@ class ECRelationshipClass(object):
         self.strength_direction = strength_direction
         self.source = source;
         self.target = target;
-    
+        self.ecproperties = []
+
     #-------------------------------------------------------------------------------------------
     # bsimethod                                     Robert.Priest    04/2017
     #-------------------------------------------------------------------------------------------
@@ -106,3 +114,39 @@ class ECRelationshipClass(object):
     #-------------------------------------------------------------------------------------------
     def get_target(self):
         return self.target
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_properties(self):
+        return self.ecproperties
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def set_properties(self, properties):
+        self.ecproperties = properties
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def add_property(self, property):
+        self.ecproperties.append(property)
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_unique_property_types(self):
+        unique_properties = []
+        for ecproperty in self.get_properties():
+            if ecproperty.type not in unique_properties:
+                unique_properties.append(ecproperty.type)
+        return unique_properties
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def does_contain_property_type(self, property_type):
+        if property_type == "StringLength":
+            property_type = 'string'
+        return property_type in self.get_unique_property_types()

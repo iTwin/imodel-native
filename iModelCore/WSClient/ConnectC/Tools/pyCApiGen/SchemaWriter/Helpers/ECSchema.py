@@ -7,6 +7,7 @@
 #
 #--------------------------------------------------------------------------------------
 from SchemaWriter.Helpers.ECClass import ECClass
+from SchemaWriter.Helpers.ECProperty import ECProperty
 from SchemaWriter.Helpers.PropertyTypeError import PropertyTypeError
 from SchemaWriter.Helpers.ECRelationshipClass import ECRelObject
 from SchemaWriter.Helpers.ECRelationshipClass import ECRelSource
@@ -166,8 +167,15 @@ class ECSchema(object):
                                                 strenth_direction, 
                                                 ec_rel_source, 
                                                 ec_rel_target);
+            
+            ecproperties_xml = xml.getElementsByTagName('ECProperty')
+            for ecproperty_xml in ecproperties_xml:
+                ec_rel_class.add_property(
+                        ECProperty( ecproperty_xml.attributes["propertyName"].value,
+                                    ecproperty_xml.attributes["typeName"].value,
+                                    ecproperty_xml.hasAttribute("readOnly") and ecproperty_xml.attributes["readOnly"].value,
+                                    False ))
             return ec_rel_class
-
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                             06/2016
