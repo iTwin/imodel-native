@@ -256,6 +256,7 @@ public:
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}
+
     //! Return true if the specified CodeSpec is the NullCodeSpec
     bool IsNullCodeSpec() const {return GetCodeSpecId() == GetNullCodeSpecId();}
 
@@ -268,6 +269,7 @@ public:
     bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
     bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}
     bool IsParentElementScope() const {return CodeScopeSpec::Type::ParentElement == GetScope().GetType();}
+
     //! Return the DgnElementId of the scope element for the specified element.
     DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnElementCR element) const;
 
