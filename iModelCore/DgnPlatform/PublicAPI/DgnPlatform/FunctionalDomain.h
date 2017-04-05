@@ -128,6 +128,9 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalElement : RoleElement
 {
     DEFINE_T_SUPER(RoleElement);
 
+private:
+    BE_PROP_NAME(TypeDefinition)
+
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
@@ -136,10 +139,10 @@ public:
     //! Set the FunctionalType for this FunctionalElement
     //! @param[in] functionalTypeId The DgnElementId of the FunctionalType to be associated with this FunctionalElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of FunctionalElementIsOfType
-    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("TypeDefinition", functionalTypeId, relClassId);}
+    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue(prop_TypeDefinition(), functionalTypeId, relClassId);}
     //! Get the DgnElementId of the FunctionalType for this FunctionalElement
     //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
-    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("TypeDefinition");}
+    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>(prop_TypeDefinition());}
     //! Get the FunctionalType for this FunctionalElement
     //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
     DGNPLATFORM_EXPORT FunctionalTypeCPtr GetFunctionalType() const;

@@ -2772,6 +2772,9 @@ struct EXPORT_VTABLE_ATTRIBUTE TypeDefinitionElement : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
 
+private:
+    BE_PROP_NAME(Recipe)
+
 protected:
     explicit TypeDefinitionElement(CreateParams const& params) : T_Super(params) {}
 
@@ -2779,11 +2782,11 @@ public:
     //! Set the recipe for this TypeDefinitionElement
     //! @param[in] recipeId The DgnElementId of the recipe to be associated with this TypeDefinitionElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of TypeDefinitionHasRecipe
-    DgnDbStatus SetRecipe(DgnElementId recipeId, ECN::ECClassId relClassId) {return SetPropertyValue("Recipe", recipeId, relClassId);}
+    DgnDbStatus SetRecipe(DgnElementId recipeId, ECN::ECClassId relClassId) {return SetPropertyValue(prop_Recipe(), recipeId, relClassId);}
 
     //! Get the DgnElementId of the recipe for this TypeDefinitionElement
     //! @return Will be invalid if there is no recipe associated with this TypeDefinitionElement
-    DgnElementId GetRecipeId() const {return GetPropertyValueId<DgnElementId>("Recipe");}
+    DgnElementId GetRecipeId() const {return GetPropertyValueId<DgnElementId>(prop_Recipe());}
 
     //! Get the RecipeDefinitionElement for this TypeDefinitionElement
     //! @return Will be invalid if there is no RecipeDefinitionElement associated with this TypeDefinitionElement
@@ -2915,6 +2918,9 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationPartitionElement : InformationContentE
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationPartitionElement, InformationContentElement);
     friend struct dgn_ElementHandler::InformationPartition;
 
+private:
+    BE_PROP_NAME(Description)
+
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
@@ -2930,9 +2936,9 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
-    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
     //! Set the description of this InformationPartitionElement
-    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
+    void SetDescription(Utf8CP description) {SetPropertyValue(prop_Description(), description);}
 };
 
 //=======================================================================================
@@ -3163,7 +3169,7 @@ public:
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
     void SetDescription(Utf8CP description) {SetPropertyValue(prop_Description(), description);}
 
-    BE_JSON_NAME(Subject);   //<! The namespace reserved for Subject Json properties
+    BE_JSON_NAME(Subject); //<! The namespace reserved for Subject Json properties
     BE_JSON_NAME(Job); //<! The sub-namespace reserved for Job Subject Json properties
     BE_JSON_NAME(Model); //<! The sub-namespace reserved for Model Subject Json properties
 

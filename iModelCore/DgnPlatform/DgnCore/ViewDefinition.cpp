@@ -1180,6 +1180,13 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
         lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_flash()]));
         lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_ambient()]));
         lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[json_portrait()]));
+
+        if (lights->IsEmpty()) // we have the camera lights flag on but no camera lights. Turn on a flashbulb.
+            {
+            Lighting::Parameters ambient(Lighting::LightType::Flash);
+            ambient.SetIntensity(30.0);
+            lights->AddLight(target.CreateLight(ambient));
+            }
         }
 
     if (m_viewFlags.ShowSolarLight())
@@ -1195,6 +1202,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
             lights->AddLight(target.CreateLight(sun, &dir));
             }
         }
+
 
     lights->m_fstop = GetSceneBrightness();
     return lights;

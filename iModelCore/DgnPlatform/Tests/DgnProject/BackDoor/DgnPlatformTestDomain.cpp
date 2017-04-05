@@ -57,6 +57,17 @@ TestElement::TestElement(CreateParams const& params) : T_Super(params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::Create(DgnDbR db, ECN::ECClassCR subclass, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+    {
+    if (!subclass.Is(db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)))
+        return nullptr;
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(subclass.GetId().GetValue()), categoryId, Placement3d()));
+    return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
