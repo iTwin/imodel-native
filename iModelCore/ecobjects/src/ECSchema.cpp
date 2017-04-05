@@ -3065,7 +3065,7 @@ void ECSchema::ReComputeCheckSum ()
         return;
 
     WString xmlStr;
-    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr))
+    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
         return;
 
     m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
