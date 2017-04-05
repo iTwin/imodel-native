@@ -38,7 +38,7 @@ enum class LightType
 };
 
 //=======================================================================================
-// Json parameters that define how a light affects the rendering of a scene.
+//! Json parameters that define how a light affects the rendering of a scene.
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct Parameters : Json::Value
@@ -99,7 +99,8 @@ public:
 
     bool IsValid() const {return GetType() != LightType::Invalid;}
     bool IsVisible() const {return IsValid() && GetIntensity() > 0.0;}
-    Parameters(LightType type = LightType::Invalid) {SetType(type);}
+
+    Parameters(LightType type=LightType::Invalid) {SetType(type);}
 };
 
 //=======================================================================================
@@ -112,7 +113,7 @@ public:
 
     BE_JSON_NAME(light)
     explicit Location(CreateParams const& params) : T_Super(params) {}
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightLocation));}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightLocation));} //!< @private
     ParametersCR GetParameters() const {return (ParametersCR) m_jsonProperties[json_light()];}
     void SetParameters(ParametersCR val) {m_jsonProperties[json_light()] = val;}
 };
