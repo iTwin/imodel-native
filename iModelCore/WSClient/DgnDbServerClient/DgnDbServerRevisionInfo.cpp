@@ -10,96 +10,6 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfo::DgnDbServerRevisionInfo(Utf8String id, Utf8String parentRevisionId, Utf8String dbGuid, int64_t index,
-    Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges)
-    : m_id(id), m_parentRevisionId(parentRevisionId), m_dbGuid(dbGuid), m_index(index),
-     m_description(description), m_fileSize(fileSize), m_briefcaseId(briefcaseId), m_userCreated(userCreated), m_pushDate(pushDate), m_containingChanges(containingChanges)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionInfo::GetId() const
-    {
-    return m_id;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionInfo::GetParentRevisionId() const
-    {
-    return m_parentRevisionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionInfo::GetDbGuid() const
-    {
-    return m_dbGuid;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-uint64_t DgnDbServerRevisionInfo::GetIndex() const
-    {
-    return m_index;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionInfo::GetDescription() const
-    {
-    return m_description;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-uint64_t DgnDbServerRevisionInfo::GetFileSize() const
-    {
-    return m_fileSize;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionInfo::GetUserCreated() const
-    {
-    return m_userCreated;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-DateTime DgnDbServerRevisionInfo::GetPushDate() const
-    {
-    return m_pushDate;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfo::ContainingChanges DgnDbServerRevisionInfo::GetContainingChanges() const
-    {
-    return m_containingChanges;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-BeSQLite::BeBriefcaseId DgnDbServerRevisionInfo::GetBriefcaseId() const
-    {
-    return m_briefcaseId;
-    }
-
 // avoid collision of a static function with the same name in another CPP file in this compiland...
 BEGIN_UNNAMED_NAMESPACE
 
@@ -150,7 +60,7 @@ DgnDbServerRevisionInfoPtr ParseRapidJson(RapidJsonValueCR properties)
         static_cast<DgnDbServerRevisionInfo::ContainingChanges>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
         static_cast<DgnDbServerRevisionInfo::ContainingChanges>(0);
 
-    return std::make_shared<DgnDbServerRevisionInfo>(id, parentRevisionId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
+    return new DgnDbServerRevisionInfo(id, parentRevisionId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
     }
 
 END_UNNAMED_NAMESPACE
@@ -173,40 +83,4 @@ DgnDbServerRevisionInfoPtr DgnDbServerRevisionInfo::Parse(WSObjectsReader::Insta
     {
     RapidJsonValueCR properties = instance.GetProperties();
     return ParseRapidJson(properties);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
-bool DgnDbServerRevisionInfo::operator==(DgnDbServerRevisionInfoCR revision) const
-    {
-    if (revision.GetId() == GetId())
-        return true;
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          02/2017
-//---------------------------------------------------------------------------------------
-bool DgnDbServerRevisionInfo::GetContainsFileAccessKey()
-    {
-    return m_containsFileAccessKey;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          02/2017
-//---------------------------------------------------------------------------------------
-DgnDbServerFileAccessKeyPtr DgnDbServerRevisionInfo::GetFileAccessKey()
-    {
-    return m_fileAccessKey;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          02/2017
-//---------------------------------------------------------------------------------------
-void DgnDbServerRevisionInfo::SetFileAccessKey(DgnDbServerFileAccessKeyPtr fileAccessKey)
-    {
-    m_fileAccessKey = fileAccessKey;
-    m_containsFileAccessKey = true;
     }

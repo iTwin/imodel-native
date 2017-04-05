@@ -13,11 +13,6 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-DgnDbServerError::DgnDbServerError()
-    {
-    m_id = Id::Unknown;
-    }
-
 DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdString)
     {
     static bmap<Utf8String, DgnDbServerError::Id> map;
@@ -110,11 +105,6 @@ bool DgnDbServerError::RequiresExtendedData(Id id)
         }
     }
 
-DgnDbServerError::DgnDbServerError(Id id)
-    {
-    m_id = id;
-    }
-
 DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
     {
     m_message = error.GetMessage();
@@ -160,16 +150,6 @@ DgnDbServerError::DgnDbServerError(HttpErrorCR error)
     m_id = Id::AzureError;
     m_message = error.AsyncError::GetMessage();
     m_description = error.AsyncError::GetDescription();
-    }
-
-JsonValueCR DgnDbServerError::GetExtendedData() const
-    {
-    return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();
-    }
-
-DgnDbServerError::Id DgnDbServerError::GetId() const
-    {
-    return m_id;
     }
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
