@@ -1135,6 +1135,7 @@ struct VirtualSet
     //! @param[in] vals The array of values. Use the DbValue::Get... methods to get the column data from vals.
     //! @return true if data in vals is in the set.
     virtual bool _IsInSet(int nVals, DbValue const* vals) const = 0;
+    virtual ~VirtualSet() {}
 };
 
 //=======================================================================================
