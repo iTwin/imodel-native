@@ -562,12 +562,15 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         case SMStoreDataType::Skirt : 
             blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
-        case SMStoreDataType::ClipDefinition :
+        case SMStoreDataType::ClipDefinition:
             blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
-        case SMStoreDataType::CoveragePolygon :
+        case SMStoreDataType::CoveragePolygon:
             blockDataCount = m_smSQLiteFile->GetCoveragePolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
+        case SMStoreDataType::CoverageName:
+            blockDataCount = m_smSQLiteFile->GetCoverageNameByteCount(blockID.m_integerID) > 0 ? 1 : 0;
+            break;            
 #ifdef WIP_MESH_IMPORT
         case SMStoreDataType::MeshParts:
             blockDataCount = m_smSQLiteFile->GetNumberOfMeshParts(blockID.m_integerID) / sizeof(DATATYPE);
@@ -696,6 +699,13 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     bvector<uint8_t> nodeData;
     size_t uncompressedSize = 0;
+
+    if (m_dataType == SMStoreDataType::CoverageName)
+        {
+        m_smSQLiteFile->GetCoverageName(blockID.m_integerID, (Utf8String*)DataTypeArray, uncompressedSize);
+        return uncompressedSize;
+        }
+
     this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
 
     if (this->IsCompressedType())
@@ -711,6 +721,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
         return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
+    else
     if (m_dataType == SMStoreDataType::DiffSet)
         {
         if (uncompressedSize == 0) return 1;
@@ -736,8 +747,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }        
 
         return nodeData.size();     
-        }
-
+        }        
+        
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
     pi_compressedPacket.SetDataSize(nodeData.size());
@@ -818,7 +829,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             break;  
         case SMStoreDataType::CoveragePolygon:
             m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
+            break;        
         case SMStoreDataType::Texture:
         case SMStoreDataType::TextureCompressed:
             m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);

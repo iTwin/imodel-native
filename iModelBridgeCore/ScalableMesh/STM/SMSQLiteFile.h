@@ -200,7 +200,9 @@ public:
 
     virtual size_t GetClipPolygonByteCount(int64_t clipID) { assert(false); return 0; }
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID) { assert(false); return 0; }
-
+    
+    virtual void GetCoverageName(int64_t coverageID, Utf8String* name, size_t& uncompressedSize) { assert(false); }
+    virtual size_t GetCoverageNameByteCount(int64_t coverageID) { assert(false); return 0; }
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
     virtual void StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize) { assert(false); }

@@ -286,6 +286,26 @@ void SMSQLiteClipDefinitionsFile::GetSkirtPolygon(int64_t clipID, bvector<uint8_
     memcpy(&clipData[0], stmt->GetValueBlob(0), clipData.size());
     }
 
+
+void SMSQLiteClipDefinitionsFile::GetCoverageName(int64_t coverageID, Utf8String* name, size_t& uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Name FROM SMCoverages WHERE PolygonId=?");
+    stmt->BindInt64(1, coverageID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE)
+        {
+        uncompressedSize = 0;
+        return;
+        }
+
+    *name = GET_VALUE_STR(stmt, 0);
+    uncompressedSize = name->SizeInBytes();        
+    }
+
+
 void SMSQLiteClipDefinitionsFile::GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
@@ -408,6 +428,14 @@ size_t SMSQLiteClipDefinitionsFile::GetCoveragePolygonByteCount(int64_t coverage
     DbResult status = stmt->Step();
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0);
+    }
+
+size_t SMSQLiteClipDefinitionsFile::GetCoverageNameByteCount(int64_t coverageID)
+    {
+    Utf8String name;
+    size_t     uncompressedSize;
+    GetCoverageName(coverageID, &name, uncompressedSize);
+    return uncompressedSize;    
     }
 
 void SMSQLiteClipDefinitionsFile::DeleteClipPolygon(int64_t clipID)

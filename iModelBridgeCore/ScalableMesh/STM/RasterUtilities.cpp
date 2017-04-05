@@ -16,6 +16,9 @@
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
@@ -28,7 +31,8 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
         {
-        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        //pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
         }
     else
 #endif

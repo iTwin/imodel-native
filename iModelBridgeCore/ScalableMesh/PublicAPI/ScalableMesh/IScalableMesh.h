@@ -266,6 +266,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const = 0;
 
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const = 0;
+        
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
@@ -432,6 +434,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 
         BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids) const;
+
+        BENTLEY_SM_EXPORT void                   GetCoverageName(Utf8String& name, uint64_t id) const;
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 

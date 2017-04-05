@@ -279,6 +279,17 @@ void ClipRegistry::GetCoverage(uint64_t id, bvector<DPoint3d>& clip)
     dataStore->LoadBlock(&clip[0], nOfPts, id);
     }
 
+
+void ClipRegistry::GetCoverageName(uint64_t id, Utf8String& coverageName)
+    {    
+    ISMCoverageNameDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0);
+    size_t nbName = dataStore->GetBlockDataCount(id);
+    if (nbName == 0) return;
+    
+    dataStore->LoadBlock(&coverageName, 1, id);
+    }
+
 bool ClipRegistry::HasCoverage(uint64_t id)
     {
     ISM3DPtDataStorePtr dataStore;

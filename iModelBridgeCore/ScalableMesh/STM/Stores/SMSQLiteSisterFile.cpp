@@ -36,6 +36,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
         case SMStoreDataType::CoveragePolygon:
+        case SMStoreDataType::CoverageName:
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;

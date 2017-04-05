@@ -516,6 +516,11 @@ void                               ScalableMeshGroup::_GetCoverageIds(bvector<ui
         }
     }
 
+void                               ScalableMeshGroup::_GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    assert(!"Should not be called");    
+    }
+
 BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t id)
     {
     for (auto& member : m_members)
