@@ -26,8 +26,56 @@ namespace WebMercator
 {
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapTile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapRoot)
+
 DEFINE_REF_COUNTED_PTR(MapTile)
 DEFINE_REF_COUNTED_PTR(MapRoot)
+
+//=======================================================================================
+// Interface between QuadTree implementation and the providers of the imagery.
+// @bsiclass                                                    Barry.Bentley   03/17
+//=======================================================================================
+struct  ImageryProvider : RefCountedBase
+{
+    // Imagery Providery implementation-specific methods.
+
+    // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
+    virtual Utf8CP      _GetProviderName() const = 0;
+
+    // Gets the message to be displayed to credit provider(s).
+    virtual Utf8CP      _GetCreditMessage() const = 0;
+
+    // Gets an URL for the image to be displayed to credit the provider.
+    virtual Utf8CP      _GetCreditUrl() const = 0;
+
+    // Gets the tile width (usually 256)
+    virtual int         _GetTileWidth () { return 256; }
+
+    // Gets the tile height (usually 256)
+    virtual int         _GetTileHeight () { return 256; }
+
+    // Gets the minimum zoom level (usually 0)
+    virtual int         _GetMinimumZoomLevel () { return 0; }
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMaximumZoomLevel (bool forPrinting) = 0;
+
+    // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
+    virtual Utf8CP      _GetCacheFileName() const = 0;
+
+    // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
+    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile)  const = 0;
+    
+    // Gets the Json that is saved to the model and used to reconstruct the ImageryProvider in subsequent sessions.
+    virtual void        _ToJson (Json::Value&) const = 0;
+
+    // Reconstructs the ImageryProvider parameters from the Json that is saved to the model.
+    virtual void        _FromJson (Json::Value const& value) = 0;
+
+};
+
+DEFINE_REF_COUNTED_PTR(ImageryProvider)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageryProvider)
+
 
 //=======================================================================================
 //! The root of a multi-resolution web mercator map.
@@ -36,14 +84,13 @@ DEFINE_REF_COUNTED_PTR(MapRoot)
 struct MapRoot : TileTree::QuadTree::Root
 {
     Render::ImageSource::Format m_format;   //! the format of the tile image source
-    Utf8String m_urlSuffix;                 //! any suffix to append to tile names. Usually includes key
-    Transform m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
+    Transform                   m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
+    ImageryProviderPtr          m_imageryProvider;
 
     DPoint3d ToWorldPoint(GeoPoint);
-    Utf8String _ConstructTileName(TileTree::TileCR tile) const override;
+    Utf8String _ConstructTileResource (TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
-    MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
-            uint8_t maxZoom, uint32_t maxSize);
+    MapRoot(DgnDbR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
 };
 
@@ -57,7 +104,7 @@ struct MapTile : TileTree::QuadTree::Tile
 
     struct Loader : TileTree::TileLoader
     {
-        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
+        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
         BentleyStatus _LoadTile() override;
     };
 
@@ -67,7 +114,7 @@ struct MapTile : TileTree::QuadTree::Tile
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);}
 };
 
 //=======================================================================================
@@ -79,86 +126,68 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
     DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 public:
-    struct Properties
-    {
-        //! Identifies a well known street map tile service
-        enum class MapService
-        {
-            MapBox = 0,
-        };
-
-        //! The kind of map to display
-        enum class MapType
-        {
-            Map,            //!< Show a map
-            Satellite,      //!< Show a satellite image (if available)
-        };
-
-        MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data.
-        MapType m_mapType=MapType::Map; //! Identifies the type of tiles to request and display.
-        double m_groundBias=-1.0;       //! An offset from the ground plane to draw map. By default, draw map 1 meter below sea level (negative values are below sea level)
-        double m_transparency=0.0;      //! 0=fully opaque, 1.0=fully transparent
-
-        void SetMapType(MapType val) {m_mapType=val;}
-        void SetGroundBias(double val) {m_groundBias=val;}
-        double GetGroundBias() const {return m_groundBias;}
-        void SetTransparency(double val) {m_transparency=std::max(0.0, std::min(val, .9));} // limit range bewteen 0 and .9
-        double GetTransparency() const {return m_transparency;}
-        bool IsTransparent() const {return 0.0 < m_transparency;}
-        Json::Value ToJson() const;
-        void FromJson(Json::Value const&);
-    };
-
 protected:
-    Properties m_properties;
-    mutable MapRootPtr m_root;
+    ImageryProviderPtr      m_provider;
+    double                  m_groundBias;
+    double                  m_transparency;
+    mutable MapRootPtr      m_root;
     void Load(Dgn::Render::SystemP) const;
-    virtual Utf8String _GetRootUrl() const {return "";}
-    virtual Utf8String _GetUrlSuffix() const {return "";}
+
+    void FromJson(Json::Value const& value);
+    void ToJson(Json::Value& value) const;
 
 public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(WebMercatorModel::T_Super::CreateParams);
-    public:
-        Properties m_properties;
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props);
+
+        // properties common to all ImageryProviders
+        Utf8String          m_providerName;
+        double              m_groundBias   = -1.0;
+        double              m_transparency = 0.0;
+        Json::Value         m_providerParameters;
+
+        public:
+
+        // Gets the ImageryProvider name - the ImagerProvider is constructed if the name matches those in the list of available providers.
+        Utf8String          GetProviderName () { return m_providerName; }
+
+        // Sets the ImageryProvider name.
+        void                SetProviderName (Utf8CP providerName) { m_providerName.assign (providerName); }
+
+        JsonValueCR         GetProviderParameters () { return m_providerParameters; }
+
+        // The offset from ground level at which the imagery is displayed
+        double      GetGroundBias () { return m_groundBias; }
+
+        // The offset from ground level at which the imagery is displayed
+        void        SetGroundBias (double value) { m_groundBias = value; }
+
+        // The transparency at which the imagery is displayed
+        double      GetTransparency () { return m_transparency; }
+
+        // The transparency at which the imagery is displayed
+        void        SetTransparency (double value) { m_transparency = value; }
+
+        // used when creating a new WebMercatorModel from user inputs.
+        CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, double groundBias, double transparency, Utf8CP providerName, JsonValueCR providerParameters) :
+                T_Super::CreateParams(dgndb, DgnClassId(dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_WebMercatorModel)), modeledElementId),
+                m_groundBias (groundBias), m_transparency(transparency), m_providerName (providerName), m_providerParameters (providerParameters) {}
+
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
     };
 
-    //! Create a new WebMercatorModel object
-    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
+    //! Create a new WebMercatorModel from ModelHandler::CreateWebMercatorModel method. The caller sets up the ImageryProvider from user input.
+    DGNPLATFORM_EXPORT WebMercatorModel(CreateParams const& params);
 
     void _AddTerrainGraphics(TerrainContextR) const override;
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    double GetGroundBias() const {return m_properties.m_groundBias;}
+    double GetGroundBias() const {return m_groundBias;}
 
-    //! Call this after creating a new model, to set up properties.
-    void SetProperties(Properties const& props) {m_properties=props;}
-
-    Properties const& GetProperties() const {return m_properties;}
-    Properties& GetPropertiesR() {return m_properties;}
 };
 
-//=======================================================================================
-//! A street map model
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
-{
-    DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
-
-    Utf8CP _GetCopyrightMessage() const override;
-    Utf8String _GetRootUrl() const override;
-    Utf8String _GetUrlSuffix() const override;
-
-public:
-    StreetMapModel(CreateParams const& params) : T_Super(params) {}
-
-    static Utf8CP GetMapboxStreetsUrl() {return "http://api.mapbox.com/v4/mapbox.streets/";}
-    static Utf8CP GetMapboxSatelliteUrl() {return "http://api.mapbox.com/v4/mapbox.satellite/";}
-};
+DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 
 //=======================================================================================
 //! Base class for model handlers that create models derived from WebMercatorModel.
@@ -169,20 +198,84 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : dgn_ModelHandler::Spatial
     MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, ModelHandler, dgn_ModelHandler::Spatial, DGNPLATFORM_EXPORT)
 };
 
-//=======================================================================================
-// A handler for models that communicate with one of the well known street map services
-// to obtain and display street maps and satellite imagery based on the WebMercator tiling system.
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-struct StreetMapHandler : ModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModel, StreetMapHandler, ModelHandler, DGNPLATFORM_EXPORT)
 
-    //! Create a new street map model in the DgnDb.
-    //! @param[in] params       The parameters for the new model
-    //! @return the Id of the new StreetMap Model.
-    DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(StreetMapModel::CreateParams const& params);
-};
+//=======================================================================================
+// MapBox Imagery Provider
+// This is the default, free provider. The same Bentley-provided key is used by all users.
+// @bsiclass                                                    Barry.Bentley   03/17
+//=======================================================================================
+struct MapBoxImageryProvider : ImageryProvider
+    {
+    enum class MapType
+        {
+        StreetMap = 0,
+        Satellite = 1,
+        StreetsAndSatellite = 2,
+        };
+
+    BE_JSON_NAME(mapBoxMapType)
+    BE_PROP_NAME(MapBoxProvider)
+
+private:
+    Utf8String      m_baseUrl;
+    MapType         m_mapType = MapType::StreetMap;
+
+public:
+    // constructor used prior to specifying from stored Json values.
+    MapBoxImageryProvider () {};
+
+    // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
+    virtual Utf8CP      _GetProviderName() const override { return prop_MapBoxProvider(); }
+
+    // Gets the message to be displayed to credit provider(s). 
+    virtual Utf8CP      _GetCreditMessage() const override;
+
+    // Gets an URL for the image to be displayed to credit the provider.
+    virtual Utf8CP      _GetCreditUrl() const override;
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMaximumZoomLevel (bool forPrinting) override { return 19; }
+
+    // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
+    virtual Utf8CP      _GetCacheFileName() const override;
+
+    // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
+    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile) const override;
+    
+    virtual void _FromJson(Json::Value const& value) override;
+
+    virtual void _ToJson (Json::Value&) const override;
+    };
+
+
+//=======================================================================================
+// Bing Imagery Provider
+// @bsiclass                                                    Barry.Bentley   03/17
+//=======================================================================================
+struct BingImageryProvider
+    {
+    BE_PROP_NAME(BingProvider)
+
+    };
+
+//=======================================================================================
+// Google Imagery Provider (Here is the successor to NavTeq).
+// @bsiclass                                                    Barry.Bentley   03/17
+//=======================================================================================
+struct GoogleImageryProvider
+    {
+    BE_PROP_NAME(GoogleProvider)
+    };
+
+//=======================================================================================
+// Here Imagery Provider (Here is the successor to NavTeq).
+// @bsiclass                                                    Barry.Bentley   03/17
+//=======================================================================================
+struct HereImageryProvider
+    {
+    BE_PROP_NAME(HereProvider)
+    };
+
 
 }; // end WebMercator namespace
 

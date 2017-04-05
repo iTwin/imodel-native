@@ -96,7 +96,6 @@
 #define BIS_CLASS_SpatialLocationPartition  "SpatialLocationPartition"
 #define BIS_CLASS_SpatialLocationType       "SpatialLocationType"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
-#define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_SubCategory               "SubCategory"
 #define BIS_CLASS_Subject                   "Subject"
 #define BIS_CLASS_TemplateRecipe2d          "TemplateRecipe2d"
@@ -110,6 +109,7 @@
 #define BIS_CLASS_ViewDefinition2d          "ViewDefinition2d"
 #define BIS_CLASS_ViewDefinition3d          "ViewDefinition3d"
 #define BIS_CLASS_VolumeElement             "VolumeElement"
+#define BIS_CLASS_WebMercatorModel          "WebMercatorModel"
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)
