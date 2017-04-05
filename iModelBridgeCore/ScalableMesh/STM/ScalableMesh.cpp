@@ -1610,6 +1610,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
 
     DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {   
+#ifndef VANCOUVER_API
     TerrainModel::BcDTMP dtm(_GetBcDTM());
 
     if (dtm == nullptr)
@@ -1619,6 +1620,10 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
 
     Transform totalTrans = Transform::FromProduct(m_transformToUors, *transformation);
     return dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);    
+#else
+        assert(0 && "Not Implemented !!!");
+        return DTM_ERROR;
+#endif
     }
 
 bool ScalableMeshDTM::_GetTransformation(TransformR transformation)
@@ -2418,13 +2423,21 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
     {
     //Clip files
     //NEEDS_WORK_SM : Might be better to get the name from SMSQLiteSisterFile.cpp
+#ifdef VANCOUVER_API
+    BeFileName fileName(m_baseExtraFilesPath.GetWCharCP());
+#else
     BeFileName fileName(m_baseExtraFilesPath);
+#endif
     fileName.AppendString(L"_clipDefinitions");
 
     extraFileNames.push_back(fileName);
 
     fileName.clear();
+#ifdef VANCOUVER_API
+    fileName = BeFileName(m_baseExtraFilesPath.GetWCharCP());
+#else
     fileName = BeFileName(m_baseExtraFilesPath);
+#endif
     fileName.AppendString(L"_clips");
 
     extraFileNames.push_back(fileName);
@@ -2440,7 +2453,11 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
                     
         //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
         fileName.clear();
+#ifdef VANCOUVER_API
+        fileName = BeFileName(m_baseExtraFilesPath.GetWCharCP());
+#else
         fileName = BeFileName(m_baseExtraFilesPath);
+#endif
         fileName.AppendString(L"_terrain_");
         fileName.AppendString(idStr);
         fileName.AppendString(L".3sm");

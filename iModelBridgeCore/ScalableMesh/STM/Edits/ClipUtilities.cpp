@@ -755,6 +755,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
     }
     stats.close();
 #endif
+
+#if SM_TRACE_CLIPS_FULL
     bool dbg = false;
     if (dbg)
         {
@@ -781,6 +783,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         fwrite(poly->GetParamIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
         fclose(meshAfterClip);
         }
+#endif
     }
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons)
@@ -1750,6 +1753,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         }
      bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys);
 
+#if SM_TRACE_CLIPS_FULL
      if (dbg)
          {
          WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
@@ -1765,7 +1769,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
          fclose(meshBeforeClip);
 
          for (size_t i = 1; i < polyfaces.size(); ++i)
-         {
+             {
              WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
              nameBefore.append(to_wstring(clipVal).c_str());
              nameBefore.append(L"_");
@@ -1779,8 +1783,9 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
              fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
              fwrite(polyfaces[i][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
              fclose(meshBeforeClip);
+             }
          }
-         }
+#endif
      return ret;
     }
 

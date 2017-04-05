@@ -1469,6 +1469,7 @@
   <ItemGroup>
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
+    <None Include="ScalableMesh_Vancouver.mke" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ScalableMesh.PartFile.xml" />

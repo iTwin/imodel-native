@@ -619,8 +619,15 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);
         BeFileName fileNameDir(fileNameStr.c_str());
+
+#ifdef VANCOUVER_API
+        BeFileName newFileNameDir(BeFileName::GetDirectoryName(fileNameDir).GetWCharCP());
+        newFileNameDir.append(BeFileName::GetFileNameWithoutExtension(fileNameDir));
+#else
         BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
         newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+#endif
+
         dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
@@ -642,8 +649,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);
         BeFileName fileNameDir(fileNameStr.c_str());
+#ifdef VANCOUVER_API
+        BeFileName newFileNameDir(BeFileName::GetDirectoryName(fileNameDir).GetWCharCP());
+        newFileNameDir.append(BeFileName::GetFileNameWithoutExtension(fileNameDir));
+#else
         BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
         newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+#endif
         dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetGenerating(true);        
         }           

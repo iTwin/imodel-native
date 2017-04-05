@@ -111,10 +111,16 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
+#ifndef VANCOUVER_API
                     BeFileName path(sqlFileName);
                     if (!path.GetDirectoryName().DoesPathExist())
                         BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
-
+#else
+                    BeFileName path(sqlFileName.GetWCharCP());
+                    BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+                    if (!BeFileName::DoesPathExist(dirname))
+                        BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
                     m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
                     }
                 }
@@ -139,10 +145,16 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
+#ifndef VANCOUVER_API
                     BeFileName path(sqlFileName);
                     if (!path.GetDirectoryName().DoesPathExist())
                         BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
-
+#else
+                    BeFileName path(sqlFileName.GetWCharCP());
+                    BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+                    if (!BeFileName::DoesPathExist(dirname))
+                        BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
                     m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
                     }
                 }
