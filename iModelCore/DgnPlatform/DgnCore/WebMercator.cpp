@@ -450,7 +450,7 @@ Utf8CP MapBoxImageryProvider::_GetCacheFileName () const
 void    MapBoxImageryProvider::_FromJson (Json::Value const& value)
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
-    m_mapType = (MapBoxImageryProvider::MapType) value[json_mapBoxMapType()].asInt((int)MapBoxImageryProvider::MapType::StreetMap);
+    m_mapType = (MapBoxImageryProvider::MapType) value[json_mapType()].asInt((int)MapBoxImageryProvider::MapType::StreetMap);
 
     switch (m_mapType)
         {
@@ -477,7 +477,7 @@ void    MapBoxImageryProvider::_FromJson (Json::Value const& value)
 void    MapBoxImageryProvider::_ToJson (Json::Value& value) const
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
-    value[json_mapBoxMapType()] = (int)m_mapType;
+    value[json_mapType()] = (int)m_mapType;
     }
 
 /*---------------------------------------------------------------------------------**//**

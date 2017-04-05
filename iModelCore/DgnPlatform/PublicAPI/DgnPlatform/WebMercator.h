@@ -213,7 +213,7 @@ struct MapBoxImageryProvider : ImageryProvider
         StreetsAndSatellite = 2,
         };
 
-    BE_JSON_NAME(mapBoxMapType)
+    BE_JSON_NAME(mapType)
     BE_PROP_NAME(MapBoxProvider)
 
 private:
