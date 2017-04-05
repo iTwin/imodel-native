@@ -34,16 +34,6 @@ void DgnDbCodeLockSetResultInfo::AddLock(const DgnLock dgnLock, BeBriefcaseId br
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-const DgnLockSet& DgnDbCodeLockSetResultInfo::GetLocks() const { return m_locks; }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              06/2016
-//---------------------------------------------------------------------------------------
-const DgnLockInfoSet& DgnDbCodeLockSetResultInfo::GetLockStates() const { return m_lockStates; }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              06/2016
-//---------------------------------------------------------------------------------------
 void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeBriefcaseId briefcaseId)
     {
     m_codes.insert(dgnCode);
@@ -94,17 +84,7 @@ bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
     return GetScope().CompareTo(rhs.GetScope()) < 0;
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              06/2016
-//---------------------------------------------------------------------------------------
-const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes; }
-                    
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas              06/2016
-//---------------------------------------------------------------------------------------
-const DgnCodeInfoSet& DgnDbCodeLockSetResultInfo::GetCodeStates() const { return m_codeStates; }
-
-DgnDbServerPreDownloadManagerPtr DgnDbRepositoryConnection::s_preDownloadManager = std::make_shared<DgnDbServerPreDownloadManager>();
+DgnDbServerPreDownloadManagerPtr DgnDbRepositoryConnection::s_preDownloadManager = new DgnDbServerPreDownloadManager();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -122,8 +102,7 @@ IHttpHandlerPtr            customHandler
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);
     wsRepositoryClient->SetCredentials(credentials);
-    if (repository.GetServerURL().Contains("azurewebsites.net"))
-        wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
+    wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
     }
@@ -133,8 +112,8 @@ IHttpHandlerPtr            customHandler
 //---------------------------------------------------------------------------------------
 DgnDbRepositoryConnection::~DgnDbRepositoryConnection()
     {
-    if (m_eventManagerPtr)
-        m_eventManagerPtr.reset();
+    if (m_eventManagerPtr.IsValid())
+        m_eventManagerPtr = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -381,7 +360,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UploadServerFile(BeFileNameC
     {
     auto fileAccessKey = downloadInfo.GetFileAccessKey();
     
-    if (nullptr == fileAccessKey)
+    if (fileAccessKey.IsNull())
         return OnPremiseFileUpload(filePath, downloadInfo.GetObjectId(), callback, cancellationToken);
     else
         return AzureFileUpload(filePath, fileAccessKey, callback, cancellationToken);
@@ -793,7 +772,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadFileInternal
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    if (nullptr == fileAccessKey)
+    if (fileAccessKey.IsNull())
         {
         return ExecutionManager::ExecuteWithRetry<void>([=]() {
             return m_wsRepositoryClient->SendGetFileRequest(fileId, localFile, nullptr, callback, cancellationToken)
@@ -1455,22 +1434,6 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             09/2016
-//---------------------------------------------------------------------------------------
-IWSRepositoryClientPtr DgnDbRepositoryConnection::GetRepositoryClient()
-    {
-    return m_wsRepositoryClient;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             09/2016
-//---------------------------------------------------------------------------------------
-void DgnDbRepositoryConnection::SetRepositoryClient(IWSRepositoryClientPtr client)
-    {
-    m_wsRepositoryClient.swap(client);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DemoteCodesLocks
@@ -1585,7 +1548,7 @@ ICancellationTokenPtr cancellationToken
         tasks.insert(task);
         }
 
-    auto finalValue = std::make_shared<bvector<std::shared_ptr<DgnDbServerBriefcaseInfo>>>();
+    auto finalValue = std::make_shared<bvector<DgnDbServerBriefcaseInfoPtr>>();
 
     return AsyncTask::WhenAll(tasks)
         ->Then<DgnDbServerBriefcasesInfoResult>([=]
@@ -1620,7 +1583,7 @@ DgnDbServerBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoIn
                 return DgnDbServerBriefcasesInfoResult::Error(result.GetError());
                 }
 
-            bvector<std::shared_ptr<DgnDbServerBriefcaseInfo>> briefcases;
+            bvector<DgnDbServerBriefcaseInfoPtr> briefcases;
             for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
                 {
                 briefcases.push_back(DgnDbServerBriefcaseInfo::Parse(value));
@@ -1690,7 +1653,7 @@ ICancellationTokenPtr cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksInternal";
 
     bset<DgnDbServerStatusTaskPtr> tasks;
-    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
+    DgnDbCodeLockSetResultInfoPtr finalValue = new DgnDbCodeLockSetResultInfo();
 
     if (nullptr != codes)
         {
@@ -2004,7 +1967,7 @@ ICancellationTokenPtr cancellationToken
                 revisionIndex = revisionResult.GetValue()->GetIndex();
                 }
 
-            auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
+            DgnDbCodeLockSetResultInfoPtr finalValue = new DgnDbCodeLockSetResultInfo();
             bset<DgnDbServerStatusTaskPtr> tasks;
 
             auto task = QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken);
@@ -2756,9 +2719,9 @@ DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback)
     {
-    if (!m_eventManagerPtr)
+    if (m_eventManagerPtr.IsNull())
         {
-        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(this);
+        m_eventManagerPtr = new DgnDbServerEventManager(this);
         }
     return m_eventManagerPtr->Subscribe(eventTypes, callback);
     }
@@ -2768,7 +2731,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(DgnD
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(DgnDbServerEventCallbackPtr callback)
     {
-    if (!m_eventManagerPtr)
+    if (m_eventManagerPtr.IsNull())
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
 
     if (!callback)
@@ -2777,7 +2740,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(Dg
     bool dispose = false;
     auto result = m_eventManagerPtr->Unsubscribe(callback, &dispose);
     if (dispose)
-        m_eventManagerPtr.reset();
+        m_eventManagerPtr = nullptr;
 
     return result;
     }
@@ -3300,7 +3263,7 @@ ICancellationTokenPtr             cancellationToken
             ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
             auto fileAccessKey = DgnDbServerFileAccessKey::ParseFromRelated(revisionInstance);
 
-            if (nullptr == fileAccessKey)
+            if (fileAccessKey.IsNull())
                 {
                 m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetRevisionChangesFile(), callback, cancellationToken)
                     ->Then([=] (const WSUpdateObjectResult& uploadRevisionResult)
@@ -3363,14 +3326,6 @@ ICancellationTokenPtr             cancellationToken
                 return *finalResult;
                 });
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-RepositoryInfoCR DgnDbRepositoryConnection::GetRepositoryInfo() const
-    {
-    return m_repositoryInfo;
     }
 
 //---------------------------------------------------------------------------------------

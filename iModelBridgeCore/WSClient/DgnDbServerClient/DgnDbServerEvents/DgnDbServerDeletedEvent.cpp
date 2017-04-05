@@ -30,7 +30,7 @@ DgnDbServerEvent::DgnDbServerEventType deletedEventType
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             07/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerDeletedEvent> DgnDbServerDeletedEvent::Create
+RefCountedPtr<struct DgnDbServerDeletedEvent> DgnDbServerDeletedEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
@@ -43,55 +43,12 @@ DgnDbServerEvent::DgnDbServerEventType deletedEventType
         0 == eventName.CompareToI("AllLocksDeletedEvent") ||
         0 == eventName.CompareToI("AllCodesDeletedEvent")
        )
-        return std::shared_ptr<struct DgnDbServerDeletedEvent>
-            (
-            new DgnDbServerDeletedEvent
+        return new DgnDbServerDeletedEvent
             (
             eventTopic,
             fromEventSubscriptionId,
             briefcaseId,
             deletedEventType
-            )
             );       
     return nullptr;    
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerDeletedEvent::GetEventTopic()
-    {
-    return m_eventTopic;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerDeletedEvent::GetFromEventSubscriptionId()
-    {
-    return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-int DgnDbServerDeletedEvent::GetBriefcaseId()
-    {
-    return m_briefcaseId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran				07/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerDeletedEvent::GetDeletedEventType()
-    {
-    return m_deletedEventType;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerDeletedEvent::GetEventType()
-    {
-    return m_deletedEventType;
     }

@@ -54,8 +54,6 @@ $(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)Dgn
 
 $(o)DgnDbServerError$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerError.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSubscription.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerBriefcaseInfo$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}

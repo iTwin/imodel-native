@@ -36,7 +36,7 @@ Utf8String releasedWithRevision
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
+RefCountedPtr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromSubscriptionId, 
@@ -47,8 +47,7 @@ int        briefcaseId,
 Utf8String releasedWithRevision
 )
     {
-    return std::shared_ptr<struct DgnDbServerLockEvent>
-        (new DgnDbServerLockEvent
+    return new DgnDbServerLockEvent
                (
                eventTopic, 
                fromSubscriptionId, 
@@ -57,72 +56,5 @@ Utf8String releasedWithRevision
                lockLevel, 
                briefcaseId, 
                releasedWithRevision
-               )
-         );
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetEventTopic()
-    {
-    return m_eventTopic;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
-    {
-    return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-bvector<Utf8String> DgnDbServerLockEvent::GetObjectIds()
-    {
-    return m_objectIds;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetLockType()
-    {
-    return m_lockType;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetLockLevel()
-    {
-    return m_lockLevel;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
-//---------------------------------------------------------------------------------------
-int DgnDbServerLockEvent::GetBriefcaseId()
-    {
-    return m_briefcaseId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetReleasedWithRevision()
-    {
-    return m_releasedWithRevision;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerLockEvent::GetEventType()
-    {
-    /*const type_info& tp = typeid(this);
-    return tp;*/
-    return DgnDbServerEvent::DgnDbServerEventType::LockEvent;
+               );
     }

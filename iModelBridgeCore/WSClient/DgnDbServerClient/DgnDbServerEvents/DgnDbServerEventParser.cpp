@@ -239,8 +239,8 @@ Utf8String responseString
 	DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEvent::Helper::GetEventTypeFromEventName(responseContentType);
 	switch (eventType)
 	    {
-	    case DgnDbServerEvent::DgnDbServerEventType::LockEvent:             return ParseIntoLockEvent(actualJsonPart);
-	    case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:         return ParseIntoRevisionEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:             return ParseIntoLockEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:         return ParseIntoRevisionEvent(actualJsonPart);
             case DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent:   return ParseIntoRevisionCreateEvent(actualJsonPart);
 	    case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:             return ParseIntoCodeEvent(actualJsonPart);
 	    case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
@@ -253,13 +253,13 @@ Utf8String responseString
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerEventParser::GetLockEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DgnDbServerLockEvent> DgnDbServerEventParser::GetLockEvent(DgnDbServerEventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return std::make_shared<DgnDbServerLockEvent>(dynamic_cast<DgnDbServerLockEvent&>(*eventPtr));
+		return new DgnDbServerLockEvent(dynamic_cast<DgnDbServerLockEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -270,13 +270,13 @@ std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerEventParser::GetLockEven
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevisionEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevisionEvent(DgnDbServerEventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return std::make_shared<DgnDbServerRevisionEvent>(dynamic_cast<DgnDbServerRevisionEvent&>(*eventPtr));
+		return new DgnDbServerRevisionEvent(dynamic_cast<DgnDbServerRevisionEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -287,13 +287,13 @@ std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Algirdas.Mikoliunas	              12/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr)
     {
     try
         {
         if (eventPtr == nullptr)
             return nullptr;
-        return std::make_shared<DgnDbServerRevisionCreateEvent>(dynamic_cast<DgnDbServerRevisionCreateEvent&>(*eventPtr));
+        return new DgnDbServerRevisionCreateEvent(dynamic_cast<DgnDbServerRevisionCreateEvent&>(*eventPtr));
         }
     catch (const std::bad_cast&)
         {
@@ -304,13 +304,13 @@ std::shared_ptr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::G
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEvent(DgnDbServerEventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return std::make_shared<DgnDbServerCodeEvent>(dynamic_cast<DgnDbServerCodeEvent&>(*eventPtr));
+		return new DgnDbServerCodeEvent(dynamic_cast<DgnDbServerCodeEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -321,13 +321,13 @@ std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEven
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerDeletedEvent> DgnDbServerEventParser::GetDeletedEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DgnDbServerDeletedEvent> DgnDbServerEventParser::GetDeletedEvent(DgnDbServerEventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return std::make_shared<DgnDbServerDeletedEvent>(dynamic_cast<DgnDbServerDeletedEvent&>(*eventPtr));
+		return new DgnDbServerDeletedEvent(dynamic_cast<DgnDbServerDeletedEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {

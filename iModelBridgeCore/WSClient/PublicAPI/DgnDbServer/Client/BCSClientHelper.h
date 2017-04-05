@@ -25,7 +25,7 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 * @bsiclass                                                     Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BCSSignInInfo
-    {
+{
     Http::Credentials m_credentials; //!< The user's credentials
     WebServices::UrlProvider::Environment m_environment; //!< The BCS deployment to use
 
@@ -50,7 +50,7 @@ struct BCSSignInInfo
             return BSIERROR;
         return BSISUCCESS;
         }
-    };
+};
 
 /*--------------------------------------------------------------------------------------+
 * Helps the caller with tasks such as signing into the BIM Collaboration Service via Connect
@@ -58,15 +58,15 @@ struct BCSSignInInfo
 * @bsiclass                                                     Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BCSClientHelper
-    {
-    private:
+{
+private:
     IJsonLocalState* m_localState;
     WebServices::ClientInfoPtr m_clientInfo;
     WebServices::ConnectSignInManagerPtr m_signinMgr;
 
     static Utf8CP str_BentleyConnectGlobal() {return "BentleyCONNECT.Global--CONNECT.GLOBAL";}
 
-    public:
+public:
     //! Construct the helper
     BCSClientHelper(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr) : m_clientInfo(clientInfo), m_localState(ls) {}
 
@@ -83,6 +83,6 @@ struct BCSClientHelper
     //! @param wsgBentleyConnectRepository The WSG Bentley Connect repository to query.
     //! @return the project ID if the lookup succeeded or the empty string if not
     DGNDBSERVERCLIENT_EXPORT Utf8String QueryProjectId(WebServices::WSError* wserrorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectGlobal());
-    };
+};
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -14,23 +14,20 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-typedef std::shared_ptr<struct DgnDbServerEventSubscription> DgnDbServerEventSubscriptionPtr;
-
+typedef RefCountedPtr<struct DgnDbServerEventSubscription> DgnDbServerEventSubscriptionPtr;
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventSubscriptionPtr, DgnDbServerEventSubscription);
 
-struct DgnDbServerEventSubscription
-    {
-    //__PUBLISH_SECTION_END__
-    private:
-        Utf8String m_subscriptionId;
-        DgnDbServerEventTypeSet m_eventTypes;
+struct DgnDbServerEventSubscription : RefCountedBase
+{
+private:
+    Utf8String m_subscriptionId;
+    DgnDbServerEventTypeSet m_eventTypes;
 
-        DgnDbServerEventSubscription(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes);
-        //__PUBLISH_SECTION_START__
-    public:
-        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes);
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTypeSet GetEventTypes();
-    };
+    DgnDbServerEventSubscription(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes) : m_subscriptionId(subscriptionId), m_eventTypes(eventTypes) {}
+public:
+    static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes) {return new DgnDbServerEventSubscription(subscriptionId, eventTypes);}
+    Utf8String GetSubscriptionId() const {return m_subscriptionId;}
+    DgnDbServerEventTypeSet GetEventTypes() const {return m_eventTypes;}
+};
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

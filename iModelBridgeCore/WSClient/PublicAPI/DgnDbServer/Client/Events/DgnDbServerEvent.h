@@ -64,8 +64,9 @@ namespace DgnDbServerEvent
     * @bsiclass                                              Arvind.Venkateswaran   06/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
     struct Helper
-        {
-        DGNDBSERVERCLIENT_EXPORT static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
+    {
+    public:
+        static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
             {
             switch (eventType)
                 {
@@ -80,38 +81,38 @@ namespace DgnDbServerEvent
                 }
             }
 
-        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventType GetEventTypeFromEventName(Utf8CP eventName)
+        static DgnDbServerEventType GetEventTypeFromEventName(Utf8CP eventName)
             {
             if (0 == (BeStringUtilities::Stricmp("LockEvent", eventName)))
                 return DgnDbServerEventType::LockEvent;
-            else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
+            if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
                 return DgnDbServerEventType::RevisionEvent;
-            else if (0 == (BeStringUtilities::Stricmp("RevisionCreateEvent", eventName)))
+            if (0 == (BeStringUtilities::Stricmp("RevisionCreateEvent", eventName)))
                 return DgnDbServerEventType::RevisionCreateEvent;
-            else if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
+            if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
                 return DgnDbServerEventType::CodeEvent;
-            else if (0 == (BeStringUtilities::Stricmp("AllLocksDeletedEvent", eventName)))
+            if (0 == (BeStringUtilities::Stricmp("AllLocksDeletedEvent", eventName)))
                 return DgnDbServerEventType::AllLocksDeletedEvent;
-            else if (0 == (BeStringUtilities::Stricmp("AllCodesDeletedEvent", eventName)))
+            if (0 == (BeStringUtilities::Stricmp("AllCodesDeletedEvent", eventName)))
                 return DgnDbServerEventType::AllCodesDeletedEvent;
-            else
-                return DgnDbServerEventType::UnknownEventType;
+        
+            return DgnDbServerEventType::UnknownEventType;
             }
-        };
+    };
 
     /*--------------------------------------------------------------------------------------+
     * @bsiclass                                              Arvind.Venkateswaran   06/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    struct EXPORT_VTABLE_ATTRIBUTE GenericEvent
-        {
-        public:
-            DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType() { return UnknownEventType; }
-            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return ""; }
-            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return ""; }
-        };
+    struct EXPORT_VTABLE_ATTRIBUTE GenericEvent : RefCountedBase
+    {
+    public:
+        virtual DgnDbServerEventType GetEventType() {return UnknownEventType;}
+        virtual Utf8String GetEventTopic() {return "";}
+        virtual Utf8String GetFromEventSubscriptionId() {return "";}
+    };
     }
 
-typedef std::shared_ptr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
+typedef RefCountedPtr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventPtr, DgnDbServerEvent);
 typedef bset<DgnDbServerEvent::DgnDbServerEventType> DgnDbServerEventTypeSet;
 

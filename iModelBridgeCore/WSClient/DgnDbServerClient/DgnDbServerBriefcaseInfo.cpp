@@ -12,77 +12,6 @@
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id)
-    : m_id(id)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeGuid fileId, bool isReadOnly)
-    : m_id(id), m_userOwned(userOwned), m_fileId(fileId), m_isReadOnly(isReadOnly)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-BeSQLite::BeBriefcaseId DgnDbServerBriefcaseInfo::GetId() const
-    {
-    return m_id;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR DgnDbServerBriefcaseInfo::GetUserOwned() const
-    {
-    return m_userOwned;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis           09/2016
-//---------------------------------------------------------------------------------------
-BeGuid DgnDbServerBriefcaseInfo::GetFileId() const
-    {
-    return m_fileId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                09/2016
-//---------------------------------------------------------------------------------------
-BeFileName DgnDbServerBriefcaseInfo::GetLocalPath() const
-    {
-    return m_localPath;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                09/2016
-//---------------------------------------------------------------------------------------
-void DgnDbServerBriefcaseInfo::SetLocalPath(BeFileName localPath) 
-    {
-    m_localPath = localPath;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                09/2016
-//---------------------------------------------------------------------------------------
-bool DgnDbServerBriefcaseInfo::GetIsReadOnly() const
-    {
-    return m_isReadOnly;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis           09/2016
 //---------------------------------------------------------------------------------------
 bool GuidFromJson(BeGuid& guid, RapidJsonValueCR json)
@@ -109,7 +38,7 @@ DgnDbServerBriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
     GuidFromJson(fileId, json[ServerSchema::Property::FileId]);
     bool isReadOnly = json[ServerSchema::Property::IsReadOnly].GetBool();
 
-    return std::make_shared<DgnDbServerBriefcaseInfo>(id, userOwned, fileId, isReadOnly);
+    return new DgnDbServerBriefcaseInfo(id, userOwned, fileId, isReadOnly);
     }
 
 END_UNNAMED_NAMESPACE
@@ -133,15 +62,4 @@ DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(WSObjectsReader::Ins
     {
     RapidJsonValueCR properties = instance.GetProperties();
     return ParseRapidJson(properties);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
-bool DgnDbServerBriefcaseInfo::operator==(DgnDbServerBriefcaseInfoCR briefcase) const
-    {
-    if (briefcase.GetId() == GetId())
-        return true;
-
-    return false;
     }
