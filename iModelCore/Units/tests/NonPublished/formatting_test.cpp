@@ -45,7 +45,10 @@ TEST(FormattingTest, Preliminary)
     FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
     EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());
     EXPECT_STREQ ("CUB.M(real)", fus1.ToText(true).c_str());
-   
+    fus1 = FormatUnitSet("CUB.FT(real)");
+    EXPECT_STREQ ("CUB.FT(DefaultReal)", fus1.ToText(false).c_str());
+    EXPECT_STREQ ("CUB.FT(real)", fus1.ToText(true).c_str());
+
     FormatUnitSet fus = FormatUnitSet("FT(fract8)");
     FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
    
@@ -91,8 +94,8 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("24 7/8-YRD", NumericFormatSpec::StdFormatQuantity("fract8", len, yrdsdUOM, "-").c_str());
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32)");
-    LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
-
+    //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
+    EXPECT_STREQ ("74 15/32 FT", fusYF.FormatQuantity(len).c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);

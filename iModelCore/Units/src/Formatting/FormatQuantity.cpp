@@ -23,7 +23,7 @@ void CompositeValueSpec::Init()
     {
     memset(m_ratio, 0, sizeof(m_ratio));
     memset(m_units, 0, sizeof(m_units));
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     m_type = CompositeSpecType::Undefined;
     //m_formatSpec = nullptr;
     }
@@ -222,7 +222,7 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCP other)
     memcpy(m_units, other->m_units, sizeof(m_units));
     memcpy(m_ratio, other->m_ratio, sizeof(m_ratio));
     memcpy(m_unitLabel, other->m_unitLabel, sizeof(m_unitLabel));
-    m_problemCode = other->m_problemCode;
+    m_problem = other->m_problem;
     m_type = other->m_type;
     m_includeZero = other->m_includeZero;
     m_spacer = Utf8String(other->m_spacer);
@@ -237,29 +237,29 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     memcpy(m_units, other.m_units, sizeof(m_units));
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     memcpy(m_unitLabel, other.m_unitLabel, sizeof(m_unitLabel));
-    m_problemCode = other.m_problemCode;
+    m_problem = other.m_problem;
     m_type = other.m_type;
     m_includeZero = other.m_includeZero;
     m_spacer = Utf8String(other.m_spacer);
     }
 
 
-Utf8CP CompositeValueSpec::GetProblemDescription() const
-    {
-    return Utils::FormatProblemDescription(m_problemCode).c_str();
-    }
+//Utf8CP CompositeValueSpec::GetProblemDescription() const
+//    {
+//    return Utils::FormatProblemDescription(m_problemCode).c_str();
+//    }
 //---------------------------------------------------------------------------------------
 // The problem code will be updated only if it was not already set to some non-zero value
 //   this approach is not the best, but witout a standard method for collection multiple 
 //    problems it's better than override earlier encountered problems
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-bool CompositeValueSpec::UpdateProblemCode(FormatProblemCode code)
-    {
-    if (m_problemCode == FormatProblemCode::NoProblems)
-        m_problemCode = code;
-    return IsProblem();
-    }
+//bool CompositeValueSpec::UpdateProblemCode(FormatProblemCode code)
+//    {
+//    if (m_problemCode == FormatProblemCode::NoProblems)
+//        m_problemCode = code;
+//    return IsProblem();
+//    }
 
 //---------------------------------------------------------------------------------------
 // if uom is not provided we assume that the value is defined in the smallest units defined
@@ -384,7 +384,7 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
 void CompositeValue::Init()
     {
     memset(m_parts, 0, sizeof(m_parts));
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     }
 
 CompositeValue::CompositeValue()
@@ -392,12 +392,10 @@ CompositeValue::CompositeValue()
     Init();
     }
 
-bool CompositeValue::UpdateProblemCode(FormatProblemCode code)
-    {
-    if (m_problemCode == FormatProblemCode::NoProblems)
-        m_problemCode = code;
-    return IsProblem();
-    }
+//bool CompositeValue::UpdateProblemCode(FormatProblemCode code)
+//    {
+//    return m_problem.UpdateProblemCode(code);
+//    }
 
 
 //===================================================
@@ -596,7 +594,7 @@ void QuantityTriadSpec::Init(bool incl0)
     m_topUnitLabel = nullptr;
     m_midUnitLabel = nullptr;
     m_lowUnitLabel = nullptr;
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     m_includeZero = incl0;
     }
 
@@ -653,12 +651,12 @@ bool QuantityTriadSpec::ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::Ph
 //    problems it's better than override earlier encountered problems
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-bool QuantityTriadSpec::UpdateProblemCode(FormatProblemCode code)
-    {
-    if (m_problemCode == FormatProblemCode::NoProblems)
-        m_problemCode = code;
-    return IsProblem();
-    }
+//bool QuantityTriadSpec::UpdateProblemCode(FormatProblemCode code)
+//    {
+//    if (m_problemCode == FormatProblemCode::NoProblems)
+//        m_problemCode = code;
+//    return m_problem.UpdateProblemCode(code);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17

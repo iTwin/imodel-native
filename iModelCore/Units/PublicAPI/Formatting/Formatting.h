@@ -173,6 +173,14 @@ enum class FormatTraits: int
     ApplyRounding = 0x80
     };
 
+enum class NumSequenceTraits
+    {
+    None = 0,
+    Signed = 0x1,
+    DecPoint = 0x2,
+    Exponent = 0x4,
+    Uom = 0x8
+    };
 enum class DecimalPrecision
     {
     Precision0 = 0,
@@ -231,21 +239,29 @@ enum class ScannerCursorStatus
 enum class FormatProblemCode
     {
     NoProblems = 0,
-    UnknownStdFormatName = 11,
-    UnknownUnitName = 12,
-    CNS_InconsistentFactorSet = 51,  //!< All ratio factors between units must be bigger than one
-    CNS_InconsistentUnitSet = 52,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
-    CNS_UncomparableUnits = 53,      //!< Units provided on the argument list are not comparable
-    CNS_InvalidUnitName = 54,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
-    CNS_InvalidMajorUnit = 55,       //!< The MajorUnit in ComboNumbers is null or invalid
-    QT_PhenomenonNotDefined = 101,
-    QT_PhenomenaNotSame = 102,
-    QT_InvalidTopMidUnits = 103,
-    QT_InvalidMidLowUnits = 104,
-    QT_InvalidUnitCombination = 105,
-    FUS_InvalidSyntax = 151,
-    NFS_InvalidSpecName = 161,
-    NFS_DuplicateSpecName = 162
+    UnknownStdFormatName = 20011,
+    UnknownUnitName = 20012,
+    CNS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
+    CNS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
+    CNS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
+    CNS_InvalidUnitName = 20054,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
+    CNS_InvalidMajorUnit = 20055,       //!< The MajorUnit in ComboNumbers is null or invalid
+    QT_PhenomenonNotDefined = 20101,
+    QT_PhenomenaNotSame = 20102,
+    QT_InvalidTopMidUnits = 20103,
+    QT_InvalidMidLowUnits = 20104,
+    QT_InvalidUnitCombination = 20105,
+    FUS_InvalidSyntax = 20151,
+    NFS_InvalidSpecName = 20161,
+    NFS_DuplicateSpecName = 20162
+    };
+
+enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
+    {
+    Undefined  = 0,
+    Notice  = 1,
+    Warning = 10000,
+    Critical = 20000
     };
 
 //! Type of the ComboSpec describes one of allowable value transformations
@@ -287,7 +303,7 @@ struct Utils
     UNITS_EXPORT static bool AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP u2);
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
     static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
-    UNITS_EXPORT static Utf8String FormatProblemDescription(FormatProblemCode code);
+   // UNITS_EXPORT static Utf8String FormatProblemDescription(FormatProblemCode code);
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName= nullptr, Utf8CP space = nullptr);
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
@@ -408,7 +424,31 @@ public:
     static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
 };
 
+struct FormatProblemDetail
+    {
+    private:
+        FormatProblemCode  m_code;
 
+    public:
+
+        FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
+
+        FormatProblemDetail(FormatProblemCode code)
+            {
+            m_code = code;
+            }
+        bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
+        bool IsWarning() const {
+            return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
+                static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Warning));
+            }
+        bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
+        bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
+
+        FormatProblemCode const GetProblemCode() { return m_code; }
+        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+        UNITS_EXPORT Utf8String GetProblemDescription();
+    };
 
 struct FactorPower
     {
@@ -632,7 +672,7 @@ protected:
     size_t m_ratio[indxSub];
     BEU::UnitCP m_units[indxLimit];
     Utf8CP m_unitLabel[indxLimit];
-    FormatProblemCode m_problemCode;
+    FormatProblemDetail m_problem;
     CompositeSpecType m_type;
     bool m_includeZero;
     Utf8String m_spacer;
@@ -661,9 +701,9 @@ public:
     UNITS_EXPORT Utf8String GetMiddleLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMiddle, substitute); }
     UNITS_EXPORT Utf8String GetMinorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMinor, substitute); }
     UNITS_EXPORT Utf8String GetSubLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxSub, substitute); }
-    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-    bool IsProblem() const { return m_problemCode != FormatProblemCode::NoProblems; }
-    bool NoProblem() const { return m_problemCode == FormatProblemCode::NoProblems; }
+    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+    bool IsProblem() const { return m_problem.IsProblem(); }
+    bool NoProblem() const { return m_problem.NoProblem(); }
     size_t GetMajorToMiddleRatio() { return m_ratio[indxMajor]; }
     size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
     size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
@@ -681,7 +721,7 @@ struct CompositeValue
     {
 private:
     double m_parts[CompositeValueSpec::indxLimit];
-    FormatProblemCode m_problemCode;
+    FormatProblemDetail m_problem;
 
     void Init();
 public:
@@ -697,8 +737,8 @@ public:
     double GetMinor()  { return m_parts[CompositeValueSpec::indxMinor]; }
     double GetSub()    { return m_parts[CompositeValueSpec::indxSub]; }
     double GetInput()  { return m_parts[CompositeValueSpec::indxInput]; }
-    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-    bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+    bool IsProblem() { return m_problem.IsProblem(); }
     };
 
 
@@ -717,7 +757,7 @@ private:
         NumericFormatSpec   m_numericSpec;
         CompositeValueSpec  m_compositeSpec;
         FormatSpecType  m_specType;
-        FormatProblemCode m_problemCode;
+        FormatProblemDetail m_problem;
 
 public:
         //UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
@@ -732,7 +772,8 @@ public:
         bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
         NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
         CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
-        bool IsProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
+        bool IsProblem() { return m_problem.IsProblem(); }
+        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
     };
@@ -746,16 +787,16 @@ struct FormatUnitSet
     private:
         NamedFormatSpecCP m_formatSpec;
         BEU::UnitCP m_unit;
-        FormatProblemCode m_problemCode;
+        FormatProblemDetail m_problem;
 
     public:
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
         UNITS_EXPORT FormatUnitSet(Utf8CP description);
-        bool HasProblem() const { return m_problemCode != FormatProblemCode::NoProblems; }
-        FormatProblemCode GetProblemCode() const { return m_problemCode; }
-        Utf8String GetProblemDescription() const { return Utils::FormatProblemDescription(m_problemCode); }
+        bool HasProblem() const { return m_problem.IsProblem(); }
+        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
     };
@@ -764,12 +805,12 @@ struct FormatUnitGroup
     {
     private:
         bvector<FormatUnitSet> m_group;
-        FormatProblemCode m_problemCode;
+        FormatProblemDetail m_problem;
     public:
         UNITS_EXPORT FormatUnitGroup(Utf8CP description);
         UNITS_EXPORT Utf8String ToText(bool useAlias);
-        bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-        FormatProblemCode GetProblemCode() { return m_problemCode; }
+        bool HasProblem() const { return m_problem.IsProblem(); }
+        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     };
 
 
@@ -851,7 +892,7 @@ struct QuantityTriadSpec : NumericTriad
         Utf8CP m_midUnitLabel;
         Utf8CP m_lowUnitLabel;
         bool m_includeZero;
-        FormatProblemCode m_problemCode;
+        FormatProblemDetail m_problem;
 
         void Init(bool incl0);
         QuantityTriadSpec();
@@ -870,9 +911,9 @@ struct QuantityTriadSpec : NumericTriad
         UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
         UNITS_EXPORT QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit = nullptr, BEU::UnitCP lowUnit = nullptr, bool incl0 = false);
 
-        bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-        FormatProblemCode GetProblemCode() { return m_problemCode; }
-        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+        bool IsProblem() { return m_problem.IsProblem(); }
+        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+        bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract = false, bool includeZero = false);
         Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
         Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
@@ -1070,6 +1111,35 @@ public:
     UNITS_EXPORT FormatStopWatch();
     UNITS_EXPORT Utf8String LastIntervalMetrics(size_t amount);
     UNITS_EXPORT Utf8String LastInterval(double factor);
+    };
+
+
+struct NumericSequence 
+    {
+private:
+    NumSequenceTraits m_traits;
+    double m_dval;    // collected value
+    int m_ival;
+    int m_startIndx;  // indicates the location of the first char in the numeric sequence (after skipping blanks)
+    int m_len;        // the length of the inspected numeric sequence
+    /*bool m_signed;
+    bool m_point;
+    bool m_exponent;
+    bool m_expSign;*/
+    Utf8String m_uom;
+    FormatProblemDetail m_problem;
+
+public:
+    NumericSequence(Utf8CP txt)
+        {
+        m_traits = NumSequenceTraits::None;
+        m_dval = 0.0;
+        m_ival = 0;
+        m_startIndx = -1;
+        m_len = 0;
+        m_uom = nullptr;
+        m_problem = FormatProblemDetail();
+        }
     };
 
 /*

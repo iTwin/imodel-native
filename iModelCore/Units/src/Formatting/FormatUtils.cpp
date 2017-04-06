@@ -281,27 +281,27 @@ const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
         }
     }
 
-Utf8String Utils::FormatProblemDescription(FormatProblemCode code)
-    {
-    switch (code)
-        {
-        case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
-        case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
-        case FormatProblemCode::CNS_InconsistentFactorSet: return "Inconsistent set of factors";
-        case FormatProblemCode::CNS_InconsistentUnitSet: return "Inconsistent set of units";
-        case FormatProblemCode::CNS_UncomparableUnits: return "Units are not comparable";
-        case FormatProblemCode::CNS_InvalidUnitName: return "Unknown name of the Unit";
-        case FormatProblemCode::CNS_InvalidMajorUnit: return "Unknown name of the Major Unit";
-        case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
-        case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
-        case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
-        case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
-        case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
-        case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
-        case FormatProblemCode::NoProblems:
-        default: return "No problems";
-        }
-    };
+//Utf8String Utils::FormatProblemDescription(FormatProblemCode code)
+//    {
+//    switch (code)
+//        {
+//        case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
+//        case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
+//        case FormatProblemCode::CNS_InconsistentFactorSet: return "Inconsistent set of factors";
+//        case FormatProblemCode::CNS_InconsistentUnitSet: return "Inconsistent set of units";
+//        case FormatProblemCode::CNS_UncomparableUnits: return "Units are not comparable";
+//        case FormatProblemCode::CNS_InvalidUnitName: return "Unknown name of the Unit";
+//        case FormatProblemCode::CNS_InvalidMajorUnit: return "Unknown name of the Major Unit";
+//        case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
+//        case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
+//        case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
+//        case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
+//        case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
+//        case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
+//        case FormatProblemCode::NoProblems:
+//        default: return "No problems";
+//        }
+//    };
 
 
 //----------------------------------------------------------------------------------------
@@ -855,11 +855,11 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
     m_formatSpec = format;
     m_unit = unit;
     if (nullptr == m_formatSpec)
-        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else if (nullptr == m_unit)
-        m_problemCode = FormatProblemCode::UnknownUnitName;
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
     else
-        m_problemCode = FormatProblemCode::NoProblems;
+        m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
     }
 
 //----------------------------------------------------------------------------------------
@@ -867,16 +867,16 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
 //----------------------------------------------------------------------------------------
 FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
     {
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     m_unit = nullptr;
     m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
-        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
         {
         m_unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
         if (nullptr == m_unit)
-            m_problemCode = FormatProblemCode::UnknownUnitName;
+            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
         }
     }
 
@@ -886,7 +886,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
 //----------------------------------------------------------------------------------------
 FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1, "()[]{}");
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
@@ -896,11 +896,11 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.GetText());
     if (nullptr == m_formatSpec)
-        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
         {
         if (nullptr == m_unit)
-            m_problemCode = FormatProblemCode::UnknownUnitName;
+            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
         }
     }
 
@@ -937,19 +937,19 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty)
 FormatUnitGroup::FormatUnitGroup(Utf8CP description)
     {
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     curs.SkipBlanks();
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
     Utf8Char unitDelim = unit.GetDelim();
     Utf8Char fnamDelim = fnam.GetDelim();
-    while (FormatProblemCode::NoProblems == m_problemCode)
+    while (m_problem.NoProblem())
         {
         if ('(' == unitDelim && ')' == fnamDelim)
             {
             FormatUnitSet fus = FormatUnitSet(fnam.GetText(), unit.GetText());
             if (fus.HasProblem())
-                m_problemCode = fus.GetProblemCode();
+                m_problem.UpdateProblemCode(fus.GetProblemCode());
             else
                 {
                 m_group.push_back(fus);
@@ -967,7 +967,7 @@ FormatUnitGroup::FormatUnitGroup(Utf8CP description)
                 }
             }
         else
-            m_problemCode = FormatProblemCode::FUS_InvalidSyntax;
+            m_problem.UpdateProblemCode(FormatProblemCode::FUS_InvalidSyntax);
         }
     }
 
@@ -1056,9 +1056,9 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Compo
     m_numericSpec = NumericFormatSpec(numSpec);
     m_compositeSpec = CompositeValueSpec(compSpec);
     m_specType = FormatSpecType::Composite;
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     if (Utils::IsNameNullOrEmpty(name))
-        m_problemCode = FormatProblemCode::NFS_InvalidSpecName;
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias)
@@ -1069,9 +1069,38 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
     m_numericSpec = NumericFormatSpec(numSpec);
     m_specType = FormatSpecType::Numeric;
     m_compositeSpec = CompositeValueSpec();
-    m_problemCode = FormatProblemCode::NoProblems;
+    m_problem = FormatProblemDetail();
     if (Utils::IsNameNullOrEmpty(name))
-        m_problemCode = FormatProblemCode::NFS_InvalidSpecName;
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
+    }
+
+Utf8String FormatProblemDetail::GetProblemDescription()
+    {
+    switch (m_code)
+        {
+        case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
+        case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
+        case FormatProblemCode::CNS_InconsistentFactorSet: return "Inconsistent set of factors";
+        case FormatProblemCode::CNS_InconsistentUnitSet: return "Inconsistent set of units";
+        case FormatProblemCode::CNS_UncomparableUnits: return "Units are not comparable";
+        case FormatProblemCode::CNS_InvalidUnitName: return "Unknown name of the Unit";
+        case FormatProblemCode::CNS_InvalidMajorUnit: return "Unknown name of the Major Unit";
+        case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
+        case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
+        case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
+        case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
+        case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
+        case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
+        case FormatProblemCode::NoProblems:
+        default: return "No problems";
+        }
+    }
+
+bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
+    {
+    if (m_code == FormatProblemCode::NoProblems)
+        m_code = code;
+    return IsProblem();
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE
