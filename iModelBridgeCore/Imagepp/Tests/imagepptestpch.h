@@ -279,5 +279,5 @@
 #include "../../PrivateApi/ImagePPInternal/gra/ImageAllocator.h"
 #include "../../PrivateApi/ImagePPInternal/gra/Task.h"
 
-#include "Tests/Common/ImagePPTestConfig.h"
+#include "Common/ImagePPTestConfig.h"
 USING_NAMESPACE_IMAGEPP

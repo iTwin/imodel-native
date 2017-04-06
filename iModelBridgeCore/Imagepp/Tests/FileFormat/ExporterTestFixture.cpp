@@ -132,7 +132,7 @@ bool RasterTestInfo::Store()
     vBuild["Source"] = GetImagePPSourcePath();
 
 
-    Utf8StringAlias infoString = Json::FastWriter::ToString(value);
+    Utf8String infoString(Json::FastWriter::ToString(value));
 
     BeFile file;
     if (BeFileStatus::Success != file.Create(m_infoPath, true))
