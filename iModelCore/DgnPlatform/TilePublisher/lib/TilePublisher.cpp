@@ -3146,7 +3146,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
     else
         {
         BeAssert(false && "Unexpected view type");
-        return; // ###TODO sheets - should not end up here
+        return;
         }
 
     json["name"] = view.GetName();
@@ -3342,7 +3342,9 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
     bgColorJson["green"] = bgColor.GetGreen() / 255.0;
     bgColorJson["blue"] = bgColor.GetBlue() / 255.0;
 
-    // ###TODO: skybox, ground plane, view flags...
+    auto style3d = style.ToDisplayStyle3d();
+    if (nullptr != style3d)
+        json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled();
 
     return json;
     }
