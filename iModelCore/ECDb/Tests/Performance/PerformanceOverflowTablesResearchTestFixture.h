@@ -871,7 +871,7 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
 
         static void SetupTestDb(Db&, Scenario const&);
         static Utf8String GetColumnName(int colIndex);
-        void LogTiming(StopWatch&, Utf8CP operation, Scenario const&, int initialRowCount, int opCount) const;
+        void LogTiming(StopWatch&, Utf8CP operation, Scenario const&, uint64_t fileSizeBefore, uint64_t fileSizeAfter, int initialRowCount, int opCount) const;
 
     protected:
         static std::vector<Scenario> GetTestScenarios()
@@ -904,6 +904,10 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsert(Scenari
     Db db;
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
+
+    BeFileName testFilePath(db.GetDbFileName());
+    uint64_t fileSizeBefore = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeBefore));
 
     Utf8String insertSql;
     if (scenario.IsSingleColumnMode())
@@ -943,8 +947,13 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsert(Scenari
         }
 
     timer.Stop();
-    db.AbandonChanges();
-    LogTiming(timer, "INSERT", scenario, s_initialRowCount, s_opCount);
+    stmt.Finalize();
+    db.SaveChanges();
+    db.CloseDb();
+    uint64_t fileSizeAfter = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
+
+    LogTiming(timer, "INSERT", scenario, fileSizeBefore, fileSizeAfter, s_initialRowCount, s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -955,6 +964,10 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdate(Scenari
     Db db;
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
+
+    BeFileName testFilePath(db.GetDbFileName());
+    uint64_t fileSizeBefore = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeBefore));
 
     Utf8String sql;
     if (scenario.IsSingleColumnMode())
@@ -992,8 +1005,12 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdate(Scenari
         }
 
     timer.Stop();
-    db.AbandonChanges();
-    LogTiming(timer, "UPDATE WHERE rowid=?", scenario, s_initialRowCount, s_opCount);
+    stmt.Finalize();
+    db.SaveChanges();
+    db.CloseDb();
+    uint64_t fileSizeAfter = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
+    LogTiming(timer, "UPDATE WHERE rowid=?", scenario, fileSizeBefore, fileSizeAfter, s_initialRowCount, s_opCount);
     }
 
 
@@ -1005,6 +1022,10 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
     Db db;
     SetupTestDb(db, scenario);
     ASSERT_TRUE(db.IsDbOpen());
+
+    BeFileName testFilePath(db.GetDbFileName());
+    uint64_t fileSizeBefore = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeBefore));
 
     StopWatch timer(true);
     Statement stmt;
@@ -1022,17 +1043,21 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
         }
 
     timer.Stop();
-    db.AbandonChanges();
-    LogTiming(timer, "DELETE WHERE rowid=?", scenario, s_initialRowCount, s_opCount);
+    stmt.Finalize();
+    db.SaveChanges();
+    db.CloseDb();
+    uint64_t fileSizeAfter = INT64_C(0);
+    ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
+    LogTiming(timer, "DELETE WHERE rowid=?", scenario, fileSizeBefore, fileSizeAfter, s_initialRowCount, s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void PerformanceOverflowTablesResearch_NullColumnsTestFixture::LogTiming(StopWatch& timer, Utf8CP operation, Scenario const& scenario, int initialRowCount, int opCount) const
+void PerformanceOverflowTablesResearch_NullColumnsTestFixture::LogTiming(StopWatch& timer, Utf8CP operation, Scenario const& scenario, uint64_t fileSizeBefore, uint64_t fileSizeAfter, int initialRowCount, int opCount) const
     {
     Utf8String descr;
-    descr.Sprintf("%s,%d,%s,%d", operation, scenario.m_colCount, scenario.ModeToString(), initialRowCount);
+    descr.Sprintf("%s,%d,%s,%" PRIu64 ",%" PRIu64 ",%d", operation, scenario.m_colCount, scenario.ModeToString(), fileSizeBefore, fileSizeAfter, initialRowCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, descr.c_str());
     }
 
@@ -1058,65 +1083,76 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::SetupTestDb(Db& d
     Utf8String fileName;
     fileName.Sprintf("perfnullcols_%d_%s_initialrowcount%d_%d.db", scenario.m_colCount, scenario.ModeToString(), s_initialRowCount,
                      DateTime::GetCurrentTimeUtc().GetDayOfYear());
+    Utf8String seedFileName("seed_");
+    seedFileName.append(fileName);
 
     BeFileName filePath = BuildECDbPath(fileName.c_str());
+    BeFileName seedFilePath = BuildECDbPath(seedFileName.c_str());
+    if (!seedFilePath.DoesPathExist())
+        {
+        Utf8String createTableSql("CREATE TABLE t(Id INTEGER PRIMARY KEY");
+        for (int i = 0; i < scenario.m_colCount; i++)
+            {
+            createTableSql.append(",");
+            Utf8String colName = GetColumnName(i);
+            createTableSql.append(colName).append(" INTEGER");
+            }
+
+        createTableSql.append(")");
+
+        Utf8String insertSql;
+        if (scenario.IsSingleColumnMode())
+            insertSql.Sprintf("INSERT INTO t(%s) VALUES(random()/1000)", GetColumnName(scenario.GetSingleColIndex()).c_str());
+        else
+            {
+            insertSql.assign("INSERT INTO t(");
+            Utf8String valuesClause(") VALUES(");
+            for (int i = 0; i < scenario.GetOperationColCount(); i++)
+                {
+                if (i > 0)
+                    {
+                    insertSql.append(",");
+                    valuesClause.append(",");
+                    }
+
+                Utf8String colName = GetColumnName(i);
+                insertSql.append(colName);
+                valuesClause.append("random()/1000");
+                }
+
+            insertSql.append(valuesClause).append(")");
+            }
+
+        Db seedDb;
+        Db::CreateParams createParams;
+        //we VACUUM the file after the set up is completed. Vacuuming requires that no transaction is active
+        createParams.SetStartDefaultTxn(DefaultTxn::No);
+        ASSERT_EQ(BE_SQLITE_OK, seedDb.CreateNewDb(seedFilePath, BeGuid(), createParams)) << seedFilePath.GetNameUtf8().c_str();
+
+        seedDb.GetDefaultTransaction()->Begin();
+        ASSERT_EQ(BE_SQLITE_OK, seedDb.ExecuteSql(createTableSql.c_str())) << createTableSql.c_str() << " " << seedDb.GetLastError().c_str();
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(seedDb, insertSql.c_str())) << insertSql.c_str() << " " << seedDb.GetLastError().c_str();
+
+        for (int i = 0; i < s_initialRowCount; i++)
+            {
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetSql() << " " << seedDb.GetLastError().c_str();
+            stmt.Reset();
+            }
+
+        stmt.Finalize();
+        ASSERT_EQ(BE_SQLITE_OK, seedDb.GetDefaultTransaction()->Commit());
+        ASSERT_FALSE(seedDb.GetDefaultTransaction()->IsActive());
+        ASSERT_EQ(BE_SQLITE_OK, seedDb.TryExecuteSql("VACUUM")) << seedDb.GetLastError().c_str();
+        seedDb.CloseDb();
+        }
 
     if (filePath.DoesPathExist())
         {
-        ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << filePath.GetNameUtf8().c_str();
-        return;
+        ASSERT_EQ(BeFileNameStatus::Success, filePath.BeDeleteFile()) << filePath.GetNameUtf8().c_str();
         }
 
-    Utf8String createTableSql("CREATE TABLE t(Id INTEGER PRIMARY KEY");
-    for (int i = 0; i < scenario.m_colCount; i++)
-        {
-        createTableSql.append(",");
-        Utf8String colName = GetColumnName(i);
-        createTableSql.append(colName).append(" INTEGER");
-        }
-
-    createTableSql.append(")");
-
-    Utf8String insertSql;
-    if (scenario.IsSingleColumnMode())
-        insertSql.Sprintf("INSERT INTO t(%s) VALUES(random()/1000)", GetColumnName(scenario.GetSingleColIndex()).c_str());
-    else
-        {
-        insertSql.assign("INSERT INTO t(");
-        Utf8String valuesClause(") VALUES(");
-        for (int i = 0; i < scenario.GetOperationColCount(); i++)
-            {
-            if (i > 0)
-                {
-                insertSql.append(",");
-                valuesClause.append(",");
-                }
-
-            Utf8String colName = GetColumnName(i);
-            insertSql.append(colName);
-            valuesClause.append("random()/1000");
-            }
-
-        insertSql.append(valuesClause).append(")");
-        }
-
-    Db seedDb;
-    ASSERT_EQ(BE_SQLITE_OK, seedDb.CreateNewDb(filePath)) << filePath.GetNameUtf8().c_str();
-
-    ASSERT_EQ(BE_SQLITE_OK, seedDb.ExecuteSql(createTableSql.c_str())) << createTableSql.c_str() << " " << seedDb.GetLastError().c_str();
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(seedDb, insertSql.c_str())) << insertSql.c_str() << " " << seedDb.GetLastError().c_str();
-
-    for (int i = 0; i < s_initialRowCount; i++)
-        {
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetSql() << " " << seedDb.GetLastError().c_str();
-        stmt.Reset();
-        }
-
-    stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_OK, seedDb.SaveChanges());
-    seedDb.CloseDb();
-
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedFilePath, filePath)) << filePath.GetNameUtf8().c_str();
     ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << filePath.GetNameUtf8().c_str();
     }
 
