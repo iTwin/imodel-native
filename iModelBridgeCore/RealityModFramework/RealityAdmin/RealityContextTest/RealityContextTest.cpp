@@ -121,7 +121,7 @@ void Dispatch(UserManager* manager)
         int sleep = rand();
         if(!hatching)
             {
-            sleep %= (int)(2200 * (1.0f - (innactiveUsers/userCount)));
+            sleep %= (int)(2200 * (1.0f - (innactiveUsers/userCount))) + 1;
             if(s_keepRunning)
                 s_stats.PrintStats();
             }
@@ -874,7 +874,7 @@ void UserManager::Perform()
             Repopulate();
             }
 
-        } while (still_running);
+        } while (s_keepRunning);
     }
 
 ///*---------------------------------------------------------------------------------**//**
