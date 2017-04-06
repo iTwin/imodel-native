@@ -2,7 +2,7 @@
 #
 #     $Source: RealityModFrameworkBentleyDesktopClient.prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -13,25 +13,7 @@ BDC_LKG = $(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/
 always:
     @CreateSymLinks.py -d "$(BuildContext)PublicAPI/BentleyDesktopClient=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/PublicAPI"
     @CreateSymLinks.py    "$(BuildContext)Delivery/CCApi.dll=$(BuildContext)SubParts/Files/CCApi.dll"
-    @CreateSymLinks.py    "$(BuildContext)SubParts/Libs/CCApi.lib=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/Library/CCApi.lib"
-    @CreateSymLinks.py    "$(BuildContext)SubParts/Files/CCApi.dll=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/Delivery/CCApi.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Connect.Client.API.dll=$(BDC_LKG)Delivery/Bentley.Connect.Client.API.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Connect.Client.API.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Connect.Client.API.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Connect.Client.Service.Interface.dll=$(BDC_LKG)Delivery/Bentley.Connect.Client.Service.Interface.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Connect.Client.Service.Interface.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Connect.Client.Service.Interface.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Select.Shareable.dll=$(BDC_LKG)Delivery/Bentley.Select.Shareable.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Select.Shareable.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Select.Shareable.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Recommendation.API1.dll=$(BDC_LKG)Delivery/Bentley.Recommendation.API1.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Recommendation.API1.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Recommendation.API1.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Recommendation.ServiceContract1.dll=$(BDC_LKG)Delivery/Bentley.Recommendation.ServiceContract1.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Recommendation.ServiceContract1.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Recommendation.ServiceContract1.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Common.Logging.dll=$(BDC_LKG)NuGet/net40/Common.Logging.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Common.Logging.dll=$(BentleyDesktopClient_SubParts)Assemblies/Common.Logging.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Common.Logging.core.dll=$(BDC_LKG)NuGet/net40/Common.Logging.core.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Common.Logging.core.dll=$(BentleyDesktopClient_SubParts)Assemblies/Common.Logging.core.dll"
-    @CreateSymLinks.py "$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Cloud.ThickClient.dll=$(BDC_LKG)NuGet/net45/Bentley.Cloud.ThickClient.dll"
-    @CreateSymLinks.py "$(BuildContext)Delivery/DesktopClient/Bentley.Cloud.ThickClient.dll=$(BentleyDesktopClient_SubParts)Assemblies/Bentley.Cloud.ThickClient.dll"
-    
+
 
 
 
