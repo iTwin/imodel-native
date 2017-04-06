@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSChangeset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -241,8 +241,8 @@ WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState
     if (Format::SingeInstance == m_format && !m_instances.empty())
         {
         BeAssert(false);
-        WSChangeset::Instance* nullChangeset = nullptr;
-        return *nullChangeset;
+        WSChangeset::Instance* nullInstance = nullptr;
+        return *nullInstance;
         }
 
     m_instances.push_back(std::make_shared<Instance>());
