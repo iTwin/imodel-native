@@ -79,6 +79,10 @@ bool PointCloudVortex::ResetQuery( PThandle query )
     {
     return ptResetQuery(query);
     }
+bool PointCloudVortex::ResetQueryProgressive(PThandle query)
+    {
+    return ptResetQueryProgressive(query);
+    }
 void PointCloudVortex::SetQueryRGBMode( PThandle query, PtQueryRgbMode mode )
     {
     ptSetQueryRGBMode(query, mode);

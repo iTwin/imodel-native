@@ -53,11 +53,12 @@ enum PtRampType
 
 enum PtQueryDensity
     {
-    QUERY_DENSITY_FULL          = 0x01,
-    QUERY_DENSITY_VIEW          = 0X02,
-    QUERY_DENSITY_LIMIT         = 0X03,
-    QUERY_DENSITY_VIEW_COMPLETE = 0X04,
-    QUERY_DENSITY_SPATIAL       = 0x07,
+    QUERY_DENSITY_FULL              = 0x01,
+    QUERY_DENSITY_VIEW              = 0X02,
+    QUERY_DENSITY_LIMIT             = 0X03,
+    QUERY_DENSITY_VIEW_COMPLETE     = 0X04,
+    QUERY_DENSITY_SPATIAL           = 0x07,
+    QUERY_DENSITY_VIEW_PROGRESSIVE  = 0X08,
     };
 
 enum PtQueryRgbMode
@@ -101,6 +102,7 @@ struct PointCloudVortex
         //BEPOINTCLOUD_EXPORT static PThandle    CreateFrustumPointsCache( uint32_t maxPoints );
         BEPOINTCLOUD_EXPORT static PThandle    CreateFrustumPointsQuery();
         BEPOINTCLOUD_EXPORT static bool        ResetQuery( PThandle query );
+        BEPOINTCLOUD_EXPORT static bool        ResetQueryProgressive(PThandle query);
         BEPOINTCLOUD_EXPORT static void        SetQueryRGBMode( PThandle query, PtQueryRgbMode mode );
         BEPOINTCLOUD_EXPORT static bool        DeleteQuery( PThandle query );
         BEPOINTCLOUD_EXPORT static void        SetQueryScope( PThandle query, PThandle sceneOrCloudHandle );

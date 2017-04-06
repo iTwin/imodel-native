@@ -393,6 +393,8 @@ struct PointCloudQueryBuffers : public NonCopyableClass, public IPointCloudQuery
         BEPOINTCLOUD_EXPORT void SetClassificationChannel(PointCloudClassificationChannel* channel) { m_classifications = channel; if (channel) channel->ChangeCapacity(m_capacity);}
         BEPOINTCLOUD_EXPORT void ChangeCapacity(uint32_t capacity);
 
+        BEPOINTCLOUD_EXPORT uint32_t GetCapacity() const                                            { return _GetCapacity(); }
+
         BEPOINTCLOUD_EXPORT PointCloudSymbologyChannelVectorCR  GetPointCloudSymbologyChannelVector() const { return m_symbologyChannels; }
         BEPOINTCLOUD_EXPORT void                                ClearSymbologyChannels()                    { m_symbologyChannels.clear(); }
         BEPOINTCLOUD_EXPORT void                                SetUserChannelBuffers(UserChannelQueryBuffers* buffers);
