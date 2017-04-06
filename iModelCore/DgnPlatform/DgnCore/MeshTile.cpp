@@ -3212,6 +3212,7 @@ bool TileDisplayParams::IsStrictlyLessThan(TileDisplayParamsCR rhs) const
     TEST_LESS_THAN(m_textureImage.get(), rhs.m_textureImage.get());
     TEST_LESS_THAN(m_linePixels, rhs.m_linePixels);
     TEST_LESS_THAN(static_cast<uint32_t>(m_class), static_cast<uint32_t>(rhs.m_class));
+    TEST_LESS_THAN(m_gradient.get(), rhs.m_gradient.get());
 
     if (m_ignoreLighting != rhs.m_ignoreLighting)
         return m_ignoreLighting;
@@ -3234,6 +3235,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_linePixels);
+    TEST_EQUAL(m_gradient);
 
     return true;
     }
