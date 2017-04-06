@@ -106,7 +106,7 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     struct Loader : Dgn::TileTree::TileLoader
         {
-        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
         BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR());};
         };
 
@@ -127,7 +127,7 @@ private:
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
-    Utf8String _GetTileName() const override {return GetChildFile();}
+    Utf8String _GetTileCacheKey() const override {return GetChildFile();}
 
 public:
     Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}

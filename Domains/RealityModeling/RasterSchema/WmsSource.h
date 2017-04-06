@@ -45,7 +45,7 @@ private:
     static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
     static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
     Utf8CP _GetName() const override {return "WmsSource";}
-    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) const override;
+    Utf8String _ConstructTileResource(Dgn::TileTree::TileCR tile) const override;
 
     StatusInt ComputeLinearApproximation(TransformR cartesianToWorld);
 
@@ -92,7 +92,7 @@ protected:
         Http::Credentials m_credentials;
         Http::Credentials m_proxyCredentials;
 
-        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
+        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
         virtual ~WmsTileLoader() {}
 
         folly::Future<BentleyStatus> _GetFromSource() override;
