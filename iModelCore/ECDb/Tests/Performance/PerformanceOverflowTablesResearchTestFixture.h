@@ -935,6 +935,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsert(Scenari
         }
 
     StopWatch timer(true);
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Begin());
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, insertSql.c_str())) << insertSql.c_str() << " " << db.GetLastError().c_str();
 
@@ -948,7 +949,8 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunInsert(Scenari
 
     timer.Stop();
     stmt.Finalize();
-    db.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Commit());
+    ASSERT_EQ(BE_SQLITE_OK, db.TryExecuteSql("VACUUM"));
     db.CloseDb();
     uint64_t fileSizeAfter = INT64_C(0);
     ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
@@ -990,6 +992,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdate(Scenari
         }
 
     StopWatch timer(true);
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Begin());
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
 
@@ -1006,7 +1009,8 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunUpdate(Scenari
 
     timer.Stop();
     stmt.Finalize();
-    db.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Commit());
+    ASSERT_EQ(BE_SQLITE_OK, db.TryExecuteSql("VACUUM"));
     db.CloseDb();
     uint64_t fileSizeAfter = INT64_C(0);
     ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
@@ -1028,6 +1032,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
     ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeBefore));
 
     StopWatch timer(true);
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Begin());
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "DELETE FROM t WHERE Id=?")) << db.GetLastError().c_str();
 
@@ -1044,7 +1049,8 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunDelete(Scenari
 
     timer.Stop();
     stmt.Finalize();
-    db.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db.GetDefaultTransaction()->Commit());
+    ASSERT_EQ(BE_SQLITE_OK, db.TryExecuteSql("VACUUM"));
     db.CloseDb();
     uint64_t fileSizeAfter = INT64_C(0);
     ASSERT_EQ(BeFileNameStatus::Success, testFilePath.GetFileSize(fileSizeAfter));
@@ -1153,7 +1159,8 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::SetupTestDb(Db& d
         }
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedFilePath, filePath)) << filePath.GetNameUtf8().c_str();
-    ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << filePath.GetNameUtf8().c_str();
+    //we VACUUM the file after the set up is completed. Vacuuming requires that no transaction is active
+    ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::No))) << filePath.GetNameUtf8().c_str();
     }
 
 //---------------------------------------------------------------------------------------
