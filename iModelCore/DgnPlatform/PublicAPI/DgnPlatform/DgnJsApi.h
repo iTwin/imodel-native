@@ -779,7 +779,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
     static JsDgnGeometryPart* Create(JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db, DgnCode::CreateEmpty())); // WIP: must pass in a valid code!
+        return new JsDgnGeometryPart(*DgnGeometryPart::Create(db->m_db->GetDictionaryModel())); // WIP: add name parameter?
         }
     BentleyStatus Insert() {return m_value->GetDgnDb().Elements().Insert(*m_value).IsValid() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;}
 };

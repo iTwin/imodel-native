@@ -650,4 +650,13 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
+    <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="DgnPlatformDLL" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+
 </BuildContext>
