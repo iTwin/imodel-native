@@ -46,7 +46,6 @@ HANDLER_DEFINE_MEMBERS(Repository)
 namespace WebMercator
 {
 HANDLER_DEFINE_MEMBERS(ModelHandler)
-HANDLER_DEFINE_MEMBERS(StreetMapHandler)
 };
 
 namespace dgn_ElementHandler
@@ -121,7 +120,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(Sheet::Handlers::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
-    RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Role::GetHandler());
     RegisterHandler(dgn_ModelHandler::Information::GetHandler());
     RegisterHandler(dgn_ModelHandler::InformationRecord::GetHandler());
