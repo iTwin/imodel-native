@@ -2318,9 +2318,6 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     {
     Json::Reader    reader;
     Json::Value     cesiumBatchTableHeader;
-    // We copy the batch file and clear data from the block so we can re-fill it with exactly the data we need
-    //bvector<uint8_t> batchFile(*this);
-    //this->clear();
     auto batchTable = cesiumData;
     uint32_t version = *(uint32_t*)(batchTable + sizeof(uint32_t));
     assert(version == 1);
@@ -2510,13 +2507,15 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
         auto transform = Transform::FromIdentity();
-        //transform = Transform::From(333011, 4728426, 0);
+        bool isTransformIdentity = true;
         if (!RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];
             Transform rtcTransform = Transform::From(center[0].asDouble(), center[1].asDouble(), center[2].asDouble());
             transform = Transform::FromProduct(rtcTransform, transform);
+            isTransformIdentity = transform.IsIdentity();
             }
+        // NEEDS_WORK_SM_STREAMING : Ray's TilePublisher stores vertices using the Z-up convention while CC follows the 3DTiles spec which stores vertices using the Y-up convention
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
@@ -2531,7 +2530,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
                 m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
-                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                if (isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
 
             }
@@ -2540,8 +2539,9 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (float*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
-                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                // The 3DTiles spec suggests using y-up so convert those back to z-up here
+                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], -point_array[3 * i + 2], point_array[3 * i + 1]);
+                if (isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
             }
         }
