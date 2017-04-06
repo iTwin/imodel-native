@@ -264,12 +264,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="StreetMapModel" displayLabel="Street Map Model">
-        <BaseClass>WebMercatorModel</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
         <ECCustomAttributes>

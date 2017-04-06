@@ -488,7 +488,7 @@ struct RectanglePoints
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
-                T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+                T_Super(db,Transform::FromIdentity(), nullptr, nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())

@@ -358,4 +358,26 @@
         <BaseClass>TestElement</BaseClass>
         <ECProperty propertyName="p2d" typeName="point2d"/>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="AnalyticalPipeDrivesPhysicalPipes" strengthDirection="Backward" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="drives">
+            <Class class="AnalyticalPipe"/>
+        </Source>
+        <!-- 0..* - many AnalyticalPipes can refer to the same PhysicalPipe, or there may be no AnalyticalPipes that refer to a given PhysicalPipe. -->
+        <!-- 0..1 - a given AnalyticalPipe refers to only one PhysicalPipe, or the AnalyticalPipe may be a TBD and have no PhysicalPipe -->
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is driven by">
+            <Class class="PhysicalPipe"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="AnalyticalPipe" >
+        <BaseClass>TestElement</BaseClass>
+        <ECNavigationProperty propertyName="PhysicalPipe" relationshipName="AnalyticalPipeDrivesPhysicalPipes" direction="Forward" readOnly="True">
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PhysicalPipe" >
+        <BaseClass>TestElement</BaseClass>
+    </ECEntityClass>
+
 </ECSchema>

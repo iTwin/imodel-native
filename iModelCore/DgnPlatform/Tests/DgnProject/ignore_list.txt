@@ -43,3 +43,5 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
 # contains ECClassId column or not
 TransactionManagerTests.TestRelationshipLinkTableTracking
 
+# Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
+DgnElementTests.NavigationPropertyOnTargetDelete
