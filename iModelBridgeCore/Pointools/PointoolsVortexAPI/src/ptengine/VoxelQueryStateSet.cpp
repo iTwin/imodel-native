@@ -60,7 +60,7 @@ namespace pointsengine
         return *this;
     }
 
-    unsigned unsigned int VoxelQueryStateSet::getNumItems(void) const
+    unsigned int VoxelQueryStateSet::getNumItems(void) const
     {
         return static_cast<int>(voxelQueryStates.size());
     }
