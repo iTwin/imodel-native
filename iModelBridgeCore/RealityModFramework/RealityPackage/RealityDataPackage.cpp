@@ -17,6 +17,7 @@ Utf8CP ImageryData::ElementName = PACKAGE_ELEMENT_ImageryData;
 Utf8CP ModelData::ElementName = PACKAGE_ELEMENT_ModelData;
 Utf8CP PinnedData::ElementName = PACKAGE_ELEMENT_PinnedData;
 Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
+Utf8CP UndefinedData::ElementName = PACKAGE_ELEMENT_UndefinedData;
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                Alain.Robert      12/2016
@@ -242,14 +243,16 @@ void RealityDataPackage::SetMinorVersion(uint32_t minor) { m_minorVersion = mino
 bool RealityDataPackage::HasUnknownElements() const {return m_hasUnknownElements;}
 void RealityDataPackage::SetUnknownElements(bool hasUnknownElements) { m_hasUnknownElements = hasUnknownElements; }
 
-RealityDataPackage::ImageryGroup const& RealityDataPackage::GetImageryGroup() const {return m_imagery;}    
-RealityDataPackage::ImageryGroup&       RealityDataPackage::GetImageryGroupR()      {return m_imagery;}   
-RealityDataPackage::ModelGroup const&   RealityDataPackage::GetModelGroup() const   {return m_model;}    
-RealityDataPackage::ModelGroup&         RealityDataPackage::GetModelGroupR()        {return m_model;}    
-RealityDataPackage::PinnedGroup const&  RealityDataPackage::GetPinnedGroup() const  {return m_pinned;}    
-RealityDataPackage::PinnedGroup&        RealityDataPackage::GetPinnedGroupR()       {return m_pinned;}    
-RealityDataPackage::TerrainGroup const& RealityDataPackage::GetTerrainGroup() const {return m_terrain;}    
-RealityDataPackage::TerrainGroup&       RealityDataPackage::GetTerrainGroupR()      {return m_terrain;}   
+RealityDataPackage::ImageryGroup const&   RealityDataPackage::GetImageryGroup() const   {return m_imagery;}    
+RealityDataPackage::ImageryGroup&         RealityDataPackage::GetImageryGroupR()        {return m_imagery;}   
+RealityDataPackage::ModelGroup const&     RealityDataPackage::GetModelGroup() const     {return m_model;}    
+RealityDataPackage::ModelGroup&           RealityDataPackage::GetModelGroupR()          {return m_model;}    
+RealityDataPackage::PinnedGroup const&    RealityDataPackage::GetPinnedGroup() const    {return m_pinned;}    
+RealityDataPackage::PinnedGroup&          RealityDataPackage::GetPinnedGroupR()         {return m_pinned;}    
+RealityDataPackage::TerrainGroup const&   RealityDataPackage::GetTerrainGroup() const   {return m_terrain;}    
+RealityDataPackage::TerrainGroup&         RealityDataPackage::GetTerrainGroupR()        {return m_terrain;}   
+RealityDataPackage::UndefinedGroup const& RealityDataPackage::GetUndefinedGroup() const {return m_undefined;}    
+RealityDataPackage::UndefinedGroup&       RealityDataPackage::GetUndefinedGroupR()      {return m_undefined;}   
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -563,3 +566,16 @@ TerrainDataPtr TerrainData::Create(RealityDataSourceR dataSource)
     return new TerrainData(dataSource);
     }
 
+//=======================================================================================
+//                              UndefinedData
+//=======================================================================================
+UndefinedData::UndefinedData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
+UndefinedData::~UndefinedData(){}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Alain.Robert  04/2017
+//----------------------------------------------------------------------------------------
+UndefinedDataPtr UndefinedData::Create(RealityDataSourceR dataSource)
+    {
+    return new UndefinedData(dataSource);
+    }

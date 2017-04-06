@@ -775,6 +775,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     #define RPACKAGE_PINDATA_A_ID                   "6455288846-3552"
     #define RPACKAGE_PINDATA_A_NAME                 "Picture of my house in 2016 during winter"
+    #define RPACKAGE_PINDATA_A_DATASET              "WinterPicts"
     #define RPACKAGE_PINDATA_A_LONG                 -71.2457
     #define RPACKAGE_PINDATA_A_LAT                  47.4876
     #define RPACKAGE_PINDATA_A_SRC_1_URI_PART1      "./pinned/myHouse.jpeg"
@@ -930,6 +931,25 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_B_SRC_4_METADATA       "https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f"
     #define RPACKAGE_TERDATA_B_SRC_4_NUMSIS         0
     #define RPACKAGE_TERDATA_B_SRC_4_GEOCS          "EPSG:4326;GEOID"
+
+
+    #define RPACKAGE_UNDDATA_A_ID                   "LionHead_ContextCaptureSourceData"
+    #define RPACKAGE_UNDDATA_A_NAME                 "Lion Head Status Input data"
+    #define RPACKAGE_UNDDATA_A_DATASET              "LionHead-333"
+    #define RPACKAGE_UNDDATA_A_SRC_1_URI_PART1      "http://connect-realitydataservices.bentley.com/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/3c6c6b90-da34-40aa-ad57-4f49bc65ee60~2FLionHead~2FInput~2FLionProject.ccs?/file"
+    #define RPACKAGE_UNDDATA_A_SRC_1_URI_PART2      ""
+    #define RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE       "CCCS-Project"
+    #define RPACKAGE_UNDDATA_A_SRC_1_ID             "3c6c6b90-da34-40aa-ad57-4f49bc65ee60"
+    #define RPACKAGE_UNDDATA_A_SRC_1_COPYRIGHT      "City of Paris"
+    #define RPACKAGE_UNDDATA_A_SRC_1_PROVIDER       "CITY-PARIS"
+    #define RPACKAGE_UNDDATA_A_SRC_1_SERVERLOGINKEY     "BentleyCONNECT"
+    #define RPACKAGE_UNDDATA_A_SRC_1_SERVERLOGINMETHOD  "CUSTOM"
+    #define RPACKAGE_UNDDATA_A_SRC_1_SIZE           9930
+    #define RPACKAGE_UNDDATA_A_SRC_1_METTYPE        ""
+    #define RPACKAGE_UNDDATA_A_SRC_1_METADATA       "http://connect-realitydataservices.bentley.com/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/3c6c6b90-da34-40aa-ad57-4f49bc65ee60~2FLionHead~2FInput~2FLionProject.xml?/file"
+    #define RPACKAGE_UNDDATA_A_SRC_1_NUMSIS         0
+    #define RPACKAGE_UNDDATA_A_SRC_1_GEOCS          "EPSG:4326;GEOID"
+
 
     #define RPACKAGE_JPEG2                  "./imagery/map.jpeg"
     #define RPACKAGE_JPEG_LL_x2             4.987654321
@@ -1435,6 +1455,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
             "<!-- Pin data can have id and name like any other data but is not always specified -->"
             "<Id>" RPACKAGE_PINDATA_A_ID "</Id>"
             "<Name>" RPACKAGE_PINDATA_A_NAME "</Name>"
+            "<Dataset>" RPACKAGE_PINDATA_A_DATASET "</Dataset>"
             "<Sources>"
                 "<!-- Notice here that no xml elements are associated with the image. It may be possible that the image contains"
                      "all necessary information as part of its EXIF fields -->"
@@ -1566,8 +1587,37 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
             "</Sources>"
         "</TerrainData>"
     "</TerrainGroup>"
+    "<UndefinedGroup>"
+        "<UndefinedData>"
+            "<Id>" RPACKAGE_UNDDATA_A_ID "</Id>"
+            "<Name>" RPACKAGE_UNDDATA_A_NAME "</Name>"
+            "<Dataset>" RPACKAGE_UNDDATA_A_DATASET "</Dataset>"
+            "<Sources>"                "<!-- This is a reference to a CCCS-Project type data. It is a project to be opened by a specific application"
+                 "in order to generate 3D Model data. Since the data does not yet represent a consumable data in itself"
+                 "it is inserted in the Undefined group. -->"
+                "<Source uri='" RPACKAGE_UNDDATA_A_SRC_1_URI_PART1 "' type='" RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE "'>"
+                    "<Id>" RPACKAGE_UNDDATA_A_SRC_1_ID "</Id>"
+                    "<Copyright>" RPACKAGE_UNDDATA_A_SRC_1_COPYRIGHT "</Copyright>"
+                    "<Provider>" RPACKAGE_UNDDATA_A_SRC_1_PROVIDER "</Provider>"
+                    "<ServerLoginKey>" RPACKAGE_UNDDATA_A_SRC_1_SERVERLOGINKEY "</ServerLoginKey>"
+                    "<ServerLoginMethod>" RPACKAGE_UNDDATA_A_SRC_1_SERVERLOGINMETHOD "</ServerLoginMethod>"
+                    "<Size>" STRINGIFY(RPACKAGE_UNDDATA_A_SRC_1_SIZE) "</Size>"
+                    "<Metadata>" RPACKAGE_UNDDATA_A_SRC_1_METADATA "</Metadata>"
+                    "<GeoCS>" RPACKAGE_UNDDATA_A_SRC_1_GEOCS "</GeoCS>"            
+                "</Source>"
+            "</Sources>"
+        "</UndefinedData>"
+    "</UndefinedGroup>"
 "</RealityDataPackage>";
 
+#if (0)
+
+
+
+
+
+
+#endif
     WString parseError;
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
     RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
@@ -1941,6 +1991,13 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_TYPE, pPackage->GetModelGroup()[0]->GetSource(0).GetType().c_str());
 
     // Pinned
+    ASSERT_TRUE(pPackage->GetPinnedGroup().size() == 4);
+
+    ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetNumSources() == 2);
+    ASSERT_STREQ(RPACKAGE_PINDATA_A_ID, pPackage->GetPinnedGroup()[0]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_A_NAME, pPackage->GetPinnedGroup()[0]->GetDataName().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_A_DATASET, pPackage->GetPinnedGroup()[0]->GetDataset().c_str());
+
     ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetSource(0).GetType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
@@ -1951,10 +2008,45 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().latitude, RPACKAGE_PINDATA_B_LAT, LONGLAT_EPSILON);
 
     // Terrain
+    ASSERT_TRUE(pPackage->GetTerrainGroup().size() == 2);
+
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_ID, pPackage->GetTerrainGroup()[0]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_NAME, pPackage->GetTerrainGroup()[0]->GetDataName().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_DATASET, pPackage->GetTerrainGroup()[0]->GetDataset().c_str());
+
     ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[0]->GetSource(0).GetType().c_str());
+
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[1]->GetNumSources() == 4);
     ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[1]->GetSource(0).GetType().c_str());
+
+
+    // Undefined group
+    ASSERT_TRUE(pPackage->GetUndefinedGroup().size() == 1);
+
+    // image data 1
+    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_ID, pPackage->GetUndefinedGroup()[0]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_NAME, pPackage->GetUndefinedGroup()[0]->GetDataName().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_DATASET, pPackage->GetUndefinedGroup()[0]->GetDataset().c_str());
+
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetElementName());
+
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_PART1, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_COPYRIGHT, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ("", pPackage->GetUndefinedGroup()[0]->GetSource(0).GetTermOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_ID, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_PROVIDER, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_UNDDATA_A_SRC_1_SIZE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetSize());
+
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_METADATA, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetMetadata().c_str());
+
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_GEOCS, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetSource(0).GetSisterFiles().size() == 0);
     }
 
 

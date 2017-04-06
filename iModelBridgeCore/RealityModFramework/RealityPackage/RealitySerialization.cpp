@@ -33,6 +33,7 @@ RealityPackageStatus RealityDataSerializer::ReadImageryGroup(RealityDataPackageR
 RealityPackageStatus RealityDataSerializer::ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadModelGroup(package, xmlDom); }
 RealityPackageStatus RealityDataSerializer::ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadPinnedGroup(package, xmlDom); }
 RealityPackageStatus RealityDataSerializer::ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadTerrainGroup(package, xmlDom); }
+RealityPackageStatus RealityDataSerializer::ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadUndefinedGroup(package, xmlDom); }
 RealityPackageStatus RealityDataSerializer::ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode) { return _ReadUnknownElements(package, pNode); }
 RealityDataSourcePtr RealityDataSerializer::ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode) { return _ReadSource(status, pNode); }
 MultiBandSourcePtr   RealityDataSerializer::ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode) { return _ReadMultiBandSource(status, pNode); }
@@ -42,6 +43,7 @@ RealityPackageStatus RealityDataSerializer::WriteImageryGroup(BeXmlNodeR node, R
 RealityPackageStatus RealityDataSerializer::WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WriteModelGroup(node, package); }
 RealityPackageStatus RealityDataSerializer::WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WritePinnedGroup(node, package); }
 RealityPackageStatus RealityDataSerializer::WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WriteTerrainGroup(node, package); }
+RealityPackageStatus RealityDataSerializer::WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WriteUndefinedGroup(node, package); }
 RealityPackageStatus RealityDataSerializer::WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const { return _WriteSource(node, source); }
 
 //----------------------------------------------------------------------------------------
@@ -214,6 +216,14 @@ RealityPackageStatus RealityDataSerializer::_ReadTerrainGroup(RealityDataPackage
     };
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                    04/2017
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::_ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+    {
+    return RealityPackageStatus::UnknownError;
+    };
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    8/2016
 // &&JFC TODO: Not efficient, find a better way to do this.
 //-------------------------------------------------------------------------------------
@@ -236,6 +246,7 @@ RealityPackageStatus RealityDataSerializer::_ReadUnknownElements(RealityDataPack
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PinnedGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_PinnedData) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_Position) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Area) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_TerrainGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_TerrainData) ||
+        0 == pNode->NameStricmp(PACKAGE_ELEMENT_UndefinedGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_UndefinedData) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_Sources) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Source) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_Copyright) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Id) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_Provider) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Size) ||
@@ -597,6 +608,14 @@ RealityPackageStatus RealityDataSerializer::_WritePinnedGroup(BeXmlNodeR node, R
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializer::_WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+    {
+    return RealityPackageStatus::UnknownError;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                    04/2017
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::_WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
     return RealityPackageStatus::UnknownError;
     }

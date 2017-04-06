@@ -79,6 +79,7 @@ public:
     typedef bvector<ModelDataPtr>     ModelGroup;
     typedef bvector<PinnedDataPtr>    PinnedGroup;
     typedef bvector<TerrainDataPtr>   TerrainGroup;
+    typedef bvector<UndefinedDataPtr> UndefinedGroup;
     
     //! Create a new empty package.
     REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(Utf8CP name);
@@ -132,12 +133,14 @@ public:
     REALITYPACKAGE_EXPORT ModelGroup const& GetModelGroup() const;
     REALITYPACKAGE_EXPORT PinnedGroup const& GetPinnedGroup() const;
     REALITYPACKAGE_EXPORT TerrainGroup const& GetTerrainGroup() const;
+    REALITYPACKAGE_EXPORT UndefinedGroup const& GetUndefinedGroup() const;
 
     //! A read-write access to the data source container.
     REALITYPACKAGE_EXPORT ImageryGroup& GetImageryGroupR();    
     REALITYPACKAGE_EXPORT ModelGroup& GetModelGroupR();    
     REALITYPACKAGE_EXPORT PinnedGroup& GetPinnedGroupR();    
     REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();    
+    REALITYPACKAGE_EXPORT UndefinedGroup& GetUndefinedGroupR();    
 
     //! Return true if during parsing unknown element(s) were found. That may indicate that new elements were added in future version of the package
     //! and these elements were ignored. Package is valid but only known elements were loaded.
@@ -180,6 +183,7 @@ private:
     ModelGroup m_model;
     PinnedGroup m_pinned;
     TerrainGroup m_terrain;
+    UndefinedGroup m_undefined;
 };
 
 //=======================================================================================
@@ -360,6 +364,28 @@ struct TerrainData: public PackageRealityData
         explicit TerrainData(){}; // for persistence
         TerrainData(RealityDataSourceR dataSource);
         virtual ~TerrainData();
+    };
+
+//=====================================================================================
+//! Undefined data type specify the data type for undefined data.
+//! @bsiclass                                     Alain.Robert               4/2017
+//=====================================================================================
+struct UndefinedData: public PackageRealityData
+    {
+    DEFINE_T_SUPER(PackageRealityData)
+
+    public:
+        friend RealityDataSerializer;
+
+        //! Create a new UndefinedData.
+        REALITYPACKAGE_EXPORT static UndefinedDataPtr Create(RealityDataSourceR dataSource);
+
+        static Utf8CP ElementName;
+
+    private:
+        explicit UndefinedData(){}; // for persistence
+        UndefinedData(RealityDataSourceR dataSource);
+        virtual ~UndefinedData();
     };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

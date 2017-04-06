@@ -323,17 +323,32 @@ StatusInt RealityDataBase::SetClassificationByTag(Utf8CP classificationTag)
     return GetClassificationFromTag(m_classification, classificationTag);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
 const bvector<GeoPoint2d>& RealityDataBase::GetFootprint() const 
     { 
-    if(m_footprint.size() == 0 && m_footprintString.length() > 0)
-        {
-        m_footprint = StringToFootprint(m_footprintString, m_coordSys);
-        }
-        return m_footprint; 
+    return m_footprint; 
     }
 
-void RealityDataBase::SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys) { m_coordSys = coordSys; m_footprint = footprint; m_footprintString = ""; m_footprintExtentComputed = false; }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataBase::SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys) 
+    {
+    // The given footprint can be empty (remove footprint). If not it must define a shape and clossing point be equal to start point 
+    BeAssert((footprint.size() == 0) || 
+             ((footprint.size() >= 4) && (footprint[0].latitude == footprint[footprint.size() - 1].latitude) && (footprint[0].longitude == footprint[footprint.size() - 1].longitude)));
 
+    m_coordSys = coordSys; 
+    m_footprint = footprint; 
+    m_footprintString = ""; 
+    m_footprintExtentComputed = false; 
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetFootprintString() const 
     { 
     if (m_footprintString.length() == 0 && m_footprint.size() > 0)
@@ -343,21 +358,42 @@ Utf8String RealityDataBase::GetFootprintString() const
     return m_footprintString;
     }
 
-void RealityDataBase::SetFootprintString(Utf8CP footprint) { m_footprintString = footprint; m_footprint.clear(); m_coordSys = ""; m_footprintExtentComputed = false; }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataBase::SetFootprintString(Utf8CP footprint) 
+    { 
+    m_footprintString = footprint; 
+    m_footprint.clear(); 
+    m_coordSys = ""; 
+    m_footprintExtentComputed = false; 
 
+    m_footprint = StringToFootprint(m_footprintString, m_coordSys);
+    // The given footprint can be empty (remove footprint). If not it must define a shape and clossing point be equal to start point 
+    BeAssert((m_footprint.size() == 0) || 
+             ((m_footprint.size() >= 4) && (m_footprint[0].latitude == m_footprint[m_footprint.size() - 1].latitude) && (m_footprint[0].longitude == m_footprint[m_footprint.size() - 1].longitude)));
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
     {
-    Utf8String filter = "{\"points\":[";
-    for (int i = 0; i < footprint.size(); i++)
+    Utf8String filter = "{\\\"points\\\":[";
+    for (int i = 0; i < footprint.size() - 1; i++)
         {
         filter.append(Utf8PrintfString("[%f,%f],", footprint[i].longitude, footprint[i].latitude));
         }
-    filter.append(Utf8PrintfString("[%f,%f],", footprint[0].longitude, footprint[0].latitude));//close the box
-    filter.append(Utf8PrintfString("]], \"coordinate_system\":\"%lu\"}", coordSys));
+    filter.append(Utf8PrintfString("[%f,%f]", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
+    filter.append(Utf8PrintfString("], \\\"coordinate_system\\\":\\\"%s\\\"}", coordSys));
 
     return filter;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
 bvector<GeoPoint2d> RealityDataBase::StringToFootprint(Utf8String footprintStr, Utf8String& coordSys)
     {
     coordSys = footprintStr;
