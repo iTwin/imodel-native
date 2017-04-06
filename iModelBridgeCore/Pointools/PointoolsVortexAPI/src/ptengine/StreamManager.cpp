@@ -584,6 +584,7 @@ void StreamManager::unload(Voxel *voxel, bool new_ooc, float am, GlobalPagerData
 
 void StreamManager::load(Voxel *voxel, bool new_ooc, float am, GlobalPagerData &globalPagerData, PointsPager::Pager &pager, float lodRead)
 {
+
     std::unique_lock<std::mutex> vlock(voxel->mutex(), std::try_to_lock );
 
 	if (vlock.owns_lock())

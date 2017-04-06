@@ -738,6 +738,15 @@
     <ClCompile Include="src\vortexobjects\IClashTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ptengine\Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ptengine\VoxelQueryStateSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ptengine\VoxelQueryStateRemoveVisitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\debug.h">
@@ -1815,6 +1824,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\vortexobjects\VortexObjects_import.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ptengine\VoxelQueryStateSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ptengine\VoxelQueryStateRemoveVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

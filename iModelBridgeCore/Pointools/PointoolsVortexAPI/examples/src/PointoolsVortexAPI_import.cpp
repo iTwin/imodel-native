@@ -282,6 +282,7 @@ PTSETQUERYSCOPE ptSetQueryScope = 0;
 PTSETQUERYLAYERMASK ptSetQueryLayerMask = 0;
 
 PTRESETQUERY ptResetQuery = 0;
+PTRESETQUERY ptResetQueryProgressive = 0;
 PTDELETEQUERY ptDeleteQuery = 0;
 
 PTSETQUERYRGBMODE ptSetQueryRGBMode = 0;
@@ -670,7 +671,8 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptCreateKNNQuery = (PTCREATEKNNQUERY) GetAPIFunc("ptCreateKNNQuery");
 
 		ptResetQuery = (PTRESETQUERY) GetAPIFunc("ptResetQuery");
-		ptDeleteQuery = (PTDELETEQUERY) GetAPIFunc("ptDeleteQuery");
+        ptResetQueryProgressive = (PTRESETQUERYPROGRESSIVE)GetAPIFunc("ptResetQueryProgressive");
+        ptDeleteQuery = (PTDELETEQUERY) GetAPIFunc("ptDeleteQuery");
 
 		ptSetQueryScope = (PTSETQUERYSCOPE) GetAPIFunc("ptSetQueryScope");
 		ptSetQueryLayerMask = (PTSETQUERYLAYERMASK) GetAPIFunc("ptSetQueryLayerMask");

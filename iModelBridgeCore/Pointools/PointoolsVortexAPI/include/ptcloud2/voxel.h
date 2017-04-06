@@ -16,6 +16,7 @@
 #include <ptds/DataSourceReadSet.h>
 #include <ptds/DataSource.h>
 #include <ptengine/VoxelLODSet.h>
+#include <ptengine/VoxelQueryStateSet.h>
 
 #if defined (BENTLEY_WIN32) 
 #include <omp.h>						// OpenMP multi-threading support
@@ -186,7 +187,10 @@ namespace pcloud
 		float				am;
 		bool				new_ooc;
 
-		pointsengine::VoxelLODSet	voxelLODSet;
+		pointsengine::VoxelLODSet	                voxelLODSet;
+        pointsengine::VoxelQueryStateSet            voxelQueryStateSet;
+
+        pointsengine::VoxelQueryStateSet &          getVoxelQueryStateSet   (void)      {return voxelQueryStateSet;}
 
 		/* usage metric, used in lru computation - suspect redundancy */ 
 		float usage() const { return _usage; }

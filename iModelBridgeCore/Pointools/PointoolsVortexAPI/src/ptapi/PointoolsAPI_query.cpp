@@ -89,10 +89,14 @@ namespace querydetail
 	/* query base class */
 	class Query
 	{
+    public:
+        typedef unsigned short  ProgressiveCounter;
+
 	public:
 		Query()
 		{
 			resetQuery();
+            resetQueryProgressive();
 
 			density = PT_QUERY_DENSITY_VIEW;
 			densityCoeff = 1.0f;
@@ -103,6 +107,8 @@ namespace querydetail
 			pcloudOnly = 0;
 			sceneOnly = 0;
 			layerMask = 255;
+
+            setQueryHandle(PTV_INVALID_HANDLE);
 		}
 		//---------------------------------------------------------------------
 		virtual ~Query()
@@ -116,6 +122,21 @@ namespace querydetail
 			lastVoxel = 0;
 			voxels = 0;
 		}
+        //---------------------------------------------------------------------
+        void resetQueryProgressive()
+        {
+            setProgressiveCounter(0);
+        }
+        //---------------------------------------------------------------------
+        void setQueryHandle(PThandle handle)
+        {
+            queryHandle = handle;
+        }
+
+        PThandle getQueryHandle(void)
+        {
+            return queryHandle;
+        }
 
 		void setLastPartiallyIteratedVoxel(pcloud::Voxel *voxel)
 		{
@@ -161,6 +182,17 @@ namespace querydetail
 		{
 			layerMask = layer_mask;
 		}
+
+        void setProgressiveCounter(ProgressiveCounter c)
+        {
+            progressiveCounter = c;
+        }
+
+        ProgressiveCounter getProgressiveCounter(void)
+        {
+            return progressiveCounter;
+        }
+
 		//---------------------------------------------------------------------
 		PTenum			getDensityType() const		{ return density; }
 		float			getDensityCoeff() const		{ return densityCoeff; }
@@ -204,16 +236,19 @@ namespace querydetail
 
 	protected:
 
-		pcloud::Voxel	*lastVoxel;			// last voxel query returned points from, used to continue query
-		int				lastPnt;			// last point delivered, used to continue query when buffer full
-		float			densityCoeff;		// den coeff, meaning depends on density type
-		int64_t			pointLimit;			// total number of points limit
-		bool			gather;			
-		PTenum			density;			// density type
-		PTenum			rgbMode;		
-		int64_t			pointCount;			// point count of points returned
-		PThandle		scope;				// point cloud or scene (pod) scope
-		uint			layerMask;
+        PThandle                queryHandle;
+        ProgressiveCounter      progressiveCounter;
+
+		pcloud::Voxel	       *lastVoxel;			// last voxel query returned points from, used to continue query
+		int				        lastPnt;			// last point delivered, used to continue query when buffer full
+		float			        densityCoeff;		// den coeff, meaning depends on density type
+		int64_t			        pointLimit;			// total number of points limit
+		bool			        gather;			
+		PTenum			        density;			// density type
+		PTenum			        rgbMode;		
+		int64_t			        pointCount;			// point count of points returned
+		PThandle		        scope;				// point cloud or scene (pod) scope
+		uint			        layerMask;
 
 		static pcloud::Voxel *	lastPartiallyIteratedVoxel;
 		static float			lastPartiallyIteratedVoxelUnloadLOD;
@@ -416,6 +451,7 @@ namespace querydetail
 				break;
 
 			case PT_QUERY_DENSITY_VIEW:						// current view based density
+            case PT_QUERY_DENSITY_VIEW_PROGRESSIVE:
 				amount = densityCoeff * vox->getRequestLOD();
 				break;
 
@@ -509,10 +545,10 @@ namespace querydetail
 
 		ReadPoints	(void)
 		{
-			ReadPoints(NULL, 0, NULL);
+			ReadPoints(NULL, NULL, 0, NULL);
 		}
 
-		ReadPoints( 
+		ReadPoints( Query           *query,
 					NodeCondition	*condition, 
 					int				geomBuffersize, 
 					T				*geomBuffer, 
@@ -536,6 +572,8 @@ namespace querydetail
 					)
 			: C(condition)
 		{
+            setQuery(query);
+
 			rwPos.reset();
 			rwPos.continueFrom = continueFromVoxel;
 			rwPos.continuePnt = continueFromPnt;
@@ -596,7 +634,17 @@ namespace querydetail
 				uchannels[c] = _ptGetUserChannel(pointChannelsReq[c]);
 			}
 		}
-		//---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        void setQuery(Query *q)
+        {
+            query = q;
+        }
+        //---------------------------------------------------------------------
+        Query *getQuery(void)
+        {
+            return query;
+        }
+        //---------------------------------------------------------------------
 		bool scene(pcloud::Scene *sc)
 		{
 			if ( sceneOnly && sc != sceneOnly ) return false;
@@ -670,7 +718,8 @@ namespace querydetail
 				break;
 
 			case PT_QUERY_DENSITY_VIEW:						// current view based density without load
-				amount = densityCoeff * std::min(vox->getCurrentLOD(), vox->getRequestLOD());
+            case PT_QUERY_DENSITY_VIEW_PROGRESSIVE:
+                amount = densityCoeff * std::min(vox->getCurrentLOD(), vox->getRequestLOD());
 				break;
 
 			case PT_QUERY_DENSITY_VIEW_COMPLETE:			// current view based density with load
@@ -753,6 +802,15 @@ namespace querydetail
 
 	- If the query iteration traversal completes without filling the buffer, any remaining deferred voxels are processed by a final call to processDeferredVoxels() in query
 
+    - View Progressive mode
+        - progressiveCounter initially 1 (first pass) and incremented when there is no last voxel specified to start (i.e. all voxels will be processed)
+        - In progressiveCounter passes
+            - QueryState entries are only made in pass 1 AND only if a voxel is not entirely processed to request LOD
+                - Examples of this include (a) dest buffer full, (b) voxel not yet loaded from disk or (c) voxel is only part streamed)
+                - For case (b), the start point should be zero and is the usual case when a POD is on local disk (not streamed)
+            - QueryState entry stores the last point processed (and is the index of the next point to be processed)
+            - Absense of a query state in progressive passes later than 1 indicate that the voxel has been processed to requestLOD (for the curent Viewport) and can be skipped
+
 */
 
 		bool voxel(pcloud::Voxel *vox)
@@ -760,8 +818,15 @@ namespace querydetail
 			float							amount;
 			float							lod_amount;
 			bool							doLoad;
-			
 			bool							voxelLoadDump = true;
+//			pcloud::Voxel				*	lastPartiallyIteratedVoxel = NULL;
+            PThandle                        queryHandle = PTV_INVALID_HANDLE;
+            VoxelQueryStateSet          *   queryStateSet = nullptr;
+            VoxelQueryState             *   queryState = nullptr;
+            unsigned int                    progressiveCounter = 0;
+
+            if (getQuery() == nullptr)
+                return true;
 
 			if(rwPos.counter >= bufferSize)
 				return false;
@@ -776,6 +841,39 @@ namespace querydetail
 	
 			if(!begin)
 				return true;
+                                                            // If progressive view mode
+            if (density == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+            {
+                                                            // Attempt to obtian a QueryState object for this voxel in this pass
+                queryHandle         = getQuery()->getQueryHandle();
+                queryStateSet       = &(vox->getVoxelQueryStateSet());
+                progressiveCounter  = getQuery()->getProgressiveCounter();
+
+                                                            // Attempt to get a QueryState from this voxel, for this query
+                queryState          = queryStateSet->getQueryState(queryHandle);
+
+                                                            // If this is the first progressive pass
+                if (progressiveCounter == 1)
+                {
+                                                            // and the QueryState is already defined in this voxel for this query
+                                                            // (it shouldn't be unless last query was not completed)
+                    if(queryState)
+                    {
+                                                            // Delete the query state to clean up (Note: one might be added after if required)
+                        queryStateSet->removeQueryState(queryHandle);
+                        queryState = nullptr;
+                    }
+                }
+                else
+                {
+                                                            // This is not the first progressive pass
+                                                            // If QueryState doesn't exist, then the voxel has been processed to completion already, so exit
+                    if (queryState == nullptr)
+                    {
+                        return true;
+                    }
+                }
+            }
 
 															
             std::unique_lock<std::mutex> lock(vox->mutex());
@@ -893,18 +991,46 @@ namespace querydetail
 															// Make sure this voxel is specified as the last processed (processDeferredVoxels() can over write this)
 //			rwPos.lastVoxel = vox;
 
-			if(vox != rwPos.continueFrom)
-			{
-				rwPos.lastPoint = 0;
-			}
+                                                            // If not continuing a pass from this voxel
+            if (vox != rwPos.continueFrom)
+            {
+                                                            // If queryState exists, desnity mode must be PT_QUERY_DENSITY_VIEW_PROGRESSIVE
+                                                            // and this is not the first pass of the progressive query
+                if (queryState)
+                {
+                                                            // State exists for this voxel, so get the start point
+                    rwPos.lastPoint = queryState->getLastPoint();
+                }
+                else
+                {
+                                                            // Otherwise, need to start from the first point in this voxel
+                    rwPos.lastPoint = 0;
+                }
+            }
 
 															// Execute query over points and return whether to continue traversal
 			bool result = iterateTransformedPoints(vox, amount, lod_amount);
 
-															// If not all of the requested range of the voxel was iterated
+															// If not all of the requested range of the voxel was iterated (e.g. dest buffer is full)
 			if(rwPos.lastPoint < vox->getNumPointsAtLOD(amount))
 			{
-			//	assert(rwPos.counter == bufferSize);
+                if (query->getDensityType() == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+                {
+															// If no queryState has been set for this Voxel, add one
+					if (queryState == nullptr)
+					{
+						VoxelQueryState state;
+															// Set last point processed (index of next to be processed)
+						state.setClientID(queryHandle);
+						state.setLastPoint(rwPos.lastPoint);
+						queryStateSet->setQueryState(state);
+					}
+					else
+					{
+									                        // Record which point to start processing in next progressive pass
+                        queryState->setLastPoint(rwPos.lastPoint);
+                    }
+                }
 															// Remember that this voxel is not unloaded so it can be unloaded if query is reset or destroyed
 				rwPos.setLastPartiallyIteratedVoxel(vox);
 				rwPos.setLastPartiallyIteratedVoxelUnloadLOD(vox->getPreviousLOD());
@@ -915,13 +1041,45 @@ namespace querydetail
 			else
 			{
 															// Only dump if query is not View based (no loading). NOTE: Crashes if not present but shouldn't !
-				if(density != PT_QUERY_DENSITY_VIEW)
+				if(density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 				{
 					load.setVoxel(vox);
 					load.setDump(true);
 
 					load.setPreviousLOD(vox->getPreviousLOD());
 				}
+                else
+                {
+															// If mode is View Progressive
+					if (density == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+					{
+															// If num points iterated is less than View's request LOD, more of the voxel's points may be iterated in future
+						if (rwPos.lastPoint < vox->getNumPointsAtLOD(vox->getRequestLOD()))
+						{
+															// If no queryState has been set for this Voxel, add one
+							if (queryState == nullptr)
+							{
+								VoxelQueryState state;
+															// Set last point processed (index of next to be processed)
+								state.setClientID(queryHandle);
+								state.setLastPoint(rwPos.lastPoint);
+								queryStateSet->setQueryState(state);
+							}
+							else
+							{
+															// Voxel already has a QueryState from previous iterations
+															// Set last point processed (index of next to be processed)
+								queryState->setLastPoint(rwPos.lastPoint);
+							}
+						}
+						else
+	                    if (queryState)
+	                    {
+                                                            // This voxel is now processed by progressive query, so remove it's QueryState entry to signify this
+	                        queryStateSet->removeQueryState(query->getQueryHandle());
+	                    }
+					}
+                }
 															// If last partially iterated voxel is now fully iterated
 				if(vox == rwPos.getLastPartiallyIteratedVoxel())
 				{
@@ -1350,23 +1508,23 @@ namespace querydetail
 					begin = true;
 				}
 				else
-					if(vox == rwPos.continueFrom)
-					{
-						begin = true;
+				if(vox == rwPos.continueFrom)
+				{
+					begin = true;
 
-						rwPos.initialContinuePnt = rwPos.continuePnt;
-					}
+					rwPos.initialContinuePnt = rwPos.continuePnt;
+				}
 			}
 			else
-				if(vox != rwPos.continueFrom)
-				{
-					rwPos.continuePnt = 0;
-				}
+			if(vox != rwPos.continueFrom)
+			{
+				rwPos.continuePnt = 0;
+			}
 
-				rwPos.lastPoint = 0;
-				rwPos.lastVoxel = vox;
+			rwPos.lastPoint = 0;
+			rwPos.lastVoxel = vox;
 
-				return true;
+			return true;
 		}
 		//---------------------------------------------------------------------
 		void voxelSizing(Voxel *vox)
@@ -1384,6 +1542,8 @@ namespace querydetail
 			voxelSelected = vox->flag(pcloud::WholeSelected);
 		};
 		//---------------------------------------------------------------------
+
+        Query               *query;
 		NodeCondition		*C;					// condition object
 
 		PTbool				begin;
@@ -1611,7 +1771,8 @@ namespace querydetail
 
 					case PT_QUERY_DENSITY_VIEW_COMPLETE:
 					case PT_QUERY_DENSITY_VIEW:						// current view based density
-						count = static_cast<int64_t>(count + (densityCoeff * v->getRequestLOD() * v->fullPointCount()));
+                    case PT_QUERY_DENSITY_VIEW_PROGRESSIVE:		// current view based density
+                        count = static_cast<int64_t>(count + (densityCoeff * v->getRequestLOD() * v->fullPointCount()));
 						break;
 					}
 				}
@@ -1646,13 +1807,13 @@ namespace querydetail
 			if (!ugrid && density == PT_QUERY_DENSITY_SPATIAL)
 				createGrid();
 
-			if(density != PT_QUERY_DENSITY_VIEW)
+			if(density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 			{
 				thePointsPager().pause();
 			}
 
 			ReadPoints<Condition, T>
-					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt,
+					reader(this, &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt,
 					density, densityCoeff, ugrid, rgbMode, layers, classification, 0, 0, 0, 
 					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(),
 					(PTubyte)layerMask );
@@ -1661,6 +1822,7 @@ namespace querydetail
 			reader.pcloudOnly = pcloudOnly;
 			reader.sceneOnly = sceneOnly;
 
+
 			thePointsScene().visitNodes(&reader, false);
 															// Process any remaining voxels that did not get processed during visitNodes()
 			reader.processDeferredVoxels();
@@ -1668,7 +1830,7 @@ namespace querydetail
 															// Note: This end() does not need to have a matching begin()
 			getStreamManager().end();
 
-			if(density != PT_QUERY_DENSITY_VIEW)
+			if(density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 			{
 				thePointsPager().unpause();
 			}
@@ -1743,7 +1905,7 @@ namespace querydetail
 
 			
 			ReadPoints<Condition, float>
-					reader( &C, static_cast<int>(buffersize), geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
+					reader(this, &C, static_cast<int>(buffersize), geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
 					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, (PTubyte)layerMask );
 
 			reader.cs = cs;
@@ -1782,13 +1944,13 @@ namespace querydetail
 			if (!ugrid && density == PT_QUERY_DENSITY_SPATIAL)
 				createGrid();
 
-			if(density != PT_QUERY_DENSITY_VIEW)
+			if(density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 			{
 				thePointsPager().pause();
 			}
 
 			ReadPoints<Condition, T>
-					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt, density, densityCoeff, ugrid,
+					reader(this, &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt, density, densityCoeff, ugrid,
 					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 
 					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), (PTubyte)layerMask);
 
@@ -1800,7 +1962,7 @@ namespace querydetail
 			/* write object stores query state to replicate exact point order for write back*/
 			if (_writer) delete _writer;
 
-			ReadPoints<Condition, T> *writer = new ReadPoints<Condition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true, lastVoxel, lastPnt,
+			ReadPoints<Condition, T> *writer = new ReadPoints<Condition, T>(this, &C, buffersize, geomBuffer, rgbBuffer, inten, true, lastVoxel, lastPnt,
 				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 0, 0, (PTubyte)layerMask);
 
 			writer->pcloudOnly = pcloudOnly;
@@ -1816,7 +1978,7 @@ namespace querydetail
 															// Note: This end() does not need to have a matching begin()
 			getStreamManager().end();
 
-			if(density != PT_QUERY_DENSITY_VIEW)
+			if(density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 			{
 				thePointsPager().unpause();
 			}
@@ -2603,7 +2765,7 @@ public:
 	}
 	static const char* name()  { return "KNN"; }
 
-	KNearestNeighbourQuery(PTfloat *vertices, PTint numQueryVertices, PTint k, float queryLOD) : AnalyticalQuery(), ReadPoints(NULL, 0, NULL)
+	KNearestNeighbourQuery(PTfloat *vertices, PTint numQueryVertices, PTint k, float queryLOD) : AnalyticalQuery(), ReadPoints(NULL, NULL, 0, NULL)
 	{
 															// Validate parameters
 		if(vertices == NULL || numQueryVertices == 0 || k == 0)
@@ -3567,6 +3729,7 @@ PTfloat getVoxelAmount(Voxel *vox, PTenum density, PTfloat densityCoeff, bool &d
 		break;
 
 	case PT_QUERY_DENSITY_VIEW:						// current view based density
+    case PT_QUERY_DENSITY_VIEW_PROGRESSIVE:
 		amount = densityCoeff * vox->getRequestLOD();
 		break;
 
@@ -3866,6 +4029,25 @@ PTbool PTAPI ptResetQuery( PThandle query )
 	setLastErrorCode( PTV_INVALID_HANDLE );
 	return false;
 }
+//-----------------------------------------------------------------------------
+// Querying for points extraction to user buffers
+//-----------------------------------------------------------------------------
+PTbool PTAPI ptResetQueryProgressive(PThandle query)
+{
+    PTTRACE_FUNC_P1(query)
+
+        using namespace querydetail;
+
+    QueryMap::iterator i = s_queries.find(query);
+    if (i != s_queries.end())
+    {
+        i->second->resetQueryProgressive();
+        return true;
+    }
+    setLastErrorCode(PTV_INVALID_HANDLE);
+    return false;
+}
+
 //-----------------------------------------------------------------------------
 // Visible Points Query
 //-----------------------------------------------------------------------------
@@ -4425,7 +4607,11 @@ struct FrustumQuery : public Query
 					}
 					else densityCoeff = 1.0f;
 				}
-				density = PT_QUERY_DENSITY_VIEW;
+
+                if (density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+                {
+                    density = PT_QUERY_DENSITY_VIEW;
+                }
 			}
 		}
 
@@ -4436,7 +4622,7 @@ struct FrustumQuery : public Query
 		stats.m_densityVal = densityCoeff;
 		stats.m_bufferSize = buffersize;
 
-		ReadPoints<FrustumCondition, T> reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false,
+		ReadPoints<FrustumCondition, T> reader(this, &C, buffersize, geomBuffer, rgbBuffer, inten, false,
 			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels, 
 			getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), (PTubyte)layerMask);
 
@@ -4444,21 +4630,41 @@ struct FrustumQuery : public Query
 
 		if (numPointChannels && pointChannels)
 		{
-			_writer = new ReadPoints<FrustumCondition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true,
+			_writer = new ReadPoints<FrustumCondition, T>(this, &C, buffersize, geomBuffer, rgbBuffer, inten, true,
 			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels ,
 			0, 0, (PTubyte)layerMask );
 		}
-		/* run query on voxel list */ 
+
+                                                            // If this is a new iteration from the start and dentiy type is progressive
+        if (lastVoxel == nullptr && density == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+        {
+                                                            // Increment completed progressive pass counter
+            setProgressiveCounter(getProgressiveCounter() + 1);
+        }
+
+
+        bool iterationCompleted = true;
+		                                                    // run query on voxel list
 		for (size_t i=0; i<voxels.size(); i++)
 		{
-			if (!reader.voxel(voxels[i])) 
-				break;
+            if (!reader.voxel(voxels[i]))
+            {
+                iterationCompleted = false;
+                break;
+            }
 		}
 															// Process any remaining voxels that did not get processed during visitNodes()
 		reader.processDeferredVoxels();
 															// Release the stream manager in case any remote access was carried out
 															// Note: This end() does not need to have a matching begin()
 		getStreamManager().end();
+
+
+        if (iterationCompleted)
+        {
+            reader.rwPos.lastVoxel = nullptr;
+            reader.rwPos.lastPoint = 0;
+        }
 
 
 		lastPnt = reader.rwPos.lastPoint;
@@ -4970,8 +5176,7 @@ PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densi
 	QueryMap::iterator i = s_queries.find( query );
 	if (i != s_queries.end())
 	{
-
-		if (densityType <PT_QUERY_DENSITY_FULL  || (densityType > PT_QUERY_DENSITY_VIEW_COMPLETE && densityType != PT_QUERY_DENSITY_SPATIAL)) 
+        if (densityType <PT_QUERY_DENSITY_FULL || densityType > PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
 			return setLastErrorCode( PTV_INVALID_PARAMETER );
 
 		i->second->setDensity( densityType, densityValue );
@@ -5122,6 +5327,8 @@ static querydetail::Query *prepareQueryRun( PThandle query )
 		if (!computePntLimitDensity( i->second )) 
 			return 0;
 	}
+
+    i->second->setQueryHandle(query);
 
 	return i->second;
 }

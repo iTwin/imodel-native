@@ -150,10 +150,11 @@ typedef unsigned char   PTubyte;
 
 /* query */
 #define PT_QUERY_DENSITY_FULL                0x01
-#define    PT_QUERY_DENSITY_VIEW             0X02
+#define PT_QUERY_DENSITY_VIEW                0X02
 #define PT_QUERY_DENSITY_LIMIT               0X03
-#define    PT_QUERY_DENSITY_VIEW_COMPLETE    0X04
+#define PT_QUERY_DENSITY_VIEW_COMPLETE       0X04
 #define PT_QUERY_DENSITY_SPATIAL             0x07
+#define PT_QUERY_DENSITY_VIEW_PROGRESSIVE    0X08
 
 #define PT_QUERY_RGB_MODE_ACTUAL             0x04
 #define PT_QUERY_RGB_MODE_SHADER             0x05
@@ -333,6 +334,7 @@ VORTEX_EXPORT PTres  ptSetQueryScope(PThandle query, PThandle sceneOrCloudHandle
 VORTEX_EXPORT PTres  ptSetQueryLayerMask(PThandle query, PTubyte layerMask);
 
 VORTEX_EXPORT PTbool  ptResetQuery(PThandle query);
+VORTEX_EXPORT PTbool  ptResetQueryProgressive(PThandle query);
 
 /* units */
 VORTEX_EXPORT PTvoid     ptSetHostUnits(PTenum units);

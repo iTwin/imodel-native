@@ -83,6 +83,8 @@ public:
 	void getBounds(pt::BoundingBoxD &bb);
 
 	void removeLOD(int clientID);
+
+    void removeQueryStates(int clientID);
 	
 	bool initialize();
 

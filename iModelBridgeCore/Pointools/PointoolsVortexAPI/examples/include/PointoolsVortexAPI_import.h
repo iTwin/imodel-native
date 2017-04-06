@@ -146,11 +146,12 @@ typedef unsigned char	PTubyte;
 #define PT_EDIT_PNT_LYR7			0x07
 
 /* query */ 
-#define PT_QUERY_DENSITY_FULL			0x01
-#define	PT_QUERY_DENSITY_VIEW			0X02
-#define PT_QUERY_DENSITY_LIMIT			0X03
-#define	PT_QUERY_DENSITY_VIEW_COMPLETE	0X04
-#define PT_QUERY_DENSITY_SPATIAL		0x07
+#define PT_QUERY_DENSITY_FULL			    0x01
+#define	PT_QUERY_DENSITY_VIEW			    0X02
+#define PT_QUERY_DENSITY_LIMIT			    0X03
+#define	PT_QUERY_DENSITY_VIEW_COMPLETE	    0X04
+#define PT_QUERY_DENSITY_SPATIAL		    0x07
+#define	PT_QUERY_DENSITY_VIEW_PROGRESSIVE	0X08
 
 #define PT_QUERY_RGB_MODE_ACTUAL			0x04
 #define PT_QUERY_RGB_MODE_SHADER			0x05
@@ -557,6 +558,7 @@ typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSCACHE)( PTuint maxPoints );
 typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSQUERY)( void );
 typedef PThandle (__stdcall * PTCREATEKNNQUERY)(PTfloat *vertices, PTint numQueryVertices, PTint k, PTfloat queryLOD);
 typedef PTbool (__stdcall * PTRESETQUERY)( PThandle query );
+typedef PTbool(__stdcall * PTRESETQUERYPROGRESSIVE)(PThandle query);
 typedef PTres (__stdcall *PTSETQUERYRGBMODE)( PThandle query, PTenum mode );
 
 typedef PTres (__stdcall *PTSETQUERYLAYERMASK)( PThandle query, PTubyte layerMask );
@@ -765,6 +767,7 @@ extern PTSETQUERYSCOPE ptSetQueryScope;
 extern PTSETQUERYLAYERMASK ptSetQueryLayerMask;
 
 extern PTRESETQUERY ptResetQuery;
+extern PTRESETQUERYPROGRESSIVE ptResetQueryProgressive;
 
 /* units */ 
 extern PTSETHOSTUNITS ptSetHostUnits;
