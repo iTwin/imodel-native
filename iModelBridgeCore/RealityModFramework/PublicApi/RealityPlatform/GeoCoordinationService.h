@@ -76,11 +76,11 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+    
+    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 protected:
     // Default constructor
     GeoCoordinationServiceRequest() { m_validRequestString = false; }
-    
-    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
     };
@@ -143,10 +143,10 @@ public:
     //!  case insensitive. The server will apply sort rules accordingly.
     REALITYDATAPLATFORM_EXPORT void SortBy(GeoCoordinationField, bool ascending);
 
+    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServicePagedRequest(){}
+
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
-
-    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServicePagedRequest(){}
 
     GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) { m_startIndex = startIndex; m_pageSize = pageSize; BeAssert(m_pageSize >0); }
 
@@ -291,6 +291,7 @@ public:
     //! Create a request for spatial entity of the given identifier
     REALITYDATAPLATFORM_EXPORT PackagePreparationRequest(bvector<GeoPoint2d> projectArea, bvector<Utf8String> listOfSpatialEntities);
    
+    REALITYDATAPLATFORM_EXPORT virtual ~PackagePreparationRequest(){}
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
@@ -298,7 +299,6 @@ private:
     bvector<GeoPoint2d>     m_projectArea;
     bvector<Utf8String>     m_listOfSpatialEntities;
     PackagePreparationRequest() { m_requestType = HttpRequestType::POST_Request; }
-    virtual ~PackagePreparationRequest(){}
     };
 
 //=====================================================================================
@@ -330,7 +330,7 @@ struct DownloadReportUploadRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report);
+    REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR guid, Utf8StringCR identifier, BeFileName report);
    
     REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() const { return m_fileSize; }
     REALITYDATAPLATFORM_EXPORT BeFileName GetFileName() const { return m_downloadReport; }
@@ -339,6 +339,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
+    Utf8String          m_guid;
     BeFileName          m_downloadReport;
     uint64_t            m_fileSize;
     DownloadReportUploadRequest(){}
@@ -385,16 +386,16 @@ public:
     REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(GeoCoordinationService_ErrorCallBack errorCallback) { s_errorCallback = errorCallback; }
 
     //! Returns the current name of the server
-    static Utf8StringCR GetServerName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServerName();
 
     //! Results the string containing the WSG protocol version number
-    static Utf8StringCR GetWSGProtocol();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetWSGProtocol();
 
     //! Returns the name of the WSG repository containing the GeoCoordination Service objects
-    static Utf8StringCR GetRepoName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetRepoName();
 
     //! Returns the name of the schema defining the classes exposed by the GeoCoordination Service.
-    static Utf8StringCR GetSchemaName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetSchemaName();
 
     //! Returns the name of the schema defining the classes exposed by the Service.
     REALITYDATAPLATFORM_EXPORT static const bool GetVerifyPeer();
@@ -441,12 +442,12 @@ public:
     REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the full WSG JSON returned by the package preparation request
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const GeoCoordinationServiceRequest* request);
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const GeoCoordinationServiceRequest* request, Utf8StringCR keyword = "instances");
 
     //! Returns the full WSG JSON returned by the spatial entity with details spatial request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicPagedRequest(const GeoCoordinationServicePagedRequest* request);
+    REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicPagedRequest(const GeoCoordinationServicePagedRequest* request, Utf8StringCR keyword = "instances");
 
     static Utf8String s_geoCoordinationServer;
     static Utf8String s_geoCoordinationWSGProtocol;
