@@ -1940,6 +1940,14 @@ bool ScalableMeshModel::IsTerrain()
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     4/2017
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::HasTerrain()
+{
+    return m_terrainParts.size() > 0;
+}
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre    10/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
