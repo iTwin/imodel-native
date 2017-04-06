@@ -145,6 +145,9 @@ public:
 
     //! Checks the file's ECDb profile compatibility to be opened with the current version of the ECDb API.
     //!
+    //! @remarks The caller must ensure that a transaction is active as this method needs to execute a SQL statement.
+    //! All SQL statements, even SELECTs, require an active transaction in SQLite.
+    //!
     //! @see BeSQLite::Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
     //! @param[out] fileIsAutoUpgradable Returns true if the file's ECDb profile version indicates that it is old, but auto-upgradeable.
     //!             false otherwise.
@@ -153,6 +156,7 @@ public:
     //! @param[in]  openModeIsReadonly true if the file is going to be opened in read-only mode. false if
     //!             the file is going to be opened in read-write mode.
     //! @return     BE_SQLITE_OK if ECDb profile can be opened in the requested mode, i.e. the compatibility contract is matched.
+    //!             BE_SQLITE_ERROR_NoTxnActive if no transaction is active
     //!             BE_SQLITE_Error_ProfileTooOld if file's ECDb profile is too old to be opened by this API.
     //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
     //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.

@@ -140,12 +140,9 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_idSequences(ecdb)
-        {
-        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
-        }
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_idSequences(ecdb) { m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); }
 
-    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { ProfileVersion unused(0, 0, 0, 0); return ProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
+    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
     SchemaManager const& Schemas() const { return *m_schemaManager; }
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }

@@ -26,7 +26,7 @@ private:
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
+    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR);
     //! @param onProfileCreation true if this method is called during profile creation. false if 
     //! called during profile upgrade
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);

@@ -20,6 +20,15 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
+    if (!ecdb.GetDefaultTransaction()->IsActive())
+        {
+        //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
+        //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
+        //except that in that case, it is not active).
+        BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::CreateNewDb keeps the default transaction active when it is called to create its profile.");
+        return BE_SQLITE_ERROR_NoTxnActive;
+        }
+
     DbResult stat = CreateProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
@@ -55,8 +64,10 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
 //static
 DbResult ProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
     {
+    BeAssert(ecdb.GetDefaultTransaction()->IsActive() && "Should have been caught before. Callers must ensure that a transaction is active before calling this.");
+
     fileIsAutoUpgradable = false;
-    const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
+    const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb);
     if (BE_SQLITE_OK != stat)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
@@ -98,6 +109,15 @@ struct ProfileUpgradeContext final: NonCopyableClass
 //static
 DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
+    if (!ecdb.GetDefaultTransaction()->IsActive())
+        {
+        //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
+        //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
+        //except that in that case, it is not active).
+        BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::CreateNewDb keeps the default transaction active when it is called to create its profile.");
+        return BE_SQLITE_ERROR_NoTxnActive;
+        }
+
     bool runProfileUpgrade = false;
     ProfileVersion actualProfileVersion(0, 0, 0, 0);
     DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
@@ -194,33 +214,26 @@ DbResult ProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
+DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR ecdb)
     {
-    //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
-    //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
-    //except that in that case, it is not active).
-    const bool isDefaultTransactionActive = defaultTransaction.IsActive();
-    if (!isDefaultTransactionActive)
-        defaultTransaction.Begin();
-
     Utf8String currentVersionString;
     //if version entry does not exist, this either means it is ECDb profile 1.0 (because we did not store
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
-    DbResult stat = BE_SQLITE_OK;
     if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
+        {
         profileVersion.FromJson(currentVersionString.c_str());
-    else if (ecdb.TableExists("ec_Schema"))
+        return BE_SQLITE_OK;
+        }
+
+    if (ecdb.TableExists("ec_Schema"))
+        {
         profileVersion = ProfileVersion(1, 0, 0, 0);
-    else
-        //File is no ECDb file
-        stat = BE_SQLITE_ERROR_InvalidProfileVersion;
+        return BE_SQLITE_OK;
+        }
 
-    //make sure to end default transaction again, if it wasn't active before this call
-    if (!isDefaultTransactionActive)
-        defaultTransaction.Commit(nullptr);
-
-    return stat;
+    //File is no ECDb file
+    return BE_SQLITE_ERROR_InvalidProfileVersion;
     }
 
 //-----------------------------------------------------------------------------------------

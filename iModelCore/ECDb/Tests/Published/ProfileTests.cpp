@@ -119,6 +119,47 @@ TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ProfileCreation)
+    {
+    auto defaultTxnModeToString = [] (DefaultTxn txnMode)
+        {
+        switch (txnMode)
+            {
+                case DefaultTxn::Exclusive:
+                    return "Exclusive";
+                case DefaultTxn::Immediate:
+                    return "Immediate";
+                case DefaultTxn::No:
+                    return "No";
+                case DefaultTxn::Yes:
+                    return "Yes";
+                default:
+                    BeAssert(false);
+                    return "error";
+            }
+        };
+
+    const std::vector<DefaultTxn> defaultTxnModes {DefaultTxn::No, DefaultTxn::Yes, DefaultTxn::Exclusive, DefaultTxn::Immediate};
+
+    BeFileName testFilePath;
+    BeTest::GetHost().GetOutputRoot(testFilePath);
+    testFilePath.AppendToPath(WString("profiletest.ecdb", BentleyCharEncoding::Utf8).c_str());
+
+    for (DefaultTxn defaultTxnMode : defaultTxnModes)
+        {
+        if (testFilePath.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(testFilePath));
+
+        ECDb::CreateParams params;
+        params.SetStartDefaultTxn(defaultTxnMode);
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(testFilePath, BeGuid(), params)) << "DefaultTxn mode: " << defaultTxnModeToString(defaultTxnMode);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
