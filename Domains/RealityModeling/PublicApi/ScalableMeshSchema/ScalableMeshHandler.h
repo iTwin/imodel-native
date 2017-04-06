@@ -258,6 +258,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
+        SCALABLEMESH_SCHEMA_EXPORT bool HasTerrain();
+
         SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
 
         
