@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 
+#ifdef BENTLEYCONFIG_OS_WINDOWS
 #include <Windows.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_POINTCLOUD
@@ -16,9 +18,11 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 void debugMessage(char *m, int64_t v = 0)
 {
+#ifdef BENTLEYCONFIG_OS_WINDOWS
     char message[1024];    
     sprintf(message, ">>> %s = %lld\n", m, v);
     OutputDebugString(message);
+#endif
 }
 
 //----------------------------------------------------------------------------------------
