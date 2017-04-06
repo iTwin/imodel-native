@@ -802,7 +802,8 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()),
     m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(true)
     {
-    //
+    // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
+    SetExpirationTime(BeDuration::Seconds(90));
     }
 
 /*---------------------------------------------------------------------------------**//**
