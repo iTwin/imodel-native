@@ -7,9 +7,19 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 
+#include <Windows.h>
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
+
+
+void debugMessage(char *m, int64_t v = 0)
+{
+    char message[1024];    
+    sprintf(message, ">>> %s = %lld\n", m, v);
+    OutputDebugString(message);
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
@@ -164,20 +174,21 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
-bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointsToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop)
+
+bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointsToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop, unsigned int maxIterations)
     {
     PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
 
     PointCloudVortex::StartDrawFrameMetrics();
-    PointCloudVortex::ResetQuery(queryHandle->GetHandle());
-    PointCloudVortex::SetQueryDensity(queryHandle->GetHandle(), densityType, density);
+	PointCloudVortex::SetQueryDensity(queryHandle->GetHandle(), densityType, density);
+	PointCloudVortex::ResetQuery(queryHandle->GetHandle());
     
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
 
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
 
-    RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);
+    RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(5000000 /* DRAW_QUERYCAPACITY */, channelFlags);
 
     bool queryCompleted = true;
     m_lastTentativeStopped = false;
@@ -186,9 +197,15 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
 
     Dgn::Render::GraphicBranch graphicArray;
 
-    while (1)
+    uint32_t        numPoints   = 0;
+    unsigned int    i           = 0;
+
+    do
         {
-        if (doCheckStop && context.CheckStop())
+
+        i++;
+
+        if ((doCheckStop && context.CheckStop()) || i > maxIterations)
             {
             DEBUG_PRINTF("CHECK_STOP reached, aborting");
             queryCompleted = false;
@@ -197,6 +214,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
             }
 
         uint64_t numQueryPoints = queryBuffers->GetPoints(queryHandle->GetHandle());
+
         if (numQueryPoints == 0)
             break;
 
@@ -234,7 +252,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
             ByteCP     pRgb = queryBuffers->HasRgb() ? (ByteCP)queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
             DPoint3dCP pXyz = queryBuffers->GetXyzChannel()->GetChannelBuffer();
             DPoint3d   origin = pXyz[0];
-            uint32_t   numPoints = queryBuffers->GetNumPoints();
+            numPoints = queryBuffers->GetNumPoints();
           
             for (size_t i = 0; i < numPoints; ++i)
                 {
@@ -245,20 +263,22 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
 
             auto graphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
             Render::GraphicParams graphicParams;
-            graphicParams.SetLineColor(m_model.GetColor());
-            graphicParams.SetFillColor(m_model.GetColor());
+//            graphicParams.SetLineColor(m_model.GetColor());
+//            graphicParams.SetFillColor(m_model.GetColor());
             graphicParams.SetWidth(DgnViewport::GetDefaultIndexedLineWidth(m_model.GetWeight()));
             graphic->ActivateGraphicParams(graphicParams);
             graphic->AddPointCloud(queryBuffers->GetNumPoints(), origin, s_floatsPts.data(), pRgb);
             graphicArray.Add(*graphic);
 
             pointsDrawn += queryBuffers->GetNumPoints();
+
             ++buffersCount;
             }
-        }
+
+        } while(numPoints == queryBuffers->GetCapacity());
 
     pointsToLoad = 0;
-    if (queryCompleted && PtQueryDensity::QUERY_DENSITY_VIEW == densityType)
+    if (queryCompleted && PtQueryDensity::QUERY_DENSITY_VIEW == densityType || PtQueryDensity::QUERY_DENSITY_VIEW_PROGRESSIVE == densityType)
         {
         // From observation, we need to recompute ptsToload otherwise the count is not [always?] updated.
         pointsToLoad = PointCloudVortex::PtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true/*recompute*/);
@@ -310,6 +330,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
 // This callback is invoked on a timer during progressive display.
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
+
 ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::RenderListContext& context, WantShow& wantShow)
     {
     // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?
@@ -332,45 +353,66 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Re
         int64_t pointsToLoad = 0;
         Dgn::Render::GraphicPtr pLowDensityGraphic;
 
-        DrawPointCloud(&pLowDensityGraphic, pointsToLoad, m_firstPassPts, context, densityType, density, false/*checkStop*/);
+        DrawPointCloud(&pLowDensityGraphic, pointsToLoad, m_firstPassPts, context, densityType, density, false/*checkStop*/, 1);
         
         if (pLowDensityGraphic.IsValid())
             {
             const_cast<PointCloudModel&>(m_model).SaveLowDensityGraphic(context.GetViewportR(), pLowDensityGraphic.get());
             wantShow = WantShow::Yes;
             m_doLowDensity = false;
+       
+            PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
+            PointCloudVortex::ResetQueryProgressive(queryHandle->GetHandle());
             }
-        else if (0 == pointsToLoad)
-            {
-            // no graphic no points to load: nothing to see in this view.
-            m_doLowDensity = false;
-            return ProgressiveTask::Completion::Finished;
+            else
+            if (0 == pointsToLoad)
+                {
+                // no graphic no points to load: nothing to see in this view.
+                m_doLowDensity = false;
+                PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
+                PointCloudVortex::ResetQueryProgressive(queryHandle->GetHandle());
+
+                return ProgressiveTask::Completion::Finished;
+                }
+
+            return ProgressiveTask::Completion::Aborted;
             }
 
-        return ProgressiveTask::Completion::Aborted;
-        }
-
-    ++m_tentativeId;   
+    ++m_tentativeId;
 
     int64_t loadedSinceLastDraw = PointCloudVortex::PtsLoadedInViewportSinceLastDraw(m_model.GetPointCloudSceneP()->GetSceneHandle());  UNUSED_VARIABLE(loadedSinceLastDraw);
     DEBUG_PRINTF("(%d)Begin _DoProgressive loadedSinceDraw                        (%ld)", m_tentativeId, loadedSinceLastDraw);
 
     float density = m_model.GetViewDensity();
-    static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Points still on disk will get loaded at a later time.
+    static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW_PROGRESSIVE; // Get only points in memory for a view representation. Points still on disk will get loaded at a later time.
 
-    uint64_t oldProgressivePts = m_progressivePts;
     m_progressivePts = 0;
-    int64_t pointsToLoad = 0;
-    if (!DrawPointCloud(nullptr, pointsToLoad, m_progressivePts, context, densityType, density, true/*checkStop*/) || pointsToLoad > 0)
+
+    uint64_t    oldProgressivePts = m_progressivePts;
+    int64_t     pointsToLoad = 0;
+    bool        drawPointCloud;
+
+    drawPointCloud = DrawPointCloud(nullptr, pointsToLoad, m_progressivePts, context, densityType, density, true/*checkStop*/, 50);
+
+    if (drawPointCloud && pointsToLoad == 0)
+        {
+        PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
+        PointCloudVortex::ResetQueryProgressive(queryHandle->GetHandle());
+        }
+
+    if (!drawPointCloud || pointsToLoad > 0)
         {
         m_totalProgressivePts += m_progressivePts;
         m_waitTime = (uint64_t)(m_waitTime * 1.33);
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
 
-        DEBUG_PRINTF("(%d)Aborted _DoProgressive pointsToLoad=%ld", m_tentativeId, pointsToLoad);
+        DEBUG_PRINTF("(%d)Aborted _DoProgressive High Density pointsToLoad=%ld", m_tentativeId, pointsToLoad);
         
         if (m_progressivePts > oldProgressivePts + 20000)
+        {
             wantShow = WantShow::Yes;
+        }
+
         return ProgressiveTask::Completion::Aborted;
         }
 
@@ -378,6 +420,10 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Re
     wantShow = WantShow::Yes;
     m_totalProgressivePts += m_progressivePts;
     DEBUG_PRINTF("(%d)Finished _DoProgressive", m_tentativeId);
+
+    PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
+    PointCloudVortex::ResetQueryProgressive(queryHandle->GetHandle());
+
     return ProgressiveTask::Completion::Finished;
     }
 
