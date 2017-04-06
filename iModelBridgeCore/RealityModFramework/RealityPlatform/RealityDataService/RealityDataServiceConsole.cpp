@@ -295,8 +295,8 @@ void RealityDataConsole::Usage()
     DisplayInfo("  Unlink              Remove a relationship between a RealityData and a project\n");
     DisplayInfo("  CreateRD            Create a new RealityData\n");
     DisplayInfo("  Delete              Delete a RealityData, Folder or single Document\n");
-    DisplayInfo("\nNote: Special characters may not be displayed properly, and items containing such characters may have bugs with uploading and downloading./n ", DisplayOption::Tip);
-    DisplayInfo("The good news is: this is a console problem, not an SDK problem. If you need to interact with those entries, please use a different service/n", DisplayOption::Tip);
+    DisplayInfo("\nNote: Special characters may not be displayed properly, and items containing such characters may have bugs with uploading and downloading.\n ", DisplayOption::Tip);
+    DisplayInfo("The good news is: this is a console problem, not an SDK problem. If you need to interact with those entries, please use a different service\n", DisplayOption::Tip);
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)

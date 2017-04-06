@@ -26,18 +26,14 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Francis Boily                   09/2015
-//+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t WriteData(void *contents, size_t size, size_t nmemb, BeFile *stream)
+static size_t WriteFileCallback(void *contents, size_t size, size_t nmemb, BeFile *stream)
     {
-    uint32_t bytesRead = 0;
-    
-    BeFileStatus status = stream->Read(contents, &bytesRead, (uint32_t)(size * nmemb));
-    if (status != BeFileStatus::Success)
-        return 0;
+    uint32_t bytesWritten = 0;
 
-    return bytesRead;
+    if (stream->Write(&bytesWritten, contents, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
+        bytesWritten = 0;
+
+    return bytesWritten;
     }
 
 RequestStatus RawServerResponse::ValidateResponse()
@@ -257,9 +253,9 @@ CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& re
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &(responseObject.header));
 
-    if (file != nullptr)
+    if (file != nullptr && wsgRequest.GetRequestType() != WSGURL::HttpRequestType::PUT_Request)
         {
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFileCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         }
     else
