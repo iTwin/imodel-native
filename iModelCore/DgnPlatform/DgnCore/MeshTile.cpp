@@ -1747,10 +1747,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     
     if (nullptr != geometricModel)
         {
-        double              rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-        static double       s_minDiagonalToleranceRatio = 1.0E-5;   // Done allow leaf tolerance to be less than this factor times range diagonal.
+        double      rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+        double      minDiagonalToleranceRatio = (nullptr == geometricModel->ToGeometricModel3d()) ? 1.0E-5 : 1.0E-3;   // Done allow leaf tolerance to be less than this factor times range diagonal.
 
-        leafTolerance = std::min(leafTolerance, rangeDiagonal * s_minDiagonalToleranceRatio);
+        leafTolerance = std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio);
         }
 
     if (nullptr != generateMeshTiles)
