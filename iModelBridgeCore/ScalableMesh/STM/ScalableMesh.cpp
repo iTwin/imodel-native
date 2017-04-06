@@ -2449,7 +2449,7 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
     for (auto& id : ids)
         { 
         wchar_t idStr[1000];
-        swprintf(idStr, L"%zu", id);
+        swprintf(idStr, L"%llu", id);
                     
         //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
         fileName.clear();
