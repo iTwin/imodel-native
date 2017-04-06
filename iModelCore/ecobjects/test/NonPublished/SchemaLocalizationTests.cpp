@@ -265,6 +265,7 @@ TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplemental)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema.IsValid());
     ASSERT_TRUE(testSchema->IsSupplemented());
     
     VerifyLocalized(testSchema, PK);
@@ -283,6 +284,7 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema.IsValid());
     ASSERT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, GB);
 
@@ -305,6 +307,7 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema.IsValid());
     ASSERT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
