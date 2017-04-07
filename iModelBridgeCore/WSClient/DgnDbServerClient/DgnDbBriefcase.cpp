@@ -15,6 +15,7 @@
 #include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include "DgnDbServerEventManager.h"
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
+#include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGN
@@ -44,7 +45,7 @@ DgnRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallbackCR callb
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {
@@ -93,7 +94,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(DgnRevisions const& revisions) co
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {
@@ -146,7 +147,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {
@@ -428,7 +429,7 @@ DgnRevisionsTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description,
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {
@@ -492,7 +493,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {
@@ -549,7 +550,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEv
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error({DgnDbServerError::Id::FileNotFound, DgnDbServerErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_repositoryConnection.IsNull())
         {

@@ -151,8 +151,8 @@ IHttpHandlerPtr          customHandler
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (repository.GetId().empty())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryName);
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository id.");
+        return DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryId);
         }
     if (repository.GetServerURL().empty())
         {
@@ -190,7 +190,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::ValidateBriefcase(BeGuidCR f
 
         if (briefcase->GetFileId() != fileId)
             {
-            return DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidBriefcase);
+            return DgnDbServerStatusResult::Error({DgnDbServerError::Id::InvalidBriefcase, DgnDbServerErrorLocalizedString(MESSAGE_BriefcaseOutdated)});
             }
 
         return DgnDbServerStatusResult::Success();
@@ -317,8 +317,8 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNa
     const Utf8String methodName = "DgnDbRepositoryConnection::OnPremiseFileUpload";
     if (objectId.remoteId.empty())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryName)); //NEEDSWORK
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository id.");
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryId));
         }
 
     return m_wsRepositoryClient->SendUpdateFileRequest(objectId, filePath, callback, cancellationToken)
@@ -585,7 +585,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICa
         auto instances = result.GetValue().GetInstances();
         if (instances.IsEmpty())
             {
-            finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
+            finalResult->SetError({DgnDbServerError::Id::FileDoesNotExist, DgnDbServerErrorLocalizedString(MESSAGE_MasterFileNotFound)});
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
             return;
             }
@@ -1512,7 +1512,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(Be
         auto briefcasesInfo = briefcasesResult.GetValue();
         if (briefcasesInfo.empty())
             {
-            return DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidBriefcase);
+            return DgnDbServerBriefcaseInfoResult::Error({DgnDbServerError::Id::InvalidBriefcase, DgnDbServerErrorLocalizedString(MESSAGE_BriefcaseInfoParseError)});
             }
         return DgnDbServerBriefcaseInfoResult::Success(briefcasesResult.GetValue()[0]);
         });
@@ -1947,7 +1947,7 @@ ICancellationTokenPtr cancellationToken
     if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid briefcase.");
-        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(DgnDbServerError::Id::InvalidBriefcase));
+        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
@@ -2038,7 +2038,7 @@ ICancellationTokenPtr cancellationToken
 
     auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
+        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error({DgnDbServerError::Id::BIMCSOperationFailed, DgnDbServerErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
 
     auto requestString = changeset->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
@@ -2056,7 +2056,7 @@ ICancellationTokenPtr cancellationToken
                 if (!GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                     {
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
-                    return DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::InvalidPropertiesValues);
+                    return DgnDbServerCodeTemplateResult::Error({DgnDbServerError::Id::InvalidPropertiesValues, DgnDbServerErrorLocalizedString(MESSAGE_CodeTemplateResponseError)});
                     }
 
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -2088,7 +2088,7 @@ ICancellationTokenPtr cancellationToken
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::BIMCSOperationFailed));
+        return CreateCompletedAsyncTask<DgnDbServerCodeTemplateResult>(DgnDbServerCodeTemplateResult::Error({DgnDbServerError::Id::BIMCSOperationFailed, DgnDbServerErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return ExecutionManager::ExecuteWithRetry<DgnDbCodeTemplate>([=]()
@@ -2105,7 +2105,7 @@ ICancellationTokenPtr cancellationToken
                 if (!GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                     {
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
-                    return DgnDbServerCodeTemplateResult::Error(DgnDbServerError::Id::InvalidPropertiesValues);
+                    return DgnDbServerCodeTemplateResult::Error({DgnDbServerError::Id::InvalidPropertiesValues, DgnDbServerErrorLocalizedString(MESSAGE_CodeTemplateResponseError)});
                     }
 
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();

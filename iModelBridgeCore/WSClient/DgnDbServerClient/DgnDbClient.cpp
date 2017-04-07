@@ -52,7 +52,7 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfo
     if (m_serverUrl.empty() || m_serverUrl != repositoryInfo.GetServerURL())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));//NEEDSWORK: different message?
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
@@ -159,7 +159,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RemoveBasicUser(Credentials credentials, I
 
         if (1 < instances.Size())
             {
-            finalResult->SetError({ DgnDbServerError::Id::InternalServerError });
+            finalResult->SetError({ DgnDbServerError::Id::InternalServerError, DgnDbServerErrorLocalizedString(MESSAGE_UserServerError)});
             return;
             }
 
@@ -413,41 +413,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             03/2016
-//---------------------------------------------------------------------------------------
-DgnDbPtr CleanDb(DgnDbCR db)
-    {
-    const Utf8String methodName = "CleanDb";
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
-    BeFileName tempFile;
-    DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFile, L"DgnDbServerClient");
-    tempFile.AppendToPath(db.GetFileName().GetFileNameAndExtension().c_str());
-    BeFileName::BeCopyFile(db.GetFileName(), tempFile);
-
-    BeSQLite::DbResult status;
-    Dgn::DgnDbPtr tempdb = Dgn::DgnDb::OpenDgnDb(&status, tempFile, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
-        return nullptr;
-
-    tempdb->Txns().EnableTracking(true);
-    //Do cleanup
-    auto revision = tempdb->Revisions().StartCreateRevision();
-    if (revision.IsValid())
-        tempdb->Revisions().FinishCreateRevision();
-    tempdb->SaveBriefcaseLocalValue("ParentRevisionId", "");                            //Clear parent revision id
-    tempdb->ChangeBriefcaseId(BeBriefcaseId(0));                                        //Set BriefcaseId to 0 (master)
-    tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryURL, "");         //Set URL
-    //tempdb.SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryId, repositoryId);//Set repository ID, we know this only after it is pushed to the server
-                                                                                        //Save changes
-    tempdb->SaveChanges();
-    //NEEDSWORK: end of file cleanup
-    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-    return tempdb;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description, bool waitForInitialized,
@@ -459,7 +424,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     if (!db.GetFileName().DoesPathExist())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));// Fixed
         }
     if (m_serverUrl.empty())
         {
@@ -477,16 +442,8 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
         }
 
-    DgnDbPtr tempdb = CleanDb(db);
-    if (!tempdb.IsValid())
-        {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
-        }
-
-    FileInfoPtr fileInfo = FileInfo::Create(*tempdb, description);
-    BeFileName filePath = tempdb->GetFileName();
-    tempdb->CloseDb();
+    FileInfoPtr fileInfo = FileInfo::Create(db, description);
+    BeFileName filePath = db.GetFileName();
 
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating repository instance. Name: %s.", repositoryName.c_str());
@@ -584,7 +541,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
     if (repositoryInfo->GetServerURL() != m_serverUrl)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Briefcase belongs to another server.");
-        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error({DgnDbServerError::Id::InvalidServerURL, DgnDbServerErrorLocalizedString(MESSAGE_BriefcaseWrongURL)}));
         }
     std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo->GetName().c_str());
@@ -727,14 +684,14 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
     if (BeFileNameStatus::Success != status)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::Unknown));
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError()));
         }
     status = BeFileName::BeMoveFile(downloadPath, originalFilePath);
     if (BeFileNameStatus::Success != status)
         {
         BeFileName::BeMoveFile(backupPath, originalFilePath);
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::Unknown));
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError()));
         }
 
     backupPath.BeDeleteFile();
@@ -823,8 +780,8 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     if (repositoryInfo.GetId().empty())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository id.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidRepositoryId));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
