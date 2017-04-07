@@ -356,11 +356,12 @@ struct SchemaStatsCommand final : public Command
         struct ClassColumnStats final
             {
         private:
+            ECN::ECClassCP m_class = nullptr;
             std::vector<std::pair<Utf8String, uint32_t>> m_columnCountPerTable;
             uint32_t m_totalColumnCount = 0;
 
         public:
-            ClassColumnStats() {}
+            explicit ClassColumnStats(ECN::ECClassCR ecClass) : m_class(&ecClass) {}
 
             void Add(Utf8CP tableName, uint32_t colCount)
                 { 
@@ -368,8 +369,30 @@ struct SchemaStatsCommand final : public Command
                 m_totalColumnCount += colCount;
                 }
 
+            ECN::ECClassCR GetClass() const { return *m_class; }
             uint32_t GetTotalColumnCount() const { return m_totalColumnCount; }
             std::vector<std::pair<Utf8String, uint32_t>> const& GetColCountPerTable() const { return m_columnCountPerTable; }
+            };
+
+        struct ClassColumnStatsCollection final
+            {
+        private:
+            std::vector<ClassColumnStats> m_stats;
+
+        public:
+            ClassColumnStatsCollection() {}
+
+            void Add(ClassColumnStats const& stat) { m_stats.push_back(stat); }
+
+            void Sort() 
+                {
+                std::sort(m_stats.begin(), m_stats.end(),
+                    [] (ClassColumnStats const& lhs, ClassColumnStats const& rhs) { return lhs.GetColCountPerTable() < rhs.GetColCountPerTable(); });
+                }
+
+            bool IsEmpty() const { return m_stats.empty(); }
+            uint32_t GetSize() const { return (uint32_t) m_stats.size(); }
+            std::vector<ClassColumnStats> const& GetList() const { return m_stats; }
             };
 
         Utf8String _GetName() const override { return ".schemastats"; }
@@ -378,7 +401,7 @@ struct SchemaStatsCommand final : public Command
         void _Run(Session&, Utf8StringCR args) const override;
         void ComputeClassHierarchyStats(Session&, std::vector<Utf8String> const& args) const;
 
-        static double ComputeQuantile(std::vector<uint32_t> const& sortedValues, double p);
+        static double ComputeQuantile(ClassColumnStatsCollection const&, double p);
 
     public:
         SchemaStatsCommand() : Command() {}
