@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
-#include "BeSqlite/ChangeSet.h"
+#include "BeSQLite/ChangeSet.h"
 
 #include <vector>
 #include <limits>
