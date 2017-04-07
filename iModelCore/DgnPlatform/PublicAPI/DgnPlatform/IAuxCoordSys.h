@@ -86,8 +86,10 @@ protected:
 public:
     //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
     static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
-    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(ViewDefinitionCR def, Utf8StringCR name="");
+    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(ViewDefinitionCR def, Utf8StringCR name=""); // Create default ACS for this type of view.
+    DGNPLATFORM_EXPORT static AuxCoordSystemPtr CreateNew(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name); // Create default ACS for this type of model.
     DGNPLATFORM_EXPORT static DgnCode CreateCode(ViewDefinitionCR def, Utf8StringCR name=""); //!< @private
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnModelR model, DefinitionModelP defnModel, Utf8StringCR name); //!< @private
 
     AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
     AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
@@ -173,11 +175,13 @@ protected:
 
 public:
     //! Construct a new 2d Auxiliary Coordinate System.
-    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] model The DefinitionModel to hold the Auxiliary Coordinate System
     //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all 2d Auxiliary Coordinate Systems.
-    AuxCoordSystem2d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    AuxCoordSystem2d(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem2d, name);} //!< @private
+    //! Create a DgnCode for an AuxCoordSystem2d given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_AuxCoordSystem2d, scope, name);}
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem2d));} //!< @private
 
     DPoint2d GetOrigin2d() const {return GetPropertyValueDPoint2d("Origin");}
@@ -210,11 +214,13 @@ protected:
 
 public:
     //! Construct a new 3d Auxiliary Coordinate System.
-    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] model The DefinitionModel to hold the Auxiliary Coordinate System
     //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all 3d Auxiliary Coordinate Systems.
-    AuxCoordSystem3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+    AuxCoordSystem3d(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem3d, name);} //!< @private
+    //! Create a DgnCode for an AuxCoordSystem3d given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_AuxCoordSystem3d, scope, name);}
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem3d));} //!< @private
 
     DPoint3d GetOrigin3d() const {return GetPropertyValueDPoint3d("Origin");}
@@ -240,11 +246,13 @@ protected:
 
 public:
     //! Construct a new spatial Auxiliary Coordinate System.
-    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] model The DefinitionModel to hold the Auxiliary Coordinate System
     //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all spatial Auxiliary Coordinate Systems.
-    AuxCoordSystemSpatial(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateSpatialCode(db, name))) {SetOrigin3d(db.GeoLocation().GetGlobalOrigin());}
+    AuxCoordSystemSpatial(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {SetOrigin3d(model.GetDgnDb().GeoLocation().GetGlobalOrigin());}
 
-    static DgnCode CreateSpatialCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystemSpatial, name);} //!< @private
+    //! Create a DgnCode for an AuxCoordSystemSpatial given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_AuxCoordSystemSpatial, scope, name);}
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystemSpatial));} //!< @private
 
 }; // AuxCoordSystemSpatial

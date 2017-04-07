@@ -27,7 +27,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 20);} // we never expect to have more than 50 or so
     void Clear() {m_graphics.clear();}
     bool IsEmpty() const {return m_graphics.empty();}
 };
@@ -788,16 +788,19 @@ public:
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
         //! @note The caller will call _UpdateProperties immediately after calling this method.
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an insert statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must override this method to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare a delete statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to update the instance properties.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
+        //! @note use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an update statement, and pass @a writeToken as the second argument
         virtual DgnDbStatus _UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to load properties from the Db.
@@ -836,6 +839,7 @@ public:
     //!     * _UpdateProperties
     //!     * _LoadProperties
     //! @see UniqueAspect
+    //! @note If you override _UpdateProperties, use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an update statement, and pass @a writeToken as the second argument
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     //! @note A domain that defines a subclass of MultiAspect may also define a subclass of dgn_AspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
@@ -2755,6 +2759,9 @@ protected:
 public:
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
+
+    //! Return the DefinitionModel that contains (or will contain) this DefinitionElement
+    DGNPLATFORM_EXPORT DefinitionModelPtr GetDefinitionModel() const;
 };
 
 //=======================================================================================
@@ -2765,6 +2772,9 @@ struct EXPORT_VTABLE_ATTRIBUTE TypeDefinitionElement : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
 
+private:
+    BE_PROP_NAME(Recipe)
+
 protected:
     explicit TypeDefinitionElement(CreateParams const& params) : T_Super(params) {}
 
@@ -2772,11 +2782,11 @@ public:
     //! Set the recipe for this TypeDefinitionElement
     //! @param[in] recipeId The DgnElementId of the recipe to be associated with this TypeDefinitionElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of TypeDefinitionHasRecipe
-    DgnDbStatus SetRecipe(DgnElementId recipeId, ECN::ECClassId relClassId) {return SetPropertyValue("Recipe", recipeId, relClassId);}
+    DgnDbStatus SetRecipe(DgnElementId recipeId, ECN::ECClassId relClassId) {return SetPropertyValue(prop_Recipe(), recipeId, relClassId);}
 
     //! Get the DgnElementId of the recipe for this TypeDefinitionElement
     //! @return Will be invalid if there is no recipe associated with this TypeDefinitionElement
-    DgnElementId GetRecipeId() const {return GetPropertyValueId<DgnElementId>("Recipe");}
+    DgnElementId GetRecipeId() const {return GetPropertyValueId<DgnElementId>(prop_Recipe());}
 
     //! Get the RecipeDefinitionElement for this TypeDefinitionElement
     //! @return Will be invalid if there is no RecipeDefinitionElement associated with this TypeDefinitionElement
@@ -2908,6 +2918,9 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationPartitionElement : InformationContentE
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationPartitionElement, InformationContentElement);
     friend struct dgn_ElementHandler::InformationPartition;
 
+private:
+    BE_PROP_NAME(Description)
+
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
@@ -2923,9 +2936,9 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
-    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
     //! Set the description of this InformationPartitionElement
-    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
+    void SetDescription(Utf8CP description) {SetPropertyValue(prop_Description(), description);}
 };
 
 //=======================================================================================
@@ -3156,7 +3169,7 @@ public:
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
     void SetDescription(Utf8CP description) {SetPropertyValue(prop_Description(), description);}
 
-    BE_JSON_NAME(Subject);   //<! The namespace reserved for Subject Json properties
+    BE_JSON_NAME(Subject); //<! The namespace reserved for Subject Json properties
     BE_JSON_NAME(Job); //<! The sub-namespace reserved for Job Subject Json properties
     BE_JSON_NAME(Model); //<! The sub-namespace reserved for Model Subject Json properties
 

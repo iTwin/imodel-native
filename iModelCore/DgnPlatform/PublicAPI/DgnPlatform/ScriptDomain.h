@@ -13,7 +13,7 @@
 #include "DgnDomain.h"
 #include "DgnPlatformLib.h"
 
-#define SCRIPT_DOMAIN_ECSCHEMA_PATH             L"ECSchemas/Domain/Script.01.00.ecschema.xml"
+#define SCRIPT_DOMAIN_ECSCHEMA_PATH             L"ECSchemas/Domain/Script.ecschema.xml"
 #define SCRIPT_DOMAIN_NAME                      "SCRIPT"
 #define SCRIPT_DOMAIN_SCHEMA(className)         SCRIPT_DOMAIN_NAME "." className
 

@@ -430,12 +430,12 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
         return m_isColorFromBackground != rhs.m_isColorFromBackground;
 
     if (m_linePixels != rhs.m_linePixels)
-        return m_linePixels != rhs.m_linePixels;
-    
+        return m_linePixels < rhs.m_linePixels;                                                                                        
+
     if (m_gradient.get() != rhs.m_gradient.get())
         {
         if (!m_gradient.IsValid() || !rhs.m_gradient.IsValid() || ! (*m_gradient == *rhs.m_gradient))
-            return m_gradient.get() != rhs.m_gradient.get();  // I don't think is it necessary to do a real less than comparison if both valid but not equal??
+            return m_gradient.get() < rhs.m_gradient.get();
         }
 
     if (m_color != rhs.m_color)
@@ -455,9 +455,6 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
 
     if (m_rasterWidth != rhs.m_rasterWidth)
         return m_rasterWidth < rhs.m_rasterWidth;
-
-    if (m_linePixels != rhs.m_linePixels)
-        return m_linePixels < rhs.m_linePixels;                                                                                        
 
     if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
         return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();
@@ -1750,10 +1747,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     
     if (nullptr != geometricModel)
         {
-        double              rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-        static double       s_minDiagonalToleranceRatio = 1.0E-5;   // Done allow leaf tolerance to be less than this factor times range diagonal.
+        double      rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+        double      minDiagonalToleranceRatio = (nullptr == geometricModel->ToGeometricModel3d()) ? 1.0E-5 : 1.0E-3;   // Done allow leaf tolerance to be less than this factor times range diagonal.
 
-        leafTolerance = std::min(leafTolerance, rangeDiagonal * s_minDiagonalToleranceRatio);
+        leafTolerance = std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio);
         }
 
     if (nullptr != generateMeshTiles)
@@ -2526,7 +2523,7 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
             return false;   // process as facets (optimization).
 
         CurveVectorPtr clone = curves.Clone();
-        return ProcessGeometry(*IGeometry::Create(clone), true, isRegion, gf);
+        return ProcessGeometry(*IGeometry::Create(clone), true, !isRegion, gf);
         }
     }
 
@@ -3215,6 +3212,7 @@ bool TileDisplayParams::IsStrictlyLessThan(TileDisplayParamsCR rhs) const
     TEST_LESS_THAN(m_textureImage.get(), rhs.m_textureImage.get());
     TEST_LESS_THAN(m_linePixels, rhs.m_linePixels);
     TEST_LESS_THAN(static_cast<uint32_t>(m_class), static_cast<uint32_t>(rhs.m_class));
+    TEST_LESS_THAN(m_gradient.get(), rhs.m_gradient.get());
 
     if (m_ignoreLighting != rhs.m_ignoreLighting)
         return m_ignoreLighting;
@@ -3237,6 +3235,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_linePixels);
+    TEST_EQUAL(m_gradient);
 
     return true;
     }

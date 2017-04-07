@@ -12,10 +12,10 @@
 // Macros associated with the BisCore ECSchema
 //-----------------------------------------------------------------------------------------
 #define BIS_ECSCHEMA_NAME       "BisCore"
-#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.01.00.ecschema.xml"
+#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.ecschema.xml"
 #define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)         "bis_" name
-#define BE_PROP_NAME(__val__) static constexpr Utf8CP prop_##__val__() {return #__val__;}
+#define BE_PROP_NAME(__val__)   static constexpr Utf8CP prop_##__val__() {return #__val__;}
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with BIS_SCHEMA macro for use in ECSql)
@@ -96,7 +96,6 @@
 #define BIS_CLASS_SpatialLocationPartition  "SpatialLocationPartition"
 #define BIS_CLASS_SpatialLocationType       "SpatialLocationType"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
-#define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_SubCategory               "SubCategory"
 #define BIS_CLASS_Subject                   "Subject"
 #define BIS_CLASS_TemplateRecipe2d          "TemplateRecipe2d"
@@ -110,6 +109,7 @@
 #define BIS_CLASS_ViewDefinition2d          "ViewDefinition2d"
 #define BIS_CLASS_ViewDefinition3d          "ViewDefinition3d"
 #define BIS_CLASS_VolumeElement             "VolumeElement"
+#define BIS_CLASS_WebMercatorModel          "WebMercatorModel"
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)

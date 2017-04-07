@@ -22,13 +22,13 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/BisCore.01.00.ecschema.xml
-                ECSchemas/Generic.01.00.ecschema.xml
-                ECSchemas/Markup.01.00.ecschema.xml
+                ECSchemas/BisCore.ecschema.xml
+                ECSchemas/Generic.ecschema.xml
+                ECSchemas/Markup.ecschema.xml
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Functional.01.00.ecschema.xml
-                ECSchemas/Script.01.00.ecschema.xml
+                ECSchemas/Functional.ecschema.xml
+                ECSchemas/Script.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
@@ -649,5 +649,14 @@
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
+
+    <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="DgnPlatformDLL" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
 
 </BuildContext>

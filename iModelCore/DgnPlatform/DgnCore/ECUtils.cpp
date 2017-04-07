@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ECUtils.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -170,7 +170,7 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
     else if (jsonValue.isDouble())
         v = ECN::ECValue(jsonValue.asDouble());
     else if (jsonValue.isString())          // *** WIP_ECUTILS -- detect if string is a serialized DateTime?
-        v = ECN::ECValue(jsonValue.asString().c_str());
+        v = ECN::ECValue(jsonValue.asCString());
     else
         v.SetIsNull(true);
 

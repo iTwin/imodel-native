@@ -45,9 +45,6 @@ private:
     static ECN::ExpressionStatus IsPropertyValueSet (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus ResolveSymbology (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
 #endif
-    // IValueListResult methods for use in ECExpressions
-    static ECN::ExpressionStatus AnyMatches (ECN::EvaluationResult& evalResult, void* context, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
-    static ECN::ExpressionStatus AllMatch (ECN::EvaluationResult& evalResult, void* context, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
 
     // Helpers for ECInstance methods
     ECN::ECSchemaR                   GetSchema();

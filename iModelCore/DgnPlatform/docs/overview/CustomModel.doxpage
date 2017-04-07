@@ -2,7 +2,7 @@
 |
 |     $Source: docs/overview/CustomModel.doxpage $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -99,7 +99,7 @@ __PUBLISH_INSERT_FILE__ ToyTileDomain_RegisterHandlers.sampleCode
 
 Finally, once everything is configured, here is an example of how to use the handler to create an instance of a custom model subclass and insert it into the %DgnDb:
 
-__PUBLISH_INSERT_FILE__ ToyTileCreator_CreateModel.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileBridge_CreateModel.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->

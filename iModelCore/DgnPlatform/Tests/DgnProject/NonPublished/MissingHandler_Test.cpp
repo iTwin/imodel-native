@@ -96,7 +96,7 @@ struct MissingHandlerDomain : DgnDomain
     DOMAIN_DECLARE_MEMBERS(MissingHandlerDomain, );
 
 private:
-    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml"; }
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" MHTEST_SCHEMAW L".ecschema.xml"; }
 
 public:
     MissingHandlerDomain() : DgnDomain(MHTEST_SCHEMA, "Missing Handlers domain", 1)

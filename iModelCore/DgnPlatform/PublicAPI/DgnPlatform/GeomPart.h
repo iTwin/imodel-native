@@ -57,14 +57,14 @@ protected:
 public:
     //! Create a DgnGeometryPart
     //! @param[in] model Create the DgnGeometryPart in this model
-    //! @param[in] name Create the DgnCode for the DgnGeometryPart using this name and the specified model as the uniqueness scope for the name
-    DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DefinitionModelR model, Utf8StringCR name);
+    //! @param[in] name Optional. If name provided, create the DgnCode for the DgnGeometryPart using this name and the specified model as the uniqueness scope for the name
+    DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DefinitionModelR model, Utf8StringCR name="");
     //! @private
     //! @deprecated
     DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DgnDbR db, DgnCodeCR code=DgnCode::CreateEmpty());
 
     //! Create a DgnCode for a DgnGeometryPart given a name that is meant to be unique within the scope of the specified model
-    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scope, name);}
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scope, name);}
     //! @private
     //! @deprecated
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
@@ -84,6 +84,8 @@ public:
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);
+    //! Looks up a DgnGeometryPartId by its containing model and name
+    static DgnGeometryPartId QueryGeometryPartId(DefinitionModelR model, Utf8StringCR name) {return QueryGeometryPartId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Query the range of a DgnGeometryPart by ID.
     //! @param[out] range On successful return, holds the DgnGeometryPart's range
