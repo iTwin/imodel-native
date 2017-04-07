@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const ProfileVersion EXPECTED_PROFILEVERSION (3, 108, 0, 0);
+static const ProfileVersion EXPECTED_PROFILEVERSION (3, 109, 0, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
@@ -118,6 +118,48 @@ TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     EXPECT_EQ(BE_SQLITE_ERROR, stat);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ProfileCreation)
+    {
+    auto defaultTxnModeToString = [] (DefaultTxn txnMode)
+        {
+        switch (txnMode)
+            {
+                case DefaultTxn::Exclusive:
+                    return "Exclusive";
+                case DefaultTxn::Immediate:
+                    return "Immediate";
+                case DefaultTxn::No:
+                    return "No";
+                case DefaultTxn::Yes:
+                    return "Yes";
+                default:
+                    BeAssert(false);
+                    return "error";
+            }
+        };
+
+    const std::vector<DefaultTxn> defaultTxnModes {DefaultTxn::No, DefaultTxn::Yes, DefaultTxn::Exclusive, DefaultTxn::Immediate};
+
+    BeFileName testFilePath;
+    BeTest::GetHost().GetOutputRoot(testFilePath);
+    testFilePath.AppendToPath(WString("profiletest.ecdb", BentleyCharEncoding::Utf8).c_str());
+
+    for (DefaultTxn defaultTxnMode : defaultTxnModes)
+        {
+        if (testFilePath.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(testFilePath));
+
+        ECDb::CreateParams params;
+        params.SetStartDefaultTxn(defaultTxnMode);
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(testFilePath, BeGuid(), params)) << "DefaultTxn mode: " << defaultTxnModeToString(defaultTxnMode);
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -144,14 +186,14 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
             {ProfileVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
             {ProfileVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,108,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,108,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(3,108,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,108,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(3,108,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,108,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
-            {ProfileVersion(3,109,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(3,109,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(3,109,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,109,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(3,109,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,109,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(3,109,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,109,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
+            {ProfileVersion(3,110,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(3,110,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
             {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
             {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
         };

@@ -28,3 +28,6 @@ ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
 # This is no longer true due to recent changes to CalculatedProperties
 ECDbExpressionSymbolContextTests.SymbolsAreInjectedWhenImportingSchemas
+
+# WIP_MERGE_Krischan
+ECDbTestFixture.ProfileUpgrade

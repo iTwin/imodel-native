@@ -26,15 +26,15 @@ private:
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
+    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR);
     //! @param onProfileCreation true if this method is called during profile creation. false if 
     //! called during profile upgrade
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static ProfileVersion GetExpectedVersion() { return ProfileVersion(3, 108, 0, 0); }
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(3, 109, 0, 0); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(3, 108, 0, 0); }
+    static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(3, 109, 0, 0); }
 
     static DbResult RunUpgraders(ECDbCR, ProfileVersion const& currentProfileVersion);
 

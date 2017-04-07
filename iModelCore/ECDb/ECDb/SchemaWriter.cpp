@@ -352,7 +352,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits) VALUES(?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -382,25 +382,28 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindText(6, koq.GetPersistenceUnit().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(7, koq.GetPrecision()))
-        return ERROR;
-
-    if (!koq.GetDefaultPresentationUnit().empty())
+    if (koq.GetPersistenceUnit().HasProblem())
         {
-        if (BE_SQLITE_OK != stmt->BindText(8, koq.GetDefaultPresentationUnit().c_str(), Statement::MakeCopy::No))
-            return ERROR;
+        Issues().Report("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), koq.GetPersistenceUnit().GetProblemDescription().c_str());
+        return ERROR;
         }
 
-    Utf8String altPresUnitsJsonStr;
-    if (!koq.GetAlternativePresentationUnitList().empty())
+    Utf8String persistenceUnitStr = koq.GetPersistenceUnit().ToText(false);
+    BeAssert(!persistenceUnitStr.empty());
+    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr.c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindDouble(7, koq.GetRelativeError()))
+        return ERROR;
+
+
+    Utf8String presUnitsJsonStr;
+    if (!koq.GetPresentationUnitList().empty())
         {
-        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(altPresUnitsJsonStr, koq))
+        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, m_ecdb, koq))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindText(9, altPresUnitsJsonStr.c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(8, presUnitsJsonStr.c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -1970,7 +1973,7 @@ BentleyStatus SchemaWriter::UpdateClasses(ClassChanges& classChanges, ECSchemaCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateKindOfQuantities(ECKindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
+BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
     if (!koqChanges.IsValid())
         return SUCCESS;

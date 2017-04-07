@@ -1837,6 +1837,14 @@ ChangeIterator::ChangeIterator(ECDbCR ecdb, IChangeSet& changeSet) : m_ecdb(ecdb
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
+ChangeIterator::ChangeIterator(ECDbCR ecdb, Changes const& changes) : m_ecdb(ecdb), m_changes(changes)
+    {
+    InitTableMap();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
 ChangeIterator::~ChangeIterator()
     {
     FreeTableMap();

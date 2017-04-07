@@ -127,6 +127,7 @@ struct ChangeIterator final
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
         SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
+        Changes::Change const& GetChange() const {return m_change;} //!< @private
         TableMap const* GetTableMap() const { return m_tableMap; } //!< @private
         ChangeIterator const& GetChangeIterator() const {return m_iterator;}  //!< @private
         ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
@@ -207,6 +208,7 @@ struct ChangeIterator final
     public:
         //! Construct a ChangeSummary from a BeSQLite ChangeSet
         ECDB_EXPORT explicit ChangeIterator(ECDbCR ecdb, IChangeSet& changeSet);
+        ECDB_EXPORT explicit ChangeIterator(ECDbCR ecdb, Changes const& changes);
 
         //! Destructor
         ECDB_EXPORT ~ChangeIterator();
