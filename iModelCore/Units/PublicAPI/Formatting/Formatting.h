@@ -447,7 +447,7 @@ struct FormatProblemDetail
 
         FormatProblemCode const GetProblemCode() { return m_code; }
         UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-        UNITS_EXPORT Utf8String GetProblemDescription();
+        UNITS_EXPORT Utf8String GetProblemDescription() const;
     };
 
 struct FactorPower
@@ -796,7 +796,7 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet(Utf8CP description);
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+        Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
     };

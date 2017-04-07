@@ -1079,7 +1079,7 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
 // FormatProblemDetail
 //
 //===================================================
-Utf8String FormatProblemDetail::GetProblemDescription()
+Utf8String FormatProblemDetail::GetProblemDescription() const
     {
     switch (m_code)
         {
