@@ -361,8 +361,8 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
         GraphicBranch branch;
         branch.SetViewFlagsOverrides(ViewFlagsOverrides(vp->GetViewFlags()));
 
-        for (auto& graphic : scene->m_list)
-            branch.Add(*graphic.m_ptr);
+        for (auto& graphic : *scene)
+            branch.Add(*graphic);
         
         Transform toNpc;
         toNpc.InitFrom(*vp->GetWorldToNpcMap(), false);

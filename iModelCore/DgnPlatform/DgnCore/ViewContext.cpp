@@ -372,35 +372,6 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
-    {
-    if (!m_viewflags.ShowWeights())
-        ovrMatSymb.SetWidth(1);
-
-    if (!m_viewflags.ShowTransparency())
-        {
-        ovrMatSymb.SetLineTransparency(0);
-        ovrMatSymb.SetFillTransparency(0);
-        }
-
-    if (m_viewflags.IsMonochrome())
-        {
-        ovrMatSymb.SetLineColor(m_monochromeColor);
-        ovrMatSymb.SetFillColor(m_monochromeColor);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
-    {
-    _AddViewOverrides(ovrMatSymb); // Modify ovrMatSymb for view flags...
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_CookGeometryParams(GeometryParamsR geomParams, GraphicParamsR graphicParams)
@@ -1114,9 +1085,9 @@ void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
 void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_world.IsValid())
-        m_decorations.m_world = new GraphicList();
+        m_decorations.m_world = new DecorationList();
 
-    m_decorations.m_world->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_world->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1125,9 +1096,9 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_worldOverlay.IsValid())
-        m_decorations.m_worldOverlay = new GraphicList();
+        m_decorations.m_worldOverlay = new DecorationList();
 
-    m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_worldOverlay->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1136,9 +1107,9 @@ void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraph
 void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_viewOverlay.IsValid())
-        m_decorations.m_viewOverlay = new GraphicList();
+        m_decorations.m_viewOverlay = new DecorationList();
 
-    m_decorations.m_viewOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_viewOverlay->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1155,16 +1126,16 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
     if (!m_isFlash)
         {
         if (!m_decorations.m_normal.IsValid())
-            m_decorations.m_normal = new GraphicList();
+            m_decorations.m_normal = new DecorationList();
 
-        m_decorations.m_normal->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+        m_decorations.m_normal->Add(graphic, ovrParams);
         return;
         }
 
     if (!m_decorations.m_flashed.IsValid())
-        m_decorations.m_flashed = new GraphicList();
+        m_decorations.m_flashed = new DecorationList();
 
-    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_flashed->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

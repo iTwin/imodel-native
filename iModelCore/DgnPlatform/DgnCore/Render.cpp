@@ -310,45 +310,6 @@ Render::Queue& DgnViewport::RenderQueue()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
-    {
-    m_list.push_back(Node(graphic, ovr, ovrFlags));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicList::Drop(Graphic& graphic) 
-    {
-    for (auto it=m_list.begin(); it!=m_list.end(); ++it)
-        {
-        if (it->m_ptr.get() == &graphic)
-            {
-            m_list.erase(it);
-            return;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicList::ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
-    {
-    for (auto it=m_list.begin(); it!=m_list.end(); ++it)
-        {
-        if (it->m_ptr.get() == &graphic)
-            {
-            it->m_overrides = ovr;
-            it->m_ovrFlags = ovrFlags;
-            return;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FrustumPlanes::Init(FrustumCR frustum)

@@ -133,8 +133,6 @@ protected:
     virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP clips) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
-    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
-    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
@@ -313,14 +311,10 @@ struct RenderContext : ViewContext
     friend struct DgnViewport;
 
 protected:
-    Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
 
 public:
-    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
-
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
-    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(std::move(branch), db, tf, clips);}
@@ -391,14 +385,19 @@ struct DynamicsContext : RenderContext
 {
     friend struct DgnPrimitiveTool;
 private:
+    Render::DecorationListR m_dynamics;
+    Render::OvrGraphicParams m_ovrParams;
     Render::Task::Priority m_priority;
-    Render::GraphicListR m_dynamics;
+
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
     DynamicsContext(DgnViewportR, Render::Task::Priority);
     ~DynamicsContext();
     void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
 
 public:
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+
     DGNVIEW_EXPORT void DrawElements(DgnElementCPtrVec const& elements, IRedrawOperationP redrawOp=nullptr);
     DGNVIEW_EXPORT void DrawElements(DgnElementIdSet const& elemIds, IRedrawOperationP redrawOp=nullptr);
     DGNVIEW_EXPORT void DrawElement(DgnElementCR element, IRedrawOperationP redrawOp=nullptr);
@@ -413,12 +412,13 @@ struct DecorateContext : RenderContext
     DEFINE_T_SUPER(RenderContext);
     friend struct DgnViewport;
 private:
-    bool    m_isFlash = false;
     Render::Decorations& m_decorations;
     Render::GraphicBranch* m_viewlet = nullptr;
+    Render::OvrGraphicParams m_ovrParams;
+    bool    m_isFlash = false;
 
     StatusInt VisitSheetHit(HitDetailCR hit);
-    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
+    virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
@@ -444,6 +444,7 @@ public:
 
     //! Set context to state used to flash elements.
     void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
 };  
 
 END_BENTLEY_DGN_NAMESPACE

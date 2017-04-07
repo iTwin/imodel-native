@@ -227,7 +227,7 @@ public:
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
-    void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
+    void ChangeDynamics(Render::DecorationListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyViewState(ViewDefinitionCR val, bool saveInUndo=true, BeDuration animationTime=BeDuration::Milliseconds(250));
     DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 

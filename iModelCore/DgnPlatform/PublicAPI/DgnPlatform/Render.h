@@ -1663,27 +1663,54 @@ struct PointCloudArgs
 };
 
 //=======================================================================================
-// An ordered list of RefCountedPtrs to a Render::Graphics, plus an override.
-// @bsiclass
+// @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
 struct GraphicList : RefCounted<NonCopyableClass>
 {
+    using List = bvector<GraphicPtr>;
+private:
+    List    m_list;
+public:
+    typedef List::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    size_t size() const { return m_list.size(); }
+    bool empty() const { return m_list.empty(); }
+    void clear() { m_list.clear(); }
+
+    void Add(GraphicR graphic) { m_list.push_back(&graphic); }
+    uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
+//=======================================================================================
+struct DecorationList : RefCounted<NonCopyableClass>
+{
     struct Node
     {
-        GraphicPtr m_ptr;
-        void* m_overrides;
-        uint32_t m_ovrFlags;
-        Node(Graphic& graphic, void* ovr, uint32_t ovrFlags) : m_ptr(&graphic), m_overrides(ovr), m_ovrFlags(ovrFlags) {}
+        GraphicPtr          m_graphic;
+        OvrGraphicParams    m_overrides;
+
+        Node(GraphicR graphic, OvrGraphicParamsCR ovr) : m_graphic(&graphic), m_overrides(ovr) { }
     };
 
-    bvector<Node> m_list;
+    using List = bvector<Node>;
+private:
+    List    m_list;
+public:
+    typedef List::const_iterator const_iterator;
 
-    uint32_t GetCount() const {return (uint32_t) m_list.size();}
-    bool IsEmpty() const {return m_list.empty();}
-    void Clear() {m_list.clear();}
-    DGNPLATFORM_EXPORT void Drop(Graphic& graphic);
-    DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
-    DGNPLATFORM_EXPORT void ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags);
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    size_t size() const { return m_list.size(); }
+    bool empty() const { return m_list.empty(); }
+    void clear() { m_list.clear(); }
+
+    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { m_list.push_back(Node(graphic, ovr)); }
+    void Add(GraphicR graphic, OvrGraphicParamsCP ovr=nullptr) { Add(graphic, nullptr != ovr ? *ovr : OvrGraphicParams()); }
+    uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
 };
 
 //=======================================================================================
@@ -1693,11 +1720,11 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
-    GraphicListPtr m_normal;         // drawn with zbuffer, with scene lighting
-    GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
-    GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
-    GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
-    GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
+    DecorationListPtr m_normal;         // drawn with zbuffer, with scene lighting
+    DecorationListPtr m_flashed;        // drawn with zbuffer, with scene lighting
+    DecorationListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
+    DecorationListPtr m_worldOverlay;   // drawn in overlay mode, world units
+    DecorationListPtr m_viewOverlay;    // drawn in overlay mode, view units
 };
 
 //=======================================================================================
@@ -2222,13 +2249,12 @@ protected:
     DevicePtr m_device;
     ClipVectorCPtr m_activeVolume;
     GraphicListPtr m_currentScene;
-    GraphicListPtr m_dynamics;
+    DecorationListPtr m_dynamics;
     Decorations m_decorations;
     double m_tileSizeModifier;
     uint32_t m_minimumFrameRate;
 
     virtual void _OnResized() {}
-    virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
@@ -2241,7 +2267,7 @@ public:
     virtual void _OnDestroy() {}
     virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
     virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
-    virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
+    virtual void _ChangeDynamics(DecorationListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
     virtual void _DrawFrame(StopWatch&, double sceneSecondsElapsed) = 0;
@@ -2263,7 +2289,6 @@ public:
     DeviceCP GetDevice() const {return m_device.get();}
     DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
-    void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     GraphicBuilderPtr CreateGraphic(GraphicBuilder::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
