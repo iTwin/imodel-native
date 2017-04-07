@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/linalg.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,8 +32,23 @@ void RowMajorMatrix::Print (RowMajorMatrix const &A)
     GEOMAPI_PRINTF ("</matrix>\n");
     }
 
+RowMajorMatrix::RowMajorMatrix ()
+    {
+    m_numRows = m_numColumns = 0;
+    }
 
-RowMajorMatrix ::RowMajorMatrix
+RowMajorMatrix::RowMajorMatrix
+(
+size_t numRows,
+size_t numColumns,
+double *data,
+bool transposeData
+)
+    {
+    SetSizes (numRows, numColumns, data, transposeData);
+    }
+
+void RowMajorMatrix::SetSizes
 (
 size_t numRows,
 size_t numColumns,
@@ -43,6 +58,7 @@ bool transposeData
     {
     m_numRows = numRows;
     m_numColumns = numColumns;
+    clear ();
     resize (numRows * numColumns, 0.0);
     if (data != NULL)
         {

@@ -475,13 +475,37 @@ TEST(SinglePointAreaShift,RegularNGonAreaImbalance)
     Check::ClearGeometry ("SinglePointAreaShift.RegularNGonAreaImbalance");
     }
 
-struct BubblePhysics
+
+struct Fixity
+{
+enum class Type
+    {
+    Fixed = 0,
+    Free  = 2
+    };
+Type m_type;
+DVec3d m_vector;
+size_t m_xIndex, m_yIndex;
+Fixity (Type type)
+    : m_type(type), m_vector(DVec3d::From (0,0,0)),
+    m_xIndex(SIZE_MAX),
+    m_yIndex(SIZE_MAX)
+    {
+    }
+bool IsFree  (){return m_type == Type::Free;}
+bool IsFixed (){return m_type == Type::Fixed;}
+};
+
+struct ISpringQueries
+{
+virtual DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj) = 0;
+};
+struct BubblePhysics : ISpringQueries
 {
 // m_lambda = 0 is dry -- favors close packing, spheres distort to polyhedra.
 // m_lambda = 1 is wet -- favors undeformed spheres.
 double m_lambda;
 double m_wetnessFactor; // (3.0 * m_wetnessfactor - 1)
-
 BubblePhysics (double lambda)
     : m_lambda (lambda), m_wetnessFactor (3.0 * lambda - 1.0)
     {
@@ -491,16 +515,338 @@ BubblePhysics (double lambda)
 double Lij (double ri, double rj)
     {
     double a = ri * ri + rj * rj + m_wetnessFactor * ri * rj;
-    return a >= 0.0? sqrt (a) : 0.0;
+    return a >= 0.0 ? sqrt (a) : 0.0;
     }
 // Return force vector between two bubble centers 
-DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj)
+DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj) override
     {
     DVec3d delta = Xi - Xj;
     delta.Normalize ();
     return (1.0 - Lij (ri, rj)) * delta;
     }
+
 };
+
+struct SpringPhysics : ISpringQueries
+{
+
+DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj) override
+    {
+    DVec3d delta = Xi - Xj;
+    double d = delta.Normalize ();
+    return (d - (ri + rj)) *delta;
+    }
+
+};
+
+struct BubbleNetwork
+{
+bvector<DPoint3d> m_points;
+bvector<double> m_radii;
+bvector<bvector<size_t>> m_neighbors;
+bvector<Fixity> m_fixity;
+ISpringQueries &m_physics;
+
+
+// COPY physics model ....
+BubbleNetwork (ISpringQueries &physics)
+    : m_physics (physics)
+    {}
+
+size_t AddPoint (double x, double y, double radius, Fixity fixity)
+    {
+    size_t index = m_points.size ();
+    m_points.push_back (DPoint3d::From (x, y));
+    m_radii.push_back (radius);
+    m_fixity.push_back (fixity);
+    m_neighbors.push_back (bvector<size_t> ());
+    return index;
+    }
+
+RowMajorMatrix m_A;
+RowMajorMatrix m_F;
+void AssignDOFs ()
+    {
+    size_t numDOF = 0;
+    for (auto &fixity : m_fixity)
+        {
+        if (fixity.IsFree ())
+            {
+            fixity.m_xIndex = numDOF++;
+            fixity.m_yIndex = numDOF++;
+            }
+        else
+            {
+            fixity.m_xIndex = fixity.m_yIndex = SIZE_MAX;
+            }
+        }
+    m_A.SetSizes (numDOF, numDOF);
+    m_F.SetSizes (numDOF, 1);
+    ClearSystem ();
+    }
+// Look up dof indices for vertex.
+// return true if BOTH are valid.
+bool TryVertexIndexToDOFs (size_t index, size_t &iX, size_t &iY)
+    {
+    size_t numDOF = m_F.size ();
+    if (index < m_fixity.size ())
+        {
+        iX = m_fixity[index].m_xIndex;
+        iY = m_fixity[index].m_yIndex;
+        return iX < numDOF && iY < numDOF;
+        }
+    iX = SIZE_MAX;
+    iY = SIZE_MAX;
+    return false;
+    }
+void ClearSystem ()
+    {
+    m_A.SetZero ();
+    m_F.SetZero ();
+    }
+// Assemble
+void AssembleSymmetricMemberForces
+(
+size_t indexA,      // central node where sums are being formed.
+size_t indexB,      // far node.
+DVec3dCR FA,         // Force vector contribution at A
+DVec3dCR dFdxA,     // derivative wrt Ax (derivative wrt Bx is negative)
+DVec3dCR dFdyA      // derivative wrt A (derivative wrt By is negative)
+)
+    {
+    if (m_fixity[indexA].IsFree ()) // There are two good matrix indices there !!
+        {
+        size_t ix = m_fixity[indexA].m_xIndex;
+        size_t iy = m_fixity[indexA].m_yIndex;
+        m_F.At (ix, 0) += FA.x;
+        m_F.At (iy, 0) += FA.y;
+
+        m_A.At (ix, ix) += dFdxA.x;
+        m_A.At (ix, iy) += dFdxA.y;
+        m_A.At (iy, ix) += dFdyA.x;
+        m_A.At (iy, iy) += dFdyA.y;
+
+        if (m_fixity[indexB].IsFree ()) // And two more here
+            {
+            size_t jx = m_fixity[indexB].m_xIndex;
+            size_t jy = m_fixity[indexB].m_yIndex;
+            m_A.At (ix, jx) -= dFdxA.x;
+            m_A.At (ix, jy) -= dFdxA.y;
+            m_A.At (iy, jx) -= dFdyA.x;
+            m_A.At (iy, jy) -= dFdyA.y;
+            }
+        }
+    }
+
+bool Connect (size_t index0, size_t index1)
+    {
+    if (index0 < m_points.size () && index1 < m_points.size ())
+        {
+        m_neighbors[index0].push_back (index1);
+        m_neighbors[index1].push_back (index0);
+        return true;
+        }
+    return false;
+    }
+// sum forces from neighbors of m_points[index] + DVec3d::From (dx,dy,0), using m_points for neighbor coordinates
+DVec3d SumForces (size_t index, double dx = 0.0, double dy = 0.0)
+    {
+    DVec3d F = DVec3d::From (0, 0, 0);
+    auto xyz = DPoint3d::FromShift (m_points[index], dx, dy);
+    for (auto neighborIndex : m_neighbors[index])
+        {
+        F = F + m_physics.Fij (xyz, m_points[neighborIndex], m_radii[index], m_radii[neighborIndex]);
+        }
+    return F;
+    }
+
+void AssembleNeighborhoodForces (
+size_t indexA,  // central index
+double delta    // step size for central differencing
+)
+    {
+    if (m_fixity[indexA].IsFree () && delta > 0.0)
+        {
+        double divDelta = 0.5 / delta;
+        auto xyzA = m_points[indexA];
+        double rA = m_radii[indexA];
+        for (auto indexB : m_neighbors[indexA])
+            {
+            DPoint3d xyzB = m_points[indexB];
+            double rB = m_radii[indexB];
+            auto F = m_physics.Fij (xyzA, xyzB, rA, rB);
+            auto dFdx = divDelta *
+                     (  m_physics.Fij (DPoint3d::FromShift (xyzA,  delta, 0, 0), xyzB, rA, rB)
+                      - m_physics.Fij (DPoint3d::FromShift (xyzA, -delta, 0, 0), xyzB, rA, rB)
+                     );
+            auto dFdy = divDelta *
+                    (  m_physics.Fij (DPoint3d::FromShift (xyzA, 0,  delta, 0), xyzB, rA, rB)
+                     - m_physics.Fij (DPoint3d::FromShift (xyzA, 0, -delta, 0), xyzB, rA, rB)
+                    );
+            AssembleSymmetricMemberForces (indexA, indexB, F, dFdx, dFdy);
+            }
+        }
+    }
+
+void ShiftWithFrictionFactor (double frictionFactor, size_t index, double dx, double dy, double dz = 0.0)
+    {
+    m_points[index] = m_points[index] + DVec3d::From (frictionFactor * dx, frictionFactor * dy, frictionFactor * dz);
+    }
+DRange3d NeighborRange (size_t index)
+    {
+    auto range = DRange3d::NullRange ();
+    for (auto neighborIndex : m_neighbors[index])
+        range.Extend (m_points[neighborIndex]);
+    return range;
+    }
+
+// Iteratively move each point to stable point.
+bool Solve_global (
+size_t maxIterations = 100,
+double fractionalStep = 1.0e-3,
+double fractionalStepTolerance = 1.0e-4,
+double frictionFactor = 0.8,
+size_t numConvergedRequired = 2
+)
+    {
+    AssignDOFs ();
+    size_t numXYZ = m_points.size ();
+    static double s_distanceFactor = 1000.0;
+    double distanceTol = DoubleOps::SmallMetricDistance () * s_distanceFactor;
+    // unused - size_t numConverged = 0;
+    for (size_t numIteration = 0; numIteration < maxIterations; numIteration++)
+        {
+        ClearSystem ();
+        // unused - size_t numFail = 0;
+        for (size_t i = 0; i < numXYZ; i++)
+            {
+            if (m_fixity[i].IsFree())
+                {
+                DRange3d neighborRange = NeighborRange (i);
+                double deltaRef = neighborRange.low.DistanceXY (neighborRange.high);
+                double delta = fractionalStep * deltaRef;
+                if (delta == 0.0)
+                    return false;
+                AssembleNeighborhoodForces (i, delta);
+                }
+            }
+        for (size_t pivot = 0; pivot < m_A.NumRows (); pivot++)
+            {
+            if (!m_A.BlockElimination (pivot, m_F))
+                return false;
+            }
+        
+        m_A.BackSubstitute (m_F);   // Can't fail -- elimination left 1 on diagonal
+
+        size_t iMax, iX, iY;
+        double maxU = m_F.MaxAbsBelowPivot (0, iMax);
+        for (size_t i = 0; i < numXYZ; i++)
+            {
+            if (TryVertexIndexToDOFs (i, iX, iY))
+                {
+                m_points[i].x -= m_F.At (iX,0);
+                m_points[i].y -= m_F.At (iY,0);
+                }
+            }
+        if (maxU <= distanceTol)
+            return true;
+        }
+    return false;
+    }
+
+
+
+void EmitSprings ()
+    {
+    bvector<DSegment3d> segments;
+    for (size_t i0 = 0; i0 < m_neighbors.size (); i0++)
+        {
+        auto arc = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (m_points[i0], m_radii[i0]));
+        Check::SaveTransformed (*arc);
+
+        DPoint3d xyz0 = m_points[i0];
+        for (size_t i1 : m_neighbors[i0])
+            {
+            DPoint3d xyz1 = m_points[i1];
+            segments.push_back (DSegment3d::From (xyz0, xyz1));
+            }
+        }
+    Check::SaveTransformed (segments);
+    }
+};
+
+
+TEST(BubblePhysics,Triangle1)
+    {
+    for (double mu : bvector<double> {1.0, 1.2, 1.5})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 30.0, 00);
+        for (double r1 : bvector<double> {1, 0.9, 0.5})
+            {
+            for (double r3 : bvector<double> {1,0.9, 0.6, 0.4})
+                {
+                SaveAndRestoreCheckTransform shifter (10.0,0,0);
+                SpringPhysics physics;
+                BubbleNetwork network (physics);
+                size_t i0 = network.AddPoint (0,0,  r1, Fixity (Fixity::Type::Fixed));
+                size_t i1 = network.AddPoint (2,0,  mu * r1, Fixity (Fixity::Type::Fixed));
+                size_t i2 = network.AddPoint (1,2,  mu * mu * r1, Fixity (Fixity::Type::Fixed));
+                size_t i3 = network.AddPoint (1.1, 1, r3, Fixity (Fixity::Type::Free));
+                network.Connect (i0, i3);
+                network.Connect (i1, i3);
+                network.Connect (i2, i3);
+                network.EmitSprings ();
+                bool stat = network.Solve_global ();
+
+                Check::Shift (0,10,0);
+                network.EmitSprings ();
+                if (!stat)
+                    Check::SaveTransformed (*ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1.1, 1.0), 5)));
+                }
+            }
+        }
+    Check::ClearGeometry ("BubblePhysics.Triangele1");
+    }
+
+TEST(BubblePhysics,Quad2)
+    {
+    for (double r1 : bvector<double> {1, 0.9, 0.5})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 40,0);
+
+        for (double r2 : bvector<double> {3, 2, 0.6, 0.4})
+            {
+            SaveAndRestoreCheckTransform shifter (10.0,0,0);
+            SpringPhysics physics;
+            BubbleNetwork network (physics);
+            size_t i0 = network.AddPoint (0,0,  r1, Fixity (Fixity::Type::Fixed));
+            size_t i1 = network.AddPoint (5,0,  r1, Fixity (Fixity::Type::Fixed));
+            size_t i2 = network.AddPoint (5,4,  0.5 * r1, Fixity (Fixity::Type::Fixed));
+            size_t i3 = network.AddPoint (0,4,  0.5 * r1, Fixity (Fixity::Type::Fixed));
+
+            size_t i4 = network.AddPoint (1,2,  r2, Fixity (Fixity::Type::Free));
+            size_t i5 = network.AddPoint (4,2,  r2, Fixity (Fixity::Type::Free));
+            network.Connect (i0, i4);
+            network.Connect (i3, i4);
+            network.Connect (i4, i5);
+            network.Connect (i1, i5);
+            network.Connect (i2, i5);
+
+            network.EmitSprings ();
+
+            bool stat = network.Solve_global ();
+
+            Check::Shift (0,10,0);
+            network.EmitSprings ();
+            if (!stat)
+                Check::SaveTransformed (*ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (2.5,2), 5)));
+            }
+        }
+    Check::ClearGeometry ("BubblePhysics.Quad2");
+    }
+
+
+
 void AddPoints (bvector<DPoint3d> &points, DEllipse3dCR arc, size_t numEdge)
     {
     double df = 1.0 / (double)numEdge;
@@ -531,36 +877,60 @@ TEST(Vu,CreateDelauney)
     Check::ClearGeometry ("Vu.CreateDelauney");
     }
 
-
+double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI, size_t numJ, size_t period)
+    {
+    return DoubleOps::Interpolate (a0, ((j * numI + i ) % period) / (double) period, a1);
+    }
 TEST(Vu,CreateDelauneySkew)
     {
 
-    double dy = 30.0;
+    // unused - double dy = 80.0;
     double a = 1.0;
+    double r0 = 0.2 * a, r1 = 0.7 * a;
     size_t numX = 7;
     size_t numY = 5;
-    for (double degrees : bvector<double> {60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
+    static size_t s_period = 11;
+    for (int distanceSelect = 0; distanceSelect < 4; distanceSelect++)
         {
-        Angle theta = Angle::FromDegrees (degrees);
-        DPoint3dDVec3dDVec3d frame (0,0,0, a,0,0,  a * theta.Cos (), a * theta.Sin (), 0);
-        bvector<DPoint3d> points;
-        for (size_t j = 0; j <= numY; j++)
-            for (size_t i = 0; i <= numX; i++)
-                points.push_back (frame.Evaluate ((double) i, (double) j));
+        double yMax = 10.0;
+        SaveAndRestoreCheckTransform shifter0 (0.0, yMax, 0.0);
 
-        SaveAndRestoreCheckTransform shifter (points.back ().x + 3.0 * a,0,0);
-        Check::SaveTransformed (points);
-        PolyfaceHeaderPtr delauney, voronoi;
-        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+        for (double degrees : bvector<double> {60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
             {
-            Check::Shift (0,dy,0);
-            Check::SaveTransformed (*delauney);
-            Check::SaveTransformed (*voronoi);
+            Angle theta = Angle::FromDegrees (degrees);
+            bvector<double> radii;
+            DPoint3dDVec3dDVec3d frame (0,0,0, a,0,0,  a * theta.Cos (), a * theta.Sin (), 0);
+            bvector<DPoint3d> points;
+            for (size_t j = 0; j <= numY; j++)
+                for (size_t i = 0; i <= numX; i++)
+                    {
+                    points.push_back (frame.Evaluate ((double) i, (double) j));
+                    radii.push_back (AssignRadiusByRow (r0, r1, i, j, numX, numY, s_period));
+                    }
+
+            SaveAndRestoreCheckTransform shifter (points.back ().x + 50.0 * a,0,0);
+            yMax = DoubleOps::Max (yMax, points.back ().y);
+            PolyfaceHeaderPtr delauney, voronoi;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi)))
+                {
+                Check::SaveTransformed (*delauney);
+                Check::SaveTransformed (*voronoi);
+                if (distanceSelect != 0)
+                    {
+                    for (size_t i = 0; i < points.size (); i++)
+                        {
+                        Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (points[i], radii[i]));
+                        }
+                    }
+
+
+
+                }
+            shifter0.SetShift (0, yMax * 3.0 + 5.0, 0.0);
             }
         }
     Check::ClearGeometry ("Vu.CreateDelauneySkew");
     }
-
 
 TEST(Vu,CreateDelauneyCircle)
     {
@@ -603,13 +973,14 @@ TEST(Vu,IncircleFlipProblem)
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
-
+//! construct delauney triangulations and voronoi diagram for given station points (e.g. room centers)
+//! clip the voronoi to the wall polygon.
 bool DoClips (
 bvector<DPoint3d> const &stationPoints, //!< [in] nominal room centers
 bvector<DPoint3d> const &wallPoints,    //!< [in] (single) wall polygon
-PolyfaceHeaderPtr &delauney,            //!<  [in] delauney triangulation of room centers
-PolyfaceHeaderPtr &voronoi,             //!< [in] voronoi regions
-PolyfaceHeaderPtr &voronoiInsideWalls   //!< [in] voronoi regions clipped to wall 
+PolyfaceHeaderPtr &delauney,            //!<  [out] delauney triangulation of room centers
+PolyfaceHeaderPtr &voronoi,             //!< [out] voronoi regions
+PolyfaceHeaderPtr &voronoiInsideWalls   //!< [out] voronoi regions clipped to wall 
 )
     {
     auto clipper = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -685,3 +1056,60 @@ TEST(Vu,CreateClippedVornoi)
 
     Check::ClearGeometry ("Vu.CreateClippedVornoi");
     }
+void Stroke (DConic4dCR conic, bvector<DPoint3d> &strokes, double theta0, double theta1, int numPoint)
+    {
+    strokes.clear ();
+    DPoint3d xyz;
+    for (int i = 0; i <= numPoint; i++)
+        {
+        double theta =
+            DoubleOps::Interpolate (theta0, (double)i / (double)numPoint, theta1);
+        bsiDConic4d_angleParameterToDPoint3d (&conic, &xyz, theta);
+        strokes.push_back (xyz);
+        }
+    }
+
+void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double theta0, double theta1)
+    {
+    int s_numPoints = 17;
+    DConic4d conic;
+    bvector<DPoint3d> strokes;
+    bsiDConic4d_initSignedCircleTangentCenters (&conic, &xyz0, r0, &xyz1, -r1);
+    Stroke (conic, strokes, theta0, theta1, s_numPoints);
+    Check::SaveTransformed (strokes);
+    }
+#ifdef DoVoronoiHyperbolaTest
+TEST(Voronoi,Hyperbolas6)
+    {
+    bvector<DPoint3d> xyzOuter;
+    DPoint3d origin = DPoint3d::FromZero ();
+    bvector<double> radiusOuter {1.0, 2.0, 2.1, 3.0, 1.5, 1.1};
+    double a = 10.0;
+    bvector<DSegment3d> segments;
+    // In a smooth triangulation, expect 6 points around each central point
+    for (int i = 0; i < 7; i++)
+        {
+        double theta = i * Angle::DegreesToRadians (60.0);
+        xyzOuter.push_back (DPoint3d::From (a * cos (theta), a * sin (theta)));
+        segments.push_back (DSegment3d::From (origin, xyzOuter.back ()));
+        }
+    segments.pop_back ();   // eliminate redundant radius
+    static double theta0 = Angle::DegreesToRadians (60.0);
+    static double theta1 = Angle::DegreesToRadians (120.0);
+    for (double r0 : bvector<double> {0.5, 1.0, 4.0})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0 * a, 0, 0);
+        Check::SaveTransformed (xyzOuter);
+        Check::SaveTransformed (segments);
+        Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (origin, r0));
+        for (size_t i0 = 0; i0 + 1 < xyzOuter.size (); i0++)
+            {
+            Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (xyzOuter[i0], radiusOuter[i0]));
+            size_t i1 = i0 + 1;
+            ShowConic (origin, r0, xyzOuter[i0], radiusOuter[i0], theta0, theta1);
+            ShowConic (xyzOuter[i0], radiusOuter[i0], xyzOuter[i1], radiusOuter[i1], theta0, theta1);
+            }
+        }
+    Check::ClearGeometry ("Voronoi.Hyperbolas");
+    }
+#endif

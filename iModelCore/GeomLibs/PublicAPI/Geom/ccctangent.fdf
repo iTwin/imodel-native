@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/ccctangent.fdf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,7 +33,16 @@ double   rA,
 DPoint3dP pCenterB,
 double   rB
 );
-
+//! @description return a single conic that is the locii of centers of circles
+//! tangent to two circles of given signed radius.
+Public GEOMDLLIMPEXP bool bsiDConic4d_initSignedCircleTangentCenters
+(
+DConic4dP pConic,
+DPoint3dP pCenterA,
+double rA,
+DPoint3dP pCenterB,
+double rB
+);
 //!
 //! @description compute the centers of circles which are tangent to 3 given circles.
 //!    Only xy parts of the inputs participate in the calculation.

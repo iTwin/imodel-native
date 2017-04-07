@@ -163,6 +163,24 @@ DPoint3d DPoint3d::From (double xx, double yy, double zz)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
+DPoint3d DPoint3d::FromShift
+(
+DPoint3dCR xyz0,    //!< [in] reference point
+double dx,      //!< [in] shift to apply to x direction
+double dy,      //!< [in] shift to apply to y direction
+double dz       //!< [in] shift to apply to z direction
+)
+    {
+    DPoint3d xyz;
+    xyz.x = xyz0.x + dx;
+    xyz.y = xyz0.y + dy;
+    xyz.z = xyz0.z + dz;
+    return xyz;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 DPoint3d DPoint3d::FromXY (DPoint3dCR xy, double zz)
     {
     DPoint3d xyz;

@@ -30,6 +30,7 @@
 #include <Geom/GeomApi.h>
 #include <Geom/XYZRangeTree.h>
 #include "SampleGeometryCreator.h"
+#include "SampleGeometry.h"
 #include <ctime>
 #include <Vu/VuApi.h>
 #include <Mtg/MtgApi.h>

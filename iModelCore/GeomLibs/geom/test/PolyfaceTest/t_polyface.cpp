@@ -3220,19 +3220,62 @@ TEST(Polyface,ConstrainedTriangulation)
             DPoint3d::From (2,5,1),
             }
         );
+    paths.push_back (
+        bvector<DPoint3d>
+            {
+            DPoint3d::From (7,2,1),
+            DPoint3d::From (3,2,1),
+            DPoint3d::From (3,4,1)
+            }
+        );
 
     bvector<DPoint3d> isolatedPoints {
         DPoint3d::From (1,2,2),
         DPoint3d::From (1,4,5)
         };
-    
+
+    {
+    SaveAndRestoreCheckTransform shifter(20, 0,0);
+    Check::SaveTransformed (loops);
+    Check::SaveTransformed (paths);
+    Check::Shift (0,10,0);
     PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateConstrainedTriangulation (loops, &paths, &isolatedPoints);
     if (Check::True (mesh.IsValid ()))
         {
         Transform localToWorld, worldToLocal;
         mesh->BuildXYParameters (LOCAL_COORDINATE_SCALE_01RangeBothAxes, localToWorld, worldToLocal);
         PrintPolyface (*mesh, "constrained triangulation", stdout, s_maxPolyfacePrint, false);
+        Check::SaveTransformed (*mesh);
         }
+    }
+
+    auto cvLoops = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    for (auto &loop : loops)
+        {
+        cvLoops->Add (CurveVector::CreateLinear (loop, CurveVector::BOUNDARY_TYPE_Outer));
+        }
+
+    auto cvPaths = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    for (auto &path : paths)
+        {
+        cvPaths->Add (ICurvePrimitive::CreateLineString (path));
+        }
+
+    {
+    SaveAndRestoreCheckTransform shifter(20, 0,0);
+    Check::SaveTransformed (*cvLoops);
+    Check::SaveTransformed (*cvPaths);
+    Check::Shift (0,10,0);
+    PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateConstrainedTriangulation (*cvLoops, cvPaths.get (), &isolatedPoints);
+    if (Check::True (mesh.IsValid ()))
+        {
+        Transform localToWorld, worldToLocal;
+        mesh->BuildXYParameters (LOCAL_COORDINATE_SCALE_01RangeBothAxes, localToWorld, worldToLocal);
+        PrintPolyface (*mesh, "constrained triangulation", stdout, s_maxPolyfacePrint, false);
+        Check::SaveTransformed (*mesh);
+        }
+    }
+    Check::ClearGeometry ("Polyface.ConstrainedTriangulation");
     }
 
 TEST(CurveVector,CollectLinearGeometry)

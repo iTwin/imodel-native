@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdplane3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -645,5 +645,41 @@ bool DPlane3d::InitFromArray (DPoint3dCP pointArray, int numPoint)
     return false;
     }
 
-
+ValidatedDPlane3d DPlane3d::VoronoiSplitPlane (DPoint3dCR xyzA, double rA, DPoint3dCR xyzB, double rB, int voronoiMetric)
+    {
+    auto  unitAB = (xyzB-xyzA).ValidatedNormalize ();
+    if (unitAB.IsValid ())
+        {
+        DPoint3d origin;
+        if (voronoiMetric == 1)
+            {
+            DPoint3d shiftA = xyzA + rA * unitAB.Value ();
+            DPoint3d shiftB = xyzB - rB * unitAB.Value ();
+            origin = DPoint3d::FromInterpolate (shiftA, 0.5, shiftB);
+            }
+        else if (voronoiMetric == 2)
+            {
+            origin = DPoint3d::FromWeightedAverage (xyzA, rB, xyzB, rA);    // yes, switch the radii to make large one get more space.
+            }
+        else if (voronoiMetric == 3)
+            {
+            // distance = distance to tangency = sqrt (euclideandistance^2 - radius^2)
+            // equal distance split of chord is
+            //    x = distance from A
+            //    c-x = distance from B (c == distance A to B)
+            //  x^2 - rA^2 = (c-x)^2 - rB^2
+            //  x = (c^2-rB^2+rA^2)/(2c)
+            // fractional    x=x/c = (c^2-rB^2+rA^2)/(2c^2)
+            double cc = xyzA.DistanceSquared (xyzB);
+            //double c = sqrt (cc);
+            double numerator = (cc + rA * rA - rB * rB);
+            auto f = DoubleOps::ValidatedDivide (numerator, 2.0 * cc, 0.5);
+            origin = DPoint3d::FromInterpolate (xyzA, f.Value (), xyzB);
+            }
+        else
+            origin = DPoint3d::FromInterpolate (xyzA, 0.5, xyzB);
+        return ValidatedDPlane3d (DPlane3d::FromOriginAndNormal (origin, unitAB.Value ()), true);
+        }
+    return ValidatedDPlane3d (DPlane3d::FromOriginAndNormal (xyzA, DVec3d::From (0,0,0)), false);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

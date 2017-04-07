@@ -630,4 +630,99 @@ bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPo
     return false;
     }
 
+
+// make userData1 = point index for vertices that match points in an array
+void InstallPointIndices (VuSetP graph, bvector<DPoint3d> const &points)
+    {
+    VuPositionDetail searcher;
+    VU_SET_LOOP (node, graph)
+        {
+        node->SetUserData1 (-1);
+        }
+    END_VU_SET_LOOP (node, graph)
+    // fix back indices.
+    for (size_t i = 0; i < points.size (); i++)
+        {
+        searcher = vu_moveTo (graph, searcher, points[i]);
+        if (searcher.IsVertex ())
+            {
+            auto seedNode = searcher.GetNode ();
+            VU_VERTEX_LOOP (node, seedNode)
+                {
+                node->SetUserData1 (i);
+                }
+            END_VU_VERTEX_LOOP (node, seedNode)
+            }
+        }
+    }
+PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric)
+    {
+    PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
+    InstallPointIndices (graph, points);
+    _VuSet::TempMask visited (graph);
+    ConvexClipPlaneSet planes;
+    DRange3d range = graph->Range ();
+    static double s_rangeExpansionFactor = 1.0;
+    double dx = range.XLength () * s_rangeExpansionFactor;
+    double dy = range.YLength () * s_rangeExpansionFactor;
+    range.low.x -= dx;
+    range.high.x += dx;
+    range.low.y -= dy;
+    range.high.y += dy;
+    bvector<DPoint3d> outerBox, clip1, clip2;
+    outerBox.push_back (DPoint3d::From (range.low.x, range.low.y));
+    outerBox.push_back (DPoint3d::From (range.high.x, range.low.y));
+    outerBox.push_back (DPoint3d::From (range.high.x, range.high.y));
+    outerBox.push_back (DPoint3d::From (range.low.x, range.high.y));
+    static bool s_interior = false;
+    static double s_sign = -1.0;
+    size_t errors = 0;
+    VU_SET_LOOP (vertexSeed, graph)
+        {
+        if (!visited.IsSetAtNode (vertexSeed))
+            {
+            planes.clear ();
+            VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+                {
+                size_t indexA = (size_t)outboundEdge->GetUserData1 ();
+                size_t indexB = (size_t)outboundEdge->FSucc ()->GetUserData1 ();
+                if (indexA < points.size () && indexB < points.size ())
+                    {
+                    auto plane  = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexB], radii[indexB], voronoiMetric);
+                    auto plane1 = DPlane3d::VoronoiSplitPlane (points[indexB], radii[indexB], points[indexA], radii[indexA], voronoiMetric);
+                    if (!plane.Value ().origin.AlmostEqual (plane1.Value ().origin))
+                        errors++;
+                    if (plane.IsValid ())
+                        {
+                        DPlane3d plane1 = plane.Value ();
+                        plane1.normal = s_sign * plane1.normal;
+                        planes.push_back (ClipPlane (plane1, false, s_interior));
+                        }
+                    }
+                }
+            END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+            planes.ConvexPolygonClip (outerBox, clip1, clip2);
+            voronoi->AddPolygon (clip1);
+            }
+        }
+    END_VU_SET_LOOP (vertexSeed, graph)
+    voronoi->Compress ();
+    return voronoi;
+    }
+
+bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
+    {
+    VuSetP graph = CreateDelauney (points);
+    if (graph != nullptr)
+        {
+        delauney = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
+        voronoi = CreateVoronoi (graph, points, radii, voronoiMetric);
+        vu_freeVuSet (graph);
+        return true;
+        }
+    return false;
+    }
+
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

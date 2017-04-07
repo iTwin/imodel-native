@@ -343,3 +343,52 @@ bool close
         points.push_back (xyz0);
     return points;
     }
+
+// return a symmetric "T" shape with elliptic fillets under the arms.
+CurveVectorPtr CreateFilletedSymmetricT (
+double dxTotal, //!< [in] total width of range box
+double dyTotal, //!< [in] total height of range box
+double dxLeft,  //!< [in] x distance under the left bar
+double dyLeft,  //!< [in] vertical width of left bar (measured from top down
+double dxFillet,    //!< [in] x size under elliptic fillet
+double dyFillet    //!< [in] y size under elliptic fillet
+)
+    {
+    double y0 = 0;
+    double y1 = dyTotal - dyLeft - dyFillet;
+    double y2 = dyTotal - dyLeft;
+    double y3 = dyTotal;
+    // positive measurements from centerline at x=0:
+    double x3 = dxTotal * 0.5;
+    double x2 = x3 - dxLeft + dxFillet;
+    double x1 = x3 - dxLeft;
+    // bottom of strut, left to right
+    bvector<DPoint3d> xyz0 {
+            DPoint3d::From (-x1, y1),
+            DPoint3d::From (-x1, y0),
+            DPoint3d::From (x1, y0),
+            DPoint3d::From (x1, y1)
+            };
+    // bar, right to left
+    bvector<DPoint3d> xyz1 {
+            DPoint3d::From (x2, y2),
+            DPoint3d::From (x3, y2),
+            DPoint3d::From (x3, y3),
+            DPoint3d::From (-x3,y3),
+            DPoint3d::From (-x3,y2),
+            DPoint3d::From (-x2, y2)
+            };
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    cv->push_back (ICurvePrimitive::CreateLineString (xyz0));        
+    cv->push_back (ICurvePrimitive::CreateArc (DEllipse3d::From (x2, y1, 0,
+                    -dxFillet, 0,0,
+                    0,dyFillet,0,
+                    0.0, Angle::DegreesToRadians (90.0))));
+    cv->push_back (ICurvePrimitive::CreateLineString (xyz1));        
+    cv->push_back (ICurvePrimitive::CreateArc (DEllipse3d::From (-x2, y1, 0,
+                    0,dyFillet,0,
+                    dxFillet, 0,0,
+                    0.0, Angle::DegreesToRadians (90.0))));
+    return cv;
+
+    }
