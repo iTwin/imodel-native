@@ -384,7 +384,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     if (koq.GetPersistenceUnit().HasProblem())
         {
-        Issues().Report("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), Formatting::Utils::FormatProblemDescription(koq.GetPersistenceUnit().GetProblemCode()).c_str());
+        Issues().Report("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), koq.GetPersistenceUnit().GetProblemDescription().c_str());
         return ERROR;
         }
 
