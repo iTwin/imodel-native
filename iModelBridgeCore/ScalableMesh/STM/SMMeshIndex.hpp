@@ -274,7 +274,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
             {
             GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
             ISDiffSetDataStorePtr nodeDiffsetStore;
-            result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);
+            result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &m_nodeHeader, false);
             if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
             m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
@@ -3483,13 +3483,16 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
+    if (!GetClipRegistry()->IsClipDefinitionFileExist())
+        return false;
+
    //if (m_SMIndex->IsTerrain() == false) 
     //   return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
         ISDiffSetDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        bool result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDataStore, &m_nodeHeader, true);
         assert(result == true);
         
         RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(
@@ -4112,8 +4115,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
-    {
+    {   
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
+    
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
     for (const auto& diffSet : *diffsetPtr)

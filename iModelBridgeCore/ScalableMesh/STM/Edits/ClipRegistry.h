@@ -87,9 +87,10 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void SetClipOnOrOff(uint64_t id, bool isActive);
     void GetIsClipActive(uint64_t id, bool& isActive);
+	void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
 
-    void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
-
+    bool IsClipDefinitionFileExist();
+    
     void SetAutoCommit(bool autoCommit);
     };
 

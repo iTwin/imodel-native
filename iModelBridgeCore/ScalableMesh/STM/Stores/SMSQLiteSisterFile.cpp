@@ -74,7 +74,9 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType)
+static bool s_alwayCreate = false;
+
+SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing)
     {
     SMSQLiteFilePtr sqlFilePtr;
 
@@ -83,6 +85,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
+            assert(createSisterIfMissing == true);
             std::lock_guard<std::mutex> lock(m_featureOpen);
             if (!m_smFeatureSQLiteFile.IsValid())
                 {
@@ -112,11 +115,18 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
-                    BeFileName path(sqlFileName);
-                    if (!path.GetDirectoryName().DoesPathExist())
-                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+                    if (createSisterIfMissing || s_alwayCreate)
+                        {
+                        BeFileName path(sqlFileName);
+                        if (!path.GetDirectoryName().DoesPathExist())
+                            BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
 
-                    m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
+                        m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
+                        }
+                    else
+                        {
+                        m_smClipSQLiteFile = nullptr;
+                        }
                     }
                 }
 
@@ -140,11 +150,18 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
-                    BeFileName path(sqlFileName);
-                    if (!path.GetDirectoryName().DoesPathExist())
-                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+                    if (createSisterIfMissing || s_alwayCreate)
+                        {
+                        BeFileName path(sqlFileName);
+                        if (!path.GetDirectoryName().DoesPathExist())
+                            BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
 
-                    m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
+                        m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
+                        }
+                    else
+                        { 
+                        m_smClipDefinitionSQLiteFile = nullptr;
+                        }
                     }
                 }
 
