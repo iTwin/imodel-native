@@ -1633,9 +1633,10 @@ void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8Strin
 //---------------------------------------------------------------------------------------
 Utf8String SchemaStatsCommand::_GetUsage() const
     {
-    return " .schemastats classhierarchy rootclass\r\n"
+    return " .schemastats classhierarchy rootclass [csvoutputfilepath]\r\n"
         COMMAND_USAGE_IDENT "Computes statistics for a class hierarchy or a branch of it\r\n";
         COMMAND_USAGE_IDENT "rootclass: Fully specified class name of the root class of the hierarchy\r\n";
+        COMMAND_USAGE_IDENT "csvoutputfilepath: Path to CSV file containing the class column count distribution\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1670,6 +1671,12 @@ void SchemaStatsCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vector<Utf8String> const& args) const
     {
+    if (args.size() != 2 && args.size() != 3)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
     Utf8StringCR rootClassName = args[1];
     bvector<Utf8String> parsedRootClassName;
     BeStringUtilities::Split(rootClassName.c_str(), ".:", parsedRootClassName);
@@ -1700,20 +1707,24 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         }
     
     /*
-    "SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
-                                                                 "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True " AND CH.ClassId=? "
-                                                                 "WHERE RCC.ClassId=?"*/
-    std::map<ECClassCP, ClassColumnStats> classStats;
-    std::function<BentleyStatus(std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)> gatherClassStats;
-    gatherClassStats = [&gatherClassStats] (std::map<ECClassCP, ClassColumnStats>& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)
+    SELECT c.Name, rc.RelationshipClassId, rc.RelationshipEnd, c.Modifier from ec_RelationshipConstraint rc
+ INNER JOIN ec_ClassMap cm ON cm.ClassId=rc.RelationshipClassId
+ INNER JOIN ec_Class c ON c.Id=cm.ClassId
+ INNER JOIN ec_RelationshipConstraintClass rcc ON rc.Id=rcc.ConstraintId
+ LEFT JOIN ec_cache_ClassHierarchy CH ON CH.BaseClassId = RCC.ClassId
+ Where ((cm.MapStrategy=10 AND rc.RelationshipEnd=1) OR (cm.MapStrategy=11 AND rc.RelationshipEnd=0)) AND
+ ((rc.IsPolymorphic=0 AND rcc.ClassId=:rootclass) OR (rc.IsPolymorphic<>0 and ch.ClassId=:rootclass))*/
+
+    ClassColumnStatsCollection classStats;
+    std::function<BentleyStatus(ClassColumnStatsCollection& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)> gatherClassStats;
+    gatherClassStats = [&gatherClassStats] (ClassColumnStatsCollection& classStats, ECDbCR ecdb, ECClassCR ecClass, Statement& stmt)
         {
         if (ecClass.GetClassModifier() != ECClassModifier::Abstract)
             {
             if (BE_SQLITE_OK != stmt.BindId(1, ecClass.GetId()))
                 return ERROR;
 
-            ClassColumnStats stats;
+            ClassColumnStats stats(ecClass);
             while (BE_SQLITE_ROW == stmt.Step())
                 {
                 stats.Add(stmt.GetValueText(0), (uint32_t) stmt.GetValueInt(1));
@@ -1723,7 +1734,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
             stmt.ClearBindings();
 
             if (!stats.GetColCountPerTable().empty())
-                classStats[&ecClass] = stats;
+                classStats.Add(stats);
             }
 
         for (ECClassCP subclass : ecdb.Schemas().GetDerivedClasses(ecClass))
@@ -1741,45 +1752,63 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         return;
         }
 
-    if (classStats.empty())
+    if (classStats.IsEmpty())
         {
         BimConsole::WriteLine("No class hierarchy stats available for root class %s. The class hierarchy only consists of abstract classes.", rootClass->GetFullName());
         return;
         }
 
     //compute stats metrics
-    std::vector<uint32_t> sortedClassColCounts;
-    for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
-        {
-        sortedClassColCounts.push_back(kvPair.second.GetTotalColumnCount());
-        }
-    std::sort(sortedClassColCounts.begin(), sortedClassColCounts.end());
+    classStats.Sort();
 
 
     BimConsole::WriteLine("Mapped column count stats for class hierarchy of class %s", rootClass->GetFullName());
-    BimConsole::WriteLine("Minimum: %" PRIu32, sortedClassColCounts.front());
-    BimConsole::WriteLine("Maximum: %" PRIu32, sortedClassColCounts.back());
-    BimConsole::WriteLine("Median: %.1f", ComputeQuantile(sortedClassColCounts, .5));
-    BimConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(sortedClassColCounts, .8));
+    BimConsole::WriteLine("Minimum: %" PRIu32, classStats.GetList().front().GetTotalColumnCount());
+    BimConsole::WriteLine("Maximum: %" PRIu32, classStats.GetList().back().GetTotalColumnCount());
+    BimConsole::WriteLine("Median: %.1f", ComputeQuantile(classStats, .5));
+    BimConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(classStats, .8));
     //Mean
-    const double mean = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0) / (1.0 * sortedClassColCounts.size());
+    const double mean = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0, [] (double sum, ClassColumnStats const& stat) { return sum + stat.GetTotalColumnCount();}) / (1.0 * classStats.GetSize());
     BimConsole::WriteLine("Mean: %.1f:", mean);
 
     //stddev
-    const double variance = std::accumulate(sortedClassColCounts.begin(), sortedClassColCounts.end(), 0.0,
-                                          [mean] (double sum, uint32_t colCount) { return sum + std::pow((mean - colCount), 2); }) / (1.0 * sortedClassColCounts.size());
+    const double variance = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0.0,
+                                          [mean] (double sum, ClassColumnStats const& stat) { return sum + std::pow((mean - stat.GetTotalColumnCount()), 2); }) / (1.0 * classStats.GetSize());
     BimConsole::WriteLine("Standard Deviation: %.1f:", std::sqrt(variance));
 
-    for (std::pair<ECClassCP, ClassColumnStats> const& kvPair : classStats)
+    if (args.size() == 2)
+        return;
+
+    BeFileName csvOutFilePath(args[2]);
+    BeFileStatus stat = BeFileStatus::Success;
+    BeTextFilePtr csvFile = BeTextFile::Open(stat, csvOutFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    if (BeFileStatus::Success != stat)
         {
-        BimConsole::WriteLine("%s: %" PRIu32 " columns", kvPair.first->GetFullName(), kvPair.second.GetTotalColumnCount());
-        for (std::pair<Utf8String, uint32_t> const& colCountPerTable : kvPair.second.GetColCountPerTable())
+        BimConsole::WriteErrorLine("Failed to create output CSV file %s", csvOutFilePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    BeAssert(csvFile != nullptr);
+    //write header line
+    csvFile->PutLine(L"ECClass,ClassColCount,FirstTable,FirstTableColCount,SecondTable,SecondTableColCount", true);
+    for (ClassColumnStats const& stats : classStats.GetList())
+        {
+        Utf8String line;
+
+        Utf8String snippet;
+        snippet.Sprintf("%s,%" PRIu32, stats.GetClass().GetFullName(), stats.GetTotalColumnCount());
+        line.append(snippet);
+        for (std::pair<Utf8String,uint32_t> const& tableColCount : stats.GetColCountPerTable())
             {
-            BimConsole::WriteLine("  Table %s: %" PRIu32 " columns", colCountPerTable.first.c_str(), colCountPerTable.second);
+            Utf8String snippet;
+            snippet.Sprintf("%s,%" PRIu32, tableColCount.first.c_str(), tableColCount.second);
+            line.append(",").append(snippet);
             }
 
-        BimConsole::WriteLine();
+        csvFile->PutLine(WString(line.c_str(), BentleyCharEncoding::Utf8).c_str(), true);
         }
+
+    BimConsole::WriteLine("Saved class column count distribution to CSV file %s.", csvOutFilePath.GetNameUtf8().c_str());
     }
 
 
@@ -1787,7 +1816,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
 // @bsimethod                                                  Krischan.Eberle     03/2017
 //---------------------------------------------------------------------------------------
 //static
-double SchemaStatsCommand::ComputeQuantile(std::vector<uint32_t> const& sortedValues, double p)
+double SchemaStatsCommand::ComputeQuantile(ClassColumnStatsCollection const& stats, double p)
     {
     if (p < 0 || p > 1)
         {
@@ -1795,23 +1824,25 @@ double SchemaStatsCommand::ComputeQuantile(std::vector<uint32_t> const& sortedVa
         return -1;
         }
 
-    const double np = p * sortedValues.size();
+    std::vector<ClassColumnStats> const& orderedStats = stats.GetList();
+
+    const double np = p * stats.GetSize();
     const double np_floor = std::floor(np);
 
     if ((np - np_floor) < std::numeric_limits<double>::epsilon())
         {
         //np is not integral
-        const size_t index = (size_t) std::floor(np + 1);
-        BeAssert(index - 1 < sortedValues.size());
-        return (double) sortedValues[index - 1];
+        const uint32_t index = (uint32_t) std::floor(np + 1);
+        BeAssert(index - 1 < stats.GetSize());
+        return (double) orderedStats[(size_t) (index - 1)].GetTotalColumnCount();
         }
 
     //np is integral
-    const size_t index1 = (size_t) np_floor;
-    BeAssert(index1 - 1 < sortedValues.size());
-    const size_t index2 = (size_t) (np_floor + 1);
-    BeAssert(index2 - 1 < sortedValues.size());
-    return .5 * (sortedValues[index1 - 1] + sortedValues[index2 - 1]);
+    const uint32_t index1 = (uint32_t) np_floor;
+    BeAssert(index1 - 1 < stats.GetSize());
+    const uint32_t index2 = (uint32_t) (np_floor + 1);
+    BeAssert(index2 - 1 < stats.GetSize());
+    return .5 * (orderedStats[(size_t) (index1 - 1)].GetTotalColumnCount() + orderedStats[(size_t) (index2 - 1)].GetTotalColumnCount());
     }
 
 //******************************* DebugCommand ******************
