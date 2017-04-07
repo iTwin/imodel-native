@@ -12,7 +12,7 @@
     #include <limits.h>
     #include <stdarg.h>
     #include <sys/time.h>
-  #if defined (ANDROID)
+  #if defined (ANDROID) && !defined(__LP64__)
     #include <time64.h>
   #endif
   #if defined (__APPLE__)
@@ -285,7 +285,7 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis(tm const& timeStructIn)
     __time64_t time = _mkgmtime64(&timeStruct);
 #elif defined (__unix__)
     time_t time;
-    #if defined (ANDROID)
+    #if defined (ANDROID) && !defined(__LP64__)
         time = timegm64(&timeStruct);
     #else
         time = timegm(&timeStruct);
