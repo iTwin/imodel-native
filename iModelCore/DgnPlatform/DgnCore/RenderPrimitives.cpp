@@ -1973,6 +1973,7 @@ void PrimitiveBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
 void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicParamsCR gfParams, ClipVectorCP clip)
     {
     // ###TODO_ELEMENT_TILE: Overriding GraphicParams?
+    // ###TODO_ELEMENT_TILE: Clip...
     Render::GraphicPtr graphic(&gf);
     if (nullptr != clip || !subToGf.IsIdentity())
         {
@@ -1990,8 +1991,8 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipVectorCP clip) const
     {
-    // ###TODO_ELEMENT_TILE: Clip...
-    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGf)));
+    // NB: clip and subToGf are handled by _AddSubGraphic()...
+    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
