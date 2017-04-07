@@ -97,7 +97,6 @@ TEST(CurveVectorA, CloneLocal)
     Check::Near (rangeC.low.z, 0.0, "low z");
     Check::Near (rangeC.high.z, 0.0, "high z");
 
-
     }
 
 // Confirma that x,y,0 maps to a local 01
@@ -1628,6 +1627,8 @@ TEST(CurveVector,RecursiveCollectPoints)
     auto unionRegionWithJustLines = unionRegion->CloneWithExplodedLinestrings ();
     unionRegion->CollectLinearGeometry (xyzB);
     CheckSame (xyzA, xyzB, "CollectLinearGeometry");
+    Check::SaveTransformed(*unionRegion);
+    Check::ClearGeometry("CurveVector.RecursiveCollectPoints");
     }
 
  // return (if possible) a DEllipse3d which starts at pointA, with initial tangent vector towards pointB, ends on the line containing pointB and pointC
@@ -2046,25 +2047,76 @@ TEST(CPLineString, LineLineStringClone)
     Check::True(cShapeLineStringCopy->IsSameStructureAndGeometry(*cShapeLineString->Clone()));
     }
 
-TEST(DSpiral2d, SpiralTest) 
+void swapCurvePrimitives(CurveVector::BoundaryType cvBT)
     {
-    DPoint3d startPoint {10,0,0};
-    Transform placement = Transform::From (startPoint);
-    double rA = 1000;
-    double rB =  500;
-    //double dAB = 100;
+    CurveVectorPtr curve = CurveVector::Create(cvBT);
+    DEllipse3d ellip = DEllipse3d::FromPointsOnArc (
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (2,1,0),
+        DPoint3d::From (1,2,0));
+    DSegment3d seg = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+    
+    curve->push_back(ICurvePrimitive::CreateLine(seg));
+    curve->push_back(ICurvePrimitive::CreateArc( ellip));
 
-    double bearing0 = Angle::DegreesToRadians (45);
-    double bearing1 = Angle::DegreesToRadians (65);
-    auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius
-    (
-        DSpiral2dBase::TransitionType_Clothoid,
-        bearing0, rA, bearing1, rB,
-        placement, 0,1
-    );
-    Check::SaveTransformed(*spiral);
-    Check::ClearGeometry("DSpiral2d.SpiralTest");
+    Check::SaveTransformed(*curve);
+    Check::Shift(10, 0, 0);
+    Check::True( curve->SwapAt(0, 1));
+    Check::SaveTransformed(*curve);
+    Check::Shift(10, 0, 0);
 
-    Check::True(spiral->IsFractionSpace());
-   
+    CurveVectorPtr curve2 = CurveVector::Create(cvBT);
+    curve2->push_back(ICurvePrimitive::CreateArc( ellip));
+    curve2->push_back(ICurvePrimitive::CreateLine( seg));
+    Check::SaveTransformed(*curve2);
+    Check::Shift(10, 0, 0);
+
+    Check::True(curve->IsSameStructureAndGeometry(*curve2));
+    }
+TEST(CurveVector, SwapIndices)
+    {
+    swapCurvePrimitives(CurveVector::BOUNDARY_TYPE_Inner);
+    swapCurvePrimitives(CurveVector::BOUNDARY_TYPE_None);
+    swapCurvePrimitives(CurveVector::BOUNDARY_TYPE_Open);
+    swapCurvePrimitives(CurveVector::BOUNDARY_TYPE_Outer);
+    Check::ClearGeometry("CurveVector.SwapIndices");
+    }
+
+
+
+void checkChildBoundaryTypes(CurveVectorPtr parent,
+                             bvector<CurveVector::BoundaryType> boundaryTypeChild,
+                             bvector<CurveVectorPtr> curveChild) 
+    {
+    for (size_t i = 1; i <= curveChild.size(); i++) 
+        {
+        
+        parent->push_back(ICurvePrimitive::CreateChildCurveVector(curveChild[i-1]));
+        parent->SetChildBoundaryType(i, boundaryTypeChild[i - 1]);
+        CurveVector::BoundaryType cvB;
+        Check::True(parent->GetChildBoundaryType(i, cvB));
+        Check::True(cvB == boundaryTypeChild[i-1]);
+        }
+
+
+    }
+TEST(CurveVector, ChildVectorType)
+    {
+    ////
+    bvector<CurveVector::BoundaryType> boundaryTypeChild = { CurveVector::BOUNDARY_TYPE_Inner,
+                                                            CurveVector::BOUNDARY_TYPE_Outer,
+                                                            CurveVector::BOUNDARY_TYPE_None };
+
+    
+    DRange2d outer = DRange2d::From(0, 0, 20, 10);
+    bvector<CurveVectorPtr> curveChild = { CurveVector::CreateRectangle(outer.low.x + 2, outer.low.y + 2, outer.high.x - 2, outer.high.y - 2, 0),
+                                           CurveVector::CreateRectangle(outer.low.x + 4, outer.low.y + 4, outer.high.x - 4, outer.high.y - 4, 0),
+                                           CurveVector::CreateRectangle(outer.low.x + 4, outer.low.y + 4, outer.high.x - 4, outer.high.y - 4, 0) };
+
+    
+    CurveVectorPtr parent = CurveVector::CreateRectangle(outer.low.x, outer.low.y, outer.high.x, outer.high.y, 0,
+                                                              CurveVector::BOUNDARY_TYPE_Outer);
+    checkChildBoundaryTypes(parent, boundaryTypeChild, curveChild);
+    
+    
     }
