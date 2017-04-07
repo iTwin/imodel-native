@@ -1991,8 +1991,7 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipVectorCP clip) const
     {
-    // NB: clip and subToGf are handled by _AddSubGraphic()...
-    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromIdentity()));
+    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), subToGf.IsIdentity() ? GetLocalToWorldTransform() : Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
