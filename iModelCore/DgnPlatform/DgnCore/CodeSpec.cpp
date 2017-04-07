@@ -45,10 +45,8 @@ CodeSpecId DgnImportContext::_RemapCodeSpecId(CodeSpecId source)
             BeDataAssert(false && "Invalid source CodeSpec");
             return source;
             }
-        else
-            {
-            dest = destCodeSpec->GetCodeSpecId();
-            }
+
+        dest = destCodeSpec->GetCodeSpecId();
         }
 
     return m_remap.Add(source, dest);
@@ -283,9 +281,7 @@ void CodeSpec::FromPropertiesJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::ReadProperties(Utf8StringCR jsonStr)
     {
-    Json::Value props(Json::objectValue);
-    if (Json::Reader::Parse(jsonStr, props))
-        FromPropertiesJson(props);
+    FromPropertiesJson(Json::Value::From(jsonStr));
     }
 
 /*---------------------------------------------------------------------------------**//**
