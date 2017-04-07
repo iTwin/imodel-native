@@ -251,6 +251,40 @@ IECInstancePtr DgnECPropertyFormatter::_GetPropertyCategory (ECN::ECPropertyCR e
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Ramanujam.Raman     03/17
+//---------------------------------------------------------------------------------------
+static BentleyStatus WriteJsonToFile(BeFileNameCR pathname, JsonValueCR jsonValue)
+    {
+    Utf8String strValue = Json::FastWriter().write(jsonValue);
+
+    FILE* file = fopen(pathname.GetNameUtf8().c_str(), "w");
+    if (file == NULL)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    fprintf(file, "%s", strValue.c_str());
+    fclose(file);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Ramanujam.Raman     03/17
+//---------------------------------------------------------------------------------------
+static BeFileName GetTempPathname(DgnElementId elementId)
+    {
+    BeFileName tempPathname;
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"ElementInfo");
+    BeAssert(SUCCESS == status && "Cannot get temporary directory");
+
+    uint64_t val = elementId.GetValue();
+    WPrintfString fileName(L"%lu.json", val);
+
+    tempPathname.AppendToPath(fileName.c_str());
+    return tempPathname;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -271,6 +305,18 @@ BentleyStatus DgnECPersistence::GetElementInfo(JsonValueR jsonInstances, JsonVal
 
     JsonReader jsonReader(dgndb, element->GetElementClassId());
     BentleyStatus status = jsonReader.Read(jsonInstances, jsonDisplayInfo, (ECInstanceId) elementId.GetValue(), formatOptions);
+
+    if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG))
+        {
+        Json::Value val;
+        val["DisplayInfo"] = jsonDisplayInfo;
+        val["Instances"] = jsonInstances;
+
+        BeFileName pathname = GetTempPathname(elementId);
+        WriteJsonToFile(pathname, val);
+
+        LOG.debugv("Written element info to %ls", pathname.GetName());
+        }
 
     PERFLOG_FINISH("Core", "Getting Element Information");
     return status;
