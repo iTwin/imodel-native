@@ -116,7 +116,14 @@ BentleyStatus MapTile::Loader::_LoadTile()
 
     auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
-    ImageSource source(mapRoot.m_format, std::move(m_tileBytes));
+    // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
+    ImageSource::Format format = mapRoot.m_format;
+    if (0 == m_contentType.CompareTo ("image/png"))
+        format = ImageSource::Format::Png;
+    if (0 == m_contentType.CompareTo ("image/jpeg"))
+        format = ImageSource::Format::Jpeg;
+
+    ImageSource source(format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
     auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
@@ -223,6 +230,7 @@ Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
         uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider (&imageryProvider)
     {
@@ -255,19 +263,6 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider,
     CreateCache(imageryProvider._GetCacheFileName(), MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
-    {
-    Load(&context.GetTargetR().GetSystem());
-
-    if (m_root.IsValid())
-        m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
-    }
-
-DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 
 
 namespace WebMercatorStrings
@@ -315,6 +310,10 @@ void WebMercatorModel::FromJson(Json::Value const& value)
         {
         m_provider = new MapBoxImageryProvider ();
         }
+    else if (0 == providerName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
+        {
+        m_provider = new BingImageryProvider ();
+        }
 
     if (m_provider.IsValid())
         {
@@ -343,6 +342,17 @@ void WebMercatorModel::_OnLoadedJsonProperties()
 
     FromJson (value);
     T_Super::_OnLoadedJsonProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WebMercatorModel::_GetCopyrightMessage () const
+    {
+    if (m_provider.IsValid())
+        return m_provider->_GetCreditMessage();
+    else
+        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,6 +390,7 @@ WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params
         }
     else if (0 == imageryProviderName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
         {
+        m_provider = new BingImageryProvider();
         }
     else if (0 == imageryProviderName.CompareToI (WebMercator::GoogleImageryProvider::prop_GoogleProvider()))
         {
@@ -490,3 +501,330 @@ Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
     }
 
 
+
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String   TileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
+    {
+    // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
+    Utf8String  quadKey;
+
+    for (int i = levelOfDetail; i > 0; i--)
+        {
+        char digit = '0';
+        int mask = 1 << (i - 1);
+        if ((tileX & mask) != 0)
+            {
+            digit++;
+            }
+        if ((tileY & mask) != 0)
+            {
+            digit++;
+            digit++;
+            }
+        quadKey.append (1, digit);
+        }
+    return quadKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+    {
+    // From the tile, get a "quadkey" the Microsoft way.
+    int x = tile.GetColumn();
+    int y = tile.GetRow();
+    Utf8String  quadKey = TileXYToQuadKey (x, y, tile.GetZoomLevel());
+    int subdomain = (x + y) % 4;
+
+    // from the template url, construct the tile url.
+    Utf8String url;
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey);
+
+    return url;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BingImageryProvider::_GetCreditMessage () const
+    {
+    return "(c) Microsoft";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BingImageryProvider::_GetCacheFileName () const
+    {
+    switch (m_mapType)
+        {
+        case BingImageryProvider::MapType::Road:
+            return "BingRoad";
+
+        case BingImageryProvider::MapType::Aerial:
+            return "BingAerial";
+
+        case BingImageryProvider::MapType::AerialWithLabels:
+            return "BingHybrid";
+        }
+    BeAssert (false);
+    return "BingUnknown";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    BingImageryProvider::_FromJson (Json::Value const& value)
+    {
+    // the only thing currently stored in the BingImageryProvider Json is the MapType.
+    m_mapType = (BingImageryProvider::MapType) value[json_mapType()].asInt((int)BingImageryProvider::MapType::Road);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    BingImageryProvider::_ToJson (Json::Value& value) const
+    {
+    // the only thing currently stored in the BingImageryProvider Json is the MapType.
+    value[json_mapType()] = (int)m_mapType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP  BingImageryProvider::_GetCreditUrl() const
+    {
+    // NEEDSWORK_MapBox
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_FetchTemplateUrl ()
+    {
+    // make a request to the following URL to get the http://dev.virtualearth.net/REST/v1/Imagery/Metadata/<imagerySet>?o=json&key= Metadata information
+    // where <imagerySet> is Aerial, AerialWithLabels, or Road. There's an "OrdnanceSurvey" value but it's only valid for the London area.
+    if (ImageryProvider::TemplateUrlLoadStatus::NotFetched != m_templateUrlLoadStatus)
+        return m_templateUrlLoadStatus;
+
+    // If the request has not yet been made, make it here:
+    m_templateUrlLoadStatus.store(ImageryProvider::TemplateUrlLoadStatus::Requested);
+
+    // base the request on the imagery type we want.
+    Utf8String imagerySetName;
+    switch (m_mapType)
+        {
+        case BingImageryProvider::MapType::Road:
+            imagerySetName.assign ("Road");
+            break;
+
+        case BingImageryProvider::MapType::Aerial:
+            imagerySetName.assign ("Aerial");
+            break;
+
+        case BingImageryProvider::MapType::AerialWithLabels:
+            imagerySetName.assign ("AerialWithLabels");
+            break;
+
+        default:
+            BeAssert(false);
+        }
+
+    // prepare the url.
+    Utf8String url;
+    url.Sprintf ("http://dev.virtualearth.net/REST/v1/Imagery/Metadata/%s?o=json&key=Am-FIomxQ8COwv6zeuMNoc9xx3rMoeNYo8prPUJysZeQSuGLHQ9VbrHa9hNaO23z", imagerySetName.c_str());
+
+    // make the URL request.
+    Http::Request request (url);
+    BingImageryProviderPtr me(this);
+
+    return request.Perform().then([me] (Http::Response response)
+        {
+        // we got the response from the server.
+        if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus())
+            {
+            // typical reponse, (LF's added for clarity)
+            // {"authenticationResultCode":"ValidCredentials",
+            // "brandLogoUri":"http:\/\/dev.virtualearth.net\/Branding\/logo_powered_by.png",
+            // "copyright":"Copyright © 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
+            // "resourceSets":
+            //    [{"estimatedTotal":1,
+            //      "resources":
+            //        [{"__type":
+            //          "ImageryMetadata:http:\/\/schemas.microsoft.com\/search\/local\/ws\/rest\/v1",
+            //          "imageHeight":256,
+            //          "imageUrl":"http:\/\/ecn.{subdomain}.tiles.virtualearth.net\/tiles\/r{quadkey}.jpeg?g=5677&mkt={culture}&shading=hill",
+            //          "imageUrlSubdomains":["t0","t1","t2","t3"],
+            //          "imageWidth":256,
+            //          "imageryProviders":null,
+            //          "vintageEnd":null,
+            //          "vintageStart":null,
+            //          "zoomMax":21,
+            //          "zoomMin":1}
+            //        ]}
+            //    ],
+            //  "statusCode":200,
+            //  "statusDescription":"OK",
+            //  "traceId":"5ad3ec719ca34a168d3bd29e33e147fe|BN20130431|7.7.0.0|"
+            //  }
+            //
+
+            Http::HttpResponseContentPtr    content = response.GetContent();
+            Http::HttpBodyPtr               body = content->GetBody();
+            Utf8String                      responseString = body->AsString();
+            Json::Value                     responseJson;
+            Json::Reader::Parse (responseString.c_str(), responseJson);
+            if (responseJson.isNull())
+                return ImageryProvider::TemplateUrlLoadStatus::Failed;
+
+            // get the url for the bing logo.
+            me->m_creditUrl             = responseJson["brandLogoUri"].asString();
+
+            JsonValueCR resourceUrl     = responseJson["resourceSets"][0]["resources"][0];
+            me->m_minimumZoomLevel      = resourceUrl["zoomMin"].asInt();
+            me->m_maximumZoomLevel      = resourceUrl["zoomMax"].asInt();
+            me->m_tileHeight            = resourceUrl["imageHeight"].asInt();
+            me->m_tileWidth             = resourceUrl["imageWidth"].asInt();
+
+            Utf8String rawTemplate      = resourceUrl["imageUrl"].asString();
+
+            size_t  subdomain           = rawTemplate.find ("{subdomain}");
+            BeAssert (Utf8String::npos != subdomain);
+            rawTemplate.replace (subdomain, 11, "t%d");    // Note:: Depends on imageUrlSubdomains returning "t0", "t1", "t2", "t3"  !!
+
+            size_t quadkey              = rawTemplate.find ("{quadkey}");
+            BeAssert (Utf8String::npos != quadkey);
+            rawTemplate.replace (quadkey, 9, "%s");
+
+            // NEEDSWORK_Culture
+            size_t culture              = rawTemplate.find ("{culture}");
+            BeAssert (Utf8String::npos != culture);
+            rawTemplate.replace (culture, 9, "en-US");
+
+            me->m_urlTemplate = rawTemplate;
+
+            return ImageryProvider::TemplateUrlLoadStatus::Received;
+            }
+
+        return ImageryProvider::TemplateUrlLoadStatus::Failed;
+        });
+    }
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+namespace WebMercator
+{
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FetchTemplateUrlProgressiveTask : ProgressiveTask 
+    {
+    folly::Future<ImageryProvider::TemplateUrlLoadStatus>&  m_future;
+    WebMercatorModelCPtr                                    m_model;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Barry.Bentley                   04/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>& future, WebMercatorModel const* model) : m_future(future), m_model (model) {}
+
+    ~FetchTemplateUrlProgressiveTask () 
+        {
+        // The progressive display is deleted if the view is closed.
+        // If the request is still outstanding, then set it back to "NotFetched"
+        m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
+    * @bsimethod                                    Keith.Bentley                   08/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
+        {
+        // won't affect the screen.
+        wantShow = WantShow::No;
+
+        // if we haven't gotten a response yet, go around another progressive cycle.
+        if (!m_future.isReady())
+            return Completion::Aborted;
+
+        // now we have the response from the server.
+        m_model->m_provider->_SetTemplateUrlLoadStatus (m_future.get());
+
+        switch (m_future.get())
+            {
+            case ImageryProvider::TemplateUrlLoadStatus::Received:
+                {
+                // got it - go on to the next task.
+                m_model->Load(&context.GetTargetR().GetSystem());
+
+                if (m_model->m_root.IsValid())
+                    m_model->m_root->DrawInView(context, m_model->m_root->GetLocation(), m_model->m_root->m_clip.get());
+                return Completion::Finished;
+                }
+
+            case ImageryProvider::TemplateUrlLoadStatus::Requested:
+                {
+                // still waiting.
+                return Completion::Aborted;
+                }
+
+            case ImageryProvider::TemplateUrlLoadStatus::Failed:
+            case ImageryProvider::TemplateUrlLoadStatus::Abandoned:
+                {
+                return Completion::Finished;
+                }
+            }
+
+        return Completion::Aborted;
+        }
+
+    };
+};
+
+END_BENTLEY_DGN_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
+    {
+    // need a provider to get the tiles.
+    if (m_provider.IsNull())
+        return;
+
+    folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
+    if (ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
+        {
+        for (;;)
+            {
+            if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
+                {
+                // don't have the tile template yet, schedule a progressive pass to get it.
+                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (future, this));
+                return;
+                }
+            else
+                {
+                // this is for the thumbnail case - wait for the fetch to finish.
+                BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+                if (ImageryProvider::TemplateUrlLoadStatus::Received == m_provider->_GetTemplateUrlLoadStatus())
+                    break;
+                }
+            }
+        }
+
+
+    // don't need or already have TemplateUrl - go on to load and display the model.
+    Load(&context.GetTargetR().GetSystem());
+
+    if (m_root.IsValid())
+        m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
+    }

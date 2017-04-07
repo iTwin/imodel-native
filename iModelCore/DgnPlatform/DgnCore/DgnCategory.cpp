@@ -406,8 +406,8 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     {
     Init();
 
-    Json::Value val(Json::objectValue);
-    if (!Json::Reader::Parse(jsonStr, val))
+    Json::Value val = Json::Value::From(jsonStr);
+    if (val.isNull())
         return;
 
     m_invisible = val.get(APPEARANCE_Invisible, false).asBool();

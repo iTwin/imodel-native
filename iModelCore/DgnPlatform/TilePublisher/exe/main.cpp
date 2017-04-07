@@ -37,7 +37,6 @@ enum class ParamId
     GeographicLocation,
     GlobeImagery,
     GlobeTerrain,
-    DisplayGlobe,
     NoReplace,
     VerboseStatistics,
     TextureMode,
@@ -73,7 +72,6 @@ static CommandParam s_paramTable[] =
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider {BingMapRoads, BingMapsAerial, BingMapsAerialWithLabels, MapboxSatellite, MapboxTerrain, MapboxStreets, MapboxStreetsClassic, StamenWatercolor, StamenToner, ESRIWorldImagery, ", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
-        { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"up", L"update", L"Update existing tileset from model changes", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
@@ -221,18 +219,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
-                m_displayGlobe = true;
+                m_geoLocated = true;
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
-                m_displayGlobe = true;
                 break;
             case ParamId::GlobeTerrain:
                 m_terrainProvider = Utf8String(arg.m_value.c_str());
-                m_displayGlobe = true;
-                break;
-            case ParamId::DisplayGlobe:
-                m_displayGlobe = true;
                 break;
             case ParamId::Tolerance:
                 {
