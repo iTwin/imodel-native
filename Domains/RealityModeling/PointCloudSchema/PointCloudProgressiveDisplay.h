@@ -39,7 +39,7 @@ private:
 
     void SetupPtViewport(Dgn::RenderContextR context);
 
-    bool DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop);
+    bool DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop, unsigned int maxIterations);
 
 protected:
     PointCloudModel const& m_model;

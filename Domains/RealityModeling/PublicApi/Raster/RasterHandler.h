@@ -70,6 +70,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
+    BE_JSON_NAME(depthBias)
 
 private:
     Dgn::DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
@@ -96,8 +97,8 @@ protected:
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _InitFrom(Dgn::DgnModelCR other) override;
 
-    void _WriteJsonProperties(Json::Value& v) const override;
-    void _ReadJsonProperties(Json::Value const& v) override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
 
     virtual bool _IsParallelToGround() const {return false;}
 

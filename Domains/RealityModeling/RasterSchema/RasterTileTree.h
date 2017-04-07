@@ -141,7 +141,7 @@ public:
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
 
-    Utf8String _GetTileName() const override;
+    Utf8String _GetTileCacheKey() const override;
 
     virtual double _GetMaximumSize() const override 
         {

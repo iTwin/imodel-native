@@ -18,7 +18,7 @@
 #define USING_NAMESPACE_BENTLEY_THREEMX      using namespace BentleyApi::ThreeMx;
 
 #define THREEMX_SCHEMA_NAME "ThreeMx"
-#define THREEMX_SCHEMA_FILE L"ThreeMx.01.00.ecschema.xml"
+#define THREEMX_SCHEMA_FILE L"ThreeMx.ecschema.xml"
 #define THREEMX_SCHEMA(className)   THREEMX_SCHEMA_NAME "." className
 
 #ifdef __THREEMX_BUILD__
@@ -106,7 +106,7 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     struct Loader : Dgn::TileTree::TileLoader
         {
-        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
         BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR());};
         };
 
@@ -128,7 +128,7 @@ private:
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
-    Utf8String _GetTileName() const override {return GetChildFile();}
+    Utf8String _GetTileCacheKey() const override {return GetChildFile();}
 public:
     Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
@@ -199,6 +199,10 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
 
+    BE_JSON_NAME(threemx)
+    BE_JSON_NAME(sceneFile)
+    BE_JSON_NAME(location)
+    BE_JSON_NAME(clip)
 private:
     Utf8String m_sceneFile;
     Transform m_location;
@@ -214,8 +218,8 @@ public:
 
     THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
     THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
-    THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
-    THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    THREEMX_EXPORT void _OnSaveJsonProperties() override;
+    THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;

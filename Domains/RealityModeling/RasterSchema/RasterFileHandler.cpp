@@ -231,19 +231,22 @@ Dgn::TileTree::RootPtr RasterFileModel::_CreateTileTree(Dgn::Render::SystemP ren
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterFileModel::_WriteJsonProperties(Json::Value& v) const
+void RasterFileModel::_OnSaveJsonProperties()
     {
-    T_Super::_WriteJsonProperties(v);
-    DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
+    T_Super::_OnSaveJsonProperties();
+
+    Json::Value val;
+    DMatrix4dToJson(val, m_sourceToWorld);
+    SetJsonProperties(json_srcToDb(), val);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
+void RasterFileModel::_OnLoadedJsonProperties()
     {
-    T_Super::_ReadJsonProperties(v);
-    DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
+    T_Super::_OnLoadedJsonProperties();
+    DMatrix4dFromJson(m_sourceToWorld, GetJsonProperties(json_srcToDb()));
     }
 
 //----------------------------------------------------------------------------------------

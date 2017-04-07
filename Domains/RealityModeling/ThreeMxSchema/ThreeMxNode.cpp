@@ -18,7 +18,7 @@ Utf8String Node::GetChildFile() const
     {
     Utf8String parentPath("/");
     if (m_parent)
-        parentPath = m_parent->_GetTileName();
+        parentPath = m_parent->_GetTileCacheKey();
 
     return parentPath.substr(0, parentPath.find_last_of("/")) + "/" + m_childPath;
     }
@@ -106,7 +106,7 @@ void Node::_PickGraphics(PickArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
     {
-    return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);
+    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -238,19 +238,21 @@ Dgn::TileTree::RootPtr WmsModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_WriteJsonProperties(Json::Value& v) const
+void WmsModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(v);
-    m_map.ToJson(v);
+    T_Super::_OnSaveJsonProperties();
+    Json::Value val;
+    m_map.ToJson(val);
+    SetJsonProperties(json_wms(), val);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_ReadJsonProperties(Json::Value const& v)
+void WmsModel::_OnLoadedJsonProperties()
     {
-    T_Super::_ReadJsonProperties(v);
-    m_map.FromJson(v);
+    T_Super::_OnLoadedJsonProperties();
+    m_map.FromJson(GetJsonProperties(json_wms()));
     }
 
 //----------------------------------------------------------------------------------------
@@ -282,7 +284,7 @@ Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Ht
         return Http::HttpStatus::None;
 
     Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
-    Http::Request request(rasterRoot->_ConstructTileName(*rasterRoot->GetRootTile()));
+    Http::Request request(rasterRoot->_ConstructTileResource(*rasterRoot->GetRootTile()));
     request.SetResponseBody(responseBody);
 
     if (credentials.IsValid())

@@ -105,11 +105,11 @@ protected:
     //! Destruct a PointCloudModel object.
     ~PointCloudModel();
 
-    virtual void _OnFitView(Dgn::FitContextR) override;
-    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
-    virtual void _WriteJsonProperties(Json::Value&) const override;
-    virtual void _ReadJsonProperties(Json::Value const&) override;
-    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    void _OnFitView(Dgn::FitContextR) override;
+    void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
+    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
 
 

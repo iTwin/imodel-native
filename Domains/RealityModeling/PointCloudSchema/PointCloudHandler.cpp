@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)
 
-static Utf8CP JSON_PointCloudModel = "PointCloudModel";
+BE_JSON_NAME(PointCloudModel)
 static Utf8CP PROPERTYJSON_FileUri = "FileUri";
 static Utf8CP PROPERTYJSON_SceneToWorld = "SceneToWorld";
 static Utf8CP PROPERTYJSON_Description = "Description";
@@ -297,20 +297,21 @@ void PointCloudModel::Properties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void PointCloudModel::_WriteJsonProperties(Json::Value& val) const
+void PointCloudModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(val);
-    m_properties.ToJson(val[JSON_PointCloudModel]);
+    T_Super::_OnSaveJsonProperties();
+    Json::Value val;
+    m_properties.ToJson(val);
+    SetJsonProperties(json_PointCloudModel(), val);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
+void PointCloudModel::_OnLoadedJsonProperties()
     {
-    BeAssert(val.isMember(JSON_PointCloudModel));
-    T_Super::_ReadJsonProperties(val);
-    m_properties.FromJson(val[JSON_PointCloudModel]);
+    T_Super::_OnLoadedJsonProperties();
+    m_properties.FromJson(GetJsonProperties(json_PointCloudModel()));
     }
 
     

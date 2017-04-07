@@ -22,14 +22,14 @@ BentleyStatus Scene::ReadSceneFile()
 
     if (IsHttp())
         {
-        TileTree::HttpDataQuery query(m_rootUrl, nullptr);
+        TileTree::HttpDataQuery query(m_rootResource, nullptr);
         query.Perform().wait();
 
         rootStream = std::move(query.GetData());
         }
     else
         {
-        TileTree::FileDataQuery query(m_rootUrl, nullptr);
+        TileTree::FileDataQuery query(m_rootResource, nullptr);
         rootStream = std::move(query.Perform().get());
         }
 
@@ -233,39 +233,41 @@ void ThreeMxModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, scene->GetLocation());
     }
 
-static constexpr Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
-static constexpr Utf8CP JSON_LOCATION() {return "Location";}
-static constexpr Utf8CP JSON_CLIP() {return "Clip";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
+void ThreeMxModel::_OnSaveJsonProperties() 
     {
-    T_Super::_WriteJsonProperties(val);
+    T_Super::_OnSaveJsonProperties();
 
-    val[Json::StaticString(JSON_SCENE_FILE())] = m_sceneFile;
+    Json::Value val;
+    val[json_sceneFile()] = m_sceneFile;
     if (!m_location.IsIdentity())
-        JsonUtils::TransformToJson(val[Json::StaticString(JSON_LOCATION())], m_location);
+        JsonUtils::TransformToJson(val[json_location()], m_location);
 
     if (m_clip.IsValid())
-        val[Json::StaticString(JSON_CLIP())] = m_clip->ToJson();
+        val[json_clip()] = m_clip->ToJson();
+
+    SetJsonProperties(json_threemx(), val);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
+void ThreeMxModel::_OnLoadedJsonProperties()
     {
-    T_Super::_ReadJsonProperties(val);
-    m_sceneFile = val[JSON_SCENE_FILE()].asString();
+    T_Super::_OnLoadedJsonProperties();
 
-    if (val.isMember(JSON_LOCATION()))
-        JsonUtils::TransformFromJson(m_location, val[JSON_LOCATION()]);
+    JsonValueCR val = GetJsonProperties(json_threemx());
+    m_sceneFile = val[json_sceneFile()].asString();
+
+    if (val.isMember(json_location()))
+        JsonUtils::TransformFromJson(m_location, val[json_location()]);
     else
         m_location.InitIdentity();
 
-    if (val.isMember(JSON_CLIP()))
-        m_clip = ClipVector::FromJson(val[JSON_CLIP()]);
+    if (val.isMember(json_clip()))
+        m_clip = ClipVector::FromJson(val[json_clip()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,7 +452,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
+//=======================================================================================
 struct Publish3mxScene : Scene
 {
     using Scene::Scene;

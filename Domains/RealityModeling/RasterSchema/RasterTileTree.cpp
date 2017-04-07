@@ -80,7 +80,7 @@ RasterTile::RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Utf8String RasterTile::_GetTileName() const
+Utf8String RasterTile::_GetTileCacheKey() const
     {
     return Utf8PrintfString("%d/%d/%d", m_id.resolution, m_id.x, m_id.y);
     }

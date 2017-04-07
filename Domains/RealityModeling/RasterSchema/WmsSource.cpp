@@ -210,7 +210,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::System
     m_rootTile = new WmsTile(*this, TileId(GetResolutionCount() - 1, 0, 0), nullptr);
 
     // Cache name is a mix of model name and root tile url hash. If settings(ex: layers) change so is the tile url which will generate a new cache name.
-    Utf8String rootTileUrl = _ConstructTileName(*m_rootTile);
+    Utf8String rootTileUrl = _ConstructTileResource(*m_rootTile);
     MD5 hash;
     hash.Add(rootTileUrl.c_str(), rootTileUrl.length());
     Utf8String cacheName(model.GetName() + "_" + hash.GetHashString());
@@ -221,7 +221,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::System
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile) const
+Utf8String WmsSource::_ConstructTileResource(Dgn::TileTree::TileCR tile) const
     {
     WmsTileCR wmsTile = static_cast<WmsTile const&>(tile);
 
@@ -410,7 +410,7 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
     {
-    auto query = std::make_shared<TileTree::HttpDataQuery>(m_fileName, m_loads);
+    auto query = std::make_shared<TileTree::HttpDataQuery>(m_resourceName, m_loads);
 
     if (m_credentials.IsValid())
         query->GetRequest().SetCredentials(m_credentials);
@@ -490,7 +490,7 @@ TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr lo
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
         return nullptr; // Need to authenticate before we try again.
 
-    RefCountedPtr<WmsTileLoader> TileLoader = new WmsTileLoader(GetRoot()._ConstructTileName(*this), *this, loads);
+    RefCountedPtr<WmsTileLoader> TileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads);
     TileLoader->m_credentials = GetSource().GetCredentials();
     TileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
 
