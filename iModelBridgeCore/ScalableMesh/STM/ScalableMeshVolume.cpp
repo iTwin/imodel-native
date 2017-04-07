@@ -189,9 +189,11 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         totalCut += tileCut;
         totalFill += tileFill;
         }
-    DPoint3d pt;
+
     double scaleFactor;
-    if (!m_transform.IsIdentity() && m_transform.IsUniformScale(pt, scaleFactor))
+    Transform t2;
+    double tol = 1e-6;
+    if (!m_transform.IsIdentity() && m_transform.IsNearRigidScale(t2,0,tol) && t2.IsRigidScale(scaleFactor))
         {
         totalCut *= pow(scaleFactor, 3);
         totalFill *= pow(scaleFactor, 3);
