@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <RealityPlatform/RealityConversionTools.h>
 #include <RealityPlatform/RealityDataDownload.h>
-#include <BentleyDesktopClient/CCApi/CCPublic.h>
+#include <CCApi/CCPublic.h>
 
 #include "RealityContextTest.h"
 

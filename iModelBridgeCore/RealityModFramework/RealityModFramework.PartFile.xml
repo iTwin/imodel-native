@@ -17,7 +17,7 @@
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
-        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
@@ -67,18 +67,11 @@
         </Bindings>
     </Part>
     
-    <Part Name="BentleyDesktopClient-Api" BentleyBuildMakeFile="RealityModFrameworkBentleyDesktopClient.prewire.mke" OnlyPlatforms="x64">
-        <SubPart PartName="ConnectClientAPI"           PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
-        <Bindings>
-            <Assemblies>Delivery/*.dll</Assemblies>
-        </Bindings>
-    </Part>
-    
     <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <Bindings>
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
@@ -423,7 +416,7 @@
         
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
-        
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
 
         <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
@@ -582,8 +575,6 @@
         <ProductDirectory Name="managedtests"                   Path=""/>
         
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
-        
-        
     </ProductDirectoryList>
 
     <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
@@ -652,6 +643,7 @@
         <ProductDirectory Name="Assemblies"                     RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyDesktopClientApi"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="applicationroot"/>
 
         <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
@@ -659,7 +651,6 @@
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
-
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework-Tests">
@@ -670,10 +661,20 @@
         <Directories DirectoryListName="RealityModFrameworkTestsDir"/>
     </Product>
 
+   <!-- Create this part only to be able ccapi.dll in the product RealityModFramework-Gtest -->
+   <!-- Don't understand the reason.                                                        -->
+    <Part Name="BentleyDesktopClient-Api" BentleyBuildMakeFile="RealityModFrameworkBentleyDesktopClient.prewire.mke" OnlyPlatforms="x64">
+        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
+        <Bindings>
+            <Assemblies>Delivery/*.dll</Assemblies>
+        </Bindings>
+    </Part>
+
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="BentleyDesktopClient-Api" />
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModFrameworkTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModFrameworkTest/Assets" />
@@ -682,6 +683,9 @@
 
     <ProductDirectoryList ListName="RealityModFramework-GtestDir" >
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
     </ProductDirectoryList>
 
     <Product Name="RealityModFramework-Gtest" >
