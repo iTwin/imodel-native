@@ -158,7 +158,7 @@ private:
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args) {return new Geometry(args, *this);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
-    virtual Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
+    virtual Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:

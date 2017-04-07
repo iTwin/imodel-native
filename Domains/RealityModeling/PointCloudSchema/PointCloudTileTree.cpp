@@ -41,7 +41,7 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileName(tile)) { }
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile)) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017

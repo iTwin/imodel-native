@@ -84,7 +84,7 @@ protected:
 
     bvector<Resolution> m_resolution;
 
-    Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
+    Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     Transform _GetTransform(Dgn::RenderContextR context) const override;
     Dgn::ClipVectorCP _GetClipVector() const override;
 public:
