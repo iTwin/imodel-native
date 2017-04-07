@@ -29,7 +29,7 @@ bool KindOfQuantity::Verify() const
     if (m_persistenceFUS.HasProblem())
         {
         LOG.errorv("Validation Error - KindOfQuantity '%s' persistence FormatUnitSet has a problem: %s",
-                   GetFullName().c_str(), Formatting::Utils::FormatProblemDescription(m_persistenceFUS.GetProblemCode()).c_str());
+                   GetFullName().c_str(), m_persistenceFUS.GetProblemDescription().c_str());
         isValid = false;
         }
     
@@ -39,7 +39,7 @@ bool KindOfQuantity::Verify() const
             continue;
 
         LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet has a problem: %s",
-                   GetFullName().c_str(), Formatting::Utils::FormatProblemDescription(presFUS.GetProblemCode()).c_str());
+                   GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
         isValid = false;
         }
 
@@ -210,7 +210,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     Formatting::FormatUnitSet persistenceFUS(value.c_str());
     if (persistenceFUS.HasProblem())
         LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                     value.c_str(), kindOfQuantityNode.GetName(), Formatting::Utils::FormatProblemDescription(persistenceFUS.GetProblemCode()).c_str());
+                     value.c_str(), kindOfQuantityNode.GetName(), persistenceFUS.GetProblemDescription().c_str());
     SetPersistenceUnit(persistenceFUS);
 
     double relError;
@@ -230,7 +230,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             Formatting::FormatUnitSet presFUS(presUnit.c_str());
             if (presFUS.HasProblem())
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                             presUnit.c_str(), kindOfQuantityNode.GetName(), Formatting::Utils::FormatProblemDescription(presFUS.GetProblemCode()).c_str());
+                             presUnit.c_str(), kindOfQuantityNode.GetName(), presFUS.GetProblemDescription().c_str());
             m_presentationFUS.push_back(presFUS);
             }
         }
