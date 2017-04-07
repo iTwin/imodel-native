@@ -1134,7 +1134,7 @@ public:
         m_ival = 0;
         m_startIndx = -1;
         m_len = 0;
-        m_uomName = nullptr;
+        m_uomName = "";
         m_unit = nullptr;
         m_problem = FormatProblemDetail();
         }
