@@ -342,22 +342,23 @@ void WebMercatorModel::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Load(SystemP renderSys) const
+TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     {
     if (m_provider.IsNull())
         {
         BeAssert (false);
-        return;
+        return nullptr;
         }
 
     if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
-        return;
+        return nullptr;
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
 
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
     m_root = new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+    return m_root;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,17 +485,3 @@ Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
     return nullptr;
     }
    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
-    {
-    Transform biasTrans;
-    biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_properties.m_groundBias));
-
-    uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    return new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
-    }
-
- 
-

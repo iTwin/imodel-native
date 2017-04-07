@@ -583,6 +583,8 @@ struct Tile : TileTree::Tile
     void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
     ChildTiles const* _GetChildren(bool load) const override;
     void _DrawGraphics(TileTree::DrawArgsR) const override;
+
+    Utf8String _GetTileCacheKey () const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
 };
@@ -649,7 +651,7 @@ public:
     bool _HasChildren() const override { return !m_isLeaf; }
     DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool load) const override;
     DGNPLATFORM_EXPORT void _DrawGraphics(TileTree::DrawArgsR) const override;
-    Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
+    Utf8String _GetTileCacheKey() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     
     TileId GetTileId() const { return m_id; }
     TileId GetRelativeTileId() const;

@@ -580,8 +580,6 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     return params;
     }
 
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -826,3 +824,5 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
         {
         m_elementOverrides.Insert(id, app);
         }
+    }
+
