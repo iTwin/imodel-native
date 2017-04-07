@@ -74,8 +74,6 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-static bool s_alwayCreate = false;
-
 SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing)
     {
     SMSQLiteFilePtr sqlFilePtr;
@@ -115,7 +113,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
-                    if (createSisterIfMissing || s_alwayCreate)
+                    if (createSisterIfMissing)
                         {
                         BeFileName path(sqlFileName);
                         if (!path.GetDirectoryName().DoesPathExist())
@@ -150,7 +148,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
-                    if (createSisterIfMissing || s_alwayCreate)
+                    if (createSisterIfMissing)
                         {
                         BeFileName path(sqlFileName);
                         if (!path.GetDirectoryName().DoesPathExist())
