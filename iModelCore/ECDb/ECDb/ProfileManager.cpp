@@ -109,25 +109,18 @@ struct ProfileUpgradeContext final: NonCopyableClass
 //static
 DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
-    //ECDb always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
-    //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
-    //except that in that case, it is not active).
+    if (!ecdb.GetDefaultTransaction()->IsActive())
+        {
+        //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
+        //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
+        //except that in that case, it is not active).
+        BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
+        return BE_SQLITE_ERROR_NoTxnActive;
+        }
 
-    StopWatch timer(true);
-
-    BeAssert(ecdb.GetDefaultTransaction() != nullptr);
-    bool wasDefaultTransActiveBefore = ecdb.GetDefaultTransaction()->IsActive();
-    if (!wasDefaultTransActiveBefore)
-        ecdb.GetDefaultTransaction()->Begin();
-
-    ProfileVersion actualProfileVersion(0, 0, 0, 0);
     bool runProfileUpgrade = false;
-
+    ProfileVersion actualProfileVersion(0, 0, 0, 0);
     DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
-
-    if (!wasDefaultTransActiveBefore)
-        ecdb.GetDefaultTransaction()->Commit();
-
     if (!runProfileUpgrade)
         return stat;
 
@@ -141,10 +134,6 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
         }
 
     BeAssert(!ecdb.IsReadonly());
-    //retrieve active state of default transaction again because file might have been reopened by _ReopenForSchemaUpgrade
-    wasDefaultTransActiveBefore = ecdb.GetDefaultTransaction()->IsActive();
-    if (!wasDefaultTransActiveBefore)
-        ecdb.GetDefaultTransaction()->Begin();
 
     //let upgraders incrementally upgrade the profile
     //to the latest state
@@ -161,7 +150,9 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
         }
 
     //after upgrade procedure set new profile version in ECDb file
-    if (BE_SQLITE_OK != AssignProfileVersion(ecdb, false))
+    stat = AssignProfileVersion(ecdb, false);
+
+    if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
         LOG.errorv("Failed to upgrade " PROFILENAME " profile in file '%s'. Could not assign new profile version. %s",
@@ -169,10 +160,6 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (!wasDefaultTransActiveBefore)
-        ecdb.GetDefaultTransaction()->Commit();
-
-    timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s in file '%s'.",
