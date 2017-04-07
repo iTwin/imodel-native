@@ -515,19 +515,18 @@ static bool WriteSchema(Options const& options)
         context->AddSchemaPath(refPath.GetName());
         }
     
-    SchemaKey bsCAKey("Bentley_Standard_CustomAttributes", 1, 0, 0);
-    ECSchemaPtr bsCASchema = ECSchema::LocateSchema(bsCAKey, *context);
-    if (!bsCASchema.IsValid())
+    SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
+    ECSchemaPtr coreCASchema = ECSchema::LocateSchema(coreCAKey, *context);
+    if (!coreCASchema.IsValid())
         {
-        s_logger->errorv("Could not load standard schema '%s'.", bsCAKey.GetName().c_str());
+        s_logger->errorv("Could not load standard schema '%s'.", coreCAKey.GetName().c_str());
         return false;
         }
-    schema->AddReferencedSchema(*bsCASchema);
+    schema->AddReferencedSchema(*coreCASchema);
 
     auto supInfo = SupplementalSchemaMetaData::Create(schemaKey.GetName().c_str(), schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor(), options.Precendence, "Localization");
     IECInstancePtr instance = supInfo->CreateCustomAttribute();
     schema->SetCustomAttribute(*instance);
-
 
 
     SchemaKey locCAKey("SchemaLocalizationCustomAttributes", 1, 0, 0);
