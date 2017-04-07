@@ -420,7 +420,55 @@ TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
     return pData;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+UndefinedDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData)
+    {
+    UndefinedDataPtr pData;
 
+    // Create with main source.
+    // In theory multiband is only useable for terrain and imagery but not forbidden for any type
+    MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
+    if (nullptr != pMultiBandSource)
+        {
+        pData = UndefinedData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        }
+    else
+        {
+        pData = UndefinedData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        }
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        // In theory multiband is only useable for terrain and imagery but not forbidden for any type
+        MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
+        if (nullptr != pMultiBandSource)
+            {
+            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            }
+        else
+            {
+            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            }
+        }
+
+    return pData;
+    }
 //=======================================================================================
 //                                      Package
 //=======================================================================================
@@ -656,6 +704,15 @@ void RealityDataPackageNet::AddTerrainData(TerrainDataNet^ data)
     {
     (*m_pPackage)->GetTerrainGroupR().push_back(ManagedToNativeTerrainData(data));
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert          	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::AddUndefinedData(UndefinedDataNet^ data)
+    {
+    (*m_pPackage)->GetUndefinedGroupR().push_back(ManagedToNativeUndefinedData(data));
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
@@ -1101,5 +1158,48 @@ TerrainDataNet::!TerrainDataNet()
         {
         delete m_pTerrainData;
         m_pTerrainData = 0;
+        }
+    }
+
+//=======================================================================================
+//                                 Undefined Data
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    04/2017
+//-------------------------------------------------------------------------------------
+UndefinedDataNet^ UndefinedDataNet::Create(RealityDataSourceNet^ dataSource)
+    {
+    return gcnew UndefinedDataNet(dataSource);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UndefinedDataNet::UndefinedDataNet(RealityDataSourceNet^ dataSource)
+    : RealityDataNet(dataSource)
+    {
+    // Managed to native reality data source.
+    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+
+    m_pUndefinedData = new UndefinedDataPtr(UndefinedData::Create(*pNativeSource));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UndefinedDataNet::~UndefinedDataNet()
+    {
+    this->!UndefinedDataNet();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UndefinedDataNet::!UndefinedDataNet()
+    {
+    if (0 != m_pUndefinedData)
+        {
+        delete m_pUndefinedData;
+        m_pUndefinedData = 0;
         }
     }
