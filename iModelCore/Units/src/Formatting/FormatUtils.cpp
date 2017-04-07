@@ -1074,6 +1074,11 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 
+//===================================================
+//
+// FormatProblemDetail
+//
+//===================================================
 Utf8String FormatProblemDetail::GetProblemDescription()
     {
     switch (m_code)
@@ -1096,12 +1101,59 @@ Utf8String FormatProblemDetail::GetProblemDescription()
         }
     }
 
+
 bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
     {
     if (m_code == FormatProblemCode::NoProblems)
         m_code = code;
     return IsProblem();
     }
+
+//===================================================
+//
+// QuantityFraction
+//
+//===================================================
+void QuantityFraction::SetSigned(bool set)
+    {
+    size_t temp = static_cast<int>(m_traits);
+    if (set)
+        temp |= static_cast<int>(NumSequenceTraits::Signed);
+    else
+        temp &= ~static_cast<int>(NumSequenceTraits::Signed);
+    m_traits = static_cast<NumSequenceTraits>(temp);
+    }
+
+void QuantityFraction::SetDecPoint(bool set)
+    {
+    size_t temp = static_cast<int>(m_traits);
+    if (set)
+        temp |= static_cast<int>(NumSequenceTraits::DecPoint);
+    else
+        temp &= ~static_cast<int>(NumSequenceTraits::DecPoint);
+    m_traits = static_cast<NumSequenceTraits>(temp);
+    }
+void QuantityFraction::SetExponent(bool set)
+    {
+    size_t temp = static_cast<int>(m_traits);
+    if (set)
+        temp |= static_cast<int>(NumSequenceTraits::Exponent);
+    else
+        temp &= ~static_cast<int>(NumSequenceTraits::Exponent);
+    m_traits = static_cast<NumSequenceTraits>(temp);
+    }
+
+void QuantityFraction::SetUom(bool set)
+    {
+    size_t temp = static_cast<int>(m_traits);
+    if (set)
+        temp |= static_cast<int>(NumSequenceTraits::Uom);
+    else
+        temp &= ~static_cast<int>(NumSequenceTraits::Uom);
+    m_traits = static_cast<NumSequenceTraits>(temp);
+    }
+
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

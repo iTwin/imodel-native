@@ -1113,8 +1113,8 @@ public:
     UNITS_EXPORT Utf8String LastInterval(double factor);
     };
 
-
-struct NumericSequence 
+//QuantityFraction
+struct QuantityFraction 
     {
 private:
     NumSequenceTraits m_traits;
@@ -1122,24 +1122,45 @@ private:
     int m_ival;
     int m_startIndx;  // indicates the location of the first char in the numeric sequence (after skipping blanks)
     int m_len;        // the length of the inspected numeric sequence
-    /*bool m_signed;
-    bool m_point;
-    bool m_exponent;
-    bool m_expSign;*/
-    Utf8String m_uom;
+    Utf8String m_uomName;
+    BEU::UnitCP m_unit;
     FormatProblemDetail m_problem;
 
 public:
-    NumericSequence(Utf8CP txt)
+    QuantityFraction()
         {
         m_traits = NumSequenceTraits::None;
         m_dval = 0.0;
         m_ival = 0;
         m_startIndx = -1;
         m_len = 0;
-        m_uom = nullptr;
+        m_uomName = nullptr;
+        m_unit = nullptr;
         m_problem = FormatProblemDetail();
         }
+
+    UNITS_EXPORT void SetSigned(bool use);
+    bool IsSigned() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Signed)) != 0); }
+    UNITS_EXPORT void SetDecPoint(bool use);
+    bool HasDecPoint() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::DecPoint)) != 0); }
+    UNITS_EXPORT void SetExponent(bool use);
+    bool HasExponent() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Exponent)) != 0); }
+    UNITS_EXPORT void SetUom(bool use);
+    bool HasUom() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Uom)) != 0); }
+    Utf8String SetUomName(Utf8String name) { return m_uomName = name; }
+    Utf8String GetUomName() { return m_uomName; }
+    BEU::UnitCP GetUnit() { return BEU::UnitRegistry::Instance().LookupUnit(m_uomName.c_str()); }
+    UNITS_EXPORT void Detect(Utf8CP txt);
+    bool IsProblem() { return m_problem.IsProblem(); }
+    FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+    double GetRealValue() { return m_dval; }
+    int GetIntValue() { return m_ival; }
+    int GetStartIndex() { return m_startIndx; }
+    int GetLength() { return m_len; }
+    int GetNextindex() { return m_startIndx + m_len; }
+
     };
 
 /*
