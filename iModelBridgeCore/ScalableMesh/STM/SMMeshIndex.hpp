@@ -2024,7 +2024,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                     DPoint3d direction;
                     direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
                     DPoint2d dir2d = DPoint2d::From(direction);
-                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && par1 > 1e-5 && par2 > 1e-5 && par1 < 1+1e-5 && par2 < 1+1e-5)
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && ((par1 > 1e-5 && par1 < 1 + 1e-5) ||( par2 > 1e-5  && par2 < 1+1e-5)))
                     noIntersect = false;
                     }
                 }
@@ -2338,12 +2338,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             assert(added >= featurePoints[i].size() - sentinels[i]);
             }
         }
-/*    for (auto& vec : m_featureDefinitions)
-        {
-        vec.clear();
-        vec.Discard();
-        }
-    m_featureDefinitions.clear();*/
+
     linearFeaturesPtr->clear();
 
     }
