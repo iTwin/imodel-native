@@ -18,7 +18,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 }
 namespace SheetStrings
 {
-static constexpr Utf8CP str_Clip() {return "Clip";}
+    BE_PROP_NAME(Clip)
 };
 END_SHEET_NAMESPACE
 
@@ -184,7 +184,7 @@ DgnDbStatus ViewAttachment::CheckValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetClip() const
     {
-    auto clipJsonStr = GetPropertyValueString(str_Clip());
+    auto clipJsonStr = GetPropertyValueString(prop_Clip());
     if (clipJsonStr.empty())
         return nullptr;
 
@@ -201,7 +201,7 @@ ClipVectorPtr ViewAttachment::GetClip() const
 DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
     Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(str_Clip(), clipJson.ToString().c_str());
+    return SetPropertyValue(prop_Clip(), clipJson.ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,7 +209,7 @@ DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewAttachment::ClearClip()
     {
-    SetPropertyValue(str_Clip(), ECValue());
+    SetPropertyValue(prop_Clip(), ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,7 +453,7 @@ struct RectanglePoints
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
-                T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+                T_Super(db,Transform::FromIdentity(), nullptr, nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())

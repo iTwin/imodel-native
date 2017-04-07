@@ -55,15 +55,15 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct CodeFragmentSpec : Json::Value
 {
 private:
-    static constexpr Utf8CP str_fixedString() {return "fixedString";}
-    static constexpr Utf8CP str_inSequenceMask() {return "inSequenceMask";}
-    static constexpr Utf8CP str_maxChars() {return "maxChars";}
-    static constexpr Utf8CP str_minChars() {return "minChars";}
-    static constexpr Utf8CP str_numberGap() {return "numberGap";}
-    static constexpr Utf8CP str_prompt() {return "prompt";}
-    static constexpr Utf8CP str_propertyName() {return "propertyName";}
-    static constexpr Utf8CP str_startNumber() {return "startNumber";}
-    static constexpr Utf8CP str_type() {return "type";}
+    BE_JSON_NAME(fixedString)
+    BE_JSON_NAME(inSequenceMask)
+    BE_JSON_NAME(maxChars)
+    BE_JSON_NAME(minChars)
+    BE_JSON_NAME(numberGap)
+    BE_JSON_NAME(prompt)
+    BE_JSON_NAME(propertyName)
+    BE_JSON_NAME(startNumber)
+    BE_JSON_NAME(type)
 
     JsonValueCR GetValue(Utf8CP key) const {return (*this)[key];}
     void SetOrRemoveString(Utf8CP key, Utf8CP value) {if (value && *value) (*this)[key] = value; else removeMember(key);}
@@ -126,37 +126,37 @@ public:
         return fragmentSpec;
         }
 
-    Type GetType() const {return (Type) GetValue(str_type()).asInt((int) Type::Invalid);}
-    void SetType(Type type) {SetOrRemoveInt(str_type(), (int) type, (int) Type::Invalid);}
+    Type GetType() const {return (Type) GetValue(json_type()).asInt((int) Type::Invalid);}
+    void SetType(Type type) {SetOrRemoveInt(json_type(), (int) type, (int) Type::Invalid);}
     bool IsValid() const {return Type::Invalid != GetType();}
     bool IsFixedString() const {return Type::FixedString == GetType();}
     bool IsElementTypeCode() const {return Type::ElementTypeCode == GetType();}
     bool IsSequence() const {return Type::Sequence == GetType();}
     bool IsPropertyValue() const {return Type::PropertyValue == GetType();}
 
-    Utf8String GetPrompt() const {return GetValue(str_prompt()).asString();}
-    void SetPrompt(Utf8CP prompt) {SetOrRemoveString(str_prompt(), prompt);}
+    Utf8String GetPrompt() const {return GetValue(json_prompt()).asString();}
+    void SetPrompt(Utf8CP prompt) {SetOrRemoveString(json_prompt(), prompt);}
 
-    bool IsInSequenceMask() const {return GetValue(str_inSequenceMask()).asBool(!IsSequence());}
-    void SetInSequenceMask(bool inSequenceMask) {if (!IsSequence()) SetOrRemoveBool(str_inSequenceMask(), inSequenceMask, true);}
+    bool IsInSequenceMask() const {return GetValue(json_inSequenceMask()).asBool(!IsSequence());}
+    void SetInSequenceMask(bool inSequenceMask) {if (!IsSequence()) SetOrRemoveBool(json_inSequenceMask(), inSequenceMask, true);}
 
-    uint32_t GetMinChars() const {return GetValue(str_minChars()).asUInt(0);} 
-    void SetMinChars(uint32_t minChars) {if (minChars <= GetMaxChars()) SetOrRemoveUInt(str_minChars(), minChars, 0);}
+    uint32_t GetMinChars() const {return GetValue(json_minChars()).asUInt(0);} 
+    void SetMinChars(uint32_t minChars) {if (minChars <= GetMaxChars()) SetOrRemoveUInt(json_minChars(), minChars, 0);}
 
-    uint32_t GetMaxChars() const {return GetValue(str_maxChars()).asUInt(MAX_MaxChars);} 
-    void SetMaxChars(uint32_t maxChars) {if ((maxChars <= MAX_MaxChars) && (maxChars >= GetMinChars())) SetOrRemoveUInt(str_maxChars(), maxChars, MAX_MaxChars);}
+    uint32_t GetMaxChars() const {return GetValue(json_maxChars()).asUInt(MAX_MaxChars);} 
+    void SetMaxChars(uint32_t maxChars) {if ((maxChars <= MAX_MaxChars) && (maxChars >= GetMinChars())) SetOrRemoveUInt(json_maxChars(), maxChars, MAX_MaxChars);}
 
-    Utf8String GetFixedString() const {return IsFixedString() ? GetValue(str_fixedString()).asString() : "";}
-    void SetFixedString(Utf8CP fixedString) {if (IsFixedString()) SetOrRemoveString(str_fixedString(), fixedString);}
+    Utf8String GetFixedString() const {return IsFixedString() ? GetValue(json_fixedString()).asString() : "";}
+    void SetFixedString(Utf8CP fixedString) {if (IsFixedString()) SetOrRemoveString(json_fixedString(), fixedString);}
 
-    Utf8String GetPropertyName() const {return IsPropertyValue() ? GetValue(str_propertyName()).asString() : "";}
-    void SetPropertyName(Utf8CP propertyName) {if (IsPropertyValue()) SetOrRemoveString(str_propertyName(), propertyName);}
+    Utf8String GetPropertyName() const {return IsPropertyValue() ? GetValue(json_propertyName()).asString() : "";}
+    void SetPropertyName(Utf8CP propertyName) {if (IsPropertyValue()) SetOrRemoveString(json_propertyName(), propertyName);}
 
-    uint32_t GetStartNumber() const {return GetValue(str_startNumber()).asInt(1);}
-    void SetStartNumber(uint32_t startNumber) {if (IsSequence()) SetOrRemoveUInt(str_startNumber(), startNumber, 1);}
+    uint32_t GetStartNumber() const {return GetValue(json_startNumber()).asInt(1);}
+    void SetStartNumber(uint32_t startNumber) {if (IsSequence()) SetOrRemoveUInt(json_startNumber(), startNumber, 1);}
 
-    uint32_t GetNumberGap() const {return GetValue(str_numberGap()).asInt(1);}
-    void SetNumberGap(uint32_t numberGap) {if (IsSequence()) SetOrRemoveUInt(str_numberGap(), numberGap, 1);}
+    uint32_t GetNumberGap() const {return GetValue(json_numberGap()).asInt(1);}
+    void SetNumberGap(uint32_t numberGap) {if (IsSequence()) SetOrRemoveUInt(json_numberGap(), numberGap, 1);}
 };
 
 //=======================================================================================
@@ -172,17 +172,16 @@ public:
         Repository = 1,
         Model = 2,
         ParentElement = 3,
-        // WIP: ArbitraryElement = 4 (identified by relationship)
     };
 
 private:
-    static constexpr Utf8CP str_type() {return "type";}
+    BE_JSON_NAME(type)
     CodeScopeSpec(Type type=Type::Repository) {SetType(type);}
-    void SetType(Type type) {(*this)[str_type()] = (int) type;}
+    void SetType(Type type) {(*this)[json_type()] = (int) type;}
     JsonValueCR GetValue(Utf8CP key) const {return (*this)[key];}
 
 public:
-    Type GetType() const {return (Type) GetValue(str_type()).asInt((int) Type::Repository);}
+    Type GetType() const {return (Type) GetValue(json_type()).asInt((int) Type::Repository);}
     static CodeScopeSpec CreateRepositoryScope() {return CodeScopeSpec(Type::Repository);}
     static CodeScopeSpec CreateModelScope() {return CodeScopeSpec(Type::Model);}
     static CodeScopeSpec CreateParentElementScope() {return CodeScopeSpec(Type::ParentElement);}
@@ -221,12 +220,11 @@ public:
             m_dgndb(dgndb), m_id(id), m_name(name), m_scopeSpec(scopeSpec) {}
     };
 
-private:
-    static constexpr Utf8CP str_fragmentSpecs() {return "fragmentSpecs";}
-    static constexpr Utf8CP str_registrySuffix() {return "registrySuffix";}
-    static constexpr Utf8CP str_scopeSpec() {return "scopeSpec";}
-    static constexpr Utf8CP str_spec() {return "spec";}
-    static constexpr Utf8CP str_version() {return "version";}
+    BE_JSON_NAME(fragmentSpecs)
+    BE_JSON_NAME(registrySuffix)
+    BE_JSON_NAME(scopeSpec)
+    BE_JSON_NAME(spec)
+    BE_JSON_NAME(version)
 
 private:
     DgnDbR          m_dgndb;
@@ -253,11 +251,12 @@ public:
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
     Utf8StringCR GetName() const { return m_name; }
 
-    Utf8String GetRegistrySuffix() const {return m_specProperties[str_registrySuffix()].asString();}
-    void SetRegistrySuffix(Utf8CP registrySuffix) {if (registrySuffix && *registrySuffix) m_specProperties[str_registrySuffix()] = registrySuffix;}
+    Utf8String GetRegistrySuffix() const {return m_specProperties[json_registrySuffix()].asString();}
+    void SetRegistrySuffix(Utf8CP registrySuffix) {if (registrySuffix && *registrySuffix) m_specProperties[json_registrySuffix()] = registrySuffix;}
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}
+
     //! Return true if the specified CodeSpec is the NullCodeSpec
     bool IsNullCodeSpec() const {return GetCodeSpecId() == GetNullCodeSpecId();}
 
@@ -270,6 +269,7 @@ public:
     bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
     bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}
     bool IsParentElementScope() const {return CodeScopeSpec::Type::ParentElement == GetScope().GetType();}
+
     //! Return the DgnElementId of the scope element for the specified element.
     DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnElementCR element) const;
 
@@ -278,6 +278,7 @@ public:
     bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
 
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;

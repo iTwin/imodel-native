@@ -145,9 +145,9 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void createImageCategory(DgnDbR db)
+static void createImageCategory(DefinitionModelR model)
     {
-    DrawingCategory imageCategory(db, CATEGORY_RedlineImage, DgnCategory::Rank::System);
+    DrawingCategory imageCategory(model, CATEGORY_RedlineImage, DgnCategory::Rank::System);
     DgnSubCategory::Appearance appearance;
     appearance.SetInvisible (false);
     appearance.SetColor (ColorDef(0xff,0xff,0xfe));
@@ -174,7 +174,7 @@ static void createRedlineCodeSpec(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     {
-    createImageCategory(db);
+    createImageCategory(db.GetDictionaryModel());
     createRedlineCodeSpec(db);
     }
 
@@ -217,7 +217,7 @@ void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
 
     vp.NpcToWorld(&origin, &origin, 1);
 
-    AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(GetDgnDb());
+    AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(GetDgnDb().GetDictionaryModel());
 
     auxCoordSys->SetOrigin(origin);
     auxCoordSys->SetRotation(m_definition->GetRotation());
@@ -615,9 +615,9 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
         return nullptr;
         }
 
-    UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
-    UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
-    rdlModel->GetDisplayInfoR().SetUnits(mu, su);
+    UnitDefinition mu = subjectViewTargetModel.GetFormatter().GetMasterUnits();
+    UnitDefinition su = subjectViewTargetModel.GetFormatter().GetSubUnits();
+    rdlModel->GetFormatterR().SetUnits(mu, su);
     return rdlModel;
     }
 
@@ -712,11 +712,12 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), 
-                                                              model.GetModelId(), *new CategorySelector(db, ""), *new DisplayStyle2d(db));
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValue().c_str(), 
+                                                              dictionary.GetModelId(), *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary));
 
     //  The view always has the same name as the redline and its model
-    DgnCode code = CreateCode(db, redline->GetCode().GetValue());
+    DgnCode code = CreateCode(dictionary, redline->GetCode().GetValue());
     if (!view->IsValidCode(code))
         {
         createStatus = DgnDbStatus::InvalidName;
@@ -740,7 +741,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-    catsel.AddCategory(DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage)));
+    catsel.AddCategory(DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(dictionary, CATEGORY_RedlineImage)));
 
     return view;
     }
@@ -750,9 +751,10 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, DVec2dCR size)
     {
-    auto& db = GetDgnDb();
+    DgnDbR db = GetDgnDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
 
-    DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage));
+    DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(dictionary, CATEGORY_RedlineImage));
 
     DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
                             DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));

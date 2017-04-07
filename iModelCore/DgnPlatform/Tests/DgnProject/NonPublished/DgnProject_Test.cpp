@@ -123,7 +123,7 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
 
     // Use ModelInfo as an alt. way to get at some of the same property data
-    GeometricModel::DisplayInfo const& displayInfo = defaultModel->GetDisplayInfo();
+    GeometricModel::Formatter const& displayInfo = defaultModel->GetFormatter();
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }

@@ -510,7 +510,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
        {
         DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
-        DrawingCategory category(*m_db, "TestCategory");
+        DrawingCategory category(m_db->GetDictionaryModel(), "TestCategory");
         ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Description"));
         ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(catindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Description")));
@@ -1000,12 +1000,13 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
     ECN::ECValue checkValue;
     DgnViewId viewId;
     if (true)
-       {
-        auto categories = new CategorySelector(*m_db, "");
+        {
+        DefinitionModelR dictionary = m_db->GetDictionaryModel();
+        auto categories = new CategorySelector(dictionary, "");
         for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        auto style = new DisplayStyle2d(*m_db, "");
+        auto style = new DisplayStyle2d(dictionary, "");
         auto flags = style->GetViewFlags();
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
         style->SetViewFlags(flags);
@@ -1014,7 +1015,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
         DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
 
-        DrawingViewDefinition view(*m_db, "Default", drawingModel->GetModelId(),*categories, *style);
+        DrawingViewDefinition view(dictionary, "Default", drawingModel->GetModelId(),*categories, *style);
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(raindex, "RotationAngle"));
@@ -1095,6 +1096,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
     checkValue.Clear();
     }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1105,17 +1107,18 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     ECN::ECValue checkValue;
     DgnViewId viewId;
     if (true)
-       {
-        auto categories = new CategorySelector(*m_db, "");
+        {
+        DefinitionModelR dictionary = m_db->GetDictionaryModel();
+        auto categories = new CategorySelector(dictionary, "");
         for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        auto style = new DisplayStyle3d(*m_db, "");
+        auto style = new DisplayStyle3d(dictionary, "");
         auto flags = style->GetViewFlags();
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
         style->SetViewFlags(flags);
 
-        auto models = new ModelSelector(*m_db, "");
+        auto models = new ModelSelector(dictionary, "");
         ModelIterator modIter = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
         for (ModelIteratorEntryCR entry : modIter)
             {
@@ -1126,7 +1129,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
                 models->AddModel(id);
              }
 
-        SpatialViewDefinition view(*m_db, "Default", *categories, *style, *models);
+        SpatialViewDefinition view(dictionary, "Default", *categories, *style, *models);
         view.SetStandardViewRotation(StandardView::Iso);
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));

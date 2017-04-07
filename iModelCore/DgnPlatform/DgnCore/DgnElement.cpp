@@ -336,7 +336,7 @@ Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
 void DefinitionElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(prop_IsPrivate()), IsPrivate());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -349,7 +349,7 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(prop_IsPrivate()));
 
     return DgnDbStatus::Success;
     }
@@ -373,6 +373,18 @@ DgnDbStatus DefinitionElement::_OnInsert()
     // DefinitionElements can reside *only* in a DefinitionModel
     DgnDbStatus status = GetModel()->IsDefinitionModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionElement::GetDefinitionModel() const
+    {
+    DgnModelPtr model = GetModel();
+    BeAssert(model.IsValid());
+    DefinitionModelP definitionModel = model.IsValid() ? model->ToDefinitionModelP() : nullptr;
+    BeAssert(nullptr != definitionModel);
+    return definitionModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -736,7 +748,7 @@ DgnDbStatus RoleElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1480,7 +1492,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
+ElementImporter::ElementImporter(DgnImportContext& context) : m_context(context), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -2505,7 +2517,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                            \
+            {                                                                           \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2604,21 +2616,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     T_Super::_RegisterPropertyAccessors(params, layout);
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                            \
+            {                                                                           \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2969,7 +2981,7 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2985,7 +2997,7 @@ SpatialLocationTypeCPtr SpatialLocationElement::GetSpatialLocationType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2993,7 +3005,7 @@ DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3020,7 +3032,7 @@ GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3028,7 +3040,7 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4134,7 +4146,7 @@ void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& 
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
+    params.RegisterPropertyAccessors(layout, DefinitionElement::prop_IsPrivate(), 
         [](ECValueR value, DgnElementCR el)
             {
             DefinitionElementCR def = (DefinitionElementCR)el;

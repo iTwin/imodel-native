@@ -161,45 +161,56 @@ DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCodeCR code)
     {
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::GeometryPart::GetHandler());
+    return new DgnGeometryPart(CreateParams(db, modelId, classId, code));
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    03/2017
+//---------------------------------------------------------------------------------------
+DgnGeometryPartPtr DgnGeometryPart::Create(DefinitionModelR model, Utf8StringCR name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnModelId modelId = model.GetModelId();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::GeometryPart::GetHandler());
+    DgnCode code = DgnGeometryPart::CreateCode(model, name);
     return new DgnGeometryPart(CreateParams(db, modelId, classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId source)
+DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourceGeometryPartId)
     {
     if (!IsBetweenDbs())
-        return source;
+        return sourceGeometryPartId;
 
-    DgnGeometryPartId dest = m_remap.Find(source);
-    if (dest.IsValid())
-        return dest;
+    DgnGeometryPartId destGeometryPartId = m_remap.Find(sourceGeometryPartId);
+    if (destGeometryPartId.IsValid())
+        return destGeometryPartId;
 
-    DgnGeometryPartCPtr sourceGeometryPart = GetSourceDb().Elements().Get<DgnGeometryPart>(source);
+    DgnGeometryPartCPtr sourceGeometryPart = GetSourceDb().Elements().Get<DgnGeometryPart>(sourceGeometryPartId);
     if (!sourceGeometryPart.IsValid())
         return DgnGeometryPartId();
 
-    DgnCode destCode = sourceGeometryPart->GetCode();
-    dest = DgnGeometryPart::QueryGeometryPartId(GetDestinationDb(), destCode);
+    DgnModelId destModelId = m_remap.Find(sourceGeometryPart->GetModelId());
+    if (!destModelId.IsValid())
+        return DgnGeometryPartId();
 
-    if (!dest.IsValid())
-        {
-        DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(GetDestinationDb(), destCode);
-        GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
+    DefinitionModelPtr destModel = GetDestinationDb().Models().Get<DefinitionModel>(destModelId);
+    if (!destModel.IsValid())
+        return DgnGeometryPartId();
 
-        destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());
+    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue());
+    if (!destGeometryPart.IsValid())
+        return DgnGeometryPartId();
 
-        if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart).IsValid())
-            {
-            BeAssert(false);
-            return DgnGeometryPartId();
-            }
-        dest = destGeometryPart->GetId();
-        }
+    GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
+    destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());
 
-    return m_remap.Add(source, dest);
+    if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart).IsValid())
+        return DgnGeometryPartId();
+
+    return m_remap.Add(sourceGeometryPartId, destGeometryPart->GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**

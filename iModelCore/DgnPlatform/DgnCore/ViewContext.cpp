@@ -1162,12 +1162,19 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
+static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp, bool useProjectExtents)
     {
-    // Limit grid to project extents in 3d views, but ask the viewcontroller for its extents for 2d views.
-    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().GeoLocation().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
-    if (range.IsEmpty())
-        return 0;
+    bool        limitRange = useProjectExtents && vp.GetViewController().IsSpatialView();
+    DRange3d    range;
+
+    // Limit non-view aligned grid to project extents in spatial views...
+    if (limitRange)
+        {
+        range = vp.GetViewController().GetDgnDb().GeoLocation().GetProjectExtents(); 
+
+        if (range.IsEmpty())
+            return 0;
+        }
 
     static int const index[12][2] = {
                         {NPC_000, NPC_001},     // lines connecting front to back
@@ -1188,7 +1195,11 @@ static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP pla
 
     Frustum frust = vp.GetFrustum();
 
-    range.IntersectionOf(range, frust.ToRange());
+    if (limitRange)
+        range.IntersectionOf(range, frust.ToRange());
+    else
+        range = frust.ToRange();
+
     range.Get8Corners(frust.m_pts);
 
     int nIntersections = 0;
@@ -1481,10 +1492,11 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     DPoint3d gridOrg;
     Point2d  repetitions;
 
-    if (nullptr == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
+    // Compute grid origin and visible repetitions when fixed sized grid size isn't supplied...
+    if (nullptr == fixedRepetitions || 0 == fixedRepetitions->x || 0 == fixedRepetitions->y)
         {
         DPoint3d intersections[12];
-        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, vp);
+        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, vp, nullptr != fixedRepetitions);
 
         if (nIntersections < 3)
             return;

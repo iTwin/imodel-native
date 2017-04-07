@@ -38,7 +38,7 @@ enum class LightType
 };
 
 //=======================================================================================
-// Json parameters that define how a light affects the rendering of a scene.
+//! Json parameters that define how a light affects the rendering of a scene.
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct Parameters : Json::Value
@@ -51,55 +51,56 @@ struct Parameters : Json::Value
     };
 
 private:
-    static constexpr Utf8CP str_Type() {return "type";}
-    static constexpr Utf8CP str_Intensity() {return "intensity";}
-    static constexpr Utf8CP str_Color() {return "color";}
-    static constexpr Utf8CP str_Intensity2() {return "intensity2";}
-    static constexpr Utf8CP str_Color2() {return "color2";}
-    static constexpr Utf8CP str_Kelvins() {return "kelvin";} 
-    static constexpr Utf8CP str_Shadows() {return "shadows";}
-    static constexpr Utf8CP str_Bulbs() {return "bulbs";}
-    static constexpr Utf8CP str_Lumens() {return "lumens";}
-    static constexpr Utf8CP str_Spot() {return "spot";}
-    static constexpr Utf8CP str_Inner() {return "inner";}
-    static constexpr Utf8CP str_Outer() {return "outer";}
-
     JsonValueCR Value(Utf8CP name) const {return (*this)[name];}
+
 public:
+    BE_JSON_NAME(type)
+    BE_JSON_NAME(intensity)
+    BE_JSON_NAME(color)
+    BE_JSON_NAME(intensity2)
+    BE_JSON_NAME(color2)
+    BE_JSON_NAME(kelvin) 
+    BE_JSON_NAME(shadows)
+    BE_JSON_NAME(bulbs)
+    BE_JSON_NAME(lumens)
+    BE_JSON_NAME(spot)
+    BE_JSON_NAME(inner)
+    BE_JSON_NAME(outer)
 
-    LightType GetType() const {return (LightType) Value(str_Type()).asInt((int) LightType::Invalid);}
-    void SetType(LightType type) {SetOrRemoveInt(str_Type(), (int) type, (int) LightType::Invalid);}
+    LightType GetType() const {return (LightType) Value(json_type()).asInt((int) LightType::Invalid);}
+    void SetType(LightType type) {SetOrRemoveInt(json_type(), (int) type, (int) LightType::Invalid);}
 
-    double GetIntensity() const {return Value(str_Intensity()).asDouble(1.0);}
-    void SetIntensity(double intensity) {SetOrRemoveDouble(str_Intensity(), intensity, 1.0);}
+    double GetIntensity() const {return Value(json_intensity()).asDouble(1.0);}
+    void SetIntensity(double intensity) {SetOrRemoveDouble(json_intensity(), intensity, 1.0);}
 
-    ColorDef GetColor() const {return ColorDef(Value(str_Color()).asInt(ColorDef::White().GetValue()));}
-    void SetColor(ColorDef color) {SetOrRemoveInt(str_Color(), color.GetValue(), ColorDef::White().GetValue());}
+    ColorDef GetColor() const {return ColorDef(Value(json_color()).asInt(ColorDef::White().GetValue()));}
+    void SetColor(ColorDef color) {SetOrRemoveInt(json_color(), color.GetValue(), ColorDef::White().GetValue());}
 
-    double GetIntensity2() const {return Value(str_Intensity2()).asDouble(1.0);}
-    void SetIntensity2(double intensity) {SetOrRemoveDouble(str_Intensity2(), intensity, 1.0);}
+    double GetIntensity2() const {return Value(json_intensity2()).asDouble(1.0);}
+    void SetIntensity2(double intensity) {SetOrRemoveDouble(json_intensity2(), intensity, 1.0);}
 
-    ColorDef GetColor2() const {return ColorDef(Value(str_Color2()).asInt(ColorDef::White().GetValue()));}
-    void SetColor2(ColorDef color) {SetOrRemoveInt(str_Color2(), color.GetValue(), ColorDef::White().GetValue());}
+    ColorDef GetColor2() const {return ColorDef(Value(json_color2()).asInt(ColorDef::White().GetValue()));}
+    void SetColor2(ColorDef color) {SetOrRemoveInt(json_color2(), color.GetValue(), ColorDef::White().GetValue());}
 
-    double GetLumens() const {return Value(str_Lumens()).asDouble(0.0);}
-    void SetLumens(double lumens) {SetOrRemoveDouble(str_Lumens(), lumens, 0.0);}
+    double GetLumens() const {return Value(json_lumens()).asDouble(0.0);}
+    void SetLumens(double lumens) {SetOrRemoveDouble(json_lumens(), lumens, 0.0);}
 
-    uint32_t GetKelvin() const {return Value(str_Kelvins()).asUInt();} 
-    void SetKelvin(uint32_t kelvins) {SetOrRemoveUInt(str_Kelvins(), kelvins, 0);}
+    uint32_t GetKelvin() const {return Value(json_kelvin()).asUInt();} 
+    void SetKelvin(uint32_t kelvins) {SetOrRemoveUInt(json_kelvin(), kelvins, 0);}
 
-    uint32_t GetShadowSamples() const {return Value(str_Shadows()).asUInt();}
-    void SetShadowSamples(uint32_t val) {SetOrRemoveUInt(str_Shadows(), val, 0);}
+    uint32_t GetShadowSamples() const {return Value(json_shadows()).asUInt();}
+    void SetShadowSamples(uint32_t val) {SetOrRemoveUInt(json_shadows(), val, 0);}
 
-    uint32_t GetBulbCount() const {return Value(str_Bulbs()).asUInt(1);}
-    void SetBulbCount(uint32_t bulbs) {SetOrRemoveUInt(str_Bulbs(), bulbs, 1);}
+    uint32_t GetBulbCount() const {return Value(json_bulbs()).asUInt(1);}
+    void SetBulbCount(uint32_t bulbs) {SetOrRemoveUInt(json_bulbs(), bulbs, 1);}
 
-    Spot GetSpot() const {auto& spot=Value(str_Spot()); return Spot(AngleInDegrees::FromDegrees(spot[str_Inner()].asDouble()), AngleInDegrees::FromDegrees(spot[str_Outer()].asDouble()));}
-    void SetSpot(Spot val) {auto& spot=(*this)[str_Spot()]; spot[str_Inner()] = val.m_inner.Degrees(); spot[str_Outer()] = val.m_outer.Degrees();}
+    Spot GetSpot() const {auto& spot=Value(json_spot()); return Spot(AngleInDegrees::FromDegrees(spot[json_inner()].asDouble()), AngleInDegrees::FromDegrees(spot[json_outer()].asDouble()));}
+    void SetSpot(Spot val) {auto& spot=(*this)[json_spot()]; spot[json_inner()] = val.m_inner.Degrees(); spot[json_outer()] = val.m_outer.Degrees();}
 
     bool IsValid() const {return GetType() != LightType::Invalid;}
     bool IsVisible() const {return IsValid() && GetIntensity() > 0.0;}
-    Parameters(LightType type = LightType::Invalid) {SetType(type);}
+
+    Parameters(LightType type=LightType::Invalid) {SetType(type);}
 };
 
 //=======================================================================================
@@ -110,11 +111,11 @@ struct Location : SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LightLocation, SpatialLocationElement);
 public:
 
-    static constexpr Utf8CP str_Params() {return "light";}
+    BE_JSON_NAME(light)
     explicit Location(CreateParams const& params) : T_Super(params) {}
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightLocation));}//!< @private
-    ParametersCR GetParameters() const {return (ParametersCR) m_jsonProperties[str_Params()];}
-    void SetParameters(ParametersCR val) {m_jsonProperties[Json::StaticString(str_Params())] = val;}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightLocation));} //!< @private
+    ParametersCR GetParameters() const {return (ParametersCR) m_jsonProperties[json_light()];}
+    void SetParameters(ParametersCR val) {m_jsonProperties[json_light()] = val;}
 };
 
 namespace Handlers

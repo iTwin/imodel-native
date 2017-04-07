@@ -273,9 +273,6 @@ void DgnECSymbolProvider::InitDefaultMethods()
     m_defaultMethods.push_back (MethodSymbol::Create ("IsPropertyValueSet", NULL, &IsPropertyValueSet));
     m_defaultMethods.push_back (MethodSymbol::Create ("ResolveSymbology", NULL, &ResolveSymbology));
 #endif
-
-    m_defaultMethods.push_back (MethodSymbol::Create ("AnyMatches", &AnyMatches));
-    m_defaultMethods.push_back (MethodSymbol::Create ("AllMatch", &AllMatch));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,82 +293,6 @@ void DgnECSymbolProvider::_PublishSymbols (SymbolExpressionContextR context, bve
         {
         provider->PublishSymbols (context, requestedSymbolSets);
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Handles AnyMatches() and AllMatch() list methods
-* @bsimethod                                                    Paul.Connelly   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PredicateProcessor : LambdaValue::IProcessor
-    {
-private:
-    bool                    m_valueToStopOn;
-    bool                    m_ignoreErrors;
-    EvaluationResult&       m_result;
-    ExpressionStatus        m_status;
-
-    PredicateProcessor (bool valueToStopOn, bool ignoreErrors, EvaluationResult& result)
-        : m_valueToStopOn(valueToStopOn), m_ignoreErrors(ignoreErrors), m_result(result), m_status(ExpressionStatus::Success)
-        {
-        m_result.InitECValue().SetBoolean (!valueToStopOn);
-        }
-
-    bool ProcessResult (ExpressionStatus status, EvaluationResultCR member, EvaluationResultCR result) override
-        {
-        if (ExpressionStatus::Success != status)
-            return m_ignoreErrors;  // stop iteration if we're not ignoring errors
-        else if (!result.IsECValue() || !result.GetECValue()->IsBoolean())
-            {
-            m_status = ExpressionStatus::UnknownError;
-            return false;   // stop iteration
-            }
-        else if (m_valueToStopOn == result.GetECValue()->GetBoolean())
-            {
-            m_result = result;
-            return false;   // stop, we found our answer
-            }
-        else
-            return true;    // continue looking
-        }
-
-    static ExpressionStatus     Execute (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args, bool target, bool ignoreErrors)
-        {
-        LambdaValueCP lambda;
-        if (!ExtractArg (lambda, args, 0) || NULL == lambda)
-            return ExpressionStatus::UnknownError;
-
-        PredicateProcessor proc (target, ignoreErrors, evalResult);
-        ExpressionStatus status = lambda->Evaluate (valueList, proc);
-        if (ExpressionStatus::Success == status)
-            status = proc.m_status;
-
-        return status;
-        }
-public:
-    static ExpressionStatus     Any (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
-        {
-        return Execute (evalResult, valueList, args, true, true);
-        }
-    static ExpressionStatus     All (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
-        {
-        return Execute (evalResult, valueList, args, false, false);
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::AnyMatches (EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args)
-    {
-    return PredicateProcessor::Any (evalResult, valueList, args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::AllMatch (EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args)
-    {
-    return PredicateProcessor::All (evalResult, valueList, args);
     }
 
 /*---------------------------------------------------------------------------------**//**

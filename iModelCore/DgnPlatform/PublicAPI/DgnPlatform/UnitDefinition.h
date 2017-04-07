@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UnitDefinition.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,13 +53,11 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct UnitDefinition
 {
 private:
-    UnitBase        m_base;
-    UnitSystem      m_system;
-    double          m_numerator;
-    double          m_denominator;
-    Utf8String      m_label;
-
-protected:
+    UnitBase m_base;
+    UnitSystem m_system;
+    double m_numerator;
+    double m_denominator;
+    Utf8String m_label;
 
 public:
 //__PUBLISH_SECTION_END__
@@ -126,12 +124,12 @@ public:
     DGNPLATFORM_EXPORT double ConvertDistanceFrom(double inputVal, UnitDefinitionCR fromUnit) const;
 
     bool IsLinear() const {return m_base == UnitBase::Meter;}
-    UnitBase GetBase() const { return m_base; };
-    UnitSystem GetSystem() const { return m_system; };
-    double GetNumerator() const { return m_numerator; };
-    double GetDenominator() const { return m_denominator; };
-    Utf8String GetLabel() const { return m_label; };
-    Utf8CP GetLabelCP() const { return m_label.c_str(); };
+    UnitBase GetBase() const {return m_base;};
+    UnitSystem GetSystem() const {return m_system;};
+    double GetNumerator() const {return m_numerator;};
+    double GetDenominator() const {return m_denominator;};
+    Utf8String GetLabel() const {return m_label;};
+    Utf8CP GetLabelCP() const {return m_label.c_str();};
     double ToMeters(double val=1.0) const {return val / (GetNumerator()/GetDenominator());}
     double ToMillimeters(double val=1.0) const {return 1000.0 * ToMeters(val);}
 
@@ -178,11 +176,16 @@ public:
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void BackDoor_ResetUserUnitsForTest();
+//__PUBLISH_SECTION_START__
+
+    BE_JSON_NAME(base)
+    BE_JSON_NAME(sys)
+    BE_JSON_NAME(num)
+    BE_JSON_NAME(den)
+    BE_JSON_NAME(label)
 
     DGNPLATFORM_EXPORT void FromJson(Json::Value const& inValue);
     DGNPLATFORM_EXPORT void ToJson(Json::Value& outValue) const;
-
-//__PUBLISH_SECTION_START__
 };
 
 /** @cond BENTLEY_SDK_Internal */
@@ -202,34 +205,31 @@ enum UnitCompareMethod
     };
 
 private:
-    bool                m_orderAscending;
+    bool m_orderAscending;
+    bool m_allowBaseNone;
+    bool m_allowBaseMeter;
+    bool m_allowBaseDegree;
+    bool m_allowSystemNone;
+    bool m_allowSystemMetric;
+    bool m_allowSystemEnglish;
+    bool m_allowSystemUSSurvey;
+    UnitDefinition m_compareUnit;
+    bool m_allowLarger;
+    bool m_allowSmaller;
+    bool m_allowEqual;
 
-    bool                m_allowBaseNone;
-    bool                m_allowBaseMeter;
-    bool                m_allowBaseDegree;
-
-    bool                m_allowSystemNone;
-    bool                m_allowSystemMetric;
-    bool                m_allowSystemEnglish;
-    bool                m_allowSystemUSSurvey;
-
-    UnitDefinition      m_compareUnit;
-    bool                m_allowLarger;
-    bool                m_allowSmaller;
-    bool                m_allowEqual;
-
-    void    DisallowAllBases();
-    void    DisallowAllSystems();
+    void DisallowAllBases();
+    void DisallowAllSystems();
 
 public:
 //__PUBLISH_SECTION_END__
-    bool IsOrderAscending() const { return m_orderAscending; }
+    bool IsOrderAscending() const {return m_orderAscending;}
     DGNPLATFORM_EXPORT bool IsBaseAllowed(UnitBase base) const;
     DGNPLATFORM_EXPORT bool IsSystemAllowed(UnitSystem system) const;
-    UnitDefinitionCR GetCompareUnit() const { return m_compareUnit; };
-    bool GetCompareAllowLarger() const { return m_allowLarger; }
-    bool GetCompareAllowSmaller() const { return m_allowSmaller; }
-    bool GetCompareAllowEqual() const { return m_allowEqual; }
+    UnitDefinitionCR GetCompareUnit() const {return m_compareUnit;};
+    bool GetCompareAllowLarger() const {return m_allowLarger;}
+    bool GetCompareAllowSmaller() const {return m_allowSmaller;}
+    bool GetCompareAllowEqual() const {return m_allowEqual;}
 
 //__PUBLISH_SECTION_START__
     //! Construct a default set of options that will iterate from smallest

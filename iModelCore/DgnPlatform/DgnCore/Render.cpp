@@ -580,28 +580,6 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     return params;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @BSIMETHOD                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
-    {
-    if (!val.isObject())
-        return;
-    m_avgLum = val[json_avgLum()].asDouble();
-    m_maxLum = val[json_maxLum()].asDouble();
-    m_fstop = val[json_fstop()].asDouble();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::SceneLights::Brightness::ToJson() const
-    {
-    Json::Value val;
-    if (0.0 != m_avgLum) val[json_avgLum()] = m_avgLum;
-    if (0.0 != m_maxLum) val[json_maxLum()] = m_maxLum;
-    if (0.0 != m_fstop) val[json_fstop()] = m_fstop;
-    return val;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -848,5 +826,3 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
         {
         m_elementOverrides.Insert(id, app);
         }
-    }
-

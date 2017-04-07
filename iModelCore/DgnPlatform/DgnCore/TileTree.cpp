@@ -92,11 +92,11 @@ folly::Future<BentleyStatus> TileLoader::Perform()
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     {
-    bool isHttp = (0 == strncmp("http:", m_fileName.c_str(), 5) || 0 == strncmp("https:", m_fileName.c_str(), 6));
+    bool isHttp = (0 == strncmp("http:", m_resourceName.c_str(), 5) || 0 == strncmp("https:", m_resourceName.c_str(), 6));
 
     if (isHttp)
         {
-        auto query = std::make_shared<HttpDataQuery>(m_fileName, m_loads);
+        auto query = std::make_shared<HttpDataQuery>(m_resourceName, m_loads);
 
         TileLoaderPtr me(this);
         return query->Perform().then([me, query] (Http::Response const& response)
@@ -112,7 +112,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             });
         }                                           
 
-    auto query = std::make_shared<FileDataQuery>(m_fileName, m_loads);
+    auto query = std::make_shared<FileDataQuery>(m_resourceName, m_loads);
  
     TileLoaderPtr me(this);
     return query->Perform().then([me, query](ByteStream const& data)
@@ -479,17 +479,20 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(system)
+Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP system) : m_db(db), m_location(location), m_renderSystem(system)
     {
-    m_isHttp = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
+    // unless a root directory is specified, we assume it's http.
+    m_isHttp = true;
 
-    if (m_isHttp)
-        m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
-    else
+    if (nullptr != rootResource)
+        m_rootResource.assign (rootResource);
+
+    if (!m_rootResource.empty())
         {
-        BeFileName rootUrl(BeFileName::DevAndDir, BeFileName(m_rootUrl));
-        BeFileName::FixPathName(rootUrl, rootUrl, false);
-        m_rootDir = rootUrl.GetNameUtf8();
+        BeFileName rootDirectory(BeFileName::DevAndDir, BeFileName(m_rootResource));
+        BeFileName::FixPathName(rootDirectory, rootDirectory, false);
+        m_rootResource = rootDirectory.GetNameUtf8();
+        m_isHttp = false;
         }
     }
 

@@ -920,6 +920,8 @@ public:
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
+    ColorDef MapColor(double value) const;
+    Image   GetImage(uint32_t width, uint32_t height) const;
 };
 
 //=======================================================================================
@@ -1270,7 +1272,7 @@ public:
 };
 
 //=======================================================================================
-//! A renderer-specific object which can be placed into a display list.
+//! A renderer-specific object that can be placed into a display list.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct Graphic : RefCounted<NonCopyableClass>
@@ -1287,6 +1289,8 @@ public:
     explicit Graphic(DgnDbR db) : m_dgndb(db) {}
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
+
+
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
@@ -1773,7 +1777,7 @@ struct HiddenLineParams
     };
 
     Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
-    Style m_hidden = Style(true, ColorDef::Black(), GraphicParams::LinePixels::HiddenLine, 1);
+    Style m_hidden = Style(false, ColorDef(), GraphicParams::LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
@@ -1787,7 +1791,7 @@ struct HiddenLineParams
 };
 
 //=======================================================================================
-//! A Light that illuminates Graphics in a scene.
+//! A Light that illuminates Graphics in a scene. Render::Lights are created from Lighting::Parameters
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct Light : RefCounted<NonCopyableClass>
@@ -1796,43 +1800,20 @@ struct Light : RefCounted<NonCopyableClass>
 DEFINE_REF_COUNTED_PTR(Light)
 
 //=======================================================================================
-//! A list of Render::Lights
+//! A list of Render::Lights, plus the f-stop setting for the camera 
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct LightList : RefCounted<NonCopyableClass>
+struct SceneLights : RefCounted<NonCopyableClass>
 {
+    double m_fstop = 0.0; //!< must be between -3 and +3
     bvector<LightPtr> m_list;
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/17
-//=======================================================================================
-struct SceneLights : LightList
-{
-    struct Brightness
-    {
-        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
-        double m_maxLum = 0.0;
-        double m_fstop = 0.0; //!< must be between -3 and +3
-        bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
-
-        BE_JSON_NAME(avgLum);
-        BE_JSON_NAME(maxLum);
-        BE_JSON_NAME(fstop);
-        Json::Value ToJson() const;
-        void FromJson(JsonValueCR val);
-    };
-
-    Brightness m_brightness;
-};
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneLights)
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
 //=======================================================================================
-//! A Render::Plan holds a Frustum and the render settings for displaying
-//! a Render::Scene into a Render::Target.
+//! A Render::Plan holds a Frustum and the render settings for displaying a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Plan
@@ -1849,7 +1830,7 @@ struct Plan
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
     ClipVectorPtr m_activeVolume;
-    SceneLightsCPtr m_lights;
+    SceneLightsCPtr m_lights;   //! if not valid, render with default lighting
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -2104,14 +2085,7 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct TransClip : RefCounted<NonCopyableClass>
-{
-};
-
-//=======================================================================================
-//! An array of GraphicPtrs.
+//! An array of GraphicPtrs, plus an optional ViewFlags that control how this set of graphics are to be rendered.
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
@@ -2234,7 +2208,7 @@ public:
 };
 
 //=======================================================================================
-//! A Render::Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
+//! A Render::Target holds the current scene, the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render::Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.

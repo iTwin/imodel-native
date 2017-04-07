@@ -112,6 +112,9 @@ public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
     
+    // This Create function allows you to create a subclass of TestElement in the case where the subclass does not have its own handler
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, ECN::ECClassCR, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
+
     // This Create function does not put any geometry on the new element. The caller is expected to add a TestItem.
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode const& elementCode);
@@ -601,7 +604,7 @@ struct DgnPlatformTestDomain : Dgn::DgnDomain
 private:
     DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
     DgnPlatformTestDomain();
-    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".ecschema.xml"; }
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

@@ -210,16 +210,18 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
 * Combine the three parts of the full tile URL: rootUrl + tileName + urlSuffix.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapRoot::_ConstructTileName(TileCR tile) const
+Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
     {
-    return m_rootUrl + tile._GetTileName() + m_urlSuffix;
+    QuadTree::Tile const* quadTile = dynamic_cast <QuadTree::Tile const*>(&tile);
+    BeAssert (nullptr != quadTile);
+    return m_imageryProvider->_ConstructUrl (*quadTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint8_t maxZoom, uint32_t maxSize) : QuadTree::Root(db, trans, rootUrl.c_str(), system, maxZoom, maxSize, transparency), m_format(format), m_urlSuffix(urlSuffix)
+MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
+        uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider (&imageryProvider)
     {
     AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
@@ -247,7 +249,7 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
         return;
         }
 
-    CreateCache(realityCacheName, MAX_DB_CACHE_SIZE);
+    CreateCache(imageryProvider._GetCacheFileName(), MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
@@ -259,18 +261,137 @@ TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)
     return Load(system);
     }
 
+DEFINE_REF_COUNTED_PTR(WebMercatorModel)
+
+
+namespace WebMercatorStrings
+{
+// top level identifier of WebMercator subfolder.
+BE_JSON_NAME(webMercatorModel)
+
+// property names common to all providers
+BE_JSON_NAME(providerName)
+BE_JSON_NAME(groundBias)
+BE_JSON_NAME(transparency)
+
+// identifier of ProviderData subfolder
+BE_JSON_NAME(providerData)
+
+};
+
+using namespace WebMercatorStrings;
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModel::_GetRootUrl() const
+void WebMercatorModel::ToJson(Json::Value& value) const
     {
-    return m_properties.m_mapType == Properties::MapType::Map ? GetMapboxStreetsUrl() : GetMapboxSatelliteUrl();
+    value[json_providerName()] = m_provider->_GetProviderName();
+    value[json_groundBias()]   = m_groundBias;
+    value[json_transparency()] = m_transparency;
+
+    m_provider->_ToJson(value[json_providerData()]);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::FromJson(Json::Value const& value)
+    {
+    m_groundBias = value[json_groundBias()].asDouble(-1.0);
+    m_transparency = value[json_transparency()].asDouble(0.0);
+    LIMIT_RANGE(0.0, .9, m_transparency);
+
+    Utf8String providerName = value[json_providerName()].asString();
+
+    if (0 == providerName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
+        {
+        m_provider = new MapBoxImageryProvider ();
+        }
+
+    if (m_provider.IsValid())
+        {
+        BeAssert (value.isMember(json_providerData()));
+        m_provider->_FromJson (value[json_providerData()]);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModel::_GetUrlSuffix() const
+void WebMercatorModel::_OnSaveJsonProperties()
+    {
+    Json::Value value;
+    ToJson(value);
+    SetJsonProperties (json_webMercatorModel(), value);
+    T_Super::_OnSaveJsonProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::_OnLoadedJsonProperties()
+    {
+    ECN::AdHocJsonValueCR value = GetJsonProperties(json_webMercatorModel());
+
+    FromJson (value);
+    T_Super::_OnLoadedJsonProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::Load(SystemP renderSys) const
+    {
+    if (m_provider.IsNull())
+        {
+        BeAssert (false);
+        return;
+        }
+
+    if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
+        return;
+
+    Transform biasTrans;
+    biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
+
+    uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
+    m_root = new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params), m_groundBias (params.m_groundBias), m_transparency (params.m_transparency)
+    {
+    // get the imagery provider from the properties.
+    Utf8String imageryProviderName (params.m_providerName);
+
+    if (0 == imageryProviderName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
+        {
+        m_provider = new MapBoxImageryProvider();
+        }
+    else if (0 == imageryProviderName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
+        {
+        }
+    else if (0 == imageryProviderName.CompareToI (WebMercator::GoogleImageryProvider::prop_GoogleProvider()))
+        {
+        }
+    else if (0 == imageryProviderName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
+        {
+        }
+
+    if (m_provider.IsValid())
+        {
+        m_provider->_FromJson (params.m_providerParameters);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String MapBoxImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
     {
     /*
     @2x.png     2x scale(retina)
@@ -283,98 +404,88 @@ Utf8String StreetMapModel::_GetUrlSuffix() const
     jpg90       90 % quality JPG
     */
 
-    return ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg";
+    Utf8String  url;    
+    url.Sprintf ("%s%d/%d/%d%s", m_baseUrl.c_str(), tile.GetZoomLevel(), tile.GetColumn(), tile.GetRow(), ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
+
+    return url;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP StreetMapModel::_GetCopyrightMessage() const
+Utf8CP MapBoxImageryProvider::_GetCreditMessage () const
     {
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
 
-DEFINE_REF_COUNTED_PTR(WebMercatorModel)
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props) : 
-    T_Super::CreateParams(dgndb, DgnClassId(dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), modeledElementId),
-    m_properties(props)
+Utf8CP MapBoxImageryProvider::_GetCacheFileName () const
     {
+    switch (m_mapType)
+        {
+        case MapBoxImageryProvider::MapType::StreetMap:
+            return "MapBoxStreets";
+
+        case MapBoxImageryProvider::MapType::Satellite:
+            return "MapBoxSatellite";
+
+        case MapBoxImageryProvider::MapType::StreetsAndSatellite:
+            return "MapBoxHybrid";
+        }
+    BeAssert (false);
+    return "MapBoxUnknown";
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams const& params)
+void    MapBoxImageryProvider::_FromJson (Json::Value const& value)
     {
-    WebMercatorModelPtr model = new StreetMapModel(params);
-    model->Insert();
-    return model->GetModelId();
-    }
+    // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
+    m_mapType = (MapBoxImageryProvider::MapType) value[json_mapType()].asInt((int)MapBoxImageryProvider::MapType::StreetMap);
 
-namespace WebMercatorStrings
-{
-static constexpr Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
-static constexpr Utf8CP str_MapService() {return "service";}
-static constexpr Utf8CP str_MapType() {return "map_type";}
-static constexpr Utf8CP str_GroundBias() {return "groundBias";}
-static constexpr Utf8CP str_Transparency() {return "transparency";}
-};
+    switch (m_mapType)
+        {
+        case MapBoxImageryProvider::MapType::StreetMap:
+            m_baseUrl = "http://api.mapbox.com/v4/mapbox.streets/";
+            break;
 
-using namespace WebMercatorStrings;
+        case MapBoxImageryProvider::MapType::Satellite:
+            m_baseUrl = "http://api.mapbox.com/v4/mapbox.satellite/";
+            break;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Properties::ToJson(Json::Value& value) const
-    {
-    value[Json::StaticString(str_MapService())] = (uint32_t) m_mapService;
-    value[Json::StaticString(str_MapType())] = (uint32_t) m_mapType;
-    value[Json::StaticString(str_GroundBias())] = m_groundBias;
-    value[Json::StaticString(str_Transparency())] = m_transparency;
+        case MapBoxImageryProvider::MapType::StreetsAndSatellite:
+            m_baseUrl = "http://api.mapbox.com/v4/mapbox.streets-satellite/";
+            break;
+
+        default:
+            BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Properties::FromJson(Json::Value const& value)
+void    MapBoxImageryProvider::_ToJson (Json::Value& value) const
     {
-    if (value.isMember(str_MapService()))
-        m_mapService = (MapService) value[str_MapService()].asInt();
-
-    if (value.isMember(str_MapType()))
-        m_mapType = (MapType) value[str_MapType()].asInt();
-
-    m_groundBias = value.isMember(str_GroundBias()) ? value[str_GroundBias()].asDouble() : -1.0;
-    m_transparency = value.isMember(str_Transparency()) ? value[str_Transparency()].asDouble() : 0.0;
-
-    LIMIT_RANGE(0.0, .9, m_transparency);
+    // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
+    value[json_mapType()] = (int)m_mapType;
     }
 
+    
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
+Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
     {
-    m_properties.ToJson(val[str_WebMercatorModel()]);
-    T_Super::_WriteJsonProperties(val);
+    // NEEDSWORK_MapBox
+    return nullptr;
     }
-
+   
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
-    {
-    BeAssert(val.isMember(str_WebMercatorModel()));
-    m_properties.FromJson(val[Json::StaticString(str_WebMercatorModel())]);
-    T_Super::_ReadJsonProperties(val);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     {
@@ -384,3 +495,6 @@ TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
     return new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
     }
+
+ 
+

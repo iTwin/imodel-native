@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ValueParse_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -726,8 +726,8 @@ TEST_F(DirectionParserTest, FromModel)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
 
     //Set direction Anti-Clockwise and set a Base Direction
-    model->GetDisplayInfoR().SetDirectionClockwise(true);
-    model->GetDisplayInfoR().SetDirectionBaseDir(270.0);
+    model->GetFormatterR().SetDirectionClockwise(true);
+    model->GetFormatterR().SetDirectionBaseDir(270.0);
 
     DirectionParserPtr dirPar = DirectionParser::Create(*model);
 

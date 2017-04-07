@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
     {
     if (!m_viewName.empty())
-        return ViewDefinition::QueryViewId(db, m_viewName);
+        return ViewDefinition::QueryViewId(db.GetDictionaryModel(), m_viewName);
 
     // Try default view
     DgnViewId viewId;
@@ -78,7 +78,6 @@ Json::Value  PublisherParams::GetViewerOptions () const
     {
     Json::Value viewerOptions;
 
-    viewerOptions["displayInPlace"] = m_displayGlobe;
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
@@ -143,16 +142,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     Json::Value viewerOptions = params.GetViewerOptions();
 
     // If we are displaying "in place" but don't have a real geographic location - default to natural earth.
-    if (IsGeolocated())
-        {
-        viewerOptions["displayInPlace"]= true;
-        }
-    else
-        {
-        if (viewerOptions["displayInPlace"].asBool() &&
-            viewerOptions["imageryProvider"].isNull())
-            viewerOptions["imageryProvider"] = "NaturalEarth";
-        }
+    if (!IsGeolocated() && viewerOptions["imageryProvider"].isNull())
+        viewerOptions["imageryProvider"] = "NaturalEarth";
 
     json["viewerOptions"] = viewerOptions;
 
