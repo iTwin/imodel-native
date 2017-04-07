@@ -106,7 +106,7 @@ private:
 
 public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError();
-    DgnDbServerError(DgnDbServerError::Id id);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id);
     DgnDbServerError(DgnDbServerError::Id id, Utf8StringCR message) {m_id = id; m_message = message;}
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbCR db, BeSQLite::DbResult result);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
