@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MemoryManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -114,15 +114,11 @@ MemoryManager::MemoryManager()
 #if defined (BENTLEYCONFIG_VIRTUAL_MEMORY)
 
     // the theory here is that if we have virtual memory, use the OS to manage physical memory mapping - they'll do a better job than we will.
-    #if defined(BENTLEYCONFIG_64BIT_HARDWARE)
-        m_targetMemorySize = 4 * GIG;
-    #else
-        m_targetMemorySize = 1 * GIG;
-    #endif
+    m_targetMemorySize = 1 * GIG;
 
 #else
     //  NEEDS_WORK_CONTINUOUS_RENDER using absurd values for memory limitation because we are using
-    //  a lot more memory per element that is actually tracked.
+    //  a lot more memory per element than is actually tracked.
     uint64_t amountOfMem = BeSystemInfo::GetAmountOfPhysicalMemory();
     if (amountOfMem > 1100*MEG)
         m_targetMemorySize = 30*MEG;
@@ -131,9 +127,5 @@ MemoryManager::MemoryManager()
     else
         m_targetMemorySize = 8*MEG;
 
-    //
-    //  This is what we used for Graphite.  It is not working well in DgnDb because PurgeUntil
-    //  computes a value that is way too small.
-    //  m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
 #endif
     }
