@@ -47,7 +47,7 @@ protected:
     Utf8String                      m_terrainProvider;
     GeoPoint                        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     PublisherContext::TextureMode   m_textureMode = PublisherContext::TextureMode::Embedded;
-    bool                            m_displayGlobe = false;
+    bool                            m_geoLocated = false;
     bool                            m_surfacesOnly = false;
     bool                            m_verbose = false;
     bool                            m_overwriteExisting = true;
@@ -68,7 +68,7 @@ public:
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
-    GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
+    GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }

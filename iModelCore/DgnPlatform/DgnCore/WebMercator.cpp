@@ -422,7 +422,7 @@ Utf8String MapBoxImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const&
     */
 
     Utf8String  url;    
-    url.Sprintf ("%s%d/%d/%d%s", m_baseUrl, tile.GetZoomLevel(), tile.GetColumn(), tile.GetRow(), ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
+    url.Sprintf ("%s%d/%d/%d%s", m_baseUrl.c_str(), tile.GetZoomLevel(), tile.GetColumn(), tile.GetRow(), ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
 
     return url;
     }
