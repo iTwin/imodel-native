@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/TilePublisher.h>
+#include <BeSqLite/BeSqLite.h>
 #include "Constants.h"
 #include <crunch/CrnLib.h>
 #include <Geom/OperatorOverload.h>
@@ -13,6 +14,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_SQLITE
 
 
 //=======================================================================================
@@ -3008,26 +3010,60 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId, DgnDbR dgnDb)
+    {
+    viewedModels.insert(modelId);
+
+    // ViewAttachments...
+    auto stmt = dgnDb.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    stmt->BindId(1, modelId);
+
+    // If we're already loaded, look in existing list so we don't reload them
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto attachId = stmt->GetValueId<DgnElementId>(0);
+        auto attach = dgnDb.Elements().Get<Sheet::ViewAttachment>(attachId);
+
+        if (!attach.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId(), dgnDb);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, DgnDbR dgnDb)
+    {
+    SpatialViewDefinitionPtr spatialView = nullptr;
+    auto view2d = dgnDb.Elements().Get<ViewDefinition2d>(viewId);
+    if (view2d.IsValid())
+        {
+        AddViewedModel (viewedModels, view2d->GetBaseModelId(), dgnDb); 
+        }
+    else if ((spatialView = dgnDb.Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
+        {
+        for (auto& modelId : spatialView->GetModelSelector().GetModels())
+            AddViewedModel (viewedModels, modelId, dgnDb);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
     DgnModelIdSet viewedModels;
+
     for (auto const& viewId : m_viewIds)
-        {
-        SpatialViewDefinitionPtr spatialView = nullptr;
-        auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
-        if (view2d.IsValid())
-            {
-            surfacesOnly = false;           // Always publish lines, text etc. in sheets.
-            viewedModels.insert(view2d->GetBaseModelId());
-            }
-        else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
-            {
-            auto spatialModels = spatialView->GetModelSelector().GetModels();
-            viewedModels.insert(spatialModels.begin(), spatialModels.end());
-            }
-        }
+        GetViewedModelsFromView (viewedModels, viewId, GetDgnDb());
 
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
