@@ -474,6 +474,7 @@
                 <PropertyStatementType>
                   <StatementTypes>0</StatementTypes>
                 </PropertyStatementType>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1323,6 +1324,7 @@
                 <PropertyStatementType>
                   <StatementTypes>0</StatementTypes>
                 </PropertyStatementType>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
