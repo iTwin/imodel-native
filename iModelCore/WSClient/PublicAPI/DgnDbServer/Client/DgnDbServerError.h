@@ -72,6 +72,7 @@ public:
         DgnDbServerClientNotInitialized,
         InvalidServerURL,
         InvalidRepositoryName,
+        InvalidRepositoryId,
         InvalidRepositoryConnection,
         InvalidRevision,
         BriefcaseIsReadOnly,
@@ -101,10 +102,12 @@ private:
     bool RequiresExtendedData(DgnDbServerError::Id id);
     DgnDbServerError::Id ErrorIdFromString(Utf8StringCR errorIdString);
     DgnDbServerError::Id ErrorIdFromWSError(WebServices::WSErrorCR error);
+    Utf8StringCR GetDefaultMessage(DgnDbServerError::Id id);
 
 public:
-    DgnDbServerError() {m_id = Id::Unknown;}
-    DgnDbServerError(DgnDbServerError::Id id) {m_id = id;}
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerError();
+    DgnDbServerError(DgnDbServerError::Id id);
+    DgnDbServerError(DgnDbServerError::Id id, Utf8StringCR message) {m_id = id; m_message = message;}
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbCR db, BeSQLite::DbResult result);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);

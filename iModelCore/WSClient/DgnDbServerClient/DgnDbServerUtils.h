@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/LocksManager.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
+#include "DgnDbServerError.xliff.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 

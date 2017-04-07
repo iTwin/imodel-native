@@ -8,6 +8,7 @@
 
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerError.h>
+#include "DgnDbServerError.xliff.h"
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
@@ -105,6 +106,12 @@ bool DgnDbServerError::RequiresExtendedData(Id id)
         }
     }
 
+DgnDbServerError::DgnDbServerError()
+    {
+    m_id = Id::Unknown;
+    m_message = GetDefaultMessage(Id::Unknown);
+    }
+
 DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
     {
     m_message = error.GetMessage();
@@ -140,9 +147,15 @@ DgnDbServerError::DgnDbServerError(DgnDbPtr db, BeSQLite::DbResult result)
 DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
     {
     if (RevisionStatus::MergeError == status)
+        {
         m_id = Id::MergeError;
+        m_message = GetDefaultMessage(Id::MergeError);
+        }
     else
+        {
         m_id = Id::RevisionManagerError;
+        m_message = GetDefaultMessage(Id::RevisionManagerError);
+        }
     }
 
 DgnDbServerError::DgnDbServerError(HttpErrorCR error)
@@ -150,6 +163,60 @@ DgnDbServerError::DgnDbServerError(HttpErrorCR error)
     m_id = Id::AzureError;
     m_message = error.AsyncError::GetMessage();
     m_description = error.AsyncError::GetDescription();
+    }
+
+Utf8StringCR DgnDbServerError::GetDefaultMessage(DgnDbServerError::Id id)
+    {
+    static bmap<DgnDbServerError::Id, Utf8String> map;
+    if (map.empty())
+        {
+        map[Id::CredentialsNotSet] = DgnDbServerErrorLocalizedString(MESSAGE_CredentialsNotSet);
+        map[Id::InvalidServerURL] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidServerURL);
+        map[Id::InvalidRepositoryName] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryName);
+        map[Id::InvalidRepositoryId] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryId);
+        map[Id::InvalidRepositoryConnection] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryConnection);
+        map[Id::InvalidRevision] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRevision);
+
+        map[Id::UserDoesNotExist] = DgnDbServerErrorLocalizedString(MESSAGE_UserDoesNotExist);
+
+        map[Id::RepositoryIsNotInitialized] = DgnDbServerErrorLocalizedString(MESSAGE_RepositoryIsNotInitialized);
+
+        map[Id::BriefcaseIsReadOnly] = DgnDbServerErrorLocalizedString(MESSAGE_BriefcaseIsReadOnly);
+        map[Id::FileNotFound] = DgnDbServerErrorLocalizedString(MESSAGE_FileNotFound);
+        map[Id::PullIsRequired] = DgnDbServerErrorLocalizedString(MESSAGE_PullIsRequired);
+        map[Id::TrackingNotEnabled] = DgnDbServerErrorLocalizedString(MESSAGE_TrackingNotEnabled);
+        map[Id::FileAlreadyExists] = DgnDbServerErrorLocalizedString(MESSAGE_FileAlreadyExists);
+        map[Id::FileIsNotBriefcase] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
+
+        map[Id::MergeError] = DgnDbServerErrorLocalizedString(MESSAGE_MergeError);
+        map[Id::RevisionManagerError] = DgnDbServerErrorLocalizedString(MESSAGE_RevisionManagerError);
+        map[Id::RevisionDoesNotExist] = DgnDbServerErrorLocalizedString(MESSAGE_RevisionDoesNotExist);
+
+        map[Id::EventCallbackAlreadySubscribed] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
+        map[Id::EventServiceSubscribingError] = DgnDbServerErrorLocalizedString(MESSAGE_EventServiceSubscribingError);
+        map[Id::EventCallbackNotFound] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackNotFound);
+        map[Id::EventCallbackNotSpecified] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackNotSpecified);
+        map[Id::NoEventsFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoEventsFound);
+        map[Id::NotSubscribedToEventService] = DgnDbServerErrorLocalizedString(MESSAGE_NotSubscribedToEventService);
+        map[Id::NoSASFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoSASFound);
+        map[Id::NoSubscriptionFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoSubscriptionFound);
+
+        map[Id::Unknown] = DgnDbServerErrorLocalizedString(MESSAGE_Unknown);
+        }
+
+    auto it = map.find(id);
+    if (it != map.end())
+        {
+        return it->second;
+        }
+
+    return map[Id::Unknown];
+    }
+
+DgnDbServerError::DgnDbServerError(DgnDbServerError::Id id)
+    {
+    m_id = id;
+    m_message = GetDefaultMessage(id);
     }
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

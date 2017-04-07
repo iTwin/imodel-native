@@ -149,6 +149,7 @@
         <SubPart PartName="DgnDbServerClient-Library" />
         <SubPart PartName="DgnDbServerClient-Library-Android" />
         <SubPart PartName="WSClient-Xliffs" />
+        <SubPart PartName="DgnDbServerClient-Xliffs" />
     </Part>
 
     <Part Name="DgnDbServerClient-PublicAPI" BentleyBuildMakeFile="DgnDbServerClientPrewire.mke">
@@ -175,6 +176,15 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnDbServerClient.so</Libs>
             <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
+        </Bindings>
+    </Part>
+
+    
+    <Part Name="DgnDbServerClient-Xliffs" BentleyBuildMakeFile="DgnDbServerClient/xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/DgnDbServerClient_en.xliff
+            </Files>
         </Bindings>
     </Part>
 
@@ -246,6 +256,7 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/ -dL10N_XLIFF_LANG_DIRECTORY=en">
         <SubPart PartName="WSClient-Xliffs" />
+        <SubPart PartName="DgnDbServerClient-Xliffs" />
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
