@@ -6,13 +6,13 @@
 //:>       $Date: 2011/06/27 14:53:05 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
         
         
 #include <ScalableMeshPCH.h>
-#include "ImagePPHeaders.h"
+#include "ImagePPHeaders.h"   
 
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files

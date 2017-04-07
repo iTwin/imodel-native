@@ -2,7 +2,7 @@
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 #ifndef VANCOUVER_API
-    #include <ThreeMxSchema/ThreeMXReader.h>
+    #include <ThreeMxReader/ThreeMXReader.h>
     #include <DgnPlatform/ImageUtilities.h>
 #else
     #include <Acute3d/ThreeMXReader.h>
@@ -47,6 +47,9 @@ public:
         StatusInt errorStat = m_inputGCS->InitFromWellKnownText(&warningStat, &warningMessageString, GeoCoordinates::BaseGCS::wktFlavorUnknown, wsInputSRS.c_str());
         if (errorStat != SUCCESS)
             return false;
+
+        // To allow automatic conversion of elevation if applicable (e.g., from ellipsoid to geoid)
+        m_inputGCS->SetReprojectElevation(true);
 
         // If no output GCS is specified, set it to the input GCS
         if (m_outputGCS == nullptr) m_outputGCS = m_inputGCS;
@@ -189,9 +192,9 @@ private:
         }
 
         // Transform the BGRA buffer into an RGB buffer
-        w = outInfo.width;
-        h = outInfo.height;
-        size_t nPixels = w * h;
+        width  = outInfo.width;
+        height = outInfo.height;
+        size_t nPixels = width * height;
         rgb.resize(nPixels * 3);
         for (size_t i = 0; i < nPixels; i++)
         {

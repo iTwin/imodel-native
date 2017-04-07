@@ -7,7 +7,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-enum class EventType
+enum EventType
 {
     LOAD_MESH_CREATE_0 = 0,
     CACHED_MESH_ACQUIRE,
@@ -35,14 +35,14 @@ enum class EventType
 struct TraceEvent
 {
     uint64_t threadId;
-    EventType type;
+    int typeOfEvent;
     clock_t timestamp;
     uint64_t nodeId;
     uint64_t texId;
     uint64_t meshId;
     uint32_t refCount;
-    uint64_t objVal = -1;
-    uint64_t poolId = -1;
+    uint64_t objVal;
+    uint64_t poolId;
 };
 
 
@@ -73,13 +73,13 @@ private:
 
     bool filter(TraceEvent& e)
     {
-        if (!typeToFilter[(int)e.type]) return false;
-        if (valToFilter == -1 && e.texId != -1)
+        if (!typeToFilter[(int)e.typeOfEvent]) return false;
+       /* if (valToFilter == -1 && e.texId != -1)
         {
             valToFilter = e.texId;
             return true;
-        }
-        return valToFilter == e.texId;
+        }*/
+        return true;// valToFilter == e.texId;
     }
 
 public:
@@ -112,18 +112,18 @@ public:
     void analyze()
     {
         std::ofstream traceFile;
-        traceFile.open("e:\\trace.log", std::ios_base::app);
+        traceFile.open("c:\\trace.log", std::ios_base::app);
         bmap<uint64_t, bvector<std::string>> eventsByVal;
         for (TraceEvent* init = ring.data(); init != current; ++init)
         {
             std::ostringstream str;
-            str << std::to_string((unsigned long long) init->timestamp) << "[" << std::to_string(init->threadId) << "] >> " << typeDesc[(int)init->type] << " : " << std::to_string(init->nodeId)
+            str << std::to_string((unsigned long long) init->timestamp) << "[" << std::to_string(init->threadId) << "] >> " << typeDesc[(int)init->typeOfEvent] << " : " << std::to_string(init->nodeId)
                 << " INSTANCE " << std::to_string(init->objVal) << " POOL ID " << std::to_string(init->poolId) << " MESH " << std::to_string(init->meshId) << " TEX " << std::to_string(init->texId) << " CT " << std::to_string(init->refCount) << std::endl;
             traceFile << str.str();
             eventsByVal[init->objVal].push_back(str.str());
         }
         traceFile.close();
-        traceFile.open("e:\\traceByObj.log", std::ios_base::app);
+        traceFile.open("c:\\traceByObj.log", std::ios_base::app);
         for (auto& obj : eventsByVal)
         {
             for (auto& str : obj.second)
@@ -146,8 +146,8 @@ public:
 #if TRACE_ON
 #define TRACEPOINT(threadt,type,id,meshid,texid,poolid,val, rc) \
 {  \
-TraceEvent e; \
-e.type = (type); \
+TraceEvent e;\
+e.typeOfEvent = (type); \
 e.refCount = (rc); \
 e.threadId = (uint64_t)(threadt);\
 e.nodeId = (id); \

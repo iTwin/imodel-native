@@ -401,7 +401,7 @@ $(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDep
 
 $(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -477,6 +477,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)PCLWrapper.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
 	$(ContextSubpartsLibs)acute3dio.lib \
+	$(ContextSubpartsLibs)PointCloud.lib \
 	$(ContextSubpartsLibs)freeimage.lib
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
@@ -514,7 +515,7 @@ LINKER_LIBRARIES            = \
 %endif
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
- #   $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+ #  $(ContextSubpartsLibs)AutomaticGroundDetection.lib
 
 #    $(ContextSubpartsLibs)DgnView.lib \
 #    $(ContextSubpartsLibs)RasterCore.lib \

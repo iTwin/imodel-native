@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
 struct SMImagePPHost : public ImageppLib::Host
     {
     virtual void             _RegisterFileFormat() override
@@ -70,7 +71,7 @@ void ScalableMeshLib::Host::Initialize()
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
-    //RegisterPODImportPlugin();
+    RegisterPODImportPlugin();
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();

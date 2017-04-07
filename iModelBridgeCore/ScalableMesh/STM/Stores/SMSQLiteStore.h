@@ -34,8 +34,10 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
             
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
 
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) override;
-                        
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+
+        virtual void SaveProjectFiles() override;
+                                
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;
 
         virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
@@ -47,6 +49,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) override;
 
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) override;
+        
+        virtual bool GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
 
         //Multi-items loading store
@@ -124,8 +128,20 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
 
         virtual void GetAllIDs(bvector<uint64_t>& allIds) override;
 
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) override;
+
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) override;
 
         virtual void SetAutoCommit(bool autoCommit) override;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) override;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) override;
     };
 

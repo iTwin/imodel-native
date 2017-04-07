@@ -218,7 +218,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 -s</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -557,6 +557,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\SMTextureTileStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMCesiumPublisher.h" />
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
@@ -642,6 +643,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\PODImporter_dgndb.cpp" />
     <ClCompile Include="stm\MapboxTextureProvider.cpp" />
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
@@ -724,6 +726,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
+    <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />

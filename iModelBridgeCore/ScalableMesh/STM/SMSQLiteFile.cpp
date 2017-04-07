@@ -23,14 +23,19 @@ SMSQLiteFile::SMSQLiteFile()
 SMSQLiteFile::~SMSQLiteFile()
     {
     if (m_database != nullptr)
-        {    
+        {            
+        if (m_database->IsDbOpen())
+            {
+            Close();
+            }
+
         delete m_database;
         }
 
     m_database = nullptr;
     }
 
-void SMSQLiteFile::CommitAll()
+void SMSQLiteFile::Save()
     {
     if (m_database != nullptr) m_database->SaveChanges();
     }
@@ -1222,18 +1227,6 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
 #endif
 
 
-void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
-    {
-    std::lock_guard<std::mutex> lock(dbLock);
-    CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMClipDefinitions");
-    DbResult status = stmt->Step();
-    while (status == BE_SQLITE_ROW)
-        {
-        allIds.push_back(stmt->GetValueInt64(0));
-        status = stmt->Step();
-        }
-    }
 
 
     bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)

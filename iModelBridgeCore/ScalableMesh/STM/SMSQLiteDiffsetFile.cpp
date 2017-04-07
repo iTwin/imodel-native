@@ -10,6 +10,9 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
+
+#define AUTO_COMMIT_FREQUENCY 20
+
 const SchemaVersion SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
 
 const SchemaVersion s_listOfReleasedSchemasDiffset[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
@@ -30,6 +33,16 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[1] = {
 
         }
     };
+
+
+SMSQLiteDiffsetFile::~SMSQLiteDiffsetFile()
+    {
+    
+
+    }
+
+
+
 size_t SMSQLiteDiffsetFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasDiffset; }
 const SchemaVersion* SMSQLiteDiffsetFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasDiffset; }
 double* SMSQLiteDiffsetFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdateDiffset; }
@@ -74,7 +87,16 @@ void SMSQLiteDiffsetFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         diffsetID = stmt2->GetValueInt64(0);
-        if (m_autocommit) m_database->SaveChanges();
+        if (m_autocommit) 
+            { 
+            m_nbAutoCommitDone++;
+
+            if (m_nbAutoCommitDone == AUTO_COMMIT_FREQUENCY)            
+                { 
+                m_database->SaveChanges();
+                m_nbAutoCommitDone = 0;
+                }
+            }
         }
     else if (nRows == 0)
         {
@@ -86,7 +108,17 @@ void SMSQLiteDiffsetFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        if (m_autocommit) m_database->SaveChanges();
+
+        if (m_autocommit)
+            {
+            m_nbAutoCommitDone++;
+
+            if (m_nbAutoCommitDone == AUTO_COMMIT_FREQUENCY)
+                {
+                m_database->SaveChanges();
+                m_nbAutoCommitDone = 0;
+                }
+            }        
         }
     else
         {
@@ -97,7 +129,17 @@ void SMSQLiteDiffsetFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        if (m_autocommit) m_database->SaveChanges();
+
+        if (m_autocommit)
+            {
+            m_nbAutoCommitDone++;
+
+            if (m_nbAutoCommitDone == AUTO_COMMIT_FREQUENCY)
+                {
+                m_database->SaveChanges();
+                m_nbAutoCommitDone = 0;
+                }
+            }    
         }
     }
 

@@ -31,9 +31,9 @@ StatusInt IScalableMeshTextureGenerator::SetTextureTempDir(const BeFileName& tex
     return _SetTextureTempDir(textureDir);
     }
               
-StatusInt IScalableMeshTextureGenerator::GenerateTexture(const bvector<DPoint3d>& area)
+StatusInt IScalableMeshTextureGenerator::GenerateTexture(const bvector<DPoint3d>& area,IScalableMeshProgress* progress)
     {
-    return _GenerateTexture(area);
+    return _GenerateTexture(area, progress);
     }
 
 StatusInt IScalableMeshTextureGenerator::SetTransform(const Transform& transToUOR)

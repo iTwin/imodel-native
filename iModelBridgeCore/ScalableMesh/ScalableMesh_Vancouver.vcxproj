@@ -731,6 +731,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
   <ItemGroup>
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
+    <None Include="ScalableMesh_Vancouver.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

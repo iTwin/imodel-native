@@ -186,7 +186,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
 
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) override;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+
+        virtual void SaveProjectFiles() override;
 
         virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
@@ -199,9 +201,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) override;
 
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) override;
-
         
-
+        virtual bool GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        
 
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;

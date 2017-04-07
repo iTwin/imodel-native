@@ -10,12 +10,12 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const SchemaVersion SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const SchemaVersion SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 4);
 
-const SchemaVersion s_listOfReleasedSchemasClip[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1,1,0,2) };
-const size_t s_numberOfReleasedSchemasClip = 3;
-double s_expectedTimeUpdateClip[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[2] = {
+const SchemaVersion s_listOfReleasedSchemasClip[5] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3), SchemaVersion(1, 1, 0, 4) };
+const size_t s_numberOfReleasedSchemasClip = 5;
+double s_expectedTimeUpdateClip[4] = { 1.2*1e-5, 1e-6,1e-6,1e-6 };
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[4] = {
     [](BeSQLite::Db* database)
         {
         database->DropTable("SMNodeHeader");
@@ -35,6 +35,19 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[2] = {
                                    "Size INTEGER");
 
             }
+                ,
+                [] (BeSQLite::Db* database)
+                {
+                database->ExecuteSql("ALTER TABLE SMClipDefinitions ADD COLUMN ClipType INTEGER DEFAULT 0");
+                database->ExecuteSql("ALTER TABLE SMClipDefinitions ADD COLUMN OnOff INTEGER DEFAULT 1");
+                database->ExecuteSql("ALTER TABLE SMClipDefinitions ADD COLUMN ClipGeometryType INTEGER DEFAULT 0");
+                }
+            ,
+            [](BeSQLite::Db* database)
+            {
+                database->ExecuteSql("ALTER TABLE SMCoverages ADD COLUMN Name STRING DEFAULT ''");
+            }
+
     };
 
 size_t SMSQLiteClipDefinitionsFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasClip; }
@@ -42,7 +55,7 @@ const SchemaVersion* SMSQLiteClipDefinitionsFile::GetListOfReleasedVersions() { 
 double* SMSQLiteClipDefinitionsFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdateClip; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteClipDefinitionsFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctionsClip; }
 
-void SMSQLiteClipDefinitionsFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize)
+void SMSQLiteClipDefinitionsFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
@@ -54,11 +67,14 @@ void SMSQLiteClipDefinitionsFile::StoreClipPolygon(int64_t& clipID, const bvecto
     if (clipID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonData,Size, Importance, NDimensions) VALUES(?,?, ?, ?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonData,Size, Importance, NDimensions, ClipType, OnOff, ClipGeometryType) VALUES(?,?, ?, ?, ?, ?, ?)");
         stmt->BindBlob(1, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
         stmt->BindDouble(3, 0);
         stmt->BindInt(4, 0);
+        stmt->BindInt(5, (int)type);
+        stmt->BindInt(6, isActive? 1 : 0);
+        stmt->BindInt(7, (int)geom);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
@@ -71,12 +87,15 @@ void SMSQLiteClipDefinitionsFile::StoreClipPolygon(int64_t& clipID, const bvecto
     else if (nRows == 0)
         {
         Savepoint insertTransaction(*m_database, "insert");
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size, Importance, NDimensions) VALUES(?, ?,?,?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size, Importance, NDimensions, ClipType, OnOff, ClipGeometryType) VALUES(?, ?,?,?,?,?,?,?)");
         stmt->BindInt64(1, clipID);
         stmt->BindBlob(2, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
         stmt->BindInt64(3, uncompressedSize);
         stmt->BindDouble(4, 0);
         stmt->BindInt(5, 0);
+        stmt->BindInt(6, (int)type);
+        stmt->BindInt(7, isActive ? 1 : 0);
+        stmt->BindInt(8, (int)geom);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
@@ -84,10 +103,13 @@ void SMSQLiteClipDefinitionsFile::StoreClipPolygon(int64_t& clipID, const bvecto
         }
     else
         {
-        m_database->GetCachedStatement(stmt, "UPDATE SMClipDefinitions SET PolygonData=?, Size=? WHERE PolygonId=?");
+        m_database->GetCachedStatement(stmt, "UPDATE SMClipDefinitions SET PolygonData=?, Size=?, ClipType=?, OnOff=?, ClipGeometryType=? WHERE PolygonId=?");
         stmt->BindBlob(1, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
-        stmt->BindInt64(3, clipID);
+        stmt->BindInt(3, (int)type);
+        stmt->BindInt(4, isActive ? 1 : 0);
+        stmt->BindInt(5, (int)geom);
+        stmt->BindInt64(6, clipID);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
@@ -215,11 +237,11 @@ size_t SMSQLiteClipDefinitionsFile::GetSkirtPolygonByteCount(int64_t clipID)
     return stmt->GetValueInt64(0);
     }
 
-void SMSQLiteClipDefinitionsFile::GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize)
+void SMSQLiteClipDefinitionsFile::GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size FROM SMClipDefinitions WHERE PolygonId=?");
+    m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size, ClipType, OnOff, ClipGeometryType FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
     DbResult status = stmt->Step();
 
@@ -230,6 +252,9 @@ void SMSQLiteClipDefinitionsFile::GetClipPolygon(int64_t clipID, bvector<uint8_t
         }
     clipData.resize(stmt->GetValueInt64(1));
     uncompressedSize = stmt->GetValueInt64(2);
+    type = (SMNonDestructiveClipType)stmt->GetValueInt(3);
+    isActive = stmt->GetValueInt(4) > 0;
+    geom = (SMClipGeometryType)stmt->GetValueInt(5);
     memcpy(&clipData[0], stmt->GetValueBlob(0), clipData.size());
     }
 
@@ -318,6 +343,52 @@ void SMSQLiteClipDefinitionsFile::StoreCoveragePolygon(int64_t& coverageID, cons
         }
     }
 
+
+void SMSQLiteClipDefinitionsFile::StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize)
+{
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    CachedStatementPtr stmt3;
+    m_database->GetCachedStatement(stmt3, "SELECT COUNT(PolygonId) FROM SMCoverages WHERE PolygonId=?");
+    stmt3->BindInt64(1, coverageID);
+    stmt3->Step();
+    size_t nRows = stmt3->GetValueInt64(0);
+    if (coverageID == SQLiteNodeHeader::NO_NODEID)
+    {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMCoverages (Name) VALUES(?)");        
+        BIND_VALUE_STR(stmt, 1, coverageName, MAKE_COPY_NO);        
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        CachedStatementPtr stmt2;
+        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
+        status = stmt2->Step();
+        coverageID = stmt2->GetValueInt64(0);
+        if (m_autocommit) m_database->SaveChanges();
+    }
+    else if (nRows == 0)
+    {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMCoverages (Name) VALUES(?)");
+        BIND_VALUE_STR(stmt, 1, coverageName, MAKE_COPY_NO);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+    }
+    else
+    {
+        m_database->GetCachedStatement(stmt, "UPDATE SMCoverages SET Name=? WHERE PolygonId=?");
+        BIND_VALUE_STR(stmt, 1, coverageName, MAKE_COPY_NO);
+        stmt->BindInt64(2, coverageID);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+    }
+}
+
 size_t SMSQLiteClipDefinitionsFile::GetCoveragePolygonByteCount(int64_t coverageID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
@@ -382,7 +453,10 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
                                      "PolygonData BLOB,"
                                      "Size INTEGER,"
                                      "Importance DOUBLE,"
-                                     "NDimensions INTEGER");
+                                     "NDimensions INTEGER,"
+                                     "ClipType    INTEGER,"
+                                     "OnOff       INTEGER,"
+                                     "ClipGeometryType INTEGER");
 
     result = m_database->CreateTable("SMSkirts", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
@@ -390,7 +464,8 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
 
     result = m_database->CreateTable("SMCoverages", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
-                                     "Size INTEGER");
+                                     "Size INTEGER,"
+                                     "Name STRING");
 
 
     assert(result == BE_SQLITE_OK);
@@ -398,3 +473,61 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
     return result;
     }
 
+
+void SMSQLiteClipDefinitionsFile::GetAllCoverageIDs(bvector<uint64_t>& ids)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMCoverages");
+    DbResult status = stmt->Step();
+    while (status == BE_SQLITE_ROW)
+        {
+        ids.push_back(stmt->GetValueInt64(0));
+        status = stmt->Step();
+        }
+    }
+
+void SMSQLiteClipDefinitionsFile::GetAllClipIDs(bvector<uint64_t>& allIds)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMClipDefinitions");
+    DbResult status = stmt->Step();
+    while (status == BE_SQLITE_ROW)
+        {
+        allIds.push_back(stmt->GetValueInt64(0));
+        status = stmt->Step();
+        }
+    }
+
+void SMSQLiteClipDefinitionsFile::GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT OnOff FROM SMClipDefinitions where PolygonId=?");
+    stmt->BindInt64(1, id);
+    DbResult status = stmt->Step();
+    if (status == BE_SQLITE_ROW)
+        isActive = stmt->GetValueInt(0) > 0;
+    }
+
+void SMSQLiteClipDefinitionsFile::GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT ClipType FROM SMClipDefinitions where PolygonId=?");
+    stmt->BindInt64(1, id);
+    DbResult status = stmt->Step();
+    if (status == BE_SQLITE_ROW)
+        type = (SMNonDestructiveClipType)stmt->GetValueInt(0);
+    }
+
+void SMSQLiteClipDefinitionsFile::SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "UPDATE SMClipDefinitions SET OnOff=? where PolygonId=?");
+    stmt->BindInt64(1, isActive? 1 : 0);
+    stmt->BindInt64(2, id);
+    stmt->Step();
+    }

@@ -60,7 +60,10 @@ enum class SMStoreDataType
     DisplayMesh,
     //Not persisted data type
     DisplayTexture,
-    Coverage,
+    CoveragePolygon,
+    CoverageName,
+    //Not persisted data type
+    Mesh3D,
     Unknown, 
     };
 
@@ -78,6 +81,18 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void SetAutoCommit(bool autoCommit) = 0;
 
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) = 0;
+
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) = 0;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) = 0;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) = 0;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) = 0;
         
     };
 
@@ -168,6 +183,7 @@ typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>>      ISMMTGGraphDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Byte>>          ISMTextureDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Utf8String>>    ISMCoverageNameDataStorePtr;
 
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
@@ -215,7 +231,12 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
          Set the path of the files created for a given project (e.g. : dgndb file). 
         -----------------------------------------------------------------------------*/
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) = 0;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
+
+        /**----------------------------------------------------------------------------
+        Save the content of the project files.
+        -----------------------------------------------------------------------------*/
+        virtual void SaveProjectFiles() = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.
@@ -236,10 +257,13 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) = 0;
 
+        virtual bool GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        
+        
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
         virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
-        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;        
     };
