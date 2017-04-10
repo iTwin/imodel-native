@@ -1836,6 +1836,24 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileNodePtr    TileGenerator::ElementTileContext::GenerateDecorationTile() const
     {
+ #ifdef WIP
+    Sheet::ModelCP      sheetModel;
+
+    if (nullptr == (sheetModel = m_model.ToSheetModel()))
+        return nullptr;
+
+
+    ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+
+    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
+
+    if (is2d)
+        {
+        TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
+        return processor.OutputGraphics(context);
+
+#endif
     return nullptr;
     }
 
