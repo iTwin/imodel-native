@@ -195,6 +195,8 @@ namespace IndexECPlugin.Source.Helpers
                     return propertyName + "+ge+" + criteria.Value;
                 case RelationalOperator.NE:
                     return propertyName + "+ne+" + criteria.Value;
+                //case RelationalOperator.IN:
+                //    return "(" + string.Join("+or+", criteria.Value.Split(',').Select(s => propertyName + "+eq+" + s)) + ")";
                 default:
                     throw new UserFriendlyException("This type of criteria is not possible when querying " + IndexConstants.RdsSourceName + " source.");
                 }
