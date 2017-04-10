@@ -21,4 +21,4 @@
 #include <ECObjects/SystemSymbolProvider.h>
 #include <BeXml/BeXml.h>
 #include <Units/Units.h>
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>

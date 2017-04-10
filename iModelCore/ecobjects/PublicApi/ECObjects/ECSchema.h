@@ -16,7 +16,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/BeFileName.h>
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 
 #define DEFAULT_VERSION_READ       1
 #define DEFAULT_VERSION_WRITE      0
