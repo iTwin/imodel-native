@@ -69,6 +69,11 @@ RealityPackageStatus RealityDataSerializerV2::_Read(RealityDataPackageR package,
     if (RealityPackageStatus::Success != status)
         return status;
 
+    // Read unefined data. (version 2.1 and up)
+    status = ReadUndefinedGroup(package, xmlDom);
+    if (RealityPackageStatus::Success != status)
+        return status;
+
     return status;
     }
 
@@ -262,6 +267,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
 
         // Create model data and add alternate sources.
         ModelDataPtr pModelData = ModelData::Create(*pSources[0]);
+        pModelData->SetDataId(id.c_str());
+        pModelData->SetDataName(name.c_str());
+        pModelData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pModelData->AddSource(*pSources[i]);
@@ -357,6 +365,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
 
         // Create pinned data and add alternate sources.
         PinnedDataPtr pPinnedData = PinnedData::Create(*pSources[0], location.longitude, location.latitude);
+        pPinnedData->SetDataId(id.c_str());
+        pPinnedData->SetDataName(name.c_str());
+        pPinnedData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pPinnedData->AddSource(*pSources[i]);
@@ -432,6 +443,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
         
         // Create terrain data and add alternate sources.
         TerrainDataPtr pTerrainData = TerrainData::Create(*pSources[0]);
+        pTerrainData->SetDataId(id.c_str());
+        pTerrainData->SetDataName(name.c_str());
+        pTerrainData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pTerrainData->AddSource(*pSources[i]);
@@ -439,6 +453,83 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
 
         // Add data to group.
         terrainGroup.push_back(pTerrainData);
+        }
+
+    // Unknown elements.
+    ReadUnknownElements(package, pRootNode->GetFirstChild());
+
+    return RealityPackageStatus::Success;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                 04/2017
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+    {
+    RealityPackageStatus status = RealityPackageStatus::Success;
+
+    // Get root node and context.
+    BeXmlNodeP pRootNode = xmlDom.GetRootElement();
+    if (NULL == pRootNode)
+        return RealityPackageStatus::XmlReadError;
+
+    // Get terrain group node.
+    BeXmlNodeP pGroupNode = pRootNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UndefinedGroup);
+    if (NULL == pGroupNode)
+        return RealityPackageStatus::Success; // Source groups are optional.
+
+    RealityDataPackage::UndefinedGroup& undefinedGroup = package.GetUndefinedGroupR();
+    for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
+        {
+        // Read base first.
+        // Id.
+        Utf8String id;
+        BeXmlNodeP pIdNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
+        if (NULL != pIdNode)
+            pIdNode->GetContent(id);
+
+        // Name.
+        Utf8String name;
+        BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
+        if (NULL != pNameNode)
+            pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
+
+        // Sources.
+        BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
+        if (NULL == pSourcesNode)
+            continue; // Missing source node.       
+
+        BeXmlDom::IterableNodeSet sourceNodes;
+        pSourcesNode->SelectChildNodes(sourceNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Source);
+
+        bvector<RealityDataSourcePtr> pSources;
+        for (BeXmlNodeP const& pSourceNode : sourceNodes)
+            {
+            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            if (status != RealityPackageStatus::Success)
+                return status;
+
+            pSources.push_back(pDataSource);
+            }
+        
+        // Create undefined data and add alternate sources.
+        UndefinedDataPtr pUndefinedData = UndefinedData::Create(*pSources[0]);
+        pUndefinedData->SetDataId(id.c_str());
+        pUndefinedData->SetDataName(name.c_str());
+        pUndefinedData->SetDataset(dataset.c_str());
+        for (size_t i = 1; i < pSources.size(); ++i)
+            {
+            pUndefinedData->AddSource(*pSources[i]);
+            }
+
+        // Add data to group.
+        undefinedGroup.push_back(pUndefinedData);
         }
 
     // Unknown elements.
@@ -486,6 +577,11 @@ RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDa
 
     // Add terrain data.
     status = WriteTerrainGroup(*pRootNode, package);
+    if (RealityPackageStatus::Success != status)
+        return status;
+
+    // Add undefined data.
+    status = WriteUndefinedGroup(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
 
@@ -719,6 +815,61 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
             for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
                 {
                 if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }                    
+                }
+            }
+        }
+
+    return RealityPackageStatus::Success;
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+    {
+    if (package.GetUndefinedGroup().empty())
+        return RealityPackageStatus::Success; // No terrain data.
+
+    // Group node.
+    BeXmlNodeP pGroupNode = node.AddEmptyElement(PACKAGE_ELEMENT_UndefinedGroup);
+    if (NULL == pGroupNode)
+        return RealityPackageStatus::UnknownError;
+
+    // Add data to group.
+    RealityDataPackage::UndefinedGroup undefinedGroup = package.GetUndefinedGroup();
+    for (UndefinedDataPtr pUndefinedData : undefinedGroup)
+        {
+        if (!pUndefinedData.IsValid())
+            continue;
+
+        // Write base first.
+        BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_UndefinedData);
+        
+        // Id.
+        if (!pUndefinedData->GetDataId().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pUndefinedData->GetDataId().c_str());
+
+        // Name.
+        if (!pUndefinedData->GetDataName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pUndefinedData->GetDataName().c_str());
+
+        // Dataset.
+        if (!pUndefinedData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pUndefinedData->GetDataset().c_str());
+
+        // Sources.
+        if (0 != pUndefinedData->GetNumSources())
+            {
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pUndefinedData->GetNumSources(); ++sourceIndex)
+                {
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pUndefinedData->GetSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;

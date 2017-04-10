@@ -342,6 +342,235 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     return data;
     }
 
+
+#if (1)
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            03/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps, bool includeROProps)
+    {
+    bvector<RealityDataField> properties;
+
+    if (includeUnsetProps || (realityData.GetIdentifier().size() != 0))
+        properties.push_back(RealityDataField::Id);
+
+    if (includeROProps && (includeUnsetProps || (realityData.GetEnterpriseId().size() != 0)))
+        properties.push_back(RealityDataField::EnterpriseId);
+
+    if (includeROProps && (includeUnsetProps || (realityData.GetContainerName().size() != 0)))
+        properties.push_back(RealityDataField::ContainerName);
+
+    if (includeUnsetProps || (realityData.GetName().size() != 0))
+        properties.push_back(RealityDataField::Name);
+
+    if (includeUnsetProps || (realityData.GetDataset().size() != 0))
+        properties.push_back(RealityDataField::Dataset);
+
+    if (includeUnsetProps || (realityData.GetDescription().size() != 0))
+        properties.push_back(RealityDataField::Description);
+
+    if (includeUnsetProps || (realityData.GetRootDocument().size() != 0))
+        properties.push_back(RealityDataField::RootDocument);
+
+    if (includeROProps && (includeUnsetProps || (realityData.GetTotalSize() > 0)))
+        properties.push_back(RealityDataField::Size);
+
+    if (includeUnsetProps || (realityData.GetClassification() != RealityDataBase::Classification::UNDEFINED_CLASSIF))
+        properties.push_back(RealityDataField::Classification);
+
+    if (includeUnsetProps || (realityData.GetRealityDataType().size() != 0))
+        properties.push_back(RealityDataField::Type);
+
+    if (includeUnsetProps || !realityData.IsStreamed()) // Default (true) is considered unset
+        properties.push_back(RealityDataField::Streamed);
+
+    if (includeUnsetProps || (realityData.GetFootprint().size() >= 4))
+        properties.push_back(RealityDataField::Footprint);
+
+    if (includeUnsetProps || (realityData.GetThumbnailDocument().size() != 0))
+        properties.push_back(RealityDataField::ThumbnailDocument);
+
+    if (includeUnsetProps || (realityData.GetMetadataURL().size() != 0))
+        properties.push_back(RealityDataField::MetadataURL);
+
+    if (includeUnsetProps || (realityData.GetCopyright().size() != 0))
+        properties.push_back(RealityDataField::Copyright);
+
+    if (includeUnsetProps || (realityData.GetTermsOfUse().size() != 0))
+        properties.push_back(RealityDataField::TermsOfUse);
+
+    if (includeUnsetProps || (realityData.GetResolution().size() != 0))
+        properties.push_back(RealityDataField::ResolutionInMeters);
+
+    if (includeUnsetProps || (realityData.GetAccuracy().size() != 0))
+        properties.push_back(RealityDataField::AccuracyInMeters);
+
+    if (includeUnsetProps || (realityData.GetVisibility() != RealityDataBase::Visibility::UNDEFINED_VISIBILITY))
+        properties.push_back(RealityDataField::Visibility);
+
+    if (includeUnsetProps || !realityData.IsListable()) // Default (true) is considered unset
+        properties.push_back(RealityDataField::Listable);
+
+    if (includeROProps && (includeUnsetProps || realityData.GetModifiedDateTime().IsValid()))
+        properties.push_back(RealityDataField::ModifiedTimestamp);
+
+    if (includeROProps && (includeUnsetProps || realityData.GetCreationDateTime().IsValid()))
+        properties.push_back(RealityDataField::CreatedTimestamp);
+
+    if (includeROProps && (includeUnsetProps || (realityData.GetOwner().size() != 0)))
+        properties.push_back(RealityDataField::OwnedBy);
+
+    if (includeUnsetProps || (realityData.GetGroup().size() != 0))
+        properties.push_back(RealityDataField::Group);
+
+    return RealityDataToJson(realityData, properties);
+    }
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            03/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, bvector<RealityDataField> properties)
+    {
+    Utf8String propertyString;
+    bvector<Utf8String> propertyVector = bvector<Utf8String>();
+
+    for(auto field : properties) // = properties.begin(); it != properties.end(); it.increment())
+        {
+        propertyString = "";
+
+        switch (field)
+            {
+        case RealityDataField::Id:
+            propertyString.append("\"Id\" : \"");
+            propertyString.append(realityData.GetIdentifier());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::EnterpriseId:
+            propertyString.append("\"Enterprise\" : \"");
+            propertyString.append(realityData.GetEnterpriseId());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::ContainerName:
+            propertyString.append("\"ContainerName\" : \"");
+            propertyString.append(realityData.GetContainerName());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Name:
+            propertyString.append("\"Name\" : \"");
+            propertyString.append(realityData.GetName());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Dataset:
+            propertyString.append("\"Dataset\" : \"");
+            propertyString.append(realityData.GetDataset());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Description:
+            propertyString.append("\"Description\" : \"");
+            propertyString.append(realityData.GetDescription());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::RootDocument:
+            propertyString.append("\"RootDocument\" : \"");
+            propertyString.append(realityData.GetRootDocument());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Size:
+            propertyString.append("\"Size\" : \"");
+            propertyString += Utf8PrintfString("%lu", realityData.GetTotalSize());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Classification:
+            propertyString.append("\"Classification\" : \"");
+            propertyString.append(realityData.GetClassificationTag());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Type:
+            propertyString.append("\"Type\" : \"");
+            propertyString.append(realityData.GetRealityDataType());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Streamed:
+            propertyString.append("\"Streamed\" : ");
+            propertyString.append(realityData.IsStreamed() ? "true" : "false");
+            break;
+        case RealityDataField::Footprint:
+            propertyString.append("\"Footprint\" : \"");
+            propertyString.append(realityData.GetFootprintString());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::ThumbnailDocument:
+            propertyString.append("\"ThumbnailDocument\" : \"");
+            propertyString.append(realityData.GetThumbnailDocument());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::MetadataURL:
+            propertyString.append("\"MetadataURL\" : \"");
+            propertyString.append(realityData.GetMetadataURL());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Copyright:
+            propertyString.append("\"Copyright\" : \"");
+            propertyString.append(realityData.GetCopyright());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::TermsOfUse:
+            propertyString.append("\"TermsOfUse\" : \"");
+            propertyString.append(realityData.GetTermsOfUse());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::ResolutionInMeters:
+            propertyString.append("\"ResolutionInMeters\" : \"");
+            propertyString.append(realityData.GetResolution());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::AccuracyInMeters:
+            propertyString.append("\"AccuracyInMeters\" : \"");
+            propertyString.append(realityData.GetAccuracy());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Visibility:
+            propertyString.append("\"Visibility\" : \"");
+            propertyString.append(realityData.GetVisibilityTag());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Listable:
+            propertyString.append("\"Listable\" : ");
+            propertyString.append(realityData.IsListable() ? "true" : "false");
+            break;
+        case RealityDataField::ModifiedTimestamp:
+            propertyString.append("\"ModifiedTimestamp\" : \"");
+            propertyString.append(realityData.GetModifiedDateTime().ToString());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::CreatedTimestamp:
+            propertyString.append("\"CreatedTimestamp\" : \"");
+            propertyString.append(realityData.GetCreationDateTime().ToString());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::OwnedBy:
+            propertyString.append("\"OwnedBy\" : \"");
+            propertyString.append(realityData.GetOwner());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::Group:
+            propertyString.append("\"Group\" : \"");
+            propertyString.append(realityData.GetGroup());
+            propertyString.append("\"");
+            break;
+            }
+        propertyVector.push_back(propertyString);
+        }
+    propertyString = propertyVector[0];
+    for(int i = 1; i < propertyVector.size(); ++i)
+        {
+        propertyString.append(",");
+        propertyString.append(propertyVector[i]);
+        }
+    return propertyString;
+    }
+
+#endif
+
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/

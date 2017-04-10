@@ -12,7 +12,7 @@
 #include <RealityPackage/RealityPackage.h>
 #include <BeXml/BeXml.h>
 #include <Geom/GeomApi.h>
-
+    
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
 struct RealityDataSourceSerializer;

@@ -68,6 +68,9 @@
 #define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
 #define PACKAGE_ELEMENT_TerrainData         "TerrainData"
 
+#define PACKAGE_ELEMENT_UndefinedGroup      "UndefinedGroup"
+#define PACKAGE_ELEMENT_UndefinedData       "UndefinedData"
+
 #define PACKAGE_ELEMENT_Sources             "Sources"
 #define PACKAGE_ELEMENT_Dataset             "Dataset"
 
@@ -217,6 +220,7 @@ struct RealityDataSerializer : public RefCountedBase
         RealityPackageStatus ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
         RealityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
         MultiBandSourcePtr   ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
@@ -227,6 +231,7 @@ struct RealityDataSerializer : public RefCountedBase
         RealityPackageStatus WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         RealityPackageStatus WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         RealityPackageStatus WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         RealityPackageStatus WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
 
     private:
@@ -240,6 +245,7 @@ struct RealityDataSerializer : public RefCountedBase
         virtual RealityPackageStatus _ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        virtual RealityPackageStatus _ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
         virtual RealityDataSourcePtr _ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
         virtual MultiBandSourcePtr   _ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
@@ -250,6 +256,7 @@ struct RealityDataSerializer : public RefCountedBase
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 
@@ -308,12 +315,14 @@ struct RealityDataSerializerV2 : public RealityDataSerializer
         virtual RealityPackageStatus _ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);        
+        virtual RealityPackageStatus _ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);        
 
         // Write methods override.
         virtual RealityPackageStatus _WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 

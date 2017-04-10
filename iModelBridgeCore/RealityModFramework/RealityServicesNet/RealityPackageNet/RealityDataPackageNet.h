@@ -14,6 +14,7 @@ namespace RealityPackageNet { ref class ImageryDataNet; }
 namespace RealityPackageNet { ref class ModelDataNet; }
 namespace RealityPackageNet { ref class PinnedDataNet; }
 namespace RealityPackageNet { ref class TerrainDataNet; }
+namespace RealityPackageNet { ref class UndefinedDataNet; }
 namespace RealityPackageNet { ref class RealityDataSourceNet; }
 
 namespace RealityPackageNet
@@ -71,6 +72,7 @@ namespace RealityPackageNet
             void AddModelData(ModelDataNet^ data);
             void AddPinnedData(PinnedDataNet^ data);
             void AddTerrainData(TerrainDataNet^ data);
+            void AddUndefinedData(UndefinedDataNet^ data);
 
             //! Get package version.
             int GetMajorVersion();
@@ -219,8 +221,7 @@ namespace RealityPackageNet
     public ref class TerrainDataNet : public RealityDataNet
         {
         public:
-            //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
+            //! Create a new TerrainData. 
             static TerrainDataNet^ Create(RealityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;
@@ -231,5 +232,24 @@ namespace RealityPackageNet
             !TerrainDataNet();
 
             RealityPackage::TerrainDataPtr* m_pTerrainData;
+        };
+
+    //=====================================================================================
+    //! @bsiclass                                   Alain.Robert              9/2016
+    //=====================================================================================
+    public ref class UndefinedDataNet : public RealityDataNet
+        {
+        public:
+            //! Create a new UndefinedData. 
+            static UndefinedDataNet^ Create(RealityDataSourceNet^ dataSource);
+
+            static Utf8CP ElementName;
+
+        private:
+            UndefinedDataNet(RealityDataSourceNet^ dataSource);
+            ~UndefinedDataNet();
+            !UndefinedDataNet();
+
+            RealityPackage::UndefinedDataPtr* m_pUndefinedData;
         };
     }

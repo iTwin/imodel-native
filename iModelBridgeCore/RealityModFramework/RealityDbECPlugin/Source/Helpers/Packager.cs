@@ -1257,6 +1257,13 @@ namespace IndexECPlugin.Source.Helpers
                 DateTime endDate = (new DateTime(now.Year, now.Month, 1));
                 bool useDefaultEndDate = true;
 
+                string bentleyInternalStatement = " AND t.BentleyInternal = 0 ";
+
+                if ( query.ExtendedData.ContainsKey("includebentleyinternal") && query.ExtendedData["includebentleyinternal"].ToString().ToLower() == "true" )
+                    {
+                    bentleyInternalStatement = "";
+                    }
+
                 while (i < query.WhereClause.Count)
                 {
                     WhereCriterion criterion = query.WhereClause[i];
@@ -1306,7 +1313,7 @@ namespace IndexECPlugin.Source.Helpers
                     using (DbCommand dbCommand = sqlConnection.CreateCommand())
                     {
                         dbCommand.CommandText =
-                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime AND t.BentleyInternal = 0";
+                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime" + bentleyInternalStatement;
                         dbCommand.CommandType = CommandType.Text;
                         dbCommand.Connection = sqlConnection;
 

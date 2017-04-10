@@ -12,7 +12,7 @@
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/WSGServices.h>
-#include <BentleyDesktopClient/CCApi/CCPublic.h>
+#include <CCApi/CCPublic.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM

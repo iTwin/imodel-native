@@ -70,6 +70,8 @@ RealityPackageStatus RealityDataSerializerV1::_Read(RealityDataPackageR package,
     if (RealityPackageStatus::Success != status)
         return status;
 
+    // We do not read undefined group as it is not supported by version 1
+
     return status;
     }
 
@@ -299,6 +301,7 @@ RealityPackageStatus RealityDataSerializerV1::_Write(BeXmlDomR xmlDom, RealityDa
     if (RealityPackageStatus::Success != status)
         return status;
 
+    // We do not write undefined group as it is not supported by version 1.0
     return status;
     }
 

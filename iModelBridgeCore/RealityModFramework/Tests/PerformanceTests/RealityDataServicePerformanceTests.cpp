@@ -84,18 +84,18 @@ RealityDataServicePerformanceTests::RealityDataServicePerformanceTests()
     m_newRealityData->SetIdentifier("41d330bb-e1e6-45f3-a29b-02e145e31aa2");
     m_newRealityData->SetName("INTERNAL-ONLY TEST Reality Data");
     m_newRealityData->SetResolution("1.11x1.12");
-    m_newRealityData->SetAccuracy("3.1x4.2");
+    m_newRealityData->SetAccuracy("3.1");
     m_newRealityData->SetClassification(RealityDataBase::Classification::MODEL);
     m_newRealityData->SetVisibility(RealityDataBase::Visibility::PRIVATE);
     m_newRealityData->SetDataset("INTERNAL-ONLY TEST DATASET");
     m_newRealityData->SetRealityDataType("TEST_ONLY");
-    m_newRealityData->SetStreamed(false);
+//    m_newRealityData->SetStreamed(false);
     m_newRealityData->SetThumbnailDocument("Thumnail.jpg");
     m_newRealityData->SetRootDocument("root.test");
     m_newRealityData->SetListable(true);
     m_newRealityData->SetMetadataURL("metadata.xml");
-    m_newRealityData->SetCopyright("belongs to every one");
-    m_newRealityData->SetTermsOfUse("use wisely");
+//    m_newRealityData->SetCopyright("belongs to every one");
+//    m_newRealityData->SetTermsOfUse("use wisely");
     m_newRealityData->SetGroup("TestGroup-185a9dbe-d9ed-4c87-9289-57beb3c94a1a");
     m_newRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vestibulum nunc quis malesuada varius. Donec at molestie enim, sit amet interdum mauris.\
                                     Sed dapibus ultricies orci, id dictum ligula consectetur vitae. Quisque eu ipsum in urna molestie ultricies. Nullam fringilla erat vitae placerat semper. Nulla consectetur justo lacinia, \
@@ -158,11 +158,10 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName)
     ConfigureServerTest(serverName, true);
 
     //// Clean existing entry in case program previously failed.
-    //DeleteRealityDataTest(true);
+    DeleteRealityDataTest(true);
 
     //// This sleep is require in case the deleting did occur ... the Azure container becomes unusable for a moment then
-    //// sleep(5000);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(25000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(25000));
 
 
 
@@ -188,11 +187,6 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName)
                 GetRelationship();
 
                 UpdateTest();
-                }
-
-            if (UploadTest2())
-                {
-                GetFolderTest();
                 }
 
             if (relationshipCreated)
@@ -440,7 +434,7 @@ StatusInt RealityDataServicePerformanceTests::UploadTest2()
     properties.Insert(RealityDataField::RootDocument, m_newRealityData->GetRootDocument());
 
     Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
-    RealityDataServiceUpload upload = RealityDataServiceUpload(BeFileName(m_tempFileName), m_newRealityData->GetIdentifier(), formatedProps, true, true, statusFunc);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(BeFileName(m_tempFileName), m_newRealityData->GetIdentifier() + "\\DummyDirectory", formatedProps, true, true, statusFunc);
     upload.SetProgressCallBack(uploadProgressFunc);
     upload.SetProgressStep(0.1);
     upload.OnlyReportErrors(true);
@@ -723,22 +717,30 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
     {
 
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
-
-    bvector<RDSFilter> properties = bvector<RDSFilter>();
-    properties.push_back(RealityDataFilterCreator::FilterByName("ONLY"));
-
-    enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+    enterpriseReq.SetQuery("ONLY");
 
     RawServerResponse enterpriseResponse = RawServerResponse();
     enterpriseResponse.status = RequestStatus::OK;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
     while(enterpriseResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
         partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
         }
+
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    std::cout << "GetRealityData with filter Test: " << (endTime - startTime) / 1000.0 << std::endl;
 
     return SUCCESS;
     }

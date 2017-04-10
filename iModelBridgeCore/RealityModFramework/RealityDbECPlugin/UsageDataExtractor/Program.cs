@@ -4,6 +4,7 @@ using System.Configuration;
 using System.IdentityModel.Tokens;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -27,21 +28,34 @@ namespace UsageDataExtractor
 
         static void Main (string[] args)
             {
+            ServicePointManager
+    .ServerCertificateValidationCallback +=
+    (sender, cert, chain, sslPolicyErrors) => true;
+
             try
                 {
-                string fetchResultsFileName;
+                string fileName;
                 if ( args.Length == 4 )
                     {
-                    fetchResultsFileName = args[1];
+                    int year = Convert.ToInt32(args[2]);
+                    int month = Convert.ToInt32(args[3]);
+
+                    fileName = args[1];
+                    if ( args[0].ToLower() == "extractv2" )
+                        {
+                        DateTime beginning = new DateTime(year, month, 1);
+                        DateTime end = beginning.AddMonths(1);
+
+                        ExtractV2(fileName, beginning, end);
+                        }
+                       
                     if ( args[0].ToLower() == "fetch" )
                         {
 
-                        if ( !File.Exists(fetchResultsFileName) ) 
+                        if ( !File.Exists(fileName) ) 
                             {
-                            using ( StreamWriter file = new System.IO.StreamWriter(fetchResultsFileName) )
+                            using ( StreamWriter file = new System.IO.StreamWriter(fileName) )
                                 {
-                                int year = Convert.ToInt32(args[2]);
-                                int month = Convert.ToInt32(args[3]);
 
                                 DateTime time = new DateTime(year, month, 1);
 
@@ -82,11 +96,11 @@ namespace UsageDataExtractor
                     }
                 else if ( args.Length == 3 )
                     {
-                    fetchResultsFileName = args[1];
+                    fileName = args[1];
                     if ( args[0].ToLower() == "extract" )
                         {
                         string extractionResultsFileNameBase = args[2];
-                        Extract(fetchResultsFileName, extractionResultsFileNameBase);
+                        Extract(fileName, extractionResultsFileNameBase);
                         }
                     }
                 else
@@ -106,6 +120,12 @@ namespace UsageDataExtractor
             Console.Out.WriteLine("Before using the program, please configure the email entry of the exe.config file.");
             Console.Out.WriteLine("The password entry is optional. If not set, the program will ask for it when it is needed.");
             Console.Out.WriteLine(" ");
+            Console.Out.WriteLine("Usage : UsageDataExtractor.exe extractv2 [resultFileName] [Year] [Month]");
+            Console.Out.WriteLine("    [resultFileName] is the name of the file that will be written on disk and contain the results of the fetch operation.");
+            Console.Out.WriteLine("    [Year] Is the year of the period for which we want the data.");
+            Console.Out.WriteLine("    [Month] Is the month of the period for which we want the data.");
+            Console.Out.WriteLine("***THE FOLLOWING IS DEPRECATED***");
+            Console.Out.WriteLine("**********************************************************************************************");
             Console.Out.WriteLine("Usage 1: UsageDataExtractor.exe fetch [fetchFileName] [Year] [Month]");
             Console.Out.WriteLine("  The fetch mode searches the GCS logs located in the azure table and gets all xrdp GUIDs captured by the logs,");
             Console.Out.WriteLine("  along with the email of the requester.");
@@ -126,6 +146,9 @@ namespace UsageDataExtractor
             Console.Out.WriteLine("                          An extension will be added by the program.");
             Console.Out.WriteLine(" ");
             Console.Out.WriteLine(@"   Example: UsageDataExtractor.exe extract C:\data\xrdpGUIDsAUGUST.txt C:\data\QueryResults\resultsAUGUST");
+            Console.Out.WriteLine("**********************************************************************************************");
+
+
             }
 
         private static void FetchResults (StreamWriter file, string tableName, string lowerPartitionKey, string upperPartitionKey)
@@ -181,7 +204,6 @@ namespace UsageDataExtractor
                                 lastTokenTime = DateTime.Now;
                                 base64Token = GetToken(password);
                                 }
-                            var split = line.Split(' ');
                             string packageId = line.Split(' ').First();
                             string date;
                             string poly;
@@ -222,6 +244,69 @@ namespace UsageDataExtractor
                         fileToWrite.WriteLine(pair.Key + "," + pair.Value.ToString());
                         }
                     }
+                }
+            }
+
+        private static void ExtractV2 (string resultFileName, DateTime beginning, DateTime end)
+            {
+
+            string serverURL = ConfigurationManager.AppSettings["serverURL"];
+            string password = GetPassword();
+
+            DateTime lastTokenTime = DateTime.Now;
+            string base64Token = GetToken(password);
+
+            JArray statsArray = GetJSonStats(serverURL, base64Token, beginning, end);
+
+            using ( StreamWriter file = new StreamWriter(resultFileName) )
+                {
+                file.WriteLine("PackageId, Date, UserId, Country, Polygon");
+                foreach ( JToken packageStatToken in statsArray )
+                    {
+                    JObject packageStat = packageStatToken as JObject;
+                    JObject properties = packageStat["properties"] as JObject;
+
+
+                    string packageId = properties["Name"].Value<string>();
+                    string dateString = properties["CreationTime"].Value<string>().Substring(0, 10);
+                    string userId = properties["UserId"].Value<string>();
+                    string poly = properties["BoundingPolygon"].Value<string>();
+                    string country = ExtractCountry(poly);
+
+                    file.WriteLine(packageId + "," + dateString + "," + userId + "," + country + "," + poly);
+
+                    }
+                }
+            }
+
+        private static JArray GetJSonStats(string serverURL, string base64Token, DateTime beginning, DateTime end)
+            {
+            string beginningCriteria = beginning.ToString("yyyy-MM-dd");
+            string endCriteria = end.ToString("yyyy-MM-dd");
+            string requestURL = serverURL + "v2.4/Repositories/IndexECPlugin--Server/RealityModeling/PackageStats?$filter=CreationTime+gt+datetime'" + beginningCriteria + "'+and+CreationTime+lt+datetime'" + endCriteria +"'";
+
+            using ( HttpClient client = new HttpClient() )
+                {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", base64Token);
+
+                using ( HttpResponseMessage response = client.GetAsync(requestURL).Result )
+                    {
+                    if ( response.IsSuccessStatusCode )
+                        {
+                        using ( HttpContent content = response.Content )
+                            {
+                            JObject jsonResponse = JObject.Parse(content.ReadAsStringAsync().Result);
+
+                            return jsonResponse["instances"] as JArray;
+                            }
+                        }
+                    else
+                        {
+                        throw new Exception("Packaging stats extraction failed");
+                        }
+                    }
+                
                 }
             }
 
@@ -350,7 +435,14 @@ namespace UsageDataExtractor
                             var document = XDocument.Parse(xrdpPackage);
                             XNamespace ns = "http://www.bentley.com/RealityDataServer/v1";
 
-                            date = document.Root.Element(ns + "CreationDate").Value;
+                            try
+                                {
+                                date = document.Root.Element(ns + "CreationDate").Value;
+                                }
+                            catch ( Exception e )
+                                {
+                                date = default(DateTime).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                                }
 
                             return document.Root.Element(ns + "BoundingPolygon").Value;
                             //XmlDocument xmlDoc = new XmlDocument();

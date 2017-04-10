@@ -13,6 +13,7 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 
 #include <RealityPlatform/SpatialEntity.h>
+#include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPackage/RealityDataPackage.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
@@ -46,6 +47,18 @@ public:
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityServer(Utf8CP data, bvector<SpatialEntityServerPtr>* outData);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityMetadata(Utf8CP data, bvector<SpatialEntityMetadataPtr>* outData);
+
+#if (1)
+    //! Converts a reality data instance to a JSON fragment appropriate for the RealityData Service
+    //! the two bool control the insertion of properties not always required
+    //! The includeUnsetProps indicates if empty properties must be added to the JSON fragment.
+    //! The includeROProps indicates that properties that cannot be set but are computed by the service be included or not.
+    REALITYDATAPLATFORM_EXPORT static Utf8String RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps = false, bool includeROProps = false);
+
+    //! Converts a reality data instance to a JSON fragment appropriate for the RealityData Service. Only properties listed
+    //! are inserted.
+    REALITYDATAPLATFORM_EXPORT static Utf8String RealityDataToJson(RealityDataCR realityData, bvector<RealityDataField> properties);
+#endif
 
     //! The first version provides a simple list of extracted Reality Data while the second version
     //! fills a map for which the spatial entity name is the key.

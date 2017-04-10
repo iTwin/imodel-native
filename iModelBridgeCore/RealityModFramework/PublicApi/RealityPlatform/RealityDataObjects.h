@@ -320,7 +320,7 @@ protected:
     mutable double m_accuracyValue;
     Classification m_classification;
     Utf8String m_dataset;
-    mutable bvector<GeoPoint2d> m_footprint;
+    bvector<GeoPoint2d> m_footprint;
     mutable Utf8String m_footprintString;
     mutable DRange2d m_footprintExtent;
     mutable bool m_footprintExtentComputed;
@@ -331,6 +331,35 @@ protected:
 
     Visibility m_visibility;
     }; 
+
+
+enum class RealityDataField
+    {
+    Id,
+    EnterpriseId,
+    ContainerName,
+    Name,
+    Dataset,
+    Description,
+    RootDocument,
+    Size,
+    Classification,
+    Type,
+    Streamed,
+    Footprint,
+    ThumbnailDocument,
+    MetadataURL,
+    Copyright,
+    TermsOfUse,
+    ResolutionInMeters,
+    AccuracyInMeters,
+    Visibility,
+    Listable,
+    CreatedTimestamp,
+    ModifiedTimestamp,
+    OwnedBy,
+    Group
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016

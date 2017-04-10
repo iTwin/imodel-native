@@ -392,33 +392,7 @@ struct RealityDataFilterCreator
     REALITYDATAPLATFORM_EXPORT static RDSFilter GroupFiltersOR(bvector<RDSFilter> filters);
     };
 
-enum class RealityDataField
-    {
-    Id,
-    EnterpriseId,
-    ContainerName,
-    Name,
-    Dataset,
-    Description,
-    RootDocument,
-    Size,
-    Classification,
-    Type,
-    Streamed,
-    Footprint,
-    ThumbnailDocument,
-    MetadataURL,
-    Copyright,
-    TermsOfUse,
-    ResolutionInMeters,
-    AccuracyInMeters,
-    Visibility,
-    Listable,
-    CreatedTimestamp,
-    ModifiedTimestamp,
-    OwnedBy,
-    Group
-    };
+
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
@@ -791,6 +765,10 @@ protected:
 //=====================================================================================
 struct RealityDataServiceUpload : public RealityDataServiceTransfer
     {
+    //! Converts a map or propety name - property value pair into a JSON property string.
+    //! The properties given must only include text types. Boolean types cannot be provided since the property value
+    //! is not text.
+    //! Consider using RealityConversionTools::RealityDataToJson() instead which will handle all properties correctly.
     REALITYDATAPLATFORM_EXPORT static Utf8String PackageProperties(bmap<RealityDataField, Utf8String> properties);
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr);
