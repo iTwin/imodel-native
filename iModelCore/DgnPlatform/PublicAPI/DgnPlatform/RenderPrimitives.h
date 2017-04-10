@@ -19,7 +19,6 @@ BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureImage);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
@@ -40,7 +39,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
-DEFINE_REF_COUNTED_PTR(TextureImage);
 DEFINE_REF_COUNTED_PTR(MeshPart);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
@@ -88,35 +86,20 @@ struct GeometryOptions
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct TextureImage : RefCountedBase
-{
-private:
-    Render::ImageSource     m_imageSource;
-
-    TextureImage(Render::ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
-public:
-    static TextureImagePtr Create(Render::ImageSource&& imageSource) { return new TextureImage(std::move(imageSource)); }
-    static TextureImagePtr Create(Render::ImageSourceCR imageSource) { return Create(Render::ImageSource(imageSource)); }
-    static TextureImagePtr Create(GradientSymbCR gradient);
-    static Render::ImageSource Load(DisplayParamsCR params, DgnDbR db);
-
-    Render::ImageSourceCR GetImageSource() const { return m_imageSource; }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
 struct DisplayParams : RefCountedBase
 {
     friend struct DisplayParamsCache;
 private:
+    enum class IsTextured { Yes, No, Maybe };
+
     Render::GraphicParams           m_graphicParams;
     Render::GeometryParams          m_geometryParams;
-    mutable TextureImagePtr         m_textureImage;
+    mutable Render::TexturePtr      m_texture;
+    mutable IsTextured              m_isTextured;
     bool                            m_ignoreLighting;
     bool                            m_geometryParamsValid;
 
-    DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams) { if (nullptr != geometryParams) m_geometryParams = *geometryParams; }
+    DGNPLATFORM_EXPORT DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting);
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
@@ -127,6 +110,8 @@ private:
         { return Create(graphicParams, &geometryParams, ignoreLighting); }
 
     DisplayParamsCPtr Clone() const;
+
+    DgnTextureCPtr QueryTexture(DgnDbR db) const;
 public:
     static DisplayParamsCPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting=false)
         { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
@@ -146,11 +131,8 @@ public:
     uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
     Render::DgnGeometryClass GetClass() const { return HasGeometryParams() ? GetGeometryParams()->GetGeometryClass() : Render::DgnGeometryClass::Primary; }
 
-    DgnTextureCPtr QueryTexture(DgnDbR db) const;
-    TextureImagePtr& TextureImage() { return m_textureImage; }
-    TextureImageCP GetTextureImage() const { return m_textureImage.get(); }
-    DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
-    bool HasTexture(DgnDbR db) const { return nullptr != GetGradient() || m_textureImage.IsValid() || QueryTexture(db).IsValid(); }
+    DGNPLATFORM_EXPORT bool HasTexture(DgnDbR db) const;
+    DGNPLATFORM_EXPORT Render::TextureP ResolveTexture(DgnDbR db, Render::System const& system) const;
 
     enum class ComparePurpose
     {

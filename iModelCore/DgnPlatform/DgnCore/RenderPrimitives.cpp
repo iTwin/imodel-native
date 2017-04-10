@@ -174,22 +174,18 @@ public:
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureCPtr DisplayParams::QueryTexture(DgnDbR db) const
+DisplayParams::DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting)
+    : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams)
     {
-    DgnMaterialCPtr material = DgnMaterial::Get(db, GetMaterialId());
-    if (material.IsNull())
-        return nullptr;
+    if (nullptr != geometryParams)
+        m_geometryParams = *geometryParams;
 
-    auto& mat = material->GetRenderingAsset();
-    auto texMap = mat.GetPatternMap();
-
-    DgnTextureId texId;
-    if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
-        return nullptr;
-
-    return DgnTexture::Get(db, texId);
+    if (GetMaterialId().IsValid())
+        m_isTextured = IsTextured::Maybe;
+    else
+        m_isTextured = nullptr != GetGradient() ? IsTextured::Yes : IsTextured::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,11 +208,17 @@ template<typename T> static int compareValues(T const& lhs, T const& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) const
     {
+    if (&rhs == this)
+        return false;
+
     if (GetIgnoreLighting() != rhs.GetIgnoreLighting())
         return GetIgnoreLighting();
 
     TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
     TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
+
+    if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
+        return m_isTextured < rhs.m_isTextured;
 
     if (GetGradient() != rhs.GetGradient())
         {
@@ -234,7 +236,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetCategoryId().GetValueUnchecked(), rhs.GetCategoryId().GetValueUnchecked());
     TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked(), rhs.GetSubCategoryId().GetValueUnchecked());
     TEST_LESS_THAN(static_cast<uint32_t>(GetClass()), static_cast<uint32_t>(rhs.GetClass()));
-    TEST_LESS_THAN(GetTextureImage(), rhs.GetTextureImage());
 
     return false;
     }
@@ -246,6 +247,9 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     {
+    if (&rhs == this)
+        return true;
+
     TEST_EQUAL(GetIgnoreLighting());
     TEST_EQUAL(GetRasterWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
@@ -254,6 +258,8 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
         return false;
     else if (nullptr != GetGradient() && GetGradient() != rhs.GetGradient() && !(*GetGradient() == *rhs.GetGradient()))
         return false;
+    else if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
+        return false;
 
     if (ComparePurpose::Merge == purpose)
         return HasTransparency() == rhs.HasTransparency();
@@ -261,7 +267,6 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetFillColor());
     TEST_EQUAL(GetCategoryId().GetValueUnchecked());
     TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
-    TEST_EQUAL(GetTextureImage());
     TEST_EQUAL(GetClass());
 
     return true;
@@ -273,7 +278,8 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
 DisplayParamsCPtr DisplayParams::Clone() const
     {
     DisplayParamsPtr clone = new DisplayParams(GetGraphicParams(), GetGeometryParams(), GetIgnoreLighting());
-    clone->m_textureImage = m_textureImage;
+    clone->m_texture = m_texture;
+    clone->m_isTextured = m_isTextured;
     return clone;
     }
 
@@ -293,49 +299,78 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsCR toFind)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageSource TextureImage::Load(DisplayParamsCR params, DgnDbR db)
+DgnTextureCPtr DisplayParams::QueryTexture(DgnDbR db) const
     {
-    DgnTextureCPtr tex = params.QueryTexture(db);
-    return tex.IsValid() ? tex->GetImageSource() : ImageSource();
+    BeAssert(IsTextured::Maybe == m_isTextured);
+
+    DgnMaterialCPtr material = DgnMaterial::Get(db, GetMaterialId());
+    if (material.IsNull())
+        return nullptr;
+
+    auto& mat = material->GetRenderingAsset();
+    auto texMap = mat.GetPatternMap();
+    if (!texMap.IsValid())
+        return nullptr;
+
+    DgnTextureId texId = texMap.GetTextureId();
+    if (!texId.IsValid())
+        return nullptr;
+
+    return DgnTexture::Get(db, texId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TextureImagePtr TextureImage::Create(GradientSymbCR gradient)
+bool DisplayParams::HasTexture(DgnDbR db) const
     {
-    constexpr size_t size = 0x100;
-    return TextureImage::Create(Render::ImageSource(gradient.GetImage(size, size), Render::ImageSource::Format::Png));
+    if (IsTextured::Maybe != m_isTextured)
+        return IsTextured::Yes == m_isTextured;
+
+    BeAssert(nullptr == GetGradient());
+
+    auto tex = QueryTexture(db);
+
+    m_isTextured = tex.IsValid() ? IsTextured::Yes : IsTextured::No;
+    return IsTextured::Yes == m_isTextured;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
+* @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayParams::ResolveTextureImage(DgnDbR db) const
+Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& system) const
     {
-    if (m_textureImage.IsValid())
-        return;
+    if (IsTextured::No == m_isTextured || m_texture.IsValid())
+        return m_texture.get();
 
-    static BeMutex s_mutex; // Because DisplayParams may be shared across threads...
+    // ###TODO? This will not handle an element with gradient fill and also a textured material. Do people do that?
+    Render::TexturePtr tex;
     if (nullptr != GetGradient())
         {
-        BeMutexHolder lock(s_mutex);
-        if (m_textureImage.IsNull())
-            m_textureImage = TextureImage::Create(*GetGradient());
-
-        return;
+        BeAssert(IsTextured::Yes == m_isTextured);
+        tex = system._GetTexture(*GetGradient(), db);
         }
-
-    ImageSource renderImage  = TextureImage::Load(*this, db);
-
-    if (renderImage.IsValid())
+    else
         {
-        BeMutexHolder lock(s_mutex);
-        if (m_textureImage.IsNull())
-            m_textureImage = TextureImage::Create(std::move(renderImage));
+        // ###TODO: Would be nice to avoid a second lookup here but meh for now...
+        DgnTextureCPtr dgnTex = QueryTexture(db);
+        if (dgnTex.IsValid())
+            tex = system._GetTexture(dgnTex->GetTextureId(), db);
         }
+
+    m_isTextured = tex.IsValid() ? IsTextured::Yes : IsTextured::No;
+    if (IsTextured::No == m_isTextured)
+        return nullptr;
+
+    // DisplayParams potentially cross thread boundaries...need to synchronize on texture-related members
+    static BeMutex s_mutex;
+    BeMutexHolder lock(s_mutex);
+    if (m_texture.IsNull())
+        m_texture = tex;
+
+    return m_texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1547,11 +1582,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
     if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
         Set(m_normals, mesh.Normals());
 
-    // ###TODO_ELEMENT_TILE: We need to ensure we create no more than one Render::Texture for a given DgnTexture or unique GradientSymb...
-    auto const& displayParams = mesh.GetDisplayParams();
-    displayParams.ResolveTextureImage(db);
-    if (nullptr != displayParams.GetTextureImage())
-        m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
+    m_texture = mesh.GetDisplayParams().ResolveTexture(db, system);
 
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);

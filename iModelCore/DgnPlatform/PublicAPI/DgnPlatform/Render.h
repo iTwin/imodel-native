@@ -921,7 +921,7 @@ public:
     void SetShift(double shift) {m_shift = shift;}
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
     ColorDef MapColor(double value) const;
-    Image   GetImage(uint32_t width, uint32_t height) const;
+    DGNPLATFORM_EXPORT Image GetImage(uint32_t width, uint32_t height) const;
 };
 
 //=======================================================================================
@@ -2167,6 +2167,9 @@ struct System
     //! @param[in] textureId the DgnElementId of the texture element
     //! @param[in] db the DgnDb for textureId
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
+
+    //! Get or create a Texture from a GradientSymb. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const = 0;
 
     //! Create a new Texture from an Image.
     virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;

@@ -1279,7 +1279,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
-    bool hasTexture = displayParams.HasTexture(db); // ###TODO: We need to reduce the number of texture/material queries...
+    bool hasTexture = displayParams.HasTexture(db);
 
     MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), true);
     MeshBuilderR builder = GetMeshBuilder(key);
