@@ -36,6 +36,8 @@ DEFINE_REF_COUNTED_PTR(MapRoot)
 //=======================================================================================
 struct  ImageryProvider : RefCountedBase
 {
+    enum class TemplateUrlLoadStatus : int {NotFetched=0, Requested=1, Received=2, Failed=3, Abandoned=4};
+
     // Imagery Providery implementation-specific methods.
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
@@ -71,6 +73,15 @@ struct  ImageryProvider : RefCountedBase
     // Reconstructs the ImageryProvider parameters from the Json that is saved to the model.
     virtual void        _FromJson (Json::Value const& value) = 0;
 
+    // Retrieve the Tile Template Url from the service.
+    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl () { return TemplateUrlLoadStatus::Received; }
+
+    // if a Tile Template Url must be retrieved, return the current status. If none is needed, return "Received"
+    virtual TemplateUrlLoadStatus _GetTemplateUrlLoadStatus () const { return TemplateUrlLoadStatus::Received; }
+
+    // sets the Tile Template Url retrieval status.
+    virtual void _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus) {}
+
 };
 
 DEFINE_REF_COUNTED_PTR(ImageryProvider)
@@ -83,8 +94,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageryProvider)
 //=======================================================================================
 struct MapRoot : TileTree::QuadTree::Root
 {
-    Render::ImageSource::Format m_format;   //! the format of the tile image source
-    Transform                   m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
+    Render::ImageSource::Format m_format;           //! the format of the tile image source
+    Transform                   m_mercatorToWorld;  //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
     ImageryProviderPtr          m_imageryProvider;
 
     DPoint3d ToWorldPoint(GeoPoint);
@@ -123,6 +134,8 @@ struct MapTile : TileTree::QuadTree::Tile
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 {
+    friend struct FetchTemplateUrlProgressiveTask;
+
     DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 public:
@@ -184,6 +197,7 @@ public:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}
+    virtual Utf8CP _GetCopyrightMessage() const override;
 
 };
 
@@ -206,6 +220,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : dgn_ModelHandler::Spatial
 //=======================================================================================
 struct MapBoxImageryProvider : ImageryProvider
     {
+    // the map types available from MapBox
     enum class MapType
         {
         StreetMap = 0,
@@ -252,11 +267,73 @@ public:
 // Bing Imagery Provider
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
-struct BingImageryProvider
+struct BingImageryProvider : ImageryProvider
     {
-    BE_PROP_NAME(BingProvider)
+    // the map types available from Bing
+    enum class MapType
+        {
+        Road = 0,
+        Aerial = 1,
+        AerialWithLabels = 2,
+        };
 
+    BE_PROP_NAME(BingProvider)
+    BE_JSON_NAME(mapType)
+
+
+private:
+    Utf8String                      m_urlTemplate;
+    Utf8String                      m_creditUrl;
+    MapType                         m_mapType = MapType::Road;
+    int                             m_maximumZoomLevel = 0;
+    int                             m_minimumZoomLevel = 19;
+    int                             m_tileWidth = 256;
+    int                             m_tileHeight = 256;
+    BeAtomic<TemplateUrlLoadStatus> m_templateUrlLoadStatus;
+
+public:
+    // constructor used prior to specifying from stored Json values.
+    BingImageryProvider () { m_templateUrlLoadStatus.store (TemplateUrlLoadStatus::NotFetched); }
+
+    // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
+    virtual Utf8CP      _GetProviderName() const override { return prop_BingProvider(); }
+
+    // Gets the message to be displayed to credit provider(s). 
+    virtual Utf8CP      _GetCreditMessage() const override;
+
+    // Gets an URL for the image to be displayed to credit the provider.
+    virtual Utf8CP      _GetCreditUrl() const override;
+
+    // Gets the tile width (usually 256)
+    virtual int         _GetTileWidth () override { return m_tileWidth; }
+
+    // Gets the tile height (usually 256)
+    virtual int         _GetTileHeight() override { return m_tileHeight; }
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMaximumZoomLevel (bool forPrinting) override { return m_maximumZoomLevel; }
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMinimumZoomLevel () override { return m_minimumZoomLevel; }
+
+    // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
+    virtual Utf8CP      _GetCacheFileName() const override;
+
+    // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
+    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile) const override;
+    
+    virtual void        _FromJson(Json::Value const& value) override;
+
+    virtual void        _ToJson (Json::Value&) const override;
+
+    virtual TemplateUrlLoadStatus   _GetTemplateUrlLoadStatus () const override { return m_templateUrlLoadStatus; }
+
+    virtual void                    _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus status) override { m_templateUrlLoadStatus.store (status); }
+
+    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl () override;
     };
+
+DEFINE_REF_COUNTED_PTR(BingImageryProvider)
 
 //=======================================================================================
 // Google Imagery Provider (Here is the successor to NavTeq).
