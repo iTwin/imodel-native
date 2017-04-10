@@ -549,7 +549,7 @@ Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
 
     // from the template url, construct the tile url.
     Utf8String url;
-    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey);
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey.c_str());
 
     return url;
     }
@@ -659,7 +659,7 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             // typical reponse, (LF's added for clarity)
             // {"authenticationResultCode":"ValidCredentials",
             // "brandLogoUri":"http:\/\/dev.virtualearth.net\/Branding\/logo_powered_by.png",
-            // "copyright":"Copyright © 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
+            // "copyright":"Copyright ï¿½ 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
             // "resourceSets":
             //    [{"estimatedTotal":1,
             //      "resources":
