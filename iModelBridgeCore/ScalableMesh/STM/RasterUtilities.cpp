@@ -16,6 +16,7 @@
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+//#include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <ImagePP/all/h/HRFVirtualEarthFile.h>
 
 
@@ -30,9 +31,9 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        //pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        {    
+        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        //pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
 #endif

@@ -191,7 +191,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
-    {
+    {        
     DRange3d total3dRange(DRange3d::NullRange());
     
     for (auto& range : tileRanges)
@@ -200,15 +200,15 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         }        
 
     HFCMatrix<3, 3> transfoMatrix;
-    transfoMatrix[0][0] = (tileRanges[0].high.x - tileRanges[0].low.x) / 1024;
+    transfoMatrix[0][0] = (tileRanges[0].high.x - tileRanges[0].low.x) / 256;
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = total3dRange.low.x;
     transfoMatrix[1][0] = 0;
-    transfoMatrix[1][1] = -(tileRanges[0].high.y - tileRanges[0].low.y) / 1024;
+    transfoMatrix[1][1] = -(tileRanges[0].high.y - tileRanges[0].low.y) / 256;
     transfoMatrix[1][2] = total3dRange.high.y;
     transfoMatrix[2][0] = 0;
     transfoMatrix[2][1] = 0;
-    transfoMatrix[2][2] = 1;
+    transfoMatrix[2][2] = 1;    
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
 
@@ -219,9 +219,17 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         pTransfoModel = pSimplifiedModel;
     }
 
+    DPoint2d lowInPixels; 
+    DPoint2d highInPixels;
+
+    pTransfoModel->ConvertInverse(total3dRange.low.x, total3dRange.low.y, &lowInPixels.x, &lowInPixels.y);
+    pTransfoModel->ConvertInverse(total3dRange.high.x, total3dRange.high.y, &highInPixels.x, &highInPixels.y);
+
     HFCPtr<HGF2DCoordSys> coordSys(new HGF2DCoordSys(*pTransfoModel, m_raster->GetCoordSys()));
 
-    HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
+    HVEShape shape(lowInPixels.x, highInPixels.y, highInPixels.x, lowInPixels.y, coordSys);
+
+    //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
             
     //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
     uint32_t consumerID = 1;
