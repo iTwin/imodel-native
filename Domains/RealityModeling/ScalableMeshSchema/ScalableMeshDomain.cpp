@@ -40,7 +40,7 @@ ScalableMeshDomain::SchemaOperation ScalableMeshDomain::SchemaOperationNeeded(Dg
     auto smDomainCP = db.Domains().FindDomain(BENTLEY_SCALABLEMESH_SCHEMA_NAME);
 
     if (!smDomainCP)
-        return SchemaOperation::Undetermined;
+        return SchemaOperation::None;
 
     // Ignoring VersionDigit2 as it is not completely hooked-up in DgnDb06 by lower layers
     Statement stmt;
