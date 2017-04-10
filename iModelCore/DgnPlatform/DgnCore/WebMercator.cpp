@@ -508,7 +508,7 @@ Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String   TileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
+static Utf8String   tileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
     {
     // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
     Utf8String  quadKey;
@@ -539,7 +539,7 @@ Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
     // From the tile, get a "quadkey" the Microsoft way.
     int x = tile.GetColumn();
     int y = tile.GetRow();
-    Utf8String  quadKey = TileXYToQuadKey (x, y, tile.GetZoomLevel());
+    Utf8String  quadKey = tileXYToQuadKey (x, y, tile.GetZoomLevel());
     int subdomain = (x + y) % 4;
 
     // from the template url, construct the tile url.
@@ -727,19 +727,21 @@ namespace WebMercator
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct FetchTemplateUrlProgressiveTask : ProgressiveTask 
     {
-    folly::Future<ImageryProvider::TemplateUrlLoadStatus>&  m_future;
+    folly::Future<ImageryProvider::TemplateUrlLoadStatus>   m_future;
     WebMercatorModelCPtr                                    m_model;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Barry.Bentley                   04/17
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>& future, WebMercatorModel const* model) : m_future(future), m_model (model) {}
+    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>&& future, WebMercatorModel const* model) : m_future(std::move(future)), m_model (model) {}
 
     ~FetchTemplateUrlProgressiveTask () 
         {
         // The progressive display is deleted if the view is closed.
         // If the request is still outstanding, then set it back to "NotFetched"
-        m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
+        ImageryProvider::TemplateUrlLoadStatus status = m_model->m_provider->_GetTemplateUrlLoadStatus();
+        if (ImageryProvider::TemplateUrlLoadStatus::Requested == status)
+            m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -801,14 +803,14 @@ void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
         return;
 
     folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
-    if (ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
+    if (!future.isReady() || ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
         {
         for (;;)
             {
             if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
                 {
                 // don't have the tile template yet, schedule a progressive pass to get it.
-                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (future, this));
+                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (std::move(future), this));
                 return;
                 }
             else
