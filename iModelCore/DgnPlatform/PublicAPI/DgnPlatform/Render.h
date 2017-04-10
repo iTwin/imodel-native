@@ -906,6 +906,7 @@ public:
 
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(GradientSymbCR rhs) const;
 
     uint32_t GetNKeys() const {return m_nKeys;}
     Mode GetMode() const {return m_mode;}

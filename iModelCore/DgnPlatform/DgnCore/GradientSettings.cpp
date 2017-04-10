@@ -74,6 +74,38 @@ bool GradientSymb::operator==(GradientSymbCR rhs) const
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::operator<(GradientSymbCR rhs) const
+    {
+    if (&rhs == this)
+        return false;
+    else if (m_mode != rhs.m_mode)
+        return m_mode < rhs.m_mode;
+    else if (m_flags != rhs.m_flags)
+        return m_flags < rhs.m_flags;
+    else if (m_nKeys != rhs.m_nKeys)
+        return m_nKeys < rhs.m_nKeys;
+    else if (m_angle != rhs.m_angle)
+        return m_angle < rhs.m_angle;
+    else if (m_tint != rhs.m_tint)
+        return m_tint < rhs.m_tint;
+    else if (m_shift != rhs.m_shift)
+        return m_shift < rhs.m_shift;
+
+    int nKeys = m_nKeys > MAX_GRADIENT_KEYS ? MAX_GRADIENT_KEYS : m_nKeys;
+    for (int i = 0; i < nKeys; i++)
+        {
+        if (m_values[i] != rhs.m_values[i])
+            return m_values[i] < rhs.m_values[i];
+        else if (m_colors[i] != rhs.m_colors[i])
+            return m_colors[i].GetValue() < rhs.m_colors[i].GetValue();
+        }
+
+    return false;
+    }
+
 static Byte roundToByte(double f) { return (Byte) std::min (f + .5, 255.0); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -110,8 +142,9 @@ ColorDef GradientSymb::MapColor(double value) const
     double          red     = w0 * (double) color0.GetRed()   + w1 * (double) color1.GetRed();
     double          green   = w0 * (double) color0.GetGreen() + w1 * (double) color1.GetGreen();
     double          blue    = w0 * (double) color0.GetBlue()  + w1 * (double) color1.GetBlue();
+    double          alpha   = w0 * (double) color0.GetAlpha() + w1 * (double) color1.GetAlpha();
 
-    return ColorDef(roundToByte(red), roundToByte(green), roundToByte(blue), 0xff);
+    return ColorDef(roundToByte(red), roundToByte(green), roundToByte(blue), 0xff - roundToByte(alpha));
     }
 
 /*---------------------------------------------------------------------------------**//**
