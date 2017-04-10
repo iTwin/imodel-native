@@ -181,7 +181,7 @@ Utf8StringCR DgnDbServerError::GetDefaultMessage(DgnDbServerError::Id id)
 
         map[Id::RepositoryIsNotInitialized] = DgnDbServerErrorLocalizedString(MESSAGE_RepositoryIsNotInitialized);
 
-        map[Id::FileIsNotInitializedYet] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsNotInitializedYet);
+        map[Id::FileIsNotYetInitialized] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsNotYetInitialized);
         map[Id::FileIsOutdated] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsOutdated);
         map[Id::FileHasDifferentId] = DgnDbServerErrorLocalizedString(MESSAGE_FileHasDifferentId);
         map[Id::FileInitializationFailed] = DgnDbServerErrorLocalizedString(MESSAGE_FileInitializationFailed);
