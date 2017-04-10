@@ -268,10 +268,10 @@ void ListCmd()
         // Filters ?
         if (s_option & (OptFilterOwner))
             {
-            bvector<Utf8String> filter1 = bvector<Utf8String>();
+            bvector<RDSFilter> filter1 = bvector<RDSFilter>();
             
             filter1.push_back(RealityDataFilterCreator::FilterByOwner(s_filterOwner));
-            Utf8String filters = RealityDataFilterCreator::GroupFiltersOR(filter1);
+            RDSFilter filters = RealityDataFilterCreator::GroupFiltersOR(filter1);
 
             enterpriseReq->SetFilter(filters);
             }

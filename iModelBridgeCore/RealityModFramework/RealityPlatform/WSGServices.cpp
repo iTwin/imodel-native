@@ -362,6 +362,28 @@ void WSGURL::EncodeId() const
     m_id = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
+WSGURL& WSGURL::operator=(WSGURL const & object)
+    {
+    if(&object != this)
+        {
+        m_serverName = object.m_serverName;
+        m_version = object.m_version;
+        m_schema = object.m_schema;
+        m_className = object.m_className;
+        m_interface = object.m_interface;
+        m_repoId = object.m_repoId;
+        m_id = object.m_id;
+        m_objectContent = object.m_objectContent;
+
+        m_validRequestString = object.m_validRequestString;
+        m_httpRequestString = object.m_httpRequestString;
+        m_requestPayload = object.m_requestPayload;
+        m_requestHeader = object.m_requestHeader;
+        m_requestType = object.m_requestType;
+        }
+    return *this;
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
@@ -390,7 +412,7 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         if (jsonObject["properties"].isMember("Label") && !jsonObject["properties"]["Label"].isNull())
             m_label = jsonObject["properties"]["Label"].asCString();
         }
-    if(rootNode.length() == 0) //navRoot
+    if(rootNode.empty()) //navRoot
         {
         m_rootNode = m_navString;
         m_rootId = m_instanceId;
