@@ -493,7 +493,7 @@ void RealityDataConsole::ListRoots()
     {
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
-    bvector<Utf8String> properties = bvector<Utf8String>();
+    bvector<RDSFilter> properties = bvector<RDSFilter>();
     if (m_nameFilter.length() > 0)
         properties.push_back(RealityDataFilterCreator::FilterByName(m_nameFilter));
     if (m_groupFilter.length() > 0)
@@ -926,7 +926,6 @@ void RealityDataConsole::ChangeProps()
 
     Utf8String input;
     DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
-    bmap<RealityDataField, Utf8String> props = bmap<RealityDataField, Utf8String>();
     std::string str;
     Utf8String propertyString = "";
     Utf8String value;

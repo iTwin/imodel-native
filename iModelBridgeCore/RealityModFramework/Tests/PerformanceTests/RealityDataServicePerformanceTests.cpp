@@ -724,7 +724,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
 
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
-    bvector<Utf8String> properties = bvector<Utf8String>();
+    bvector<RDSFilter> properties = bvector<RDSFilter>();
     properties.push_back(RealityDataFilterCreator::FilterByName("ONLY"));
 
     enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
@@ -767,7 +767,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon()
 
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
-    bvector<Utf8String> properties = bvector<Utf8String>();
+    bvector<RDSFilter> properties = bvector<RDSFilter>();
     properties.push_back(RealityDataFilterCreator::FilterSpatial(myFootprint, 4326));
 
     enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));

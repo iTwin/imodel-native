@@ -83,7 +83,17 @@
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
     </Part>
-
+    
+    <Part Name="RDSLoadTest" BentleyBuildMakeFile="RealityAdmin\RDSLoadTester\RDSLoadTest.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <Bindings>
+            <Assemblies>Delivery/RDSLoadTest.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
         <SubPart PartName="WMSCapabilitiesNET"/>
@@ -261,6 +271,7 @@
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="RealityContextTest"/>
+        <SubPart PartName="RDSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
     </Part>
 

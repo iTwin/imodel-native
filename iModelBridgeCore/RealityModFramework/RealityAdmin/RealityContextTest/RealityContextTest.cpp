@@ -119,7 +119,7 @@ void Dispatch(UserManager* manager)
         int sleep = rand();
         if(!hatching)
             {
-            sleep %= (int)(2200 * (1.0f - (innactiveUsers/userCount)));
+            sleep %= 1 + (int)(2200 * (1.0f - (innactiveUsers/userCount)));
             if(s_keepRunning)
                 s_stats.PrintStats();
             }

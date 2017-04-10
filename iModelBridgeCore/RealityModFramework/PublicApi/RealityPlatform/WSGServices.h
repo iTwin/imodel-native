@@ -65,8 +65,8 @@ public:
     RawServerResponse():responseCode(-1), curlCode(ServerType::WSG), status(RequestStatus::UNSENT),
     header(Utf8String()), body(Utf8String()){}
 
-    RequestStatus ValidateResponse();
-    RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
+    REALITYDATAPLATFORM_EXPORT RequestStatus ValidateResponse();
+    REALITYDATAPLATFORM_EXPORT RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
 
     void clear() {header.clear(); body.clear(); responseCode = -1; curlCode=ServerType::WSG; status = RequestStatus::UNSENT;}
 
@@ -193,9 +193,18 @@ public:
         return m_requestHeader;
         }
 
+    REALITYDATAPLATFORM_EXPORT virtual Utf8String GetRequestHeaders() const
+        {
+        bvector<Utf8String> const & headers = GetRequestHeader();
+        Utf8String headerString = "";
+        for(Utf8String header : headers)
+            headerString.append(Utf8PrintfString("%s\t", header));
+        return headerString;
+        }
+
     WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_interface(WSGInterface::Repositories), m_objectContent(false) {}
     WSGURL(WSGURL const& object);
-    WSGURL& operator=(WSGURL const & object);
+    REALITYDATAPLATFORM_EXPORT WSGURL& operator=(WSGURL const & object);
 
 protected:
     //! Function to url encode the id, depending on which server is receiving it
@@ -353,7 +362,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT virtual ~WSGPagedRequest() {}
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(WSGPagedRequest const& object);
-    REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object);
+    REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object) { if(&object != this){WSGURL::operator=(object);  m_startIndex = object.m_startIndex; m_pageSize = object.m_pageSize; } return *this;}
 
     //! Get/Set the page size. It must be greater or equal to 1 
     REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
