@@ -328,7 +328,7 @@ public:
 
     virtual TemplateUrlLoadStatus   _GetTemplateUrlLoadStatus () const override { return m_templateUrlLoadStatus; }
 
-    virtual void                    _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus status) { m_templateUrlLoadStatus.store (status); }
+    virtual void                    _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus status) override { m_templateUrlLoadStatus.store (status); }
 
     virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl () override;
     };

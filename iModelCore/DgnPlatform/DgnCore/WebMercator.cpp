@@ -544,7 +544,7 @@ Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
 
     // from the template url, construct the tile url.
     Utf8String url;
-    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey);
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey.c_str());
 
     return url;
     }
