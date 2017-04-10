@@ -218,6 +218,12 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
     TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
 
+    if (GetGradient() != rhs.GetGradient())
+        {
+        if (nullptr == GetGradient() || nullptr == rhs.GetGradient() || !(*GetGradient() == *rhs.GetGradient()))
+            return GetGradient() < rhs.GetGradient();
+        }
+
     if (ComparePurpose::Merge == purpose)
         {
         // We can merge meshes of differing colors, but can't mix opaque with translucent
@@ -243,6 +249,11 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetIgnoreLighting());
     TEST_EQUAL(GetRasterWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+
+    if ((nullptr == GetGradient()) != (nullptr == rhs.GetGradient()))
+        return false;
+    else if (nullptr != GetGradient() && GetGradient() != rhs.GetGradient() && !(*GetGradient() == *rhs.GetGradient()))
+        return false;
 
     if (ComparePurpose::Merge == purpose)
         return HasTransparency() == rhs.HasTransparency();
@@ -291,6 +302,15 @@ ImageSource TextureImage::Load(DisplayParamsCR params, DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TextureImagePtr TextureImage::Create(GradientSymbCR gradient)
+    {
+    constexpr size_t size = 0x100;
+    return TextureImage::Create(Render::ImageSource(gradient.GetImage(size, size), Render::ImageSource::Format::Png));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayParams::ResolveTextureImage(DgnDbR db) const
@@ -298,9 +318,18 @@ void DisplayParams::ResolveTextureImage(DgnDbR db) const
     if (m_textureImage.IsValid())
         return;
 
+    static BeMutex s_mutex; // Because DisplayParams may be shared across threads...
+    if (nullptr != GetGradient())
+        {
+        BeMutexHolder lock(s_mutex);
+        if (m_textureImage.IsNull())
+            m_textureImage = TextureImage::Create(*GetGradient());
+
+        return;
+        }
+
     ImageSource renderImage  = TextureImage::Load(*this, db);
 
-    static BeMutex s_mutex; // Because DisplayParams may be shared across threads...
     if (renderImage.IsValid())
         {
         BeMutexHolder lock(s_mutex);
@@ -832,7 +861,7 @@ size_t GeomPart::GetFacetCount(FacetCounter& counter, GeometryCR instance) const
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db)
-    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.QueryTexture(db).IsValid())
+    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.HasTexture(db))
     {
     }
 
@@ -1236,7 +1265,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
                 continue;
 
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
-            bool hasTexture = displayParams.IsValid() && displayParams->QueryTexture(GetDgnDb()).IsValid();
+            bool hasTexture = displayParams.IsValid() && displayParams->HasTexture(GetDgnDb());
 
             MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), true);
 
@@ -1518,6 +1547,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
     if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
         Set(m_normals, mesh.Normals());
 
+    // ###TODO_ELEMENT_TILE: We need to ensure we create no more than one Render::Texture for a given DgnTexture or unique GradientSymb...
     auto const& displayParams = mesh.GetDisplayParams();
     displayParams.ResolveTextureImage(db);
     if (nullptr != displayParams.GetTextureImage())

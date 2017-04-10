@@ -97,6 +97,7 @@ private:
 public:
     static TextureImagePtr Create(Render::ImageSource&& imageSource) { return new TextureImage(std::move(imageSource)); }
     static TextureImagePtr Create(Render::ImageSourceCR imageSource) { return Create(Render::ImageSource(imageSource)); }
+    static TextureImagePtr Create(GradientSymbCR gradient);
     static Render::ImageSource Load(DisplayParamsCR params, DgnDbR db);
 
     Render::ImageSourceCR GetImageSource() const { return m_imageSource; }
@@ -141,6 +142,7 @@ public:
     DgnMaterialId GetMaterialId() const { return HasGeometryParams() ? GetGeometryParams()->GetMaterialId() : DgnMaterialId(); }
     ColorDef GetFillColorDef() const { return GetGraphicParams().GetFillColor(); }
     uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
+    GradientSymbCP GetGradient() const { return GetGraphicParams().GetGradientSymb(); }
     uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
     Render::DgnGeometryClass GetClass() const { return HasGeometryParams() ? GetGeometryParams()->GetGeometryClass() : Render::DgnGeometryClass::Primary; }
 
@@ -148,6 +150,7 @@ public:
     TextureImagePtr& TextureImage() { return m_textureImage; }
     TextureImageCP GetTextureImage() const { return m_textureImage.get(); }
     DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
+    bool HasTexture(DgnDbR db) const { return nullptr != GetGradient() || m_textureImage.IsValid() || QueryTexture(db).IsValid(); }
 
     enum class ComparePurpose
     {
