@@ -13,6 +13,7 @@ HANDLER_DEFINE_MEMBERS(ModelHandler)
 
 USING_NAMESPACE_TILETREE
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -22,14 +23,14 @@ BentleyStatus Scene::ReadSceneFile()
 
     if (IsHttp())
         {
-        TileTree::HttpDataQuery query(m_rootResource, nullptr);
+        TileTree::HttpDataQuery query(m_sceneFile, nullptr);
         query.Perform().wait();
 
         rootStream = std::move(query.GetData());
         }
     else
         {
-        TileTree::FileDataQuery query(m_rootResource, nullptr);
+        TileTree::FileDataQuery query(m_sceneFile, nullptr);
         rootStream = std::move(query.Perform().get());
         }
 
