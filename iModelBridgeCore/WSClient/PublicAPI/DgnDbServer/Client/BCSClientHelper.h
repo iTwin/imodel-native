@@ -63,12 +63,22 @@ private:
     IJsonLocalState* m_localState;
     WebServices::ClientInfoPtr m_clientInfo;
     WebServices::ConnectSignInManagerPtr m_signinMgr;
+    static BCSClientHelper* s_instance;
+    static BeMutex s_mutex;
 
     static Utf8CP str_BentleyConnectGlobal() {return "BentleyCONNECT.Global--CONNECT.GLOBAL";}
 
-public:
     //! Construct the helper
     BCSClientHelper(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr) : m_clientInfo(clientInfo), m_localState(ls) {}
+public:
+    //! Create or update the singleton instance.
+    //! @param clientInfo Client information.
+    //! @param ls Local storage.
+    //! @return the singleton instance.
+    DGNDBSERVERCLIENT_EXPORT static BCSClientHelper* Initialize(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr);
+
+    //! Get the singleton instance
+    DGNDBSERVERCLIENT_EXPORT static BCSClientHelper* GetInstance();
 
     //! Sign in
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
