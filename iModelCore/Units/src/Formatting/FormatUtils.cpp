@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -1153,7 +1153,87 @@ void QuantityFraction::SetUom(bool set)
     m_traits = static_cast<NumSequenceTraits>(temp);
     }
 
+void QuantityFraction::Detect(Utf8CP txt)
+    {
+    Init();
+    int phase = 0;
+    while (m_problem.NoProblem())
+        {
+        switch (phase)
+            {
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+            default:
+                break;
+            }
+        }
+    }
 
+//===================================================
+//
+// CodepointBuffer
+//
+//===================================================
+void CodepointBuffer::Release()
+    {
+    if (nullptr != m_buff.bytes)
+        delete m_buff.bytes;
+    m_lastIndex = -1;
+    m_size = CodepointSize::Zero;
+    m_capacity = 0;
+    m_bufSize = 0;
+    m_buff.ptr = nullptr;
+    }
+
+void CodepointBuffer::Reset(CodepointSize cps, size_t capacity)
+    {
+    if (nullptr != m_buff.bytes)
+        delete m_buff.bytes;
+    m_lastIndex = -1;
+    if (0 == capacity)
+        {
+        m_size = CodepointSize::Zero;
+        m_capacity = 0;
+        m_bufSize = 0;
+        m_buff.ptr = nullptr;
+        }
+    else
+        {
+        m_size = cps;
+        m_capacity = capacity;
+        m_bufSize = (m_capacity + 1)* SizeToInt(m_size);  // extra bytes for terminating zero
+        m_buff.ptr = new char[m_bufSize];
+        }
+    }
+
+Utf8P CodepointBuffer::AppendByte(Utf8Char symb)
+    {
+    if (m_lastIndex < m_capacity)
+        m_buff.bytes[++m_lastIndex] = symb;
+    return  GetByteBuffer();
+    }
+
+uint32_t* CodepointBuffer::AppendSymbol(uint32_t symb)
+    {
+    if (m_lastIndex < m_capacity)
+        m_buff.longs[++m_lastIndex] = symb;
+    return  GetLongBuffer();
+    }
+
+uint16_t* CodepointBuffer::AppendSymbol(uint16_t symb)
+    {
+    if (m_lastIndex < m_capacity)
+        m_buff.shorts[++m_lastIndex] = symb;
+    return GetShortBuffer();
+    }
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

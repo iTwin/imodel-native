@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 

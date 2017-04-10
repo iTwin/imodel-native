@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Formatting/Formatting.h $
+|     $Source: PublicAPI/Formatting/FormattingApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,6 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include <Formatting/FormattingDefinitions.h>
+#include <Formatting/FormattingEnum.h>
+#include <Formatting/FormattingParsing.h>
 #include <Units/Units.h>
 
 namespace BEU = BentleyApi::Units;
@@ -25,261 +27,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
+//DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
-//===================================================
-//
-// Enumerations
-//
-//===================================================
 
-enum class ParameterCode
-    {
-    FormatName = 50,
-    NoSign = 101,
-    OnlyNegative = 102,
-    SignAlways = 103,
-    NegativeParenths = 104,
-    Decimal = 151,
-    Fractional = 152,
-    Scientific = 153,
-    ScientificNorm = 154,
-    Binary = 155,
-    DefaultZeroes = 201,
-    LeadingZeroes = 202,
-    TrailingZeroes = 203,
-    KeepSingleZero = 204,
-    KeepDecimalPoint = 205,
-    ExponentZero = 206,
-    ZeroEmpty = 207,    // formatter will return the empy string if the result is 0
-    DecPrec0 =  300,
-    DecPrec1 =  301,
-    DecPrec2 =  302,
-    DecPrec3 =  303,
-    DecPrec4 =  304,
-    DecPrec5 =  305,
-    DecPrec6 =  306,
-    DecPrec7 =  307,
-    DecPrec8 =  308,
-    DecPrec9 =  309,
-    DecPrec10 = 310,
-    DecPrec11 = 311,
-    DecPrec12 = 312,
-    FractPrec1 = 331,
-    FractPrec2 = 332,
-    FractPrec4 = 333,
-    FractPrec8 = 334,
-    FractPrec16 = 335,
-    FractPrec32 = 336,
-    FractPrec64 = 337,
-    FractPrec128 = 338,
-    FractPrec256 = 339,
-    DecimalComma = 351,
-    DecimalPoint = 352,
-    DecimalSepar = 353,
-    ThousandSepComma = 354,
-    ThousandSepPoint = 355,
-    ThousandsSepar = 356,
-    RoundUp = 401,
-    RoundDown = 402,
-    RoundToward0 = 403,
-    RoundAwayFrom0 = 404,
-    FractBarHoriz = 451,
-    FractBarOblique = 452,
-    FractBarDiagonal = 453,
-    AngleRegular = 501,
-    AngleDegMin = 502,
-    AngleDegMinSec = 503,
-    PaddingSymbol = 504,
-    BoudaryLen = 601,
-    CenterAlign = 620,
-    LeftAlign = 621,
-    RightAlign = 622,
-    MapName = 651,
-    };
-
-enum class ParameterDataType
-    {
-    Flag = 0,
-    BitFlag = 1,
-    Integer = 2,
-    Double = 3,
-    Symbol = 4,
-    String = 5
-    };
-
-enum class RoundingType
-    {
-    RoundUp = 1,
-    RoundDown = 2,
-    RoundToward0 = 3,
-    RoundAwayFrom0 = 4
-    };
-
-enum class FractionBarType
-    {
-    None = 0,
-    Oblique = 1,
-    Horizontal = 2,
-    Diagonal = 3
-    };
-
-enum class AngleFormatType
-    {
-    AngleRegular = 0,
-    AngleDegMin = 1,
-    AngleDegMinSec = 2
-    };
-
-enum class FieldAlignment
-    {
-    Center = 0,
-    Left = 1,
-    Right = 2
-    };
-
-enum class ShowSignOption
-    {
-    NoSign = 0,
-    OnlyNegative = 1,
-    SignAlways = 2,
-    NegativeParentheses = 3
-    };
-
-enum class PresentationType
-    {
-    Decimal = 1,
-    Fractional = 2,
-    Scientific = 3,      // scientific with 1 digit before the decimal point
-    ScientificNorm = 4   // normalized scientific when Mantissa is < 1
-    };
-
-enum class FormatTraits: int
-    {
-    DefaultZeroes = 0,
-    LeadingZeroes = 0x1,
-    TrailingZeroes = 0x2,
-    KeepDecimalPoint = 0x4,
-    KeepSingleZero = 0x8,
-    ExponentZero = 0x10,
-    ZeroEmpty = 0x20,
-    Use1000Separator = 0x40,
-    ApplyRounding = 0x80
-    };
-
-enum class NumSequenceTraits
-    {
-    None = 0,
-    Signed = 0x1,
-    DecPoint = 0x2,
-    Exponent = 0x4,
-    Uom = 0x8
-    };
-enum class DecimalPrecision
-    {
-    Precision0 = 0,
-    Precision1 = 1,
-    Precision2 = 2,
-    Precision3 = 3,
-    Precision4 = 4,
-    Precision5 = 5,
-    Precision6 = 6,
-    Precision7 = 7,
-    Precision8 = 8,
-    Precision9 = 9,
-    Precision10 = 10,
-    Precision11 = 11,
-    Precision12 = 12
-    };
-
-enum class FractionalPrecision
-    {
-    Whole = 0,       //!< Ex. 30
-    Half = 1,        //!< Ex. 30 1/2
-    Quarter = 2,      //!< Ex. 30 1/4
-    Eighth = 3,      //!< Ex. 30 1/8
-    Sixteenth = 4,      //!< Ex. 30 1/16
-    Over_32 = 5,      //!< Ex. 30 1/32
-    Over_64 = 6,      //!< Ex. 30 1/64
-    Over_128 = 7,      //!< Ex. 30 1/128
-    Over_256 = 8,      //!< Ex. 30 1/256
-    };
-
-enum class ParameterCategory
-    {
-    DataType = 1,
-    Sign = 2,
-    Presentation = 3,
-    Zeroes = 4,
-    DecPrecision = 6,
-    FractPrecision = 7,
-    RoundType = 8,
-    FractionBar = 9,
-    AngleFormat = 10,
-    Alignment = 11,
-    Separator = 12,
-    Padding = 13,
-    Mapping = 14
-    };
-
-enum class ScannerCursorStatus
-    {
-    Success = 0,
-    InvalidSymbol = 1,
-    IncompleteSequence = 2
-    };
-
-//! Codes of problems might help in finding the source of the problem
-enum class FormatProblemCode
-    {
-    NoProblems = 0,
-    UnknownStdFormatName = 20011,
-    UnknownUnitName = 20012,
-    CNS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
-    CNS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
-    CNS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
-    CNS_InvalidUnitName = 20054,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
-    CNS_InvalidMajorUnit = 20055,       //!< The MajorUnit in ComboNumbers is null or invalid
-    QT_PhenomenonNotDefined = 20101,
-    QT_PhenomenaNotSame = 20102,
-    QT_InvalidTopMidUnits = 20103,
-    QT_InvalidMidLowUnits = 20104,
-    QT_InvalidUnitCombination = 20105,
-    FUS_InvalidSyntax = 20151,
-    NFS_InvalidSpecName = 20161,
-    NFS_DuplicateSpecName = 20162
-    };
-
-enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
-    {
-    Undefined  = 0,
-    Notice  = 1,
-    Warning = 10000,
-    Critical = 20000
-    };
-
-//! Type of the ComboSpec describes one of allowable value transformations
-enum class CompositeSpecType
-    {
-    Undefined = 0, //!< program failes to infer the type (default)
-    Single = 1,    //!< trivial case when Combo effectively is not used - not prohibited though
-    Double = 2,    //!< indicates of using 2 levels: Major and Middle
-    Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
-    Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
-    };
-
-enum class FormatSpecType
-    {
-    Undefined = 0,
-    Numeric = 1,   // a pure numeric Spec
-    Composite = 2      // a composite spec is also defined (numeric spec is implied)
-    };
 
 struct Utils
     {
@@ -741,7 +494,6 @@ public:
     bool IsProblem() { return m_problem.IsProblem(); }
     };
 
-
 //=======================================================================================
 // Container for keeping together primary numeric, composite and other types of specs
 //  and referrring them by the unique name. Name and at the valid numeric spec are required
@@ -974,130 +726,6 @@ public:
     UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecCP format);
     };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct FormatCursorDetail
-    {
-private:
-    size_t m_totalScanLength; // this is the total length of the byte sequence that ought to be scanned/parsed
-    size_t m_cursorPosition;  // the index of the next byte to be scanned
-    size_t m_lastScannedCount;   // the number of bytes processed in the last step
-    size_t m_uniCode;
-
-    void Init() { m_totalScanLength = 0; m_cursorPosition = 0; m_lastScannedCount = 0; m_uniCode = 0; }
-public:
-
-    };
-
-struct FormattingDividers
-    {
-    // only 32 ASCII characters are regarded as allowable dividers in all formatting related text strings and expressions
-    //  Their ASCII codes are quite stable and not going to change for the foreseeable future. The simplest and fastest 
-    //   approach for marking dividers/stopperswill be creating an array of 128 bit flags occupying 128/8=16 bytes (or two doubles)
-    //    Each bit in this array marks the code point that is considered as a astopper. This approach is also very flexible 
-    //   since it will allow to directly control what is and what is not included into the set of stoppers.
-    private:
-        char m_markers[16];
-    public:
-        UNITS_EXPORT FormattingDividers(Utf8CP div);
-        UNITS_EXPORT FormattingDividers(FormattingDividersCR other);
-        UNITS_EXPORT bool IsDivider(char c);
-        CharCP GetMarkers() const { return m_markers; }
-
-    };
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct FormattingScannerCursor
-    {
-private:
-    Utf8String m_text;           // pointer to the head of the string
-    size_t m_totalScanLength;    // this is the total length of the byte sequence that ought to be scanned/parsed
-    size_t m_cursorPosition;     // the index of the next byte to be scanned
-    size_t m_lastScannedCount;   // the number of bytes processed in the last step
-    size_t m_uniCode;
-    FormattingDividers m_dividers;
-    //union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
-    bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
-    UnicodeConstantP m_unicodeConst; // reference to constants and character processors
-    ScannerCursorStatus m_status;
-    size_t m_effectiveBytes;
-    char m_temp;
-
-    // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
-    // returns the physical index of the same array adjusted by endianness. The little endian is default 
-    //  and the index will be returned unchaged. This function does not check if supplied 
-    size_t TrueIndex(size_t index, size_t wordSize);
-    int AddTrailingByte();
-    size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
-    //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
-    
-
-public:
-    //! Construct a cursor attached to the given Utf8 string 
-   // FormattingScannerCursor();
-    UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div=nullptr);
-    UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
-    UnicodeConstant* GetConstants() { return m_unicodeConst; }
-    size_t GetCurrentPosition() { return m_cursorPosition; }
-    UNITS_EXPORT size_t GetNextSymbol();
-    UNITS_EXPORT size_t GetNextCodePoint();
-    bool IsError() { return (m_status != ScannerCursorStatus::Success); }
-    bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
-    ScannerCursorStatus GetOperationStatus() { return m_status;}
-    bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
-    bool IsASCII() { return m_isASCII; }
-    UNITS_EXPORT int CodePointCount();
-    UNITS_EXPORT void Rewind();
-    size_t GetUnicode() { return m_uniCode; }
-    size_t GetLastScanned() { return m_lastScannedCount; }
-    UNITS_EXPORT size_t SkipBlanks();
-    UNITS_EXPORT Utf8String SelectKeyWord();
-    void SetDividers(CharCP div) { m_dividers = FormattingDividers(div); }
-    bool IsDivider() { return m_isASCII ? m_dividers.IsDivider((char)(m_uniCode & 0x7F)) : false; }
-    size_t GetEffectiveBytes() { return m_effectiveBytes; }
-    UNITS_EXPORT FormattingWord ExtractWord();
-    };
-
-struct FormattingWord
-    {
-private:
-    static const int maxDelim = 4;   // the maximum number of ASCII characters in the delimiting group/clause
-    FormattingScannerCursorP m_cursor;  // just a reference to the cursor that has been used
-    Utf8String m_word;
-    Utf8Char m_delim[maxDelim+2];
-    bool m_isASCII;
-public:
-    UNITS_EXPORT FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii);
-    Utf8String GetWord() { return m_word; }
-    Utf8Char GetDelim() { return m_delim[0]; }
-    Utf8CP GetText() { return m_word.c_str(); }
-    bool IsDelimeterOnly() { return ((0 == m_word.length()) && (0 != m_delim[0])); }
-    bool IsEndLine() { return ((0 == m_word.length()) && (0 == m_delim[0])); }
-    bool IsSeparator() { return ((0 == m_word.length()) && (',' == m_delim[0] || ' ' == m_delim[0])); }
-    };
-
-struct FormattingToken
-    {
-private:
-    FormattingScannerCursorP m_cursor;
-    size_t m_tokenLength;    // this is the number of logical symbols
-    size_t m_tokenBytes;     // this is the number of bytes containing the token
-    size_t m_cursorStart;    // the index of the first byte in token
-    bvector<size_t> m_word;
-    bvector<size_t> m_delim;
-    bool m_isASCII;
-    UNITS_EXPORT void Init();
-
-public:
-    UNITS_EXPORT FormattingToken(FormattingScannerCursorP cursor);
-    UNITS_EXPORT WCharCP GetNextTokenW();
-    UNITS_EXPORT CharCP GetASCII();
-    UNITS_EXPORT Utf8Char GetDelimeter();
-    };
-
 struct FormatStopWatch
     {
 private:
@@ -1125,9 +753,7 @@ private:
     Utf8String m_uomName;
     BEU::UnitCP m_unit;
     FormatProblemDetail m_problem;
-
-public:
-    QuantityFraction()
+    void Init()
         {
         m_traits = NumSequenceTraits::None;
         m_dval = 0.0;
@@ -1139,6 +765,8 @@ public:
         m_problem = FormatProblemDetail();
         }
 
+public:
+    QuantityFraction() { Init();  }
     UNITS_EXPORT void SetSigned(bool use);
     bool IsSigned() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Signed)) != 0); }
     UNITS_EXPORT void SetDecPoint(bool use);

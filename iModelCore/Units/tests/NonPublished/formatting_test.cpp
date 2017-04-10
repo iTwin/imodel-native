@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 #include <Units/UnitRegistry.h>
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
@@ -54,6 +54,14 @@ TEST(FormattingTest, Preliminary)
    
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
+
+    FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
+    FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
+    LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
+    LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
+    BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
+    Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
+    LOG.infov("TONNE_PER_HR-System  %s", sysN);
     }
 
 TEST(FormattingTest, PhysValues)
@@ -398,7 +406,7 @@ TEST(FormattingTest, Simple)
     EXPECT_EQ(2, FormatConstant::GetSequenceLength(uni[0]));
     EXPECT_TRUE(FormatConstant::IsTrailingByteValid(uni[1]));
 
-    curs.Rewind();
+    curs.Rewind(true);
 
     NumericTriad tr = NumericTriad(1000.0, (size_t)3, (size_t)12);
 
