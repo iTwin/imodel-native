@@ -2078,13 +2078,13 @@ GraphicPtr PrimitiveBuilder::_Finish()
 
         switch (m_primitives.size())
             {
-            case 0:
-                break;
             case 1:
                 graphic = *m_primitives.begin();
                 m_primitives.clear();
                 break;
             default:
+                // NB: We may have zero primitives. Callers aren't going to check for null return value. So return an empty graphic list.
+                // (See for example DrawGrid() - often produces empty Graphic and adds directly to world decorations)
                 graphic = m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
                 break;
             }
