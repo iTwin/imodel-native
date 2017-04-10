@@ -462,6 +462,7 @@
                 <CustomHandledProperty>
                     <StatementTypes>0</StatementTypes>
                 </CustomHandledProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
