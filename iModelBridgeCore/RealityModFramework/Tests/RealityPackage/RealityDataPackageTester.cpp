@@ -1610,14 +1610,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     "</UndefinedGroup>"
 "</RealityDataPackage>";
 
-#if (0)
 
-
-
-
-
-
-#endif
     WString parseError;
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
     RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
