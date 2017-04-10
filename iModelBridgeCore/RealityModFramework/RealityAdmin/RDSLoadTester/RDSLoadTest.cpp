@@ -315,11 +315,11 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User():
-    m_currentOperation(OperationType::NAVNODE), m_retryCounter(0), m_handshake(AzureHandshake()), m_node(nullptr)
+    m_currentOperation(OperationType::NAVNODE), m_handshake(AzureHandshake()), m_node(nullptr)
     {}
 
 User::User(int id) :
-    m_currentOperation(OperationType::NAVNODE), m_retryCounter(0), m_handshake(AzureHandshake()), m_node(nullptr),
+    m_currentOperation(OperationType::NAVNODE), m_handshake(AzureHandshake()), m_node(nullptr),
     m_userId(id)
 {}
 
@@ -330,6 +330,9 @@ User::User(int id) :
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void User::DoNext(UserManager* owner)
     {
+    if(!s_keepRunning)
+        return WrapUp(owner);
+
     m_currentOperation = static_cast<OperationType>(rand() % OperationType::last);
 
     CURL* curl = nullptr;
@@ -417,6 +420,24 @@ void User::DoNext(UserManager* owner)
 
     m_start = std::time(nullptr);
     if(curl != nullptr)
+        owner->SetupCurl(curl, this);
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                   4/2017
+//* prepares next request, based on most recent action
+//* can be called blindly from outside
+//+---------------+---------------+---------------+---------------+---------------+------*/
+void User::WrapUp(UserManager* owner)
+    {
+    if (m_id.empty())
+        return;
+
+    m_currentOperation = OperationType::REMOVE;
+    CURL* curl = Delete();
+    
+    m_start = std::time(nullptr);
+    if (curl != nullptr)
         owner->SetupCurl(curl, this);
     }
 
@@ -609,7 +630,7 @@ CURL*  User::Create()
     {
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     
-    properties.Insert(RealityDataField::Name, "Load Test");
+    properties.Insert(RealityDataField::Name, "Load Test (ERASE)");
 
     properties.Insert(RealityDataField::Classification, "MODEL");
 
@@ -922,15 +943,15 @@ void UserManager::Perform()
     
     int still_running; /* keep number of running handles */
     int repeats = 0;
+    bool wrapUp = true;
 
     std::cout << "launching requests, it may take a few seconds to receive responses and display results" << std::endl;
 
+    curl_multi_perform(m_pCurlHandle, &still_running);
     do
         {
         CURLMcode mc; /* curl_multi_wait() return code */
         int numfds;
-
-        curl_multi_perform(m_pCurlHandle, &still_running);
 
         /* wait for activity, timeout or "nothing" */
         mc = curl_multi_wait(m_pCurlHandle, NULL, 0, 1000, &numfds);
@@ -954,8 +975,6 @@ void UserManager::Perform()
         int nbQueue;
         while ((msg = curl_multi_info_read(m_pCurlHandle, &nbQueue)))
             {
-            if (msg->msg == CURLMSG_DONE)
-                {
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct User *user = (struct User *)pClient;
@@ -963,62 +982,38 @@ void UserManager::Perform()
                 user->m_correspondance.response.curlCode = msg->data.result;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &(user->m_correspondance.response.responseCode));
 
-                if (msg->data.result == CURLE_OK)
-                    {
-                    //response received, ensure that it is valid
-                    user->ValidatePrevious(still_running);
-
-                    if(s_keepRunning) //has program exit been queued?
-                        {
-                        int keepGoing = rand() % 100; 
-                        //20% chance user will immediately perform package request, after spatial request
-                        if((user->m_currentOperation == OperationType::NAVNODE) || keepGoing < 20) 
-                            user->DoNext(this);
-                        else
-                            {
-                            std::lock_guard<std::mutex> lock(innactiveUserMutex);
-                            s_innactiveUsers.push_back(user);
-                            }
-                        }
-                    }
-                else if (msg->data.result != CURLE_OK)
-                    {
-                    char error[256];
-                    sprintf(error, "curl error number: %d", (int)msg->data.result);
-                    //in case of curl failure, add error number to error list
-                    s_stats.InsertStats(user, false, still_running);
-                    s_stats.PrintStats();
-                    if(s_keepRunning)
-                        {
-                        if(user->m_retryCounter < 10)
-                            {
-                            user->DoNext(this);
-                            }
-                        else
-                            std::cout << "max retries reached, user giving up" << std::endl;
-                        }
-                    }
-
-                curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
-                curl_easy_cleanup(msg->easy_handle);
-                }
-            else
+            if (msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK)
                 {
-                char *pClient;
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
-                struct User *user = (struct User *)pClient;
-                s_stats.InsertStats(user, false, still_running);
+                //response received, ensure that it is valid
+                user->ValidatePrevious(still_running);
                 }
-            }
 
-        if (s_keepRunning && still_running == 0)//no pending requests but exit has not been queued
+            std::lock_guard<std::mutex> lock(innactiveUserMutex);
+            s_innactiveUsers.push_back(user);
+                
+            curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
+            curl_easy_cleanup(msg->easy_handle);
+            }
+        
+        curl_multi_perform(m_pCurlHandle, &still_running);
+        if(still_running == 0)
             {
-            s_stats.PrintStats();
-            std::cout << "user pool empty, repopulating" << std::endl;
-            Repopulate();
-            }
+            if (s_keepRunning)//no pending requests but exit has not been queued
+                {
+                s_stats.PrintStats();
+                std::cout << "user pool empty, repopulating" << std::endl;
+                Repopulate();
+                }
+            else if (wrapUp)
+                {
+                wrapUp = false;
+                std::cout << "Removing created entries..." << std::endl;
+                Repopulate();
+                }
 
-        } while (s_keepRunning);
+            curl_multi_perform(m_pCurlHandle, &still_running);
+            }
+        } while (wrapUp || still_running > 0);
     }
 
 ///*---------------------------------------------------------------------------------**//**

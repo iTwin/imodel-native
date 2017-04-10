@@ -100,7 +100,6 @@ public:
     AzureHandshake              m_handshake;
 
     int                         m_userId;
-    int                         m_retryCounter;
 
     User();
     User(int id);
@@ -130,6 +129,8 @@ public:
     void ValidateUnlink(int activeUsers);
     CURL* Delete();
     void ValidateDelete(int activeUsers);
+
+    void WrapUp(UserManager* owner);
     };
 
 struct UserManager
