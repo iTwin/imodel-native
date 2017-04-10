@@ -615,6 +615,8 @@ protected:
 public:
     //! Map a texture to this material
     virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
+
+    bool HasTextures() const { return !m_mappedTextures.empty(); }
 };
 
 //=======================================================================================

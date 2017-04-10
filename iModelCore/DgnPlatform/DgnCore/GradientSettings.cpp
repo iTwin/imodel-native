@@ -259,10 +259,12 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
 
         }
     Render::Image image (width, height, std::move(imageBytes), Image::Format::Rgba);
+#define TEST_IMAGE
 #ifdef  TEST_IMAGE 
     std::FILE*       pFile;
-    if (nullptr != (pFile = fopen("d:\\tmp\\png", "wb")))
+    if (nullptr != (pFile = fopen("d:\\t3\\tmp\\png", "wb")))
         {
+        ImageSource imageSource(image, ImageSource::Format::Png);
         fwrite(imageSource.GetByteStream().GetDataP(), 1, imageSource.GetByteStream().GetSize(), pFile);
         fclose(pFile);
         }

@@ -182,7 +182,9 @@ DisplayParams::DisplayParams(Render::GraphicParamsCR graphicParams, Render::Geom
     if (nullptr != geometryParams)
         m_geometryParams = *geometryParams;
 
-    if (GetMaterialId().IsValid())
+    if (nullptr != graphicParams.GetMaterial() && graphicParams.GetMaterial()->HasTextures())
+        m_isTextured = IsTextured::Yes;
+    else if (GetMaterialId().IsValid())
         m_isTextured = IsTextured::Maybe;
     else
         m_isTextured = nullptr != GetGradient() ? IsTextured::Yes : IsTextured::No;
@@ -344,6 +346,8 @@ Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& 
     {
     if (IsTextured::No == m_isTextured || m_texture.IsValid())
         return m_texture.get();
+    else if (nullptr != m_graphicParams.GetMaterial() && m_graphicParams.GetMaterial()->HasTextures())
+        return nullptr; // Textures already cooked into material...
 
     // ###TODO? This will not handle an element with gradient fill and also a textured material. Do people do that?
     Render::TexturePtr tex;
