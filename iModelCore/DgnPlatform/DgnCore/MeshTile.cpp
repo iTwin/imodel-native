@@ -1810,28 +1810,6 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         return context.m_cache->Populate(GetDgnDb(), *context.m_model);
         });
     }
-#ifdef WIP
-//=======================================================================================
-// @bsistruct                                                    Ray.Bentley     04/2017
-//=======================================================================================
-struct SheetDecorationTileNode : ElementTileNode 
-    {
-    SheetDecorationTile (Sheet::ModelCR sheetModel, TransformCR transformFromDgn, TileNodeR parent) :  : TileNode(model, transformFromDgn), m_isLeaf(false), m_containsParts(false) { }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
-    {
-    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
-
-        TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
-
-        return nullptr;
-        }
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
@@ -2968,8 +2946,19 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry SheetDecorationTileNode::_GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const
+PublishableTileGeometry SheetDecorationTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const
     {
+    TileGeometryList                geometries;
+    PublishableTileGeometry         publishedTileGeometry;
+    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
+    TileGenerateCachePtr            generationCache = TileGenerationCache::Create();
+
+    TileGeometryProcessor           processor(geometries, *cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, nullptr, m_tolerance, flse, 0, true);
+    TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
+
+
+
+    return publishableGeometry;
     }
 
 #endif

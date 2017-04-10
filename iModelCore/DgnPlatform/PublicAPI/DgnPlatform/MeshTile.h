@@ -912,17 +912,19 @@ public:
 //=======================================================================================
 // @bsistruct                                                    Ray.Bentley     04/2017
 //=======================================================================================
-struct SheetDecorationTileNode : TileNode
+struct SheetDecorationTileNode : ElementTileNode
     {
+private:
+    Sheet::ModelCR      m_sheetModel;
+
 protected:
-    SheetDecorationTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
-        : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
+    SheetDecorationTileNode(Sheet::ModelCR sheetModel, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
+        : m_sheetModel (sheetModel), ElementTileNode(sheetModel, range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
 
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const override;
-    virtual WString _GetFileExtension() const override { return L"b3dm"; }
 
 public:
-    static SheetDecorationTileNodePtr Create(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance)
+    static SheetDecorationTileNodePtr Create(Sheet::ModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance)
         { return  new SheetDecorationTileNode(model, range, transformFromDgn, depth, siblingIndex, parent); }
    
 
