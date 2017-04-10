@@ -285,8 +285,8 @@ private:
     Utf8String                      m_urlTemplate;
     Utf8String                      m_creditUrl;
     MapType                         m_mapType = MapType::Road;
-    int                             m_maximumZoomLevel = 0;
-    int                             m_minimumZoomLevel = 19;
+    int                             m_maximumZoomLevel = 19;
+    int                             m_minimumZoomLevel = 0;
     int                             m_tileWidth = 256;
     int                             m_tileHeight = 256;
     BeAtomic<TemplateUrlLoadStatus> m_templateUrlLoadStatus;
@@ -348,9 +348,59 @@ struct GoogleImageryProvider
 // Here Imagery Provider (Here is the successor to NavTeq).
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
-struct HereImageryProvider
+struct HereImageryProvider : ImageryProvider
     {
+    enum class MapType
+        {
+        // Note: Here provides a big assortment of different types, I picked these to simplify it.
+        Map      = 0,
+        Aerial   = 1,
+        Combined = 2,
+        };
+
     BE_PROP_NAME(HereProvider)
+    BE_JSON_NAME(mapType)
+
+private:
+    Utf8String                      m_urlTemplate;
+    Utf8String                      m_creditUrl;
+    Utf8String                      m_appId;
+    Utf8String                      m_appCode;
+
+    MapType                         m_mapType = MapType::Map;
+    int                             m_minimumZoomLevel = 0;
+    int                             m_maximumZoomLevel = 21;
+    int                             m_tileWidth = 256;
+    int                             m_tileHeight = 256;
+
+public:
+    // constructor used prior to specifying from stored Json values.
+    HereImageryProvider ();
+
+    // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
+    virtual Utf8CP      _GetProviderName() const override { return prop_HereProvider(); }
+
+    // Gets the message to be displayed to credit provider(s). 
+    virtual Utf8CP      _GetCreditMessage() const override;
+
+    // Gets an URL for the image to be displayed to credit the provider.
+    virtual Utf8CP      _GetCreditUrl() const override;
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMaximumZoomLevel (bool forPrinting) override { return m_maximumZoomLevel; }
+
+    // Gets the maximum zoom level alllowed (provider dependent)
+    virtual int         _GetMinimumZoomLevel () override { return m_minimumZoomLevel; }
+
+    // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
+    virtual Utf8CP      _GetCacheFileName() const override;
+
+    // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
+    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile) const override;
+    
+    virtual void        _FromJson(Json::Value const& value) override;
+
+    virtual void        _ToJson (Json::Value&) const override;
     };
 
 
