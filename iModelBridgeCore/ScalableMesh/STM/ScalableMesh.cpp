@@ -1587,7 +1587,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         return DTM_ERROR;
         }
 
-    Transform totalTrans = Transform::FromProduct(m_transformToUors, *transformation);
+    Transform totalTrans = Transform::FromProduct(*transformation, m_transformToUors);
     return dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);    
     }
 
