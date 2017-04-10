@@ -977,9 +977,12 @@ private:
         double                  m_leafTolerance;
         bool                    m_surfacesOnly;
 
+
         ElementTileContext(TileGenerationCacheR cache, DgnModelR model, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }
-        };
+
+        TileNodePtr GenerateDecorationTile() const;
+    };
 
     struct ElementTileResult
         {

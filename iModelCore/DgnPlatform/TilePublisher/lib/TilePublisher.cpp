@@ -1502,7 +1502,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix)
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency();         // || IsTesselated(); // Turn this on if we use alpha in tesselated polylines.
     m_colorDimension = ColorIndex::CalcDimension(map.GetNumIndices());
-    m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
+    m_width = static_cast<double> (displayParams.GetRasterWidth());
 
     if (0 != displayParams.GetLinePixels())
         {

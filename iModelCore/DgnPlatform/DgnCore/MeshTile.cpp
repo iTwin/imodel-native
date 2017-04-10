@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+                                                                                           
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1830,6 +1830,15 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         });
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileNodePtr    TileGenerator::ElementTileContext::GenerateDecorationTile() const
+    {
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1841,9 +1850,23 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
         ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
-
     ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
-    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
+
+    return ProcessParentTile(parent, context).then([=](ElementTileResult result)
+        { 
+        return ProcessChildTiles(result.m_status, parent, context);
+        })
+    .then([=](ElementTileResult result)
+        {
+        TileNodePtr     decorationTile = context.GenerateDecorationTile();
+
+        if (TileGeneratorStatus::Success == result.m_status && decorationTile.IsValid())
+            {
+            // TODO - Extend range.
+            parent->GetChildren().push_back(decorationTile);
+            }
+        return result;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1960,6 +1983,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(TileGene
         return ElementTileResult(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, root);
         });
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
