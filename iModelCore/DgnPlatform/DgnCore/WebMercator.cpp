@@ -314,6 +314,10 @@ void WebMercatorModel::FromJson(Json::Value const& value)
         {
         m_provider = new BingImageryProvider ();
         }
+    else if (0 == providerName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
+        {
+        m_provider = new HereImageryProvider ();
+        }
 
     if (m_provider.IsValid())
         {
@@ -397,6 +401,7 @@ WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params
         }
     else if (0 == imageryProviderName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
         {
+        m_provider = new HereImageryProvider();
         }
 
     if (m_provider.IsValid())
@@ -654,7 +659,7 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             // typical reponse, (LF's added for clarity)
             // {"authenticationResultCode":"ValidCredentials",
             // "brandLogoUri":"http:\/\/dev.virtualearth.net\/Branding\/logo_powered_by.png",
-            // "copyright":"Copyright © 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
+            // "copyright":"Copyright ï¿½ 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
             // "resourceSets":
             //    [{"estimatedTotal":1,
             //      "resources":
@@ -717,6 +722,117 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
         return ImageryProvider::TemplateUrlLoadStatus::Failed;
         });
     }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+HereImageryProvider::HereImageryProvider ()
+    {
+    // Trial period credentials, good only until July 9, 2017.
+    m_appId.assign("Eieg0LYRqg5cyHQdUPCf");
+    m_appCode.assign("scZCSrR56QXuGU4_EwzQGQ");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HereImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+    {
+    // The general format (from Here documentation: https://developer.here.com/rest-apis/documentation/enterprise-map-tile/topics/request-constructing.html
+    // {Base URL}{Path}{resource (tile type)}/{map id}/{scheme}/{zoom}/{column}/{row}/{size}/{format}
+    // ?app_id={YOUR_APP_ID}
+    // &app_code={YOUR_APP_CODE}
+    // &{param}={value}
+    // 
+    // Base URL for Map types:      https://{1-4}.base.maps.api.here.com
+    // Base URL for Aerial type:    https://{1-4}.aerial.maps.api.here.com
+    // They also have traffic tiles, but I don't think they are relevant for us.
+
+    int x = tile.GetColumn();
+    int y = tile.GetRow();
+    int subdomain = 1 + ((x + y) % 4);
+
+    Utf8String  url;
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, tile.GetZoomLevel(), x, y, m_appId.c_str(), m_appCode.c_str());
+
+    return url;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HereImageryProvider::_GetCreditMessage () const
+    {
+    return "(c) HERE";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HereImageryProvider::_GetCacheFileName () const
+    {
+    switch (m_mapType)
+        {
+        case HereImageryProvider::MapType::Map:
+            return "HereRoad";
+
+        case HereImageryProvider::MapType::Aerial:
+            return "HereAerial";
+
+        case HereImageryProvider::MapType::Combined:
+            return "HereHybrid";
+        }
+    BeAssert (false);
+    return "HereUnknown";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    HereImageryProvider::_FromJson (Json::Value const& value)
+    {
+    // the only thing currently stored in the HereImageryProvider Json is the MapType.
+    m_mapType = (HereImageryProvider::MapType) value[json_mapType()].asInt((int)HereImageryProvider::MapType::Map);
+
+    switch (m_mapType)
+        {
+        case HereImageryProvider::MapType::Map:
+            m_urlTemplate = "https://%d.base.maps.api.here.com/maptile/2.1/maptile/newest/normal.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        case HereImageryProvider::MapType::Aerial:
+            m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/satellite.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        case HereImageryProvider::MapType::Combined:
+            m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/hybrid.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        default:
+            BeAssert(false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    HereImageryProvider::_ToJson (Json::Value& value) const
+    {
+    // the only thing currently stored in the HereImageryProvider Json is the MapType.
+    value[json_mapType()] = (int)m_mapType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP  HereImageryProvider::_GetCreditUrl() const
+    {
+    // NEEDSWORK_MapBox
+    return nullptr;
+    }
+
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -792,7 +908,7 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
 };
 
 END_BENTLEY_DGN_NAMESPACE
-
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
