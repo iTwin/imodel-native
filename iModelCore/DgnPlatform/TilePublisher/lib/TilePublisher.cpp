@@ -712,7 +712,7 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
+    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), nullptr);
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.

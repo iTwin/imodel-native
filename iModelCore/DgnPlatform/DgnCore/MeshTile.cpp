@@ -855,7 +855,7 @@ bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -899,26 +899,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     AddTriangle(newTriangle);
     ++m_triangleIndex;
-
-    if (visitor.GetTwoSided() && duplicateTwoSidedTriangles)
-        {
-        TileTriangle dupTriangle(false);
-
-        for (size_t i = 0; i < 3; i++)
-            {
-            size_t reverseIndex = 2 - i;
-            DVec3d reverseNormal;
-            if (haveNormals)
-                reverseNormal.Negate(visitor.Normal().at(reverseIndex));
-
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes, fillColor);
-            dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
-            }
-
-        AddTriangle(dupTriangle);
-        ++m_triangleIndex;
-        }
-    }
+     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -939,10 +920,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams, fillColor);
+        AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1829,33 +1810,28 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         return context.m_cache->Populate(GetDgnDb(), *context.m_model);
         });
     }
-
+#ifdef WIP
+//=======================================================================================
+// @bsistruct                                                    Ray.Bentley     04/2017
+//=======================================================================================
+struct SheetDecorationTileNode : ElementTileNode 
+    {
+    SheetDecorationTile (Sheet::ModelCR sheetModel, TransformCR transformFromDgn, TileNodeR parent) :  : TileNode(model, transformFromDgn), m_isLeaf(false), m_containsParts(false) { }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
+* @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileNodePtr    TileGenerator::ElementTileContext::GenerateDecorationTile() const
+virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
     {
- #ifdef WIP
-    Sheet::ModelCP      sheetModel;
-
-    if (nullptr == (sheetModel = m_model.ToSheetModel()))
-        return nullptr;
-
-
-    ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
-    if (is2d)
-        {
         TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
-        return processor.OutputGraphics(context);
 
-#endif
-    return nullptr;
+        return nullptr;
+        }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
@@ -1876,7 +1852,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
         })
     .then([=](ElementTileResult result)
         {
-        TileNodePtr     decorationTile = context.GenerateDecorationTile();
+        TileNodePtr     decorationTile = nullptr;
 
         if (TileGeneratorStatus::Success == result.m_status && decorationTile.IsValid())
             {
@@ -2935,7 +2911,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, ITileGenerationFilterCP filter) const
+PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode,  bool doSurfacesOnly, ITileGenerationFilterCP filter) const
     {
     bmap<TileGeomPartCP, TileMeshPartPtr>   partMap;
     TileGeometryList            uninstancedGeometry;
@@ -2957,7 +2933,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
 
             if (found == partMap.end())
                 {           
-                TileMeshList    partMeshes = GenerateMeshes(db, normalMode, twoSidedTriangles, doSurfacesOnly, false, filter, part->GetGeometries());
+                TileMeshList    partMeshes = GenerateMeshes(db, normalMode, doSurfacesOnly, false, filter, part->GetGeometries());
 
                 if (partMeshes.empty())
                     continue;
@@ -2981,17 +2957,26 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
             uninstancedGeometry.push_back(geom);
             }
         }
-    TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, twoSidedTriangles, doSurfacesOnly, true, filter, uninstancedGeometry);
+    TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, doSurfacesOnly, true, filter, uninstancedGeometry);
 
     meshes.insert (meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
 
     return publishedTileGeometry;
     }
 
+#ifdef WIP
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishableTileGeometry SheetDecorationTileNode::_GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const
+    {
+    }
+
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const
+TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const
     {
     static const double         s_vertexToleranceRatio    = .1;
     static const double         s_vertexClusterThresholdPixels = 5.0;
@@ -3054,7 +3039,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture, hasTexture ? 0 : displayParams->GetColor());
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
                         }
                     }
                 }
