@@ -16,8 +16,12 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct CompatibilityTests : public DgnDbTestFixture
 {
     static constexpr Utf8CP GetSpatialCategoryName() {return "TestSpatialCategory";}
-    static constexpr Utf8CP GetDefinitionPartitionName() {return "Definition";}
+    static constexpr Utf8CP GetDrawingCategoryName() {return "TestDrawingCategory";}
     static constexpr Utf8CP GetPhysicalPartitionName() {return "Physical";}
+    static constexpr Utf8CP GetDocumentPartitionName() {return "Document";}
+    static constexpr Utf8CP GetDefinitionPartitionName() {return "Definition";}
+    static constexpr double GetSheetScale() {return 1.0;}
+    static DPoint2d GetSheetSize() {return DPoint2d::From(0.1, 0.3);}
     static Utf8String GetSubjectName(int index) {return Utf8PrintfString(BIS_CLASS_Subject "%" PRIi32, index);}
     static Utf8String GetGeometryPartName(int index) {return Utf8PrintfString(BIS_CLASS_GeometryPart "%" PRIi32, index);}
     static Utf8String GetCategorySelectorName(int index) {return Utf8PrintfString(BIS_CLASS_CategorySelector "%" PRIi32, index);}
@@ -26,32 +30,50 @@ struct CompatibilityTests : public DgnDbTestFixture
     static Utf8String GetSpatialViewDefinitionName(int index) {return Utf8PrintfString(BIS_CLASS_SpatialViewDefinition "%" PRIi32, index);}
     static Utf8String GetPhysicalElementName(int index) {return Utf8PrintfString(BIS_CLASS_PhysicalElement "%" PRIi32, index);}
     static Utf8String GetSpatialLocationName(int index) {return Utf8PrintfString(BIS_CLASS_SpatialLocationElement "%" PRIi32, index);}
+    static Utf8String GetDrawingName(int index) {return Utf8PrintfString(BIS_CLASS_Drawing "%" PRIi32, index);}
+    static Utf8String GetDrawingGraphicName(int index) {return Utf8PrintfString(BIS_CLASS_DrawingGraphic "%" PRIi32, index);}
+    static Utf8String GetSheetName(int index) {return Utf8PrintfString(BIS_CLASS_Sheet "%" PRIi32, index);}
     static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
 
     BE_JSON_NAME(inserted);
     BE_JSON_NAME(updated);
 
-    void InsertSubHierarchy(SubjectCR, int);
+    void InsertHierarchy(SubjectCR, int);
+    void InsertPhysicalHierarchy(SubjectCR);
+    void InsertDocumentHierarchy(SubjectCR);
+    void InsertDefinitionHierarchy(SubjectCR);
     void InsertSpatialCategory();
-    void InsertDefinitionModel(SubjectCR);
+    void InsertDrawingCategory();
     DgnGeometryPartPtr InsertGeometryPart(DefinitionModelR, int);
     CategorySelectorPtr InsertCategorySelector(DefinitionModelR, DgnCategoryId, int);
     ModelSelectorPtr InsertModelSelector(DefinitionModelR, DgnModelId, int);
     DisplayStyle3dPtr InsertDisplayStyle3d(DefinitionModelR, int);
     SpatialViewDefinitionPtr InsertSpatialViewDefinition(DefinitionModelR, int, CategorySelectorR, DisplayStyle3dR, ModelSelectorR, DRange3dCR);
-    void InsertPhysicalModel(SubjectCR);
     void InsertPhysicalElement(PhysicalModelR, DgnCategoryId, int);
     void InsertSpatialLocation(PhysicalModelR, DgnCategoryId, int);
+    DrawingPtr InsertDrawing(DocumentListModelR, int);
+    DrawingModelPtr InsertDrawingModel(DrawingCR);
+    void InsertDrawingGraphic(GraphicalModel2dR, DgnCategoryId, int);
+    Sheet::ElementPtr InsertSheet(DocumentListModelR, int);
+    Sheet::ModelPtr InsertSheetModel(Sheet::ElementCR);
 
-    void ModifySubHierarchy(SubjectCR, int);
-    void ModifyDefinitionModelContents(SubjectCR);
+    void ModifyHierarchy(SubjectCR, int);
+    void ModifyPhysicalHierarchy(SubjectCR);
+    void ModifyDocumentHierarchy(SubjectCR);
+    void ModifyDefinitionHierarchy(SubjectCR);
+    void ModifyGeometricElements(GeometricModelR, Utf8CP);
+    void ModifyDocumentElements(DocumentListModelR, Utf8CP);
     void ModifyDefinitionElements(DefinitionModelR, Utf8CP);
-    void ModifyPhysicalModelContents(SubjectCR);
-    void ModifySpatialElements(PhysicalModelR, Utf8CP);
+    void ModifyElementCode(DgnDbR, DgnElementId);
+    void ModifyGeometricElement(DgnDbR, DgnElementId);
+    void ModifySubModel(DgnDbR, DgnElementId);
+    void DeleteElementAndSubModel(DgnDbR, DgnElementId);
 
     DgnCategoryId GetSpatialCategoryId();
-    DefinitionModelPtr GetDefinitionModel(SubjectCR);
+    DgnCategoryId GetDrawingCategoryId();
     PhysicalModelPtr GetPhysicalModel(SubjectCR);
+    DocumentListModelPtr GetDocumentListModel(SubjectCR);
+    DefinitionModelPtr GetDefinitionModel(SubjectCR);
 
     void SetupFromOtherBranch(Utf8CP);
 };
@@ -63,11 +85,12 @@ TEST_F(CompatibilityTests, Seed)
     {
     SetupSeedProject();
     InsertSpatialCategory();
+    InsertDrawingCategory();
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(BentleyStatus::SUCCESS, db.Schemas().CreateClassViewsInDb());
     ASSERT_EQ(1, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size()) << "Expected just the root Subject";
-    InsertSubHierarchy(*db.Elements().GetRootSubject(), 1);
+    InsertHierarchy(*db.Elements().GetRootSubject(), 1);
     }
 
 //---------------------------------------------------------------------------------------
@@ -77,13 +100,14 @@ TEST_F(CompatibilityTests, Modify)
     {
     SetupSeedProject();
     InsertSpatialCategory();
+    InsertDrawingCategory();
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(1, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size()) << "Expected just the root Subject";
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    InsertSubHierarchy(*rootSubject, 1);
-    ModifySubHierarchy(*rootSubject, 1);
-    InsertSubHierarchy(*rootSubject, 2);
+    InsertHierarchy(*rootSubject, 1);
+    ModifyHierarchy(*rootSubject, 1);
+    InsertHierarchy(*rootSubject, 2);
     }
 
 //---------------------------------------------------------------------------------------
@@ -96,26 +120,27 @@ TEST_F(CompatibilityTests, Update)
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    ModifySubHierarchy(*rootSubject, 1);
-    InsertSubHierarchy(*rootSubject, 2);
+    ModifyHierarchy(*rootSubject, 1);
+    InsertHierarchy(*rootSubject, 2);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertSubHierarchy(SubjectCR parentSubject, int subjectNumber)
+void CompatibilityTests::InsertHierarchy(SubjectCR parentSubject, int subjectNumber)
     {
     SubjectCPtr subject = Subject::CreateAndInsert(parentSubject, GetSubjectName(subjectNumber).c_str());
     ASSERT_TRUE(subject.IsValid());
 
-    InsertPhysicalModel(*subject);
-    InsertDefinitionModel(*subject);
+    InsertPhysicalHierarchy(*subject);
+    InsertDocumentHierarchy(*subject);
+    InsertDefinitionHierarchy(*subject);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::ModifySubHierarchy(SubjectCR parentSubject, int subjectNumber)
+void CompatibilityTests::ModifyHierarchy(SubjectCR parentSubject, int subjectNumber)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnCode subjectCode = Subject::CreateCode(parentSubject, GetSubjectName(subjectNumber).c_str());
@@ -123,8 +148,9 @@ void CompatibilityTests::ModifySubHierarchy(SubjectCR parentSubject, int subject
     SubjectCPtr subject = db.Elements().Get<Subject>(subjectId);
     ASSERT_TRUE(subject.IsValid());
 
-    ModifyPhysicalModelContents(*subject);
-    ModifyDefinitionModelContents(*subject);
+    ModifyPhysicalHierarchy(*subject);
+    ModifyDocumentHierarchy(*subject);
+    ModifyDefinitionHierarchy(*subject);
     }
 
 //---------------------------------------------------------------------------------------
@@ -133,6 +159,14 @@ void CompatibilityTests::ModifySubHierarchy(SubjectCR parentSubject, int subject
 void CompatibilityTests::InsertSpatialCategory()
     {
     DgnDbTestUtils::InsertSpatialCategory(GetDgnDb(), GetSpatialCategoryName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertDrawingCategory()
+    {
+    DgnDbTestUtils::InsertDrawingCategory(GetDgnDb(), GetDrawingCategoryName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -148,7 +182,17 @@ DgnCategoryId CompatibilityTests::GetSpatialCategoryId()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertDefinitionModel(SubjectCR subject)
+DgnCategoryId CompatibilityTests::GetDrawingCategoryId()
+    {
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(GetDgnDb().GetDictionaryModel(), GetDrawingCategoryName()));
+    BeAssert(categoryId.IsValid());
+    return categoryId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertDefinitionHierarchy(SubjectCR subject)
     {
     DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(subject, GetDefinitionPartitionName());
     ASSERT_TRUE(partition.IsValid());
@@ -238,7 +282,7 @@ DgnGeometryPartPtr CompatibilityTests::InsertGeometryPart(DefinitionModelR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::ModifyDefinitionModelContents(SubjectCR subject)
+void CompatibilityTests::ModifyDefinitionHierarchy(SubjectCR subject)
     {
     DefinitionModelPtr model = GetDefinitionModel(subject);
     ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_GeometryPart));
@@ -290,17 +334,8 @@ void CompatibilityTests::ModifyDefinitionElements(DefinitionModelR model, Utf8CP
                 break;
 
             case 1: // update second element
-                {
-                DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementEntry.GetElementId());
-                ASSERT_TRUE(element.IsValid());
-                ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
-                DgnCode oldCode = element->GetCode();
-                DgnCode newCode(oldCode.GetCodeSpecId(), Utf8PrintfString("%s%s", className, "Updated"), oldCode.GetScope());
-                element->SetCode(newCode);
-                element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
-                ASSERT_TRUE(element->Update().IsValid());
+                ModifyElementCode(db, elementEntry.GetElementId());
                 break;
-                }
 
             case 2: // delete third element
                 ASSERT_EQ(DgnDbStatus::Success, db.Elements().Delete(elementEntry.GetElementId()));
@@ -311,6 +346,21 @@ void CompatibilityTests::ModifyDefinitionElements(DefinitionModelR model, Utf8CP
                 break;
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifyElementCode(DgnDbR db, DgnElementId elementId)
+    {
+    DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+    ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
+    DgnCode oldCode = element->GetCode();
+    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetValue() + "Updated", oldCode.GetScope());
+    element->SetCode(newCode);
+    element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
+    ASSERT_TRUE(element->Update().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -329,7 +379,7 @@ DefinitionModelPtr CompatibilityTests::GetDefinitionModel(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertPhysicalModel(SubjectCR subject)
+void CompatibilityTests::InsertPhysicalHierarchy(SubjectCR subject)
     {
     PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(subject, GetPhysicalPartitionName());
     ASSERT_TRUE(partition.IsValid());
@@ -381,18 +431,20 @@ void CompatibilityTests::InsertSpatialLocation(PhysicalModelR model, DgnCategory
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::ModifyPhysicalModelContents(SubjectCR subject)
+void CompatibilityTests::ModifyPhysicalHierarchy(SubjectCR subject)
     {
     PhysicalModelPtr model = GetPhysicalModel(subject);
-    ModifySpatialElements(*model, BIS_SCHEMA(BIS_CLASS_PhysicalElement));
-    ModifySpatialElements(*model, BIS_SCHEMA(BIS_CLASS_SpatialLocationElement));
+    ModifyGeometricElements(*model, BIS_SCHEMA(BIS_CLASS_PhysicalElement));
+    ModifyGeometricElements(*model, BIS_SCHEMA(BIS_CLASS_SpatialLocationElement));
 
     DgnDbR db = subject.GetDgnDb();
     Utf8String whereClause = BuildWhereModelIdEquals(model->GetModelId());
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialLocationElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    
     InsertPhysicalElement(*model, GetSpatialCategoryId(), 3);
     InsertSpatialLocation(*model, GetSpatialCategoryId(), 3);
+    
     ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialLocationElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     }
@@ -400,7 +452,7 @@ void CompatibilityTests::ModifyPhysicalModelContents(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::ModifySpatialElements(PhysicalModelR model, Utf8CP className)
+void CompatibilityTests::ModifyGeometricElements(GeometricModelR model, Utf8CP className)
     {
     DgnDbR db = model.GetDgnDb();
     int i=0;
@@ -413,16 +465,8 @@ void CompatibilityTests::ModifySpatialElements(PhysicalModelR model, Utf8CP clas
                 break;
 
             case 1: // update second element
-                {
-                SpatialElementPtr element = db.Elements().GetForEdit<SpatialElement>(elementEntry.GetElementId());
-                ASSERT_TRUE(element.IsValid());
-                ASSERT_TRUE(element->GetFederationGuid().IsValid());
-                Utf8String userLabel(element->GetUserLabel());
-                userLabel.append("Updated");
-                element->SetUserLabel(userLabel.c_str());
-                ASSERT_TRUE(element->Update().IsValid());
+                ModifyGeometricElement(db, elementEntry.GetElementId());
                 break;
-                }
 
             case 2: // delete third element
                 ASSERT_EQ(DgnDbStatus::Success, db.Elements().Delete(elementEntry.GetElementId()));
@@ -438,12 +482,220 @@ void CompatibilityTests::ModifySpatialElements(PhysicalModelR model, Utf8CP clas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifyGeometricElement(DgnDbR db, DgnElementId elementId)
+    {
+    GeometricElementPtr element = db.Elements().GetForEdit<GeometricElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+    ASSERT_TRUE(element->GetFederationGuid().IsValid());
+    Utf8String userLabel(element->GetUserLabel());
+    userLabel.append("Updated");
+    element->SetUserLabel(userLabel.c_str());
+    ASSERT_TRUE(element->Update().IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
 PhysicalModelPtr CompatibilityTests::GetPhysicalModel(SubjectCR subject)
     {
     DgnDbR db = subject.GetDgnDb();
     DgnCode partitionCode = PhysicalPartition::CreateCode(subject, GetPhysicalPartitionName());
     DgnModelId modelId = db.Models().QuerySubModelId(partitionCode);
     PhysicalModelPtr model = db.Models().Get<PhysicalModel>(modelId);
+    BeAssert(model.IsValid());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertDocumentHierarchy(SubjectCR subject)
+    {
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(subject, GetDocumentPartitionName());
+    ASSERT_TRUE(partition.IsValid());
+    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(model.IsValid());
+
+    for (int i=0; i<3; i++)
+        {
+        DrawingPtr drawing = InsertDrawing(*model, i);
+        Sheet::ElementPtr sheet = InsertSheet(*model, i);
+        ASSERT_TRUE(drawing.IsValid());
+        ASSERT_TRUE(sheet.IsValid());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+DrawingPtr CompatibilityTests::InsertDrawing(DocumentListModelR model, int index)
+    {
+    DrawingPtr drawing = Drawing::Create(model, GetDrawingName(index).c_str());
+    drawing->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    if (!drawing->Insert().IsValid())
+        return nullptr;
+
+    DrawingModelPtr drawingModel = InsertDrawingModel(*drawing);
+    if (!drawingModel.IsValid())
+        return nullptr;
+
+    return drawing;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+DrawingModelPtr CompatibilityTests::InsertDrawingModel(DrawingCR drawing)
+    {
+    DrawingModelPtr model = DrawingModel::Create(drawing);
+    BeAssert(model.IsValid());
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    DgnCategoryId categoryId = GetDrawingCategoryId();
+    for (int i=0; i<3; i++)
+        InsertDrawingGraphic(*model, categoryId, i);
+
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertDrawingGraphic(GraphicalModel2dR model, DgnCategoryId categoryId, int index)
+    {
+    DrawingGraphicPtr element = DrawingGraphic::Create(model, categoryId);
+    ASSERT_TRUE(element.IsValid());
+    element->SetUserLabel(GetDrawingGraphicName(index).c_str());
+    element->SetFederationGuid(BeGuid(true));
+    GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint2d::From(index, index));
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(ICurvePrimitive::CreateRectangle(0, 0, 1+index, 1+index, 0));
+    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    geometryBuilder->Append(*geometry);
+    geometryBuilder->Finish(*element);
+    ASSERT_TRUE(element->Insert().IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+Sheet::ElementPtr CompatibilityTests::InsertSheet(DocumentListModelR model, int index)
+    {
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, GetSheetScale(), GetSheetSize(), GetSheetName(index).c_str());
+    sheet->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    if (!sheet->Insert().IsValid())
+        return nullptr;
+
+    Sheet::ModelPtr sheetModel = InsertSheetModel(*sheet);
+    if (!sheetModel.IsValid())
+        return nullptr;
+
+    return sheet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+Sheet::ModelPtr CompatibilityTests::InsertSheetModel(Sheet::ElementCR sheet)
+    {
+    Sheet::ModelPtr model = Sheet::Model::Create(sheet);
+    BeAssert(model.IsValid());
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    DgnCategoryId categoryId = GetDrawingCategoryId();
+    for (int i=0; i<3; i++)
+        InsertDrawingGraphic(*model, categoryId, i);
+
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifyDocumentHierarchy(SubjectCR subject)
+    {
+    DocumentListModelPtr model = GetDocumentListModel(subject);
+    ModifyDocumentElements(*model, BIS_SCHEMA(BIS_CLASS_Drawing));
+    ModifyDocumentElements(*model, BIS_SCHEMA(BIS_CLASS_Sheet));
+
+    DgnDbR db = subject.GetDgnDb();
+    Utf8String whereClause = BuildWhereModelIdEquals(model->GetModelId());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Drawing), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Sheet), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+
+    InsertDrawing(*model, 3);
+    InsertSheet(*model, 3);
+
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Drawing), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Sheet), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifyDocumentElements(DocumentListModelR model, Utf8CP className)
+    {
+    DgnDbR db = model.GetDgnDb();
+    int i=0;
+    Utf8String whereClause = BuildWhereModelIdEquals(model.GetModelId());
+    for (ElementIteratorEntryCR elementEntry : db.Elements().MakeIterator(className, whereClause.c_str()))
+        {
+        switch (i++)
+            {
+            case 0: // modify sub-model
+                ModifySubModel(db, elementEntry.GetElementId());
+                break;
+
+            case 1: // update second element
+                ModifyElementCode(db, elementEntry.GetElementId());
+                break;
+
+            case 2: // delete third element
+                DeleteElementAndSubModel(db, elementEntry.GetElementId()); 
+                break;
+
+            default: // should only be 3 elements
+                ASSERT_TRUE(false);
+                break;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifySubModel(DgnDbR db, DgnElementId elementId)
+    {
+    DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+    GeometricModelPtr subModel = element->GetSub<GeometricModel>();
+    ASSERT_TRUE(subModel.IsValid());
+    ModifyGeometricElements(*subModel, BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::DeleteElementAndSubModel(DgnDbR db, DgnElementId elementId)
+    {
+    DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+    GeometricModelPtr subModel = element->GetSub<GeometricModel>();
+    ASSERT_TRUE(subModel.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, subModel->Delete());
+    ASSERT_EQ(DgnDbStatus::Success, db.Elements().Delete(elementId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+DocumentListModelPtr CompatibilityTests::GetDocumentListModel(SubjectCR subject)
+    {
+    DgnDbR db = subject.GetDgnDb();
+    DgnCode partitionCode = DocumentPartition::CreateCode(subject, GetDocumentPartitionName());
+    DgnModelId modelId = db.Models().QuerySubModelId(partitionCode);
+    DocumentListModelPtr model = db.Models().Get<DocumentListModel>(modelId);
     BeAssert(model.IsValid());
     return model;
     }
