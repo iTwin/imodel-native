@@ -286,6 +286,35 @@ class ECRelationshipClass(object):
     def does_contain_datetime(self):
         return self.does_contain_property_type('dateTime')
 
+#-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
+    def __get_class_properties_for_function_def(self):
+        property_str = ""
+        for ecproperty in self.get_properties():
+            if ecproperty.should_be_excluded:
+                continue
+            if ecproperty.is_read_only:
+                continue
+            property_str += ',\n'
+            property_type = ecproperty.type
+            if property_type == "string":
+                property_str += "WCharCP "
+            elif property_type == "dateTime":
+                property_str += "WCharCP "
+            elif property_type == "guid":
+                property_str += "WCharCP "
+            elif property_type == "boolean":
+                property_str += "bool* "
+            elif property_type == "int":
+                property_str += "int32_t* "
+            elif property_type == "long":
+                property_str += "int64_t* "
+            else:
+                property_str += ecproperty.type + "* "
+            property_str += ecproperty.name
+        return property_str
+
     #-------------------------------------------------------------------------------------------
     # bsimethod                                            						 06/2016
     #-------------------------------------------------------------------------------------------
@@ -341,8 +370,9 @@ class ECRelationshipClass(object):
     def __get_buf_init_function_def(self):
         get_request_str = "CallStatus {0}_Init{1}Buffer\n".format(self.__api.get_api_name(), self.get_name())
         get_request_str += "(\n"
-        get_request_str += "{0}DATABUFHANDLE* {1}Buffer\n".format(self.__api.get_upper_api_acronym(), self.get_lower_name())
-        get_request_str += ")"
+        get_request_str += "{0}DATABUFHANDLE* {1}Buffer".format(self.__api.get_upper_api_acronym(), self.get_lower_name())
+        get_request_str += self.__get_class_properties_for_function_def()
+        get_request_str += "\n)"
         return get_request_str
 
     #-------------------------------------------------------------------------------------------
@@ -375,7 +405,8 @@ class ECRelationshipClass(object):
             .format("INTERNAL_MEMORY_ERROR",
                     self.__status_codes["INTERNAL_MEMORY_ERROR"].message,
                     "Failed to calloc memory for {0}BUFFER.".format(self.__api.get_api_acronym()))
-        get_request_str += "        }\n\n"        
+        get_request_str += "        }\n\n"      
+        get_request_str += self.get_buffer_stuffer_function_implementation()  
         get_request_str += "    buf->lCount = 1;\n"
         get_request_str += "    buf->lClassType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    buf->lSchemaType = SCHEMA_TYPE_{0};\n".format(self.get_schema_name().upper())
@@ -389,4 +420,47 @@ class ECRelationshipClass(object):
                                                       .format(self.__api.get_api_name(), self.get_name()))
         get_request_str += "    }\n"
         return get_request_str
+
+   #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
+    def get_buffer_stuffer_function_implementation(self):
+        stuffer_str = ""
+        for ecproperty in self.get_properties():
+            if ecproperty.should_be_excluded:
+                continue
+            if ecproperty.type == "string":
+                stuffer_str += '    {0}Buf->{1} = WString({1});\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "dateTime":
+                stuffer_str += '    {0}Buf->{1} = WString("{1}", true);\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "guid":
+                stuffer_str += '    {0}Buf->{1} = WString("{1}", true);\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "boolean":
+                stuffer_str += '    {0}Buf->{1} = {1};\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "int" or ecproperty.type == "long":
+                stuffer_str += '    {0}Buf->{1} = {1};\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "double":
+                stuffer_str += '    {0}Buf->{1} = {1};\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = true;\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            else:
+                raise PropertyTypeError("Property type {0} not accepted".format(ecproperty.type))
+        stuffer_str += "\n"
+        return stuffer_str
 
