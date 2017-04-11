@@ -404,18 +404,17 @@ struct  PublishTileNode : ModelTileNode
         TileMeshBuilderR    m_builder;
         DgnModelId          m_modelId;
         DgnDbR              m_dgnDb;
-        bool                m_twoSidedTriangles;
         
-        ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb), m_twoSidedTriangles(twoSidedTriangles) { }
+        ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true, 0); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true, 0); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, FeatureAttributes(), true, 0); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, FeatureAttributes(), true, 0); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
+virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
     {
     PublishableTileGeometry publishableGeometry;
     TileMeshList&           tileMeshes =  publishableGeometry.Meshes();
@@ -489,13 +488,13 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
-                ClipOutputCollector clipOutputCollector(m_model->GetModelId(), dgnDb, *builder, twoSidedTriangles);
+                ClipOutputCollector clipOutputCollector(m_model->GetModelId(), dgnDb, *builder);
 
                 m_clip->ClipPolyface(*polyface, clipOutputCollector, true);
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, FeatureAttributes(), twoSidedTriangles, true, 0);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, FeatureAttributes(), true, 0);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
