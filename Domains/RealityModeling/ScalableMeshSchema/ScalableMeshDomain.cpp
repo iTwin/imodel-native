@@ -40,7 +40,7 @@ ScalableMeshDomain::SchemaOperation ScalableMeshDomain::SchemaOperationNeeded(Dg
     auto smDomainCP = db.Domains().FindDomain(BENTLEY_SCALABLEMESH_SCHEMA_NAME);
 
     if (!smDomainCP)
-        return SchemaOperation::None;
+        return SchemaOperation::Import;
 
     // Ignoring VersionDigit2 as it is not completely hooked-up in DgnDb06 by lower layers
     Statement stmt;
@@ -49,7 +49,7 @@ ScalableMeshDomain::SchemaOperation ScalableMeshDomain::SchemaOperationNeeded(Dg
 
     if (DbResult::BE_SQLITE_OK != stmt.BindText(1, BENTLEY_SCALABLEMESH_SCHEMA_NAME, Statement::MakeCopy::No) ||
         DbResult::BE_SQLITE_ROW != stmt.Step())
-        return SchemaOperation::Undetermined;
+        return SchemaOperation::Import;
 
     uint32_t digit1 = (uint32_t)stmt.GetValueInt(0);
     uint32_t digit3 = (uint32_t)stmt.GetValueInt(1);
@@ -73,7 +73,7 @@ Dgn::DgnDbStatus ScalableMeshDomain::UpdateSchema(SchemaUpdateScalableMeshDgnDbP
     if (schemaOp == SchemaOperation::None)
         return DgnDbStatus::Success;
 
-    if (schemaOp != SchemaOperation::MinorSchemaUpdate)
+    if (schemaOp != SchemaOperation::MinorSchemaUpdate && schemaOp != SchemaOperation::Import)
         return DgnDbStatus::InvalidSchemaVersion;
 
     BeFileName schemaFileName = params.m_assetsRootDir;
@@ -84,6 +84,9 @@ Dgn::DgnDbStatus ScalableMeshDomain::UpdateSchema(SchemaUpdateScalableMeshDgnDbP
         return retVal;
 
     Utf8String schemaUpdateDescr("SAVECHANGES_SchemaUpdate");
+    if (schemaOp == SchemaOperation::Import)
+        schemaUpdateDescr = "SAVECHANGES_SchemaImport";
+
     if (DbResult::BE_SQLITE_OK != params.m_dgnDb->SaveChanges(schemaUpdateDescr.c_str()))
         retVal = DgnDbStatus::WriteError;
 
