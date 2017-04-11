@@ -2459,6 +2459,23 @@ static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
+*
+*  6 points are generated for each line segment and these are used to generate 4 triangles.
+*  The triangles on the interior of a joint are truncated at the miter line - else
+*  we would be able to use only two triangles and 4 points.  (See PolylineTesselation.dgn)
+*  At each point we include the point location on at the segment center line as well as
+*  the previous and next points.   The previous and next points are used to calculate the 
+*  the miter direction.  For a start or end point the previous and next directions are 
+*  along the line segment and the miter direction is therefore perpendicular to the line segment.
+*  Param.x is the direction to offset along the miter line -- (0, -1 or 1).   
+*  Param.y is an inelegant horrible conglomeration -- 0 indicates the start point, 4 indicates end point.
+*
+*  The joint geometry fills the void between the two miter triangles.  Currently we are just
+*  Creating two triangles -- but we could create a single triangle (as QVision does) or additional
+*  triangles to make a more rounded joint.
+*    param.y values from 2-3 indicate start joint points, 6-7 indicate end joints. these are calculated as a linear combination of 
+*    the segment perpendicular and the miter direction.
+*
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
@@ -3016,11 +3033,10 @@ void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId mo
     {
     viewedModels.insert(modelId);
 
-    // ViewAttachments...
+    // Scan for viewAttachments...
     auto stmt = dgnDb.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, modelId);
 
-    // If we're already loaded, look in existing list so we don't reload them
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto attachId = stmt->GetValueId<DgnElementId>(0);
@@ -3226,7 +3242,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
         }
     else
         {
-        json["type"] = "drawing";
+        json["type"] = nullptr != view.ToDrawingView() ? "drawing" : "sheet";;
         }
     }
 

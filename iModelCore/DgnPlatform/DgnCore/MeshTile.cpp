@@ -1811,18 +1811,24 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         });
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGeneratorStatus status, ElementTileContext context)
     {
     auto& cache = *context.m_cache;
-    if (TileGeneratorStatus::Success != status)
+    if (TileGeneratorStatus::Success != status && nullptr == context.m_model->ToSheetModel())
         {
         ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
-    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
+    
+    DRange3d        range = cache.GetRange();
+    if (nullptr != context.m_model->ToSheetModel())
+        range.Extend(context.m_model->ToSheetModel()->GetSheetExtents());
+
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, GetTransformFromDgn(), 0, 0, nullptr);
 
     return ProcessParentTile(parent, context).then([=](ElementTileResult result)
         { 
@@ -1830,13 +1836,6 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
         })
     .then([=](ElementTileResult result)
         {
-        TileNodePtr     decorationTile = nullptr;
-
-        if (TileGeneratorStatus::Success == result.m_status && decorationTile.IsValid())
-            {
-            // TODO - Extend range.
-            parent->GetChildren().push_back(decorationTile);
-            }
         return result;
         });
     }
@@ -1860,7 +1859,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         auto const& generationCache = *context.m_cache;
 
         double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
-        bool            isLeaf = tileTolerance < leafTolerance;
+        bool            isLeaf = tileTolerance < leafTolerance && parent->GetChildren().empty();
         bool            leafThresholdExceeded = false;
 
         // Always collect geometry at the target leaf tolerance.
@@ -1888,13 +1887,12 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
             return result;
             }
 
-        size_t              siblingIndex = 0;
         bvector<DRange3d>   subRanges;
 
         tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange());
         for (auto& subRange : subRanges)
             {
-            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, tile.GetChildren().size(), &tile);
 
             tile.GetChildren().push_back(child);
             }
@@ -2230,6 +2228,7 @@ public:
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
+
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
     void FlushPolyfaceCache();
@@ -2243,6 +2242,13 @@ public:
         // Avoid processing any elements with range smaller than roughly half a pixel...
         return range.DiagonalDistance() < m_minRangeDiagonal;
         }
+    
+    void PushCurrentGeometry()
+        {
+        for (auto& geom : m_curElemGeometries)
+            PushGeometry(*geom);
+        }
+
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     11/2016
@@ -2457,9 +2463,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             context.VisitElement(elemId, false);
             FlushPolyfaceCache();
             }
-        for (auto& geom : m_curElemGeometries)
-            PushGeometry(*geom);
-
+        PushCurrentGeometry();
         if (!haveCached)
             m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
         }
@@ -2704,13 +2708,14 @@ struct GeometryCollector : RangeIndex::Traverser
         return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
         }
 };
-
+         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
     {
     GeometryCollector collector(m_range, *this, context);
+
     auto status = collector.Collect();
     if (TileGeneratorStatus::Aborted == status)
         {
@@ -2718,6 +2723,14 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         }
     else if (TileGeneratorStatus::Success == status)
         {
+        Sheet::ModelCP      sheetModel;
+
+        if (nullptr != (sheetModel = m_cache.GetModel().ToSheetModel()))
+            {
+            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+            PushCurrentGeometry();
+            }
+
         // We sort by size in order to ensure the largest geometries are assigned batch IDs
         // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
         if (m_geometries.size() > s_maxGeometryIdCount)
@@ -2874,9 +2887,11 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
+
     if (is2d)
         {
         TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
+
         return processor.OutputGraphics(context);
         }
     else
@@ -2942,26 +2957,6 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     return publishedTileGeometry;
     }
 
-#ifdef WIP
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry SheetDecorationTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const
-    {
-    TileGeometryList                geometries;
-    PublishableTileGeometry         publishedTileGeometry;
-    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGenerateCachePtr            generationCache = TileGenerationCache::Create();
-
-    TileGeometryProcessor           processor(geometries, *cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, nullptr, m_tolerance, flse, 0, true);
-    TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
-
-
-
-    return publishableGeometry;
-    }
-
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
