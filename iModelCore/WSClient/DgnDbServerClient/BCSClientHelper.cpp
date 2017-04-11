@@ -12,6 +12,21 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BCSClientHelper::BCSClientHelper(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls) : m_clientInfo(clientInfo)
+    {
+    m_localStateOwned = false;
+    m_localState = ls;
+
+    if (nullptr == m_localState)
+        {
+        m_localState        = new DefaultServiceLocalState;
+        m_localStateOwned   = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbClientPtr BCSClientHelper::SignIn(Tasks::AsyncError* errorOut, BCSSignInInfo const& signinInfo)

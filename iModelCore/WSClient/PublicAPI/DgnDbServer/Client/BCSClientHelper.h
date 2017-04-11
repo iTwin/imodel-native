@@ -52,6 +52,7 @@ struct BCSSignInInfo
         }
 };
 
+
 /*--------------------------------------------------------------------------------------+
 * Helps the caller with tasks such as signing into the BIM Collaboration Service via Connect
 * and looking up a project ID from a project name.
@@ -61,14 +62,58 @@ struct BCSClientHelper
 {
 private:
     IJsonLocalState* m_localState;
+    bool             m_localStateOwned;
     WebServices::ClientInfoPtr m_clientInfo;
     WebServices::ConnectSignInManagerPtr m_signinMgr;
+
+    //=======================================================================================
+    // This class was taken from the DgnPlatformExample Briefcase.cpp
+    // Apparently local state is now not being passed correctly in Gist
+    // So use this class to create a local state if none is given to BCSClientHelper
+    //                                                              -Diego.Pinate
+    // @bsimethod                                    Abeesh.Basheer                  09/2016
+    //=======================================================================================
+    struct DefaultServiceLocalState : public IJsonLocalState
+    {
+    private:
+        Json::Value m_map;
+
+    public:
+        JsonValueR GetStubMap()
+            {
+            return m_map;
+            }
+        //! Saves the Utf8String value in the local state.
+        //! @note The nameSpace and key pair must be unique.
+        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+            {
+            Utf8PrintfString identifier("%s/%s", nameSpace, key);
+
+            if (value == "null")
+                {
+                m_map.removeMember(identifier);
+                }
+            else
+                {
+                m_map[identifier] = value;
+                }
+            };
+        //! Returns a stored Utf8String from the local state.
+        //! @note The nameSpace and key pair uniquely identifies the value.
+        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+            {
+            Utf8PrintfString identifier("%s/%s", nameSpace, key);
+            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
+            };
+    }; // DefaultServiceLocalState
 
     static Utf8CP str_BentleyConnectGlobal() {return "BentleyCONNECT.Global--CONNECT.GLOBAL";}
 
 public:
     //! Construct the helper
-    BCSClientHelper(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr) : m_clientInfo(clientInfo), m_localState(ls) {}
+    DGNDBSERVERCLIENT_EXPORT BCSClientHelper(WebServices::ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr);
+
+    ~BCSClientHelper() { if (nullptr != m_localState && m_localStateOwned) delete m_localState; }
 
     //! Sign in
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
