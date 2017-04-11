@@ -33,6 +33,16 @@ class SchemaApiSourceWriter(SchemaSourceWriter):
                 self.__write_update_class_implementation(ecclass)
             if ecclass.should_have_delete():
                 self.__write_delete_class_implementation(ecclass)
+            
+        for ecrelclass in self._ecschema.get_relationships():
+            if ecrelclass.should_exclude_entire_class():
+                continue
+            self.__write_rel_class_buf_init_implementation(ecrelclass)
+
+    def __write_rel_class_buf_init_implementation(self, ecrelclass):
+        self._file.write(self._COMMENT_BsiMethod)
+        self._file.write(ecrelclass.get_buf_init_implementation())
+        self._write_spacing()
 
     def __write_read_class_list_implementation(self, ecclass):
         self._file.write(self._COMMENT_BsiMethod)
