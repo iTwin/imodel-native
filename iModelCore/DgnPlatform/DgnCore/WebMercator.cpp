@@ -314,6 +314,10 @@ void WebMercatorModel::FromJson(Json::Value const& value)
         {
         m_provider = new BingImageryProvider ();
         }
+    else if (0 == providerName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
+        {
+        m_provider = new HereImageryProvider ();
+        }
 
     if (m_provider.IsValid())
         {
@@ -397,6 +401,7 @@ WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params
         }
     else if (0 == imageryProviderName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
         {
+        m_provider = new HereImageryProvider();
         }
 
     if (m_provider.IsValid())
@@ -508,7 +513,7 @@ Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String   TileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
+static Utf8String   tileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
     {
     // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
     Utf8String  quadKey;
@@ -539,12 +544,12 @@ Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
     // From the tile, get a "quadkey" the Microsoft way.
     int x = tile.GetColumn();
     int y = tile.GetRow();
-    Utf8String  quadKey = TileXYToQuadKey (x, y, tile.GetZoomLevel());
+    Utf8String  quadKey = tileXYToQuadKey (x, y, tile.GetZoomLevel());
     int subdomain = (x + y) % 4;
 
     // from the template url, construct the tile url.
     Utf8String url;
-    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey);
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey.c_str());
 
     return url;
     }
@@ -654,7 +659,7 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             // typical reponse, (LF's added for clarity)
             // {"authenticationResultCode":"ValidCredentials",
             // "brandLogoUri":"http:\/\/dev.virtualearth.net\/Branding\/logo_powered_by.png",
-            // "copyright":"Copyright © 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
+            // "copyright":"Copyright ï¿½ 2017 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
             // "resourceSets":
             //    [{"estimatedTotal":1,
             //      "resources":
@@ -718,6 +723,117 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
         });
     }
 
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+HereImageryProvider::HereImageryProvider ()
+    {
+    // Trial period credentials, good only until July 9, 2017.
+    m_appId.assign("Eieg0LYRqg5cyHQdUPCf");
+    m_appCode.assign("scZCSrR56QXuGU4_EwzQGQ");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HereImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+    {
+    // The general format (from Here documentation: https://developer.here.com/rest-apis/documentation/enterprise-map-tile/topics/request-constructing.html
+    // {Base URL}{Path}{resource (tile type)}/{map id}/{scheme}/{zoom}/{column}/{row}/{size}/{format}
+    // ?app_id={YOUR_APP_ID}
+    // &app_code={YOUR_APP_CODE}
+    // &{param}={value}
+    // 
+    // Base URL for Map types:      https://{1-4}.base.maps.api.here.com
+    // Base URL for Aerial type:    https://{1-4}.aerial.maps.api.here.com
+    // They also have traffic tiles, but I don't think they are relevant for us.
+
+    int x = tile.GetColumn();
+    int y = tile.GetRow();
+    int subdomain = 1 + ((x + y) % 4);
+
+    Utf8String  url;
+    url.Sprintf (m_urlTemplate.c_str(), subdomain, tile.GetZoomLevel(), x, y, m_appId.c_str(), m_appCode.c_str());
+
+    return url;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HereImageryProvider::_GetCreditMessage () const
+    {
+    return "(c) HERE";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HereImageryProvider::_GetCacheFileName () const
+    {
+    switch (m_mapType)
+        {
+        case HereImageryProvider::MapType::Map:
+            return "HereRoad";
+
+        case HereImageryProvider::MapType::Aerial:
+            return "HereAerial";
+
+        case HereImageryProvider::MapType::Combined:
+            return "HereHybrid";
+        }
+    BeAssert (false);
+    return "HereUnknown";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    HereImageryProvider::_FromJson (Json::Value const& value)
+    {
+    // the only thing currently stored in the HereImageryProvider Json is the MapType.
+    m_mapType = (HereImageryProvider::MapType) value[json_mapType()].asInt((int)HereImageryProvider::MapType::Map);
+
+    switch (m_mapType)
+        {
+        case HereImageryProvider::MapType::Map:
+            m_urlTemplate = "https://%d.base.maps.api.here.com/maptile/2.1/maptile/newest/normal.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        case HereImageryProvider::MapType::Aerial:
+            m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/satellite.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        case HereImageryProvider::MapType::Combined:
+            m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/hybrid.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
+            break;
+
+        default:
+            BeAssert(false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    HereImageryProvider::_ToJson (Json::Value& value) const
+    {
+    // the only thing currently stored in the HereImageryProvider Json is the MapType.
+    value[json_mapType()] = (int)m_mapType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP  HereImageryProvider::_GetCreditUrl() const
+    {
+    // NEEDSWORK_MapBox
+    return nullptr;
+    }
+
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace WebMercator
@@ -727,19 +843,21 @@ namespace WebMercator
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct FetchTemplateUrlProgressiveTask : ProgressiveTask 
     {
-    folly::Future<ImageryProvider::TemplateUrlLoadStatus>&  m_future;
+    folly::Future<ImageryProvider::TemplateUrlLoadStatus>   m_future;
     WebMercatorModelCPtr                                    m_model;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Barry.Bentley                   04/17
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>& future, WebMercatorModel const* model) : m_future(future), m_model (model) {}
+    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>&& future, WebMercatorModel const* model) : m_future(std::move(future)), m_model (model) {}
 
     ~FetchTemplateUrlProgressiveTask () 
         {
         // The progressive display is deleted if the view is closed.
         // If the request is still outstanding, then set it back to "NotFetched"
-        m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
+        ImageryProvider::TemplateUrlLoadStatus status = m_model->m_provider->_GetTemplateUrlLoadStatus();
+        if (ImageryProvider::TemplateUrlLoadStatus::Requested == status)
+            m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -790,7 +908,7 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
 };
 
 END_BENTLEY_DGN_NAMESPACE
-
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -801,14 +919,14 @@ void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
         return;
 
     folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
-    if (ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
+    if (!future.isReady() || ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
         {
         for (;;)
             {
             if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
                 {
                 // don't have the tile template yet, schedule a progressive pass to get it.
-                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (future, this));
+                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (std::move(future), this));
                 return;
                 }
             else
