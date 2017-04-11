@@ -328,17 +328,9 @@
             </Files>
         </Bindings>
     </Part>
-
-    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsNative" />
-        <Bindings>
-            <Files ProductDirectoryName="SchemaValidatorExe">
-                Delivery/SchemaValidator.exe
-                Delivery/SchemaValidator.logging.config.xml
-            </Files>
-        </Bindings>
-    </Part>
     
+    <Part Name="SchemaValidator" PrgOutputDir="AllBisSchemas">
+    </Part>
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
