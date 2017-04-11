@@ -281,23 +281,43 @@ class ECClass(object):
         create_request_str += "(\n"
         create_request_str += "{0}HANDLE apiHandle".format(self.__api.get_upper_api_acronym())
         create_request_str += self.__get_class_properties_for_function_def()
-        #create_request_str += self.__get_relationship_source_ids_for_function_def()
+        create_request_str += self.__get_relationship_source_ids_for_function_def('create')
         create_request_str += "\n)"
         return create_request_str
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                     Robert.Priest    04/2017
     #-------------------------------------------------------------------------------------------
-    def __get_relationship_source_ids_for_function_def(self):
-        str = ""        
+    def __get_relationship_source_ids_for_function_def(self, function_type):
+        str = ""               
         #if we have any relationships, we need to allow for id for the source object to be passed in (for example:
         # a parent object id under which this item will be created) 
         # TODO: Re-examine whether we can make such an assumption (to add an id) for any relationship encountered.
         #       It is not completely clear that is a safe make that assumption at this point.        
         if (len (self.__ecRelationshipclasses) > 0):                
-                for ecr in self.__ecRelationshipclasses:                    
-                    str += ',\n'
-                    str += "WCharCP {0}Id".format(ecr.get_name())
+                for ecr in self.__ecRelationshipclasses:   
+                    if function_type == 'create':
+                        if ecr.should_have_create():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'read':
+                        if ecr.should_have_read():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'update':
+                        if ecr.should_have_update():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'delete':
+                        if ecr.should_have_delete():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'readall':
+                        if ecr.should_have_readall():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+        return str
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def __get_relationship_source_var_for_function_def(self, ecr):
+        str = ",\n{0}DATABUFHANDLE {1}Buffer".format(self.__api.get_upper_api_acronym(), ecr.get_var_name())
         return str
 
     #-------------------------------------------------------------------------------------------

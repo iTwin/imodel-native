@@ -25,6 +25,13 @@ class SchemaBufferPublicHeaderWriter(SchemaHeaderWriter):
             self._write_spacing()
         self._file.write(self._COMMENT_GroupEnd)
 
+        for ecrelclass in self._ecschema.get_relationships():
+            if ecrelclass.should_exclude_entire_class():
+                continue
+            self._file.write(self._COMMENT_GroupBriefShort.format(ecrelclass.get_name()))
+            self._file.write(ecrelclass.get_enum())
+            self._write_spacing()
+        self._file.write(self._COMMENT_GroupEnd)
 
 
 
