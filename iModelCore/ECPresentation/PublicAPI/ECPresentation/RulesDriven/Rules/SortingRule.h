@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/SortingRule.h $
+|     $Source: PublicApi/ECPresentationRules/SortingRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ Sorting rule for defining sorting type of ECInstances. If no rule is defined, EC
 will be sorted using natural (alphanumeric) sorting by default.
 * @bsiclass                                     Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SortingRule : public PresentationRule
+struct SortingRule : public CustomizationRule
     {
     private:
         Utf8String m_schemaName;
@@ -35,6 +35,9 @@ struct SortingRule : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accepts customization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

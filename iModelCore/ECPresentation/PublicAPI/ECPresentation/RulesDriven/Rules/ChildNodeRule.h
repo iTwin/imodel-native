@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/ChildNodeRule.h $
+|     $Source: PublicApi/ECPresentationRules/ChildNodeRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,11 +11,13 @@
 
 #include <ECPresentationRules/PresentationRule.h>
 #include <ECPresentationRules/PresentationRulesTypes.h>
+#include <ECPresentationRules/CustomizationRules.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef bvector<ChildNodeSpecificationP> ChildNodeSpecificationList;
 typedef bvector<SubConditionP>           SubConditionList;
+typedef bvector<CustomizationRuleP>      ChildNodeCustomizationRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 SubCondition can be used in ChildNodeRule or RootNodeRule in order to separate 
@@ -71,6 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         RuleTargetTree             m_targetTree;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
+        ChildNodeCustomizationRuleList m_customizationRules;
         bool                       m_stopFurtherProcessing;
 
     protected:
@@ -106,6 +109,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
         ECOBJECTS_EXPORT ChildNodeSpecificationList&        GetSpecificationsR (void);
         ECOBJECTS_EXPORT ChildNodeSpecificationList const&  GetSpecifications (void) const;
+
+        //! Nested customization rules applied on nodes created by this rule
+        ECOBJECTS_EXPORT ChildNodeCustomizationRuleList&         GetCustomizationRulesR (void);
+        ECOBJECTS_EXPORT ChildNodeCustomizationRuleList const&   GetCustomizationRules (void) const;
 
         //! If this flag is set, this rule will stop any further processing of rules.
         //! This helps in cases when recursion suppression is needed.

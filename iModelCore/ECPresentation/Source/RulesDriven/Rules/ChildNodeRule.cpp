@@ -175,6 +175,20 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
             CommonTools::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
             CommonTools::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), GROUPING_RULE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<GroupingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CHECKBOX_RULE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<CheckBoxRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), RENAMENODE_RULE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<RenameNodeRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), STYLE_OVERRIDE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<StyleOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), LABEL_OVERRIDE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<LabelOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SORTING_RULE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<SortingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), IMAGE_ID_OVERRIDE_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
         }
 
     return PresentationRule::_ReadXml (xmlNode);
@@ -189,7 +203,7 @@ void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
 
     CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (xmlNode, m_specifications);
-
+    CommonTools::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList> (xmlNode, m_customizationRules);
     PresentationRule::_WriteXml (xmlNode);
     }
 
@@ -209,6 +223,12 @@ SubConditionList& ChildNodeRule::GetSubConditionsR (void) { return m_subConditio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications (void) const { return m_specifications; }
 ChildNodeSpecificationList& ChildNodeRule::GetSpecificationsR (void) { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.vaiksnoras               03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeCustomizationRuleList const& ChildNodeRule::GetCustomizationRules(void) const { return m_customizationRules; }
+ChildNodeCustomizationRuleList& ChildNodeRule::GetCustomizationRulesR(void) { return m_customizationRules; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014

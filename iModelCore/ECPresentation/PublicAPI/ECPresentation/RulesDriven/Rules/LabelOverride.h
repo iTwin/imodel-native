@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/LabelOverride.h $
+|     $Source: PublicApi/ECPresentationRules/LabelOverride.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,7 +18,7 @@ Label and Description override rule implementation. This rule is used to overrid
 label and description generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public PresentationRule
+struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public CustomizationRule
     {
     private:
         Utf8String m_label;
@@ -33,6 +33,9 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accept nested customization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

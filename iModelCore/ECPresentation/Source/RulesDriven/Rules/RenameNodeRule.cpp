@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RenameNodeRule.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenameNodeRule::RenameNodeRule () : PresentationRule ()
+RenameNodeRule::RenameNodeRule () : CustomizationRule()
     {
     }
 
@@ -23,7 +23,7 @@ RenameNodeRule::RenameNodeRule () : PresentationRule ()
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenameNodeRule::RenameNodeRule (Utf8StringCR condition, int priority)
-    : PresentationRule (condition, priority, false)
+    : CustomizationRule(condition, priority, false)
     {
     }
 
@@ -50,3 +50,8 @@ void RenameNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     PresentationRule::_WriteXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              Aidas.Vaiksnoras                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RenameNodeRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Visit(*this);}

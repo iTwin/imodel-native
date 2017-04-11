@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/StyleOverride.h $
+|     $Source: PublicApi/ECPresentationRules/StyleOverride.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Node style override rule implementation. This rule is used to override default node style.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StyleOverride : public PresentationRule
+struct StyleOverride : public CustomizationRule
     {
     private:
         Utf8String m_foreColor;
@@ -31,6 +31,9 @@ struct StyleOverride : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accecpt nested customization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

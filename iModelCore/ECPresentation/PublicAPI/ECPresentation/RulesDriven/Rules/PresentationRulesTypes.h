@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/PresentationRulesTypes.h $
+|     $Source: PublicApi/ECPresentationRules/PresentationRulesTypes.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,6 +18,7 @@ EC_TYPEDEFS (ImageIdOverride);
 EC_TYPEDEFS (PresentationKey);
 EC_TYPEDEFS (PresentationRule);
 EC_TYPEDEFS (PresentationRuleSet);
+EC_TYPEDEFS (CustomizationRule);
 EC_TYPEDEFS (RootNodeRule);
 EC_TYPEDEFS (LabelOverride);
 EC_TYPEDEFS (StyleOverride);

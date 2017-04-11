@@ -121,6 +121,13 @@
                 <xs:element ref="InstancesOfSpecificClasses"/>
                 <xs:element ref="SearchResultInstances"/>
                 <xs:element ref="RelatedInstances"/>
+                <xs:element ref="GroupingRule"/>
+                <xs:element ref="RenameNodeRule"/>
+                <xs:element ref="CheckBoxRule"/>
+                <xs:element ref="SortingRule"/>
+                <xs:element ref="StyleOverride"/>
+                <xs:element ref="LabelOverride"/>
+                <xs:element ref="ImageIdOverride"/>
             </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
             <xs:attribute default="MainTree" name="TargetTree">

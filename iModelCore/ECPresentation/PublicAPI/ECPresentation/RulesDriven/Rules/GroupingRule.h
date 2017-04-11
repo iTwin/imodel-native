@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
+|     $Source: PublicApi/ECPresentationRules/GroupingRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -42,7 +42,7 @@ protected:
 Presentation rule for child nodes advanced grouping in the hierarchy.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GroupingRule : public PresentationRule
+struct GroupingRule : public CustomizationRule
     {
     private:
         Utf8String            m_schemaName;
@@ -62,12 +62,15 @@ struct GroupingRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //!Accepts customization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT GroupingRule ();
+        ECOBJECTS_EXPORT GroupingRule();
 
         //! Constructor.
-        ECOBJECTS_EXPORT GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
+        ECOBJECTS_EXPORT GroupingRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
 
         //! Constructor.
         ECOBJECTS_EXPORT GroupingRule(GroupingRuleCR);

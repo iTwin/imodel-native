@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule ()
-    : PresentationRule (), m_schemaName (""), m_className (""), m_contextMenuCondition (""), m_contextMenuLabel (""), m_settingsId ("")
+    : m_schemaName (""), m_className (""), m_contextMenuCondition (""), m_contextMenuLabel (""), m_settingsId ("")
     {
     }
 
@@ -25,7 +25,7 @@ GroupingRule::GroupingRule ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId)
-    : PresentationRule (condition, priority, onlyIfNotHandled), 
+    : CustomizationRule(condition, priority, onlyIfNotHandled),
       m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
     {
     }
@@ -143,6 +143,11 @@ Utf8StringCR GroupingRule::GetContextMenuLabel (void) const        { return m_co
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR GroupingRule::GetSettingsId (void) const              { return m_settingsId; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GroupingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
