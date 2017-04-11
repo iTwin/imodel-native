@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
+
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
 #include <Units/Units.h>
