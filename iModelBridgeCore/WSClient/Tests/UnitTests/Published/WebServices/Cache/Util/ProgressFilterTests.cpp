@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ProgressFilterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,14 +11,14 @@
 
 using namespace ::testing;
 
-TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithProgressOfNullptr_DoesNothing)
+TEST_F(ProgressFilterTests, Execute_CreatedWithProgressOfNullptr_DoesNothing)
     {
     std::function<void(double)> onProgress = nullptr;
     std::function<void(double)> filteredProgress = ProgressFilter::Create(onProgress);
     filteredProgress(55);
     }
 
-TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfOneArgument_ProgressExcecutes)
+TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfOneArgument_ProgressExcecutes)
     {
     int count = 0;
     std::function<void(double)> onProgress = [&] (double a) 
@@ -31,7 +31,7 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfOneArgu
     EXPECT_EQ(1, count);
     }
 
-TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfTwoArguments_ProgressExcecutes)
+TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfTwoArguments_ProgressExcecutes)
     {
     int count = 0;
     std::function<void(int, Utf8String)> onProgress = [&] (int a, Utf8String b)
@@ -45,7 +45,7 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfTwoArgu
     EXPECT_EQ(1, count);
     }
 
-TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithInsufficientDelay_ProgressIsCalledOnce)
+TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithInsufficientDelay_ProgressIsCalledOnce)
     {
     int count = 0;
     std::function<void(double)> onProgress = [&] (double a)
@@ -60,7 +60,7 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithInsufficient
     EXPECT_EQ(1, count);
     }
 
-TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithSufficiantDelay_ProgressIsCalledTwice)
+TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithSufficiantDelay_ProgressIsCalledTwice)
     {
     int count = 0;
     std::function<void(double)> onProgress = [&] (double a)
@@ -71,6 +71,63 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithSufficiantDe
     filteredProgress(55);
     BeThreadUtilities::BeSleep(2);
     filteredProgress(75);
+    EXPECT_EQ(2, count);
+    }
+
+TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsTrue_ProgressIsCalledMultipleTimes)
+    {
+    int count = 0;
+    std::function<void(double)> onProgress = [&] (double a)
+        {
+        count++;
+        };
+    std::function<bool(double)> shouldSkipFilter = [] (double a)
+        {
+        return true;
+        };
+    std::function<void(double)> filteredProgress = ProgressFilter::Create(onProgress, shouldSkipFilter, 100000);
+    filteredProgress(1);
+    filteredProgress(2);
+    filteredProgress(3);
+    filteredProgress(4);
+    EXPECT_EQ(4, count);
+    }
+    
+TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsFalse_ProgressIsCalledOnce)
+    {
+    int count = 0;
+    std::function<void(double)> onProgress = [&] (double a)
+        {
+        count++;
+        };
+    std::function<bool(double)> shouldSkipFilter = [] (double a)
+        {
+        return false;
+        };
+    std::function<void(double)> filteredProgress = ProgressFilter::Create(onProgress, shouldSkipFilter, 100000);
+    filteredProgress(1);
+    filteredProgress(2);
+    filteredProgress(3);
+    filteredProgress(4);
+    EXPECT_EQ(1, count);
+    }
+    
+TEST_F(ProgressFilterTests, Execute_MultipleTimesAndShouldSkipFilterTrueOnce_ProgressIsCalledTwice)
+    {
+    int count = 0;
+    std::function<void(double)> onProgress = [&] (double a)
+        {
+        count++;
+        };
+    std::function<bool(double)> shouldSkipFilter = [&] (double a)
+        {
+        return count == 1;
+        };
+    std::function<void(double)> filteredProgress = ProgressFilter::Create(onProgress, shouldSkipFilter, 100000);
+    filteredProgress(1);
+    filteredProgress(2);
+    filteredProgress(3);
+    filteredProgress(4);
     EXPECT_EQ(2, count);
     }
 

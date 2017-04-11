@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/FileUtil.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -243,9 +243,13 @@ ICancellationTokenPtr ct
     if (BeFileStatus::Success != target.SetSize(0))
         {
         return ERROR;
-        }
+        }    
 
-    ProgressCallback onFilteredProgress = ProgressFilter::Create(onProgress);
+    std::function<bool(double, double)> shouldSkipFilter = [] (double bytesTransfered, double bytesTotal)
+        {
+        return bytesTransfered == bytesTotal;
+        };
+    ProgressCallback onFilteredProgress = ProgressFilter::Create(onProgress, shouldSkipFilter);
 
     uint32_t bufferSize = 1024 * 8;
     std::unique_ptr<char[]> buffer(new char[bufferSize]);
@@ -255,7 +259,7 @@ ICancellationTokenPtr ct
 
     uint64_t sourceSize = 0;
     uint64_t targetSize = 0;
-    source.GetSize(sourceSize);
+    source.GetSize(sourceSize);    
 
     onFilteredProgress(0, 0);
 
