@@ -43,7 +43,7 @@ public:
     ScalableMeshDomain();
 
 public:
-    enum SchemaOperation { None, MinorSchemaUpdate, MajorSchemaUpgrade, UnsupportedSchema, Undetermined };
+    enum SchemaOperation { None, Import, MinorSchemaUpdate, MajorSchemaUpgrade, UnsupportedSchema, Undetermined };
 
     SCALABLEMESH_SCHEMA_EXPORT Dgn::DgnDbStatus UpdateSchema(SchemaUpdateScalableMeshDgnDbParams& params) const;
 
