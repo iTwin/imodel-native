@@ -329,8 +329,21 @@
         </Bindings>
     </Part>
     
-    <Part Name="SchemaValidator" PrgOutputDir="AllBisSchemas">
+    <Part Name="SchemaValidatorRunner" BentleyBuildMakeFile="tools/SchemaValidator/SchemaLoadTool/SchemaValidatorLoader.mke" ExcludePlatforms="Android*,Linux*,iOS*" PrgOutputDir="AllBisSchemas">
+        <SubPart PartName="SchemaValidator" />
     </Part>
+    
+    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*" PrgOutputDir="AllBisSchemas">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaValidatorExe">
+                Delivery/SchemaValidator.exe
+                Delivery/SchemaValidator.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
@@ -360,8 +373,8 @@
 
     <ProductDirectoryList ListName="SchemaValidator">
         <ProductDirectory Name="SchemaValidatorExe" Path=""/>
-    </ProductDirectoryList>    
-
+    </ProductDirectoryList>  
+    
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
