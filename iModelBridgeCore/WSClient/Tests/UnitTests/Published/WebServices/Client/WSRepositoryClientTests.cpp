@@ -1705,6 +1705,21 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24_SendsPutRequestW
     EXPECT_TRUE(response.IsSuccess());
     }
 
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV25_SendsPutRequestWithCorrectApiVersion)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadSuccessful_SendsConfirmationToServer)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationHandlerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectAuthenticationHandlerTests.h"
@@ -111,29 +111,12 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
     EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
     }
 
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWithTokenAuth_RetrievesnewTokenAndRetries)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
-
-    SamlTokenPtr newToken = StubSamlToken(100);
-
-    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(newToken)));
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
-    }
-
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceWithTokenAuth_ReturnsError)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 2);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());

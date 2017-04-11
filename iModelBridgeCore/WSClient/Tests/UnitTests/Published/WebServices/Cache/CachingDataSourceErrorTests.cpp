@@ -97,6 +97,30 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMess
     EXPECT_EQ("B", error.GetDescription());
     }
 
+TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusAndAsyncErrorPassed_StatusAndMessageAndDescriptionSet)
+    {
+    auto error = CachingDataSource::Error(CacheStatus::Error, AsyncError("A", "B"));
+    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, error.GetStatus());
+    ASSERT_EQ("A", error.GetMessage());
+    EXPECT_EQ("B", error.GetDescription());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusFileLockedAndEmptyAsyncError_OnlyStatusSet)
+    {
+    auto error = CachingDataSource::Error(CacheStatus::FileLocked, AsyncError());
+    ASSERT_EQ(ICachingDataSource::Status::FileLocked, error.GetStatus());
+    EXPECT_TRUE(error.GetMessage().empty());
+    EXPECT_TRUE(error.GetDescription().empty());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_StatusAndMessageSet)
+    {
+    auto error = CachingDataSource::Error(CacheStatus::Error, AsyncError());
+    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, error.GetStatus());
+    ASSERT_EQ("Internal cache error.", error.GetMessage());
+    EXPECT_TRUE(error.GetDescription().empty());
+    }
+
 TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, nullptr);
