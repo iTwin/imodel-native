@@ -297,5 +297,29 @@ void Drone::_CopyFrom(DgnElementCR el)
     SetGimbalElementId(other->GetGimbalElementId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DroneElementId Drone::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+    {
+    Utf8CP ecSql = "SELECT Drone.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Drone) " Drone " \
+                   "WHERE Drone.Label=?";
+
+    CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (!statement.IsValid())
+        {
+        BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
+        return DroneElementId();
+        }
+
+    statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
+
+    DbResult stepStatus = statement->Step();
+    if (stepStatus != BE_SQLITE_ROW)
+        return DroneElementId();
+
+    return statement->GetValueId<DroneElementId>(0);
+    }
+	
 END_BENTLEY_DATACAPTURE_NAMESPACE
 

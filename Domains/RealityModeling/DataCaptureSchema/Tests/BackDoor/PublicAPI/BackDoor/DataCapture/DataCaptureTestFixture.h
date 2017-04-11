@@ -2,7 +2,7 @@
 |
 |  $Source: DataCaptureSchema/Tests/BackDoor/PublicAPI/BackDoor/DataCapture/DataCaptureTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +35,9 @@ struct DataCaptureTestsFixture : ::testing::Test
 
         //Create Sample cameraDevice-photos project
         void CreateSampleShotProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable);
+
+        //Create Sample cameraDevice-drone project
+        void CreateSampleDroneProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
 
     public:
         static DataCaptureProjectHost& GetHost() { return *m_host; }

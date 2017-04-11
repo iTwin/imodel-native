@@ -377,8 +377,6 @@ TEST_F(DataCaptureTests, ModifyShot)
     DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDevicePtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
     shotPtr->SetCode(shotCode);
 
-
-
     //Update Shot element
     auto ShotUpdatedPtr = shotPtr->Update();
     ASSERT_TRUE(ShotUpdatedPtr.IsValid());
@@ -765,3 +763,164 @@ TEST_F(DataCaptureTests, CreateDrone)
     ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetSkew(), 1.0);
     ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetSensorSize(), 1.0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, ModifyDrone)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"ModifyDrone.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+    Utf8String cameraDeviceLabel = "BasicCameraDevice";
+    CreateSampleDroneProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr = projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Query Drone element
+    Utf8String droneLabel(Utf8PrintfString("Drone1"));
+    DgnElementId droneId = Drone::QueryForIdByLabel(*projectPtr, droneLabel.c_str());
+    ASSERT_TRUE(droneId.IsValid());
+    DronePtr dronePtr = Drone::GetForEdit(*projectPtr, droneId);
+    ASSERT_TRUE(dronePtr.IsValid());
+
+    // Change Drone properties
+    DgnElementId gimbalId = dronePtr->GetGimbalElementId();
+    GimbalPtr gimbalPtr = Gimbal::GetForEdit(*projectPtr, gimbalId);
+    ASSERT_TRUE(gimbalPtr.IsValid());
+
+    DgnElementIdSet gimbalAngleRangeSet = gimbalPtr->GetGimbalAngleRangeElementIdSet();
+    DgnElementId gimbalAngleRangeId = *gimbalAngleRangeSet.begin();
+    GimbalAngleRangePtr gimbalAngleRangePtr = GimbalAngleRange::GetForEdit(*projectPtr, gimbalAngleRangeId);
+    ASSERT_TRUE(gimbalAngleRangePtr.IsValid());
+    DgnCode gimbalAngleRangeCode = GimbalAngleRange::CreateCode(*projectPtr, Utf8PrintfString("%d", 42));
+    gimbalAngleRangePtr->SetCode(gimbalAngleRangeCode);
+    Angle minAngle(Angle::FromDegrees(10.0));
+    gimbalAngleRangePtr->SetMinimumAngle(minAngle);
+    Angle maxAngle(Angle::FromDegrees(20.0));
+    gimbalAngleRangePtr->SetMaximumAngle(maxAngle);
+    auto gimbalAngleRangeUpdatedPtr = gimbalAngleRangePtr->Update();
+    ASSERT_TRUE(gimbalAngleRangeUpdatedPtr.IsValid());
+    GimbalAngleRangeElementId gimbalAngleRangeUpdatedId = gimbalAngleRangeUpdatedPtr->GetId();
+    ASSERT_TRUE(gimbalAngleRangeUpdatedId.IsValid());
+    //Updating don't change id...
+    ASSERT_TRUE(gimbalAngleRangeUpdatedId == gimbalAngleRangeId);
+
+    DgnCode gimbalCode = Gimbal::CreateCode(*projectPtr, Utf8PrintfString("%d", 42));
+    gimbalPtr->SetCode(gimbalCode);
+    auto gimbalUpdatedPtr = gimbalPtr->Update();
+    ASSERT_TRUE(gimbalUpdatedPtr.IsValid());
+    GimbalElementId gimbalUpdatedId = gimbalUpdatedPtr->GetId();
+    ASSERT_TRUE(gimbalUpdatedId.IsValid());
+    //Updating don't change id...
+    ASSERT_TRUE(gimbalUpdatedId == gimbalId);
+
+    DgnCode droneCode = Drone::CreateCode(*projectPtr, Utf8PrintfString("%d", 42));
+    dronePtr->SetCode(droneCode);
+    auto droneUpdatedPtr = dronePtr->Update();
+    ASSERT_TRUE(droneUpdatedPtr.IsValid());
+    DroneElementId droneUpdatedId = droneUpdatedPtr->GetId();
+    ASSERT_TRUE(droneUpdatedId.IsValid());
+    //Updating don't change id...
+    ASSERT_TRUE(droneUpdatedId == droneId);
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicDrone");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Drone failed";
+
+    //Close project to flush memory
+    dronePtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    droneUpdatedPtr = nullptr;
+    gimbalPtr = nullptr;
+    gimbalUpdatedPtr = nullptr;
+    gimbalAngleRangePtr = nullptr;
+    gimbalAngleRangeUpdatedPtr = nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"ModifyDrone.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(droneId).IsValid());
+    DroneCPtr myDronePtr = Drone::Get(*projectReopenedPtr, droneId);
+    ASSERT_TRUE(myDronePtr.IsValid());
+    ASSERT_EQ(droneId, myDronePtr->GetElementId());
+    GimbalElementId gimbalIdRead = myDronePtr->GetGimbalElementId();
+    ASSERT_TRUE(gimbalIdRead.IsValid());
+    ASSERT_EQ(gimbalIdRead, gimbalId);
+    GimbalCPtr myGimbalPtr = Gimbal::Get(*projectReopenedPtr, gimbalIdRead);
+
+    DgnElementIdSet newGimbalAngleRangeSet = myGimbalPtr->GetGimbalAngleRangeElementIdSet();
+    GimbalAngleRangeCPtr myGimbalAngleRangePtr = GimbalAngleRange::Get(*projectReopenedPtr, *(newGimbalAngleRangeSet.begin()));
+    ASSERT_TRUE(myGimbalAngleRangePtr.IsValid());
+
+    //read back Drone properties and check if equal
+    DgnCode myDroneCode = myDronePtr->GetCode();
+    ASSERT_TRUE(myDroneCode == droneCode);
+
+    DgnCode myGimbalCode = myGimbalPtr->GetCode();
+    ASSERT_TRUE(myGimbalCode == gimbalCode);
+    DgnCode myGimbalAngleRangeCode = myGimbalAngleRangePtr->GetCode();
+    ASSERT_TRUE(myGimbalAngleRangeCode == gimbalAngleRangeCode);
+    ASSERT_TRUE(minAngle.Radians() == myGimbalAngleRangePtr->GetMinimumAngle().Radians());
+    ASSERT_TRUE(maxAngle.Radians() == myGimbalAngleRangePtr->GetMaximumAngle().Radians());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, DeleteDrone)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"DeleteDrone.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+    Utf8String cameraDeviceLabel = "BasicCameraDevice";
+    CreateSampleDroneProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr = projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Query Drone element
+    Utf8String droneLabel(Utf8PrintfString("Drone1"));
+    DgnElementId droneId = Drone::QueryForIdByLabel(*projectPtr, droneLabel.c_str());
+    ASSERT_TRUE(droneId.IsValid());
+
+    //Delete edited Drone element - You CANNOT delete an edited Drone element because you get a copy of the original ...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    DroneCPtr droneEditedPtr = Drone::GetForEdit(*projectPtr, droneId);
+    ASSERT_TRUE(droneEditedPtr.IsValid());
+    DgnDbStatus status = droneEditedPtr->Delete();
+    ASSERT_FALSE(status == DgnDbStatus::Success);
+
+    //Delete Drone element - You CAN delete a const Drone element because this is effectively the original element...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    DroneCPtr dronePtr = Drone::Get(*projectPtr, droneId);
+    ASSERT_TRUE(dronePtr.IsValid());
+    status = dronePtr->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicDrone");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Drone failed";
+
+    //Close project to flush memory
+    dronePtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    droneEditedPtr = nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"DeleteDrone.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    //Check that DroneId is not accessible anymore 
+    ASSERT_FALSE(projectReopenedPtr->Elements().GetElement(droneId).IsValid());
+    DroneCPtr myDronePtr = Drone::Get(*projectReopenedPtr, droneId);
+    ASSERT_FALSE(myDronePtr.IsValid());
+
+    // Check that query Drone element returns nothing
+    DgnElementId deletedDroneId = Drone::QueryForIdByLabel(*projectReopenedPtr, droneLabel.c_str());
+    ASSERT_FALSE(deletedDroneId.IsValid());
+    }   

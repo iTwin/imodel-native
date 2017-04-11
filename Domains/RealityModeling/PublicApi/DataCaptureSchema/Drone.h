@@ -103,6 +103,10 @@ public:
     DATACAPTURE_EXPORT void SetGimbalElementId(GimbalElementId gimbalId);
 
     DATACAPTURE_EXPORT GimbalElementId GetGimbalElementId() const;
+
+    //! Query for an Drone (Id) by label
+    //! @return Id of the Drone or invalid Id if an Drone was not found
+    DATACAPTURE_EXPORT static DroneElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 };
 
 //=================================================================================

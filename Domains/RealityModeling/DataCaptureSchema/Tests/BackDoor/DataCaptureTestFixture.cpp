@@ -242,3 +242,83 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     dgndb.SaveChanges("SamplePhotos");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DataCaptureTestsFixture::CreateSampleDroneProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
+    {
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(dgndb);
+    DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
+    SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(dgndb);
+    DgnModelPtr definitonModelPtr = dgndb.Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
+
+    // Create GimbalAngleRange
+    auto gimbalAngleRangePtr = GimbalAngleRange::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalAngleRangePtr.IsValid());
+
+    gimbalAngleRangePtr->SetMinimumAngle(Angle::FromDegrees(20));
+    gimbalAngleRangePtr->SetMaximumAngle(Angle::FromDegrees(40));
+
+    auto gimbalAngleRangeInsertedPtr = gimbalAngleRangePtr->Insert();
+    GimbalAngleRangeElementId gimbalAngleRangeElmId = gimbalAngleRangeInsertedPtr->GetId();
+
+    // Create CameraDevice Model
+    auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
+    cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
+
+    // Create Camera
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP, cameraDeviceModelPtr->GetId());
+    ASSERT_TRUE(cameraDevicePtr.IsValid());
+
+    cameraDevicePtr->SetLabel(cameraDeviceLable);
+    cameraDevicePtr->SetFocalLength(0.00479835);
+    cameraDevicePtr->SetImageWidth(5456);
+    cameraDevicePtr->SetImageHeight(3632);
+    DPoint2d principalPoint = { 2677.8,1772 };
+    cameraDevicePtr->SetPrincipalPoint(principalPoint);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraDevicePtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
+    cameraDevicePtr->SetAspectRatio(1.0);
+    cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
+
+    auto cameraDeviceInsertedPtr = cameraDevicePtr->Insert();
+    ASSERT_TRUE(cameraDeviceInsertedPtr.IsValid());
+    CameraDeviceElementId cameraDeviceId = cameraDeviceInsertedPtr->GetId();
+    ASSERT_TRUE(cameraDeviceId.IsValid());
+
+    // Create Gimbal
+    auto gimbalPtr = Gimbal::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalPtr.IsValid());
+
+    DgnElementIdSet gimbalAngleRangeSet;
+    gimbalAngleRangeSet.insert(gimbalAngleRangeElmId);
+    gimbalPtr->SetGimbalAngleRangeElementIdSet(gimbalAngleRangeSet);
+
+    DgnElementIdSet cameraDeviceSet;
+    cameraDeviceSet.insert(cameraDeviceId);
+    gimbalPtr->SetCameraElementIdSet(cameraDeviceSet);
+
+    auto gimbalInsertedPtr = gimbalPtr->Insert();
+    GimbalElementId gimbalElmId = gimbalInsertedPtr->GetId();
+
+    // Create Drone
+    auto dronePtr = Drone::Create(*spatialModelP, gimbalElmId);
+    dronePtr->SetLabel("Drone1");
+
+    ASSERT_TRUE(dronePtr.IsValid());
+
+    auto droneInsertedPtr = dronePtr->Insert();
+    DroneElementId droneElmId = droneInsertedPtr->GetId();
+
+    //Save changes
+    dgndb.SaveChanges("SampleDrone");
+	}
