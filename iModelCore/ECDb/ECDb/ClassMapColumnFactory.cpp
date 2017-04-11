@@ -32,7 +32,6 @@ void ClassMapColumnFactory::Initialize()const
         BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
         return;
         }
-
     for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
         {
         AddColumnToCache(*entry.second, entry.first);
@@ -739,19 +738,26 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
 
     for (RelationshipClassEndTableMap const* relClassEndTableMap : m_endTableRelationship)
         {
-        RelationshipConstraintMap const& persistedEnd = relClassEndTableMap->GetConstraintMap(relClassEndTableMap->GetForeignEnd());
+        RelationshipConstraintMap const& persistedEnd = relClassEndTableMap->GetConstraintMap(relClassEndTableMap->GetReferencedEnd());
+        SystemPropertyMap::PerTableIdPropertyMap const* relECClassIdPropMap = nullptr;
+        SystemPropertyMap::PerTableIdPropertyMap const* ecInstanceIdPropMap = nullptr;
         for (DbTable const* mappedTable : m_classMap.GetTables())
             {
-            SystemPropertyMap::PerTableIdPropertyMap const* ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
-            if (ecInstanceIdPropMap != nullptr)
-                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
+            if (!ecInstanceIdPropMap)
+                {
+                ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
+                if (ecInstanceIdPropMap != nullptr)
+                    columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
+                }
 
-            SystemPropertyMap::PerTableIdPropertyMap const* relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
-            if (relECClassIdPropMap != nullptr)
-                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
+            if (!relECClassIdPropMap) 
+                {
+                relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
+                if (relECClassIdPropMap != nullptr)
+                    columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
+                }
             }
         }
-    //    {
 
     return SUCCESS;
     }
