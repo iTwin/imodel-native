@@ -102,10 +102,12 @@ int FormattingScannerCursor::AddTrailingByte()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
+//POP_MSVC_IGNORE
 FormattingWord FormattingScannerCursor::ExtractWord()
     {
     static const size_t maxDelim = 4;
-    Utf8P buff = (Utf8P)alloca(m_totalScanLength + 1);
+    Utf8P buff = (Utf8P)alloca(m_totalScanLength + 2);
     buff[0] = 0;
     m_status = ScannerCursorStatus::Success;
     m_lastScannedCount = 0;
@@ -115,7 +117,7 @@ FormattingWord FormattingScannerCursor::ExtractWord()
 
     Utf8CP c = &m_text.c_str()[m_cursorPosition];
 
-    while (!m_dividers.IsDivider(*c))
+    while (!m_dividers.IsDivider(*c) && m_lastScannedCount < m_totalScanLength)
         {
         buff[m_lastScannedCount++] = *c;
         buff[m_lastScannedCount] = 0;
@@ -131,8 +133,7 @@ FormattingWord FormattingScannerCursor::ExtractWord()
     FormattingWord word = FormattingWord(this, buff, delim, m_isASCII);
     return word;
     }
-
-
+POP_MSVC_IGNORE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

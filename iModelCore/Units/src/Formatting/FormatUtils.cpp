@@ -1032,7 +1032,7 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
     if(0 < len)
         m_word = buffer;
     len = (nullptr == delim) ? 0 : strlen(delim);
-    memset(m_delim, 0, sizeof(delim));
+    memset(m_delim, 0, sizeof(m_delim));
     if (0 < len)
         memcpy(m_delim, delim, Utils::MinInt(maxDelim, len));
     m_isASCII = isAscii;

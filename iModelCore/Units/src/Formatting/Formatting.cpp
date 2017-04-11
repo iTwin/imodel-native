@@ -128,7 +128,7 @@ bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
+NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
     Init(presType, signOpt, formatTraits, precision);   
     }
@@ -666,10 +666,12 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
             if (ind < locBufL)
                 ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
             }
-            ind++;
-            if (ind > bufLen)
-                ind = bufLen;
+        ind++;
+        if (ind > bufLen)
+            ind = bufLen;
+        PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
         memcpy(buf, locBuf, ind);
+        POP_MSVC_IGNORE
         }
 
     return ind;
