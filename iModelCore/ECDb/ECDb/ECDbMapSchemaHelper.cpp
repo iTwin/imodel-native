@@ -528,18 +528,6 @@ BentleyStatus ShareColumns::TryGetSharedColumnCount(int& sharedColumnCount) cons
     return CustomAttributeReader::TryGetIntegerValue(sharedColumnCount, *m_ca, "SharedColumnCount");
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ShareColumns::TryGetSharedColumnCountPerOverflowTable(int& sharedColumnCountPerOverflowTable) const
-    {
-    if (m_ca == nullptr)
-        return ERROR;
-
-    return CustomAttributeReader::TryGetIntegerValue(sharedColumnCountPerOverflowTable, *m_ca, "SharedColumnCountPerOverflowTable");
-    }
-
-
 
 //*****************************************************************
 //ECDbLinkTableRelationshipMap

@@ -71,7 +71,6 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
 
         m_shareColumnsMode = ShareColumnsMode::Yes;
         m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
-        m_sharedColumnCountPerOverflowTable = baseMapStrategy->GetTphInfo().GetSharedColumnCountPerOverflowTable();
         return SUCCESS;
         }
 
@@ -89,32 +88,11 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         else
             m_shareColumnsMode = ShareColumnsMode::Yes;
 
-        int customShareColCount = 0; //default is 0 if not set in the CA
+        int customShareColCount = -1; //default is -1 if not set in the CA
         if (SUCCESS != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
             return ERROR;
 
-        if (customShareColCount < 0)
-            {
-            issues.Report("Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCount' must be greater or equal to 0, but was %d.",
-                          ecClass.GetFullName(), customShareColCount);
-            return ERROR;
-            }
-
         m_sharedColumnCount = customShareColCount;
-
-
-        int customShareColCountPerOverflowTable = 32; //default is 32 if not set in the CA
-        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCountPerOverflowTable(customShareColCountPerOverflowTable))
-            return ERROR;
-
-        if (customShareColCountPerOverflowTable <= 0)
-            {
-            issues.Report("Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCountPerOverflowTable' must be greater or equal to 1, but was %d.",
-                          ecClass.GetFullName(), customShareColCountPerOverflowTable);
-            return ERROR;
-            }
-
-        m_sharedColumnCountPerOverflowTable = customShareColCountPerOverflowTable;
         }
 
     return SUCCESS;

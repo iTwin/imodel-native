@@ -174,12 +174,6 @@ struct ShareColumns final
         //! @param[out] sharedColumnCount Number of shared columns to use. It remains unchanged, if the SharedColumnCount property wasn't set.
         //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, ERROR otherwise
         BentleyStatus TryGetSharedColumnCount(int& sharedColumnCount) const;
-
-        //! Tries to get the value of the SharedColumnCountPerOverflowTable property in the ShareColumns custom attribute.
-        //! @param[out] sharedColumnCountPerOverflowTable Number of shared columns of each overflow table. It remains unchanged, if the SharedColumnCountPerOverflowTable property wasn't set.
-        //! @return ECOBJECTSTATUS_Success if SharedColumnCountPerOverflowTable was set or unset in the ShareColumns custom attribute, ERROR otherwise
-        BentleyStatus TryGetSharedColumnCountPerOverflowTable(int& sharedColumnCountPerOverflowTable) const;
-
     };
 
 //=======================================================================================    
