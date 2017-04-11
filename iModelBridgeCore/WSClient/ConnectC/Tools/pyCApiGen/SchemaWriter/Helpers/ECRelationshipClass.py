@@ -388,23 +388,16 @@ class ECRelationshipClass(object):
         get_request_str = self.__get_buf_init_function_def() + "\n"
         get_request_str += "    {\n"
         get_request_str += "    if ({0}Buffer == nullptr)\n".format(self.get_lower_name())
-        get_request_str += "        {\n"
-        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                           '        return {0};\n        }}\n\n'\
-            .format("INVALID_PARAMETER",
-                    self.__status_codes["INVALID_PARAMETER"].message,
-                    "{0}Buffer is a nullptr.".format(self.get_lower_name()))
+        get_request_str += "        {\n" 
+        get_request_str += "        return {0};\n        }}\n\n" \
+                    .format("INVALID_PARAMETER")
         get_request_str += "    LP{0}{1}BUFFER {2}Buf = new {0}{1}BUFFER;\n" \
             .format(self.__api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())                    
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self.__api.get_api_acronym())
         get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
-        get_request_str += "        free(buf);\n"
-        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                           '        return {0};\n' \
-            .format("INTERNAL_MEMORY_ERROR",
-                    self.__status_codes["INTERNAL_MEMORY_ERROR"].message,
-                    "Failed to calloc memory for {0}BUFFER.".format(self.__api.get_api_acronym()))
+        get_request_str += "        free(buf);\n"         
+        get_request_str += "        return {0};\n".format("INTERNAL_MEMORY_ERROR")
         get_request_str += "        }\n\n"      
         get_request_str += self.get_buffer_stuffer_function_implementation()  
         get_request_str += "    buf->lCount = 1;\n"
@@ -413,11 +406,7 @@ class ECRelationshipClass(object):
         get_request_str += "    buf->isWSGBuffer = true;\n"
         get_request_str += "    buf->lItems = {{{0}Buf}};\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self.__api.get_upper_api_acronym())
-        get_request_str += '    api->SetObjectsResponse(result.GetValue());\n'
-        get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
-                           '    return {0};\n'.format("SUCCESS", self.__status_codes["SUCCESS"].message,
-                                                      "{0}_Init{1}Buffer completed successfully."
-                                                      .format(self.__api.get_api_name(), self.get_name()))
+        get_request_str += '    return {0};\n'.format("SUCCESS")
         get_request_str += "    }\n"
         return get_request_str
 
