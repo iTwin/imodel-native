@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/CheckBoxRule.h $
+|     $Source: PublicApi/ECPresentationRules/CheckBoxRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Presentation rule for adding and configuring check boxes.
 * @bsiclass                                     Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CheckBoxRule : public PresentationRule
+struct CheckBoxRule : public CustomizationRule
     {
     private:
         Utf8String              m_propertyName;
@@ -34,6 +34,9 @@ struct CheckBoxRule : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accept nested cutomization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

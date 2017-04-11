@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CheckBoxRule::CheckBoxRule ()
-    : PresentationRule (), m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false), m_isEnabled ("")
+    : m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false), m_isEnabled ("")
     {
     }
 
@@ -32,7 +32,7 @@ Utf8StringCR propertyName,
 bool      useInversedPropertyValue,
 bool      defaultValue,
 Utf8StringCR isEnabled
-) : PresentationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
+) : CustomizationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
     m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue), m_isEnabled (isEnabled)
     {
     }
@@ -96,3 +96,8 @@ bool CheckBoxRule::GetDefaultValue (void) const { return m_defaultValue; }
 * @bsimethod                                    Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR CheckBoxRule::GetIsEnabled(void) const { return m_isEnabled; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckBoxRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Visit(*this);}

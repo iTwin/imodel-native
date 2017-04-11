@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SortingRule.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRule::SortingRule ()
-    : PresentationRule (), m_schemaName (""), m_className (""), m_propertyName (""), m_sortAscending (true), m_doNotSort (false), m_isPolymorphic (false)
+    : m_schemaName (""), m_className (""), m_propertyName (""), m_sortAscending (true), m_doNotSort (false), m_isPolymorphic (false)
     {
     }
 
@@ -24,7 +24,7 @@ SortingRule::SortingRule ()
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRule::SortingRule (Utf8StringCR condition, int priority, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic)
-    : PresentationRule (condition, priority, false), 
+    : CustomizationRule(condition, priority, false),
       m_schemaName (schemaName), m_className (className), m_propertyName (propertyName), m_sortAscending (sortAscending), m_doNotSort (doNotSort), m_isPolymorphic (isPolymorphic)
     {
     }
@@ -107,3 +107,8 @@ bool SortingRule::GetDoNotSort (void) const { return m_doNotSort; }
 * @bsimethod                                    Andrius.Zonys                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SortingRule::GetIsPolymorphic (void) const { return m_isPolymorphic; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SortingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }

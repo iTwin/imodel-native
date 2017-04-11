@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/RenameNodeRule.h $
+|     $Source: PublicApi/ECPresentationRules/RenameNodeRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Presentation rule for configuring node rename functionality.
 * @bsiclass                                    dmitrijus.tiazlovas                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RenameNodeRule : public PresentationRule
+struct RenameNodeRule : public CustomizationRule
     {
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -26,6 +26,9 @@ struct RenameNodeRule : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accept nested cutomization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

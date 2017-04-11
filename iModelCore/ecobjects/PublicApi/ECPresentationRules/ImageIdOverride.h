@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/ImageIdOverride.h $
+|     $Source: PublicApi/ECPresentationRules/ImageIdOverride.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,7 +18,7 @@ ImageId override rule implementation. This rule is used to override default Imag
 generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ImageIdOverride : public PresentationRule
+struct ImageIdOverride : public CustomizationRule
     {
     private:
         Utf8String m_imageIdExpression;
@@ -32,6 +32,9 @@ struct ImageIdOverride : public PresentationRule
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Accecpt nested customization rule visitor
+        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const  override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ImageIdOverride.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageIdOverride::ImageIdOverride ()
-    : PresentationRule (), m_imageIdExpression ("")
+    : m_imageIdExpression ("")
     {
     }
 
@@ -24,7 +24,7 @@ ImageIdOverride::ImageIdOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression)
-    : PresentationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
+    : CustomizationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
     {
     }
 
@@ -66,3 +66,8 @@ Utf8StringCR ImageIdOverride::GetImageId (void) const { return m_imageIdExpressi
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImageIdOverride::SetImageId (Utf8String value) { m_imageIdExpression = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImageIdOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }

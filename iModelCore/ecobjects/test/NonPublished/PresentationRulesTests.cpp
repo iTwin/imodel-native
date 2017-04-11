@@ -640,4 +640,97 @@ TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
     ASSERT_EQ(2, displayRelatedItemsCount);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestCustomizationRuleLoadingFromXml)
+    {
+    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "  <PresentationRuleSet"
+        "    RuleSetId=\"Items\""
+        "    VersionMajor=\"5\""
+        "    VersionMinor=\"3\""
+        "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+        "    <RootNodeRule>"
+        "      <LabelOverride Label = 'newLabel1' />"
+        "    </RootNodeRule>"
+        "    <RootNodeRule>"
+        "        <AllInstances>"
+        "            <ChildNodeRule>"
+        "                <StyleOverride ForeColor = 'blue' />"
+        "            </ChildNodeRule>"
+        "        </AllInstances>"
+        "    </RootNodeRule>"
+        "    <ImageIdOverride ImageId='NewImageId100'/>"
+        "  </PresentationRuleSet>";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
+    EXPECT_FALSE(ruleSet.IsNull());
+
+    ASSERT_EQ(2, ruleSet->GetRootNodesRules().size());
+    ASSERT_EQ(1, ruleSet->GetRootNodesRules()[0]->GetCustomizationRules().size());
+    ValidateLabelOverride(*(dynamic_cast<LabelOverride*>(ruleSet->GetRootNodesRules()[0]->GetCustomizationRules()[0])), "", 1000, "newLabel1", "");
+
+    ASSERT_EQ(1, ruleSet->GetRootNodesRules()[1]->GetSpecifications()[0]->GetNestedRules()[0]->GetCustomizationRules().size());
+    ValidateStyleOverride(*(dynamic_cast<StyleOverride*>(ruleSet->GetRootNodesRules()[1]->GetSpecifications()[0]->GetNestedRules()[0]->GetCustomizationRules()[0])), "", 1000, "blue", "", "");
+
+    ASSERT_EQ(1, ruleSet->GetImageIdOverrides().size());
+    ValidateImageIdOverride(*(ruleSet->GetImageIdOverrides()[0]), "", "NewImageId100", 1000);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                    Aidas.Vaiksnoras               03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
+    {
+    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
+    ASSERT_TRUE(nullptr != ruleSet.get());
+
+    RootNodeRuleP rootNodeRule = new RootNodeRule("TestCondition1", 1, true, TargetTree_Both, false);
+    ASSERT_TRUE(nullptr != rootNodeRule);
+    ruleSet->AddPresentationRule(*rootNodeRule);
+    rootNodeRule->GetCustomizationRulesR().push_back(new ImageIdOverride("TestCondition3", 4, "ImageIdOverrideTestValue"));
+
+    ChildNodeRuleP childNodeRule = new ChildNodeRule("TestCondition2", 2, true, TargetTree_Both);
+    ruleSet->AddPresentationRule(*childNodeRule);
+    ASSERT_TRUE(nullptr != childNodeRule);
+    bvector<CustomizationRuleP>& customizationRules = childNodeRule->GetCustomizationRulesR();
+    customizationRules.push_back(new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
+    customizationRules.push_back(new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
+    customizationRules.push_back(new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
+
+    AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
+    ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
+    nestedChildNodeRule->GetCustomizationRulesR().push_back(new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
+    spec->GetNestedRules().push_back(nestedChildNodeRule);
+    ruleSet->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
+
+    StyleOverrideP styleOverride = new StyleOverride("TestCondition7", 7, "Blue", "Red", "Bold");
+    ASSERT_TRUE(nullptr != styleOverride);
+    ruleSet->AddPresentationRule(*styleOverride);
+
+    //Serialize RuleSet to string and deserialize from the same string.
+    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
+    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" "
+        "VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
+            "<RootNodeRule Priority=\"1\" AutoExpand=\"false\" TargetTree=\"Both\" StopFurtherProcessing=\"false\" Condition=\"TestCondition1\" OnlyIfNotHandled=\"true\">"
+                "<ImageIdOverride Priority=\"4\" ImageId=\"ImageIdOverrideTestValue\" Condition=\"TestCondition3\" OnlyIfNotHandled=\"false\"/>"
+            "</RootNodeRule>"
+            "<ChildNodeRule Priority=\"2\" TargetTree=\"Both\" StopFurtherProcessing=\"false\" Condition=\"TestCondition2\" OnlyIfNotHandled=\"true\">"
+                "<AllInstances Priority=\"1\" AlwaysReturnsChildren=\"false\" HideNodesInHierarchy=\"false\" HideIfNoChildren=\"false\" ExtendedData=\"\" DoNotSort=\"false\" GroupByClass=\"false\" GroupByLabel=\"false\" SupportedSchemas=\"one\">"
+                    "<ChildNodeRule Priority=\"1\" TargetTree=\"MainTree\" StopFurtherProcessing=\"false\" Condition=\"\" OnlyIfNotHandled=\"false\">"
+                        "<GroupingRule Priority=\"2\" SchemaName=\"TestSchemaName2\" ClassName=\"\" ContextMenuCondition=\"\" ContextMenuLabel=\"\" SettingsId=\"\" Condition=\"\" OnlyIfNotHandled=\"false\"/>"
+                    "</ChildNodeRule>"
+                "</AllInstances>"
+                "<ImageIdOverride Priority=\"4\" ImageId=\"ImageIdOverrideTestValue\" Condition=\"TestCondition4\" OnlyIfNotHandled=\"false\"/>"
+                "<LabelOverride Priority=\"5\" Label=\"LabelOverrideLabelValue\" Description=\"LabelOverrideDescriptionValue\" Condition=\"TestCondition5\" OnlyIfNotHandled=\"false\"/>"
+                "<StyleOverride Priority=\"6\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition6\" OnlyIfNotHandled=\"false\"/>"
+            "</ChildNodeRule>"
+            "<StyleOverride Priority=\"7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition7\" OnlyIfNotHandled=\"false\"/>"
+        "</PresentationRuleSet>";
+    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

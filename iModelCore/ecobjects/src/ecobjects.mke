@@ -94,6 +94,7 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)CalculatedPropertySpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)CustomizationRules.h \
                                 $(ECPresentationHeaders)
 
 

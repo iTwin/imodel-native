@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LabelOverride.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverride::LabelOverride ()
-    : PresentationRule (), m_label (L""), m_description (L"")
+    : m_label (L""), m_description (L"")
     {
     }
 
@@ -24,7 +24,7 @@ LabelOverride::LabelOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverride::LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description)
-    : PresentationRule (condition, priority, false), m_label (label), m_description (description)
+    : CustomizationRule (condition, priority, false), m_label (label), m_description (description)
     {
     }
 
@@ -80,3 +80,8 @@ Utf8StringCR LabelOverride::GetDescription (void) const { return m_description; 
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LabelOverride::SetDescription (Utf8String value) { m_description = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void LabelOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/StyleOverride.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverride::StyleOverride ()
-    : PresentationRule (), m_foreColor (""), m_backColor (""), m_fontStyle ("")
+    : m_foreColor (""), m_backColor (""), m_fontStyle ("")
     {
     }
 
@@ -24,7 +24,7 @@ StyleOverride::StyleOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle)
-    : PresentationRule (condition, priority, false), 
+    : CustomizationRule(condition, priority, false),
         m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
     {
     }
@@ -85,3 +85,8 @@ Utf8StringCR StyleOverride::GetBackColor (void) const { return m_backColor; }
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR StyleOverride::GetFontStyle (void) const { return m_fontStyle; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void StyleOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }
