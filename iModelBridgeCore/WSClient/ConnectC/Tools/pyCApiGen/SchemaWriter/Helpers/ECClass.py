@@ -351,12 +351,17 @@ class ECClass(object):
         properties_str = "    if ({0}Buffer != nullptr)\n ".format(ecr.get_var_name())
         properties_str += "      {\n"
         properties_str += '       Json::Value relationshipInstancesJson;\n'
-        properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) {2}Buffer->lItems[1];\n" \
+
+
+        # HCWSCCBUFFER buf = (HCWSCCBUFFER) dataBuffer; see ConnectWebServicesClientC_DataBufferGetStringLength
+        # LPCWSCCFOLDERBUFFER folderBuf = (LPCWSCCFOLDERBUFFER) buf->lItems[index]; see Folder_GetStringLength
+
+        properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) ((HCWSCCBUFFER) {2}Buffer)->lItems[1];\n" \
                                     .format(self.__api.get_api_acronym(), ecr.get_upper_name(), ecr.get_var_name())
         properties_str += '       relationshipInstancesJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
         properties_str += '       relationshipInstancesJson["className"] = "{0}";\n'.format(ecr.get_name())
         properties_str += '       //relationshipInstancesJson["direction"] = "backward" /*TODO: figure out what direction is used for*/;\n\n'.format(ecr.get_name())
-        if (len(ecr.get_properties()) > 0):
+        if (len(ecr.get_properties()) > 1):
             properties_str += '       Json::Value relationshipInstancesPropertiesJson;\n'        
             for ecproperty in ecr.get_properties():
                 if ecproperty.should_be_excluded:
@@ -364,8 +369,8 @@ class ECClass(object):
                 if ecproperty.is_read_only:
                     continue
                 #the "{SourceObject}Id"" will be set as the instanceid. Just needed a way for them to tell it to me.
-                #if (ecproperty.name == "{0}Id", ecr.get_source().get_name()):  
-                #    continue
+                if (ecproperty.name == "{0}Id", ecr.get_source().get_name()):  
+                    continue
                 properties_str += "       if ({0}Buffer.{1} != nullptr) ".format(ecr.get_var_name(), ecproperty.name)
                 property_type = ecproperty.type
                 if property_type == "guid":

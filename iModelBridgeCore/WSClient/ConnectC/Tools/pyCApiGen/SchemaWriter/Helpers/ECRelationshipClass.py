@@ -464,37 +464,4 @@ class ECRelationshipClass(object):
         stuffer_str += "\n"
         return stuffer_str
 
-    #-------------------------------------------------------------------------------------------
-    # bsimethod                                            						 06/2016
-    #-------------------------------------------------------------------------------------------
-    def __get_relationship_properties_for_function_impl(self):
-        properties_str = "if ({0}Buffer != nullptr) "
-        properties_str += "{\n"
-        properties_str += '    Json::Value relationshipInstanceJson;\n'
-        for ecproperty in self.get_properties():
-            if ecproperty.should_be_excluded:
-                continue
-            if ecproperty.is_read_only:
-                continue
-            properties_str += "    if ({0} != nullptr) ".format(ecproperty.name)
-            property_type = ecproperty.type
-            if property_type == "guid":
-                properties_str += 'relationshipInstanceJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
-                    .format(ecproperty.name, self.get_lower_name())
-            elif property_type == "dateTime":
-                properties_str += 'relationshipInstanceJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
-                    .format(ecproperty.name, self.get_lower_name())
-            elif property_type == "string":
-                properties_str += 'relationshipInstanceJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
-                    .format(ecproperty.name, self.get_lower_name())
-            else:
-                properties_str += 'relationshipInstanceJson["{0}"] = *{1}Buffer.{0};\n'.format(ecproperty.name, self.get_lower_name())
-        properties_str += '    if (relationshipInstanceJson.size() == 0)\n'
-        properties_str += '        {\n'
-        properties_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                          '        return {0};\n        }}\n'\
-            .format("INVALID_PARAMETER",
-                    self.__status_codes["INVALID_PARAMETER"].message,
-                    "There were not any valid {0} properties passed in.".format(self.get_name()))
-        properties_str += "}\n"
-        return properties_str
+
