@@ -149,7 +149,9 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
 //static 
 BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ClassMap const& classMap, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString)
     {
+    //return information whether the col name originates from the PropertyMap CA or whether a default name was used
     Utf8String columnName;
+    bool colNameIsFromPropertyMapCA = false;
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
@@ -165,40 +167,54 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
             return ERROR;
             }
 
-        if (SUCCESS != customPropMap.TryGetColumnName(columnName))
+        Nullable<Utf8String> colNameFromCA;
+        if (SUCCESS != customPropMap.TryGetColumnName(colNameFromCA))
             {
             BeAssert(false);
             return ERROR;
             }
 
-        if (!columnName.empty() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+        colNameIsFromPropertyMapCA = !colNameFromCA.IsNull();
+        if (!colNameFromCA.IsNull() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
             {
+            BeAssert(!colNameFromCA.Value().empty());
             issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
                                                           ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
             return ERROR;
             }
 
-        if (SUCCESS != customPropMap.TryGetIsNullable(isNullable))
+        if (!colNameFromCA.IsNull())
+            columnName.assign(colNameFromCA.Value());
+
+        Nullable<bool> isNullableFromCA;
+        if (SUCCESS != customPropMap.TryGetIsNullable(isNullableFromCA))
             return ERROR;
 
-        if (SUCCESS != customPropMap.TryGetIsUnique(isUnique))
+        if (!isNullableFromCA.IsNull())
+            isNullable = isNullableFromCA.Value();
+
+        Nullable<bool> isUniqueFromCA;
+        if (SUCCESS != customPropMap.TryGetIsUnique(isUniqueFromCA))
             return ERROR;
 
-        Utf8String collationStr;
+        if (!isUniqueFromCA.IsNull())
+            isUnique = isUniqueFromCA.Value();
+
+        Nullable<Utf8String> collationStr;
         if (SUCCESS != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
-        if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))
+        if (!collationStr.IsNull())
             {
-            issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
-                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
-                                                          collationStr.c_str());
-            return ERROR;
+            if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr.Value()))
+                {
+                issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
+                              ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), collationStr.Value().c_str());
+                return ERROR;
+                }
             }
         }
 
-    //return information whether the col name originates from the PropertyMap CA or whether a default name was used
-    const bool colNameIsFromPropertyMapCA = !columnName.empty();
 
     if (!colNameIsFromPropertyMapCA)
         columnName.assign(DbColumn::CreateParams::ColumnNameFromAccessString(accessString));

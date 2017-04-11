@@ -19,6 +19,8 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
+#include "Nullable.h"
+
 #include "ECDbImpl.h"
 
 #include "ProfileManager.h"

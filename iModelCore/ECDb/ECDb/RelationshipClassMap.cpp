@@ -618,9 +618,9 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
 
     if (persType != PersistenceType::Virtual)
         {
-        Utf8String indexName("ix_");
-        indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
-        DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {relClassIdCol}, true, true, GetClass().GetId());
+        Nullable<Utf8String> indexName("ix_");
+        indexName.ValueR().append(table.GetName()).append("_").append(relClassIdCol->GetName());
+        DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName, false, {relClassIdCol}, true, true, GetClass().GetId());
         if (index == nullptr)
             {
             LOG.errorv("Failed to create index on " ECDBSYS_PROP_NavPropRelECClassId " column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
@@ -896,14 +896,14 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMapping
             continue;
 
         // name of the index
-        Utf8String name(isUniqueIndex ? "uix_" : "ix_");
-        name.append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetAlias() + "_" + GetClass().GetName());
+        Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
+        name.ValueR().append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetAlias() + "_" + GetClass().GetName());
         if (GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
-            name.append("_source");
+            name.ValueR().append("_source");
         else
-            name.append("_target");
+            name.ValueR().append("_target");
 
-        GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {&vmap->GetColumn()}, true, true, GetClass().GetId());
+        GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name, isUniqueIndex, {&vmap->GetColumn()}, true, true, GetClass().GetId());
         }
     }
 
@@ -1395,24 +1395,19 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx, bool al
 void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
-    Utf8String name;
-    if (isUniqueIndex)
-        name.append("uix_");
-    else
-        name.append("ix_");
-
-    name.append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
+    Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
+    name.ValueR().append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
 
     switch (spec)
         {
             case RelationshipIndexSpec::Source:
-                name.append("source");
+                name.ValueR().append("source");
                 break;
             case RelationshipIndexSpec::Target:
-                name.append("target");
+                name.ValueR().append("target");
                 break;
             case RelationshipIndexSpec::SourceAndTarget:
-                name.append("sourcetarget");
+                name.ValueR().append("sourcetarget");
                 break;
             default:
                 BeAssert(false);
@@ -1443,7 +1438,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    GetDbMap().GetDbSchemaR().CreateIndex(GetPrimaryTable(), name.c_str(), isUniqueIndex, columns, false,
+    GetDbMap().GetDbSchemaR().CreateIndex(GetPrimaryTable(), name, isUniqueIndex, columns, false,
                                             true, GetClass().GetId(),
                                             //if a partial index is created, it must only apply to this class,
                                             //not to subclasses, as constraints are not inherited by relationships
@@ -1481,19 +1476,19 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
         {
             case ECRelationshipEnd_Source:
             {
-            if (linkTableInfo.GetSourceIdColumnName().empty())
+            if (linkTableInfo.GetSourceIdColumnName().IsNull())
                 colName.assign(COL_DEFAULTNAME_SourceId);
             else
-                colName.assign(linkTableInfo.GetSourceIdColumnName());
+                colName.assign(linkTableInfo.GetSourceIdColumnName().Value());
 
             break;
             }
             case ECRelationshipEnd_Target:
             {
-            if (linkTableInfo.GetTargetIdColumnName().empty())
+            if (linkTableInfo.GetTargetIdColumnName().IsNull())
                 colName.assign(COL_DEFAULTNAME_TargetId);
             else
-                colName.assign(linkTableInfo.GetTargetIdColumnName());
+                colName.assign(linkTableInfo.GetTargetIdColumnName().Value());
 
             break;
             }
@@ -1519,20 +1514,20 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
         {
             case ECRelationshipEnd_Source:
             {
-            if (linkTableInfo.GetSourceIdColumnName().empty())
+            if (linkTableInfo.GetSourceIdColumnName().IsNull())
                 colName.assign(COL_SourceECClassId);
             else
-                idColName = &linkTableInfo.GetSourceIdColumnName();
+                idColName = &linkTableInfo.GetSourceIdColumnName().Value();
             
             break;
             }
 
             case ECRelationshipEnd_Target:
             {
-            if (linkTableInfo.GetTargetIdColumnName().empty())
+            if (linkTableInfo.GetTargetIdColumnName().IsNull())
                 colName.assign(COL_TargetECClassId);
             else
-                idColName = &linkTableInfo.GetTargetIdColumnName();
+                idColName = &linkTableInfo.GetTargetIdColumnName().Value();
             
             break;
             }
@@ -1565,9 +1560,10 @@ bool RelationshipClassLinkTableMap::DetermineAllowDuplicateRelationshipsFlagFrom
     ECDbLinkTableRelationshipMap linkRelMap;
     if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
         {
-        bool allowDuplicateRels = false;
+        //default for AllowDuplicateRelationships: false
+        Nullable<bool> allowDuplicateRels;
         linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRels);
-        if (allowDuplicateRels)
+        if (!allowDuplicateRels.IsNull() && allowDuplicateRels.Value())
             return true;
         }
 

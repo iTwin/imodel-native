@@ -101,8 +101,8 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
         if (tphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::No)
             stmt->BindInt(3, Enum::ToInt(tphInfo.GetShareColumnsMode()));
 
-        if (tphInfo.GetSharedColumnCount() >= 0)
-            stmt->BindInt(4, tphInfo.GetSharedColumnCount());
+        if (!tphInfo.GetSharedColumnCount().IsNull())
+            stmt->BindInt(4, (int) tphInfo.GetSharedColumnCount().Value());
 
         if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
             stmt->BindInt(5, Enum::ToInt(tphInfo.GetJoinedTableInfo()));
@@ -188,7 +188,10 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
         const TablePerHierarchyInfo::ShareColumnsMode shareColumnsMode = stmt->IsColumnNull(1) ? TablePerHierarchyInfo::ShareColumnsMode::No : Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(stmt->GetValueInt(1));
-        const int sharedColumnCount = stmt->IsColumnNull(2) ? -1 : stmt->GetValueInt(2);
+        Nullable<uint32_t> sharedColumnCount;
+        if (!stmt->IsColumnNull(2))
+            sharedColumnCount = Nullable<uint32_t>((uint32_t) stmt->GetValueInt(2));
+
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(3) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(3));
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode, sharedColumnCount, joinedTableInfo));
         }

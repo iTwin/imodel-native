@@ -774,25 +774,28 @@ BentleyStatus ClassMap::MapSystemColumns()
 //static
 BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
     {
-    tablePrefix.clear();
-
     ECSchemaCR schema = ecclass.GetSchema();
     ECDbSchemaMap customSchemaMap;
 
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
         {
-        if (SUCCESS != customSchemaMap.TryGetTablePrefix(tablePrefix))
+        Nullable<Utf8String> tablePrefixFromCA;
+        if (SUCCESS != customSchemaMap.TryGetTablePrefix(tablePrefixFromCA))
             return ERROR;
+
+        if (!tablePrefixFromCA.IsNull())
+            {
+            tablePrefix.assign(tablePrefixFromCA.Value());
+            BeAssert(!tablePrefix.empty() && "tablePrefixFromCA is null also if it contains an empty string");
+            return SUCCESS;
+            }
         }
 
-    if (tablePrefix.empty())
-        {
-        Utf8StringCR alias = schema.GetAlias();
-        if (!alias.empty())
-            tablePrefix = alias;
-        else
-            tablePrefix = schema.GetName();
-        }
+    Utf8StringCR alias = schema.GetAlias();
+    if (!alias.empty())
+        tablePrefix = alias;
+    else
+        tablePrefix = schema.GetName();
 
     return SUCCESS;
     }

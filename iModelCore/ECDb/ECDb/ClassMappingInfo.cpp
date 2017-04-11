@@ -320,9 +320,6 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
-        if (SUCCESS != classMapCA.TryGetTableName(m_tableName))
-            return ERROR;
-
         const MapStrategy strategy = caCache.GetStrategy();
 
         if (strategy == MapStrategy::TablePerHierarchy && m_ecClass.GetClassModifier() == ECClassModifier::Sealed)
@@ -332,9 +329,13 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
+        Nullable<Utf8String> tableName;
+        if (SUCCESS != classMapCA.TryGetTableName(tableName))
+            return ERROR;
+
         if (strategy == MapStrategy::ExistingTable)
             {
-            if (m_tableName.empty())
+            if (tableName.IsNull())
                 {
                 Issues().Report("Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
                                 m_ecClass.GetFullName());
@@ -343,7 +344,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             }
         else
             {
-            if (!m_tableName.empty())
+            if (!tableName.IsNull())
                 {
                 Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
                                 m_ecClass.GetFullName());
@@ -351,9 +352,15 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
                 }
             }
 
+        if (!tableName.IsNull())
+            m_tableName.assign(tableName.Value());
 
-        if (SUCCESS != classMapCA.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
+        Nullable<Utf8String> idColName;
+        if (SUCCESS != classMapCA.TryGetECInstanceIdColumn(idColName))
             return ERROR;
+
+        if (!idColName.IsNull())
+            m_ecInstanceIdColumnName.assign(idColName.Value());
         }
 
     if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, caCache.GetDbIndexListCA()))
@@ -601,15 +608,30 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             return SUCCESS;
             }
 
-        Utf8String onDeleteActionStr;
+        Nullable<Utf8String> onDeleteActionStr;
         if (SUCCESS != foreignKeyConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
-        Utf8String onUpdateActionStr;
+        ForeignKeyDbConstraint::ActionType onDeleteAction;
+        if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onDeleteAction, onDeleteActionStr))
+            {
+            Issues().Report("Failed to map ECRelationshipClass %s. The ForeignKeyConstraint custom attribute defines an invalid value for OnDeleteAction. See API documentation for valid values.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        Nullable<Utf8String> onUpdateActionStr;
         if (SUCCESS != foreignKeyConstraintCA.TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
-        const ForeignKeyDbConstraint::ActionType onDeleteAction = ForeignKeyDbConstraint::ToActionType(onDeleteActionStr.c_str());
+        ForeignKeyDbConstraint::ActionType onUpdateAction;
+        if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onUpdateAction, onUpdateActionStr))
+            {
+            Issues().Report("Failed to map ECRelationshipClass %s. The ForeignKeyConstraint custom attribute defines an invalid value for OnUpdateAction. See API documentation for valid values.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
         if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::Embedding)
             {
             Issues().Report("Failed to map ECRelationshipClass %s. The ForeignKeyConstraint custom attribute can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.",
@@ -617,7 +639,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
-        m_fkMappingInfo = std::make_unique<FkMappingInfo>(foreignKeyEnd, onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), useECInstanceIdAsFk);
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>(foreignKeyEnd, onDeleteAction, onUpdateAction, useECInstanceIdAsFk);
         return SUCCESS;
         }
 
@@ -627,15 +649,15 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         return SUCCESS;
         }
 
-    Utf8String sourceIdColName;
+    Nullable<Utf8String> sourceIdColName;
     if (SUCCESS != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
         return ERROR;
 
-    Utf8String targetIdColName;
+    Nullable<Utf8String> targetIdColName;
     if (SUCCESS != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
         return ERROR;
 
-    bool allowDuplicateRelationships = false;
+    Nullable<bool> allowDuplicateRelationships = false;
     if (SUCCESS != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
         return ERROR;
 
@@ -1031,14 +1053,13 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
             {
             bool addPropsAreNotNullWhereExp = false;
 
-            Utf8CP whereClause = index.GetWhereClause();
-            if (!Utf8String::IsNullOrEmpty(whereClause))
+            if (!index.GetWhereClause().IsNull())
                 {
-                if (BeStringUtilities::StricmpAscii(whereClause, "IndexedColumnsAreNotNull") == 0)
+                if (index.GetWhereClause().Value().EqualsIAscii("IndexedColumnsAreNotNull"))
                     addPropsAreNotNullWhereExp = true;
                 else
                     {
-                    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause());
+                    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause().Value().c_str());
                     return ERROR;
                     }
                 }

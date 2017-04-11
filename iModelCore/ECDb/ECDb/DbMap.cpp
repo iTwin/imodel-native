@@ -700,10 +700,10 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
                 for (IndexMappingInfoPtr const& indexMappingInfo : *baseClassIndexInfos)
                     {
                     Utf8String indexName;
-                    if (!Utf8String::IsNullOrEmpty(indexMappingInfo->GetName()))
-                        indexName.append(indexMappingInfo->GetName()).append("_").append(joinedOrSingleTable.GetName());
+                    if (!indexMappingInfo->GetName().IsNull())
+                        indexName.append(indexMappingInfo->GetName().Value()).append("_").append(joinedOrSingleTable.GetName());
 
-                    indexMappingInfos.push_back(IndexMappingInfo::Clone(indexName.c_str(), *indexMappingInfo));
+                    indexMappingInfos.push_back(IndexMappingInfo::Clone(Nullable<Utf8String>(indexName), *indexMappingInfo));
                     }
 
                 if (SUCCESS != derivedClassMap->CreateUserProvidedIndexes(*m_schemaImportContext, indexMappingInfos))
@@ -766,10 +766,9 @@ BentleyStatus DbMap::UpdateECClassIdColumnIfRequired(DbTable& table, bset<ClassM
         return ERROR;
         }
 
-    Utf8String indexName("ix_");
-    indexName.append(table.GetName()).append("_ecclassid");
-    return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {&table.GetECClassIdColumn()},
-                                      false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
+    Nullable<Utf8String> indexName("ix_");
+    indexName.ValueR().append(table.GetName()).append("_ecclassid");
+    return GetDbSchemaR().CreateIndex(table, indexName, false, {&table.GetECClassIdColumn()}, false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
