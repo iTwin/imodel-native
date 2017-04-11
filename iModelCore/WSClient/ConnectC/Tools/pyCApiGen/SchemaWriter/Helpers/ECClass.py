@@ -351,11 +351,9 @@ class ECClass(object):
         properties_str = "    if ({0}Buffer != nullptr)\n ".format(ecr.get_var_name())
         properties_str += "      {\n"
         properties_str += '       Json::Value relationshipInstancesJson;\n'
-
-
+        
         # HCWSCCBUFFER buf = (HCWSCCBUFFER) dataBuffer; see ConnectWebServicesClientC_DataBufferGetStringLength
         # LPCWSCCFOLDERBUFFER folderBuf = (LPCWSCCFOLDERBUFFER) buf->lItems[index]; see Folder_GetStringLength
-
         properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) ((HCWSCCBUFFER) {2}Buffer)->lItems[1];\n" \
                                     .format(self.__api.get_api_acronym(), ecr.get_upper_name(), ecr.get_var_name())
         properties_str += '       relationshipInstancesJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
