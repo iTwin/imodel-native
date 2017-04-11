@@ -31,7 +31,7 @@ struct DownloadFilesTask : public CachingTaskBase
             };
 
     private:
-        const CachingDataSource::ProgressCallback m_onProgressCallback;
+        CachingDataSource::ProgressCallback m_onProgressCallback;
 
         FileCache                       m_fileCacheLocation;
         bset<ObjectId>                  m_filesToDownloadIds;

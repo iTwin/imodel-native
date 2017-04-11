@@ -35,10 +35,15 @@ CachingTaskBase(cachingDataSource, ct),
 m_fileDownloadManager(fileDownloadManager),
 m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
-m_onProgressCallback(ProgressFilter::Create(onProgress)),
 m_downloadTasksRunning(0),
 m_nextFileToDownloadIndex(0)
-    {}
+    {
+    std::function<bool(CachingDataSource::ProgressCR)> shouldSkipFilter = [] (CachingDataSource::ProgressCR progress)
+        {
+        return progress.GetBytes().current == progress.GetBytes().total;
+        };
+    m_onProgressCallback = ProgressFilter::Create(onProgress, shouldSkipFilter);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
@@ -112,6 +117,9 @@ void DownloadFilesTask::ContinueDownloadingFiles()
             m_downloadTasksRunning--;
 
             if (IsTaskCanceled()) return;
+
+            if (result.IsSuccess())
+                ProgressCalback(static_cast<double>(file.size), static_cast<double>(file.size), file);
 
             if (!result.IsSuccess())
                 {
