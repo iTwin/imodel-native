@@ -18,21 +18,36 @@ struct CompatibilityTests : public DgnDbTestFixture
     static constexpr Utf8CP GetSpatialCategoryName() {return "TestSpatialCategory";}
     static constexpr Utf8CP GetDefinitionPartitionName() {return "Definition";}
     static constexpr Utf8CP GetPhysicalPartitionName() {return "Physical";}
-    static Utf8String GetSubjectName(int subjectNumber) {return Utf8PrintfString("Subject%" PRIi32, subjectNumber);}
+    static Utf8String GetSubjectName(int index) {return Utf8PrintfString(BIS_CLASS_Subject "%" PRIi32, index);}
+    static Utf8String GetGeometryPartName(int index) {return Utf8PrintfString(BIS_CLASS_GeometryPart "%" PRIi32, index);}
+    static Utf8String GetCategorySelectorName(int index) {return Utf8PrintfString(BIS_CLASS_CategorySelector "%" PRIi32, index);}
+    static Utf8String GetModelSelectorName(int index) {return Utf8PrintfString(BIS_CLASS_ModelSelector "%" PRIi32, index);}
+    static Utf8String GetDisplayStyle3dName(int index) {return Utf8PrintfString(BIS_CLASS_DisplayStyle3d "%" PRIi32, index);}
+    static Utf8String GetSpatialViewDefinitionName(int index) {return Utf8PrintfString(BIS_CLASS_SpatialViewDefinition "%" PRIi32, index);}
+    static Utf8String GetPhysicalElementName(int index) {return Utf8PrintfString(BIS_CLASS_PhysicalElement "%" PRIi32, index);}
+    static Utf8String GetSpatialLocationName(int index) {return Utf8PrintfString(BIS_CLASS_SpatialLocationElement "%" PRIi32, index);}
     static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
+
+    BE_JSON_NAME(inserted);
+    BE_JSON_NAME(updated);
 
     void InsertSubHierarchy(SubjectCR, int);
     void InsertSpatialCategory();
     void InsertDefinitionModel(SubjectCR);
-    void InsertCategorySelector(DefinitionModelR, DgnCategoryId, int);
-    void InsertGeometryPart(DefinitionModelR, int);
+    DgnGeometryPartPtr InsertGeometryPart(DefinitionModelR, int);
+    CategorySelectorPtr InsertCategorySelector(DefinitionModelR, DgnCategoryId, int);
+    ModelSelectorPtr InsertModelSelector(DefinitionModelR, DgnModelId, int);
+    DisplayStyle3dPtr InsertDisplayStyle3d(DefinitionModelR, int);
+    SpatialViewDefinitionPtr InsertSpatialViewDefinition(DefinitionModelR, int, CategorySelectorR, DisplayStyle3dR, ModelSelectorR, DRange3dCR);
     void InsertPhysicalModel(SubjectCR);
     void InsertPhysicalElement(PhysicalModelR, DgnCategoryId, int);
+    void InsertSpatialLocation(PhysicalModelR, DgnCategoryId, int);
 
     void ModifySubHierarchy(SubjectCR, int);
     void ModifyDefinitionModelContents(SubjectCR);
     void ModifyDefinitionElements(DefinitionModelR, Utf8CP);
     void ModifyPhysicalModelContents(SubjectCR);
+    void ModifySpatialElements(PhysicalModelR, Utf8CP);
 
     DgnCategoryId GetSpatialCategoryId();
     DefinitionModelPtr GetDefinitionModel(SubjectCR);
@@ -93,8 +108,8 @@ void CompatibilityTests::InsertSubHierarchy(SubjectCR parentSubject, int subject
     SubjectCPtr subject = Subject::CreateAndInsert(parentSubject, GetSubjectName(subjectNumber).c_str());
     ASSERT_TRUE(subject.IsValid());
 
-    InsertDefinitionModel(*subject);
     InsertPhysicalModel(*subject);
+    InsertDefinitionModel(*subject);
     }
 
 //---------------------------------------------------------------------------------------
@@ -108,8 +123,8 @@ void CompatibilityTests::ModifySubHierarchy(SubjectCR parentSubject, int subject
     SubjectCPtr subject = db.Elements().Get<Subject>(subjectId);
     ASSERT_TRUE(subject.IsValid());
 
-    ModifyDefinitionModelContents(*subject);
     ModifyPhysicalModelContents(*subject);
+    ModifyDefinitionModelContents(*subject);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,40 +152,87 @@ void CompatibilityTests::InsertDefinitionModel(SubjectCR subject)
     {
     DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(subject, GetDefinitionPartitionName());
     ASSERT_TRUE(partition.IsValid());
-    DefinitionModelPtr model = DefinitionModel::CreateAndInsert(*partition);
-    ASSERT_TRUE(model.IsValid());
+    DefinitionModelPtr definitionModel = DefinitionModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(definitionModel.IsValid());
     DgnCategoryId categoryId = GetSpatialCategoryId();
+    PhysicalModelPtr physicalModel = GetPhysicalModel(subject);
 
     for (int i=0; i<3; i++)
         {
-        InsertCategorySelector(*model, categoryId, i);
-        InsertGeometryPart(*model, i);
+        DgnGeometryPartPtr geometryPart = InsertGeometryPart(*definitionModel, i);
+        CategorySelectorPtr categorySelector = InsertCategorySelector(*definitionModel, categoryId, i);
+        ModelSelectorPtr modelSelector = InsertModelSelector(*definitionModel, physicalModel->GetModelId(), i);
+        DisplayStyle3dPtr displayStyle = InsertDisplayStyle3d(*definitionModel, i);
+        DRange3d volume = physicalModel->QueryModelRange();
+        ASSERT_TRUE(geometryPart.IsValid());
+        ASSERT_TRUE(categorySelector.IsValid());
+        ASSERT_TRUE(modelSelector.IsValid());
+        ASSERT_TRUE(displayStyle.IsValid());
+        ASSERT_FALSE(volume.IsNull());
+
+        SpatialViewDefinitionPtr spatialViewDefinition = InsertSpatialViewDefinition(*definitionModel, i, *categorySelector, *displayStyle, *modelSelector, volume);
+        ASSERT_TRUE(spatialViewDefinition.IsValid());
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertCategorySelector(DefinitionModelR model, DgnCategoryId categoryId, int index)
+CategorySelectorPtr CompatibilityTests::InsertCategorySelector(DefinitionModelR model, DgnCategoryId categoryId, int index)
     {
-    CategorySelector categorySelector(model, Utf8PrintfString("CategorySelector%" PRIi32, index).c_str());
-    categorySelector.AddCategory(categoryId);
-    ASSERT_TRUE(categorySelector.Insert().IsValid());
+    CategorySelectorPtr categorySelector = new CategorySelector(model, GetCategorySelectorName(index).c_str());
+    categorySelector->AddCategory(categoryId);
+    categorySelector->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    return categorySelector->Insert().IsValid() ? categorySelector : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertGeometryPart(DefinitionModelR model, int index)
+ModelSelectorPtr CompatibilityTests::InsertModelSelector(DefinitionModelR model, DgnModelId selectedModelId, int index)
     {
-    DgnGeometryPartPtr geometryPart = DgnGeometryPart::Create(model, Utf8PrintfString("GeometryPart%" PRIi32, index));
+    ModelSelectorPtr modelSelector = new ModelSelector(model, GetModelSelectorName(index));
+    modelSelector->AddModel(selectedModelId);
+    modelSelector->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    return modelSelector->Insert().IsValid() ? modelSelector : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+DisplayStyle3dPtr CompatibilityTests::InsertDisplayStyle3d(DefinitionModelR model, int index)
+    {
+    DisplayStyle3dPtr displayStyle = new DisplayStyle3d(model, GetDisplayStyle3dName(index));
+    displayStyle->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    return displayStyle->Insert().IsValid() ? displayStyle : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+SpatialViewDefinitionPtr CompatibilityTests::InsertSpatialViewDefinition(DefinitionModelR model, int index, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector, DRange3dCR volume)
+    {
+    SpatialViewDefinitionPtr viewDefinition = new OrthographicViewDefinition(model, GetSpatialViewDefinitionName(index), categorySelector, displayStyle, modelSelector);
+    viewDefinition->SetStandardViewRotation(StandardView::Iso);
+    viewDefinition->LookAtVolume(volume);
+    viewDefinition->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    return viewDefinition->Insert().IsValid() ? viewDefinition : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+DgnGeometryPartPtr CompatibilityTests::InsertGeometryPart(DefinitionModelR model, int index)
+    {
+    DgnGeometryPartPtr geometryPart = DgnGeometryPart::Create(model, GetGeometryPartName(index));
     GeometryBuilderPtr geometryPartBuilder = GeometryBuilder::CreateGeometryPart(model.GetDgnDb(), true /*is3d*/);
-    ASSERT_TRUE(geometryPart.IsValid() && geometryPartBuilder.IsValid());
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(1, 1, 1), true));
-    ASSERT_TRUE(geometry.IsValid());
+    BeAssert(geometryPart.IsValid() && geometryPartBuilder.IsValid());
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(1+index, 1+index, 1+index), true));
+    BeAssert(geometry.IsValid());
     geometryPartBuilder->Append(*geometry);
     geometryPartBuilder->Finish(*geometryPart);
-    ASSERT_TRUE(geometryPart->Insert().IsValid());
+    geometryPart->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
+    return geometryPart->Insert().IsValid() ? geometryPart : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,17 +241,37 @@ void CompatibilityTests::InsertGeometryPart(DefinitionModelR model, int index)
 void CompatibilityTests::ModifyDefinitionModelContents(SubjectCR subject)
     {
     DefinitionModelPtr model = GetDefinitionModel(subject);
-    ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_CategorySelector));
     ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_GeometryPart));
+    ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_CategorySelector));
+    ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_ModelSelector));
+    ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_DisplayStyle3d));
+    ModifyDefinitionElements(*model, BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition));
 
     DgnDbR db = subject.GetDgnDb();
     Utf8String whereClause = BuildWhereModelIdEquals(model->GetModelId());
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_CategorySelector), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_ModelSelector), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DisplayStyle3d), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometryPart), whereClause.c_str()).BuildIdList<DgnElementId>().size());
-    InsertCategorySelector(*model, GetSpatialCategoryId(), 3);
-    InsertGeometryPart(*model, 3);
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+
+    DgnGeometryPartPtr geometryPart = InsertGeometryPart(*model, 3);
+    CategorySelectorPtr categorySelector = InsertCategorySelector(*model, GetSpatialCategoryId(), 3);
+    ModelSelectorPtr modelSelector = InsertModelSelector(*model, GetPhysicalModel(subject)->GetModelId(), 3);
+    DisplayStyle3dPtr displayStyle = InsertDisplayStyle3d(*model, 3);
+    ASSERT_TRUE(geometryPart.IsValid());
+    ASSERT_TRUE(categorySelector.IsValid());
+    ASSERT_TRUE(modelSelector.IsValid());
+    ASSERT_TRUE(displayStyle.IsValid());
+    
+    SpatialViewDefinitionPtr spatialViewDefinition = InsertSpatialViewDefinition(*model, 3, *categorySelector, *displayStyle, *modelSelector, GetPhysicalModel(subject)->QueryModelRange());
+    ASSERT_TRUE(spatialViewDefinition.IsValid());
+
     ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_CategorySelector), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_ModelSelector), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DisplayStyle3d), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometryPart), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     }
 
 //---------------------------------------------------------------------------------------
@@ -211,9 +293,11 @@ void CompatibilityTests::ModifyDefinitionElements(DefinitionModelR model, Utf8CP
                 {
                 DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementEntry.GetElementId());
                 ASSERT_TRUE(element.IsValid());
+                ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
                 DgnCode oldCode = element->GetCode();
                 DgnCode newCode(oldCode.GetCodeSpecId(), Utf8PrintfString("%s%s", className, "Updated"), oldCode.GetScope());
                 element->SetCode(newCode);
+                element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
                 ASSERT_TRUE(element->Update().IsValid());
                 break;
                 }
@@ -254,7 +338,10 @@ void CompatibilityTests::InsertPhysicalModel(SubjectCR subject)
     DgnCategoryId categoryId = GetSpatialCategoryId();
 
     for (int i=0; i<3; i++)
+        {
         InsertPhysicalElement(*model, categoryId, i);
+        InsertSpatialLocation(*model, categoryId, i);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -262,10 +349,33 @@ void CompatibilityTests::InsertPhysicalModel(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 void CompatibilityTests::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int index)
     {
-    GenericPhysicalObjectPtr physicalObject = GenericPhysicalObject::Create(model, categoryId);
-    ASSERT_TRUE(physicalObject.IsValid());
-    physicalObject->SetUserLabel(Utf8PrintfString("PhysicalElement%" PRIi32, index).c_str());
-    ASSERT_TRUE(physicalObject->Insert().IsValid());
+    GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(model, categoryId);
+    ASSERT_TRUE(element.IsValid());
+    element->SetUserLabel(GetPhysicalElementName(index).c_str());
+    element->SetFederationGuid(BeGuid(true));
+    GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint3d::From(index, index, index));
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnSphereDetail(DPoint3d::FromZero(), 0.25));
+    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    geometryBuilder->Append(*geometry);
+    geometryBuilder->Finish(*element);
+    ASSERT_TRUE(element->Insert().IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertSpatialLocation(PhysicalModelR model, DgnCategoryId categoryId, int index)
+    {
+    GenericSpatialLocationPtr element = GenericSpatialLocation::Create(model, categoryId);
+    ASSERT_TRUE(element.IsValid());
+    element->SetUserLabel(GetSpatialLocationName(index).c_str());
+    element->SetFederationGuid(BeGuid(true));
+    GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint3d::From(index, index, index));
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(0.5, 0.5, 0.5), true));
+    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    geometryBuilder->Append(*geometry);
+    geometryBuilder->Finish(*element);
+    ASSERT_TRUE(element->Insert().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -273,12 +383,29 @@ void CompatibilityTests::InsertPhysicalElement(PhysicalModelR model, DgnCategory
 //---------------------------------------------------------------------------------------
 void CompatibilityTests::ModifyPhysicalModelContents(SubjectCR subject)
     {
-    DgnDbR db = subject.GetDgnDb();
     PhysicalModelPtr model = GetPhysicalModel(subject);
+    ModifySpatialElements(*model, BIS_SCHEMA(BIS_CLASS_PhysicalElement));
+    ModifySpatialElements(*model, BIS_SCHEMA(BIS_CLASS_SpatialLocationElement));
 
+    DgnDbR db = subject.GetDgnDb();
+    Utf8String whereClause = BuildWhereModelIdEquals(model->GetModelId());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialLocationElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    InsertPhysicalElement(*model, GetSpatialCategoryId(), 3);
+    InsertSpatialLocation(*model, GetSpatialCategoryId(), 3);
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialLocationElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::ModifySpatialElements(PhysicalModelR model, Utf8CP className)
+    {
+    DgnDbR db = model.GetDgnDb();
     int i=0;
-    Utf8PrintfString whereClause("WHERE Model.Id=%" PRIi64, model->GetModelId().GetValue());
-    for (ElementIteratorEntryCR elementEntry : db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()))
+    Utf8String whereClause = BuildWhereModelIdEquals(model.GetModelId());
+    for (ElementIteratorEntryCR elementEntry : db.Elements().MakeIterator(className, whereClause.c_str()))
         {
         switch (i++)
             {
@@ -287,10 +414,12 @@ void CompatibilityTests::ModifyPhysicalModelContents(SubjectCR subject)
 
             case 1: // update second element
                 {
-                GenericPhysicalObjectPtr element = db.Elements().GetForEdit<GenericPhysicalObject>(elementEntry.GetElementId());
+                SpatialElementPtr element = db.Elements().GetForEdit<SpatialElement>(elementEntry.GetElementId());
                 ASSERT_TRUE(element.IsValid());
+                ASSERT_TRUE(element->GetFederationGuid().IsValid());
                 Utf8String userLabel(element->GetUserLabel());
-                userLabel.append("x");
+                userLabel.append("Updated");
+                element->SetUserLabel(userLabel.c_str());
                 ASSERT_TRUE(element->Update().IsValid());
                 break;
                 }
@@ -304,10 +433,6 @@ void CompatibilityTests::ModifyPhysicalModelContents(SubjectCR subject)
                 break;
             }
         }
-
-    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
-    InsertPhysicalElement(*model, GetSpatialCategoryId(), 3);
-    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalElement), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     }
 
 //---------------------------------------------------------------------------------------
