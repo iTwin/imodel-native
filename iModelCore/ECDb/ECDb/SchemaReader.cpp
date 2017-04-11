@@ -7,7 +7,7 @@
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECDbExpressionSymbolProvider.h"
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 #include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
