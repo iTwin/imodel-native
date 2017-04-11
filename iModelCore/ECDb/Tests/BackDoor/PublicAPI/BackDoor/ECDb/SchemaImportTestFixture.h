@@ -103,7 +103,6 @@ protected:
 
             TablePerHierarchyInfo() : m_sharedColumnsMode(ShareColumnsMode::No), m_joinedTableInfo(JoinedTableInfo::None) {}
             TablePerHierarchyInfo(ShareColumnsMode sharedColumnsMode, int sharedColumnCount, JoinedTableInfo jti) : m_sharedColumnsMode(sharedColumnsMode), m_sharedColumnCount(sharedColumnCount), m_joinedTableInfo(jti) {}
-            TablePerHierarchyInfo(ShareColumnsMode sharedColumnsMode, int sharedColumnCount, JoinedTableInfo jti) : m_sharedColumnsMode(sharedColumnsMode), m_sharedColumnCount(sharedColumnCount), m_joinedTableInfo(jti) {}
             explicit TablePerHierarchyInfo(JoinedTableInfo jti) : m_sharedColumnsMode(ShareColumnsMode::No), m_joinedTableInfo(jti) {}
 
             bool IsUnset() const { return m_sharedColumnsMode == ShareColumnsMode::No && m_joinedTableInfo == JoinedTableInfo::None; }
