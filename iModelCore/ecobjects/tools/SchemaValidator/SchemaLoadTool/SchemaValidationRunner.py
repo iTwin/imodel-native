@@ -20,7 +20,7 @@ for fileName in os.listdir(schemaDir):
     if fileName.endswith(schemaExtension):
         if not os.path.exists(logOutputDir): # If validation log folder doesn't exist, create it
             os.makedirs(logOutputDir)
-        logFileName = logOutputDir + fileName + '.log'
+        logFileName = logOutputDir + fileName.replace(schemaExtension,"") + '.log'
         logFile = open(logFileName, 'w') # Create log
         os.chdir(validatorExeDir) # Change to appropriate dir to call validator exe. 
         exeCall = 'schemavalidator.exe -i ' + schemaDir + fileName + ' -r ' + schemaRef
