@@ -26,6 +26,7 @@ struct WebApiV2 : public WebApi
         IAzureBlobStorageClientPtr m_azureClient;
 
     private:
+        BeVersion GetMaxWebApiVersion() const;
         Utf8String GetWebApiUrl(BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
