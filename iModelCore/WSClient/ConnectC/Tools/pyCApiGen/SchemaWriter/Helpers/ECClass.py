@@ -358,7 +358,7 @@ class ECClass(object):
                                     .format(self.__api.get_api_acronym(), ecr.get_upper_name(), ecr.get_var_name())
         properties_str += '       relationshipInstancesJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
         properties_str += '       relationshipInstancesJson["className"] = "{0}";\n'.format(ecr.get_name())
-        properties_str += '       //relationshipInstancesJson["direction"] = "backward" /*TODO: figure out what direction is used for*/;\n\n'.format(ecr.get_name())
+        properties_str += '       relationshipInstancesJson["direction"] = "backward" /*TODO: figure out what direction is used for*/;\n\n'.format(ecr.get_name())
         if (len(ecr.get_properties()) > 1):
             properties_str += '       Json::Value relationshipInstancesPropertiesJson;\n'        
             for ecproperty in ecr.get_properties():
@@ -400,7 +400,8 @@ class ECClass(object):
             .format("INVALID_PARAMETER",
                     self.__status_codes["INVALID_PARAMETER"].message,
                     "There were not any valid {0} properties passed in.".format(ecr.get_name()))
-        properties_str += '      instance["relationshipInstances"] = relationshipInstancesJson;\n'                      
+        properties_str += '      instance["relationshipInstances"] = Json::Value(Json::arrayValue);\n'
+        properties_str += '      instance["relationshipInstances"].append(relationshipInstancesJson);\n'                      
         properties_str += "      }\n\n"
         return properties_str
 
