@@ -2971,9 +2971,8 @@ TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
     {
-    if (TileGeneratorStatus::Success == status)
+    if (TileGeneratorStatus::Success == status && nullptr != rootTile && !rootTile->GetIsEmpty())
         {
-        BeAssert(nullptr != rootTile);
             {
             BeMutexHolder lock(m_mutex);
             m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
