@@ -47,6 +47,12 @@ std::ostream& operator << (std::ostream &o, ICachingDataSource::DataOrigin origi
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress::State value)
+    {
+    o << Utf8PrintfString("Current:%.0f Total:%.0f", value.current, value.total);
+    return o;
+    }
+
 std::ostream& operator << (std::ostream &o, CacheStatus status)
     {
     static std::map<CacheStatus, Utf8String> names

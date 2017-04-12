@@ -19,18 +19,47 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct SyncCachedDataTask : public CachingTaskBase
     {
     private:
+        struct CacheQuery;
+
+        struct Instance
+            {
+            ECInstanceKey key;
+            bvector<std::weak_ptr<CacheQuery>> cacheQueries;
+
+            Instance() {};
+            Instance(ECInstanceKey key) : key(key) {};
+
+            void Remove(CacheQuery& node);
+            bool IsComplete();
+
+            bool operator==(const Instance& other) const { return key == other.key; }
+            bool operator!=(const Instance& other) const { return key != other.key; }
+            bool operator<(const Instance& other) const { return key < other.key; }
+            };
+
+        struct CacheQuery
+            {
+            IQueryProvider::Query query;
+            std::shared_ptr<Instance> instance;
+
+            CacheQuery() {};
+            CacheQuery(IQueryProvider::Query query) : query(query) {};
+            };
+        
+    private:
         bvector<IQueryProviderPtr>          m_queryProviders;
 
-        bvector<ECInstanceKey>              m_initialInstances;
-        std::deque<IQueryProvider::Query>   m_queriesToCache;
+        bvector<Instance>        			       m_initialInstances;
+        std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
         bset<ObjectId>                      m_instancesToRedownload;
         bset<ECInstanceKey>                 m_filesToDownload;
 
         bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
-        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;
+        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;             
 
         ICachingDataSource::ProgressCallback m_onProgress;
 
+        size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
         size_t m_syncedRejectedInstances = 0;
         size_t m_syncedQueries = 0;
@@ -41,7 +70,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         virtual void _OnExecute();
 
         void StartCaching();
-        void CacheInitialInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys);
+        void CacheInitialInstances(CacheTransactionCR txn, const bset<Instance>& instanceKeys);
 
         void ContinueCachingQueries(CacheTransactionCR txn);
         void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);

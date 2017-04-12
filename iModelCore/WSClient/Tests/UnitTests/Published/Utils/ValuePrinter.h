@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +35,7 @@ std::ostream& operator << (std::ostream &o, ObjectIdCR id);
 // Caching
 std::ostream& operator << (std::ostream &o, ICachingDataSource::Status status);
 std::ostream& operator << (std::ostream &o, ICachingDataSource::DataOrigin origin);
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress::State value);
 std::ostream& operator << (std::ostream &o, CacheStatus status);
 std::ostream& operator << (std::ostream &o, FileCache location);
 std::ostream& operator << (std::ostream &o, IChangeManager::ChangeStatus status);

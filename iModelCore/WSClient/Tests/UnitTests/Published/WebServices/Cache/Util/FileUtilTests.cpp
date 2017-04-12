@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/FileUtilTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -247,7 +247,7 @@ TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAndFileExists_Records
         };
 
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target, onProgress));
-    EXPECT_EQ(2, i);
+    EXPECT_EQ(4, i);
     }
 
 TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAnFilesDoNotExists_DoNotRecordProgress)

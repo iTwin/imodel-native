@@ -467,6 +467,8 @@ struct ICachingDataSource::Progress
         	State() {};
         	State(double current, double total) : current(current), total(total) {};
         	bool operator==(const State& other) const { return current == other.current && total == other.total; };
+            bool IsFinished() const { return total != 0 && current == total; };
+            bool IsUndefined() const { return current == 0 && total == 0; };
         	};
 		
         typedef State& StateR;
@@ -475,16 +477,20 @@ struct ICachingDataSource::Progress
     private:        
         double m_synced = 0;
         State m_bytes;
+        State m_instances;
         Utf8StringCPtr m_label;
     
     public:
         Progress() {};
-        Progress(State bytes, Utf8StringCPtr label = nullptr, double synced = 0) :
-            m_synced(synced), m_bytes(bytes), m_label(label) {};
+        Progress(State bytes, Utf8StringCPtr label = nullptr, double synced = 0, State instances = State()) :
+            m_synced(synced), m_bytes(bytes), m_label(label), m_instances(instances) {};
 
-        //! GetBytes().current - file bytes already synced. 0 if no files are being synced
-        //! GetBytes().total - total file bytes to sync. 0 if no files are being synced
-        State GetBytes() const { return m_bytes; };
+        //! GetBytes().current - file bytes already synced
+        //! GetBytes().total - total file bytes to sync. 0 if no files are being synced.
+        StateCR GetBytes() const { return m_bytes; };
+		//! GetInstances().current - already synced instances
+		//! GetInstances().toal - total instances to sync
+        StateCR GetInstances() const { return m_instances; };
         //! Get percentage (0.0 -> 1.0) of total sync done based on instances count
         double GetSynced() const { return m_synced; };
         //! Get label of instance being synced
