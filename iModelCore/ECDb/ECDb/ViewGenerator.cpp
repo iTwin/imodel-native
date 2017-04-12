@@ -591,7 +591,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
         if (propertyMap->IsSystem())
             viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString().c_str());
         else
-            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<PrimitivePropertyMap>().GetColumn().GetName().c_str());
+            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str());
 
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
