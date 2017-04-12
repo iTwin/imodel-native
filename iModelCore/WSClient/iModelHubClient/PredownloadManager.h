@@ -6,30 +6,30 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
+#include <WebServices/iModelHub/Common.h>
+#include <WebServices/iModelHub/Client/iModelConnection.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             01/2017
 //=======================================================================================
-struct DgnDbServerPreDownloadManager : RefCountedBase
+struct PredownloadManager : RefCountedBase
 {
 private:
-    //! Gets path for pre-downloaded revision
-    BeFileName static BuildRevisionPreDownloadPathname(Utf8String revisionId);
+    //! Gets path for pre-downloaded changeSet
+    BeFileName static BuildChangeSetPredownloadPathname(Utf8String changeSetId);
 
-    //! Pre-downloads single revision by revisionId
-    DgnDbServerStatusTaskPtr PreDownloadRevision(DgnDbRepositoryConnectionP repositoryConnectionP, Utf8StringCR revisionId, 
+    //! Pre-downloads single changeSet by changeSetId
+    StatusTaskPtr PredownloadChangeSet(iModelConnectionP imodelConnectionP, Utf8StringCR changeSetId, 
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     bvector<BeFileName> GetOrderedCacheFiles(BeFileName directoryName) const;
     uint64_t GetCacheSize(BeFileName directoryName) const;
-    void CheckCacheSize(BeFileName revisionFileName) const;
+    void CheckCacheSize(BeFileName changeSetFileName) const;
 public:
-    bool TryGetRevisionFile(BeFileName revisionFileName, Utf8String revisionId);
-    void SubscribeRevisionsDownload(DgnDbRepositoryConnectionP repositoryConnectionP);
+    bool TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId);
+    void SubscribeChangeSetsDownload(iModelConnectionP imodelConnectionP);
 };
 
 //=======================================================================================
@@ -46,4 +46,4 @@ public:
     bool Lock();
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

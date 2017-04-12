@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Events/DgnDbServerLockEvent.h>
-#include "../DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Events/LockEvent.h>
+#include "../Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerLockEvent::DgnDbServerLockEvent
+LockEvent::LockEvent
 (
 Utf8String eventTopic, 
 Utf8String fromSubscriptionId, 
@@ -21,7 +21,7 @@ bvector<Utf8String> objectIds,
 Utf8String lockType, 
 Utf8String lockLevel, 
 int        briefcaseId, 
-Utf8String releasedWithRevision
+Utf8String releasedWithChangeSet
 )
     {
     m_eventTopic = eventTopic;
@@ -30,13 +30,13 @@ Utf8String releasedWithRevision
     m_lockType = lockType;
     m_lockLevel = lockLevel;
     m_briefcaseId = briefcaseId;
-    m_releasedWithRevision = releasedWithRevision;
+    m_releasedWithChangeSet = releasedWithChangeSet;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
+RefCountedPtr<struct LockEvent> LockEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromSubscriptionId, 
@@ -44,10 +44,10 @@ bvector<Utf8String> objectIds,
 Utf8String lockType, 
 Utf8String lockLevel, 
 int        briefcaseId, 
-Utf8String releasedWithRevision
+Utf8String releasedWithChangeSet
 )
     {
-    return new DgnDbServerLockEvent
+    return new LockEvent
                (
                eventTopic, 
                fromSubscriptionId, 
@@ -55,6 +55,6 @@ Utf8String releasedWithRevision
                lockType, 
                lockLevel, 
                briefcaseId, 
-               releasedWithRevision
+               releasedWithChangeSet
                );
     }

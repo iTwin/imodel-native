@@ -62,7 +62,7 @@
         <SubPart PartName="PublishedApi" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
-        <SubPart PartName="DgnDbServerClient-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
@@ -141,49 +141,49 @@
     </Part>
     
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // DgnDbServerClient lib                                                  // -->
+    <!-- // iModelHubClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="DgnDbServerClient">
-        <SubPart PartName="DgnDbServerClient-PublicAPI" />
-        <SubPart PartName="DgnDbServerClient-Library" />
-        <SubPart PartName="DgnDbServerClient-Library-Android" />
+    <Part Name="iModelHubClient">
+        <SubPart PartName="iModelHubClient-PublicAPI" />
+        <SubPart PartName="iModelHubClient-Library" />
+        <SubPart PartName="iModelHubClient-Library-Android" />
         <SubPart PartName="WSClient-Xliffs" />
-        <SubPart PartName="DgnDbServerClient-Xliffs" />
+        <SubPart PartName="iModelHubClient-Xliffs" />
     </Part>
 
-    <Part Name="DgnDbServerClient-PublicAPI" BentleyBuildMakeFile="DgnDbServerClientPrewire.mke">
+    <Part Name="iModelHubClient-PublicAPI" BentleyBuildMakeFile="iModelHubClientPrewire.mke">
         <Bindings>
-            <PublicAPI Domain="DgnDbServer" />
+            <PublicAPI Domain="WebServices" />
         </Bindings>
     </Part>
 
-    <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
+    <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)DgnDbServerClient$(libext)</Libs>
-            <Assemblies>Delivery/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
 
-    <Part Name="DgnDbServerClient-Library-Android" BentleyBuildMakeFile="DgnDbServerClientLib.mke" OnlyPlatforms="Android*">
+    <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)DgnDbServerClient.so</Libs>
-            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
+            <Libs>Delivery/$(libprefix)iModelHubClient.so</Libs>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)iModelHubClient.so</Assemblies>
         </Bindings>
     </Part>
 
     
-    <Part Name="DgnDbServerClient-Xliffs" BentleyBuildMakeFile="DgnDbServerClient/xliffs.mke">
+    <Part Name="iModelHubClient-Xliffs" BentleyBuildMakeFile="iModelHubClient/xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/DgnDbServerClient_en.xliff
+                Delivery/xliffs/iModelHubClient_en.xliff
             </Files>
         </Bindings>
     </Part>
@@ -256,7 +256,7 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/ -dL10N_XLIFF_LANG_DIRECTORY=en">
         <SubPart PartName="WSClient-Xliffs" />
-        <SubPart PartName="DgnDbServerClient-Xliffs" />
+        <SubPart PartName="iModelHubClient-Xliffs" />
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
@@ -426,8 +426,8 @@
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
-        <SubPart PartName="DgnDbServerClient-Library" />
-        <SubPart PartName="DgnDbServerClient-Library-Android" />
+        <SubPart PartName="iModelHubClient-Library" />
+        <SubPart PartName="iModelHubClient-Library-Android" />
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -492,7 +492,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache,DgnDbServerClient -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache,iModelHubClient -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

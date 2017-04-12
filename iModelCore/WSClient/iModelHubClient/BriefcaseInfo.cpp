@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerBriefcaseInfo.h>
+#include <WebServices/iModelHub/Client/BriefcaseInfo.h>
 #include <DgnPlatform/TxnManager.h>
-#include "DgnDbServerUtils.h"
+#include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis           09/2016
@@ -29,7 +29,7 @@ BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
+BriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
     {
     BeSQLite::BeBriefcaseId id;
     id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
@@ -38,7 +38,7 @@ DgnDbServerBriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
     GuidFromJson(fileId, json[ServerSchema::Property::FileId]);
     bool isReadOnly = json[ServerSchema::Property::IsReadOnly].GetBool();
 
-    return new DgnDbServerBriefcaseInfo(id, userOwned, fileId, isReadOnly);
+    return new BriefcaseInfo(id, userOwned, fileId, isReadOnly);
     }
 
 END_UNNAMED_NAMESPACE
@@ -46,7 +46,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(JsonValueCR json)
+BriefcaseInfoPtr BriefcaseInfo::Parse(JsonValueCR json)
     {
     JsonValueCR properties      = json[ServerSchema::Properties]; 
 
@@ -58,7 +58,7 @@ DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(JsonValueCR json)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(WSObjectsReader::Instance instance)
+BriefcaseInfoPtr BriefcaseInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();
     return ParseRapidJson(properties);

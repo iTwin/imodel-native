@@ -6,90 +6,90 @@
 #
 #----------------------------------------------------------------------------------------
 
-DgnDbServerClientMkiPublicApiDir = $(DgnDbServerClientPublicApiDirectory)
-DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerClient/
+iModelHubClientMkiPublicApiDir = $(iModelHubClientPublicApiDirectory)
+iModelHubClientMkiSourceDir = $(iModelHubClientSourceDirectory)iModelHubClient/
 
 #----------------------------------------------------------------------------------------
 #   Set up build dependencies for precompiled header and Client.mki
 #----------------------------------------------------------------------------------------
 
-DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                      \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBreakHelper.h          \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryManager.h          \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryAdmin.h            \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h    \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Logging.h                         \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/BCSClientHelper.h                 \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEventParser.h   \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerLockEvent.h     \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionEvent.h \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionCreateEvent.h \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
-                                $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                          \
-                                $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.h                   \
-                                $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.h             \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionInfo.h         \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerConfiguration.h        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbCodeAdmin.h
+iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h                            \
+                                $(iModelHubClientMkiPublicApiDir)Client/BreakHelper.h            \
+                                $(iModelHubClientMkiPublicApiDir)Client/Briefcase.h              \
+                                $(iModelHubClientMkiPublicApiDir)Client/Client.h                 \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelConnection.h       \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelManager.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelAdmin.h            \
+                                $(iModelHubClientMkiPublicApiDir)Client/Result.h                 \
+                                $(iModelHubClientMkiPublicApiDir)Client/Error.h                  \
+                                $(iModelHubClientMkiPublicApiDir)Client/ClientHelper.h           \
+                                $(iModelHubClientMkiPublicApiDir)Events/EventSubscription.h      \
+                                $(iModelHubClientMkiPublicApiDir)Events/Event.h                  \
+                                $(iModelHubClientMkiPublicApiDir)Events/EventParser.h            \
+                                $(iModelHubClientMkiPublicApiDir)Events/CodeEvent.h              \
+                                $(iModelHubClientMkiPublicApiDir)Events/LockEvent.h              \
+                                $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPostPushEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPrePushEvent.h  \
+                                $(iModelHubClientMkiPublicApiDir)Events/DeletedEvent.h           \
+                                $(iModelHubClientMkiSourceDir)Logging.h                          \
+                                $(iModelHubClientMkiSourceDir)Utils.h                            \
+                                $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
+                                $(iModelHubClientMkiSourceDir)PredownloadManager.h               \
+                                $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
+                                $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/Configuration.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/CodeAdmin.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
 #----------------------------------------------------------------------------------------
 
-$(o)Logging$(oext)                         : $(DgnDbServerClientMkiSourceDir)Logging.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Logging$(oext)                         : $(iModelHubClientMkiSourceDir)Logging.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerBreakHelper$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerBreakHelper.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)BreakHelper$(oext)                     : $(iModelHubClientMkiSourceDir)BreakHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Utils$(oext)                           : $(iModelHubClientMkiSourceDir)Utils.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerError$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerError.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Error$(oext)                           : $(iModelHubClientMkiSourceDir)Error.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)iModelInfo$(oext)                      : $(iModelHubClientMkiSourceDir)iModelInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerBriefcaseInfo$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)BriefcaseInfo$(oext)                   : $(iModelHubClientMkiSourceDir)BriefcaseInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerRevisionInfo$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevisionInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)ChangeSetInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ChangeSetInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)FileInfo$(oext)                        : $(iModelHubClientMkiSourceDir)FileInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbRepositoryConnection$(oext)       : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)iModelConnection$(oext)                : $(iModelHubClientMkiSourceDir)iModelConnection.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbBriefcase$(oext)                  : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcase.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Briefcase$(oext)                       : $(iModelHubClientMkiSourceDir)Briefcase.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbRepositoryManager$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)iModelManager$(oext)                   : $(iModelHubClientMkiSourceDir)iModelManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbRepositoryAdmin$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryAdmin.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)iModelAdmin$(oext)                     : $(iModelHubClientMkiSourceDir)iModelAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Client$(oext)                          : $(iModelHubClientMkiSourceDir)Client.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerEventManager$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)EventManager$(oext)                    : $(iModelHubClientMkiSourceDir)Events/EventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerPreDownloadManager$(oext)   : $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)PredownloadManager$(oext)              : $(iModelHubClientMkiSourceDir)PredownloadManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerConfiguration$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerConfiguration.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)Configuration$(oext)                   : $(iModelHubClientMkiSourceDir)Configuration.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)BCSClientHelper$(oext)                 : $(DgnDbServerClientMkiSourceDir)BCSClientHelper.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)ClientHelper$(oext)                    : $(iModelHubClientMkiSourceDir)ClientHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerEventParser$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerEventParser.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)EventParser$(oext)                     : $(iModelHubClientMkiSourceDir)Events/EventParser.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerLockEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerLockEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)LockEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/LockEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerRevisionEvent$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerRevisionEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)ChangeSetPostPushEvent$(oext)          : $(iModelHubClientMkiSourceDir)Events/ChangeSetPostPushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerRevisionCreateEvent$(oext)  : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerRevisionCreateEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Events/ChangeSetPrePushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerCodeEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerCodeEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)CodeEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/CodeEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerDeletedEvent$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerDeletedEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)DeletedEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/DeletedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbCodeAdmin$(oext)                  : $(DgnDbServerClientMkiSourceDir)DgnDbCodeAdmin.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)CodeAdmin$(oext)                       : $(iModelHubClientMkiSourceDir)CodeAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}

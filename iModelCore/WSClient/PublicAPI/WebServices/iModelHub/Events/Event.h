@@ -7,16 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerResult.h>
+#include <WebServices/iModelHub/Client/Result.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Arvind.Venkateswaran   06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-namespace DgnDbServerEvent
+namespace Event
     {
     static Utf8CP EventTopic = "EventTopic";
     static Utf8CP FromEventSubscriptionId = "FromEventSubscriptionId";
@@ -26,12 +26,12 @@ namespace DgnDbServerEvent
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP BriefcaseId = "BriefcaseId";
-        static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
+        static Utf8CP ReleasedWithChangeSet = "ReleasedWithRevision";
         }
-    namespace RevisionEventProperties
+    namespace ChangeSetPostPushEventProperties
         {
-        static Utf8CP RevisionId = "RevisionId";
-        static Utf8CP RevisionIndex = "RevisionIndex";
+        static Utf8CP ChangeSetId = "RevisionId";
+        static Utf8CP ChangeSetIndex = "RevisionIndex";
         static Utf8CP BriefcaseId = "BriefcaseId";
         }
     namespace CodeEventProperties
@@ -49,11 +49,11 @@ namespace DgnDbServerEvent
         static Utf8CP BriefcaseId = "BriefcaseId";
         }
 
-    enum DgnDbServerEventType
+    enum EventType
         {
         LockEvent,
-        RevisionEvent,
-        RevisionCreateEvent,
+        ChangeSetPostPushEvent,
+        ChangeSetPrePushEvent,
         CodeEvent,
         AllLocksDeletedEvent,
         AllCodesDeletedEvent,
@@ -66,37 +66,37 @@ namespace DgnDbServerEvent
     struct Helper
     {
     public:
-        static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
+        static Utf8String GetEventNameFromEventType(EventType eventType)
             {
             switch (eventType)
                 {
-                    case DgnDbServerEventType::LockEvent:             return "LockEvent";
-                    case DgnDbServerEventType::RevisionEvent:         return "RevisionEvent";
-                    case DgnDbServerEventType::RevisionCreateEvent:   return "RevisionCreateEvent";
-                    case DgnDbServerEventType::CodeEvent:             return "CodeEvent";
-                    case DgnDbServerEventType::AllLocksDeletedEvent:  return "AllLocksDeletedEvent";
-                    case DgnDbServerEventType::AllCodesDeletedEvent:  return "AllCodesDeletedEvent";
-                    case DgnDbServerEventType::UnknownEventType:
+                    case EventType::LockEvent:             return "LockEvent";
+                    case EventType::ChangeSetPostPushEvent:         return "ChangeSetPostPushEvent";
+                    case EventType::ChangeSetPrePushEvent:   return "ChangeSetPrePushEvent";
+                    case EventType::CodeEvent:             return "CodeEvent";
+                    case EventType::AllLocksDeletedEvent:  return "AllLocksDeletedEvent";
+                    case EventType::AllCodesDeletedEvent:  return "AllCodesDeletedEvent";
+                    case EventType::UnknownEventType:
                     default:      return "UnknownEventType";
                 }
             }
 
-        static DgnDbServerEventType GetEventTypeFromEventName(Utf8CP eventName)
+        static EventType GetEventTypeFromEventName(Utf8CP eventName)
             {
             if (0 == (BeStringUtilities::Stricmp("LockEvent", eventName)))
-                return DgnDbServerEventType::LockEvent;
-            if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
-                return DgnDbServerEventType::RevisionEvent;
-            if (0 == (BeStringUtilities::Stricmp("RevisionCreateEvent", eventName)))
-                return DgnDbServerEventType::RevisionCreateEvent;
+                return EventType::LockEvent;
+            if (0 == (BeStringUtilities::Stricmp("ChangeSetPostPushEvent", eventName)))
+                return EventType::ChangeSetPostPushEvent;
+            if (0 == (BeStringUtilities::Stricmp("ChangeSetPrePushEvent", eventName)))
+                return EventType::ChangeSetPrePushEvent;
             if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
-                return DgnDbServerEventType::CodeEvent;
+                return EventType::CodeEvent;
             if (0 == (BeStringUtilities::Stricmp("AllLocksDeletedEvent", eventName)))
-                return DgnDbServerEventType::AllLocksDeletedEvent;
+                return EventType::AllLocksDeletedEvent;
             if (0 == (BeStringUtilities::Stricmp("AllCodesDeletedEvent", eventName)))
-                return DgnDbServerEventType::AllCodesDeletedEvent;
+                return EventType::AllCodesDeletedEvent;
         
-            return DgnDbServerEventType::UnknownEventType;
+            return EventType::UnknownEventType;
             }
     };
 
@@ -106,14 +106,14 @@ namespace DgnDbServerEvent
     struct EXPORT_VTABLE_ATTRIBUTE GenericEvent : RefCountedBase
     {
     public:
-        virtual DgnDbServerEventType GetEventType() {return UnknownEventType;}
+        virtual EventType GetEventType() {return UnknownEventType;}
         virtual Utf8String GetEventTopic() {return "";}
         virtual Utf8String GetFromEventSubscriptionId() {return "";}
     };
     }
 
-typedef RefCountedPtr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
-DEFINE_TASK_TYPEDEFS(DgnDbServerEventPtr, DgnDbServerEvent);
-typedef bset<DgnDbServerEvent::DgnDbServerEventType> DgnDbServerEventTypeSet;
+typedef RefCountedPtr<struct Event::GenericEvent> EventPtr;
+DEFINE_TASK_TYPEDEFS(EventPtr, Event);
+typedef bset<Event::EventType> EventTypeSet;
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

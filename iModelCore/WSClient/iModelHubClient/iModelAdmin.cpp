@@ -5,40 +5,40 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbRepositoryAdmin.h>
-#include <DgnDbServer/Client/DgnDbClient.h>
-#include "DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Client/iModelAdmin.h>
+#include <WebServices/iModelHub/Client/Client.h>
+#include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRepositoryAdmin::DgnDbRepositoryAdmin(DgnDbClientP client) : m_client(client)
+iModelAdmin::iModelAdmin(ClientP client) : m_client(client)
     {
-    m_managers = std::make_unique<bmap<Utf8String, DgnDbRepositoryManagerPtr>>();
+    m_managers = std::make_unique<bmap<Utf8String, iModelManagerPtr>>();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRepositoryManagerP DgnDbRepositoryAdmin::_GetRepositoryManager(DgnDbR db) const
+IRepositoryManagerP iModelAdmin::_GetRepositoryManager(DgnDbR db) const
     {
-    DgnDbServerRepositoryResult readResult = RepositoryInfo::ReadRepositoryInfo(db);
+    iModelResult readResult = iModelInfo::ReadiModelInfo(db);
     if (!readResult.IsSuccess())
         return nullptr;
-    RepositoryInfoPtr repositoryInfo = readResult.GetValue();
-    DgnDbServerBriefcaseInfo briefcase(db.GetBriefcaseId());
-    Utf8String repositoryId = repositoryInfo->GetId();
-    if ((*m_managers)[repositoryId].IsNull())
+    iModelInfoPtr iModelInfo = readResult.GetValue();
+    BriefcaseInfo briefcase(db.GetBriefcaseId());
+    Utf8String iModelId = iModelInfo->GetId();
+    if ((*m_managers)[iModelId].IsNull())
         {
         FileInfoPtr fileInfo = FileInfo::Create(db, "");
-        auto managerResult = m_client->CreateRepositoryManager(*repositoryInfo, *fileInfo, briefcase)->GetResult();
+        auto managerResult = m_client->CreateiModelManager(*iModelInfo, *fileInfo, briefcase)->GetResult();
         if (!managerResult.IsSuccess())
             return nullptr;
-        (*m_managers)[repositoryId] = managerResult.GetValue();
+        (*m_managers)[iModelId] = managerResult.GetValue();
         }
 
-    return (*m_managers)[repositoryId].get();
+    return (*m_managers)[iModelId].get();
     }

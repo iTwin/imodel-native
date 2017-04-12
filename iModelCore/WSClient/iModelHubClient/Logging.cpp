@@ -5,16 +5,16 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Logging.h>
+#include "Logging.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_LOGGING
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
-NativeLogging::ILogger* DgnDbServerLogHelper::logger = BentleyApi::NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_DGNDBSERVER);
+NativeLogging::ILogger* LogHelper::logger = BentleyApi::NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_IMODELHUB);
 
-void DgnDbServerLogHelper::LogInternal(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, va_list args)
+void LogHelper::LogInternal(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, va_list args)
     {
     if (!logger->isSeverityEnabled(severity))
         return;
@@ -38,38 +38,38 @@ void DgnDbServerLogHelper::LogInternal(SEVERITY severity, const Utf8String metho
     switch (severity)
         {
             case SEVERITY::LOG_DEBUG:
-                DgnDbServerLogHelper::logger->debug(logItem.c_str());
+                LogHelper::logger->debug(logItem.c_str());
                 break;
             case SEVERITY::LOG_ERROR:
-                DgnDbServerLogHelper::logger->error(logItem.c_str());
+                LogHelper::logger->error(logItem.c_str());
                 break;
             case SEVERITY::LOG_FATAL:
-                DgnDbServerLogHelper::logger->fatal(logItem.c_str());
+                LogHelper::logger->fatal(logItem.c_str());
                 break;
             case SEVERITY::LOG_INFO:
-                DgnDbServerLogHelper::logger->info(logItem.c_str());
+                LogHelper::logger->info(logItem.c_str());
                 break;
             case SEVERITY::LOG_TRACE:
-                DgnDbServerLogHelper::logger->trace(logItem.c_str());
+                LogHelper::logger->trace(logItem.c_str());
                 break;
             case SEVERITY::LOG_WARNING:
-                DgnDbServerLogHelper::logger->warning(logItem.c_str());
+                LogHelper::logger->warning(logItem.c_str());
         }
     }
 
-void DgnDbServerLogHelper::Log(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, ...)
+void LogHelper::Log(SEVERITY severity, const Utf8String methodName, float timeSpent, Utf8CP messageFormat, ...)
     {
     va_list args;
     va_start(args, messageFormat);
-    DgnDbServerLogHelper::LogInternal(severity, methodName, timeSpent, messageFormat, args);
+    LogHelper::LogInternal(severity, methodName, timeSpent, messageFormat, args);
     va_end(args);
     }
 
-void DgnDbServerLogHelper::Log(SEVERITY severity, const Utf8String methodName, Utf8CP message, ...)
+void LogHelper::Log(SEVERITY severity, const Utf8String methodName, Utf8CP message, ...)
     {
     va_list args;
     va_start(args, message);
-    DgnDbServerLogHelper::LogInternal(severity, methodName, -1, message, args);
+    LogHelper::LogInternal(severity, methodName, -1, message, args);
     va_end(args);
     }
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

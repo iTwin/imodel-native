@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/DgnDbServerEventParserTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -138,7 +138,7 @@ Utf8String     StubHttpResponseInvalidCodesDeletedContentType();
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-class DgnDbServerEventParserTests : public BaseMockHttpHandlerTest
+class EventParserTests : public BaseMockHttpHandlerTest
     {
     void SetUp() override;
     };

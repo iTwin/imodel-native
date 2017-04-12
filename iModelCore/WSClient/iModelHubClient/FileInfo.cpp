@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/FileInfo.h>
+#include <WebServices/iModelHub/Client/FileInfo.h>
 #include <DgnPlatform/TxnManager.h>
-#include "DgnDbServerUtils.h"
+#include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 //---------------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(de
     BeFileName fileName = db.GetFileName();
     BeStringUtilities::WCharToUtf8(m_fileName, BeFileName::GetFileNameAndExtension(fileName).c_str());
     m_fileId = db.GetDbGuid();
-    m_mergedRevisionId = db.Revisions().GetParentRevisionId();
+    m_mergedChangeSetId = db.Revisions().GetParentRevisionId();
     fileName.GetFileSize(m_fileSize);
     m_index = -1;
     }
@@ -28,9 +28,9 @@ FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(de
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
+FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedChangeSetId,
     Utf8StringCR description, uint64_t size, Utf8StringCR user, DateTimeCR date) :
-    m_index(index), m_fileName(fileName), m_mergedRevisionId(mergedRevisionId), m_description(description),
+    m_index(index), m_fileName(fileName), m_mergedChangeSetId(mergedChangeSetId), m_description(description),
     m_fileSize(size), m_userUploaded(user), m_uploadedDate(date), m_areFileDetailsAvailable(false)
     {
     m_fileId.FromString(fileId.c_str());
@@ -75,10 +75,10 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
     if (!fileId.empty())
         info->m_fileId.FromString(fileId.c_str());
 
-    Utf8String mergedRevisionId = GetProperty(properties, ServerSchema::Property::MergedRevisionId);
+    Utf8String mergedChangeSetId = GetProperty(properties, ServerSchema::Property::MergedChangeSetId);
 
-    if (!mergedRevisionId.empty())
-        info->m_mergedRevisionId = mergedRevisionId;
+    if (!mergedChangeSetId.empty())
+        info->m_mergedChangeSetId = mergedChangeSetId;
 
     Utf8String description = GetProperty(properties, ServerSchema::Property::FileDescription);
 
@@ -141,7 +141,7 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
     if (0 <= GetIndex())
         json[ServerSchema::Property::Index] = GetIndex();
     json[ServerSchema::Property::FileId] = GetFileId().ToString();
-    json[ServerSchema::Property::MergedRevisionId] = GetMergedRevisionId();
+    json[ServerSchema::Property::MergedChangeSetId] = GetMergedChangeSetId();
     if (m_description.size() > 0)
         json[ServerSchema::Property::FileDescription] = m_description;
     if (m_fileName.size() > 0)
@@ -155,13 +155,13 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
 //---------------------------------------------------------------------------------------
 WebServices::ObjectId FileInfo::GetObjectId() const
     {
-    return WebServices::ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::File, GetFileId().ToString());
+    return WebServices::ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::File, GetFileId().ToString());
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(JsonValueCR json)
+FileAccessKeyPtr FileAccessKey::ParseFromRelated(JsonValueCR json)
     {
     if (!json.isMember(ServerSchema::RelationshipInstances))
         return nullptr;
@@ -190,7 +190,7 @@ DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(JsonValue
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(WSObjectsReader::Instance instance)
+FileAccessKeyPtr FileAccessKey::ParseFromRelated(WSObjectsReader::Instance instance)
     {
     auto relationshipInstances = instance.GetRelationshipInstances();
     if (0 == relationshipInstances.Size())
@@ -214,7 +214,7 @@ DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(WSObjects
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerFileAccessKey::GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
+Utf8String FileAccessKey::GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
     {
     if (properties.HasMember(member.c_str()))
         {
@@ -229,9 +229,9 @@ Utf8String DgnDbServerFileAccessKey::GetProperty(RapidJsonValueCR properties, Ut
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::Parse(RapidJsonValueCR properties)
+FileAccessKeyPtr FileAccessKey::Parse(RapidJsonValueCR properties)
     {
-    DgnDbServerFileAccessKeyPtr result = new DgnDbServerFileAccessKey();
+    FileAccessKeyPtr result = new FileAccessKey();
 
     Utf8String downloadUrl = GetProperty(properties, ServerSchema::Property::DownloadUrl);
     if (!downloadUrl.empty())
@@ -247,7 +247,7 @@ DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::Parse(RapidJsonValueCR pro
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-void DgnDbServerFileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
+void FileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
     {
     selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
     }
@@ -255,7 +255,7 @@ void DgnDbServerFileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectStri
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-void DgnDbServerFileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString)
+void FileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString)
     {
     selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
     }

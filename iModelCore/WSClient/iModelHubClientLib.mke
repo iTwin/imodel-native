@@ -10,10 +10,10 @@ ENABLE_CPP_CX_EXTENSIONS = 1
 
 %include mdl.mki
 
-DgnDbServerClientSourceDirectory    = $(_MakeFilePath)
-DgnDbServerClientPublicApiDirectory = $(_MakeFilePath)PublicAPI/DgnDbServer/
+iModelHubClientSourceDirectory    = $(_MakeFilePath)
+iModelHubClientPublicApiDirectory = $(_MakeFilePath)PublicAPI/WebServices/iModelHub/
 BuildContextLibsDirectory           = $(BuildContext)SubParts/Libs/
-o                                   = $(OutputRootDir)build/WSClient/DgnDbServer/Client/
+o                                   = $(OutputRootDir)build/WSClient/iModelHub/
 
 always:
     !~@mkdir $(o)
@@ -22,7 +22,7 @@ always:
 #--------------------------------------------------------------------------------------
 #   Building the WebServicesClient library
 #--------------------------------------------------------------------------------------
-nameToDefine    = __DgnDbServerClient_DLL_BUILD__
+nameToDefine    = __iModelHubClient_DLL_BUILD__
 %include cdefapnd.mki
 %if defined (DEBUG)
 	nameToDefine    = DEBUG
@@ -59,16 +59,16 @@ CCCompOpts + -bigobj
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-%include DgnDbServerClient/DgnDbServerClient.mki
+%include iModelHubClient/Client.mki
 
 %include MultiCppCompileGo.mki
-DgnDbServerClientObjectList = $(MultiCompileObjectList)
+iModelHubClientObjectList = $(MultiCompileObjectList)
 
 #--------------------------------------------------------------------------------------
 #   Link the library
 #--------------------------------------------------------------------------------------
-DLM_NAME                    = DgnDbServerClient
-DLM_OBJECT_FILES            = $(DgnDbServerClientObjectList)
+DLM_NAME                    = iModelHubClient
+DLM_OBJECT_FILES            = $(iModelHubClientObjectList)
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)

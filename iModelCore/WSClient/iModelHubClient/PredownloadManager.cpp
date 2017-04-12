@@ -5,22 +5,22 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbBriefcase.h>
-#include "DgnDbServerPreDownloadManager.h"
-#include <DgnDbServer/Client/Logging.h>
-#include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
-#include <DgnDbServer/Client/DgnDbServerConfiguration.h>
+#include <WebServices/iModelHub/Client/Briefcase.h>
+#include "PredownloadManager.h"
+#include "Logging.h"
+#include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
+#include <WebServices/iModelHub/Client/Configuration.h>
 #include <Bentley/BeFileListIterator.h>
-#include "DgnDbServerUtils.h"
+#include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
 //---------------------------------------------------------------------------------------
-bool DgnDbServerPreDownloadManager::TryGetRevisionFile(BeFileName revisionFileName, Utf8String revisionId)
+bool PredownloadManager::TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId)
     {
-    auto preDownloadPath = BuildRevisionPreDownloadPathname(revisionId);
+    auto preDownloadPath = BuildChangeSetPredownloadPathname(changeSetId);
     
     FileLock fileLock(preDownloadPath);
     bool lockResult = fileLock.Lock();
@@ -30,27 +30,27 @@ bool DgnDbServerPreDownloadManager::TryGetRevisionFile(BeFileName revisionFileNa
         return false;
         }
 
-    if (!preDownloadPath.DoesPathExist() || revisionFileName.DoesPathExist())
+    if (!preDownloadPath.DoesPathExist() || changeSetFileName.DoesPathExist())
         return false;
 
-    auto moveResult = BeFileName::BeMoveFile(preDownloadPath, revisionFileName);
+    auto moveResult = BeFileName::BeMoveFile(preDownloadPath, changeSetFileName);
     return BeFileNameStatus::Success == moveResult;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
 //---------------------------------------------------------------------------------------
-void DgnDbServerPreDownloadManager::SubscribeRevisionsDownload(DgnDbRepositoryConnectionP repositoryConnectionP)
+void PredownloadManager::SubscribeChangeSetsDownload(iModelConnectionP imodelConnectionP)
     {
-    DgnDbServerEventTypeSet eventTypes;
-    eventTypes.insert(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
+    EventTypeSet eventTypes;
+    eventTypes.insert(Event::EventType::ChangeSetPostPushEvent);
 
-    auto preDownloadCallback = std::make_shared<DgnDbServerEventCallback>([=](DgnDbServerEventPtr event)
+    auto preDownloadCallback = std::make_shared<EventCallback>([=](EventPtr event)
         {
-        auto revisionEventPtr = DgnDbServerEventParser::GetRevisionEvent(event);
-        auto revisionId = revisionEventPtr->GetRevisionId();
+        auto changeSetEventPtr = EventParser::GetChangeSetPostPushEvent(event);
+        auto changeSetId = changeSetEventPtr->GetChangeSetId();
 
-        auto preDownloadPath = BuildRevisionPreDownloadPathname(revisionId);
+        auto preDownloadPath = BuildChangeSetPredownloadPathname(changeSetId);
         FileLock fileLock(preDownloadPath);
         bool lockResult = fileLock.Lock();
         if (!lockResult)
@@ -59,23 +59,23 @@ void DgnDbServerPreDownloadManager::SubscribeRevisionsDownload(DgnDbRepositoryCo
             return;
             }
             
-        if (revisionEventPtr.IsValid() && repositoryConnectionP)
+        if (changeSetEventPtr.IsValid() && imodelConnectionP)
             {
-            PreDownloadRevision(repositoryConnectionP, revisionId)->GetResult();
+            PredownloadChangeSet(imodelConnectionP, changeSetId)->GetResult();
             }
         });
-    repositoryConnectionP->SubscribeEventsCallback(&eventTypes, preDownloadCallback);
+    imodelConnectionP->SubscribeEventsCallback(&eventTypes, preDownloadCallback);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-BeFileName DgnDbServerPreDownloadManager::BuildRevisionPreDownloadPathname(Utf8String revisionId)
+BeFileName PredownloadManager::BuildChangeSetPredownloadPathname(Utf8String changeSetId)
     {
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev\\PreDownload");
     BeAssert(SUCCESS == status && "Cannot get pre-download directory");
-    tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
+    tempPathname.AppendToPath(WString(changeSetId.c_str(), true).c_str());
     tempPathname.AppendExtension(L"rev");
     return tempPathname;
     }
@@ -83,7 +83,7 @@ BeFileName DgnDbServerPreDownloadManager::BuildRevisionPreDownloadPathname(Utf8S
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-uint64_t DgnDbServerPreDownloadManager::GetCacheSize(BeFileName directoryName) const
+uint64_t PredownloadManager::GetCacheSize(BeFileName directoryName) const
     {
     BeFileListIterator fileIterator(directoryName, false);
 
@@ -104,7 +104,7 @@ uint64_t DgnDbServerPreDownloadManager::GetCacheSize(BeFileName directoryName) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-bvector<BeFileName> DgnDbServerPreDownloadManager::GetOrderedCacheFiles(BeFileName directoryName) const
+bvector<BeFileName> PredownloadManager::GetOrderedCacheFiles(BeFileName directoryName) const
     {
     BeFileListIterator fileIterator(directoryName, false);
     BeFileName tempFileName;
@@ -130,13 +130,13 @@ bvector<BeFileName> DgnDbServerPreDownloadManager::GetOrderedCacheFiles(BeFileNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) const
+void PredownloadManager::CheckCacheSize(BeFileName changeSetFileName) const
     {
-    auto directoryName = revisionFileName.GetDirectoryName();
+    auto directoryName = changeSetFileName.GetDirectoryName();
     directoryName.AppendToPath(L"*.rev");
 
     uint64_t cacheSize = GetCacheSize(directoryName);
-    int maxCacheSize = DgnDbServerConfiguration::GetPreDownloadRevisionsCacheSize();
+    int maxCacheSize = Configuration::GetPredownloadChangeSetsCacheSize();
 
     if (cacheSize > maxCacheSize)
         {
@@ -156,7 +156,7 @@ void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) 
             
             // Get lock for the file
             FileLock lock(currentFile);
-            if (0 != BeStringUtilities::Wcsicmp(currentFile.GetName(), revisionFileName.GetName()))
+            if (0 != BeStringUtilities::Wcsicmp(currentFile.GetName(), changeSetFileName.GetName()))
                 {
                 if (!lock.Lock())
                     {
@@ -179,59 +179,59 @@ void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbServerPreDownloadManager::PreDownloadRevision
+StatusTaskPtr PredownloadManager::PredownloadChangeSet
 (
-DgnDbRepositoryConnectionP        repositoryConnectionP,
-Utf8StringCR                      revisionId,
+iModelConnectionP        imodelConnectionP,
+Utf8StringCR                      changeSetId,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
     {
-    const Utf8String methodName = "DgnDbServerPreDownloadManager::PreDownloadRevision";
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (revisionId.empty())
+    const Utf8String methodName = "PredownloadManager::PredownloadChangeSet";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    if (changeSetId.empty())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Revision Id not specified.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRevision));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "ChangeSetId not specified.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidChangeSet));
         }
 
-    auto revisionPreDownloadPath = BuildRevisionPreDownloadPathname(revisionId);
-    if (revisionPreDownloadPath.DoesPathExist())
+    auto changeSetPreDownloadPath = BuildChangeSetPredownloadPathname(changeSetId);
+    if (changeSetPreDownloadPath.DoesPathExist())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Revision file already downloaded, skipping download.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "ChangeSet file already downloaded, skipping download.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
+    std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
 
-    return repositoryConnectionP->GetRevisionByIdInternal(revisionId, true, cancellationToken)->Then([=](DgnDbServerRevisionInfoResultCR revisionResult)
+    return imodelConnectionP->GetChangeSetByIdInternal(changeSetId, true, cancellationToken)->Then([=](ChangeSetInfoResultCR changeSetResult)
         {
-        if (!revisionResult.IsSuccess())
+        if (!changeSetResult.IsSuccess())
             {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
-            finalResult->SetError(revisionResult.GetError());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+            finalResult->SetError(changeSetResult.GetError());
             return;
             }
 
-        auto revisionPtr = revisionResult.GetValue();
-        ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
-        repositoryConnectionP->DownloadFileInternal(revisionPreDownloadPath, fileObject, revisionPtr->GetFileAccessKey(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
+        auto changeSetPtr = changeSetResult.GetValue();
+        ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetId);
+        imodelConnectionP->DownloadFileInternal(changeSetPreDownloadPath, fileObject, changeSetPtr->GetFileAccessKey(), callback, cancellationToken)->Then([=](StatusResultCR downloadResult)
             {
             if (!downloadResult.IsSuccess())
                 {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
                 finalResult->SetError(downloadResult.GetError());
                 return;
                 }
 
-            CheckCacheSize(revisionPreDownloadPath);
+            CheckCacheSize(changeSetPreDownloadPath);
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             finalResult->SetSuccess();
             });
-        })->Then<DgnDbServerStatusResult>([=]()
+        })->Then<StatusResult>([=]()
             {
             return *finalResult;
             });

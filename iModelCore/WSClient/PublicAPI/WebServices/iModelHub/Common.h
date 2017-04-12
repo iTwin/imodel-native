@@ -14,13 +14,14 @@
 #include <Bentley/Tasks/AsyncTask.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 
-#define BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace DgnDbServer {
-#define END_BENTLEY_DGNDBSERVER_NAMESPACE      } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_DGNDBSERVER    using namespace BentleyApi::DgnDbServer;
-#define LOGGER_NAMESPACE_DGNDBSERVER           "DgnDbServer"
 
-#ifdef __DgnDbServerClient_DLL_BUILD__
-#define DGNDBSERVERCLIENT_EXPORT EXPORT_ATTRIBUTE
+#define BEGIN_BENTLEY_IMODELHUB_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace iModel { namespace Hub {
+#define END_BENTLEY_IMODELHUB_NAMESPACE        } } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_IMODELHUB      using namespace BentleyApi::iModel::Hub;
+#define LOGGER_NAMESPACE_IMODELHUB             "DgnDbServer"
+
+#ifdef __iModelHubClient_DLL_BUILD__
+#define IMODELHUBCLIENT_EXPORT EXPORT_ATTRIBUTE
 #else
-#define DGNDBSERVERCLIENT_EXPORT IMPORT_ATTRIBUTE
+#define IMODELHUBCLIENT_EXPORT IMPORT_ATTRIBUTE
 #endif

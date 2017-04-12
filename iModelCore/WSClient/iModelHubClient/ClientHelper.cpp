@@ -5,25 +5,25 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/BCSClientHelper.h>
+#include <WebServices/iModelHub/Client/ClientHelper.h>
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 
-BCSClientHelper* BCSClientHelper::s_instance = nullptr;
-BeMutex BCSClientHelper::s_mutex{};
+ClientHelper* ClientHelper::s_instance = nullptr;
+BeMutex ClientHelper::s_mutex{};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BCSClientHelper* BCSClientHelper::Initialize(WebServices::ClientInfoPtr clientInfo, IJsonLocalState * ls)
+ClientHelper* ClientHelper::Initialize(WebServices::ClientInfoPtr clientInfo, IJsonLocalState * ls)
     {
     BeMutexHolder lock(s_mutex);
     if (nullptr == s_instance)
         {
-        s_instance = new BCSClientHelper(clientInfo, ls);
+        s_instance = new ClientHelper(clientInfo, ls);
         AsyncTasksManager::RegisterOnCompletedListener([]
             {
             if (nullptr != s_instance)
@@ -46,7 +46,7 @@ BCSClientHelper* BCSClientHelper::Initialize(WebServices::ClientInfoPtr clientIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BCSClientHelper* BCSClientHelper::GetInstance()
+ClientHelper* ClientHelper::GetInstance()
     {
     BeMutexHolder lock(s_mutex);
     return s_instance;
@@ -55,7 +55,7 @@ BCSClientHelper* BCSClientHelper::GetInstance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbClientPtr BCSClientHelper::SignIn(Tasks::AsyncError* errorOut, BCSSignInInfo const& signinInfo)
+ClientPtr ClientHelper::SignIn(Tasks::AsyncError* errorOut, SignInInfo const& signinInfo)
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
@@ -72,7 +72,7 @@ DgnDbClientPtr BCSClientHelper::SignIn(Tasks::AsyncError* errorOut, BCSSignInInf
 
     AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
 
-    DgnDbClientPtr client = DgnDbClient::Create(m_clientInfo, authHandler);
+    ClientPtr client = Client::Create(m_clientInfo, authHandler);
     client->SetServerURL(host);
     client->SetCredentials(signinInfo.m_credentials);
 
@@ -82,7 +82,7 @@ DgnDbClientPtr BCSClientHelper::SignIn(Tasks::AsyncError* errorOut, BCSSignInInf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BCSClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)
+Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)
     {
     if (m_signinMgr == nullptr)
         {

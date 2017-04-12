@@ -7,27 +7,27 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <BeSQLite/L10N.h>
-#include <DgnDbServer/Client/DgnDbServerError.h>
+#include <WebServices/iModelHub/Client/Error.h>
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-BENTLEY_TRANSLATABLE_STRINGS_START(DgnDbServerErrorL10N, DgnDbServerError)
+BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubClientError)
     //Missing argument errors
     L10N_STRING(MESSAGE_CredentialsNotSet)                 // =="Credentials were not specified."==
     L10N_STRING(MESSAGE_InvalidServerURL)                  // =="Server URL was not specified."==
-    L10N_STRING(MESSAGE_InvalidRepositoryName)             // =="Repository name is not specified."==
-    L10N_STRING(MESSAGE_InvalidRepositoryId)               // =="Repository id is not specified."==
-    L10N_STRING(MESSAGE_InvalidRepositoryConnection)       // =="Repository connection is not specified."==
-    L10N_STRING(MESSAGE_InvalidRevision)                   // =="Revision id is not specified."==
+    L10N_STRING(MESSAGE_InvalidiModelName)                 // =="iModel name is not specified."==
+    L10N_STRING(MESSAGE_InvalidiModelId)                   // =="iModel id is not specified."==
+    L10N_STRING(MESSAGE_InvalidiModelConnection)           // =="iModel connection is not specified."==
+    L10N_STRING(MESSAGE_InvalidChangeSet)                  // =="ChangeSet id is not specified."==
 
     //User definition errors
     L10N_STRING(MESSAGE_UserDoesNotExist)                  // =="User could not be found."==
     L10N_STRING(MESSAGE_UserServerError)                   // =="Internal server error has occured. More than one user found."==
 
-    //Repository errors
+    //iModel errors
     L10N_STRING(MESSAGE_MasterFileNotFound)                // =="Could not find uninitialized master file."==
-    L10N_STRING(MESSAGE_RepositoryIsNotInitialized)        // =="Repository is not initialized."==
+    L10N_STRING(MESSAGE_iModelIsNotInitialized)            // =="iModel is not initialized."==
 
     //Initialization errors
     L10N_STRING(MESSAGE_FileIsNotYetInitialized)           // =="File is not yet initialized."==
@@ -47,10 +47,10 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnDbServerErrorL10N, DgnDbServerError)
     L10N_STRING(MESSAGE_BriefcaseInfoParseError)           // =="Briefcase information could not be parsed."==
     L10N_STRING(MESSAGE_BriefcaseOutdated)                 // =="Briefcase is no longer valid. Master file has been replaced."==
 
-    //Revision errors
-    L10N_STRING(MESSAGE_MergeError)                        // =="Revision merge error has occured."==
+    //ChangeSet errors
+    L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==
     L10N_STRING(MESSAGE_RevisionManagerError)              // =="Revision manager error has occured."==
-    L10N_STRING(MESSAGE_RevisionDoesNotExist)              // =="Revision could not be found."==
+    L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
 
     //Code template errors
     L10N_STRING(MESSAGE_CodeTemplateRequestError)          // =="Code template request formatting has failed."==
@@ -70,4 +70,4 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnDbServerErrorL10N, DgnDbServerError)
     L10N_STRING(MESSAGE_Unknown)                           // =="Unexpected error has occured."==
 BENTLEY_TRANSLATABLE_STRINGS_END
 
-#define DgnDbServerErrorLocalizedString(K) DgnDbServerErrorL10N::GetString(DgnDbServerErrorL10N::K())
+#define ErrorLocalizedString(K) ErrorL10N::GetString(ErrorL10N::K())

@@ -7,24 +7,24 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Arvind.Venkateswaran   06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnDbServerEventParser 
+struct EventParser 
 {
 public:
-    DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventPtr ParseEvent(Utf8CP responseContentType, Utf8String responseString);
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerLockEvent> GetLockEvent(DgnDbServerEventPtr eventPtr);
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerRevisionEvent> GetRevisionEvent(DgnDbServerEventPtr eventPtr);
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerRevisionCreateEvent> GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr);
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerCodeEvent> GetCodeEvent(DgnDbServerEventPtr eventPtr);
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerDeletedEvent> GetDeletedEvent(DgnDbServerEventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static EventPtr ParseEvent(Utf8CP responseContentType, Utf8String responseString);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct LockEvent> GetLockEvent(EventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct ChangeSetPostPushEvent> GetChangeSetPostPushEvent(EventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct ChangeSetPrePushEvent> GetChangeSetPrePushEvent(EventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct CodeEvent> GetCodeEvent(EventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct DeletedEvent> GetDeletedEvent(EventPtr eventPtr);
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

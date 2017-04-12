@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Events/DgnDbServerCodeEvent.h>
-#include "../DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Events/CodeEvent.h>
+#include "../Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerCodeEvent::DgnDbServerCodeEvent
+CodeEvent::CodeEvent
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
@@ -36,7 +36,7 @@ int        briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
+RefCountedPtr<struct CodeEvent> CodeEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
@@ -47,7 +47,7 @@ int        state,
 int        briefcaseId
 )
     {
-    return new DgnDbServerCodeEvent
+    return new CodeEvent
                 (
                 eventTopic,
                 fromEventSubscriptionId,

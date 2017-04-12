@@ -7,25 +7,25 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionCreateEvent : public DgnDbServerEvent::GenericEvent
+struct EXPORT_VTABLE_ATTRIBUTE ChangeSetPrePushEvent : public Event::GenericEvent
 {
 private:
     Utf8String m_eventTopic;
     Utf8String m_fromEventSubscriptionId;
 
-    DgnDbServerRevisionCreateEvent(Utf8String eventTopic, Utf8String fromEventSubscriptionId);
+    ChangeSetPrePushEvent(Utf8String eventTopic, Utf8String fromEventSubscriptionId);
 
 public:
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerRevisionCreateEvent> Create (Utf8String eventTopic, Utf8String fromEventSubscriptionId);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct ChangeSetPrePushEvent> Create (Utf8String eventTopic, Utf8String fromEventSubscriptionId);
     Utf8String GetEventTopic() {return m_eventTopic;}
     Utf8String GetFromEventSubscriptionId() {return m_fromEventSubscriptionId;}
-    DgnDbServerEvent::DgnDbServerEventType GetEventType() {return DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent;}
+    Event::EventType GetEventType() {return Event::EventType::ChangeSetPrePushEvent;}
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

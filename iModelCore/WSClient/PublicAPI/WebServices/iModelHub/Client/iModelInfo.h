@@ -7,22 +7,22 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerResult.h>
+#include <WebServices/iModelHub/Common.h>
+#include <WebServices/iModelHub/Client/Result.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
 #include <Bentley/DateTime.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-typedef RefCountedPtr<struct RepositoryInfo> RepositoryInfoPtr;
-DEFINE_POINTER_SUFFIX_TYPEDEFS(RepositoryInfo);
-DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
+typedef RefCountedPtr<struct iModelInfo> iModelInfoPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelInfo);
+DEFINE_TASK_TYPEDEFS(iModelInfoPtr, iModel);
 
 //=======================================================================================
-//! Information about revision file that is on server.
+//! Information about changeSet file that is on server.
 //@bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct RepositoryInfo : RefCountedBase
+struct iModelInfo : RefCountedBase
 {
 private:
     Utf8String m_serverUrl;
@@ -32,30 +32,30 @@ private:
     Utf8String m_userCreated;
     DateTime   m_createdDate;
 
-    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
-    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
+    iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
+    iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
         : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date) {}
 
-    static RepositoryInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR repositoryInstanceId, Utf8StringCR url);
+    static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url);
 
 public:
-    RepositoryInfo() {}
+    iModelInfo() {}
 
-    bool operator==(RepositoryInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
+    bool operator==(iModelInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
     //! DEPRECATED: Use Parsing from Instance
-    static RepositoryInfoPtr Parse(JsonValueCR json, Utf8StringCR url);
-    static RepositoryInfoPtr Parse(WSObjectsReader::Instance instnace, Utf8StringCR url);
-    static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return RepositoryInfoPtr(new RepositoryInfo(serverUrl, id)); }
+    static iModelInfoPtr Parse(JsonValueCR json, Utf8StringCR url);
+    static iModelInfoPtr Parse(WSObjectsReader::Instance instnace, Utf8StringCR url);
+    static iModelInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return iModelInfoPtr(new iModelInfo(serverUrl, id)); }
 
-    DGNDBSERVERCLIENT_EXPORT static DgnDbServerRepositoryResult ReadRepositoryInfo(Dgn::DgnDbCR db);
-    DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId = false) const;
+    IMODELHUBCLIENT_EXPORT static iModelResult ReadiModelInfo(Dgn::DgnDbCR db);
+    StatusResult WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledChangeSetId = false) const;
 
     Utf8StringCR GetDescription() const {return m_description;}
     Utf8StringCR GetServerURL() const {return m_serverUrl;}
     Utf8StringCR GetName() const {return m_name;}
     Utf8StringCR GetId() const {return m_id;}
-    DGNDBSERVERCLIENT_EXPORT Utf8String GetWSRepositoryName() const;
+    IMODELHUBCLIENT_EXPORT Utf8String GetWSRepositoryName() const;
     Utf8StringCR GetUserCreated() const {return m_userCreated;}
     DateTimeCR GetCreatedDate() const {return m_createdDate;}
 };
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

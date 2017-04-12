@@ -5,16 +5,16 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbCodeAdmin.h>
-#include <DgnDbServer/Client/DgnDbRepositoryManager.h>
+#include <WebServices/iModelHub/Client/CodeAdmin.h>
+#include <WebServices/iModelHub/Client/iModelManager.h>
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbCodeAdmin::GenerateCodeValue
+DgnDbStatus CodeAdmin::GenerateCodeValue
 (
 CodeSpecCR codeSpec,
 Utf8StringCR generatedSequenceNumber,
@@ -42,7 +42,7 @@ Utf8StringR formattedValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbCodeAdmin::GenerateMask
+DgnDbStatus CodeAdmin::GenerateMask
 (
 CodeSpecCR codeSpec,
 Utf8StringR mask
@@ -71,14 +71,14 @@ Utf8StringR mask
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnCode DgnDbCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR codeSpec, Utf8StringCR sequenceMask) const
+DgnCode CodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR codeSpec, Utf8StringCR sequenceMask) const
     {
     DgnDbR dgndb = element.GetDgnDb();
-    DgnDbRepositoryManager* repositoryManager = static_cast<DgnDbRepositoryManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
-    auto repositoryConnection = repositoryManager->GetRepositoryConnectionPtr();
+    iModelManager* imodelManager = static_cast<iModelManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
+    auto imodelConnection = imodelManager->GetiModelConnectionPtr();
     
     // Query next available code 
-    auto queryResult = repositoryConnection->QueryCodeNextAvailable(codeSpec)->GetResult();
+    auto queryResult = imodelConnection->QueryCodeNextAvailable(codeSpec)->GetResult();
     if (!queryResult.IsSuccess())
         {
         BeAssert(false);
@@ -115,15 +115,15 @@ DgnCode DgnDbCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbCodeAdmin::_ReserveCode(DgnElementCR element, DgnCodeCR codeToReserve) const
+DgnDbStatus CodeAdmin::_ReserveCode(DgnElementCR element, DgnCodeCR codeToReserve) const
     {
     DgnDbR dgndb = element.GetDgnDb();
-    DgnDbRepositoryManager* repositoryManager = static_cast<DgnDbRepositoryManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
+    iModelManager* imodelManager = static_cast<iModelManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
 
     IBriefcaseManager::Request request;
     request.Codes().insert(codeToReserve);
 
-    RepositoryStatus result = repositoryManager->Acquire(request, dgndb).Result();
+    RepositoryStatus result = imodelManager->Acquire(request, dgndb).Result();
     if (RepositoryStatus::Success != result)
         {
         return DgnDbStatus::CodeNotReserved;
@@ -135,7 +135,7 @@ DgnDbStatus DgnDbCodeAdmin::_ReserveCode(DgnElementCR element, DgnCodeCR codeToR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbCodeAdmin::_RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName)
+DgnDbStatus CodeAdmin::_RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName)
     {
     m_classToCodeSpecMap[className] = codeSpecName;
     return DgnDbStatus::Success;
@@ -144,7 +144,7 @@ DgnDbStatus DgnDbCodeAdmin::_RegisterDefaultCodeSpec(Utf8CP className, Utf8CP co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-CodeSpecId DgnDbCodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputClass) const
+CodeSpecId CodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputClass) const
     {
     if (!inputClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
         return CodeSpecId();

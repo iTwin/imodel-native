@@ -7,22 +7,22 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerResult.h>
+#include <WebServices/iModelHub/Common.h>
+#include <WebServices/iModelHub/Client/Result.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-typedef RefCountedPtr<struct DgnDbServerBriefcaseInfo> DgnDbServerBriefcaseInfoPtr;
-DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerBriefcaseInfo);
-DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfoPtr, DgnDbServerBriefcaseInfo);
-DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerBriefcaseInfoPtr>, DgnDbServerBriefcasesInfo);
+typedef RefCountedPtr<struct BriefcaseInfo> BriefcaseInfoPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(BriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(BriefcaseInfoPtr, BriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(bvector<BriefcaseInfoPtr>, BriefcasesInfo);
 
 //=======================================================================================
 //! Information about briefcase.
 //@bsiclass                                      julius.cepukenas               08/2015
 //=======================================================================================
-struct DgnDbServerBriefcaseInfo : RefCountedBase
+struct BriefcaseInfo : RefCountedBase
 {
 private:
     BeSQLite::BeBriefcaseId m_id;
@@ -32,16 +32,16 @@ private:
     bool m_isReadOnly;
 
 public:
-    DgnDbServerBriefcaseInfo() {}
-    DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id) : m_id(id) {}
-    DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly) 
+    BriefcaseInfo() {}
+    BriefcaseInfo(BeSQLite::BeBriefcaseId id) : m_id(id) {}
+    BriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly) 
         : m_id(id), m_fileId(fileId), m_userOwned(userOwned), m_isReadOnly(isReadOnly) {}
 
-    static DgnDbServerBriefcaseInfoPtr Parse(WSObjectsReader::Instance instance);
+    static BriefcaseInfoPtr Parse(WSObjectsReader::Instance instance);
     //! DEPRECATED: Use Parse from Instance
-    static DgnDbServerBriefcaseInfoPtr Parse(JsonValueCR json);
+    static BriefcaseInfoPtr Parse(JsonValueCR json);
 
-    bool operator==(DgnDbServerBriefcaseInfoCR briefcase) const {return briefcase.GetId() == GetId();}
+    bool operator==(BriefcaseInfoCR briefcase) const {return briefcase.GetId() == GetId();}
     void SetLocalPath(BeFileName localPath) {m_localPath = localPath;}
 
     BeSQLite::BeBriefcaseId GetId() const {return m_id; }
@@ -50,4 +50,4 @@ public:
     BeFileName GetLocalPath() const {return m_localPath;}
     bool GetIsReadOnly() const {return m_isReadOnly;}
 };
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

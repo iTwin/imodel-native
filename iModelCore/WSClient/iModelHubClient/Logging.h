@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Common.h>
 #include <Logging/bentleylogging.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_LOGGING
 
-struct DgnDbServerLogHelper
+struct LogHelper
 {
 private:
     static NativeLogging::ILogger* logger;
@@ -34,4 +34,4 @@ public:
     //=======================================================================================
     static void Log(SEVERITY severity, Utf8String const methodName, Utf8CP message, ...);
 };
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

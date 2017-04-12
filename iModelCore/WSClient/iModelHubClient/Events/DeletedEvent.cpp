@@ -5,20 +5,20 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Events/DgnDbServerDeletedEvent.h>
-#include "../DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Events/DeletedEvent.h>
+#include "../Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerDeletedEvent::DgnDbServerDeletedEvent
+DeletedEvent::DeletedEvent
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 int        briefcaseId,
-DgnDbServerEvent::DgnDbServerEventType deletedEventType
+Event::EventType deletedEventType
 )
     {
     m_eventTopic = eventTopic;
@@ -30,20 +30,20 @@ DgnDbServerEvent::DgnDbServerEventType deletedEventType
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             07/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerDeletedEvent> DgnDbServerDeletedEvent::Create
+RefCountedPtr<struct DeletedEvent> DeletedEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 int        briefcaseId,
-DgnDbServerEvent::DgnDbServerEventType deletedEventType
+Event::EventType deletedEventType
 )
     {
-    Utf8String eventName = DgnDbServerEvent::Helper::GetEventNameFromEventType(deletedEventType);
+    Utf8String eventName = Event::Helper::GetEventNameFromEventType(deletedEventType);
     if (
         0 == eventName.CompareToI("AllLocksDeletedEvent") ||
         0 == eventName.CompareToI("AllCodesDeletedEvent")
        )
-        return new DgnDbServerDeletedEvent
+        return new DeletedEvent
             (
             eventTopic,
             fromEventSubscriptionId,

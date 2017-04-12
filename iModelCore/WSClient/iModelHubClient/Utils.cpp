@@ -1,11 +1,18 @@
-#include "DgnDbServerUtils.h"
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: iModelHubClient/Utils.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "Utils.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
+#include <WebServices/iModelHub/Client/iModelConnection.h>
 
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -54,7 +61,7 @@ void CallbackQueue::Notify()
 //=======================================================================================
 //@bsiclass                                      Karolis.Dziedzelis             11/2015
 //=======================================================================================
-struct DgnDbServerLocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
+struct LocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     private:
         BeFileName m_temp;
@@ -63,8 +70,8 @@ struct DgnDbServerLocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocat
         virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override { return m_temp; };
         virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override { return m_assets; };
     public:
-        DgnDbServerLocationsAdmin(BeFileNameCR temp, BeFileNameCR assets) : m_temp(temp), m_assets(assets) {}
-        virtual ~DgnDbServerLocationsAdmin() {}
+        LocationsAdmin(BeFileNameCR temp, BeFileNameCR assets) : m_temp(temp), m_assets(assets) {}
+        virtual ~LocationsAdmin() {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -144,7 +151,7 @@ bool BriefcaseIdFromJson(BeBriefcaseId& bcId, RapidJsonValueCR value)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                12/2016
 //---------------------------------------------------------------------------------------
-bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR changeSetId)
     {
     LockLevel               level;
     LockableType            type;
@@ -169,13 +176,16 @@ bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet
         lockSet.insert(DgnLock(LockableId(type, id), level));
         }
 
+    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithChangeSet) || !StringFromJson(changeSetId, serverJson[ServerSchema::Property::ReleasedWithChangeSet]))
+        changeSetId = nullptr;
+
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR changeSetId)
     {
     BeInt64Id           id;
     LockLevel           level;
@@ -191,7 +201,45 @@ bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite:
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
         return false;
 
+    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithChangeSet) || !StringFromJson(changeSetId, serverJson[ServerSchema::Property::ReleasedWithChangeSet]))
+        changeSetId = nullptr;
+
     lock = DgnLock(LockableId(type, id), level);
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite         03/2017
+//---------------------------------------------------------------------------------------
+bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR serverJson)
+    {
+    if (!serverJson.HasMember(ServerSchema::Property::LockLevel) || !serverJson.HasMember(ServerSchema::Property::LockType) || !serverJson.HasMember(ServerSchema::Property::LockOwners))
+        return false;
+
+    LockLevel    level;
+    LockableType type;
+    if (!LockLevelFromJson(level, serverJson[ServerSchema::Property::LockLevel]) ||
+        !LockableTypeFromJson(type, serverJson[ServerSchema::Property::LockType]))
+        return false;
+
+    for (auto& lockInfo : serverJson[ServerSchema::Property::LockOwners].GetArray())
+        {
+
+        if (!lockInfo.HasMember(ServerSchema::Property::ObjectId) || !lockInfo.HasMember(ServerSchema::Property::BriefcaseIds))
+            return false;
+
+        BeInt64Id id;
+        if (!BeInt64IdFromJson(id, lockInfo[ServerSchema::Property::ObjectId]))
+            return false;
+
+        for (auto& briefcaseInfo : lockInfo[ServerSchema::Property::BriefcaseIds].GetArray())
+            {
+            BeSQLite::BeBriefcaseId briefcaseId;
+            if (BriefcaseIdFromJson(briefcaseId, briefcaseInfo))
+                AddLockInfoToList(lockInfos, DgnLock(LockableId(type, id), level), briefcaseId, nullptr);
+            }
+        }
 
     return true;
     }
@@ -199,7 +247,7 @@ bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              08/2016
 //---------------------------------------------------------------------------------------
-bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate)
+bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, CodeTemplate& codeTemplate)
     {
     BeInt64Id      codeSpecId;
     Utf8String     scope = "";
@@ -214,7 +262,7 @@ bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplat
         !StringFromJson(valuePattern, serverJson[ServerSchema::Property::ValuePattern]))
         return false;
     
-    codeTemplate = DgnDbCodeTemplate(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
+    codeTemplate = CodeTemplate(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
 
     return true;
     }
@@ -222,7 +270,7 @@ bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplat
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR changeSetId)
     {
     DgnLockInfo&      info = *lockInfos.insert (DgnLockInfo (dgnLock.GetLockableId ())).first;
     DgnLockOwnershipR ownership = info.GetOwnership ();
@@ -232,10 +280,10 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
     else if (LockLevel::Shared == dgnLock.GetLevel ())
         ownership.AddSharedOwner (briefcaseId);
 
-    if (!repositoryId.empty ())
-        info.SetRevisionId (repositoryId);
+    if (!changeSetId.empty ())
+        info.SetRevisionId (changeSetId);
 
-    if (info.IsOwned () || !repositoryId.empty ())
+    if (info.IsOwned () || !changeSetId.empty ())
         info.SetTracked ();
     }
 
@@ -257,7 +305,7 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeS
         }
     if (2 == parsedState)
         {
-        // TODO what state revision???
+        // TODO what state changeSet???
         codeState.SetUsed("");
         return true;
         }
@@ -354,12 +402,12 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCod
         }
     else if (codeState.IsUsed())
         {
-        //TODO revision
+        //TODO changeSet
         info.SetUsed("");
         }
     else if (codeState.IsDiscarded())
         {
-        //TODO revision
+        //TODO changeSet
         info.SetDiscarded("");
         }
     }
@@ -367,17 +415,17 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCod
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-bool ExecutionManager::IsErrorForRetry(DgnDbServerError::Id errorId)
+bool ExecutionManager::IsErrorForRetry(Error::Id errorId)
     {
-    static bset<DgnDbServerError::Id> set;
+    static bset<Error::Id> set;
     if (set.empty())
         {
-        set.insert(DgnDbServerError::Id::InternalServerError);
-        set.insert(DgnDbServerError::Id::WebServicesError);
-        set.insert(DgnDbServerError::Id::ConnectionError);
+        set.insert(Error::Id::InternalServerError);
+        set.insert(Error::Id::WebServicesError);
+        set.insert(Error::Id::ConnectionError);
         }
 
     return set.find(errorId) != set.end();
     }
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE
