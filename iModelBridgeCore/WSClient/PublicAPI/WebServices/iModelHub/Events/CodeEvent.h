@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
+struct EXPORT_VTABLE_ATTRIBUTE CodeEvent : public Event::GenericEvent
 {
 private:
     Utf8String m_eventTopic;
@@ -24,7 +24,7 @@ private:
     int        m_state;
     int        m_briefcaseId;
 
-    DgnDbServerCodeEvent
+    CodeEvent
         (
         Utf8String eventTopic,
         Utf8String fromEventSubscriptionId,
@@ -36,7 +36,7 @@ private:
         );
 
 public:
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerCodeEvent> Create
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct CodeEvent> Create
         (
         Utf8String eventTopic,
         Utf8String fromEventSubscriptionId,
@@ -49,7 +49,7 @@ public:
 
     Utf8String GetEventTopic() override {return m_eventTopic;}
     Utf8String GetFromEventSubscriptionId() override {return m_fromEventSubscriptionId;}
-    DgnDbServerEvent::DgnDbServerEventType GetEventType() override {return DgnDbServerEvent::DgnDbServerEventType::CodeEvent;}
+    Event::EventType GetEventType() override {return Event::EventType::CodeEvent;}
     Utf8String GetCodeSpecId() const {return m_codeSpecId;}
     Utf8String GetCodeScope() const {return m_codeScope;}
     bvector<Utf8String> GetValues() const {return m_values;}
@@ -57,4 +57,4 @@ public:
     int GetBriefcaseId() const {return m_briefcaseId;}
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

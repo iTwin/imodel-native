@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+#include <WebServices/iModelHub/Client/BreakHelper.h>
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
-DgnDbServerBreakpoints DgnDbServerBreakHelper::s_breakpoint = DgnDbServerBreakpoints::None;
+Breakpoints BreakHelper::s_breakpoint = Breakpoints::None;
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-void DgnDbServerBreakHelper::SetBreakpoint(DgnDbServerBreakpoints breakpoint)
+void BreakHelper::SetBreakpoint(Breakpoints breakpoint)
     {
 #if defined (ENABLE_BIM_CRASH_TESTS)
     s_breakpoint = breakpoint;
@@ -23,7 +23,7 @@ void DgnDbServerBreakHelper::SetBreakpoint(DgnDbServerBreakpoints breakpoint)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-void DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints breakpoint)
+void BreakHelper::HitBreakpoint(Breakpoints breakpoint)
     {
 #if defined (ENABLE_BIM_CRASH_TESTS)
     if (s_breakpoint == breakpoint)
@@ -31,4 +31,4 @@ void DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints breakpoint)
 #endif
     }
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerLockEvent : public DgnDbServerEvent::GenericEvent
+struct EXPORT_VTABLE_ATTRIBUTE LockEvent : public Event::GenericEvent
 {
 private:
     Utf8String m_eventTopic;
@@ -22,38 +22,38 @@ private:
     Utf8String m_lockType;
     Utf8String m_lockLevel;
     int        m_briefcaseId;
-    Utf8String m_releasedWithRevision;
+    Utf8String m_releasedWithChangeSet;
 
-    DgnDbServerLockEvent
-                        (
-                        Utf8String eventTopic,
-                        Utf8String fromSubscriptionId,
-                        bvector<Utf8String> objectIds,
-                        Utf8String lockType, 
-                        Utf8String lockLevel, 
-                        int        briefcaseId, 
-                        Utf8String releasedWithRevision
-                        );
+    LockEvent
+        (
+        Utf8String eventTopic,
+        Utf8String fromSubscriptionId,
+        bvector<Utf8String> objectIds,
+        Utf8String lockType, 
+        Utf8String lockLevel, 
+        int        briefcaseId, 
+        Utf8String releasedWithChangeSet
+        );
 
 public:
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerLockEvent> Create
-                                                                                    (
-                                                                                    Utf8String eventTopic,
-                                                                                    Utf8String fromSubscriptionId,
-                                                                                    bvector<Utf8String> objectIds,
-                                                                                    Utf8String lockType, 
-                                                                                    Utf8String lockLevel, 
-                                                                                    int        briefcaseId, 
-                                                                                    Utf8String releasedWithRevision
-                                                                                    );
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct LockEvent> Create
+        (
+        Utf8String eventTopic,
+        Utf8String fromSubscriptionId,
+        bvector<Utf8String> objectIds,
+        Utf8String lockType, 
+        Utf8String lockLevel, 
+        int        briefcaseId, 
+        Utf8String releasedWithChangeSet
+        );
     Utf8String GetEventTopic() override {return m_eventTopic;}
     Utf8String GetFromEventSubscriptionId() override {return m_fromEventSubscriptionId;}
-    DgnDbServerEvent::DgnDbServerEventType GetEventType() override {return DgnDbServerEvent::DgnDbServerEventType::LockEvent;}
+    Event::EventType GetEventType() override {return Event::EventType::LockEvent;}
     bvector<Utf8String> GetObjectIds() const {return m_objectIds;}
     Utf8String GetLockType() const {return m_lockType;}
     Utf8String GetLockLevel() const {return m_lockLevel;}
     int GetBriefcaseId() const {return m_briefcaseId;}
-    Utf8String GetReleasedWithRevision() const {return m_releasedWithRevision;}
+    Utf8String GetReleasedWithChangeSet() const {return m_releasedWithChangeSet;}
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

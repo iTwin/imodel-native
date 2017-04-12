@@ -7,27 +7,26 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerResult.h>
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-typedef RefCountedPtr<struct DgnDbServerEventSubscription> DgnDbServerEventSubscriptionPtr;
-DEFINE_TASK_TYPEDEFS(DgnDbServerEventSubscriptionPtr, DgnDbServerEventSubscription);
+typedef RefCountedPtr<struct EventSubscription> EventSubscriptionPtr;
+DEFINE_TASK_TYPEDEFS(EventSubscriptionPtr, EventSubscription);
 
-struct DgnDbServerEventSubscription : RefCountedBase
+struct EventSubscription : RefCountedBase
 {
 private:
     Utf8String m_subscriptionId;
-    DgnDbServerEventTypeSet m_eventTypes;
+    EventTypeSet m_eventTypes;
 
-    DgnDbServerEventSubscription(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes) : m_subscriptionId(subscriptionId), m_eventTypes(eventTypes) {}
+    EventSubscription(Utf8String subscriptionId, EventTypeSet eventTypes) : m_subscriptionId(subscriptionId), m_eventTypes(eventTypes) {}
 public:
-    static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes) {return new DgnDbServerEventSubscription(subscriptionId, eventTypes);}
+    static EventSubscriptionPtr Create(Utf8String subscriptionId, EventTypeSet eventTypes) {return new EventSubscription(subscriptionId, eventTypes);}
     Utf8String GetSubscriptionId() const {return m_subscriptionId;}
-    DgnDbServerEventTypeSet GetEventTypes() const {return m_eventTypes;}
+    EventTypeSet GetEventTypes() const {return m_eventTypes;}
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

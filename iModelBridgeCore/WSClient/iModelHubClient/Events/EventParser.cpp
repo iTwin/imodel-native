@@ -5,20 +5,20 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
-#include <DgnDbServer/Client/Events/DgnDbServerLockEvent.h>
-#include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
-#include <DgnDbServer/Client/Events/DgnDbServerCodeEvent.h>
-#include <DgnDbServer/Client/Events/DgnDbServerDeletedEvent.h>
-#include "../DgnDbServerUtils.h"
-#include <DgnDbServer/Client/Events/DgnDbServerRevisionCreateEvent.h>
+#include <WebServices/iModelHub/Events/EventParser.h>
+#include <WebServices/iModelHub/Events/LockEvent.h>
+#include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
+#include <WebServices/iModelHub/Events/CodeEvent.h>
+#include <WebServices/iModelHub/Events/DeletedEvent.h>
+#include "../Utils.h"
+#include <WebServices/iModelHub/Events/ChangeSetPrePushEvent.h>
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnDbServerEvent::DgnDbServerEventType eventType)
+std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Event::EventType eventType)
     {
 	Json::Reader reader;
 	Json::Value data(Json::objectValue);
@@ -28,72 +28,72 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 	bool isSuccess = false;
 	switch (eventType)
 	    {
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::LockEvent:
+	    case BentleyB0200::iModel::Hub::Event::LockEvent:
 	        {
 		    if (
-			    data.isMember(DgnDbServerEvent::EventTopic) &&
-			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			    data.isMember(DgnDbServerEvent::LockEventProperties::ObjectIds) && 
-			    data[DgnDbServerEvent::LockEventProperties::ObjectIds].isArray() &&
-			    data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
-			    data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
-			    data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
-			    data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision)
+			    data.isMember(Event::EventTopic) &&
+			    data.isMember(Event::FromEventSubscriptionId) &&
+			    data.isMember(Event::LockEventProperties::ObjectIds) && 
+			    data[Event::LockEventProperties::ObjectIds].isArray() &&
+			    data.isMember(Event::LockEventProperties::LockType) &&
+			    data.isMember(Event::LockEventProperties::LockLevel) &&
+			    data.isMember(Event::LockEventProperties::BriefcaseId) &&
+			    data.isMember(Event::LockEventProperties::ReleasedWithChangeSet)
 			    )
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::RevisionEvent:
+	    case BentleyB0200::iModel::Hub::Event::ChangeSetPostPushEvent:
 	        {
 		    if (
-			    data.isMember(DgnDbServerEvent::EventTopic) &&
-			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			    data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
-			    data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
-				data.isMember(DgnDbServerEvent::RevisionEventProperties::BriefcaseId)
+			    data.isMember(Event::EventTopic) &&
+			    data.isMember(Event::FromEventSubscriptionId) &&
+			    data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetId) &&
+			    data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetIndex) &&
+				data.isMember(Event::ChangeSetPostPushEventProperties::BriefcaseId)
 			    )
 			    isSuccess = true;
 		    break;
 	        }
-        case BentleyB0200::DgnDbServer::DgnDbServerEvent::RevisionCreateEvent:
+        case BentleyB0200::iModel::Hub::Event::ChangeSetPrePushEvent:
             {
             if (
-                data.isMember(DgnDbServerEvent::EventTopic) &&
-                data.isMember(DgnDbServerEvent::FromEventSubscriptionId)
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId)
                 )
                 isSuccess = true;
             break;
             }
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::CodeEvent:
+	    case BentleyB0200::iModel::Hub::Event::CodeEvent:
 	        {
 		    if (
-			    data.isMember(DgnDbServerEvent::EventTopic) &&
-			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::CodeSpecId) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::CodeScope) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
-			    data[DgnDbServerEvent::CodeEventProperties::Values].isArray() &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId)
+			    data.isMember(Event::EventTopic) &&
+			    data.isMember(Event::FromEventSubscriptionId) &&
+			    data.isMember(Event::CodeEventProperties::CodeSpecId) &&
+			    data.isMember(Event::CodeEventProperties::CodeScope) &&
+			    data.isMember(Event::CodeEventProperties::Values) &&
+			    data[Event::CodeEventProperties::Values].isArray() &&
+			    data.isMember(Event::CodeEventProperties::State) &&
+			    data.isMember(Event::CodeEventProperties::BriefcaseId)
 			    )
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::AllLocksDeletedEvent:
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::AllCodesDeletedEvent:
+	    case BentleyB0200::iModel::Hub::Event::AllLocksDeletedEvent:
+	    case BentleyB0200::iModel::Hub::Event::AllCodesDeletedEvent:
 	        {
 		    if (
-			    data.isMember(DgnDbServerEvent::EventTopic) &&
-			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			    data.isMember(DgnDbServerEvent::DeletedEventProperties::BriefcaseId) &&
-			    !CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent) &&
-			    !CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent) &&
-				!CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionEvent)
+			    data.isMember(Event::EventTopic) &&
+			    data.isMember(Event::FromEventSubscriptionId) &&
+			    data.isMember(Event::DeletedEventProperties::BriefcaseId) &&
+			    !CheckForEventProperties(jsonString, Event::LockEvent) &&
+			    !CheckForEventProperties(jsonString, Event::CodeEvent) &&
+				!CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent)
 			    )
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::UnknownEventType:
+	    case BentleyB0200::iModel::Hub::Event::UnknownEventType:
 	    default:
 	        {
 		    break;
@@ -105,17 +105,17 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
+EventPtr ParseIntoLockEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::LockEvent);
 	if (data == nullptr)
 		return nullptr;
 
 	bvector<Utf8String> objectIds;
 	for
 		(
-		Json::ValueIterator itr = (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].begin();
-		itr != (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].end();
+		Json::ValueIterator itr = (*data)[Event::LockEventProperties::ObjectIds].begin();
+		itr != (*data)[Event::LockEventProperties::ObjectIds].end();
 		itr++
 		)
 		objectIds.push_back((*itr).asString());
@@ -123,65 +123,65 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 	if (objectIds.size() < 1)
 		return nullptr;
 
-	return DgnDbServerLockEvent::Create
+	return LockEvent::Create
 	    (
-		(*data)[DgnDbServerEvent::EventTopic].asString(),
-		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
+		(*data)[Event::EventTopic].asString(),
+		(*data)[Event::FromEventSubscriptionId].asString(),
 		objectIds,
-		(*data)[DgnDbServerEvent::LockEventProperties::LockType].asString(),
-		(*data)[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
-		(*data)[DgnDbServerEvent::LockEventProperties::BriefcaseId].asInt(),
-		(*data)[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString()
+		(*data)[Event::LockEventProperties::LockType].asString(),
+		(*data)[Event::LockEventProperties::LockLevel].asString(),
+		(*data)[Event::LockEventProperties::BriefcaseId].asInt(),
+		(*data)[Event::LockEventProperties::ReleasedWithChangeSet].asString()
 	    );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
+EventPtr ParseIntoChangeSetPostPushEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent);
 	if (data == nullptr)
 		return nullptr;
-	return DgnDbServerRevisionEvent::Create
+	return ChangeSetPostPushEvent::Create
 	    (
-		(*data)[DgnDbServerEvent::EventTopic].asString(),
-		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
-		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
-	    (*data)[DgnDbServerEvent::RevisionEventProperties::BriefcaseId].asInt()
+		(*data)[Event::EventTopic].asString(),
+		(*data)[Event::FromEventSubscriptionId].asString(),
+		(*data)[Event::ChangeSetPostPushEventProperties::ChangeSetId].asString(),
+		(*data)[Event::ChangeSetPostPushEventProperties::ChangeSetIndex].asString(),
+	    (*data)[Event::ChangeSetPostPushEventProperties::BriefcaseId].asInt()
 	    );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Algirdas.Mikoliunas	              12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoRevisionCreateEvent(Utf8String jsonString)
+EventPtr ParseIntoChangeSetPrePushEvent(Utf8String jsonString)
     {
-    std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionCreateEvent);
+    std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::ChangeSetPrePushEvent);
     if (data == nullptr)
         return nullptr;
-    return DgnDbServerRevisionCreateEvent::Create
+    return ChangeSetPrePushEvent::Create
         (
-        (*data)[DgnDbServerEvent::EventTopic].asString(),
-        (*data)[DgnDbServerEvent::FromEventSubscriptionId].asString()
+        (*data)[Event::EventTopic].asString(),
+        (*data)[Event::FromEventSubscriptionId].asString()
         );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
+EventPtr ParseIntoCodeEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::CodeEvent);
 	if (data == nullptr)
 		return nullptr;
 
 	bvector<Utf8String> values;
 	for 
 		(
-		Json::ValueIterator itr = (*data)[DgnDbServerEvent::CodeEventProperties::Values].begin(); 
-		itr != (*data)[DgnDbServerEvent::CodeEventProperties::Values].end(); 
+		Json::ValueIterator itr = (*data)[Event::CodeEventProperties::Values].begin(); 
+		itr != (*data)[Event::CodeEventProperties::Values].end(); 
 		itr++
 		)
 		values.push_back((*itr).asString());
@@ -189,31 +189,31 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 	if (values.size() < 1)
 		return nullptr;
 
-	return DgnDbServerCodeEvent::Create
+	return CodeEvent::Create
 	    (
-		(*data)[DgnDbServerEvent::EventTopic].asString(),
-		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::CodeSpecId].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::CodeScope].asString(),
+		(*data)[Event::EventTopic].asString(),
+		(*data)[Event::FromEventSubscriptionId].asString(),
+		(*data)[Event::CodeEventProperties::CodeSpecId].asString(),
+		(*data)[Event::CodeEventProperties::CodeScope].asString(),
 		values,
-		(*data)[DgnDbServerEvent::CodeEventProperties::State].asInt(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asInt()
+		(*data)[Event::CodeEventProperties::State].asInt(),
+		(*data)[Event::CodeEventProperties::BriefcaseId].asInt()
 	    );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEvent::DgnDbServerEventType deletedEventType)
+EventPtr ParseIntoDeletedEvent(Utf8String jsonString, Event::EventType deletedEventType)
     {
 	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, deletedEventType);
 	if (data == nullptr)
 		return nullptr;
-	return DgnDbServerDeletedEvent::Create
+	return DeletedEvent::Create
 	    (
-		(*data)[DgnDbServerEvent::EventTopic].asString(),
-		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		(*data)[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asInt(),
+		(*data)[Event::EventTopic].asString(),
+		(*data)[Event::FromEventSubscriptionId].asString(),
+		(*data)[Event::DeletedEventProperties::BriefcaseId].asInt(),
 		deletedEventType
 	    );
     }
@@ -221,7 +221,7 @@ DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEven
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr DgnDbServerEventParser::ParseEvent
+EventPtr EventParser::ParseEvent
 (
 Utf8CP responseContentType,
 Utf8String responseString
@@ -236,30 +236,30 @@ Utf8String responseString
 		return nullptr;
 
 	Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
-	DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEvent::Helper::GetEventTypeFromEventName(responseContentType);
+	Event::EventType eventType = Event::Helper::GetEventTypeFromEventName(responseContentType);
 	switch (eventType)
 	    {
-            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:             return ParseIntoLockEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:         return ParseIntoRevisionEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent:   return ParseIntoRevisionCreateEvent(actualJsonPart);
-	    case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:             return ParseIntoCodeEvent(actualJsonPart);
-	    case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
-	    case DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent:  return ParseIntoDeletedEvent(actualJsonPart, eventType);
+        case Event::EventType::LockEvent:                   return ParseIntoLockEvent(actualJsonPart);
+        case Event::EventType::ChangeSetPostPushEvent:      return ParseIntoChangeSetPostPushEvent(actualJsonPart);
+        case Event::EventType::ChangeSetPrePushEvent:       return ParseIntoChangeSetPrePushEvent(actualJsonPart);
+	    case Event::EventType::CodeEvent:                   return ParseIntoCodeEvent(actualJsonPart);
+	    case Event::EventType::AllLocksDeletedEvent:
+	    case Event::EventType::AllCodesDeletedEvent:        return ParseIntoDeletedEvent(actualJsonPart, eventType);
 	    default:
-	    case DgnDbServerEvent::DgnDbServerEventType::UnknownEventType: return nullptr;
+	    case Event::EventType::UnknownEventType:            return nullptr;
 	    }
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerLockEvent> DgnDbServerEventParser::GetLockEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct LockEvent> EventParser::GetLockEvent(EventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return new DgnDbServerLockEvent(dynamic_cast<DgnDbServerLockEvent&>(*eventPtr));
+		return new LockEvent(dynamic_cast<LockEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -270,13 +270,13 @@ RefCountedPtr<struct DgnDbServerLockEvent> DgnDbServerEventParser::GetLockEvent(
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevisionEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct ChangeSetPostPushEvent> EventParser::GetChangeSetPostPushEvent(EventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return new DgnDbServerRevisionEvent(dynamic_cast<DgnDbServerRevisionEvent&>(*eventPtr));
+		return new ChangeSetPostPushEvent(dynamic_cast<ChangeSetPostPushEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -287,13 +287,13 @@ RefCountedPtr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevisi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Algirdas.Mikoliunas	              12/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct ChangeSetPrePushEvent> EventParser::GetChangeSetPrePushEvent(EventPtr eventPtr)
     {
     try
         {
         if (eventPtr == nullptr)
             return nullptr;
-        return new DgnDbServerRevisionCreateEvent(dynamic_cast<DgnDbServerRevisionCreateEvent&>(*eventPtr));
+        return new ChangeSetPrePushEvent(dynamic_cast<ChangeSetPrePushEvent&>(*eventPtr));
         }
     catch (const std::bad_cast&)
         {
@@ -304,13 +304,13 @@ RefCountedPtr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::Get
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct CodeEvent> EventParser::GetCodeEvent(EventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return new DgnDbServerCodeEvent(dynamic_cast<DgnDbServerCodeEvent&>(*eventPtr));
+		return new CodeEvent(dynamic_cast<CodeEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {
@@ -321,13 +321,13 @@ RefCountedPtr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEvent(
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerDeletedEvent> DgnDbServerEventParser::GetDeletedEvent(DgnDbServerEventPtr eventPtr)
+RefCountedPtr<struct DeletedEvent> EventParser::GetDeletedEvent(EventPtr eventPtr)
     {
 	try
 	    {
 		if (eventPtr == nullptr)
 			return nullptr;
-		return new DgnDbServerDeletedEvent(dynamic_cast<DgnDbServerDeletedEvent&>(*eventPtr));
+		return new DeletedEvent(dynamic_cast<DeletedEvent&>(*eventPtr));
 	    }
 	catch (const std::bad_cast&)
 	    {

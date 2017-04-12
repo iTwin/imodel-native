@@ -5,18 +5,17 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <WebServices/iModelHub/Common.h>
+#include <WebServices/iModelHub/Client/Error.h>
+#include "Error.xliff.h"
 
-#include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerError.h>
-#include "DgnDbServerError.xliff.h"
-
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdString)
+Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
     {
-    static bmap<Utf8String, DgnDbServerError::Id> map;
+    static bmap<Utf8String, Error::Id> map;
     if (map.empty())
         {
         map["BIMCS.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
@@ -24,26 +23,26 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["BIMCS.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
         map["BIMCS.InvalidBriefcase"]                          = Id::InvalidBriefcase;
         map["BIMCS.AnotherUserPushing"]                        = Id::AnotherUserPushing;
-        map["BIMCS.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
-        map["BIMCS.RevisionDoesNotExist"]                      = Id::RevisionDoesNotExist;
+        map["BIMCS.ChangeSetAlreadyExists"]                     = Id::ChangeSetAlreadyExists;
+        map["BIMCS.ChangeSetDoesNotExist"]                      = Id::ChangeSetDoesNotExist;
         map["BIMCS.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
-        map["BIMCS.RevisionExistsButNoBackingFile"]            = Id::RevisionExistsButNoBackingFile;
-        map["BIMCS.RepositoryIsNotInitialized"]                = Id::RepositoryIsNotInitialized;
-        map["BIMCS.RevisionPointsToBadBIM"]                    = Id::RevisionPointsToBadBIM;
+        map["BIMCS.ChangeSetExistsButNoBackingFile"]            = Id::ChangeSetExistsButNoBackingFile;
+        map["BIMCS.iModelIsNotInitialized"]                = Id::iModelIsNotInitialized;
+        map["BIMCS.ChangeSetPointsToBadiModel"]                    = Id::ChangeSetPointsToBadiModel;
         map["BIMCS.OperationFailed"]                           = Id::BIMCSOperationFailed;
         map["BIMCS.PullIsRequired"]                            = Id::PullIsRequired;
         map["BIMCS.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
         map["BIMCS.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
         map["BIMCS.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
-        map["BIMCS.RepositoryAlreadyExists"]                   = Id::RepositoryAlreadyExists;
-        map["BIMCS.RepositoryDoesNotExist"]                    = Id::RepositoryDoesNotExist;
+        map["BIMCS.iModelAlreadyExists"]                   = Id::iModelAlreadyExists;
+        map["BIMCS.iModelDoesNotExist"]                    = Id::iModelDoesNotExist;
         map["BIMCS.LockDoesNotExist"]                          = Id::LockDoesNotExist;
         map["BIMCS.LocksExist"]                                = Id::LocksExist;
         map["BIMCS.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
         map["BIMCS.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
         map["BIMCS.UserAlreadyExists"]                         = Id::UserAlreadyExists;
         map["BIMCS.CodeStateInvalid"]                          = Id::CodeStateInvalid;
-        map["BIMCS.CodeStateRevisionDenied"]                   = Id::CodeStateRevisionDenied;
+        map["BIMCS.CodeStateChangeSetDenied"]                   = Id::CodeStateChangeSetDenied;
         map["BIMCS.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
         map["BIMCS.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
         map["BIMCS.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
@@ -51,7 +50,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["BIMCS.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         map["BIMCS.FileDoesNotExist"]                          = Id::FileDoesNotExist;
         map["BIMCS.FileAlreadyExists"]                         = Id::FileAlreadyExists;
-        map["BIMCS.RepositoryIsLocked"]                        = Id::RepositoryIsLocked;
+        map["BIMCS.iModelIsLocked"]                        = Id::iModelIsLocked;
         }
 
     auto it = map.find(errorIdString);
@@ -63,7 +62,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
     return Id::Unknown;
     }
 
-DgnDbServerError::Id DgnDbServerError::ErrorIdFromWSError(WebServices::WSErrorCR error)
+Error::Id Error::ErrorIdFromWSError(WebServices::WSErrorCR error)
     {
     if (WSError::Status::ReceivedError == error.GetStatus())
         switch (error.GetId())
@@ -93,26 +92,27 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromWSError(WebServices::WSErrorCR
     return Id::WebServicesError;
     }
 
-bool DgnDbServerError::RequiresExtendedData(Id id)
+bool Error::RequiresExtendedData(Id id)
     {
     switch (id)
         {
             case Id::LockOwnedByAnotherBriefcase:
-            case Id::RepositoryAlreadyExists:
+            case Id::iModelAlreadyExists:
             case Id::FileAlreadyExists:
+            case Id::PullIsRequired:
                 return true;
             default:
                 return false;
         }
     }
 
-DgnDbServerError::DgnDbServerError()
+Error::Error()
     {
     m_id = Id::Unknown;
     m_message = GetDefaultMessage(Id::Unknown);
     }
 
-DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
+Error::Error(WebServices::WSErrorCR error)
     {
     m_message = error.GetMessage();
     m_description = error.GetDescription();
@@ -129,13 +129,13 @@ DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
         }
     }
 
-DgnDbServerError::DgnDbServerError(DgnDbCR db, BeSQLite::DbResult result)
+Error::Error(DgnDbCR db, BeSQLite::DbResult result)
     {
     m_id = Id::DgnDbError;
     m_message = db.GetLastError(&result);
     }
 
-DgnDbServerError::DgnDbServerError(DgnDbPtr db, BeSQLite::DbResult result)
+Error::Error(DgnDbPtr db, BeSQLite::DbResult result)
     {
     m_id = Id::DgnDbError;
     if (db.IsValid())
@@ -144,7 +144,7 @@ DgnDbServerError::DgnDbServerError(DgnDbPtr db, BeSQLite::DbResult result)
         }
     }
 
-DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
+Error::Error(RevisionStatus const& status)
     {
     if (RevisionStatus::MergeError == status)
         {
@@ -158,55 +158,55 @@ DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
         }
     }
 
-DgnDbServerError::DgnDbServerError(HttpErrorCR error)
+Error::Error(HttpErrorCR error)
     {
     m_id = Id::AzureError;
     m_message = error.AsyncError::GetMessage();
     m_description = error.AsyncError::GetDescription();
     }
 
-Utf8StringCR DgnDbServerError::GetDefaultMessage(DgnDbServerError::Id id)
+Utf8StringCR Error::GetDefaultMessage(Error::Id id)
     {
-    static bmap<DgnDbServerError::Id, Utf8String> map;
+    static bmap<Error::Id, Utf8String> map;
     if (map.empty())
         {
-        map[Id::CredentialsNotSet] = DgnDbServerErrorLocalizedString(MESSAGE_CredentialsNotSet);
-        map[Id::InvalidServerURL] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidServerURL);
-        map[Id::InvalidRepositoryName] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryName);
-        map[Id::InvalidRepositoryId] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryId);
-        map[Id::InvalidRepositoryConnection] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRepositoryConnection);
-        map[Id::InvalidRevision] = DgnDbServerErrorLocalizedString(MESSAGE_InvalidRevision);
+        map[Id::CredentialsNotSet] = ErrorLocalizedString(MESSAGE_CredentialsNotSet);
+        map[Id::InvalidServerURL] = ErrorLocalizedString(MESSAGE_InvalidServerURL);
+        map[Id::InvalidiModelName] = ErrorLocalizedString(MESSAGE_InvalidiModelName);
+        map[Id::InvalidiModelId] = ErrorLocalizedString(MESSAGE_InvalidiModelId);
+        map[Id::InvalidiModelConnection] = ErrorLocalizedString(MESSAGE_InvalidiModelConnection);
+        map[Id::InvalidChangeSet] = ErrorLocalizedString(MESSAGE_InvalidChangeSet);
 
-        map[Id::UserDoesNotExist] = DgnDbServerErrorLocalizedString(MESSAGE_UserDoesNotExist);
+        map[Id::UserDoesNotExist] = ErrorLocalizedString(MESSAGE_UserDoesNotExist);
 
-        map[Id::RepositoryIsNotInitialized] = DgnDbServerErrorLocalizedString(MESSAGE_RepositoryIsNotInitialized);
+        map[Id::iModelIsNotInitialized] = ErrorLocalizedString(MESSAGE_iModelIsNotInitialized);
 
-        map[Id::FileIsNotYetInitialized] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsNotYetInitialized);
-        map[Id::FileIsOutdated] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsOutdated);
-        map[Id::FileHasDifferentId] = DgnDbServerErrorLocalizedString(MESSAGE_FileHasDifferentId);
-        map[Id::FileInitializationFailed] = DgnDbServerErrorLocalizedString(MESSAGE_FileInitializationFailed);
+        map[Id::FileIsNotYetInitialized] = ErrorLocalizedString(MESSAGE_FileIsNotYetInitialized);
+        map[Id::FileIsOutdated] = ErrorLocalizedString(MESSAGE_FileIsOutdated);
+        map[Id::FileHasDifferentId] = ErrorLocalizedString(MESSAGE_FileHasDifferentId);
+        map[Id::FileInitializationFailed] = ErrorLocalizedString(MESSAGE_FileInitializationFailed);
 
-        map[Id::BriefcaseIsReadOnly] = DgnDbServerErrorLocalizedString(MESSAGE_BriefcaseIsReadOnly);
-        map[Id::FileNotFound] = DgnDbServerErrorLocalizedString(MESSAGE_FileNotFound);
-        map[Id::PullIsRequired] = DgnDbServerErrorLocalizedString(MESSAGE_PullIsRequired);
-        map[Id::TrackingNotEnabled] = DgnDbServerErrorLocalizedString(MESSAGE_TrackingNotEnabled);
-        map[Id::FileAlreadyExists] = DgnDbServerErrorLocalizedString(MESSAGE_FileAlreadyExists);
-        map[Id::FileIsNotBriefcase] = DgnDbServerErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
+        map[Id::BriefcaseIsReadOnly] = ErrorLocalizedString(MESSAGE_BriefcaseIsReadOnly);
+        map[Id::FileNotFound] = ErrorLocalizedString(MESSAGE_FileNotFound);
+        map[Id::PullIsRequired] = ErrorLocalizedString(MESSAGE_PullIsRequired);
+        map[Id::TrackingNotEnabled] = ErrorLocalizedString(MESSAGE_TrackingNotEnabled);
+        map[Id::FileAlreadyExists] = ErrorLocalizedString(MESSAGE_FileAlreadyExists);
+        map[Id::FileIsNotBriefcase] = ErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
 
-        map[Id::MergeError] = DgnDbServerErrorLocalizedString(MESSAGE_MergeError);
-        map[Id::RevisionManagerError] = DgnDbServerErrorLocalizedString(MESSAGE_RevisionManagerError);
-        map[Id::RevisionDoesNotExist] = DgnDbServerErrorLocalizedString(MESSAGE_RevisionDoesNotExist);
+        map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);
+        map[Id::RevisionManagerError] = ErrorLocalizedString(MESSAGE_RevisionManagerError);
+        map[Id::ChangeSetDoesNotExist] = ErrorLocalizedString(MESSAGE_ChangeSetDoesNotExist);
 
-        map[Id::EventCallbackAlreadySubscribed] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
-        map[Id::EventServiceSubscribingError] = DgnDbServerErrorLocalizedString(MESSAGE_EventServiceSubscribingError);
-        map[Id::EventCallbackNotFound] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackNotFound);
-        map[Id::EventCallbackNotSpecified] = DgnDbServerErrorLocalizedString(MESSAGE_EventCallbackNotSpecified);
-        map[Id::NoEventsFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoEventsFound);
-        map[Id::NotSubscribedToEventService] = DgnDbServerErrorLocalizedString(MESSAGE_NotSubscribedToEventService);
-        map[Id::NoSASFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoSASFound);
-        map[Id::NoSubscriptionFound] = DgnDbServerErrorLocalizedString(MESSAGE_NoSubscriptionFound);
+        map[Id::EventCallbackAlreadySubscribed] = ErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
+        map[Id::EventServiceSubscribingError] = ErrorLocalizedString(MESSAGE_EventServiceSubscribingError);
+        map[Id::EventCallbackNotFound] = ErrorLocalizedString(MESSAGE_EventCallbackNotFound);
+        map[Id::EventCallbackNotSpecified] = ErrorLocalizedString(MESSAGE_EventCallbackNotSpecified);
+        map[Id::NoEventsFound] = ErrorLocalizedString(MESSAGE_NoEventsFound);
+        map[Id::NotSubscribedToEventService] = ErrorLocalizedString(MESSAGE_NotSubscribedToEventService);
+        map[Id::NoSASFound] = ErrorLocalizedString(MESSAGE_NoSASFound);
+        map[Id::NoSubscriptionFound] = ErrorLocalizedString(MESSAGE_NoSubscriptionFound);
 
-        map[Id::Unknown] = DgnDbServerErrorLocalizedString(MESSAGE_Unknown);
+        map[Id::Unknown] = ErrorLocalizedString(MESSAGE_Unknown);
         }
 
     auto it = map.find(id);
@@ -218,10 +218,10 @@ Utf8StringCR DgnDbServerError::GetDefaultMessage(DgnDbServerError::Id id)
     return map[Id::Unknown];
     }
 
-DgnDbServerError::DgnDbServerError(DgnDbServerError::Id id)
+Error::Error(Error::Id id)
     {
     m_id = id;
     m_message = GetDefaultMessage(id);
     }
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

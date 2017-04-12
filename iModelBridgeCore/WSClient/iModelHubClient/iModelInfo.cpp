@@ -5,106 +5,106 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/RepositoryInfo.h>
+#include <WebServices/iModelHub/Client/iModelInfo.h>
 #include <DgnPlatform/TxnManager.h>
-#include "DgnDbServerUtils.h"
-#include <DgnDbServer/Client/Logging.h>
+#include "Utils.h"
+#include "Logging.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Utf8String RepositoryInfo::GetWSRepositoryName() const
+Utf8String iModelInfo::GetWSRepositoryName() const
     {
-    return ServerSchema::Plugin::Repository + ("--" + m_id);
+    return ServerSchema::Plugin::iModel + ("--" + m_id);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRepositoryResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
+iModelResult iModelInfo::ReadiModelInfo(Dgn::DgnDbCR db)
     {
-    const Utf8String methodName = "RepositoryInfo::ReadRepositoryInfo";
+    const Utf8String methodName = "iModelInfo::ReadiModelInfo";
     Utf8String serverUrl;
     Utf8String id;
     BeSQLite::DbResult status;
-    status = db.QueryBriefcaseLocalValue(serverUrl, Db::Local::RepositoryURL);
+    status = db.QueryBriefcaseLocalValue(serverUrl, Db::Local::iModelURL);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
-        status = db.QueryBriefcaseLocalValue(id, Db::Local::RepositoryId);
+        status = db.QueryBriefcaseLocalValue(id, Db::Local::iModelId);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         {
-        return DgnDbServerRepositoryResult::Success(Create(serverUrl, id));
+        return iModelResult::Success(Create(serverUrl, id));
         }
-    auto error = DgnDbServerError(db, status);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-    return DgnDbServerRepositoryResult::Error(error);
+    auto error = Error(db, status);
+    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+    return iModelResult::Error(error);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId) const
+StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledChangeSetId) const
     {
-    const Utf8String methodName = "RepositoryInfo::WriteRepositoryInfo";
+    const Utf8String methodName = "iModelInfo::WriteiModelInfo";
     BeSQLite::DbResult status;
-    Utf8String parentRevisionId = clearLastPulledRevisionId ? "" : db.Revisions().GetParentRevisionId();
+    Utf8String parentChangeSetId = clearLastPulledChangeSetId ? "" : db.Revisions().GetParentRevisionId();
     status = db.ChangeBriefcaseId(briefcaseId);
 
-    //Write the RepositoryInfo properties to the file
+    //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryURL, GetServerURL());
+        status = db.SaveBriefcaseLocalValue(Db::Local::iModelURL, GetServerURL());
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, GetId());
+        status = db.SaveBriefcaseLocalValue(Db::Local::iModelId, GetId());
 
-    //ParentRevisionId is reset when changing briefcase Id
+    //ParentChangeSetId is reset when changing briefcase Id
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::ParentRevisionId, parentRevisionId);
+        status = db.SaveBriefcaseLocalValue(Db::Local::ParentChangeSetId, parentChangeSetId);
 
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-        return DgnDbServerStatusResult::Success();
-    auto error = DgnDbServerError(db, status);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-    return DgnDbServerStatusResult::Error(error);
+        return StatusResult::Success();
+    auto error = Error(db, status);
+    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+    return StatusResult::Error(error);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::Parse(RapidJsonValueCR properties, Utf8StringCR repositoryInstanceId, Utf8StringCR url)
+iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url)
     {
-    Utf8String name = properties[ServerSchema::Property::RepositoryName].GetString();
-    Utf8String description = properties[ServerSchema::Property::RepositoryDescription].GetString();
+    Utf8String name = properties[ServerSchema::Property::iModelName].GetString();
+    Utf8String description = properties[ServerSchema::Property::iModelDescription].GetString();
     Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? properties[ServerSchema::Property::UserCreated].GetString() : "";
     DateTime uploadedDate;
     Utf8String dateStr = properties.HasMember(ServerSchema::Property::UploadedDate) ? properties[ServerSchema::Property::UploadedDate].GetString() : "";
     if (!dateStr.empty())
         DateTime::FromString(uploadedDate, dateStr.c_str());
-    return new RepositoryInfo(url, repositoryInstanceId, name, description, userUploaded, uploadedDate);
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, uploadedDate);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    julius.cepukenas             10/2016
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::Parse(JsonValueCR json, Utf8StringCR url)
+iModelInfoPtr iModelInfo::Parse(JsonValueCR json, Utf8StringCR url)
     {
     if (json.isNull())
         return nullptr;
-    Utf8String repositoryInstanceId = json[ServerSchema::InstanceId].asString();
+    Utf8String iModelInstanceId = json[ServerSchema::InstanceId].asString();
     JsonValueCR properties = json[ServerSchema::Properties];
 
     auto rapidJson = ToRapidJson(properties);
 
-    return Parse(rapidJson, repositoryInstanceId, url);
+    return Parse(rapidJson, iModelInstanceId, url);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::Parse(WSObjectsReader::Instance instance, Utf8StringCR url)
+iModelInfoPtr iModelInfo::Parse(WSObjectsReader::Instance instance, Utf8StringCR url)
     {
-    Utf8String repositoryInstanceId = instance.GetObjectId().remoteId;
+    Utf8String iModelInstanceId = instance.GetObjectId().remoteId;
     RapidJsonValueCR properties = instance.GetProperties();
-    return Parse(properties, repositoryInstanceId, url);
+    return Parse(properties, iModelInstanceId, url);
     }
 

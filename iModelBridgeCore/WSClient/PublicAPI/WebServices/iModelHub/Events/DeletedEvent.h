@@ -7,42 +7,42 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Events/Event.h>
+#include <WebServices/iModelHub/Common.h>
 
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
+struct EXPORT_VTABLE_ATTRIBUTE DeletedEvent : public Event::GenericEvent
 {
 private:
     Utf8String m_eventTopic;
     Utf8String m_fromEventSubscriptionId;
     int        m_briefcaseId;
-    DgnDbServerEvent::DgnDbServerEventType m_deletedEventType;
+    Event::EventType m_deletedEventType;
 
-    DgnDbServerDeletedEvent
+    DeletedEvent
         (
         Utf8String eventTopic,
         Utf8String fromEventSubscriptionId,
         int        briefcaseId,
-        DgnDbServerEvent::DgnDbServerEventType deletedEventType
+        Event::EventType deletedEventType
         );
 
 public:
-    DGNDBSERVERCLIENT_EXPORT static RefCountedPtr<struct DgnDbServerDeletedEvent> Create
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct DeletedEvent> Create
         (
         Utf8String eventTopic,
         Utf8String fromEventSubscriptionId,
         int        briefcaseId,
-        DgnDbServerEvent::DgnDbServerEventType deletedEventType
+        Event::EventType deletedEventType
         );
 
     Utf8String GetEventTopic() override {return m_eventTopic;}
     Utf8String GetFromEventSubscriptionId() override {return m_fromEventSubscriptionId;}
-    DgnDbServerEvent::DgnDbServerEventType GetEventType() override {return m_deletedEventType;}
+    Event::EventType GetEventType() override {return m_deletedEventType;}
     int GetBriefcaseId() const {return m_briefcaseId;}
-    DgnDbServerEvent::DgnDbServerEventType GetDeletedEventType() const {return m_deletedEventType;}
+    Event::EventType GetDeletedEventType() const {return m_deletedEventType;}
 };
 
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

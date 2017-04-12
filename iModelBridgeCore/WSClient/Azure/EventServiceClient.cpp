@@ -22,7 +22,7 @@ EventServiceClient::EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR re
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Arvind.Venkateswaran   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-//Need a default constructor for DgnDbClientRepository
+//Need a default constructor for iModel Hub Client
 EventServiceClient::EventServiceClient()
     {
     }

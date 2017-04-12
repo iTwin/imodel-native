@@ -8,6 +8,7 @@
 %include mdl.mki
 
 always:
-    !~@mkdir $(BuildContext)PublicAPI/DgnDbServer
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/DgnDbServerCommon.h =$(_MakeFilePath)/PublicAPI/DgnDbServer/DgnDbServerCommon.h"
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/Client =$(_MakeFilePath)/PublicAPI/DgnDbServer/Client"
+    !~@mkdir $(BuildContext)PublicAPI/WebServices/iModelHub
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/iModelHub/Common.h =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Common.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/iModelHub/Client =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Client"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/iModelHub/Events =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Events"

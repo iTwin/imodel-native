@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/Events/DgnDbServerRevisionCreateEvent.h>
-#include "../DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Events/ChangeSetPrePushEvent.h>
+#include "../Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionCreateEvent::DgnDbServerRevisionCreateEvent
+ChangeSetPrePushEvent::ChangeSetPrePushEvent
 (
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId
@@ -26,11 +26,11 @@ Utf8String fromEventSubscriptionId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-RefCountedPtr<struct DgnDbServerRevisionCreateEvent> DgnDbServerRevisionCreateEvent::Create
+RefCountedPtr<struct ChangeSetPrePushEvent> ChangeSetPrePushEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId
 )
     {
-    return new DgnDbServerRevisionCreateEvent(eventTopic, fromEventSubscriptionId);
+    return new ChangeSetPrePushEvent(eventTopic, fromEventSubscriptionId);
     }

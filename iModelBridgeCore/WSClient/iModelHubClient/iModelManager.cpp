@@ -5,12 +5,12 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbRepositoryManager.h>
-#include "DgnDbServerUtils.h"
-#include <DgnDbServer/Client/Logging.h>
+#include <WebServices/iModelHub/Client/iModelManager.h>
+#include "Utils.h"
+#include "Logging.h"
 #include <WebServices/Cache/Util/JsonUtil.h>
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -23,14 +23,9 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
         {
         for (auto const& lockJson : deniedLocks)
             {
-            DgnLock                  lock;
-            BeSQLite::BeBriefcaseId  briefcaseId;
-            Utf8String               repositoryId;
             auto rapidJson = ToRapidJson(lockJson);
-            if (!GetLockFromServerJson (rapidJson, lock, briefcaseId, repositoryId))
+            if (!AddLockInfoToListFromErrorJson (response.LockStates(), rapidJson))
                 continue;//NEEDSWORK: log an error
-
-            AddLockInfoToList (response.LockStates (), lock, briefcaseId, repositoryId);
             }
         }
     if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
@@ -52,21 +47,21 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<void> result)
+RepositoryStatus iModelManager::GetResponseStatus(Result<void> result)
     {
-    static bmap<DgnDbServerError::Id, RepositoryStatus> map;
+    static bmap<Error::Id, RepositoryStatus> map;
     if (map.empty())
         {
-        map[DgnDbServerError::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
-        map[DgnDbServerError::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
-        map[DgnDbServerError::Id::RevisionDoesNotExist]           = RepositoryStatus::InvalidRequest;
-        map[DgnDbServerError::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
-        map[DgnDbServerError::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
-        map[DgnDbServerError::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
-        map[DgnDbServerError::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
-        map[DgnDbServerError::Id::CodeStateRevisionDenied]        = RepositoryStatus::InvalidRequest;
-        map[DgnDbServerError::Id::CodeAlreadyExists]              = RepositoryStatus::CodeUnavailable;
-        map[DgnDbServerError::Id::RepositoryIsLocked]             = RepositoryStatus::RepositoryIsLocked;
+        map[Error::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
+        map[Error::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
+        map[Error::Id::ChangeSetDoesNotExist]           = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
+        map[Error::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
+        map[Error::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeStateChangeSetDenied]        = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeAlreadyExists]              = RepositoryStatus::CodeUnavailable;
+        map[Error::Id::iModelIsLocked]             = RepositoryStatus::RepositoryIsLocked;
         }
 
     auto it = map.find(result.GetError().GetId());
@@ -81,10 +76,10 @@ RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<voi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose)
+IBriefcaseManager::Response iModelManager::HandleError(Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose)
     {
     Response           response(purpose, request.Options(), RepositoryStatus::ServerUnavailable);
-    DgnDbServerError&  error = result.GetError();
+    Error&  error = result.GetError();
 
     RepositoryStatus responseStatus = GetResponseStatus(result);
     if (RepositoryStatus::LockAlreadyHeld == responseStatus)
@@ -107,7 +102,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& r
         {
         response.SetResult(responseStatus);
         JsonValueCR errorData = error.GetExtendedData();
-        auto errorPropertyName = DgnDbServerError::Id::CodeStateInvalid == error.GetId()
+        auto errorPropertyName = Error::Id::CodeStateInvalid == error.GetId()
             ? ServerSchema::Property::CodeStateInvalid
             : ServerSchema::Property::ConflictingCodes;
         SetCodesLocksStates(response, request.Options(), nullptr, errorData[errorPropertyName]);
@@ -125,7 +120,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
+IBriefcaseManager::Response iModelManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
     auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
 
@@ -134,14 +129,14 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 
     if (m_connection.IsNull())
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
-    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
+    Utf8String lastChangeSetId = db.Revisions ().GetParentRevisionId ();
 
-    DgnDbServerStatusResult result;
+    StatusResult result;
     if (queryOnly)
-        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastRevisionId, req.Options(), m_cancellationToken)->GetResult();
+        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken)->GetResult();
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastRevisionId, req.Options(), m_cancellationToken)->GetResult ();
+        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
@@ -153,7 +148,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
+RepositoryStatus iModelManager::_Demote (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
     {
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
@@ -176,7 +171,7 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db)
+RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
     {
     if (Resources::None == which) 
         return RepositoryStatus::Success;
@@ -198,7 +193,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
+RepositoryStatus iModelManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
@@ -227,7 +222,7 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
+RepositoryStatus iModelManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
     {
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;

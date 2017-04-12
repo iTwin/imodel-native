@@ -6,48 +6,48 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <DgnDbServer/DgnDbServerCommon.h>
+#include <WebServices/iModelHub/Common.h>
 
 //__BENTLEY_INTERNAL_ONLY__
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
-enum DgnDbServerBreakpoints
+enum Breakpoints
     { 
     None,
-    AfterDownloadRevisions,
-    BeforeStartCreateRevision, 
-    AfterStartCreateRevision,
-    BeforePushRevisionToServer,
-    AfterPushRevisionToServer,
-    AfterFinishCreateRevision,
+    AfterDownloadChangeSets,
+    BeforeStartCreateChangeSet, 
+    AfterStartCreateChangeSet,
+    BeforePushChangeSetToServer,
+    AfterPushChangeSetToServer,
+    AfterFinishCreateChangeSet,
 
-    DgnDbClient_AfterCreateRequest,
-    DgnDbClient_AfterDownloadBriefcaseFile,
-    DgnDbClient_AfterDeleteBriefcase,
-    DgnDbClient_AfterOpenBriefcaseForMerge,
-    DgnDbClient_AfterMergeRevisions,
-    DgnDbClient_AfterCreateBriefcaseInstance,
+    Client_AfterCreateRequest,
+    Client_AfterDownloadBriefcaseFile,
+    Client_AfterDeleteBriefcase,
+    Client_AfterOpenBriefcaseForMerge,
+    Client_AfterMergeChangeSets,
+    Client_AfterCreateBriefcaseInstance,
 
-    DgnDbRepositoryConnection_AfterCreateNewServerFile, 
-    DgnDbRepositoryConnection_AfterUploadServerFile,
-    DgnDbRepositoryConnection_AfterWriteRepositoryInfo,
-    DgnDbRepositoryConnection_AfterCreateRevisionRequest,
-    DgnDbRepositoryConnection_AfterUploadRevisionFile
+    iModelConnection_AfterCreateNewServerFile, 
+    iModelConnection_AfterUploadServerFile,
+    iModelConnection_AfterWriteiModelInfo,
+    iModelConnection_AfterCreateChangeSetRequest,
+    iModelConnection_AfterUploadChangeSetFile
     };
 
 //=======================================================================================
 // @bsiclass                                    Algirdas.Mikoliunas             10/2016
 //=======================================================================================
-struct DgnDbServerBreakHelper
+struct BreakHelper
 {
 private:
-    static DgnDbServerBreakpoints s_breakpoint;
+    static Breakpoints s_breakpoint;
 public:
     //! Sets breakpoint, that should throw exception during execution
     //! @param[in] breakpoint
-    DGNDBSERVERCLIENT_EXPORT static void SetBreakpoint(DgnDbServerBreakpoints breakpoint);
+    IMODELHUBCLIENT_EXPORT static void SetBreakpoint(Breakpoints breakpoint);
     //! Hits breakpoint and throws exception if set breakpoint is equal to current
     //! @param[in] breakpoint
-    DGNDBSERVERCLIENT_EXPORT static void HitBreakpoint(DgnDbServerBreakpoints breakpoint);
+    IMODELHUBCLIENT_EXPORT static void HitBreakpoint(Breakpoints breakpoint);
 };
-END_BENTLEY_DGNDBSERVER_NAMESPACE
+END_BENTLEY_IMODELHUB_NAMESPACE

@@ -5,10 +5,10 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerRevisionInfo.h>
-#include "DgnDbServerUtils.h"
+#include <WebServices/iModelHub/Client/ChangeSetInfo.h>
+#include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 // avoid collision of a static function with the same name in another CPP file in this compiland...
 BEGIN_UNNAMED_NAMESPACE
@@ -44,11 +44,11 @@ Utf8String ParseString(RapidJsonValueCR properties, Utf8String stringName, Utf8S
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfoPtr ParseRapidJson(RapidJsonValueCR properties)
+ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties)
     {
     auto id = properties[ServerSchema::Property::Id].GetString();
     auto dbGuid = ParseString(properties, ServerSchema::Property::MasterFileId, "");
-    auto parentRevisionId = ParseString(properties, ServerSchema::Property::ParentId, "");
+    auto parentChangeSetId = ParseString(properties, ServerSchema::Property::ParentId, "");
     auto description = ParseString(properties, ServerSchema::Property::Description, "");
     auto userCreated = ParseString(properties, ServerSchema::Property::UserCreated, "");
 
@@ -56,11 +56,11 @@ DgnDbServerRevisionInfoPtr ParseRapidJson(RapidJsonValueCR properties)
     uint64_t fileSize = ParseInt(properties, ServerSchema::Property::FileSize, -1);
     auto briefcaseId = properties.HasMember(ServerSchema::Property::BriefcaseId) ? BeBriefcaseId(properties[ServerSchema::Property::BriefcaseId].GetInt64()) : BeBriefcaseId(-1);
     auto pushDate = properties.HasMember(ServerSchema::Property::PushDate) ? BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::PushDate].GetString()) : DateTime();
-    DgnDbServerRevisionInfo::ContainingChanges containingChanges = properties.HasMember(ServerSchema::Property::ContainingChanges) ?
-        static_cast<DgnDbServerRevisionInfo::ContainingChanges>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
-        static_cast<DgnDbServerRevisionInfo::ContainingChanges>(0);
+    ChangeSetInfo::ContainingChanges containingChanges = properties.HasMember(ServerSchema::Property::ContainingChanges) ?
+        static_cast<ChangeSetInfo::ContainingChanges>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
+        static_cast<ChangeSetInfo::ContainingChanges>(0);
 
-    return new DgnDbServerRevisionInfo(id, parentRevisionId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
+    return new ChangeSetInfo(id, parentChangeSetId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
     }
 
 END_UNNAMED_NAMESPACE
@@ -68,7 +68,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfoPtr DgnDbServerRevisionInfo::Parse(JsonValueCR json)
+ChangeSetInfoPtr ChangeSetInfo::Parse(JsonValueCR json)
     {
     JsonValueCR properties      = json[ServerSchema::Properties];
     auto rapidJson = ToRapidJson(properties);
@@ -79,7 +79,7 @@ DgnDbServerRevisionInfoPtr DgnDbServerRevisionInfo::Parse(JsonValueCR json)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfoPtr DgnDbServerRevisionInfo::Parse(WSObjectsReader::Instance instance)
+ChangeSetInfoPtr ChangeSetInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();
     return ParseRapidJson(properties);

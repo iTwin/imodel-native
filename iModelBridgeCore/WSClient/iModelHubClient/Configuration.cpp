@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnDbServerUtils.h"
-#include "DgnDbServer/Client/DgnDbServerConfiguration.h"
+#include "Utils.h"
+#include <WebServices/iModelHub/Client/Configuration.h>
 
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
-bool DgnDbServerConfiguration::s_preDownloadRevisionsEnabled = true;
-int DgnDbServerConfiguration::s_preDownloadCacheSize         = 10 * 1024 * 1024; // 10 MB
+bool Configuration::s_preDownloadChangeSetsEnabled = true;
+int Configuration::s_preDownloadCacheSize         = 10 * 1024 * 1024; // 10 MB
 
