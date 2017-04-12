@@ -40,7 +40,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, DistanceExpr
     params.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsStations)));
 
     AlignmentStationPtr retVal(new AlignmentStation(params, distanceExpression, restartValue));
-    retVal->_SetLinearElementId(alignment.GetElementId());
+    retVal->_SetLinearElement(&alignment);
     return retVal;
     }
 
