@@ -1161,7 +1161,7 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     ASSERT_TRUE (status == SUCCESS);
     }
 
-#ifdef NOT_NOW
+//#ifdef NOT_NOW
 
     TEST_F (ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
     {
@@ -1197,6 +1197,10 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId.c_str());    
     EXPECT_TRUE(status == SUCCESS);
 
+    CWSCCDATABUFHANDLE parentFolderContainerBuffer;    
+    status = ConnectWebServicesClientC_InitFolderHasContentBuffer(&parentFolderContainerBuffer, wProjectInstanceId.c_str());
+
+
     //test folder ops
     WString folderName = L"FolderA";
     WPrintfString folderDescription(L"Description for %s", folderName);
@@ -1218,7 +1222,8 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
         &folderSize,
         folderDescription.c_str(),
         nullptr,
-        nullptr
+        nullptr,
+        parentFolderContainerBuffer
         );
     ASSERT_TRUE (status == SUCCESS);
 
@@ -1235,7 +1240,7 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     ASSERT_TRUE (status == SUCCESS);    
     }
 
-#endif
+//#endif
 //#endif
 
     
