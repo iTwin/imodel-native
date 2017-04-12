@@ -27,7 +27,13 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnDbServerErrorL10N, DgnDbServerError)
 
     //Repository errors
     L10N_STRING(MESSAGE_MasterFileNotFound)                // =="Could not find uninitialized master file."==
-    L10N_STRING(MESSAGE_RepositoryIsNotInitialized)        // =="Master file could not be initialized."==
+    L10N_STRING(MESSAGE_RepositoryIsNotInitialized)        // =="Repository is not initialized."==
+
+    //Initialization errors
+    L10N_STRING(MESSAGE_FileIsNotYetInitialized)           // =="File is not yet initialized."==
+    L10N_STRING(MESSAGE_FileIsOutdated)                    // =="File could not be initialized. File is too old."==
+    L10N_STRING(MESSAGE_FileHasDifferentId)                // =="File could not be initialized. File has different id than expected."==
+    L10N_STRING(MESSAGE_FileInitializationFailed)          // =="File could not be initialized. Unexpected error has occured."==
 
     //Briefcase errors
     L10N_STRING(MESSAGE_BriefcaseIsReadOnly)               // =="Briefcase is read only."==

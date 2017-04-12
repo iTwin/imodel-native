@@ -40,9 +40,9 @@ bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMCollaborationServices(
     "BIMCollaborationServices",
-    "https://dev-dgndbserver-eus.cloudapp.net",
-    "https://qa-dgndbserver-eus.cloudapp.net",
-    "https://connect-dgndbserver.bentley.com",
+    "https://dev-dgndbserver.bentley.com",
+    "https://qa-dgndbserver.bentley.com",
+    "https://dgndbserver.bentley.com",
     &s_urlRegistry
     );
 

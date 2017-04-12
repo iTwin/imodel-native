@@ -30,8 +30,9 @@ enum class InitializationState
 	Success,
 	NotStarted,
 	Scheduled,
-	Failed,
-	OutdatedFile
+    UnknownFailure,
+	OutdatedFile,
+    IncorrectFileId
 	};
 
 //=======================================================================================

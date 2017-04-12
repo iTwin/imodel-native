@@ -11,6 +11,47 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+
+BCSClientHelper* BCSClientHelper::s_instance = nullptr;
+BeMutex BCSClientHelper::s_mutex{};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Karolis.Dziedzelis              04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BCSClientHelper* BCSClientHelper::Initialize(WebServices::ClientInfoPtr clientInfo, IJsonLocalState * ls)
+    {
+    BeMutexHolder lock(s_mutex);
+    if (nullptr == s_instance)
+        {
+        s_instance = new BCSClientHelper(clientInfo, ls);
+        AsyncTasksManager::RegisterOnCompletedListener([]
+            {
+            if (nullptr != s_instance)
+                {
+                delete s_instance;
+                s_instance = nullptr;
+                }
+            UrlProvider::Uninitialize();
+            });
+        }
+    else
+        {
+        s_instance->m_clientInfo = clientInfo;
+        if (nullptr != ls)
+            s_instance->m_localState = ls;
+        }
+    return s_instance;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Karolis.Dziedzelis              04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BCSClientHelper* BCSClientHelper::GetInstance()
+    {
+    BeMutexHolder lock(s_mutex);
+    return s_instance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
