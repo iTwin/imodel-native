@@ -1,3 +1,12 @@
+#!Python
+#--------------------------------------------------------------------------------------
+#
+#     $Source: tools/SchemaValidator/SchemaLoadTool/SchemaValidationRunner.py $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
 import glob, os, sys, subprocess
 
 if (len(sys.argv) < 4):
@@ -8,7 +17,7 @@ validatorExeDir = sys.argv[1] # schemavalidator.exe dir
 schemaDir = sys.argv[2] 
 schemaRef = sys.argv[3]
 
-# Optional 3rd argument as log output location
+# Optional 4th argument as log output location
 if (len(sys.argv) > 4):
     logOutputDir = sys.argv[4] 
 else:
