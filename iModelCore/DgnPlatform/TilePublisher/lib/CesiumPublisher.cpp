@@ -236,7 +236,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return status;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), nullptr, &progressMeter);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
 
     DRange3d            range;
 
@@ -260,12 +260,20 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         }
     else
         {
-        Transform   tileToDb;
+        if (range.IsNull())
+            {
+            groundPoint.x = groundPoint.y = 0.0;
+            }
+        else
+            {
+            Transform   tileToDb;
 
-        tileToDb.InverseOf (m_dbToTile);
-        
-        groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
-        tileToDb.Multiply (groundPoint);
+            tileToDb.InverseOf (m_dbToTile);
+            
+            groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
+            tileToDb.Multiply (groundPoint);
+            }
+
         groundPoint.z = params.GetGroundHeight();
         }
 

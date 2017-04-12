@@ -898,6 +898,7 @@ public:
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
     DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values using the supplied ViewContext.
+    bool IsResolved() const { return m_resolved; } // Whether effective values have been resolved.
 
     void SetCategoryId(DgnCategoryId categoryId, bool clearAppearanceOverrides = true) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId, bool clearAppearanceOverrides = true) {m_subCategoryId = subCategoryId; if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}

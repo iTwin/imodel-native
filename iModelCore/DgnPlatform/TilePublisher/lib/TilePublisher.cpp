@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/TilePublisher.h>
+#include <BeSqLite/BeSqLite.h>
 #include "Constants.h"
 #include <crunch/CrnLib.h>
 #include <Geom/OperatorOverload.h>
@@ -13,6 +14,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_SQLITE
 
 
 //=======================================================================================
@@ -710,7 +712,7 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
+    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), nullptr);
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
@@ -1500,7 +1502,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix)
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency();         // || IsTesselated(); // Turn this on if we use alpha in tesselated polylines.
     m_colorDimension = ColorIndex::CalcDimension(map.GetNumIndices());
-    m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
+    m_width = static_cast<double> (displayParams.GetRasterWidth());
 
     if (0 != displayParams.GetLinePixels())
         {
@@ -2457,6 +2459,23 @@ static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
+*
+*  6 points are generated for each line segment and these are used to generate 4 triangles.
+*  The triangles on the interior of a joint are truncated at the miter line - else
+*  we would be able to use only two triangles and 4 points.  (See PolylineTesselation.dgn)
+*  At each point we include the point location on at the segment center line as well as
+*  the previous and next points.   The previous and next points are used to calculate the 
+*  the miter direction.  For a start or end point the previous and next directions are 
+*  along the line segment and the miter direction is therefore perpendicular to the line segment.
+*  Param.x is the direction to offset along the miter line -- (0, -1 or 1).   
+*  Param.y is an inelegant horrible conglomeration -- 0 indicates the start point, 4 indicates end point.
+*
+*  The joint geometry fills the void between the two miter triangles.  Currently we are just
+*  Creating two triangles -- but we could create a single triangle (as QVision does) or additional
+*  triangles to make a more rounded joint.
+*    param.y values from 2-3 indicate start joint points, 6-7 indicate end joints. these are calculated as a linear combination of 
+*    the segment perpendicular and the miter direction.
+*
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
@@ -2742,7 +2761,6 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
     RotMatrix   rMatrix;
     rMatrix.InitIdentity();
-    m_nonSpatialToEcef = Transform::From(rMatrix, ecfOrigin);
 
     DVec3d      zVector, yVector;
 
@@ -2932,9 +2950,8 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     auto&       root = val[JSON_Root];
 
-    auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
-    if (!ecefTransform.IsIdentity())
-        root[JSON_Transform] = TransformToJson(ecefTransform);
+    if (rootTile.GetModel().IsSpatialModel())
+        root[JSON_Transform] = TransformToJson(m_spatialToEcef);
 
     DRange3d    rootRange;
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
@@ -2954,9 +2971,8 @@ TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
     {
-    if (TileGeneratorStatus::Success == status)
+    if (TileGeneratorStatus::Success == status && nullptr != rootTile && !rootTile->GetIsEmpty())
         {
-        BeAssert(nullptr != rootTile);
             {
             BeMutexHolder lock(m_mutex);
             m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
@@ -3008,26 +3024,59 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId, DgnDbR dgnDb)
+    {
+    viewedModels.insert(modelId);
+
+    // Scan for viewAttachments...
+    auto stmt = dgnDb.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    stmt->BindId(1, modelId);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto attachId = stmt->GetValueId<DgnElementId>(0);
+        auto attach = dgnDb.Elements().Get<Sheet::ViewAttachment>(attachId);
+
+        if (!attach.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId(), dgnDb);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, DgnDbR dgnDb)
+    {
+    SpatialViewDefinitionPtr spatialView = nullptr;
+    auto view2d = dgnDb.Elements().Get<ViewDefinition2d>(viewId);
+    if (view2d.IsValid())
+        {
+        AddViewedModel (viewedModels, view2d->GetBaseModelId(), dgnDb); 
+        }
+    else if ((spatialView = dgnDb.Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
+        {
+        for (auto& modelId : spatialView->GetModelSelector().GetModels())
+            AddViewedModel (viewedModels, modelId, dgnDb);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
     DgnModelIdSet viewedModels;
+
     for (auto const& viewId : m_viewIds)
-        {
-        SpatialViewDefinitionPtr spatialView = nullptr;
-        auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
-        if (view2d.IsValid())
-            {
-            surfacesOnly = false;           // Always publish lines, text etc. in sheets.
-            viewedModels.insert(view2d->GetBaseModelId());
-            }
-        else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
-            {
-            auto spatialModels = spatialView->GetModelSelector().GetModels();
-            viewedModels.insert(spatialModels.begin(), spatialModels.end());
-            }
-        }
+        GetViewedModelsFromView (viewedModels, viewId, GetDgnDb());
 
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
@@ -3079,13 +3128,13 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             modelJson["name"] = model->GetName();
             modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
 
+            if (nullptr != spatialModel)
+                {
+                m_spatialToEcef.Multiply(modelRange, modelRange);
+                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                }
 
-            auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
-            modelTransform.Multiply(modelRange, modelRange);
             modelJson["extents"] = RangeToJson(modelRange);
-
-            if (nullptr == spatialModel && !modelTransform.IsIdentity())
-                modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
 
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName;
@@ -3190,7 +3239,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
         }
     else
         {
-        json["type"] = "drawing";
+        json["type"] = nullptr != view.ToDrawingView() ? "drawing" : "sheet";;
         }
     }
 
@@ -3203,7 +3252,6 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     json["name"] = rootNameUtf8;
 
     Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
-    Transform nonSpatialTransform = Transform::FromProduct(m_nonSpatialToEcef, m_dbToTile);
 
     if (!m_spatialToEcef.IsIdentity())
         {
@@ -3238,7 +3286,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : nonSpatialTransform);
+        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : Transform::FromIdentity());
         viewsJson[viewId.ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default
