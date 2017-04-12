@@ -331,7 +331,8 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
     {
     BeCriticalSectionHolder lock(m_cs);
 
-    // TODO: Harcoded URI for first G0505 release (2016 Q1). Should match service server URL in future
+    // Harcoded URI for first G0505 release (2016 Q1). May need to match service server URL in future.
+    // Update: This seems to be good enough for IMS as most of services use generic AppliesTo anyway as of 2017-04 
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
     auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
