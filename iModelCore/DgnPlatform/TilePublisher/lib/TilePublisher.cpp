@@ -2761,7 +2761,6 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
     RotMatrix   rMatrix;
     rMatrix.InitIdentity();
-    m_nonSpatialToEcef = Transform::From(rMatrix, ecfOrigin);
 
     DVec3d      zVector, yVector;
 
@@ -2951,9 +2950,8 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     auto&       root = val[JSON_Root];
 
-    auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
-    if (!ecefTransform.IsIdentity())
-        root[JSON_Transform] = TransformToJson(ecefTransform);
+    if (rootTile.GetModel().IsSpatialModel())
+        root[JSON_Transform] = TransformToJson(m_spatialToEcef);
 
     DRange3d    rootRange;
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
@@ -3131,13 +3129,13 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             modelJson["name"] = model->GetName();
             modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
 
+            if (nullptr != spatialModel)
+                {
+                m_spatialToEcef.Multiply(modelRange, modelRange);
+                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                }
 
-            auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
-            modelTransform.Multiply(modelRange, modelRange);
             modelJson["extents"] = RangeToJson(modelRange);
-
-            if (nullptr == spatialModel && !modelTransform.IsIdentity())
-                modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
 
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName;
@@ -3255,7 +3253,6 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     json["name"] = rootNameUtf8;
 
     Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
-    Transform nonSpatialTransform = Transform::FromProduct(m_nonSpatialToEcef, m_dbToTile);
 
     if (!m_spatialToEcef.IsIdentity())
         {
@@ -3290,7 +3287,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : nonSpatialTransform);
+        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : Transform::FromIdentity());
         viewsJson[viewId.ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default

@@ -260,7 +260,6 @@ protected:
     WString                                 m_rootName;
     Transform                               m_dbToTile;
     Transform                               m_spatialToEcef;
-    Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
     bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
@@ -296,7 +295,6 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
-    TransformCR GetNonSpatialToEcef() const { return m_nonSpatialToEcef; }
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
