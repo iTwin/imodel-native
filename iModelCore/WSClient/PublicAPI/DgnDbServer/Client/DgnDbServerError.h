@@ -51,6 +51,12 @@ public:
         FileDoesNotExist,
         RepositoryIsLocked,
 
+        //Long Running Processes Errors
+        FileIsNotYetInitialized,
+        FileIsOutdated,
+        FileHasDifferentId,
+        FileInitializationFailed,
+
         //WebServices Errors
         LoginFailed,
         SslRequired,

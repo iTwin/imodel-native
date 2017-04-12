@@ -485,8 +485,18 @@ void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDb
 
     if (initializationState != InitializationState::Success)
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Repository is not initialized.");
-        finalResult->SetError({ DgnDbServerError::Id::RepositoryIsNotInitialized });
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not initialized.");
+        switch (initializationState)
+            {
+            case InitializationState::Scheduled:
+                finalResult->SetError({ DgnDbServerError::Id::FileIsNotYetInitialized });
+            case InitializationState::OutdatedFile:
+                finalResult->SetError({ DgnDbServerError::Id::FileIsOutdated });
+            case InitializationState::IncorrectFileId:
+                finalResult->SetError({ DgnDbServerError::Id::FileHasDifferentId });
+            default:
+                finalResult->SetError({ DgnDbServerError::Id::FileInitializationFailed });
+            }
         }
     }
 
