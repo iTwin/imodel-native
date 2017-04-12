@@ -34,24 +34,32 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //!
 //=====================================================================================
 
-
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              03/2017
+//! Determines whether the CC token should be added to the headers of the curl request
+//=====================================================================================
 enum ServerType
     {
     WSG = -1,
     Azure = -2
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              03/2017
+//=====================================================================================
 enum RequestStatus
     {
-    OK = 0,
-    BADREQ = 1,
-    LASTPAGE = 2,
-    PARAMSNOTSET = 3,
-    UNSENT = 4
+    OK = 0, // everything seems successful
+    BADREQ = 1, // either an http error or a curl error was encountered
+    LASTPAGE = 2, // the request returned fewer reponses than the page size of the request
+    PARAMSNOTSET = 3, // indicates that the client has not yet set the server info
+    UNSENT = 4 // default status, before a response has been received
     };
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              03/2017
+//! RawServerResponse
+//! struct used to hold and return all pertinent elements regarding a curl response.
 //=====================================================================================
 struct RawServerResponse
     {
@@ -64,10 +72,15 @@ public:
 
     RawServerResponse():responseCode(-1), curlCode(ServerType::WSG), status(RequestStatus::UNSENT),
     header(Utf8String()), body(Utf8String()){}
-
+    
+    //! Performs a basic check of the response received to determine if the request was successful
     REALITYDATAPLATFORM_EXPORT RequestStatus ValidateResponse();
+    
+    //! Analyses the json response received to ensure that an error was not received at that
+    //! the structure corresponds to the user's expectations (contains keyword)
     REALITYDATAPLATFORM_EXPORT RequestStatus ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword);
 
+    //! Resets all values to their initial state
     void clear() {header.clear(); body.clear(); responseCode = -1; curlCode=ServerType::WSG; status = RequestStatus::UNSENT;}
 
     //! Compares a Request Status to the request status imbedded in the response
@@ -193,6 +206,7 @@ public:
         return m_requestHeader;
         }
 
+    //! Returns the http headers as a single string
     REALITYDATAPLATFORM_EXPORT virtual Utf8String GetRequestHeaders() const
         {
         bvector<Utf8String> const & headers = GetRequestHeader();
@@ -239,6 +253,10 @@ protected:
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              02/2017
+//! NavNode
+//! This class represents a single NavNode returned from a NavNode request.
+//! The WSG NavNode interface enables to navigate a tree-like structure exposed by a WSG 
+//! service.
 //=====================================================================================
 struct NavNode
     {
@@ -270,6 +288,12 @@ private:
 
 struct WSGServer; //forward declaration
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              02/2017
+//! NodeNavigator
+//! This class encapsulates the NavNode interface. It allows client code to navigate
+//! and explore the NavNode tree
+//=====================================================================================
 struct NodeNavigator
     {
     static NodeNavigator* s_nnInstance;
@@ -277,8 +301,11 @@ struct NodeNavigator
 public:
     REALITYDATAPLATFORM_EXPORT static NodeNavigator& GetInstance();
 
+    //! Returns the NavNodes for all RealityData entries on the server
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(Utf8String serverName, Utf8String repoId, RawServerResponse& responseObject);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId, RawServerResponse& responseObject);
+
+    //! Returns the NavNodes beneath the provided NavNode path
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode, RawServerResponse& responseObject);
 
@@ -443,11 +470,20 @@ private:
     mutable Utf8String m_version;
     };
 
+//=====================================================================================
+//! @bsiclass                                  Spencer.Mason               01/2017
+//! CurlConstructor
+//! Base class for all Requestor classes. Defines functions for CC Token management
+//! Also Defines basic curl setup which will be common to all requests
+//=====================================================================================
 struct CurlConstructor
     {
 public:
+    //! Gets the CC Token
     REALITYDATAPLATFORM_EXPORT Utf8String GetToken(); 
     REALITYDATAPLATFORM_EXPORT void RefreshToken();
+
+    //! user defined path for the .pem file used to authenticate the server
     REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
 
@@ -466,6 +502,11 @@ protected:
     time_t              m_tokenRefreshTimer;
     };
 
+//=====================================================================================
+//! @bsiclass                               Spencer.Mason                 01/2017
+//! WSGRequest
+//! Creates and executes Curl requests as defined by WSGURL objects
+//=====================================================================================
 struct WSGRequest : public CurlConstructor
     {
 private:
