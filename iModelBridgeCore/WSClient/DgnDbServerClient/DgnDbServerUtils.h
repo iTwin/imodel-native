@@ -82,6 +82,7 @@ namespace ServerSchema
         static Utf8CP UploadedDate = "UploadedDate";
         static Utf8CP FileSize = "FileSize";
         static Utf8CP BriefcaseId = "BriefcaseId";
+        static Utf8CP BriefcaseIds = "BriefcaseIds";
         static Utf8CP ParentId = "ParentId";
         static Utf8CP MasterFileId = "MasterFileId";
         static Utf8CP MergedRevisionId = "MergedRevisionId";
@@ -91,6 +92,7 @@ namespace ServerSchema
         static Utf8CP QueryOnly = "QueryOnly";
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
+        static Utf8CP LockOwners = "LockOwners";
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
@@ -189,6 +191,7 @@ struct CallbackQueue
     };
 bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
+bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR serverJson);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
 bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
