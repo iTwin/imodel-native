@@ -34,18 +34,20 @@ ILinearlyLocated::ILinearlyLocated():
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocated::_SetLinearElementId(DgnElementId linearElementId)
+void ILinearlyLocated::_SetLinearElement(ILinearElementCP linearElement)
     {
-    DgnDbStatus status;
-
-    if (linearElementId.IsValid())
-        status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
+    if (linearElement)
+        _SetLinearElement(linearElement->ToElement().GetElementId(), linearElement->ToElement().GetElementClassId());
     else
-        {
-        ECValue val; val.SetToNull();
-        status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
-        }
+        _SetLinearElement(DgnElementId());
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearlyLocated::_SetLinearElement(DgnElementId elementId, DgnClassId classId)
+    {
+    DgnDbStatus status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, elementId, classId);
     BeAssert(DgnDbStatus::Success == status);
     }
 
@@ -54,9 +56,7 @@ void ILinearlyLocated::_SetLinearElementId(DgnElementId linearElementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ILinearlyLocated::GetLinearElementId() const 
     {
-    ECValue val; 
-    ToElement().GetPropertyValue(val, BLR_PROP_ILinearlyLocated_ILinearElement);
-    return DgnElementId((uint64_t)val.GetLong());
+    return ToElement().GetPropertyValueId<DgnElementId>(BLR_PROP_ILinearlyLocated_ILinearElement);
     }
 
 /*---------------------------------------------------------------------------------**//**

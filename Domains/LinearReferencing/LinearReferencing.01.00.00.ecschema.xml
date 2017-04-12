@@ -59,15 +59,14 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
-        <!--ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward">
+        <ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward">
             <ECCustomAttributes>
                 <AutoHandledProperty>
-                    <- 3 translates to "ReadOnly = Select|Insert" ->
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
                     <StatementTypes>3</StatementTypes>
                 </AutoHandledProperty>
             </ECCustomAttributes>
-        </ECNavigationProperty-->
-        <ECProperty propertyName="ILinearElement" typeName="long" />
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
