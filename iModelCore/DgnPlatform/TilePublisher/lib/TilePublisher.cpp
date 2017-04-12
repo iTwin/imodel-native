@@ -8,7 +8,6 @@
 #include <TilePublisher/TilePublisher.h>
 #include <BeSqLite/BeSqLite.h>
 #include "Constants.h"
-#include <crunch/CrnLib.h>
 #include <Geom/OperatorOverload.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -1262,6 +1261,7 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
         {
         WString     name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
 
+#ifdef COMPRESSED_TEXTURE_SUPPORT
         if (m_context.GetTextureMode() == PublisherContext::Compressed) 
             {
             extension = L"crn";
@@ -1297,6 +1297,7 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
             fclose (outputFile);
             }
         else
+#endif
             {
             extension = ImageSource::Format::Jpeg == imageSource.GetFormat() ? L"jpg" : L"png";
             std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
@@ -2761,7 +2762,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
     RotMatrix   rMatrix;
     rMatrix.InitIdentity();
-    m_nonSpatialToEcef = Transform::From(rMatrix, ecfOrigin);
+    m_nonSpatialToEcef = Transform::FromIdentity(); 
 
     DVec3d      zVector, yVector;
 
@@ -2832,9 +2833,59 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::WriteSheetAttachmentTree (Sheet::ModelCR sheetModel, bvector<DgnElementId>& attachmentIds, Json::Value&& modelRoot, DRange3dCR rootModelRange)
+    {
+    Json::Value     root, sheetChild;
+    DRange3d        compositeRange = rootModelRange;
+
+    root["refine"] = "replace";
+    root[JSON_GeometricError] = 1.0E6;      // Always use children.
+    root[JSON_Children].append(modelRoot);
+
+    for (auto& attachmentId : attachmentIds)
+        {
+        auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+
+        if (!attachmentElement.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        
+        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
+
+        if (!viewDefinition.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        
+        DPoint3d            viewOrigin = viewDefinition->GetOrigin();
+        AxisAlignedBox3d    sheetRange = attachmentElement->GetPlacement().CalculateRange();
+        double              sheetScale = sheetRange.XLength() / viewDefinition->GetExtents().x; 
+        Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
+                            viewRotation = Transform::From(viewDefinition->GetRotation()),
+                            scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
+                            addSheetOrigin = Transform::From(sheetRange.low),
+                            tileToDb;
+
+        tileToDb.InverseOf(m_dbToTile);
+
+        Transform           dbToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
+        Transform           tileToSheet = Transform::FromProduct(m_dbToTile, dbToSheet, tileToDb);
+
+        }
+    TilePublisher::WriteBoundingVolume(root, compositeRange);
+
+    return root;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
+void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
     if (tile.GetIsEmpty())
         {
@@ -2842,9 +2893,8 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
         return;
         }
 
-    WString rootName;
-    BeFileName dataDir = GetDataDirForModel(tile.GetModel(), &rootName);
-
+    WString         rootName;
+    BeFileName      dataDir = GetDataDirForModel(tile.GetModel(), &rootName);
     DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
 
     // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
@@ -2876,7 +2926,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
                 BeFileName  metadataFileName (nullptr, dataDir.c_str(), metadataRelativePath.c_str(), nullptr);
 
-                WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
+                WriteModelMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
                     {
                     TileUtil::WriteJsonToFile (metadataFileName.c_str(), childTileset);
@@ -2901,7 +2951,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 Json::Value         child;
                 DRange3d            childRange;
 
-                WriteMetadataTree (childRange, child, *childTile, depth);
+                WriteModelMetadataTree (childRange, child, *childTile, depth);
                 if (!childRange.IsNull())
                     {
                     root[JSON_Children].append(child);
@@ -2939,24 +2989,38 @@ Json::Value PublisherContext::TransformToJson(TransformCR tf)
     return json;
     };
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth)
     {
-    Json::Value val;
+    Json::Value val, modelRoot;
 
     val["asset"]["version"] = "0.0";
     val["asset"]["gltfUpAxis"] = "Z";
 
-    auto&       root = val[JSON_Root];
 
     auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
     if (!ecefTransform.IsIdentity())
-        root[JSON_Transform] = TransformToJson(ecefTransform);
+        modelRoot[JSON_Transform] = TransformToJson(ecefTransform);
 
     DRange3d    rootRange;
-    WriteMetadataTree (rootRange, root, rootTile, maxDepth);
+    WriteModelMetadataTree (rootRange, modelRoot, rootTile, maxDepth);
+
+    Sheet::ModelCP          sheetModel;
+    bvector<DgnElementId>   attachmentIds;
+
+    if (nullptr != (sheetModel = rootTile.GetModel().ToSheetModel()) &&
+        !(attachmentIds = sheetModel->GetSheetAttachmentIds()).empty()) 
+        {
+        val[JSON_Root] = WriteSheetAttachmentTree (*sheetModel, attachmentIds, std::move(modelRoot), rootRange);
+        }
+    else
+        {
+        val[JSON_Root] = std::move(modelRoot);
+        }
+
     TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
     }
 
@@ -3029,18 +3093,18 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId, DgnDbR dgnDb)
+void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId)
     {
     viewedModels.insert(modelId);
 
     // Scan for viewAttachments...
-    auto stmt = dgnDb.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, modelId);
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto attachId = stmt->GetValueId<DgnElementId>(0);
-        auto attach = dgnDb.Elements().Get<Sheet::ViewAttachment>(attachId);
+        auto attach   = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
 
         if (!attach.IsValid())
             {
@@ -3048,25 +3112,25 @@ void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId mo
             continue;
             }
 
-        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId(), dgnDb);
+        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId());
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, DgnDbR dgnDb)
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId)
     {
     SpatialViewDefinitionPtr spatialView = nullptr;
-    auto view2d = dgnDb.Elements().Get<ViewDefinition2d>(viewId);
+    auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
-        AddViewedModel (viewedModels, view2d->GetBaseModelId(), dgnDb); 
+        AddViewedModel (viewedModels, view2d->GetBaseModelId()); 
         }
-    else if ((spatialView = dgnDb.Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
+    else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
         for (auto& modelId : spatialView->GetModelSelector().GetModels())
-            AddViewedModel (viewedModels, modelId, dgnDb);
+            AddViewedModel (viewedModels, modelId);
         }
     }
 
@@ -3079,7 +3143,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     DgnModelIdSet viewedModels;
 
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, GetDgnDb());
+        GetViewedModelsFromView (viewedModels, viewId);
 
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
