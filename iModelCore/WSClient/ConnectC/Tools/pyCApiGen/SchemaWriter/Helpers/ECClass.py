@@ -354,7 +354,7 @@ class ECClass(object):
         
         # HCWSCCBUFFER buf = (HCWSCCBUFFER) dataBuffer; see ConnectWebServicesClientC_DataBufferGetStringLength
         # LPCWSCCFOLDERBUFFER folderBuf = (LPCWSCCFOLDERBUFFER) buf->lItems[index]; see Folder_GetStringLength
-        properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) ((HCWSCCBUFFER) {2}Buffer)->lItems[1];\n" \
+        properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) ((HCWSCCBUFFER) {2}Buffer)->lItems[0];\n" \
                                     .format(self.__api.get_api_acronym(), ecr.get_upper_name(), ecr.get_var_name())
         properties_str += '       relationshipInstancesJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
         properties_str += '       relationshipInstancesJson["className"] = "{0}";\n'.format(ecr.get_name())
