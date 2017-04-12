@@ -20,21 +20,21 @@ for fileName in os.listdir(schemaDir):
     if fileName.endswith(schemaExtension):
         if not os.path.exists(logOutputDir): # If validation log folder doesn't exist, create it
             os.makedirs(logOutputDir)
-        logFileName = logOutputDir + fileName.replace(schemaExtension,"") + '.log'
+        logFileName = logOutputDir + fileName.replace(schemaExtension,'.validation.log')
         logFile = open(logFileName, 'w') # Create log
         os.chdir(validatorExeDir) # Change to appropriate dir to call validator exe. 
         exeCall = 'schemavalidator.exe -i ' + schemaDir + fileName + ' -r ' + schemaRef
         outCode = subprocess.call(exeCall, stdout = logFile) # Get success code and print output to logfile instead of console 
-        print("Created " + logFileName)
         if (outCode != 0): # If an error occured, write to log file that an error occured 
             print("There was an error validating schema" + fileName + ".  See log file at " + logFileName + " for more") # Print error to console
             with open(logFileName, "a") as appendedFile:
-                appendedFile.write("-------------------------------------------------------------------------------------------------------------------\n")
-                appendedFile.write("-------------------------------------------------------------------------------------------------------------------\n")
+                appendedFile.write("!-----------------------------------------------------------------------------------------------------------------!\n")
+                appendedFile.write("!-----------------------------------------------------------------------------------------------------------------!\n")
                 appendedFile.write("The schema '" + fileName + "' FAILED validation. See above for details\n")
-                appendedFile.write("-------------------------------------------------------------------------------------------------------------------\n")
-                appendedFile.write("-------------------------------------------------------------------------------------------------------------------\n")
-
+                appendedFile.write("!-----------------------------------------------------------------------------------------------------------------!\n")
+                appendedFile.write("!-----------------------------------------------------------------------------------------------------------------!\n")
+        else:
+            print("Validation of " + fileName + " was successful. Created log at " + logFileName);
         with open(logFileName, 'r') as original: data = original.read()
         with open(logFileName, 'w') as prependedFile:
             prependedFile.write("-------------------------------------------------------------------------------------------------------------------\n")
