@@ -27,10 +27,8 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
             BeSQLite::BeBriefcaseId  briefcaseId;
             Utf8String               repositoryId;
             auto rapidJson = ToRapidJson(lockJson);
-            if (!GetLockFromServerJson (rapidJson, lock, briefcaseId, repositoryId))
+            if (!AddLockInfoToListFromErrorJson(response.LockStates(), rapidJson))
                 continue;//NEEDSWORK: log an error
-
-            AddLockInfoToList (response.LockStates (), lock, briefcaseId, repositoryId);
             }
         }
     if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
