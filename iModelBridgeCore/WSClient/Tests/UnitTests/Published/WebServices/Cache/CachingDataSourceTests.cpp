@@ -676,6 +676,8 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
         {
         EXPECT_EQ(0, progress.GetBytes().current);
         EXPECT_EQ(42, progress.GetBytes().total);
+        EXPECT_EQ(0, progress.GetInstances().current);
+        EXPECT_EQ(0, progress.GetInstances().total);
         EXPECT_EQ("TestFileName", progress.GetLabel());
         onProgressCalled++;
         };
@@ -939,6 +941,8 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         {
         EXPECT_EQ(0, progress.GetBytes().current);
         EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ(0, progress.GetInstances().current);
+        EXPECT_EQ(0, progress.GetInstances().total);
         EXPECT_EQ("", progress.GetLabel());
         onProgressCalled++;
         };
@@ -1003,6 +1007,8 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         {
         EXPECT_EQ(0, progress.GetBytes().current);
         EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ(0, progress.GetInstances().current);
+        EXPECT_EQ(0, progress.GetInstances().total);
         EXPECT_EQ("TestLabel", progress.GetLabel());
         onProgressCalled++;
         };
@@ -4217,6 +4223,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassThatHasLab
         onProgressCount++;
         EXPECT_EQ(0, progress.GetBytes().current);
         EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ(0, progress.GetInstances().current);
+        EXPECT_EQ(0, progress.GetInstances().total);
         EXPECT_EQ("TestLabel", progress.GetLabel());
         };
 
@@ -4418,6 +4426,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
             EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
             onProgressCount++;
             EXPECT_EQ(6, progress.GetBytes().total);
+            EXPECT_EQ(0, progress.GetInstances().current);
+            EXPECT_EQ(0, progress.GetInstances().total);
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4460,6 +4470,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
             EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
             onProgressCount++;
             EXPECT_EQ(6, progress.GetBytes().total);
+            EXPECT_EQ(0, progress.GetInstances().current);
+            EXPECT_EQ(0, progress.GetInstances().total);
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -5299,11 +5311,14 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
 
     int progressCalled = 0;
     double expectedSyncedValues[5] = {0, 0.50, 1.00, 0.75, 1};
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 2}, {0, 2}, {0, 2}, {1, 2}, {2, 2}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
         EXPECT_THAT(progress.GetBytes().current, 0);
         EXPECT_THAT(progress.GetBytes().total, 0);
+        EXPECT_THAT(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_THAT(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
         progressCalled++;
         };
 
@@ -5352,7 +5367,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
     int progressCalled = 0;
-    double expectedSyncedValues[3] = {0, 1, 1};
+    double expectedSyncedValues[] = {0, 1, 1, 1};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
@@ -5368,7 +5383,344 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
-    EXPECT_THAT(progressCalled, 3);
+    EXPECT_THAT(progressCalled, 4);
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsTwoInstances_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instanceA;
+    instanceA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceId {"TestSchema.TestClass", "A"};
+    auto instanceKey = StubInstanceInCache(txn.GetCache(), instanceId);
+    auto responseKey = StubCachedResponseKey(txn.GetCache()); 
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
+
+    IQueryProvider::Query query(responseKey, std::make_shared<WSQuery>("TestSchema", "TestClass"));
+    EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(StubBVector({query})));
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "B"});
+    instances.Add({"TestSchema.TestClass", "C"});
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+    
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {3, 3}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesReturnTwoInstancesEach_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instanceA;
+    instanceA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+    auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
+    auto responseQBKey = StubCachedResponseKey(txn.GetCache(), "QB");
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
+
+    IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
+    IQueryProvider::Query queryB(responseQBKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QB"}));
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryA, queryB})));
+
+    StubInstances instancesQA;
+    instancesQA.Add({"TestSchema.TestClass", "AA"});
+    instancesQA.Add({"TestSchema.TestClass", "AB"});
+    StubInstances instancesQB;
+    instancesQB.Add({"TestSchema.TestClass", "BA"});
+    instancesQB.Add({"TestSchema.TestClass", "BB"});
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesQA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesQB.ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {2, 3}, {5, 5}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+     
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturnsInstanceWithQuery_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instancesA;
+    instancesA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+    auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
+
+    StubInstances instancesQA;
+    instancesQA.Add({"TestSchema.TestClass", "B"});
+    ObjectId instanceBId {"TestSchema.TestClass", "B"};
+    auto instanceBKey = StubInstanceInCache(txn.GetCache(), instanceBId);
+    auto responseQBKey = StubCachedResponseKey(txn.GetCache(), "QB");
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+
+    IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
+    IQueryProvider::Query queryB(responseQBKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QB"}));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryA})));
+    EXPECT_CALL(*provider, GetQueries(_, instanceBKey, _)).WillOnce(Return(StubBVector({queryB})));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesQA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 2}, {2, 2}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturnsNoInstances_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instancesA;
+    instancesA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+    auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+
+    IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryA})));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 1}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instancesA;
+    instancesA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 1}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
+    IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
+    StubInstances instancesA;
+    instancesA.Add({"TestSchema.TestClass", "A"});
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+    
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {1, 1}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturnsQueryWithInstance_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
+    IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
+    StubInstances instancesA;
+    instancesA.Add({"TestSchema.TestClass", "A"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+
+    auto responseQBKey = StubCachedResponseKey(txn.GetCache(), "QB");
+    IQueryProvider::Query queryB(responseQBKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QB"}));
+    StubInstances instancesB;
+    instancesB.Add({"TestSchema.TestClass", "B"});
+    ObjectId instanceBId {"TestSchema.TestClass", "B"};
+    auto instanceBKey = StubInstanceInCache(txn.GetCache(), instanceBId);
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesB.ToWSObjectsResult())));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryB})));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {0, 1}, {2, 2}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatReturnQueriesWithNoInstances_ProgressCalledWithInstancesState)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto responseQKey = StubCachedResponseKey(txn.GetCache(), "Q");
+    IQueryProvider::Query query(responseQKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "Q"}));
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ObjectId instanceAId {"TestSchema.TestClass", "A"};
+    ObjectId instanceBId {"TestSchema.TestClass", "B"};
+    auto instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+    auto instanceBKey = StubInstanceInCache(txn.GetCache(), instanceBId);
+
+    auto responseQ1AKey = StubCachedResponseKey(txn.GetCache(), "Q1A");
+    auto responseQ2AKey = StubCachedResponseKey(txn.GetCache(), "Q2A");
+    IQueryProvider::Query queryA1(responseQ1AKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "Q1A"}));
+    IQueryProvider::Query queryA2(responseQ2AKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "Q2A"}));
+
+    auto responseQ1BKey = StubCachedResponseKey(txn.GetCache(), "Q1B");
+    auto responseQ2BKey = StubCachedResponseKey(txn.GetCache(), "Q2B");
+    IQueryProvider::Query queryB1(responseQ1BKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "Q1B"}));
+    IQueryProvider::Query queryB2(responseQ2BKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "Q2B"}));
+    txn.Commit();
+
+    // Act & Assert
+    auto provider = std::make_shared<MockQueryProvider>();
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA1.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA2.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB1.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB2.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryA1, queryA2})));
+    EXPECT_CALL(*provider, GetQueries(_, instanceBKey, _)).WillOnce(Return(StubBVector({queryB1, queryB2})));
+
+    int progressCalled = 0;
+    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {0, 2}, {0, 2}, {1, 2}, {1, 2}, {2, 2}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
+        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
     }
 
 #endif // USE_GTEST

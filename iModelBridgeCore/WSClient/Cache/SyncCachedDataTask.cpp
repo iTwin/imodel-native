@@ -10,6 +10,7 @@
 
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Cache/ServerQueryHelper.h>
+#include <algorithm>
 
 #include "Logging.h"
 #include "SyncCachedInstancesSeperatelyTask.h"
@@ -31,10 +32,14 @@ ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
-m_initialInstances(initialInstances),
-m_queriesToCache(initialQueries.begin(), initialQueries.end()),
 m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
-    {}
+    {
+    for (auto& key : initialInstances)        
+        m_initialInstances.push_back(Instance(key));
+
+    for (auto& query : initialQueries)        
+        m_queriesToCache.push_back(std::make_shared<CacheQuery>(query));
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
@@ -45,7 +50,18 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     size_t synced = m_syncedInitialInstances + m_syncedRejectedInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    m_onProgress({m_downloadBytesProgress, label, progress});
+    size_t syncedInstances = m_syncedRejectedInstances + m_syncedInstances;
+    size_t totalInstances = m_instancesToRedownload.size() + m_instancesWithQueriesProvided.size();
+
+    if (totalInstances == 0)
+        totalInstances = m_initialInstances.size();
+
+    m_onProgress({
+        m_downloadBytesProgress,
+        label,
+        progress,
+        {(double) syncedInstances, (double) totalInstances}
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -67,13 +83,11 @@ void SyncCachedDataTask::StartCaching()
     ReportProgress();
 
     if (IsTaskCanceled())
-        {
         return;
-        }
 
     auto txn = m_ds->StartCacheTransaction();
-
-    bset<ECInstanceKey> instancesToCache(m_initialInstances.begin(), m_initialInstances.end());
+    
+    bset<Instance> instancesToCache(m_initialInstances.begin(), m_initialInstances.end());
     CacheInitialInstances(txn, instancesToCache);
     ContinueCachingQueries(txn);
 
@@ -83,18 +97,14 @@ void SyncCachedDataTask::StartCaching()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys)
+void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bset<Instance>& instanceKeys)
     {
     if (IsTaskCanceled() || instanceKeys.empty())
-        {
         return;
-        }
 
     bset<ObjectId> objectIds;
-    for (ECInstanceKeyCR instanceKey : instanceKeys)
-        {
-        objectIds.insert(txn.GetCache().FindInstance(instanceKey));
-        }
+    for (auto& instance : instanceKeys)
+        objectIds.insert(txn.GetCache().FindInstance(instance.key));
 
     auto onProgress = [=] (size_t synced)
         {
@@ -109,15 +119,11 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
         AddResult(result);
 
         if (IsTaskCanceled())
-            {
             return;
-            }
 
         auto txn = m_ds->StartCacheTransaction();
-        for (ECInstanceKeyCR instnaceKey : instanceKeys)
-            {
-            PrepareCachingQueries(txn, instnaceKey, true);
-            }
+        for (auto instance : instanceKeys)
+            PrepareCachingQueries(txn, instance.key, true);
 
         ContinueCachingQueries(txn);
         txn.Commit();
@@ -130,9 +136,7 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
 void SyncCachedDataTask::CacheRejectedInstances()
     {
     if (IsTaskCanceled() || m_instancesToRedownload.empty())
-        {
         return;
-        }
 
     auto onProgress = [=] (size_t synced)
         {
@@ -154,9 +158,7 @@ void SyncCachedDataTask::CacheRejectedInstances()
 void SyncCachedDataTask::CacheFiles()
     {
     if (IsTaskCanceled() || m_filesToDownload.empty())
-        {
         return;
-        }
 
     auto txn = m_ds->StartCacheTransaction();
 
@@ -190,23 +192,21 @@ void SyncCachedDataTask::CacheFiles()
 void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
     {
     if (IsTaskCanceled() || m_queriesToCache.empty())
-        {
         return;
-        }
 
-    auto providerQuery = m_queriesToCache.front();
+    auto providedQuery = m_queriesToCache.front();
     m_queriesToCache.pop_front();
 
-    if (!providerQuery.IsValid())
+    if (!providedQuery->query.IsValid())
         {
         LOG.warningv("Invalid query provided");
         ContinueCachingQueries(txn);
         return;
         }
 
-    CachedResponseKey responseKey = providerQuery.key;
-    WSQueryPtr query = providerQuery.query;
-    bool syncRecursively = providerQuery.syncRecursively;
+    CachedResponseKey responseKey = providedQuery->query.key;
+    WSQueryPtr query = providedQuery->query.query;
+    bool syncRecursively = providedQuery->query.syncRecursively;
 
     auto ct = GetCancellationToken();
 
@@ -214,10 +214,8 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
         {
         if (IsTaskCanceled())
-            {
             return;
-            }
-
+        
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
@@ -231,18 +229,21 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
                 }
 
             if (IsTaskCanceled())
-                {
                 return;
-                }
-
+            
             for (auto& pair : cachedInstances)
-                {
                 PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively);
-                }
             }
         else
             {
             RegisterError(txn, responseKey, result.GetError());
+            }
+
+        if (providedQuery->instance != nullptr)
+            {
+            providedQuery->instance->Remove(*providedQuery);
+            if (providedQuery->instance->IsComplete())
+                m_syncedInstances++;
             }
 
         m_syncedQueries++;
@@ -262,11 +263,9 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKey
         ICachingDataSource::Status::DataNotCached == error.GetStatus())
         {
         AddFailedObject(txn, txn.GetCache().FindInstance(responseKey.GetParent()), error);
+        return;
         }
-    else
-        {
-        SetError(error);
-        }
+    SetError(error);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -275,19 +274,24 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKey
 void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
     {
     if (m_instancesWithQueriesProvided.find(instanceKey) != m_instancesWithQueriesProvided.end())
-        {
         return;
-        }
 
     bool isPersistent = IsInstancePersistent(txn, instanceKey);
+    auto instancePtr = std::make_shared<Instance>(instanceKey);
 
     for (auto queryProviderPtr : m_queryProviders)
         {
         if (syncRecursively)
             {
             auto queries = queryProviderPtr->GetQueries(txn, instanceKey, isPersistent);
-            m_queriesToCache.insert(m_queriesToCache.end(), queries.begin(), queries.end());
-            m_totalQueries += queries.size();
+            for (auto& query : queries)
+                {
+                auto cacheQueryPtr = std::make_shared<CacheQuery>(query);
+                cacheQueryPtr->instance = instancePtr;
+                instancePtr->cacheQueries.push_back(cacheQueryPtr);
+                
+                m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
+                }
             }
 
         if (queryProviderPtr->DoUpdateFile(txn, instanceKey, isPersistent))
@@ -300,6 +304,11 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
             }
         }
 
+    size_t instanceQueriesCount = instancePtr->cacheQueries.size();
+    m_totalQueries += instanceQueriesCount;
+    if (instanceQueriesCount == 0)
+        m_syncedInstances++;
+    
     m_instancesWithQueriesProvided.insert(instanceKey);
     }
 
@@ -320,10 +329,31 @@ bool SyncCachedDataTask::IsInstancePersistent(CacheTransactionCR txn, ECInstance
         {
         m_persistentInstances = std::make_shared<ECInstanceKeyMultiMap>();
         if (SUCCESS != txn.GetCache().ReadFullyPersistedInstanceKeys(*m_persistentInstances))
-            {
             SetError();
-            }
         }
 
     return ECDbHelper::IsInstanceInMultiMap(instanceKey, *m_persistentInstances);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncCachedDataTask::Instance::Remove(CacheQuery& queryToRemove)
+    {
+    auto isEqual = [&] (const std::weak_ptr<CacheQuery> queryWeak)
+        {
+        auto queryPtr = queryWeak.lock();
+        if (!queryPtr)
+            return false;
+        return queryToRemove.query.key == queryPtr->query.key;
+        };
+    cacheQueries.erase(std::remove_if(cacheQueries.begin(), cacheQueries.end(), isEqual), cacheQueries.end());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SyncCachedDataTask::Instance::IsComplete()
+    {
+    return cacheQueries.empty();
     }
