@@ -214,7 +214,7 @@ RoadDesignSpeedPtr RoadDesignSpeed::Create(RoadRangeCR roadRange, RoadDesignSpee
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasDesignSpeeds)));
 
     auto retVal = new RoadDesignSpeed(params, designSpeedDef, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 

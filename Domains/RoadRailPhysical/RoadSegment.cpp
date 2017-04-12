@@ -43,7 +43,7 @@ RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, double fromDistanceAlo
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeAssemblesSegments)));
 
     auto retVal = new RoadSegment(params, fromDistanceAlong, toDistanceAlong, crossSection);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 
@@ -82,7 +82,7 @@ RoadTransitionSegmentPtr RoadTransitionSegment::Create(RoadRangeCR roadRange, do
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeAssemblesSegments)));
 
     auto retVal = new RoadTransitionSegment(params, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 
@@ -112,7 +112,7 @@ ElevatedRoadSegmentPtr ElevatedRoadSegment::Create(RoadRangeCR roadRange, double
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeAssemblesSegments)));
 
     auto retVal = new ElevatedRoadSegment(params, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 
@@ -142,7 +142,7 @@ RoadIntersectionSegmentPtr RoadIntersectionSegment::Create(RoadRangeCR roadRange
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeAssemblesSegments)));
 
     auto retVal = new RoadIntersectionSegment(params, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 
@@ -171,7 +171,7 @@ ElevatedRoadIntersectionSegmentPtr ElevatedRoadIntersectionSegment::Create(RoadR
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeAssemblesSegments)));
 
     auto retVal = new ElevatedRoadIntersectionSegment(params, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 

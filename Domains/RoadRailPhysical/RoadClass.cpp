@@ -167,7 +167,7 @@ RoadClassPtr RoadClass::Create(RoadRangeCR roadRange, RoadClassDefinitionCR Clas
         DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasRoadClasses)));
 
     auto retVal = new RoadClass(params, ClassDef, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElementId(alignmentId);
+    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
     return retVal;
     }
 
