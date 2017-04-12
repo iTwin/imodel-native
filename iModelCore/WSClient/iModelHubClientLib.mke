@@ -1,0 +1,103 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelHubClientLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# affects WinRT build only.
+ENABLE_CPP_CX_EXTENSIONS = 1
+
+%include mdl.mki
+
+DgnDbServerClientSourceDirectory    = $(_MakeFilePath)
+DgnDbServerClientPublicApiDirectory = $(_MakeFilePath)PublicAPI/DgnDbServer/
+BuildContextLibsDirectory           = $(BuildContext)SubParts/Libs/
+o                                   = $(OutputRootDir)build/WSClient/DgnDbServer/Client/
+
+always:
+    !~@mkdir $(o)
+
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
+nameToDefine    = __DgnDbServerClient_DLL_BUILD__
+%include cdefapnd.mki
+%if defined (DEBUG)
+	nameToDefine    = DEBUG
+	%include cdefapnd.mki
+%endif
+
+%if defined (ENABLE_BIM_CRASH_TESTS) || defined (DEBUG)
+	nameToDefine    = ENABLE_BIM_CRASH_TESTS
+	%include cdefapnd.mki
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+%endif
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+
+# Ignore unknown pragmas
+LLVMCommonCompOpts      + -Wno-unknown-pragmas
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+dirToSearch = $(_MakeFilePath)PublicAPI/
+%include cincapnd.mki
+
+# Prevent fatal error C1128.
+CCCompOpts + -bigobj
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+%include DgnDbServerClient/DgnDbServerClient.mki
+
+%include MultiCppCompileGo.mki
+DgnDbServerClientObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = DgnDbServerClient
+DLM_OBJECT_FILES            = $(DgnDbServerClientObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# DgnClientFx library name
+%if $(TARGET_PLATFORM)=="Android"
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)
+%else
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Android"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(shlibext)
+    %include dlmlink.mki
+%else
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+    %include $(sharedMki)LinkLibrary.mki    
+%endif

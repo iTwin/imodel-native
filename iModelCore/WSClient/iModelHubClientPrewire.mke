@@ -1,0 +1,13 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelHubClientPrewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    !~@mkdir $(BuildContext)PublicAPI/DgnDbServer
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/DgnDbServerCommon.h =$(_MakeFilePath)/PublicAPI/DgnDbServer/DgnDbServerCommon.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/Client =$(_MakeFilePath)/PublicAPI/DgnDbServer/Client"
