@@ -4,12 +4,11 @@ rem /*--------------------------------------------------------------------------
 rem |
 rem |     $Source: SQLite/UpdateSqlite.bat $
 rem |
-rem |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+rem |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 rem |
 rem +--------------------------------------------------------------------------------------*/
 
 rem SQLite uses the Fossil source code management system.
-rem Bentley pulls SQLite from the "sessions" branch, to which the SQLite developers regularly merge.
 rem You can track SQLite development at http://www.sqlite.org/src/timeline
 
 rem Bentley uses bentleybuild to compile SQLite, but the source code must be preprocessed first.

@@ -11355,12 +11355,35 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
     , pRtree->zDb, pRtree->zName, zNewName
   );
   if( zSql ){
+    nodeBlobReset(pRtree);
     rc = sqlite3_exec(pRtree->db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
   }
   return rc;
 }
 
+/*
+** The xSavepoint method.
+**
+** This module does not need to do anything to support savepoints. However,
+** it uses this hook to close any open blob handle. This is done because a 
+** DROP TABLE command - which fortunately always opens a savepoint - cannot 
+** succeed if there are any open blob handles. i.e. if the blob handle were
+** not closed here, the following would fail:
+**
+**   BEGIN;
+**     INSERT INTO rtree...
+**     DROP TABLE <tablename>;    -- Would fail with SQLITE_LOCKED
+**   COMMIT;
+*/
+static int rtreeSavepoint(sqlite3_vtab *pVtab, int iSavepoint){
+  Rtree *pRtree = (Rtree *)pVtab;
+  int iwt = pRtree->inWrTrans;
+  pRtree->inWrTrans = 0;
+  nodeBlobReset(pRtree);
+  pRtree->inWrTrans = iwt;
+  return SQLITE_OK;
+}
 
 /*
 ** This function populates the pRtree->nRowEst variable with an estimate
@@ -11407,7 +11430,7 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
 }
 
 static sqlite3_module rtreeModule = {
-  0,                          /* iVersion */
+  2,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -11427,7 +11450,7 @@ static sqlite3_module rtreeModule = {
   rtreeEndTransaction,        /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
-  0,                          /* xSavepoint */
+  rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
 };
@@ -23584,6 +23607,7 @@ static const char jsonIsSpace[] = {
   ** but the definitions need to be repeated for separate compilation. */
   typedef sqlite3_uint64 u64;
   typedef unsigned int u32;
+  typedef unsigned short int u16;
   typedef unsigned char u8;
 #endif
 
@@ -23663,7 +23687,17 @@ struct JsonParse {
   u32 *aUp;          /* Index of parent of each node */
   u8 oom;            /* Set to true if out of memory */
   u8 nErr;           /* Number of errors seen */
+  u16 iDepth;        /* Nesting depth */
 };
+
+/*
+** Maximum nesting depth of JSON for this implementation.
+**
+** This limit is needed to avoid a stack overflow in the recursive
+** descent parser.  A depth of 2000 is far deeper than any sane JSON
+** should go.
+*/
+#define JSON_MAX_DEPTH  2000
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -24221,15 +24255,18 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int iThis;
   int x;
   JsonNode *pNode;
-  while( safe_isspace(pParse->zJson[i]) ){ i++; }
-  if( (c = pParse->zJson[i])=='{' ){
+  const char *z = pParse->zJson;
+  while( safe_isspace(z[i]) ){ i++; }
+  if( (c = z[i])=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(z[j]) ){ j++; }
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
       if( x<0 ){
+        pParse->iDepth--;
         if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
@@ -24238,14 +24275,15 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( pNode->eType!=JSON_STRING ) return -1;
       pNode->jnFlags |= JNODE_LABEL;
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      if( pParse->zJson[j]!=':' ) return -1;
+      while( safe_isspace(z[j]) ){ j++; }
+      if( z[j]!=':' ) return -1;
       j++;
       x = jsonParseValue(pParse, j);
+      pParse->iDepth--;
       if( x<0 ) return -1;
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      c = pParse->zJson[j];
+      while( safe_isspace(z[j]) ){ j++; }
+      c = z[j];
       if( c==',' ) continue;
       if( c!='}' ) return -1;
       break;
@@ -24257,15 +24295,17 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(z[j]) ){ j++; }
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
+      pParse->iDepth--;
       if( x<0 ){
         if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      c = pParse->zJson[j];
+      while( safe_isspace(z[j]) ){ j++; }
+      c = z[j];
       if( c==',' ) continue;
       if( c!=']' ) return -1;
       break;
@@ -24277,13 +24317,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     u8 jnFlags = 0;
     j = i+1;
     for(;;){
-      c = pParse->zJson[j];
-      if( c==0 ) return -1;
+      c = z[j];
+      if( c<=0x1f ) return -1;  /* Control characters not allowed in strings */
       if( c=='\\' ){
-        c = pParse->zJson[++j];
+        c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
-           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
+           || (c=='u' && jsonIs4Hex(z+j+1)) ){
           jnFlags = JNODE_ESCAPE;
         }else{
           return -1;
@@ -24293,55 +24333,60 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       }
       j++;
     }
-    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &pParse->zJson[i]);
+    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &z[i]);
     if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     return j+1;
   }else if( c=='n'
-         && strncmp(pParse->zJson+i,"null",4)==0
-         && !safe_isalnum(pParse->zJson[i+4]) ){
+         && strncmp(z+i,"null",4)==0
+         && !safe_isalnum(z[i+4]) ){
     jsonParseAddNode(pParse, JSON_NULL, 0, 0);
     return i+4;
   }else if( c=='t'
-         && strncmp(pParse->zJson+i,"true",4)==0
-         && !safe_isalnum(pParse->zJson[i+4]) ){
+         && strncmp(z+i,"true",4)==0
+         && !safe_isalnum(z[i+4]) ){
     jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
     return i+4;
   }else if( c=='f'
-         && strncmp(pParse->zJson+i,"false",5)==0
-         && !safe_isalnum(pParse->zJson[i+5]) ){
+         && strncmp(z+i,"false",5)==0
+         && !safe_isalnum(z[i+5]) ){
     jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
     return i+5;
   }else if( c=='-' || (c>='0' && c<='9') ){
     /* Parse number */
     u8 seenDP = 0;
     u8 seenE = 0;
+    assert( '-' < '0' );
+    if( c<='0' ){
+      j = c=='-' ? i+1 : i;
+      if( z[j]=='0' && z[j+1]>='0' && z[j+1]<='9' ) return -1;
+    }
     j = i+1;
     for(;; j++){
-      c = pParse->zJson[j];
+      c = z[j];
       if( c>='0' && c<='9' ) continue;
       if( c=='.' ){
-        if( pParse->zJson[j-1]=='-' ) return -1;
+        if( z[j-1]=='-' ) return -1;
         if( seenDP ) return -1;
         seenDP = 1;
         continue;
       }
       if( c=='e' || c=='E' ){
-        if( pParse->zJson[j-1]<'0' ) return -1;
+        if( z[j-1]<'0' ) return -1;
         if( seenE ) return -1;
         seenDP = seenE = 1;
-        c = pParse->zJson[j+1];
+        c = z[j+1];
         if( c=='+' || c=='-' ){
           j++;
-          c = pParse->zJson[j+1];
+          c = z[j+1];
         }
         if( c<'0' || c>'9' ) return -1;
         continue;
       }
       break;
     }
-    if( pParse->zJson[j-1]<'0' ) return -1;
+    if( z[j-1]<'0' ) return -1;
     jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
-                        j - i, &pParse->zJson[i]);
+                        j - i, &z[i]);
     return j;
   }else if( c=='}' ){
     return -2;  /* End of {...} */
@@ -24373,6 +24418,7 @@ static int jsonParse(
   i = jsonParseValue(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
+    assert( pParse->iDepth==0 );
     while( safe_isspace(zJson[i]) ) i++;
     if( zJson[i] ) i = -1;
   }

@@ -191,7 +191,7 @@ typedef struct sqlite3& SqlDbR;
 typedef struct sqlite3_stmt* SqlStatementP;
 typedef struct sqlite3_session* SqlSessionP;
 typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
-typedef struct Mem* SqlValueP;
+typedef struct sqlite3_value* SqlValueP;
 
 #endif // DOCUMENTATION_GENERATOR
 

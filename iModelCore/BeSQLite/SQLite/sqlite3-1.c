@@ -376,7 +376,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.19.0"
 #define SQLITE_VERSION_NUMBER 3019000
-#define SQLITE_SOURCE_ID      "2017-04-03 12:04:39 84fa069c5bdfe41d03d03875c9157cc6785150b677c04e40b8916ba5af073dc8"
+#define SQLITE_SOURCE_ID      "2017-04-11 20:48:30 7aae5c0f99aa2fda85654242cfc9e23a0f981d9ce4ab17610d619cd208540b3d"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -2464,9 +2464,6 @@ SQLITE_API int sqlite3_total_changes(sqlite3*);
 ** ^A call to sqlite3_interrupt(D) that occurs when there are no running
 ** SQL statements is a no-op and has no effect on SQL statements
 ** that are started after the sqlite3_interrupt() call returns.
-**
-** If the database connection closes while [sqlite3_interrupt()]
-** is running then bad things will likely happen.
 */
 SQLITE_API void sqlite3_interrupt(sqlite3*);
 
@@ -3958,7 +3955,7 @@ SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 ** The [sqlite3_value_blob | sqlite3_value_type()] family of
 ** interfaces require protected sqlite3_value objects.
 */
-typedef struct Mem sqlite3_value;
+typedef struct sqlite3_value sqlite3_value;
 
 /*
 ** CAPI3REF: SQL Function Context Object
@@ -12436,7 +12433,7 @@ struct BtreePayload {
   const void *pKey;       /* Key content for indexes.  NULL for tables */
   sqlite3_int64 nKey;     /* Size of pKey for indexes.  PRIMARY KEY for tabs */
   const void *pData;      /* Data for tables.  NULL for indexes */
-  struct Mem *aMem;       /* First of nMem value in the unpacked pKey */
+  sqlite3_value *aMem;    /* First of nMem value in the unpacked pKey */
   u16 nMem;               /* Number of aMem[] value.  Might be zero */
   int nData;              /* Size of pData.  0 if none. */
   int nZero;              /* Extra zero data appended after pData,nData */
@@ -12566,7 +12563,7 @@ typedef struct Vdbe Vdbe;
 ** The names of the following types declared in vdbeInt.h are required
 ** for the VdbeOp definition.
 */
-typedef struct Mem Mem;
+typedef struct sqlite3_value Mem;
 typedef struct SubProgram SubProgram;
 
 /*
@@ -15187,6 +15184,7 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
+  int nAlloc;            /* Number of a[] slots allocated */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
@@ -15202,7 +15200,7 @@ struct ExprList {
       } x;
       int iConstExprReg;      /* Register in which Expr value is cached */
     } u;
-  } *a;                  /* Alloc a power of two greater or equal to nExpr */
+  } a[1];                  /* One slot for each expression in the list */
 };
 
 /*
@@ -16067,6 +16065,7 @@ struct Walker {
     struct CCurHint *pCCurHint;                /* Used by codeCursorHint() */
     int *aiCol;                                /* array of column indexes */
     struct IdxCover *pIdxCover;                /* Check for index coverage */
+    struct IdxExprTrans *pIdxTrans;            /* Convert indexed expr to column */
   } u;
 };
 
@@ -16220,6 +16219,7 @@ SQLITE_PRIVATE void *sqlite3Realloc(void*, u64);
 SQLITE_PRIVATE void *sqlite3DbReallocOrFree(sqlite3 *, void *, u64);
 SQLITE_PRIVATE void *sqlite3DbRealloc(sqlite3 *, void *, u64);
 SQLITE_PRIVATE void sqlite3DbFree(sqlite3*, void*);
+SQLITE_PRIVATE void sqlite3DbFreeNN(sqlite3*, void*);
 SQLITE_PRIVATE int sqlite3MallocSize(void*);
 SQLITE_PRIVATE int sqlite3DbMallocSize(sqlite3*, void*);
 SQLITE_PRIVATE void *sqlite3ScratchMalloc(int);
@@ -18070,7 +18070,7 @@ struct VdbeFrame {
 ** structures. Each Mem struct may cache multiple representations (string,
 ** integer etc.) of the same value.
 */
-struct Mem {
+struct sqlite3_value {
   union MemValue {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
@@ -24637,11 +24637,12 @@ static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
 
 /*
 ** Free memory that might be associated with a particular database
-** connection.
+** connection.  Calling sqlite3DbFree(D,X) for X==0 is a harmless no-op.
+** The sqlite3DbFreeNN(D,X) version requires that X be non-NULL.
 */
-SQLITE_PRIVATE void sqlite3DbFree(sqlite3 *db, void *p){
+SQLITE_PRIVATE void sqlite3DbFreeNN(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( p==0 ) return;
+  assert( p!=0 );
   if( db ){
     if( db->pnBytesFreed ){
       measureAllocationSize(db, p);
@@ -24664,6 +24665,10 @@ SQLITE_PRIVATE void sqlite3DbFree(sqlite3 *db, void *p){
   assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
   sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
   sqlite3_free(p);
+}
+SQLITE_PRIVATE void sqlite3DbFree(sqlite3 *db, void *p){
+  assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  if( p ) sqlite3DbFreeNN(db, p);
 }
 
 /*
