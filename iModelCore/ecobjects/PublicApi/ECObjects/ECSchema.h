@@ -3342,8 +3342,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaR refSchema);
 
     //! Removes an ECSchema from the list of referenced schemas
-    //! @param[in]  schemaKey   The key for the schema that should be removed from the list of referenced schemas.  Must be an exact match
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(SchemaKeyCR schemaKey);
+    //! @param[in]  schemaKey   The key for the schema that should be removed from the list of referenced schemas.  Version must match according to 'matchType'
+    //! @param[in]  matchType   Defines how version of the input 'schemaKey' matches the actual referenced schema version.  Default is ::Exact.
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType = SchemaMatchType::Exact);
 
     //! Removes any ECSchema from the list of referenced ECSchemas that is not referenced by elements of this schema
     //! @return The number of ECSchemas that were removed

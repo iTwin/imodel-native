@@ -1502,10 +1502,10 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey)
+ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType)
     {
     ECSchemaReferenceListCR schemas = GetReferencedSchemas();
-    auto schemaIt = schemas.Find(schemaKey, SchemaMatchType::Exact);
+    auto schemaIt = schemas.Find(schemaKey, matchType);
     return schemaIt != schemas.end() ? RemoveReferencedSchema(*schemaIt->second) : ECObjectsStatus::SchemaNotFound;
     }
 
