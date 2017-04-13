@@ -351,7 +351,7 @@
         <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
         <ProductDirectory Name="NuGetPackages"                              Path="Install" />
     </ProductDirectoryList>
-    
+
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
         <SubPart PartName="PublishedApi_Doc" />
@@ -370,7 +370,7 @@
     <ProductDirectoryList ListName="SchemaValidator">
         <ProductDirectory Name="SchemaValidatorExe" Path=""/>
     </ProductDirectoryList>  
-
+    
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
