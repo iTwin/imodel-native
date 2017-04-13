@@ -49,9 +49,9 @@ DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-LinkPartitionPtr LinkPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+LinkPartitionPtr LinkPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
-    CreateParams createParams = InitCreateParams(parentSubject, label, dgn_ElementHandler::LinkPartitionHandler::GetHandler());
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::LinkPartitionHandler::GetHandler());
     if (!createParams.IsValid())
         return nullptr;
 
@@ -65,9 +65,9 @@ LinkPartitionPtr LinkPartition::Create(SubjectCR parentSubject, Utf8CP label, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
-    LinkPartitionPtr partition = Create(parentSubject, label, description);
+    LinkPartitionPtr partition = Create(parentSubject, name, description);
     if (!partition.IsValid())
         return nullptr;
 
@@ -353,7 +353,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Shaun.Sewall                       11/2016
 //---------------------------------------------------------------------------------------
-DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8CP name)
+DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *model.GetModeledElement(), name);
     }

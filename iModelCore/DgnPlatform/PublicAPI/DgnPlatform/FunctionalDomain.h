@@ -91,13 +91,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this FunctionalPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static FunctionalPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static FunctionalPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new FunctionalPartition
     //! @param[in] parentSubject The new FunctionalPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this FunctionalPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static FunctionalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static FunctionalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================

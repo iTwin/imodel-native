@@ -1892,6 +1892,7 @@ public:
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
+        static void RecordGraphicsStats();
     };
     virtual void _OnDestroy() {}
     virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_terrain=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
