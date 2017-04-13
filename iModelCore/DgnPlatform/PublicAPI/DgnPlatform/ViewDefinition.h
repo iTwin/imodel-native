@@ -336,7 +336,7 @@ protected:
 
 public:
     //! Construct a new CategorySelector
-    CategorySelector(DefinitionModelR model, Utf8CP name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
+    CategorySelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
     //! Get the name of this CategorySelector
     Utf8String GetName() const {return GetCode().GetValue();} 

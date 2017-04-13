@@ -341,8 +341,8 @@ void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target
         YawPitchRollAngles angles(Angle::FromDegrees(stmt->GetValueDouble(2)), Angle::FromDegrees(stmt->GetValueDouble(3)), Angle::FromDegrees(stmt->GetValueDouble(4)));
         angles.ToRotMatrix().GetColumn(dir, 0);
 
-        Json::Value json;
-        if (Json::Reader::Parse(stmt->GetValueText(0), json))
+        Json::Value json = Json::Value::From(stmt->GetValueText(0));
+        if (!json.isNull())
             lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::json_light()], &dir, &origin));
         }
     }

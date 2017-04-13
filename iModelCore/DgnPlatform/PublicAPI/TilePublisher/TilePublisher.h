@@ -260,7 +260,6 @@ protected:
     WString                                 m_rootName;
     Transform                               m_dbToTile;
     Transform                               m_spatialToEcef;
-    Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
     bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
@@ -282,19 +281,20 @@ protected:
     void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
-
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
 
     void WriteModelTileset(TileNodeCR rootTile);
+
+    static void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId, DgnDbR dgnDb);
+    static void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, DgnDbR dgnDb);
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
-    TransformCR GetNonSpatialToEcef() const { return m_nonSpatialToEcef; }
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }

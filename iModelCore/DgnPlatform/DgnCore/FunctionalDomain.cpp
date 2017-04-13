@@ -66,9 +66,9 @@ DgnDbStatus FunctionalPartition::_OnSubModelInsert(DgnModelCR model) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-FunctionalPartitionPtr FunctionalPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+FunctionalPartitionPtr FunctionalPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
-    CreateParams createParams = InitCreateParams(parentSubject, label, func_ElementHandler::FunctionalPartitionHandler::GetHandler());
+    CreateParams createParams = InitCreateParams(parentSubject, name, func_ElementHandler::FunctionalPartitionHandler::GetHandler());
     if (!createParams.IsValid())
         return nullptr;
 
@@ -82,9 +82,9 @@ FunctionalPartitionPtr FunctionalPartition::Create(SubjectCR parentSubject, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-FunctionalPartitionCPtr FunctionalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+FunctionalPartitionCPtr FunctionalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
-    FunctionalPartitionPtr partition = Create(parentSubject, label, description);
+    FunctionalPartitionPtr partition = Create(parentSubject, name, description);
     if (!partition.IsValid())
         return nullptr;
 

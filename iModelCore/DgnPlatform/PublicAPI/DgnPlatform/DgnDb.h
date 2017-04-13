@@ -147,7 +147,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
         //! Flag to enable import of schemas to fix schema validation errors when opening the DgnDb
         //! @note Only used in Project Administrator workflows to allow upgrading/importing domain schemas. 
-        enum class EnableSchemaImport : bool { Yes = 1, No = 0 };
+        enum class EnableSchemaImport : bool { Yes = true, No = false };
 
     private:
         EnableSchemaImport m_enableSchemaImport;

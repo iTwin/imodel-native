@@ -85,7 +85,7 @@ TEST_F(ExampleTestGroup, Test1)
         DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDb(rootSeedInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), rootSeedInfo.physicalPartitionName.c_str());
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), rootSeedInfo.physicalPartitionName);
         ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
         ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, rootSeedInfo.categoryName)).IsValid());
         ASSERT_TRUE(ViewDefinition::QueryViewId(db->GetDictionaryModel(), rootSeedInfo.viewName).IsValid());
@@ -98,7 +98,7 @@ TEST_F(ExampleTestGroup, Test1)
         // Verify that the seed file for just this group is there.
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
         ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
         ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName)).IsValid());
         ASSERT_TRUE(ViewDefinition::QueryViewId(db->GetDictionaryModel(), s_seedFileInfo.viewName).IsValid());
@@ -117,7 +117,7 @@ TEST_F(ExampleTestGroup, Test2)
         {
         //  Verify that we can work with a read-write copy of the test group seed file
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName);
-        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
         DgnModelId defaultModelId = db->Models().QuerySubModelId(physicalPartitionCode);
         ASSERT_TRUE(defaultModelId.IsValid());
 
