@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatform\DgnPlatformApi.h>
@@ -4364,9 +4364,23 @@ GeoPointR               outLatLong,         // <= latitude longitude
 DPoint3dCR              inUors              // => cartesian, in UORS
 ) const
     {
-    DPoint3d    cartesian;
-    CartesianFromUors (cartesian, inUors);
-    return LatLongFromCartesian (outLatLong, cartesian);
+    DPoint3d    point;
+    CartesianFromUors(point, inUors);
+    return LatLongFromCartesian(outLatLong, point);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+ReprojectStatus DgnGCS::LatLongFromUorsXYZ
+(
+GeoPointR               outLatLong,         // <= latitude longitude
+DPoint3dCR              inUors              // => cartesian, in UORS
+) const
+    {
+    DPoint3d    point;
+    CartesianFromUors (point, inUors);   
+    return LatLongFromXYZ(outLatLong, point);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4390,11 +4404,27 @@ GeoPointCR              inLatLong           // => latitude longitude
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReprojectStatus         DgnGCS::ReprojectUors
 (
+    DPoint3dP               outUorsDest,        // <= cartesian, in UORS of destination DgnGCS 's model.
+    GeoPointP               outLatLongDest,     // <= (optional) lat long in destination Geocoordinate system.
+    GeoPointP               outLatLongSrc,      // <= (optional) lat long in this Geocoordinate system.
+    DPoint3dCP              inUors,             // => cartesian coordinates in this Geocoordinate system modelRef UORS.
+    int                     numPoints,          // => number of points.
+    DgnGCSCR                destMstnGCS         // => destination coordinate system
+) const
+    {
+    return ReprojectUors(outUorsDest, outLatLongDest, outLatLongSrc, inUors, numPoints, GeoCoordInterpretation::Cartesian, destMstnGCS);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+ReprojectStatus         DgnGCS::ReprojectUors
+(
 DPoint3dP               outUorsDest,        // <= cartesian, in UORS of destination DgnGCS 's model.
 GeoPointP               outLatLongDest,     // <= (optional) lat long in destination Geocoordinate system.
 GeoPointP               outLatLongSrc,      // <= (optional) lat long in this Geocoordinate system.
 DPoint3dCP              inUors,             // => cartesian coordinates in this Geocoordinate system modelRef UORS.
 int                     numPoints,          // => number of points.
+GeoCoordInterpretation  interpretation,     // => the interpretation of the input points.
 DgnGCSCR                destMstnGCS         // => destination coordinate system
 ) const
     {
@@ -4429,7 +4459,23 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 
         // convert the input LatLong to meters.
         GeoPoint    srcLatLong;
-        stat1 = LatLongFromUors (srcLatLong, *inUors);
+        switch (interpretation)
+            {
+            case GeoCoordInterpretation::Cartesian:
+                {
+                stat1 = LatLongFromUors(srcLatLong, *inUors);
+                break;
+                }
+            case GeoCoordInterpretation::XYZ:
+                {
+                stat1 = LatLongFromUorsXYZ(srcLatLong, *inUors);
+                break;
+                }
+            default:
+                {
+                assert(!"Unknown geocoordinate interpretion for reprojection");
+                }
+            };
 
         // does caller want the latlong in source coordinates?
         if (NULL != outLatLongSrc)
@@ -4598,12 +4644,13 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReprojectStatus       DgnGCS::GetLocalTransform
 (
-TransformP              outTransform,       // <= the transform effective at the point elementOrigin in source coordinates
-DPoint3dCR              elementOrigin,      // => the point to use to find the transform.
-DPoint3dCP              extent,             // => the extent to use to find the rotation and scale, NULL to use a default range.
-bool                    doRotate,           // => whether to apply a rotation.
-bool                    doScale,            // => whehter to apply a scale based on the coordinate system distortion.
-DgnGCSCR                destMstnGCS         // => destination coordinate system
+    TransformP              outTransform,       // <= the transform effective at the point elementOrigin in source coordinates
+    DPoint3dCR              elementOrigin,      // => the point to use to find the transform.
+    DPoint3dCP              extent,             // => the extent to use to find the rotation and scale, NULL to use a default range.
+    bool                    doRotate,           // => whether to apply a rotation.
+    bool                    doScale,            // => whehter to apply a scale based on the coordinate system distortion.
+    GeoCoordInterpretation  interpretation,     // => the interpretation of the input points.
+    DgnGCSCR                destMstnGCS         // => destination coordinate system
 ) const
     {
 
@@ -4640,7 +4687,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     points[3].init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
 
     DPoint3d transformedPoints[4];
-    ReprojectStatus status = ReprojectUors (transformedPoints, NULL, NULL, points, 4, destMstnGCS);
+    ReprojectStatus status = ReprojectUors(transformedPoints, NULL, NULL, points, 4, interpretation, destMstnGCS);
 
     frameA.initFrom4Points (&points[0], &points[1], &points[2], &points[3]);
     frameAInverse.inverseOf (&frameA);
@@ -4708,6 +4755,22 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 
     outTransform->productOf (&frameB, &frameAInverse);
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+ReprojectStatus       DgnGCS::GetLocalTransform
+(
+TransformP              outTransform,       // <= the transform effective at the point elementOrigin in source coordinates
+DPoint3dCR              elementOrigin,      // => the point to use to find the transform.
+DPoint3dCP              extent,             // => the extent to use to find the rotation and scale, NULL to use a default range.
+bool                    doRotate,           // => whether to apply a rotation.
+bool                    doScale,            // => whehter to apply a scale based on the coordinate system distortion.
+DgnGCSCR                destMstnGCS         // => destination coordinate system
+) const
+    {
+    return GetLocalTransform(outTransform, elementOrigin, extent, doRotate, doScale, GeoCoordInterpretation::Cartesian, destMstnGCS);
     }
 
 /*---------------------------------------------------------------------------------**//**
