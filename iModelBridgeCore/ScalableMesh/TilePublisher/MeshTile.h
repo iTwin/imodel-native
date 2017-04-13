@@ -12,6 +12,7 @@
 //#include "DgnTexture.h"
 //#include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
+#include <ScalableMesh\GeoCoords\GCS.h>
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -482,6 +483,8 @@ public:
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param/*, BeInt64Id entityId*/);
+
+    void ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS);
 };
 
 //=======================================================================================

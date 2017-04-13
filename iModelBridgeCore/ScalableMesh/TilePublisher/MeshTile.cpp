@@ -738,6 +738,26 @@ bool TileMesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMesh::ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
+    {
+    if (sourceGCS == nullptr || sourceGCS == destinationGCS) return;
+
+    // Otherwise, compute a reprojection
+    for (auto& p : m_points)
+        {
+        GeoPoint inLatLong, outLatLong;
+        if (sourceGCS->LatLongFromCartesian(inLatLong, p) != SUCCESS)
+            return;
+        if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
+            return;
+        if (destinationGCS->XYZFromLatLong(p, outLatLong) != SUCCESS)
+            return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param/*, BeInt64Id entityId*/)
