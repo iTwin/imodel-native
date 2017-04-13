@@ -54,7 +54,8 @@ public:
     DPoint2d GetSheetSize() const;
 
     //! Getthe sheet extents.
-    AxisAlignedBox3d GetSheetExtents() const;
+    AxisAlignedBox3d GetSheetExtents() const;
+
 
     //! @private
     DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
