@@ -68,7 +68,7 @@ ClientPtr ClientHelper::SignIn(Tasks::AsyncError* errorOut, SignInInfo const& si
         error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());;
         return nullptr;
         }
-    Utf8String host = UrlProvider::Urls::BIMCollaborationServices.Get();
+    Utf8String host = UrlProvider::Urls::iModelHubServices.Get();
 
     AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
 
