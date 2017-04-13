@@ -1346,7 +1346,19 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         if (val == DTM_ERROR) 
             {
             m_dtm = nullptr;
+            return nullptr;
             }
+        
+        if (!m_transformToUors.IsIdentity())
+            {
+            val = m_dtm->Transform(m_transformToUors);
+
+            if (val == DTM_ERROR)
+                {
+                m_dtm = nullptr;
+                return nullptr;
+                }            
+            }        
         }
 
     return m_dtm.get();    
