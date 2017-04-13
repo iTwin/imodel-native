@@ -459,21 +459,12 @@ void ECClass::AddPropertyMapping(Utf8CP originalName, Utf8CP newName)
         return;
         }
 
-    // Add ECv3ConversionAttributes as a schema reference, if it is not already.
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaKey key("ECv3ConversionAttributes", 1, 0);
-    ECSchemaPtr convSchema = ECSchema::LocateSchema(key, *context);
-    if (!convSchema.IsValid())
+    if (!ECSchema::IsSchemaReferenced(GetSchema(), renameInstance->GetClass().GetSchema()))
         {
-        LOG.warningv("Failed to locate schema, %s.", key.GetName().c_str());
-        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetFullName(), GetName().c_str());
-        }
-
-    if (!ECSchema::IsSchemaReferenced(GetSchema(), *convSchema))
-        {
-        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
+        ECClassP nonConstClass = const_cast<ECClassP>(&renameInstance->GetClass());
+        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(nonConstClass->GetSchemaR()))
             {
-            LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", renameInstance->GetClass().GetSchema().GetName().c_str(), GetSchema().GetName().c_str());
             LOG.warningv("Failed to add 'RenamedPropertiesMapping' custom attribute to ECClass '%s'.", GetFullName(), GetName().c_str());
             return;
             }
