@@ -1,0 +1,95 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: iModelHubClient/Client.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+iModelHubClientMkiPublicApiDir = $(iModelHubClientPublicApiDirectory)
+iModelHubClientMkiSourceDir = $(iModelHubClientSourceDirectory)iModelHubClient/
+
+#----------------------------------------------------------------------------------------
+#   Set up build dependencies for precompiled header and Client.mki
+#----------------------------------------------------------------------------------------
+
+iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h                            \
+                                $(iModelHubClientMkiPublicApiDir)Client/BreakHelper.h            \
+                                $(iModelHubClientMkiPublicApiDir)Client/Briefcase.h              \
+                                $(iModelHubClientMkiPublicApiDir)Client/Client.h                 \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelConnection.h       \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelManager.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelAdmin.h            \
+                                $(iModelHubClientMkiPublicApiDir)Client/Result.h                 \
+                                $(iModelHubClientMkiPublicApiDir)Client/Error.h                  \
+                                $(iModelHubClientMkiPublicApiDir)Client/ClientHelper.h           \
+                                $(iModelHubClientMkiPublicApiDir)Events/EventSubscription.h      \
+                                $(iModelHubClientMkiPublicApiDir)Events/Event.h                  \
+                                $(iModelHubClientMkiPublicApiDir)Events/EventParser.h            \
+                                $(iModelHubClientMkiPublicApiDir)Events/CodeEvent.h              \
+                                $(iModelHubClientMkiPublicApiDir)Events/LockEvent.h              \
+                                $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPostPushEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPrePushEvent.h  \
+                                $(iModelHubClientMkiPublicApiDir)Events/DeletedEvent.h           \
+                                $(iModelHubClientMkiSourceDir)Logging.h                          \
+                                $(iModelHubClientMkiSourceDir)Utils.h                            \
+                                $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
+                                $(iModelHubClientMkiSourceDir)PredownloadManager.h               \
+                                $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
+                                $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/Configuration.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/CodeAdmin.h
+
+#----------------------------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------------------------
+
+$(o)Logging$(oext)                         : $(iModelHubClientMkiSourceDir)Logging.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BreakHelper$(oext)                     : $(iModelHubClientMkiSourceDir)BreakHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Utils$(oext)                           : $(iModelHubClientMkiSourceDir)Utils.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Error$(oext)                           : $(iModelHubClientMkiSourceDir)Error.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelInfo$(oext)                      : $(iModelHubClientMkiSourceDir)iModelInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BriefcaseInfo$(oext)                   : $(iModelHubClientMkiSourceDir)BriefcaseInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ChangeSetInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileInfo$(oext)                        : $(iModelHubClientMkiSourceDir)FileInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelConnection$(oext)                : $(iModelHubClientMkiSourceDir)iModelConnection.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Briefcase$(oext)                       : $(iModelHubClientMkiSourceDir)Briefcase.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelManager$(oext)                   : $(iModelHubClientMkiSourceDir)iModelManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelAdmin$(oext)                     : $(iModelHubClientMkiSourceDir)iModelAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Client$(oext)                          : $(iModelHubClientMkiSourceDir)Client.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)EventManager$(oext)                    : $(iModelHubClientMkiSourceDir)Events/EventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)PredownloadManager$(oext)              : $(iModelHubClientMkiSourceDir)PredownloadManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Configuration$(oext)                   : $(iModelHubClientMkiSourceDir)Configuration.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ClientHelper$(oext)                    : $(iModelHubClientMkiSourceDir)ClientHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)EventParser$(oext)                     : $(iModelHubClientMkiSourceDir)Events/EventParser.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)LockEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/LockEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetPostPushEvent$(oext)          : $(iModelHubClientMkiSourceDir)Events/ChangeSetPostPushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Events/ChangeSetPrePushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CodeEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/CodeEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DeletedEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/DeletedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CodeAdmin$(oext)                       : $(iModelHubClientMkiSourceDir)CodeAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
