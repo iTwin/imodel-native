@@ -25,10 +25,10 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void DgnDbCodeLockSetResultInfo::AddLock(const DgnLock dgnLock, BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+void DgnDbCodeLockSetResultInfo::AddLock(const DgnLock dgnLock, BeBriefcaseId briefcaseId, Utf8StringCR revisionId)
     {
     m_locks.insert(dgnLock);
-    AddLockInfoToList(m_lockStates, dgnLock, briefcaseId, repositoryId);
+    AddLockInfoToList(m_lockStates, dgnLock, briefcaseId, revisionId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1821,12 +1821,12 @@ ICancellationTokenPtr cancellationToken
         {
         DgnLock        lock;
         BeBriefcaseId  briefcaseId;
-        Utf8String     repositoryId;
+        Utf8String     revisionId;
 
-        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, repositoryId))
+        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, revisionId))
             {
             if (lock.GetLevel() != LockLevel::None)
-                codesLocksSetOut->AddLock(lock, briefcaseId, repositoryId);
+                codesLocksSetOut->AddLock(lock, briefcaseId, revisionId);
             }
         };
 
@@ -1853,14 +1853,14 @@ ICancellationTokenPtr cancellationToken
         {
         DgnLock        lock;
         BeBriefcaseId  briefcaseId;
-        Utf8String     repositoryId;
+        Utf8String     revisionId;
 
         DgnLockSet lockSet;
-        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, repositoryId))
+        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, revisionId))
             {
             for (auto const& lock : lockSet)
                 {
-                codesLocksSetOut->AddLock(lock, briefcaseId, repositoryId);
+                codesLocksSetOut->AddLock(lock, briefcaseId, revisionId);
                 }
             }
         };
@@ -1896,11 +1896,11 @@ ICancellationTokenPtr cancellationToken
         {
         DgnLock        lock;
         BeBriefcaseId  briefcaseId;
-        Utf8String     repositoryId;
+        Utf8String     revisionId;
 
-        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, repositoryId))
+        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, revisionId))
             {
-            codesLocksSetOut->AddLock(lock, briefcaseId, repositoryId);
+            codesLocksSetOut->AddLock(lock, briefcaseId, revisionId);
             }
         };
 

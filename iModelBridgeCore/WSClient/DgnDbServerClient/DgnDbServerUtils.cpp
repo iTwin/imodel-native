@@ -144,7 +144,7 @@ bool BriefcaseIdFromJson(BeBriefcaseId& bcId, RapidJsonValueCR value)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                12/2016
 //---------------------------------------------------------------------------------------
-bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
     LockLevel               level;
     LockableType            type;
@@ -169,13 +169,16 @@ bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet
         lockSet.insert(DgnLock(LockableId(type, id), level));
         }
 
+    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithRevision) || !StringFromJson(revisionId, serverJson[ServerSchema::Property::ReleasedWithRevision]))
+        revisionId = nullptr;
+
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
     BeInt64Id           id;
     LockLevel           level;
@@ -191,8 +194,46 @@ bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite:
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
         return false;
 
+    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithRevision) || !StringFromJson(revisionId, serverJson[ServerSchema::Property::ReleasedWithRevision]))
+        revisionId = nullptr;
+
     lock = DgnLock(LockableId(type, id), level);
 
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite         03/2017
+//---------------------------------------------------------------------------------------
+bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR serverJson)
+    {
+    if (!serverJson.HasMember(ServerSchema::Property::LockLevel) || !serverJson.HasMember(ServerSchema::Property::LockType) || !serverJson.HasMember(ServerSchema::Property::LockOwners))
+        return false;
+
+    LockLevel    level;
+    LockableType type;
+    if (!LockLevelFromJson(level, serverJson[ServerSchema::Property::LockLevel]) ||
+        !LockableTypeFromJson(type, serverJson[ServerSchema::Property::LockType]))
+        return false;
+
+    for (auto& lockInfo : serverJson[ServerSchema::Property::LockOwners].GetArray())
+        {
+
+        if (!lockInfo.HasMember(ServerSchema::Property::ObjectId) || !lockInfo.HasMember(ServerSchema::Property::BriefcaseIds))
+            return false;
+
+        BeInt64Id id;
+        if (!BeInt64IdFromJson(id, lockInfo[ServerSchema::Property::ObjectId]))
+            return false;
+
+        for (auto& briefcaseInfo : lockInfo[ServerSchema::Property::BriefcaseIds].GetArray())
+            {
+            BeSQLite::BeBriefcaseId briefcaseId;
+            if (BriefcaseIdFromJson(briefcaseId, briefcaseInfo))
+                AddLockInfoToList(lockInfos, DgnLock(LockableId(type, id), level), briefcaseId, nullptr);
+            }
+        }
+    
     return true;
     }
 
@@ -222,7 +263,7 @@ bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplat
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId)
     {
     DgnLockInfo&      info = *lockInfos.insert (DgnLockInfo (dgnLock.GetLockableId ())).first;
     DgnLockOwnershipR ownership = info.GetOwnership ();
@@ -232,10 +273,10 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
     else if (LockLevel::Shared == dgnLock.GetLevel ())
         ownership.AddSharedOwner (briefcaseId);
 
-    if (!repositoryId.empty ())
-        info.SetRevisionId (repositoryId);
+    if (!revisionId.empty ())
+        info.SetRevisionId (revisionId);
 
-    if (info.IsOwned () || !repositoryId.empty ())
+    if (info.IsOwned () || !revisionId.empty ())
         info.SetTracked ();
     }
 

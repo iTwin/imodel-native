@@ -100,6 +100,7 @@ bool DgnDbServerError::RequiresExtendedData(Id id)
             case Id::LockOwnedByAnotherBriefcase:
             case Id::RepositoryAlreadyExists:
             case Id::FileAlreadyExists:
+            case Id::PullIsRequired:
                 return true;
             default:
                 return false;
