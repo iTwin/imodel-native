@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_context.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -62,6 +62,7 @@ Public void     jmdlRIMSBS_freeContext
 RIMSBS_Context *pContext
 )
     {
+    jmdlRIMSBS_releaseMem (pContext);
     delete pContext;
     }
 
