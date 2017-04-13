@@ -16,11 +16,15 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //========================================================================================
 struct CompatibilityTests : public DgnDbTestFixture
 {
+    static constexpr Utf8CP GetCodeSpecName() {return "CompatibilityTests.CodeSpec";}
     static constexpr Utf8CP GetSpatialCategoryName() {return "TestSpatialCategory";}
     static constexpr Utf8CP GetDrawingCategoryName() {return "TestDrawingCategory";}
+    static constexpr Utf8CP GetGroupInformationPartitionName() {return "GroupInformation";}
     static constexpr Utf8CP GetPhysicalPartitionName() {return "Physical";}
     static constexpr Utf8CP GetDocumentPartitionName() {return "Document";}
     static constexpr Utf8CP GetDefinitionPartitionName() {return "Definition";}
+    static constexpr Utf8CP GetPhysicalElementGroupName() {return "PhysicalElementGroup";}
+    static constexpr Utf8CP GetSpatialLocationGroupName() {return "SpatialLocationGroup";}
     static constexpr double GetSheetScale() {return 1.0;}
     static DPoint2d GetSheetSize() {return DPoint2d::From(0.1, 0.3);}
     static Utf8String GetSubjectName(int index) {return Utf8PrintfString(BIS_CLASS_Subject "%" PRIi32, index);}
@@ -44,9 +48,11 @@ struct CompatibilityTests : public DgnDbTestFixture
     BE_JSON_NAME(updated);
 
     void InsertHierarchy(SubjectCR, int);
+    void InsertGroupInformationHierarchy(SubjectCR);
     void InsertPhysicalHierarchy(SubjectCR);
     void InsertDocumentHierarchy(SubjectCR);
     void InsertDefinitionHierarchy(SubjectCR);
+    void InsertCodeSpec();
     void InsertSpatialCategory();
     void InsertDrawingCategory();
     DgnGeometryPartPtr InsertGeometryPart(DefinitionModelR, int);
@@ -54,11 +60,11 @@ struct CompatibilityTests : public DgnDbTestFixture
     ModelSelectorPtr InsertModelSelector(DefinitionModelR, DgnModelId, int);
     DisplayStyle3dPtr InsertDisplayStyle3d(DefinitionModelR, int);
     SpatialViewDefinitionPtr InsertSpatialViewDefinition(DefinitionModelR, int, CategorySelectorR, DisplayStyle3dR, ModelSelectorR, DRange3dCR);
-    void InsertPhysicalElement(PhysicalModelR, DgnCategoryId, int);
-    void InsertSpatialLocation(PhysicalModelR, DgnCategoryId, int);
+    PhysicalElementPtr InsertPhysicalElement(PhysicalModelR, DgnCategoryId, int);
+    SpatialLocationElementPtr InsertSpatialLocation(PhysicalModelR, DgnCategoryId, int);
     DrawingPtr InsertDrawing(DocumentListModelR, int);
     DrawingModelPtr InsertDrawingModel(DrawingCR);
-    void InsertDrawingGraphic(GraphicalModel2dR, DgnCategoryId, int);
+    DrawingGraphicPtr InsertDrawingGraphic(GraphicalModel2dR, DgnCategoryId, int);
     Sheet::ElementPtr InsertSheet(DocumentListModelR, int);
     Sheet::ModelPtr InsertSheetModel(Sheet::ElementCR);
 
@@ -76,6 +82,13 @@ struct CompatibilityTests : public DgnDbTestFixture
 
     DgnCategoryId GetSpatialCategoryId();
     DgnCategoryId GetDrawingCategoryId();
+    CodeSpecCPtr GetCodeSpec();
+    GenericGroupModelPtr GetGroupModel(SubjectCR);
+    GenericGroupCPtr GetGroup(DgnDbR, DgnCodeCR);
+    DgnCode GetPhysicalElementGroupCode(GroupInformationModelCR model) {return GetCodeSpec()->CreateCode(model, GetPhysicalElementGroupName());}
+    DgnCode GetSpatialLocationGroupCode(GroupInformationModelCR model) {return GetCodeSpec()->CreateCode(model, GetSpatialLocationGroupName());}
+    GenericGroupCPtr GetPhysicalElementGroup(SubjectCR);
+    GenericGroupCPtr GetSpatialLocationGroup(SubjectCR);
     PhysicalModelPtr GetPhysicalModel(SubjectCR);
     DocumentListModelPtr GetDocumentListModel(SubjectCR);
     DefinitionModelPtr GetDefinitionModel(SubjectCR);
@@ -89,6 +102,7 @@ TEST_F(CompatibilityTests, CompatibilityTestSeed)
     {
     SetupSeedProject();
     ImportFunctionalSchema();
+    InsertCodeSpec();
     InsertSpatialCategory();
     InsertDrawingCategory();
 
@@ -105,6 +119,7 @@ TEST_F(CompatibilityTests, CompatibilityTestSeed)
 TEST_F(CompatibilityTests, ModifyCurrent)
     {
     SetupSeedProject();
+    InsertCodeSpec();
     InsertSpatialCategory();
     InsertDrawingCategory();
 
@@ -139,6 +154,7 @@ void CompatibilityTests::InsertHierarchy(SubjectCR parentSubject, int subjectNum
     SubjectCPtr subject = Subject::CreateAndInsert(parentSubject, GetSubjectName(subjectNumber));
     ASSERT_TRUE(subject.IsValid());
 
+    InsertGroupInformationHierarchy(*subject);
     InsertPhysicalHierarchy(*subject);
     InsertDocumentHierarchy(*subject);
     InsertDefinitionHierarchy(*subject);
@@ -158,6 +174,26 @@ void CompatibilityTests::ModifyHierarchy(SubjectCR parentSubject, int subjectNum
     ModifyPhysicalHierarchy(*subject);
     ModifyDocumentHierarchy(*subject);
     ModifyDefinitionHierarchy(*subject);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertCodeSpec()
+    {
+    CodeSpecPtr codeSpec = CodeSpec::Create(GetDgnDb(), GetCodeSpecName(), CodeScopeSpec::CreateModelScope());
+    ASSERT_TRUE(codeSpec.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, codeSpec->Insert());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+CodeSpecCPtr CompatibilityTests::GetCodeSpec()
+    {
+    CodeSpecCPtr codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(GetCodeSpecName());
+    BeAssert(codeSpec.IsValid());
+    return codeSpec;
     }
 
 //---------------------------------------------------------------------------------------
@@ -393,46 +429,61 @@ void CompatibilityTests::InsertPhysicalHierarchy(SubjectCR subject)
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition);
     ASSERT_TRUE(model.IsValid());
     DgnCategoryId categoryId = GetSpatialCategoryId();
+    GenericGroupCPtr physicalElementGroup = GetPhysicalElementGroup(subject);
+    GenericGroupCPtr spatialLocationGroup = GetSpatialLocationGroup(subject);
 
     for (int i=0; i<3; i++)
         {
-        InsertPhysicalElement(*model, categoryId, i);
-        InsertSpatialLocation(*model, categoryId, i);
+        PhysicalElementPtr physicalElement = InsertPhysicalElement(*model, categoryId, i);
+        ASSERT_TRUE(physicalElement.IsValid());
+        physicalElementGroup->AddMember(*physicalElement);
+
+        SpatialLocationElementPtr spatialLocation = InsertSpatialLocation(*model, categoryId, i);
+        ASSERT_TRUE(spatialLocation.IsValid());
+        spatialLocationGroup->AddMember(*spatialLocation);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int index)
+PhysicalElementPtr CompatibilityTests::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int index)
     {
     GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(model, categoryId);
-    ASSERT_TRUE(element.IsValid());
+    if (!element.IsValid())
+        return nullptr;
+
     element->SetUserLabel(GetPhysicalElementName(index).c_str());
     element->SetFederationGuid(BeGuid(true));
     GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint3d::From(index, index, index));
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnSphereDetail(DPoint3d::FromZero(), 0.25));
-    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    if (!geometryBuilder.IsValid() || !geometry.IsValid())
+        return nullptr;
+
     geometryBuilder->Append(*geometry);
     geometryBuilder->Finish(*element);
-    ASSERT_TRUE(element->Insert().IsValid());
+    return element->Insert().IsValid() ? element.get() : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertSpatialLocation(PhysicalModelR model, DgnCategoryId categoryId, int index)
+SpatialLocationElementPtr CompatibilityTests::InsertSpatialLocation(PhysicalModelR model, DgnCategoryId categoryId, int index)
     {
     GenericSpatialLocationPtr element = GenericSpatialLocation::Create(model, categoryId);
-    ASSERT_TRUE(element.IsValid());
+    if (!element.IsValid())
+        return nullptr;
+
     element->SetUserLabel(GetSpatialLocationName(index).c_str());
     element->SetFederationGuid(BeGuid(true));
     GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint3d::From(index, index, index));
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(0.5, 0.5, 0.5), true));
-    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    if (!geometryBuilder.IsValid() || !geometry.IsValid())
+        return nullptr;
+
     geometryBuilder->Append(*geometry);
     geometryBuilder->Finish(*element);
-    ASSERT_TRUE(element->Insert().IsValid());
+    return element->Insert().IsValid() ? element.get() : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -569,18 +620,22 @@ DrawingModelPtr CompatibilityTests::InsertDrawingModel(DrawingCR drawing)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::InsertDrawingGraphic(GraphicalModel2dR model, DgnCategoryId categoryId, int index)
+DrawingGraphicPtr CompatibilityTests::InsertDrawingGraphic(GraphicalModel2dR model, DgnCategoryId categoryId, int index)
     {
     DrawingGraphicPtr element = DrawingGraphic::Create(model, categoryId);
-    ASSERT_TRUE(element.IsValid());
+    if (!element.IsValid())
+        return nullptr;
+
     element->SetUserLabel(GetDrawingGraphicName(index).c_str());
     element->SetFederationGuid(BeGuid(true));
     GeometryBuilderPtr geometryBuilder = GeometryBuilder::Create(model, categoryId, DPoint2d::From(index, index));
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(ICurvePrimitive::CreateRectangle(0, 0, 1+index, 1+index, 0));
-    ASSERT_TRUE(geometryBuilder.IsValid() && geometry.IsValid());
+    if (!geometryBuilder.IsValid() || !geometry.IsValid())
+        return nullptr;
+
     geometryBuilder->Append(*geometry);
     geometryBuilder->Finish(*element);
-    ASSERT_TRUE(element->Insert().IsValid());
+    return element->Insert().IsValid() ? element : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -712,6 +767,62 @@ DocumentListModelPtr CompatibilityTests::GetDocumentListModel(SubjectCR subject)
     return model;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::InsertGroupInformationHierarchy(SubjectCR subject)
+    {
+    GroupInformationPartitionCPtr partition = GroupInformationPartition::CreateAndInsert(subject, GetGroupInformationPartitionName());
+    ASSERT_TRUE(partition.IsValid());
+    GenericGroupModelPtr groupModel = GenericGroupModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(groupModel.IsValid());
+
+    GenericGroupPtr physicalElementGroup = GenericGroup::Create(*groupModel, GetPhysicalElementGroupCode(*groupModel));
+    ASSERT_TRUE(physicalElementGroup.IsValid() && physicalElementGroup->Insert().IsValid());
+
+    GenericGroupPtr spatialLocationGroup = GenericGroup::Create(*groupModel, GetSpatialLocationGroupCode(*groupModel));
+    ASSERT_TRUE(spatialLocationGroup.IsValid() && spatialLocationGroup->Insert().IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+GenericGroupModelPtr CompatibilityTests::GetGroupModel(SubjectCR subject)
+    {
+    DgnDbR db = subject.GetDgnDb();
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(subject, GetGroupInformationPartitionName());
+    DgnModelId modelId = db.Models().QuerySubModelId(partitionCode);
+    GenericGroupModelPtr model = db.Models().Get<GenericGroupModel>(modelId);
+    BeAssert(model.IsValid());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+GenericGroupCPtr CompatibilityTests::GetGroup(DgnDbR db, DgnCodeCR code)
+    {
+    DgnElementId groupId = db.Elements().QueryElementIdByCode(code);
+    GenericGroupCPtr group = db.Elements().Get<GenericGroup>(groupId);
+    BeAssert(group.IsValid());
+    return group;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+GenericGroupCPtr CompatibilityTests::GetPhysicalElementGroup(SubjectCR subject)
+    {
+    return GetGroup(subject.GetDgnDb(), GetPhysicalElementGroupCode(*GetGroupModel(subject)));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
+    {
+    return GetGroup(subject.GetDgnDb(), GetSpatialLocationGroupCode(*GetGroupModel(subject)));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
