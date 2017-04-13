@@ -1656,26 +1656,26 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
     m_smPtr->GetCoverageIds(coverageIds);
 
     for (auto& pMeshModel : allScalableMeshes)
-        {
-        BeFileName coveragePath = m_basePath;
-        //coveragePath.AppendString(L"_terrain");
+        {                
         ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
         if (this == pScalableMesh)
-            continue;
+            continue;        
 
-        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
+        for (uint64_t coverageId : coverageIds)
             {
-            pScalableMesh->GetScalableMesh()->SetInvertClip(true);
-            for (uint64_t coverageId : coverageIds)
-                {
-                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
-                    {
-                    bvector<DPoint3d> regionData;
-                    if (m_smPtr->GetClip(coverageId, regionData))
-                        AddTerrainRegion(coverageId, pScalableMesh, regionData);
-                    }
+            BeFileName terrainPath;
+
+            GetPathForTerrainRegion(terrainPath, coverageId);
+
+            if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
+                {                                            
+                pScalableMesh->GetScalableMesh()->SetInvertClip(true);
+                bvector<DPoint3d> regionData;
+                if (m_smPtr->GetClip(coverageId, regionData))
+                    AddTerrainRegion(coverageId, pScalableMesh, regionData);
+                break;
                 }
-            }
+            }                      
 
         if (nullptr != context.GetViewport())
             {
@@ -1683,6 +1683,7 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
             SetRegionVisibility(pScalableMesh->GetAssociatedRegionId(), isDisplayed);
             }
         }
+
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
