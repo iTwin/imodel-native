@@ -2737,8 +2737,8 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            //Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
-            //PushCurrentGeometry();
+            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+            PushCurrentGeometry();
             }
 
         // We sort by size in order to ensure the largest geometries are assigned batch IDs
@@ -3009,7 +3009,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (0 == polyface->GetPointCount())
                 continue;
 
-            TileMeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+            TileMeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid(), geom->GetEntityId().IsValid());
 
             TileMeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
@@ -3046,7 +3046,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 TileDisplayParamsCPtr   displayParams = tileStrokes.m_displayParams;
-                TileMeshMergeKey key(*displayParams, false, false);
+                TileMeshMergeKey key(*displayParams, false, false, geom->GetEntityId().IsValid());
 
                 TileMeshBuilderPtr meshBuilder;
                 auto found = builderMap.find(key);

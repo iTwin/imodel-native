@@ -463,10 +463,11 @@ struct TileMeshMergeKey
     TileDisplayParamsCP m_params;                                                                                                                                                     
     bool                m_hasNormals;
     bool                m_hasFacets;
+    bool                m_hasBatchIds;
 
-    TileMeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets(false) { }
-    TileMeshMergeKey(TileDisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets(hasFacets) { }
-    TileMeshMergeKey(TileMeshCR mesh) : TileMeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
+    TileMeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets(false), m_hasBatchIds(false) { }
+    TileMeshMergeKey(TileDisplayParamsCR params, bool hasNormals, bool hasFacets, bool hasBatchIds) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets(hasFacets), m_hasBatchIds(hasBatchIds) { }
+    TileMeshMergeKey(TileMeshCR mesh) : TileMeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty(), mesh.ValidIdsPresent()) { }
 
     bool operator<(TileMeshMergeKey const& rhs) const
         {
@@ -476,6 +477,9 @@ struct TileMeshMergeKey
 
         if(m_hasFacets != rhs.m_hasFacets)
             return !m_hasFacets;
+
+        if (m_hasBatchIds != rhs.m_hasBatchIds)
+            return !m_hasBatchIds;
 
         return m_params->IsLessThan(*rhs.m_params, false);  // don't compare colors.
         }
