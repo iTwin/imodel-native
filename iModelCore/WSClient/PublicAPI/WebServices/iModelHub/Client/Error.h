@@ -1,0 +1,127 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/WebServices/iModelHub/Client/Error.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+#include <WebServices/Client/WSClient.h>
+#include <WebServices/iModelHub/Common.h>
+
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+struct Error : public Tasks::AsyncError
+{
+public:
+    enum class Id
+        {
+        Unknown = -1,
+        //DgnDbServer Errors
+        MissingRequiredProperties = 1,
+        InvalidPropertiesValues,
+        UserDoesNotHavePermission,
+        InvalidBriefcase,
+        BriefcaseDoesNotBelongToUser,
+        AnotherUserPushing,
+        ChangeSetAlreadyExists,
+        ChangeSetDoesNotExist,
+        FileIsNotUploaded,
+        ChangeSetExistsButNoBackingFile,
+        iModelIsNotInitialized,
+        ChangeSetPointsToBadiModel,
+        BIMCSOperationFailed,
+        PullIsRequired,
+        MaximumNumberOfBriefcasesPerUser,
+        MaximumNumberOfBriefcasesPerUserPerMinute,
+        DatabaseTemporarilyLocked,
+        iModelAlreadyExists,
+        iModelDoesNotExist,
+        LockDoesNotExist,
+        LocksExist,
+        LockOwnedByAnotherBriefcase,
+        UserAlreadyExists,
+        UserDoesNotExist,
+        CodeStateInvalid,
+        CodeStateChangeSetDenied,
+        CodeReservedByAnotherBriefcase,
+        CodeAlreadyExists,
+        CodeDoesNotExist,
+        CodesExist,
+        FileDoesNotExist,
+        iModelIsLocked,
+
+        //Long Running Processes Errors
+        FileIsNotYetInitialized,
+        FileIsOutdated,
+        FileHasDifferentId,
+        FileInitializationFailed,
+
+        //WebServices Errors
+        LoginFailed,
+        SslRequired,
+        NotEnoughRights,
+        NoServerLicense,
+        NoClientLicense,
+        TooManyBadLoginAttempts,
+        InternalServerError,
+        WebServicesError,
+        ConnectionError,
+        Canceled,
+
+        //DgnDbServer Client API Errors
+        NoRepositoriesFound,
+        FileIsNotBriefcase,
+        CredentialsNotSet,
+        FileNotFound,
+        FileAlreadyExists,
+        DgnDbServerClientNotInitialized,
+        InvalidServerURL,
+        InvalidiModelName,
+        InvalidiModelId,
+        InvalidiModelConnection,
+        InvalidChangeSet,
+        BriefcaseIsReadOnly,
+        TrackingNotEnabled,
+
+        //Revision Manager Errors
+        MergeError,
+        RevisionManagerError,
+
+        //Event Errors
+        NoEventsFound,
+        NoSubscriptionFound,
+        NoSASFound,
+        NotSubscribedToEventService,
+        EventServiceSubscribingError,
+        EventCallbackNotFound,
+        EventCallbackAlreadySubscribed,
+        EventCallbackNotSpecified,
+			
+        AzureError,
+        DgnDbError
+        };
+
+private:
+    Error::Id m_id;
+    std::shared_ptr<WebServices::WSError> m_wsError;
+    bool RequiresExtendedData(Error::Id id);
+    Error::Id ErrorIdFromString(Utf8StringCR errorIdString);
+    Error::Id ErrorIdFromWSError(WebServices::WSErrorCR error);
+    Utf8StringCR GetDefaultMessage(Error::Id id);
+
+public:
+    IMODELHUBCLIENT_EXPORT Error();
+    IMODELHUBCLIENT_EXPORT Error(Error::Id id);
+    Error(Error::Id id, Utf8StringCR message) {m_id = id; m_message = message;}
+    IMODELHUBCLIENT_EXPORT Error(Dgn::DgnDbCR db, BeSQLite::DbResult result);
+    IMODELHUBCLIENT_EXPORT Error(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
+    IMODELHUBCLIENT_EXPORT Error(WebServices::WSErrorCR error);
+    IMODELHUBCLIENT_EXPORT Error(Dgn::RevisionStatus const& status);
+
+    IMODELHUBCLIENT_EXPORT Error(Http::HttpErrorCR error);
+
+    JsonValueCR GetExtendedData() const {return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();}
+    Error::Id GetId() const {return m_id;}
+};
+END_BENTLEY_IMODELHUB_NAMESPACE

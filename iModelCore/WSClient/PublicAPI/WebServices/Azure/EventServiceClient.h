@@ -31,7 +31,7 @@ struct EventServiceClient
         SimpleCancellationTokenPtr m_ct;
 
     public:
-        EventServiceClient(); //Need a default constructor for DgnDbClientRepository
+        EventServiceClient(); //Need a default constructor for iModel Hub Client
         WSCLIENT_EXPORT AsyncTaskPtr<EventServiceResult> MakeReceiveDeleteRequest(bool longPolling = true);
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
