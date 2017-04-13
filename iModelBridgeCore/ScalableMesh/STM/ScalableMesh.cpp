@@ -2371,6 +2371,8 @@ template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
     if (m_scmIndexPtr->m_isInsertingClips == true)
         return;
 
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+
     m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
     }
 

@@ -4382,8 +4382,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 if (other.clientID == ((uint64_t)-1)) const_cast<DifferenceSet&>(other).upToDate = false;
                 }
 
-            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+          /*  GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
             
             }
 
@@ -4435,9 +4435,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
     if (found)
     {
         diffSetPtr->erase(indices);
-        //force commit
+       /* //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
     }
     return found;
     }
@@ -4479,9 +4479,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         }
     else
     {
-        //force commit
+  /*      //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
 
     }
     return found;

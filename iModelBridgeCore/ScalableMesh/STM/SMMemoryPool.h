@@ -1361,6 +1361,8 @@ class SMMemoryPool : public RefCountedBase
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             
         bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
+
+        uint64_t RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t smId);
             
         SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 
