@@ -17,7 +17,7 @@
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+struct FileInfo;
 typedef RefCountedPtr<struct FileInfo> FileInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileInfo);
 
@@ -74,7 +74,7 @@ public:
     static FileInfoPtr Create(BeGuid fileId) {return FileInfoPtr(new FileInfo(fileId));}
     //! DEPRECATED: Use Parsing from Instance
     IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
-    IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
+    IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(WebServices::WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
     IMODELHUBCLIENT_EXPORT void ToPropertiesJson(JsonValueR json) const;
     IMODELHUBCLIENT_EXPORT WebServices::ObjectId GetObjectId() const;
     bool AreFileDetailsAvailable() const {return m_areFileDetailsAvailable;}
@@ -108,7 +108,7 @@ private:
 
     static FileAccessKeyPtr Parse(RapidJsonValueCR properties);
     static FileAccessKeyPtr ParseFromRelated(JsonValueCR json);
-    static FileAccessKeyPtr ParseFromRelated(WSObjectsReader::Instance instance);
+    static FileAccessKeyPtr ParseFromRelated(WebServices::WSObjectsReader::Instance instance);
 
 public:
     //! Select download access key
