@@ -45,6 +45,8 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
 
         WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication(HttpResponseCR response) override;
         WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) override;
+        WSCLIENT_EXPORT static void SetRetryOnExpiredToken(bool value);
+        static unsigned s_expiredTokenRetryCount;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
