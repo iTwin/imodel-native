@@ -1676,7 +1676,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
     auto nodeGroup = this->GetGroup(nodeHeader->m_id);
     // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
     //assert(nodeGroup.IsValid());
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings.IsPublishing(), nodeGroup);
     
     return true;    
     }
