@@ -47,6 +47,15 @@ public:
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
+    //! Draw border graphics (static, called during update)
+    DGNPLATFORM_EXPORT static void DrawBorder (ViewContextR viewContext, DPoint2dCR size);
+
+    //! Get the sheet size.
+    DPoint2d GetSheetSize() const;
+
+    //! Getthe sheet extents.
+    AxisAlignedBox3d GetSheetExtents() const;
+
     //! @private
     DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
 };
@@ -308,7 +317,6 @@ protected:
 
     void DrawBorder(ViewContextR context) const;
     Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
-    AxisAlignedBox3d GetSheetExtents() const {return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0));}
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
 };
 

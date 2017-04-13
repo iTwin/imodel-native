@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/DgnJSApi.h>
 #include <DgnPlatform/ElementHandler.h>
+#include <ECDb/SchemaManager.h>
 #include <Bentley/ReleaseMarshaller.h>
 
 #pragma managed
@@ -140,7 +141,7 @@ static System::DateTime         DateTimeToManaged (BENTLEY_NAMESPACE_NAME::DateT
 
 static DgnModels^               DgnModelsToManaged (BDGN::DgnModels*, DgnDb^);
 
-static SchemaManager^           SchemaManagerToManaged (BeSQLite::EC::ECDbSchemaManager const*, DgnDb^);
+static SchemaManager^           SchemaManagerToManaged (BeSQLite::EC::SchemaManager const*, DgnDb^);
 
 static DgnElementCollection^    ElementCollectionToManaged (BDGN::DgnElements*, DgnDb^);
 
@@ -2694,9 +2695,9 @@ public:
         }
 
     /** Set the geometry's fill color to match the view background. */
-    void SetFillColorToViewBackground()
+    void SetFillColorFromViewBackground()
         {
-        m_native->SetFillColorToViewBackground();
+        m_native->SetFillColorFromViewBackground();
         }
 
     /** The geometry class */
@@ -4172,7 +4173,7 @@ struct ECSchemaEnumeratorImpl
     bvector<ECN::ECSchemaCP>                    m_collection;
     bvector<ECN::ECSchemaCP>::const_iterator    m_current;
 
-    ECSchemaEnumeratorImpl (BeSQLite::EC::ECDbSchemaManager const* nativeSchemaManager) : m_collection (nativeSchemaManager->GetECSchemas()), m_current (m_collection.begin()) {}
+    ECSchemaEnumeratorImpl (BeSQLite::EC::SchemaManager const* nativeSchemaManager) : m_collection (nativeSchemaManager->GetSchemas()), m_current (m_collection.begin()) {}
     };
 
 
@@ -4183,11 +4184,11 @@ struct ECSchemaEnumeratorImpl
 public ref struct ECSchemaEnumerator : System::Collections::Generic::IEnumerator <ECSchema^>
 {
 private:
-    BeSQLite::EC::ECDbSchemaManager const*  m_nativeSchemaManager;
-    System::Object^                         m_owner;
+    BeSQLite::EC::SchemaManager const*  m_nativeSchemaManager;
+    System::Object^                     m_owner;
 
-    ECSchemaEnumeratorImpl*                 m_impl;
-    ECSchema^                               m_currentMember;
+    ECSchemaEnumeratorImpl*             m_impl;
+    ECSchema^                           m_currentMember;
 
     ECSchema^     GetMember()
         {
@@ -4235,7 +4236,7 @@ private:
 
 
 internal:
-    ECSchemaEnumerator (BeSQLite::EC::ECDbSchemaManager const* nativeSchemaManager, System::Object^ owner)
+    ECSchemaEnumerator (BeSQLite::EC::SchemaManager const* nativeSchemaManager, System::Object^ owner)
         {
         m_nativeSchemaManager   = nativeSchemaManager;
         m_owner                 = owner;
@@ -4297,11 +4298,11 @@ public:
 public ref struct SchemaManager : System::Collections::Generic::IEnumerable <ECSchema^>
 {
 private:
-    BeSQLite::EC::ECDbSchemaManager const*  m_native;
-    DgnDb^                                  m_owner;
+    BeSQLite::EC::SchemaManager const*  m_native;
+    DgnDb^                              m_owner;
 
 internal:
-    SchemaManager (BeSQLite::EC::ECDbSchemaManager const* native, DgnDb^ owner)
+    SchemaManager (BeSQLite::EC::SchemaManager const* native, DgnDb^ owner)
         {
         // the SchemaManager is integral to the DgnDb, so no need for dispose method.
         m_native = native;
@@ -4315,7 +4316,7 @@ public:
         pin_ptr<wchar_t const>  classNamePinned = PtrToStringChars (className);
         Utf8String  utf8SchemaName (schemaNamePinned);
         Utf8String  utf8ClassName (classNamePinned);
-        ECN::ECClassCP nativeClass = m_native->GetECClass (utf8SchemaName.c_str(), utf8ClassName.c_str());
+        ECN::ECClassCP nativeClass = m_native->GetClass (utf8SchemaName.c_str(), utf8ClassName.c_str());
 
         return gcnew ECClass (nativeClass, m_owner);
         }
@@ -4323,7 +4324,7 @@ public:
     /** Look up an ECClass by its ECClassId */
     ECClass^    GetECClassById (ECClassId^ classId)
         {
-        ECN::ECClassCP nativeClass = m_native->GetECClass (ECN::ECClassId (classId->Value));
+        ECN::ECClassCP nativeClass = m_native->GetClass (ECN::ECClassId (classId->Value));
         if (nullptr == nativeClass)
             return nullptr;
 
@@ -5298,7 +5299,7 @@ DgnModels^              Convert::DgnModelsToManaged (BDGN::DgnModels* models, Dg
     return gcnew DgnModels (models, owner);
     }
 
-SchemaManager^          Convert::SchemaManagerToManaged (BeSQLite::EC::ECDbSchemaManager const* schemaManager, DgnDb^ dgnDb)
+SchemaManager^          Convert::SchemaManagerToManaged (BeSQLite::EC::SchemaManager const* schemaManager, DgnDb^ dgnDb)
     {
     return gcnew SchemaManager (schemaManager, dgnDb);
     }

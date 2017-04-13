@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*-------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/Sheet.cpp $
 |
@@ -584,25 +584,42 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d Sheet::Model::GetSheetSize() const
+    {
+    // Get the Sheet::Element to extract the sheet size
+    auto sheetElement = GetDgnDb().Elements().Get<Sheet::Element>(GetModeledElementId());
+    if (!sheetElement.IsValid())
+        {
+        BeAssert(false); // this is fatal
+        return DPoint2d::From(0.0, 0.0);
+        }
+    
+    // save the sheet size in this ViewController
+    return DPoint2d::From (sheetElement->GetWidth(), sheetElement->GetHeight());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d Sheet::Model::GetSheetExtents () const
+    {
+    DPoint2d        size = GetSheetSize();
+
+    return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(size.x, size.y, 0.0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
     {
     auto model = GetViewedModel();  // get the sheet model for this view
-    if (nullptr == model)
+    if (nullptr == model || nullptr == model->ToSheetModel())
         {
         BeAssert(false); // what happened?
         return;
         }
-
-    // Get the Sheet::Element to extract the sheet size
-    auto sheetElement = GetDgnDb().Elements().Get<Sheet::Element>(model->GetModeledElementId());
-    if (!sheetElement.IsValid())
-        {
-        BeAssert(false); // this is fatal
-        return;
-        }
-    
-    // save the sheet size in this ViewController
-    m_size.Init(sheetElement->GetWidth(), sheetElement->GetHeight());
+    m_size = model->ToSheetModel()->GetSheetSize();
 
     bvector<TreePtr> attachments;
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
@@ -627,23 +644,23 @@ void Sheet::ViewController::_LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::DrawBorder(ViewContextR context) const
+void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
     {
     Render::GraphicBuilderPtr border = context.CreateGraphic();
-    RectanglePoints rect(0, 0, m_size.x, m_size.y);
+    RectanglePoints rect(0, 0, size.x, size.y);
     border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, GraphicParams::LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);
 
-    double shadowWidth = .01 * m_size.Distance(DPoint2d::FromZero());
+    double shadowWidth = .01 * size.Distance(DPoint2d::FromZero());
     double keyValues[] = {0.0, 0.5};
     ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
 
     DPoint2d points[7];
     points[0].y = points[1].y = points[6].y = 0.0;
     points[0].x = shadowWidth;
-    points[1].x = points[2].x = m_size.x;
-    points[3].x = points[4].x = m_size.x + shadowWidth;
-    points[2].y = points[3].y = m_size.y - shadowWidth;
+    points[1].x = points[2].x = size.x;
+    points[3].x = points[4].x = size.x + shadowWidth;
+    points[2].y = points[3].y = size.y - shadowWidth;
     points[4].y = points[5].y = -shadowWidth;
     points[5].x = points[6].x = shadowWidth;
 
@@ -673,7 +690,7 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     for (auto& attach : m_attachments)
         attach->Draw(context);
 
-    DrawBorder(context);
+    Sheet::Model::DrawBorder(context, m_size);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,7 +715,8 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::ViewController::FitComplete Sheet::ViewController::_ComputeFitRange(FitContextR context) 
     {
-    context.ExtendFitRange(GetSheetExtents());
+    context.ExtendFitRange(AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0.0)
+    ));
     return FitComplete::Yes;
     }
 
