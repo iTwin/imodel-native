@@ -129,6 +129,7 @@ public:
     uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
     GradientSymbCP GetGradient() const { return GetGraphicParams().GetGradientSymb(); }
     uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
+    uint32_t GetLinePixels() const { return GetGraphicParams().GetLinePixels(); }
     Render::DgnGeometryClass GetClass() const { return HasGeometryParams() ? GetGeometryParams()->GetGeometryClass() : Render::DgnGeometryClass::Primary; }
 
     DGNPLATFORM_EXPORT bool HasTexture(DgnDbR db) const;

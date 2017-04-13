@@ -218,6 +218,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
 
     TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
     TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
+    TEST_LESS_THAN(GetLinePixels(), rhs.GetLinePixels());
 
     if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
         return m_isTextured < rhs.m_isTextured;
@@ -255,6 +256,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetIgnoreLighting());
     TEST_EQUAL(GetRasterWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+    TEST_EQUAL(GetLinePixels());
 
     if ((nullptr == GetGradient()) != (nullptr == rhs.GetGradient()))
         return false;
