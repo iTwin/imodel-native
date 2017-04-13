@@ -216,14 +216,14 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     RevisionComparisonElementKeeper::PairWithState<DgnElementPtr>* elementData = NULL;
 
     // Get the override for element IDs
-    if (RevisionComparisonElementKeeper::ContainsElementId(el->GetElementId(), elementIdData))
+    if (((m_flags & SHOW_CURRENT) != 0) && RevisionComparisonElementKeeper::ContainsElementId(el->GetElementId(), elementIdData))
         {
         elementIdData->GetOverrideGraphicParams(symbologyOverrides);
         return;
         }
 
     // Get the override from the temporary elements
-    if (RevisionComparisonElementKeeper::ContainsElement(el->GetElementId(), elementData))
+    if (((m_flags & SHOW_TARGET) != 0) && RevisionComparisonElementKeeper::ContainsElement(el->GetElementId(), elementData))
         {
         elementData->GetOverrideGraphicParams(symbologyOverrides);
         return;

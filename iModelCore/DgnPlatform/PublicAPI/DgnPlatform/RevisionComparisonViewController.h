@@ -160,12 +160,27 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionComparisonViewController : SpatialViewCon
     friend struct SpatialViewDefinition;
 
 protected:
+    unsigned int        m_flags;
+
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
     void _VisitAllElements(ViewContextR context) override;
 
 public:
+    enum Flags
+        {
+        SHOW_CURRENT    = 1,
+        SHOW_TARGET     = 1 << 1,
+        SHOW_BOTH       = SHOW_CURRENT | SHOW_TARGET,
+        };
+
     void    _CreateTerrain(TerrainContextR context) override;
-    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view) : T_Super(view) { }
+
+    //! Set flags for what's shown in the comparison
+    DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }
+
+    //! Constructors
+    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view) : T_Super(view), m_flags((unsigned int)Flags::SHOW_BOTH) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view, unsigned int flags) : T_Super(view), m_flags(flags) { }
 };
 
 END_BENTLEY_DGN_NAMESPACE
