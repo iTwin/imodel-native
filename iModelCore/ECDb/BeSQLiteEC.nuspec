@@ -17,7 +17,8 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Assemblies\BeSQLiteB02.dll" target="lib\native\BeSQLiteB02.dll" />
+        <file src="Assemblies\BeSQLiteB02.dll"   target="lib\native\BeSQLiteB02.dll" />
         <file src="Assemblies\BeSQLiteECB02.dll" target="lib\native\BeSQLiteECB02.dll" />
+        <file src="ECSchemas\**\*.*"             target="Assets\" />
     </files>
 </package>
