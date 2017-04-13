@@ -277,6 +277,7 @@ void TestShortestPaths (MTGShortestPathContext::MTGGraphSearchFunctions *functio
     Check::Size(1, numRoot, "Shortest path has 1 root");
     Check::True(numUnvisited == 0, "Shortest path numUnVisited");
     Check::True(numReached >= 4, "Shortest paths numReached");
+    jmdlMTGFacets_free (facets);
     }
 
 #ifdef BuildMTGDisplayableGeometry
