@@ -5,7 +5,6 @@
 #include <curl/curl.h>
 #include <openssl/crypto.h>
 #include <locale>
-#include <codecvt>
 #include <Bentley/BeFileName.h>
 #include "include/DataSourceAccountCURL.h"
 #include "include/DataSourceCURL.h"
@@ -213,10 +212,10 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     buffer.size = size;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    std::string utf8URL = Utf8String(url);
     std::string contentLength = "Content-Length " + std::to_string(size);
     std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-    contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
+    contentDisposition += Utf8String(filename);
     contentDisposition += "\"";
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();

@@ -405,6 +405,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         size_t GetSizeOfHeaders() { return m_rawHeaders.size(); }
 
+        bool  GetWKTString(Utf8String& wkt);
+
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
         DataSourceURL GetDataURLForNode(HPMBlockID blockID);

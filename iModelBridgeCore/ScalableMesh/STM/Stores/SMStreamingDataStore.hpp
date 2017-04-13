@@ -13,7 +13,6 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
-#include <codecvt>
 #ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
 #endif
@@ -135,7 +134,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     //    }
     }
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
     : SMSQLiteSisterFile(nullptr),
       m_settings(settings)
     {
@@ -159,7 +158,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
-    //if (settings.IsLocal())
+    //if (settings->IsLocal())
     //    {
     //    // Create base directory structure to store information if not already done
     //    BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
@@ -173,7 +172,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
     }
 
-template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
     {
     DataSourceStatus                            status;
     DataSourceAccount                       *   account;
@@ -186,12 +185,12 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     std::unique_ptr<std::function<string(void)>> callback = nullptr;
     Utf8String sslCertificatePath;
 
-    if (settings.IsLocal() && settings.IsUsingCURL())
+    if (settings->IsLocal() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        BeFileName url(settings.GetURL().c_str());
-        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
+        BeFileName url(settings->GetURL().c_str());
+        if (m_settings->IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
             {
             BeFileName::CreateNewDirectory(url.c_str());
             }
@@ -202,18 +201,18 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             }
         account_prefix = DataSourceURL((L"file:///" + url).c_str());
         }
-    else if (settings.IsLocal())
+    else if (settings->IsLocal())
         {
         service_name = L"DataSourceServiceFile";
         account_name = L"LocalFileAccount";
-        account_prefix = DataSourceURL(settings.GetURL().c_str());
+        account_prefix = DataSourceURL(settings->GetURL().c_str());
         }
-    else if (!settings.IsPublic())
+    else if (!settings->IsPublic())
         {
         service_name = L"DataSourceServiceWSG";
         account_name = L"WSGAccount";
-        account_prefix = DataSourceURL(settings.GetURL().c_str());
-        account_identifier = settings.GetServerID().c_str();
+        account_prefix = DataSourceURL(settings->GetURL().c_str());
+        account_identifier = settings->GetServerID().c_str();
 
         Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
         assert(!tokenUtf8.empty());
@@ -228,24 +227,24 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
             }));
         }
-    else if (settings.IsDataFromRDS() && settings.IsUsingCURL())
+    else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
         account_name = L"AzureCURLAccount";
-        BeFileName url(settings.GetURL().c_str());
+        BeFileName url(settings->GetURL().c_str());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
-        account_prefix = DataSourceURL(settings.GetGUID().c_str());
+        account_prefix = DataSourceURL(settings->GetGUID().c_str());
         account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
-        account_identifier = settings.GetServerID().c_str();
+        account_identifier = settings->GetServerID().c_str();
         }
-    else if (settings.IsDataFromAzure() && settings.IsUsingCURL())
+    else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
         service_name = L"DataSourceServiceAzureCURL";
         account_name = L"AzureCURLAccount";
         assert(!"Not implemented...");
         }
-    else if (settings.IsDataFromAzure())
+    else if (settings->IsDataFromAzure())
         {
         // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
         assert(!"Not implemented...");
@@ -312,7 +311,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         casted_account->setUseDirectAzureCalls(s_use_qa_azure);
         }
 
-    if (!settings.IsLocal())
+    if (!settings->IsLocal())
         {
         // Setup Caching service + set up local file based caching
         DataSourceService                       *   serviceCaching;
@@ -434,7 +433,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     //    }
 
 
-    if (m_settings.IsCesium3DTiles())
+    if (m_settings->IsCesium3DTiles())
         {
         //headerSize = readSize;
         //Json::Value masterHeader;
@@ -462,6 +461,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         m_CesiumGroup->ResetNodeIDGenerator();
+        //m_CesiumGroup->Load(rootNodeBlockID);
+        //Utf8String wkt;
+        //m_CesiumGroup->GetWKTString(wkt);
+        //m_settings->SetGCSString(wkt);
         }
     else
         {
@@ -1674,7 +1677,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
         // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
         //assert(nodeGroup.IsValid());
-        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings.IsPublishing(), nodeGroup);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
         }
 
     return true;    
@@ -1736,14 +1739,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings.IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings->IsPublishing());
     return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings.IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings->IsPublishing());
     return true;
     }
 
@@ -2083,8 +2086,8 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         if (m_jsonHeader->isMember("content"))
             {
             assert((*m_jsonHeader)["content"].isMember("url"));
-            auto dataURL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes((*m_jsonHeader)["content"]["url"].asCString());
-            block->SetURL(DataSourceURL(dataURL));
+            auto dataURL = WString((*m_jsonHeader)["content"]["url"].asCString(), BentleyCharEncoding::Utf8);
+            block->SetURL(DataSourceURL(dataURL.c_str()));
             block->SetDataSourceURL(m_dataSourceURL);
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
             block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
