@@ -788,6 +788,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
+    mutable SMMemoryPoolItemId m_smMeshPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
@@ -1078,3 +1079,5 @@ void MergeTextures(bvector<uint8_t>& outTex, DPoint2d& uvBotLeft, DPoint2d&  uvT
 void RemapAllUVs(bvector<DPoint2d>& inoutUvs, DPoint2d uvBotLeft, DPoint2d uvTopRight);
 
 void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bvector<uint8_t>& texDataUnified);
+
+void ComputeAndRemoveIntersections(bvector<bvector<DPoint3d>>& polygons, bvector<uint64_t>& ids);

@@ -112,6 +112,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         bvector<IScalableMesh*> m_members;
         bvector<RegionInfo> m_regions;
 
+        IScalableMesh* m_selection;
+
         RefCountedPtr<ScalableMeshGroupDTM>  m_smGroupsDTM[DTMAnalysisType::Qty];
 
     protected:
@@ -195,10 +197,11 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
-        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
+        virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
+        virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
 
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
         virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;
@@ -220,7 +223,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {}
         virtual void _ReFilter() override {}
-
+        
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
 
         virtual Utf8String                         _GetEditFilesBasePath() override { return Utf8String(); }
@@ -246,6 +249,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void                          _RemoveFromGroup(IScalableMeshPtr& sMesh) override {}
 
+        virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override;
+        virtual void                          _ClearGroupSelection() override;
+
      public:
 
          ScalableMeshGroup();
@@ -259,6 +265,12 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
          void AddMember(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0);
 
          void RemoveMember(IScalableMeshPtr& sMesh);
+
+         void SelectMember(IScalableMesh* sMesh);
+
+         void ClearSelection();
+
+         IScalableMesh* GetSelection();
 
          static IScalableMeshPtr Create()
              {

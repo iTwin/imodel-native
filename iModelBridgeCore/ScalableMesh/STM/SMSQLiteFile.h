@@ -107,8 +107,7 @@ public:
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
-
-    void CommitAll();
+    void Save();
 
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     void SetSource();
@@ -204,9 +203,12 @@ public:
 
     virtual size_t GetClipPolygonByteCount(int64_t clipID) { assert(false); return 0; }
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID) { assert(false); return 0; }
-
+    
+    virtual void GetCoverageName(int64_t coverageID, Utf8String* name, size_t& uncompressedSize) { assert(false); }
+    virtual size_t GetCoverageNameByteCount(int64_t coverageID) { assert(false); return 0; }
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize) { assert(false); }
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID) { assert(false); return 0; }
 
     virtual void GetAllCoverageIDs(bvector<uint64_t>& ids) { assert(false); }

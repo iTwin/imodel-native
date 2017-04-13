@@ -45,7 +45,7 @@ SMSQLiteFile::~SMSQLiteFile()
     m_database = nullptr;
     }
 
-void SMSQLiteFile::CommitAll()
+void SMSQLiteFile::Save()
     {
     if (m_database != nullptr) m_database->SaveChanges();
     }
@@ -56,7 +56,6 @@ bool SMSQLiteFile::Close()
     m_database->CloseDb();
     return true;
     }
-
 
 const SchemaVersion s_listOfReleasedSchemas[4] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3) };
 const size_t s_numberOfReleasedSchemas = 4;
@@ -422,8 +421,13 @@ DbResult SMSQLiteFile::CreateTables()
     return result == BE_SQLITE_OK;
 }
 
-    bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
+bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
     {
+    BeFileName sqlFileName(filename);
+
+    if (!sqlFileName.GetDirectoryName().DoesPathExist())
+        BeFileName::CreateNewDirectory(sqlFileName.GetDirectoryName().GetWCharCP());
+
     Utf8String utf8FileName(filename);            
     return Create(utf8FileName.c_str(), type);
     }

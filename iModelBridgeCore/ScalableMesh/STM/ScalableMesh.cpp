@@ -410,7 +410,6 @@ void IScalableMesh::SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>&
     return _SetCurrentlyViewedNodes(nodes);
     }
 
-
 void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     {
     return _SetEditFilesBasePath(path);
@@ -449,9 +448,9 @@ int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDa
     return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {    
-    return _CreateCoverage(coverageData, id);
+    return _CreateCoverage(coverageData, id, coverageName);
     }
 
 BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
@@ -467,6 +466,11 @@ void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
 void IScalableMesh::GetCoverageIds(bvector<uint64_t>& ids) const
     {
     return _GetCoverageIds(ids);
+    }
+
+void IScalableMesh::GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    return _GetCoverageName(name, id);
     }
 
 BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
@@ -508,6 +512,17 @@ void IScalableMesh::AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted,
 void IScalableMesh::RemoveFromGroup(IScalableMeshPtr& sMesh)
     {
     return _RemoveFromGroup(sMesh);
+    }
+
+void IScalableMesh::SetGroupSelectionFromPoint(DPoint3d firstPoint)
+    {
+    return _SetGroupSelectionFromPoint(firstPoint);
+    }
+
+
+void  IScalableMesh::ClearGroupSelection()
+    {
+    return _ClearGroupSelection();
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -1029,7 +1044,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             
             BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
-            bool result = dataStore->SetProjectFilesPath(projectFilesPath, false);
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
                                                                  
             ClipRegistry* registry = new ClipRegistry(dataStore);
@@ -1322,7 +1337,19 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         if (val == DTM_ERROR) 
             {
             m_dtm = nullptr;
+            return nullptr;
             }
+        
+        if (!m_transformToUors.IsIdentity())
+            {
+            val = m_dtm->Transform(m_transformToUors);
+
+            if (val == DTM_ERROR)
+                {
+                m_dtm = nullptr;
+                return nullptr;
+                }            
+            }        
         }
 
     return m_dtm.get();    
@@ -1563,7 +1590,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         return DTM_ERROR;
         }
 
-    Transform totalTrans = Transform::FromProduct(m_transformToUors, *transformation);
+    Transform totalTrans = Transform::FromProduct(*transformation, m_transformToUors);
     return dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);    
     }
 
@@ -1672,7 +1699,7 @@ template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProv
 
     m_scmIndexPtr->TextureFromRaster(provider, smUnitToMeterTransform);
     m_scmIndexPtr->Store();
-    m_smSQLitePtr->CommitAll();
+    m_smSQLitePtr->Save();
     m_scmIndexPtr = 0;
     Open();
     }
@@ -1999,7 +2026,9 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
         delete[] flippedPts;
         return clipId;
         }
-    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
+    uint64_t id = m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
+    SaveEditFiles();
+    return id;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2037,6 +2066,9 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
             m_terrainP->AddClip(targetPts, ptsSize, clipID);
             }*/
         }
+
+    SaveEditFiles();
+
     return true;
     }
 
@@ -2062,6 +2094,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+    SaveEditFiles();
     return true;
     }
 
@@ -2090,8 +2123,10 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
-    return true;
+    
+    SaveEditFiles();    
 
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2114,6 +2149,9 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+        
+    SaveEditFiles();        
+
     return true;
     }
 
@@ -2128,6 +2166,9 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
+    
+    SaveEditFiles();
+    
     return true;
     }
 
@@ -2142,7 +2183,9 @@ template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
-    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;    
+    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;        
+    
+    SaveEditFiles();
     }
 
 template <class POINT>  bool   ScalableMesh<POINT>::_ShouldInvertClips()
@@ -2159,6 +2202,8 @@ template <class POINT> void ScalableMesh<POINT>::_ModifyClipMetadata(uint64_t cl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetClipMetadata(clipId, importance, nDimensions);
+    
+    SaveEditFiles();
     }
 
 
@@ -2250,6 +2295,9 @@ template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector
             m_terrainP->AddSkirt(skirt, clipID);
             }*/
         }
+
+    SaveEditFiles();
+
     return true;
     }
 
@@ -2277,6 +2325,9 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvec
     for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false);
+    
+    SaveEditFiles();
+    
     return true;
     }
 
@@ -2290,6 +2341,8 @@ template <class POINT>  void                         ScalableMesh<POINT>::_SetCl
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetClipOnOrOff(id, isActive);
+    
+    SaveEditFiles();
     }
 
 template <class POINT>  void                       ScalableMesh<POINT>::_GetIsClipActive(uint64_t id, bool& isActive)
@@ -2312,6 +2365,18 @@ template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvecto
 template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes)
     {
     m_viewedNodes = nodes;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
+    {        
+    assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+    if (m_scmIndexPtr->m_isInsertingClips == true)
+        return;
+
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+
+    m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
@@ -2349,11 +2414,11 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
         swprintf(idStr, L"%zu", id);
                     
         //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
-        fileName.clear();
-        fileName = BeFileName(m_baseExtraFilesPath);
-        fileName.AppendString(L"_terrain_");
-        fileName.AppendString(idStr);
-        fileName.AppendString(L".3sm");
+        fileName.clear();   
+        Utf8String coverageName; 
+        GetCoverageName(coverageName, id);
+     
+        GetCoverageTerrainAbsFileName(fileName, m_baseExtraFilesPath, coverageName);
         extraFileNames.push_back(fileName);        
         }    
     }
@@ -2412,6 +2477,7 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false);
+    SaveEditFiles();
     return true;
     }
 
@@ -2589,12 +2655,15 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
-    {
-    WString newPath = m_baseExtraFilesPath + L"_terrain_";
-    newPath.append(std::to_wstring(id).c_str());
-    newPath.append(L".3sm");
-     
+    {    
+    BeFileName terrainAbsName;
 
+    Utf8String coverageName(createdTerrain);
+
+    GetCoverageTerrainAbsFileName(terrainAbsName, m_baseExtraFilesPath, coverageName);
+
+    assert(!terrainAbsName.DoesPathExist());
+          
 #ifndef VANCOUVER_API
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {
@@ -2606,7 +2675,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         int result = _wremove(newPath.c_str());
         assert(result == 0);
         */
-        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));
+        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
 
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
@@ -2614,12 +2683,13 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
         assert(status == SUCCESS);
-
+/*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
+*/
 
         StatusInt openStatus;
-        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(terrainAbsName, false, openStatus));
         if (openStatus && smSQLiteFile != nullptr)
             {
  /*           m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
@@ -2629,14 +2699,14 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         }
 #endif
 
-    createdTerrain = BeFileName(newPath.c_str());
+    createdTerrain = terrainAbsName;
     return SUCCESS;
     }
 
 
 static bool s_doGroundExtract = true; 
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id)
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {
    // if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
@@ -2645,9 +2715,11 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const
    // _AddSkirt(skirts, id, false);
 
 /*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
-    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
+    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size(), coverageName);
 
     //m_terrainP->AddClip(coverageData.data(), coverageData.size(), id);
+
+    SaveEditFiles();
     return SUCCESS;
     }
 
@@ -2662,10 +2734,17 @@ template <class POINT> void ScalableMesh<POINT>::_GetCoverageIds(bvector<uint64_
     m_scmIndexPtr->GetClipRegistry()->GetAllCoverageIds(ids);
     }
 
+template <class POINT> void ScalableMesh<POINT>::_GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    if (nullptr == m_scmIndexPtr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetCoverageName(id, name);    
+    }
+
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64_t id)
     {
     m_scmIndexPtr->GetClipRegistry()->DeleteCoverage(id);
     _RemoveClip(id);
+    SaveEditFiles();
     return SUCCESS;
     }
 
@@ -2847,7 +2926,6 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     {
     return false;
     }
-
 
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBreaklineCount() const
     {

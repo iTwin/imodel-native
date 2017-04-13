@@ -245,6 +245,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         bool                            IsEmpty                        () const;
 
+        void                            SaveEditFiles();
+
     protected : 
 
         HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> GetRootNode();                    
@@ -328,10 +330,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
-        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
+        virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
+        virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;        
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -342,6 +345,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
 
         virtual void                          _RemoveFromGroup(IScalableMeshPtr& sMesh) override;
+
+        virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override {}
+        virtual void                          _ClearGroupSelection() override {}
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override;
@@ -352,7 +358,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override;
         virtual void _ReFilter() override;
-
+        
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
         virtual Utf8String                         _GetEditFilesBasePath() override;
@@ -529,12 +535,13 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ERROR;
             }
 
-        virtual BentleyStatus                   _CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
+        virtual BentleyStatus                   _CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override { return ERROR; };
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override {};
-        virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };
+        virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };        
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override { assert(false); };
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
-        virtual Utf8String                               _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
+        virtual Utf8String                         _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
             assert(false);
@@ -553,6 +560,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
 
         virtual void                          _RemoveFromGroup(IScalableMeshPtr& sMesh) override {}
+
+        virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override {}
+        virtual void                          _ClearGroupSelection() override{}
 
 #ifdef WIP_MESH_IMPORT
         virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override

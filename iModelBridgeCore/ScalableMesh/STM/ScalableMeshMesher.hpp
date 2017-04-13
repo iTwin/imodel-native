@@ -1982,7 +1982,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         fileName2.append("_stats_after_stitch.txt");
         LOG_STATS_FOR_NODE(fileName2, node)
 #endif
-        delete[] newNodePointData;
+         delete[] newNodePointData;
             }
     
     return true;

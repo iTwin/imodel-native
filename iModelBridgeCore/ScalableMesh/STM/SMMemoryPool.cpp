@@ -253,6 +253,27 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDat
     return false;
     }
 
+uint64_t SMMemoryPool::RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t smId)
+    {
+    uint64_t nRemoved = 0;
+    for (size_t binIndToDelete = 0; binIndToDelete < m_nbBins; binIndToDelete++)
+        {
+        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
+            {
+            std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
+
+            if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1 && m_memPoolItems[binIndToDelete][itemIndToDelete]->IsCorrect(m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), dataType, smId))
+                {
+                m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();
+
+                    m_memPoolItems[binIndToDelete][itemIndToDelete] = 0;
+                    nRemoved++;
+                }
+            }
+        }
+    return nRemoved;
+    }
+
 void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
@@ -260,7 +281,7 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
 
     size_t binId = id / s_binSize;
     size_t itemId = id % s_binSize;
-    assert(binId < m_nbBins);
+    assert(binId < m_nbBins); 
 
     std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
@@ -268,7 +289,9 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType,smId))
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();
-        memItemPtr = 0;
+        //Ensure the replaced item is not saved to file.
+        memItemPtr->SetDirty(false);
+        memItemPtr = 0;        
         m_memPoolItems[binId][itemId] = poolItem;
         m_currentPoolSizeInBytes += m_memPoolItems[binId][itemId]->GetSize();
         m_lastAccessTime[binId][itemId] = clock();

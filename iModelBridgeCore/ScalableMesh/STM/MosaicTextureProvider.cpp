@@ -143,4 +143,5 @@ MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)
     {
     HGF2DExtent maxExt;
     m_targetMosaic->GetPixelSizeRange(m_minExt, maxExt);
+    m_minExt.ChangeCoordSys(mosaic->GetCoordSys());
     }
