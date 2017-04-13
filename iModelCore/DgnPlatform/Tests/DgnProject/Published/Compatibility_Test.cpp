@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <DgnPlatform/FunctionalDomain.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -34,6 +35,10 @@ struct CompatibilityTests : public DgnDbTestFixture
     static Utf8String GetDrawingGraphicName(int index) {return Utf8PrintfString(BIS_CLASS_DrawingGraphic "%" PRIi32, index);}
     static Utf8String GetSheetName(int index) {return Utf8PrintfString(BIS_CLASS_Sheet "%" PRIi32, index);}
     static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
+
+    static void SetUpTestCase();
+    void SetUpFromBaselineCopy(BeFileNameCR, Utf8CP, DbResult);
+    void ImportFunctionalSchema();
 
     BE_JSON_NAME(inserted);
     BE_JSON_NAME(updated);
@@ -74,8 +79,6 @@ struct CompatibilityTests : public DgnDbTestFixture
     PhysicalModelPtr GetPhysicalModel(SubjectCR);
     DocumentListModelPtr GetDocumentListModel(SubjectCR);
     DefinitionModelPtr GetDefinitionModel(SubjectCR);
-
-    void SetupFromBaselineCopy(BeFileNameCR, Utf8CP, DbResult);
 };
 
 //---------------------------------------------------------------------------------------
@@ -85,6 +88,7 @@ struct CompatibilityTests : public DgnDbTestFixture
 TEST_F(CompatibilityTests, CompatibilityTestSeed)
     {
     SetupSeedProject();
+    ImportFunctionalSchema();
     InsertSpatialCategory();
     InsertDrawingCategory();
 
@@ -118,7 +122,7 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 //---------------------------------------------------------------------------------------
 TEST_F(CompatibilityTests, DISABLED_ModifyBaseline_1_0_0)
     {
-    SetupFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaImportRequired);
+    SetUpFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaImportRequired);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -708,10 +712,30 @@ DocumentListModelPtr CompatibilityTests::GetDocumentListModel(SubjectCR subject)
     return model;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::SetupFromBaselineCopy(BeFileNameCR sourceFileName, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
+void CompatibilityTests::ImportFunctionalSchema()
+    {
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    ASSERT_EQ(BE_SQLITE_OK, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::SetUpTestCase()
+    {
+    ScopedDgnHost host;
+    DgnPlatformSeedManager::SeedDbOptions seedDbOptions(false, false); // don't want the DgnPlatformTest schema to be part of the compatibility test
+    DgnDbTestFixture::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, seedDbOptions); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    04/2017
+//---------------------------------------------------------------------------------------
+void CompatibilityTests::SetUpFromBaselineCopy(BeFileNameCR sourceFileName, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
     {
     BeFileName destFileName;
     BeTest::GetHost().GetOutputRoot(destFileName);
