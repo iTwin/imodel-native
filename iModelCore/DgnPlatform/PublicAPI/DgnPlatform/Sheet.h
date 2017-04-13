@@ -70,11 +70,12 @@ public:
     explicit Element(CreateParams const& params) : T_Super(params) {}
 
     //! Create a DgnCode for a Sheet in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8StringCR name);
 
     //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    //! @private
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
 
     //! Creates a new Sheet in the specified InformationModel
@@ -83,7 +84,7 @@ public:
     //! @param[in] size The sheet size (meters)
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name);
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8StringCR name);
 
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
@@ -91,7 +92,7 @@ public:
     //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8StringCR name);
 
     //! Get the drawing scale of the sheet
     double GetScale() const {return GetPropertyValueDouble(prop_Scale());}

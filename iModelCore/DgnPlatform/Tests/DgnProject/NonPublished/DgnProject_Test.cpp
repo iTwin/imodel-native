@@ -768,7 +768,7 @@ TEST_F(ElementUriTests, Test1)
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
     ASSERT_TRUE(db.IsValid());
 
-    DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+    DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
     DgnModelId mid = db->Models().QuerySubModelId(physicalPartitionCode);
     DgnCategoryId catId = DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName));
 

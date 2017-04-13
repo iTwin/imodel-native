@@ -75,13 +75,14 @@ struct CompatibilityTests : public DgnDbTestFixture
     DocumentListModelPtr GetDocumentListModel(SubjectCR);
     DefinitionModelPtr GetDefinitionModel(SubjectCR);
 
-    void SetupFromOtherBranch(Utf8CP);
+    void SetupFromBaselineCopy(BeFileNameCR, Utf8CP, DbResult);
 };
 
 //---------------------------------------------------------------------------------------
+// NOTE: This unit test produces "CompatibilityTestSeed.bim" which is saved in the "CompatibilityTestFiles" product by each build and used for cross version/stream compatibility testing.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, Seed)
+TEST_F(CompatibilityTests, CompatibilityTestSeed)
     {
     SetupSeedProject();
     InsertSpatialCategory();
@@ -94,9 +95,10 @@ TEST_F(CompatibilityTests, Seed)
     }
 
 //---------------------------------------------------------------------------------------
+// This unit test ensures that the "Modify" and "Insert" tests work with a matching combination of DgnPlatform and DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, Modify)
+TEST_F(CompatibilityTests, ModifyCurrent)
     {
     SetupSeedProject();
     InsertSpatialCategory();
@@ -111,11 +113,12 @@ TEST_F(CompatibilityTests, Modify)
     }
 
 //---------------------------------------------------------------------------------------
+// This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, Update)
+TEST_F(CompatibilityTests, DISABLED_ModifyBaseline_1_0_0)
     {
-    SetupFromOtherBranch("BranchName");
+    SetupFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaImportRequired);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -129,7 +132,7 @@ TEST_F(CompatibilityTests, Update)
 //---------------------------------------------------------------------------------------
 void CompatibilityTests::InsertHierarchy(SubjectCR parentSubject, int subjectNumber)
     {
-    SubjectCPtr subject = Subject::CreateAndInsert(parentSubject, GetSubjectName(subjectNumber).c_str());
+    SubjectCPtr subject = Subject::CreateAndInsert(parentSubject, GetSubjectName(subjectNumber));
     ASSERT_TRUE(subject.IsValid());
 
     InsertPhysicalHierarchy(*subject);
@@ -143,7 +146,7 @@ void CompatibilityTests::InsertHierarchy(SubjectCR parentSubject, int subjectNum
 void CompatibilityTests::ModifyHierarchy(SubjectCR parentSubject, int subjectNumber)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode subjectCode = Subject::CreateCode(parentSubject, GetSubjectName(subjectNumber).c_str());
+    DgnCode subjectCode = Subject::CreateCode(parentSubject, GetSubjectName(subjectNumber));
     DgnElementId subjectId = db.Elements().QueryElementIdByCode(subjectCode);
     SubjectCPtr subject = db.Elements().Get<Subject>(subjectId);
     ASSERT_TRUE(subject.IsValid());
@@ -224,7 +227,7 @@ void CompatibilityTests::InsertDefinitionHierarchy(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 CategorySelectorPtr CompatibilityTests::InsertCategorySelector(DefinitionModelR model, DgnCategoryId categoryId, int index)
     {
-    CategorySelectorPtr categorySelector = new CategorySelector(model, GetCategorySelectorName(index).c_str());
+    CategorySelectorPtr categorySelector = new CategorySelector(model, GetCategorySelectorName(index));
     categorySelector->AddCategory(categoryId);
     categorySelector->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
     return categorySelector->Insert().IsValid() ? categorySelector : nullptr;
@@ -530,7 +533,7 @@ void CompatibilityTests::InsertDocumentHierarchy(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 DrawingPtr CompatibilityTests::InsertDrawing(DocumentListModelR model, int index)
     {
-    DrawingPtr drawing = Drawing::Create(model, GetDrawingName(index).c_str());
+    DrawingPtr drawing = Drawing::Create(model, GetDrawingName(index));
     drawing->SetUserProperties(json_inserted(), DateTime::GetCurrentTime().ToString());
     if (!drawing->Insert().IsValid())
         return nullptr;
@@ -669,9 +672,14 @@ void CompatibilityTests::ModifySubModel(DgnDbR db, DgnElementId elementId)
     {
     DgnElementPtr element = db.Elements().GetForEdit<DgnElement>(elementId);
     ASSERT_TRUE(element.IsValid());
-    GeometricModelPtr subModel = element->GetSub<GeometricModel>();
+    GraphicalModel2dPtr subModel = element->GetSub<GraphicalModel2d>();
     ASSERT_TRUE(subModel.IsValid());
     ModifyGeometricElements(*subModel, BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+
+    Utf8String whereClause = BuildWhereModelIdEquals(subModel->GetModelId());
+    ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), whereClause.c_str()).BuildIdList<DgnElementId>().size());
+    InsertDrawingGraphic(*subModel, GetDrawingCategoryId(), 3);
+    ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), whereClause.c_str()).BuildIdList<DgnElementId>().size());
     }
 
 //---------------------------------------------------------------------------------------
@@ -703,29 +711,30 @@ DocumentListModelPtr CompatibilityTests::GetDocumentListModel(SubjectCR subject)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::SetupFromOtherBranch(Utf8CP branchName)
+void CompatibilityTests::SetupFromBaselineCopy(BeFileNameCR sourceFileName, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
     {
-    BeFileName testFixtureName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8);
-    BeFileName testFileName(branchName, BentleyCharEncoding::Utf8);
-
-    BeFileName sourceFileName;
-    BeTest::GetHost().GetOutputRoot(sourceFileName);
-    sourceFileName.AppendToPath(testFixtureName);
-    sourceFileName.AppendToPath(L"Seed.bim");
-    ASSERT_TRUE(sourceFileName.DoesPathExist());
-
     BeFileName destFileName;
     BeTest::GetHost().GetOutputRoot(destFileName);
-    destFileName.AppendToPath(testFixtureName);
-    destFileName.AppendToPath(testFileName);
+    destFileName.AppendToPath(BeFileName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8));
+    destFileName.AppendToPath(BeFileName(destBaseName, BentleyCharEncoding::Utf8));
     destFileName.AppendExtension(L"bim");
     ASSERT_FALSE(destFileName.DoesPathExist());
+    ASSERT_TRUE(sourceFileName.DoesPathExist());
 
     BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceFileName, destFileName, true /*failIfFileExists*/);
     ASSERT_EQ(BeFileNameStatus::Success, copyStatus);
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+
+    if (BE_SQLITE_OK != expectedFirstOpenStatus)
+        {
+        m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+        ASSERT_EQ(expectedFirstOpenStatus, openStatus);
+        ASSERT_FALSE(m_db.IsValid());
+        openParams.SetEnableSchemaImport(DgnDb::OpenParams::EnableSchemaImport::Yes);
+        }
+
     m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(m_db.IsValid());
