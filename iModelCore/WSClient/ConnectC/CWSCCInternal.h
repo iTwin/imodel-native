@@ -11,10 +11,10 @@
 #include "CWSCCPrivate.h"
 #include "CWSCCBuffer.h"
 #include "CWSCCBufferGen.h"
+#include "Logging.h"
 #include "ConnectWsgGlobal/GlobalSchemaBufferGen.h"
 #include "IMSSearch/IMSSearchBuffer.h"
 #include "ConnectWsgProjectShare/ProjectShareBufferGen.h"
-
 #include <WebServices/ConnectC/CWSCCPublic.h>
 #include <WebServices/ConnectC/CWSCCBufferPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
