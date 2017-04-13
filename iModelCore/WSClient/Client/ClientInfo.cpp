@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/ClientInfo.h>
+#include "Device/Device.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -15,6 +16,41 @@ Utf8CP ClientInfo::DefaultLanguage = "en";
 #define HEADER_MasUuid      "Mas-Uuid"
 #define HEADER_MasAppGuid   "Mas-App-Guid"
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientInfoPtr ClientInfo::Create
+(
+Utf8String applicationName,
+BeVersion applicationVersion,
+Utf8String applicationGUID,
+Utf8String applicationProductId,
+IHttpHeaderProviderPtr primaryHeaderProvider
+)
+    {
+    Utf8String deviceId = Device::GetDeviceId();
+
+    Utf8String model = Device::GetModelName();
+    if (!model.empty())
+        {
+        model += "; ";
+        }
+
+    Utf8PrintfString systemDescription("%s%s %s",
+        model.c_str(),
+        Device::GetOSName().c_str(),
+        Device::GetOSVersion().c_str());
+
+    return std::shared_ptr<ClientInfo>(new ClientInfo(
+        applicationName,
+        applicationVersion,
+        applicationGUID,
+        deviceId,
+        systemDescription,
+        applicationProductId,
+        primaryHeaderProvider
+        ));
+    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -225,3 +261,15 @@ void ClientInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
         headers.SetValue(pair.first, pair.second);
         }
     }
+
+#if defined (__ANDROID__)
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                   Robert.Priest 06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientInfo::CacheAndroidDeviceId(UTF8String deviceId)
+    {
+    Device::CacheAndroidDeviceId(deviceId);
+    }
+
+#endif

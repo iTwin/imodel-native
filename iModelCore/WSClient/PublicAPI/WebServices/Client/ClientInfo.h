@@ -44,6 +44,26 @@ struct ClientInfo : public IHttpHeaderProvider
         Utf8String GetUserAgent() const;
 
     public:
+        //! Create client info with mandatory fields and initialize other required fields automatically.
+        //! More info at WSClient wiki page.
+        //! There should be one ClientInfo created per application and shared to code that connects to web services.
+        //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
+        //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
+        //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
+        //! @param[in] applicationProductId - registered 4-digit application product ID (e.g. "1234") used for IMS sign-in [optional otherwise]
+        //! Given product ID is used for sign-in relying-party URI that is "sso://wsfed_desktop/1234" for Windows builds and 
+        //! "sso://wsfed_mobile/1234" for iOS/Android builds. Both RPs need to be registered to IMS DEV/QA/PROD environments so 
+        //! that your application would be allowed to sign-in by IMS.
+        //! @param[in] primaryHeaderProvider - [optional] provide additional headers
+        WSCLIENT_EXPORT static ClientInfoPtr Create
+            (
+            Utf8String applicationName,
+            BeVersion applicationVersion,
+            Utf8String applicationGUID,
+            Utf8String applicationProductId = nullptr,
+            IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
+            );
+
         //! Consider using ClientInfo::Create() instead. Create client info with custom values, only useful for testing.
         //! More info at WSClient wiki page.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
@@ -96,6 +116,12 @@ struct ClientInfo : public IHttpHeaderProvider
 
         //! Fill required headers using ClientInfo values
         WSCLIENT_EXPORT virtual void FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const override;
+
+#if defined (__ANDROID__)
+
+        WCLIENT_EXPORT void CacheAndroidDeviceId(UTF8String deviceId);
+
+#endif
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
