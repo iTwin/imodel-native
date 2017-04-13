@@ -319,6 +319,11 @@ UnitCP Unit::DivideUnit(UnitCR rhs) const
     return CombineWithUnit(rhs, -1);
     }
 
+bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
+    {
+    return nullptr == unitA || nullptr == unitB ? false : Phenomenon::AreEqual(unitA->GetPhenomenon(), unitB->GetPhenomenon());
+    }
+
 Utf8String Phenomenon::GetPhenomenonSignature() const
     {
     Expression phenomenonExpression = Evaluate();
