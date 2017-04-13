@@ -1871,6 +1871,7 @@ TEST(CurvePrimitive,IntersectLineStringRange)
         auto cpB = ICurvePrimitive::CreateBsplineCurve (bCurve);
         cpB->ICurvePrimitive::AppendCurveRangeIntersections (localRange, intervalsB);
         Check::Size (intervals.size (), intervalsB.size (), "bcurve intersection");
+        bCurve.ReleaseMem ();
         }
     }
 
