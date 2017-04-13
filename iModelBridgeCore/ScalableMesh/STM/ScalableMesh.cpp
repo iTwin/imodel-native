@@ -2807,7 +2807,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     //s_stream_from_grouped_store = false;
 
     //return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
-    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, true);
+    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)

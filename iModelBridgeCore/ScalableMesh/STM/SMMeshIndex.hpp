@@ -440,7 +440,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
 
 extern std::mutex s_createdNodeMutex;
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS)
     {
     assert(pi_pDataStore != nullptr);
 
@@ -449,11 +449,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     static std::atomic<uint64_t> convertTime = 0;
     static std::atomic<uint64_t> storeTime = 0;
 
+
     if (!IsLoaded())
         Load();
 
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
-    static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
+    static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore, sourceGCS, destinationGCS](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
 #ifndef VANCOUVER_API
             // Gather all data in one place
@@ -474,7 +475,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
 
             IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
             bvector<Byte> cesiumData;
-            cesiumPublisher->Publish(nodeP, Transform::FromIdentity(), cesiumData);
+            cesiumPublisher->Publish(nodeP, sourceGCS, destinationGCS, cesiumData);
+
 
             convertTime += clock() - t;
 
@@ -529,7 +531,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore);
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
         //this->m_pSubNodeNoSplit = nullptr;
@@ -540,7 +542,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             {
             if (this->m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore);
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
                 loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
                 //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 //this->m_apSubNodes[indexNode] = nullptr;
@@ -5018,7 +5020,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 /**----------------------------------------------------------------------------
 Publish Cesium ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS)
     {
     typedef SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -5037,8 +5039,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 
     //this->SaveMasterHeaderToCloud(pDataStore);
     // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
+    static GeoCoordinates::BaseGCSPtr destinationGCS = GeoCoordinates::BaseGCS::CreateGCS(L"ll84");
 
-    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore);
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, sourceGCS, destinationGCS);
     GetRootNode()->Unload();
 
     SMIndexMasterHeader<EXTENT> oldMasterHeader;
@@ -5060,7 +5063,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     auto strategy = group->GetStrategy<EXTENT>();
 
     strategy->SetOldMasterHeader(oldMasterHeader);
-
+    strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     GetRootNode()->SaveGroupedNodeHeaders(group);
 
     // Handle all open groups 
