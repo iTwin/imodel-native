@@ -572,6 +572,58 @@ TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
     }
 
+TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReferencedSchema)
+    {
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
+    ECCustomAttributeClassP caClass;
+    refSchema->CreateCustomAttributeClass(caClass, "CA");
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "Entity");
+
+    ECSchemaPtr refSchemaCopy;
+    refSchema->CopySchema(refSchemaCopy);
+    schema->AddReferencedSchema(*refSchemaCopy);
+
+    IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ecClass->SetCustomAttribute(*caInstance);
+
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "Failed to find the RefSchema when a copy was added as a reference";
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchemaCopy)) << "Failed to find the RefSchema copy that was added as a reference";
+
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should have found CA which uses refSchema";
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchemaCopy)) << "Should have found CA which uses refSchema even though we passed in the copy";
+
+    ASSERT_EQ(0, schema->RemoveUnusedSchemaReferences()) << "Should not have removed any referenced schemas";
+    }
+
+TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType)
+    {
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
+    ECStructClassP structClass;
+    refSchema->CreateStructClass(structClass, "Struct");
+
+    ECSchemaPtr unusedRefSchema;
+    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "URS", 1, 2, 3);
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
+    schema->AddReferencedSchema(*refSchema);
+    schema->AddReferencedSchema(*unusedRefSchema);
+
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "Class");
+    StructECPropertyP structProp;
+    ecClass->CreateStructProperty(structProp, "SProp", *structClass);
+
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should not have been able to remove RefSchema because it is used";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Should have been able to remove UnusedRefSchema because it is not used";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
