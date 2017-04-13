@@ -420,6 +420,43 @@ void ClassMapColumnFactory::Debug() const
     printf("%s\n", sql.ToString());
     }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04 / 2017
+//------------------------------------------------------------------------------------------
+//static 
+int ClassMapColumnFactory::MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty)
+    {
+    int columnsRequired = 0;
+    if (ecProperty.GetIsNavigation())
+        {
+        columnsRequired = 2;
+        }
+    else if (PrimitiveECPropertyCP primitive = ecProperty.GetAsPrimitiveProperty())
+        {
+        if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
+            columnsRequired = 3;
+        else if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
+            columnsRequired = 2;
+        else
+            columnsRequired = 1;
+        }
+    else if (ecProperty.GetIsArray())
+        {
+        columnsRequired = 1;
+        }
+    else if (StructECPropertyCP structProperty = ecProperty.GetAsStructProperty())
+        {
+        for (ECN::ECPropertyCP prop : structProperty->GetType().GetProperties(true))
+            columnsRequired += MaxColumnsRequiredToPersistAProperty(*prop);
+        }
+    else
+        {
+        columnsRequired = std::numeric_limits<int>().max();
+        BeAssert(false && "Unknow type of ECProperty");
+        }
+
+    return columnsRequired;
+    }
 //**************************ClassMapColumnFactory::UsedColumnFinder*************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
