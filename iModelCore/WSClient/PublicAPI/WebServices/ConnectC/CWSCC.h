@@ -149,9 +149,6 @@ To many unsuccessful login attempts have happened.
 #define ERROR403                                 403
 #define ERROR401                                 401
 #define ERROR400                                 400
-#ifndef ERROR_ALREADY_EXISTS
-    #define ERROR_ALREADY_EXISTS                 183
-#endif
 #define SUCCESS                                  0
 #define INVALID_PARAMETER                        -100
 #define PROPERTY_HAS_NOT_BEEN_SET                -101
@@ -169,7 +166,7 @@ To many unsuccessful login attempts have happened.
 #define NO_SERVER_LICENSE                        -213
 #define NO_CLIENT_LICENSE                        -214
 #define TO_MANY_BAD_LOGIN_ATTEMPTS               -215
-
+#define INSTANCE_ALREADY_EXISTS                  -216
 /**
 * \brief Call status code. See \ref ConnectWebServicesClientCStatusCodes
 */
