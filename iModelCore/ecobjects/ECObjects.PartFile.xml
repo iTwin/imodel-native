@@ -329,7 +329,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*" PrgOutputDir="AllBisSchemas">
+    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="SchemaValidatorExe">
