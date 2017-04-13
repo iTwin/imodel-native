@@ -256,7 +256,7 @@ WCharCP projectGuid
     CallStatus status = ConnectWebServicesClientC_ReadFolder(api, projectGuid, &folderBuffer);
     if (status == SUCCESS && folderBuffer != nullptr)
         {
-        return ERROR_ALREADY_EXISTS;
+        return INSTANCE_ALREADY_EXISTS;
         }
 
     Json::Value instance;
@@ -519,10 +519,8 @@ void* securityStoreInitializer
     //  we will follow suit here. We need to supply something on connect calls.
     // NOTE: there looks like there is code on the interwebs to retrieve the IMEI\MEID from an android phone.
     // That should replace this dummy value at some point.
-    if (DgnClientFx::Device::GetDeviceId().empty())
-    {
-        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
-    }
+    ClientInfo::CacheAndroidDeviceId("TEST_DEVICE_ID");
+    
 #endif
 
 
