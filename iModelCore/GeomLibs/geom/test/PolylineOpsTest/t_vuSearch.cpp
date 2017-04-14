@@ -309,6 +309,7 @@ TEST(Vu, MaskOps)
     VuP node0;
     AddTestGraph00(graph, node0);
     ExerciseGraphMaskMethods(graph, VU_SEAM_EDGE);
+    vu_freeVuSet (graph);
     }
 
 void TestShortestPaths (ShortestPathContext::SearchFunctions *functions)

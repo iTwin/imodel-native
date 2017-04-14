@@ -1435,7 +1435,7 @@ ICurvePrimitivePtr ICurvePrimitive::CloneAsBspline (double fraction0, double fra
     {
     MSBsplineCurve bcurve;
     if (GetMSBsplineCurve (bcurve))
-        return ICurvePrimitive::CreateBsplineCurve (bcurve);
+        return ICurvePrimitive::CreateBsplineCurveSwapFromSource (bcurve);
     return nullptr;
     }
 

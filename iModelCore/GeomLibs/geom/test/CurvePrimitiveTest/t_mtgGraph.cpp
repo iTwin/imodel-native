@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_mtgGraph.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -216,6 +216,7 @@ void CheckGrid (size_t numX, size_t numY)
             Check::Size (4, graph->CountNodesAroundFace (lowerLeftOfQuad), "Quad in Grid");
             }
         }
+    delete graph;
     }
 
 TEST(MTG,Grid11)
