@@ -255,7 +255,9 @@ private:
             if (status == S_SUCCESS)
                 {             
                 double metersToFileUnit = gcsPtr->UnitsFromMeters();
-
+                
+                //OpenRoad ConceptStation might create LandXML with unit different then the GCS unit for backcompatibility with PowerInroads SS2, 
+                //thus the local unit transform.
                 if (fileUnitToMetersFound && fabs(1 / metersToFileUnit - fileUnitToMeters) > FILE_MINUS_GCS_UNIT_DIFF_PRECISION)
                     {                                                                         
                     double localToGlobalTransformScale = fileUnitToMeters * metersToFileUnit;
