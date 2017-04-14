@@ -998,9 +998,4 @@ public:
     static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state
 };
 
-//__PUBLISH_SECTION_END__
-// Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
-#define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
-/*__PUBLISH_SECTION_START__*/
-
 END_BENTLEY_DGN_NAMESPACE

@@ -27,7 +27,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 20);} // we never expect to have more than 50 or so
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 50);} // we never expect to have more than 50 or so
     void Clear() {m_graphics.clear();}
     bool IsEmpty() const {return m_graphics.empty();}
 };
@@ -144,7 +144,7 @@ private:
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
 
-    void ComputeGcsAndGOadjustment();
+    void ComputeGcsAdjustment();
 
 protected:
     DGNPLATFORM_EXPORT virtual CodeSpecId _RemapCodeSpecId(CodeSpecId sourceId);
@@ -477,7 +477,7 @@ public:
 * <h2>The Central role of _CopyFrom</h2>
 *
 * _Clone, _CloneForImport, and CopyForEdit all call _CopyFrom to do one specific part of the copying work: copying the member variables. 
-* _CopyFrom must make a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
+* _CopyFrom must make a straight, faithful copy of the C++ element struct's member variables only. It must be quick. 
 * It should not load data from the Db. 
 *
 * Note that the _CopyFrom method copies <em>only</em> member variables. It must not try to read from the Db. 
@@ -539,7 +539,7 @@ public:
 * New or updated auto-handled properties are automatically written to the database when the element is inserted or updated.
 *
 * <h4>Validating Auto-Handled Properties</h4>
-* The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
+* The domain schema can specify some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
 * _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
@@ -912,7 +912,7 @@ public:
         //! Prepare to update an aspect for the specified element
         //! @param el The host element
         //! @param properties  holds the properties that are to be set on the aspect
-        //! @param id  The ID of the particular multiaspect that should be udpated
+        //! @param id  The ID of the particular multiaspect that should be updated
         //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
         //! @return non-zero error status if the specified aspect is not found or cannot be set
         DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId id);
@@ -1171,7 +1171,7 @@ protected:
     //! Called to bind the element's custom-handled property values to the ECSqlStatement when inserting
     //! a new element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
     //! @param[in] statement A statement that has been prepared for either Insert or Update of your class' CustomHandledProperties
-    //! @param[in] forInsert Indicates whether the statemeent is an insert or update statement
+    //! @param[in] forInsert Indicates whether the statement is an insert or update statement
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
     //! Then you @em must call T_Super::_BindWriteParams,
@@ -1407,7 +1407,7 @@ protected:
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
     //! Provide a description of this element to display in the "info balloon" that appears when the element is under the cursor.
-    //! @param[in] delimiter Put this string to break lines of the desciption.
+    //! @param[in] delimiter Put this string to break lines of the description.
     //! @return The information to display in the info balloon.
     //! @note If you override this method, you may decide whether to call your superclass' implementation or not (it is not required).
     //! The default implementation shows display label, category and model.
@@ -1994,12 +1994,14 @@ public:
 
     //! Get the origin of this Placement2d.
     DPoint2dCR GetOrigin() const {return m_origin;}
+    void SetOrigin(DPoint2dCR origin) {m_origin=origin;}
 
     //! Get a writable reference to the origin of this Placement2d.
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the angle of this Placement2d
     AngleInDegrees GetAngle() const {return m_angle;}
+    void SetAngle(AngleInDegrees const& angle) {m_angle=angle;}
 
     //! Get a writable reference to the angle of this Placement2d.
     AngleInDegrees& GetAngleR() {return m_angle;}
@@ -3203,7 +3205,7 @@ protected:
 //! Abstract base class for roles played by other (typically physical) elements.
 //! For example:
 //! - <i>Lawyer</i> and <i>employee</i> are potential roles of a person
-//! - <i>Asset</i> and <i>safey hazard</i> are potential roles of a PhysicalElement
+//! - <i>Asset</i> and <i>safety hazard</i> are potential roles of a PhysicalElement
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
@@ -3348,7 +3350,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByURI(Utf8CP uri) const;
 
     //! @private Allow Navigator to create a URI that can be stored outside of the Db and resolved later.
-    //! @praam[out] uriStr  The encoded URI
+    //! @param[out] uriStr  The encoded URI
     //! @param[in] el       The element that is to be the target of the URI
     //! @param[in] fallBackOnV8Id   If  true, V8 provenance is used as a fallback if the element does not have a code
     //! @param[in] fallBackOnDgnDbId   If  true, the element's DgnDb element ID is used as a fallback if the element does not have a code or provenance. This is not recommended if the Db will be re-created by a publisher.
@@ -3544,7 +3546,7 @@ public:
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
     DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;
 
-    //! See if this collection and \a other have the equivalement set of elements
+    //! See if this collection and \a other have the equivalent set of elements
     //! @param other    The other collection
     //! @param filter   The properties to exclude from the comparison.
     //! @return true if the collections are equivalent

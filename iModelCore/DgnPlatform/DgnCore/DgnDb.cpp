@@ -545,7 +545,7 @@ DgnClassId DgnImportContext::_RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnImportContext::ComputeGcsAndGOadjustment()
+void DgnImportContext::ComputeGcsAdjustment()
     {
     //  We may need to transform between source and destination GCS.
     m_xyzOffset = DPoint3d::FromZero();
@@ -589,7 +589,7 @@ DgnCloneContext::DgnCloneContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
-    ComputeGcsAndGOadjustment();
+    ComputeGcsAdjustment();
     }
 
 /*---------------------------------------------------------------------------------**//**

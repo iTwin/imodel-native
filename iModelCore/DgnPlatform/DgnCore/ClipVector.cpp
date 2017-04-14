@@ -151,7 +151,7 @@ BentleyStatus ClipVector::AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR plane
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus    ClipVector::AppendShape(ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
+BentleyStatus ClipVector::AppendShape(ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
     {
     ClipPrimitivePtr    clipPrimitive = ClipPrimitive::CreateFromShape(points, nPoints, outside, zLow, zHigh, transform, invisible);
 
@@ -337,7 +337,7 @@ BentleyStatus ClipVector::MultiplyPlanesTimesMatrix(DMatrix4dCR matrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneContainment    ClipVector::ClassifyPointContainment(DPoint3dCP points, size_t nPoints, bool ignoreMasks) const
+ClipPlaneContainment ClipVector::ClassifyPointContainment(DPoint3dCP points, size_t nPoints, bool ignoreMasks) const
     {
     ClipPlaneContainment        currentContainment = ClipPlaneContainment_Ambiguous;
 
@@ -518,6 +518,9 @@ Json::Value ClipVector::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ClipVector::FromJson(JsonValueCR json) 
     {
+    if (json.isNull())
+        return nullptr;
+
     ClipVectorPtr clip = new ClipVector();
     for (Json::ArrayIndex i = 0; i<json.size(); ++i)
         {
@@ -528,4 +531,3 @@ ClipVectorPtr ClipVector::FromJson(JsonValueCR json)
 
     return clip->empty() ? nullptr : clip;
     }
-
