@@ -2092,7 +2092,7 @@ void checkChildBoundaryTypes(CurveVectorPtr parent,
         {
         
         parent->push_back(ICurvePrimitive::CreateChildCurveVector(curveChild[i-1]));
-        parent->SetChildBoundaryType(i, boundaryTypeChild[i - 1]);
+        Check::True(parent->SetChildBoundaryType(i, boundaryTypeChild[i - 1]));
         CurveVector::BoundaryType cvB;
         Check::True(parent->GetChildBoundaryType(i, cvB));
         Check::True(cvB == boundaryTypeChild[i-1]);
@@ -2119,4 +2119,108 @@ TEST(CurveVector, ChildVectorType)
     checkChildBoundaryTypes(parent, boundaryTypeChild, curveChild);
     
     
+    }
+
+TEST(CurveVector, ReverseLeafCurves) 
+    {
+    bvector<CurveVector::BoundaryType> cvType = { CurveVector::BOUNDARY_TYPE_Inner,
+                                                  CurveVector::BOUNDARY_TYPE_Outer,
+                                                  CurveVector::BOUNDARY_TYPE_Open };
+    for (int i = 0; i < cvType.size(); i++)
+        {
+
+        CurveVectorPtr curve = CurveVector::Create(cvType[i]);
+        DEllipse3d ellip = DEllipse3d::FromPointsOnArc(DPoint3d::From(1, 0, 0),
+                                                       DPoint3d::From(2, 1, 0),
+                                                       DPoint3d::From(1, 2, 0));
+        curve->push_back(ICurvePrimitive::CreateArc(ellip));
+        DSegment3d seg = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+        curve->push_back(ICurvePrimitive::CreateLine(seg));
+        DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+
+        bvector<DPoint3d> pointsLineString = { DPoint3d::From(0,0,0),DPoint3d::From(4,5,2),DPoint3d::From(9,8,10) };
+        curve->push_back(ICurvePrimitive::CreateLineString(pointsLineString));
+        Check::True(curve->ReverseCurvesInPlace());
+        ICurvePrimitivePtr curvePrim = curve->GetCyclic(0);
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == curvePrim->GetCurvePrimitiveType());
+        curvePrim = curve->GetCyclic(1);
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == curvePrim->GetCurvePrimitiveType());
+        curvePrim = curve->GetCyclic(2);
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == curvePrim->GetCurvePrimitiveType());
+        }
+
+    bvector<CurveVector::BoundaryType> cvTypeN = { CurveVector::BOUNDARY_TYPE_UnionRegion,
+                                                  CurveVector::BOUNDARY_TYPE_ParityRegion,
+                                                  CurveVector::BOUNDARY_TYPE_None };
+    
+    for (int i = 0; i < cvTypeN.size(); i++)
+        {
+
+        CurveVectorPtr curveN = CurveVector::Create(cvTypeN[i]);
+        DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(1, 0, 0),
+                                                       DPoint3d::From(2, 1, 0),
+                                                       DPoint3d::From(1, 2, 0));
+        curveN->push_back(ICurvePrimitive::CreateArc(ellipN));
+        DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+        curveN->push_back(ICurvePrimitive::CreateLine(segN));
+        DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+
+        bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0),DPoint3d::From(4,5,2),DPoint3d::From(9,8,10) };
+        curveN->push_back(ICurvePrimitive::CreateLineString(pointsLineStringN));
+        Check::True(curveN->ReverseCurvesInPlace());
+        ICurvePrimitivePtr curvePrim = curveN->GetCyclic(0);
+        //unchanged order
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == curvePrim->GetCurvePrimitiveType());
+        curvePrim = curveN->GetCyclic(1);
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == curvePrim->GetCurvePrimitiveType());
+        curvePrim = curveN->GetCyclic(2);
+        Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == curvePrim->GetCurvePrimitiveType());
+        }
+    
+    }
+
+/*TEST(CurveVector, ParentofParameter) 
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
+    bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
+    ICurvePrimitivePtr linePrim = ICurvePrimitive::CreateLineString(pointsLineStringN);
+    curve->push_back(linePrim);
+    DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(segN);
+    curve->push_back(segPrim);
+    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(1, 0, 0),
+                                                    DPoint3d::From(2, 1, 0),
+                                                    DPoint3d::From(1, 2, 0));
+    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
+    curve->push_back(ellipsePrim);
+    curve->FindParentOfPrimitive(ellipsePrim);
+    
+    }*/
+TEST(CurveVector, LengthOfPrimitives) 
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
+    bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
+    ICurvePrimitivePtr linePrim = ICurvePrimitive::CreateLineString(pointsLineStringN);
+    curve->push_back(linePrim);
+    DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(segN);
+    curve->push_back(segPrim);
+    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(1, 0, 0),
+                                                    DPoint3d::From(2, 1, 0),
+                                                    DPoint3d::From(1, 2, 0));
+    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
+    curve->push_back(ellipsePrim);
+    double flength =curve->FastLength();
+    double prim1, prim2, prim3;
+    Check::True(linePrim->FastLength(prim1)); Check::True(segPrim->FastLength(prim2)); Check::True(ellipsePrim->FastLength(prim3));
+    double flengthExp = prim1 + prim2 + prim3;
+    Check::Near(flength, flengthExp);
+
+    // length post rotation
+    double prior = curve->Length();
+    
+    double posterior = curve->Length();
+    }
+TEST(CurveVector, LengthPostRotation)
+    {
     }
