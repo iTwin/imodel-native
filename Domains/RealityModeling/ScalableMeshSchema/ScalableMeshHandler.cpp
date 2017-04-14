@@ -1491,6 +1491,28 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     4/2017
+//----------------------------------------------------------------------------------------
+ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb, WString terrainName, BeFileName terrainPath)
+{
+    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    BeAssert(classId.IsValid());
+
+    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode(Utf8String(terrainName.c_str()).c_str())));
+
+    model->Insert();
+    model->OpenFile(terrainPath, dgnDb);
+    model->Update();
+
+    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(dgnDb));
+
+    appData->m_smTerrainPhysicalModelP = model;
+    appData->m_modelSearched = true;
+    dgnDb.SaveChanges();
+    return model;
+}
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)

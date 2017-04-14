@@ -223,6 +223,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual ~ScalableMeshModel();
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
+
+        SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb, WString terrainName, BeFileName terrainPath);
                 
         SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 
