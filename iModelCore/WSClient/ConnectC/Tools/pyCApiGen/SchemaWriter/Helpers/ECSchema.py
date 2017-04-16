@@ -27,6 +27,7 @@ class ECSchema(object):
         self.__status_codes = status_codes
         self.__ecclasses = []
         self.__ecRelationshipclasses = []
+        self.__ecRelationshipSpecs = {}
         self.__ecschema_xmldoc = None
 
     #-------------------------------------------------------------------------------------------
@@ -96,6 +97,21 @@ class ECSchema(object):
         return False
 
     #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest       04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_relationships(self):
+        return self.__ecRelationshipclasses
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest       04/2017
+    #-------------------------------------------------------------------------------------------
+    def has_ecrelationship_with_property_type(self, property_type):
+        for ecrelclass in self.get_relationships():
+            if ecrelclass.does_contain_property_type(property_type):
+                return True
+        return False
+
+    #-------------------------------------------------------------------------------------------
     # bsimethod                                             06/2016
     #-------------------------------------------------------------------------------------------
     def init_xml(self, xmldoc):
@@ -157,11 +173,15 @@ class ECSchema(object):
             ec_rel_target = ECRelTarget(tgt_cardinality, tgt_polymorphic, tgt_rel_objects);
 
             # now set up the class
+            schema_name = self.get_name()
             name = xml.attributes["typeName"].value
             is_domain_class = xml.attributes["typeName"].value
             strength = xml.attributes["typeName"].value
             strenth_direction = xml.attributes["typeName"].value
-            ec_rel_class = ECRelationshipClass( name, 
+            ec_rel_class = ECRelationshipClass( self.__api,
+                                                self.__status_codes,
+                                                schema_name,
+                                                name, 
                                                 is_domain_class, 
                                                 strength, 
                                                 strenth_direction, 
@@ -175,7 +195,21 @@ class ECSchema(object):
                                     ecproperty_xml.attributes["typeName"].value,
                                     ecproperty_xml.hasAttribute("readOnly") and ecproperty_xml.attributes["readOnly"].value,
                                     False ))
+                                
+            #set which functions should include a buffer for this relationship
+            for ecRelClassSpec in self.__ecRelationshipSpecs:
+                item = self.__ecRelationshipSpecs.get(ec_rel_class.get_name(), None)
+                if(item != None):
+                    ec_rel_class.set_include(item[0], item[1], item[2], item[3], item[4])
+                    
             return ec_rel_class
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                             06/2016
+    #-------------------------------------------------------------------------------------------
+    def add_ecrelationship_specification(self, name, on_create, on_read, on_update, on_delete, on_readall):
+        self.__ecRelationshipSpecs[name] = \
+                            [on_create, on_read, on_update, on_delete, on_readall]
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                             06/2016
@@ -304,6 +338,16 @@ class ECSchema(object):
             free_str += "                    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n"\
                 .format(self.__api.get_upper_api_acronym(), ecclass.get_upper_name(), ecclass.get_lower_name())
             free_str += "                    delete {0}Buf;\n".format(ecclass.get_lower_name())
+            free_str += "                    }\n"
+            free_str += "                    break;\n"
+        for ecrelclass in self.get_relationships():
+            if ecrelclass.should_exclude_entire_class():
+                continue
+            free_str += "                case BUFF_TYPE_{0}:\n".format(ecrelclass.get_upper_name())
+            free_str += "                    {\n"
+            free_str += "                    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n"\
+                .format(self.__api.get_upper_api_acronym(), ecrelclass.get_upper_name(), ecrelclass.get_lower_name())
+            free_str += "                    delete {0}Buf;\n".format(ecrelclass.get_lower_name())
             free_str += "                    }\n"
             free_str += "                    break;\n"
         free_str += "                default:\n"

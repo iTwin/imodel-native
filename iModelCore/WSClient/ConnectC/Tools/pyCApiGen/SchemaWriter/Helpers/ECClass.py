@@ -281,24 +281,129 @@ class ECClass(object):
         create_request_str += "(\n"
         create_request_str += "{0}HANDLE apiHandle".format(self.__api.get_upper_api_acronym())
         create_request_str += self.__get_class_properties_for_function_def()
-        #create_request_str += self.__get_relationship_source_ids_for_function_def()
+        create_request_str += self.__get_relationship_source_ids_for_function_def('create')
         create_request_str += "\n)"
         return create_request_str
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                     Robert.Priest    04/2017
     #-------------------------------------------------------------------------------------------
-    def __get_relationship_source_ids_for_function_def(self):
-        str = ""        
+    def __get_relationship_source_ids_for_function_def(self, function_type):
+        str = ""               
         #if we have any relationships, we need to allow for id for the source object to be passed in (for example:
         # a parent object id under which this item will be created) 
         # TODO: Re-examine whether we can make such an assumption (to add an id) for any relationship encountered.
         #       It is not completely clear that is a safe make that assumption at this point.        
         if (len (self.__ecRelationshipclasses) > 0):                
-                for ecr in self.__ecRelationshipclasses:                    
-                    str += ',\n'
-                    str += "WCharCP {0}Id".format(ecr.get_name())
+                for ecr in self.__ecRelationshipclasses:   
+                    if function_type == 'create':
+                        if ecr.should_have_create():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'read':
+                        if ecr.should_have_read():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'update':
+                        if ecr.should_have_update():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'delete':
+                        if ecr.should_have_delete():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
+                    elif function_type == 'readall':
+                        if ecr.should_have_readall():
+                            str += self.__get_relationship_source_var_for_function_def(ecr)
         return str
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def get_relationship_properties_implementation(self, function_type):
+        str = ""               
+        if (len (self.__ecRelationshipclasses) > 0):                
+                for ecr in self.__ecRelationshipclasses:   
+                    if function_type == 'create':
+                        if ecr.should_have_create():
+                            str += self.__get_relationship_properties_for_function_impl(ecr)
+                    elif function_type == 'read':
+                        if ecr.should_have_read():
+                            str += self.__get_relationship_properties_for_function_impl(ecr)
+                    elif function_type == 'update':
+                        if ecr.should_have_update():
+                            str += self.__get_relationship_properties_for_function_impl(ecr)
+                    elif function_type == 'delete':
+                        if ecr.should_have_delete():
+                            str += self.__get_relationship_properties_for_function_impl(ecr)
+                    elif function_type == 'readall':
+                        if ecr.should_have_readall():
+                            str += self.__get_relationship_properties_for_function_impl(ecr)
+        return str
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                     Robert.Priest    04/2017
+    #-------------------------------------------------------------------------------------------
+    def __get_relationship_source_var_for_function_def(self, ecr):
+        str = ",\n{0}DATABUFHANDLE {1}Buffer".format(self.__api.get_upper_api_acronym(), ecr.get_var_name())
+        return str
+
+    #-------------------------------------------------------------------------------------------
+    # bsimethod                                            						 06/2016
+    #-------------------------------------------------------------------------------------------
+    def __get_relationship_properties_for_function_impl(self, ecr):
+        properties_str = "    if ({0}Buffer != nullptr)\n ".format(ecr.get_var_name())
+        properties_str += "      {\n"
+        properties_str += '       Json::Value relationshipInstancesJson;\n'
+        
+        # HCWSCCBUFFER buf = (HCWSCCBUFFER) dataBuffer; see ConnectWebServicesClientC_DataBufferGetStringLength
+        # LPCWSCCFOLDERBUFFER folderBuf = (LPCWSCCFOLDERBUFFER) buf->lItems[index]; see Folder_GetStringLength
+        properties_str += "       LP{0}{1}BUFFER buf = (LP{0}{1}BUFFER) ((HCWSCCBUFFER) {2}Buffer)->lItems[0];\n" \
+                                    .format(self.__api.get_api_acronym(), ecr.get_upper_name(), ecr.get_var_name())
+        properties_str += '       relationshipInstancesJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
+        properties_str += '       relationshipInstancesJson["className"] = "{0}";\n'.format(ecr.get_name())
+        properties_str += '       relationshipInstancesJson["direction"] = "backward" /*TODO: figure out what direction is used for*/;\n\n'.format(ecr.get_name())
+        if (len(ecr.get_properties()) > 1):
+            properties_str += '       Json::Value relationshipInstancesPropertiesJson;\n'        
+            for ecproperty in ecr.get_properties():
+                if ecproperty.should_be_excluded:
+                    continue
+                if ecproperty.is_read_only:
+                    continue
+                #the "{SourceObject}Id"" will be set as the instanceid. Just needed a way for them to tell it to me.
+                if (ecproperty.name == "{0}Id", ecr.get_source().get_name()):  
+                    continue
+                properties_str += "       if ({0}Buffer.{1} != nullptr) ".format(ecr.get_var_name(), ecproperty.name)
+                property_type = ecproperty.type
+                if property_type == "guid":
+                    properties_str += 'relationshipInstancesPropertiesJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
+                        .format(ecproperty.name, ecr.get_var_name())
+                elif property_type == "dateTime":
+                    properties_str += 'relationshipInstancesPropertiesJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
+                        .format(ecproperty.name, ecr.get_var_name())
+                elif property_type == "string":
+                    properties_str += 'relationshipInstancesPropertiesJson["{0}"] = Utf8String({1}Buffer.{0});\n' \
+                        .format(ecproperty.name, ecr.get_var_name())
+                else:
+                    properties_str += 'relationshipInstancesPropertiesJson["{0}"] = *{1}Buffer.{0};\n'.format(ecproperty.name, ecr.get_var_name())
+            properties_str += '       if (relationshipInstancesPropertiesJson.size() == 0)\n'
+            properties_str += '          {\n'
+            properties_str += '          relationshipInstancesJson["properties"] = relationshipInstancesPropertiesJson;\n' \
+                            '          }}\n\n'
+        properties_str += '       Json::Value relatedInstanceJson;\n'                     
+        properties_str += '       relatedInstanceJson["schemaName"] = "{0}";\n'.format(ecr.get_schema_name())
+        properties_str += '       relatedInstanceJson["className"] = "{0}";\n'.format(ecr.get_source().get_name())  
+        properties_str += '       relatedInstanceJson["instanceId"] = Utf8String(buf->{0}Id);\n'.format(ecr.get_source().get_name())     
+        properties_str += '       relationshipInstancesJson["relatedInstance"] = relatedInstanceJson;\n' 
+        properties_str += '       if (relationshipInstancesJson.size() == 0)\n'
+        properties_str += '          {\n'
+        properties_str += '          api->SetStatusMessage("{1}");\n' \
+                          '          api->SetStatusDescription("{2}");\n' \
+                          '          return {0};\n' \
+                          '          }}\n'\
+            .format("INVALID_PARAMETER",
+                    self.__status_codes["INVALID_PARAMETER"].message,
+                    "There were not any valid {0} properties passed in.".format(ecr.get_name()))
+        properties_str += '      instance["relationshipInstances"] = Json::Value(Json::arrayValue);\n'
+        properties_str += '      instance["relationshipInstances"].append(relationshipInstancesJson);\n'                      
+        properties_str += "      }\n\n"
+        return properties_str
 
     #-------------------------------------------------------------------------------------------
     # bsimethod                                            						 06/2016
@@ -317,7 +422,8 @@ class ECClass(object):
         create_request_str += '    instance["schemaName"] = "{0}";\n'.format(self.__ecschema_name)
         create_request_str += '    instance["className"] = "{0}";\n\n'.format(self.get_name())
         create_request_str += self.__get_class_properties_for_function_impl()
-        create_request_str += '    instance["properties"] = propertiesJson;\n\n'
+        create_request_str += '    instance["properties"] = propertiesJson;\n\n'            
+        create_request_str += self.get_relationship_properties_implementation('create')
         create_request_str += '    Json::Value objectCreationJson;\n'
         create_request_str += '    objectCreationJson["instance"] = instance;\n\n'
         create_request_str += '    Utf8String {0}Url = UrlProvider::Urls::{1}.Get();\n'\

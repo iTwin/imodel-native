@@ -71,6 +71,19 @@ def ParseSchemaFile(api, excelFile):
                 ECSchema(row[0].value, row[1].value, row[2].value, row[3].value, api, status_codes)
         unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value].add_ecclass(row)
 
+    #Read Relationships sheet
+    #TODO: Move this code to a separate method. Maybe rework how how info loaded from sheet.
+    rel_worksheet = workbook.get_sheet_by_name('Relationships')
+    unique__rel_defs = {}
+    for row in rel_worksheet.iter_rows(range_string=rel_worksheet.calculate_dimension(), row_offset=2):
+        if row[0].value is None or row[1].value is None or row[2].value is None:
+            break
+        if row[0].value + row[1].value + row[2].value + row[3].value not in unique_ecschemas:
+            unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value] = \
+                ECSchema(row[0].value, row[1].value, row[2].value, row[3].value, api, status_codes)
+        unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value].add_ecrelationship_specification(
+                                            row[4].value, row[5].value, row[6].value, row[7].value, row[8].value, row[9].value)
+
     for ecschema in unique_ecschemas.values():
         filename = ecschema.get_filename()
         if not os.path.isabs(filename):
@@ -149,6 +162,9 @@ def main():
         schemas = ParseSchemaFile(api, options.excelgenfile)
     except Exception, ex:
         print("{0}".format (ex))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         return
     
     #generate the schema code.
@@ -157,6 +173,9 @@ def main():
         GenerateSchemaCode(options.targetsourcedir, options.targetpublicapidir,api, schemas)
     except Exception, ex:
         print("{0}".format (ex))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         return
 
     print "Done"

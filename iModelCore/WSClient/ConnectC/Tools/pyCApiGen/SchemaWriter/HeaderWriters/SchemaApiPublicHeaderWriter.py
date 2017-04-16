@@ -43,6 +43,26 @@ class SchemaApiPublicHeaderWriter(SchemaHeaderWriter):
                 self.__write_delete_class_definition(ecclass)
         self._file.write(self._COMMENT_GroupEnd)
 
+        #relationship buffer initialization
+        for ecrelclass in self._ecschema.get_relationships():
+            if ecrelclass.should_exclude_entire_class():
+                continue
+            self.__write_rel_class_buf_init_definition(ecrelclass)       
+        self._file.write(self._COMMENT_GroupEnd)
+
+    def __write_rel_class_buf_init_definition(self, ecrelclass):        
+        param_str = "\param[out] {0}Buffer Buffer of {0} data\n".format(ecrelclass.get_lower_name())
+        for ecproperty in ecrelclass.get_properties():
+            if ecproperty.should_be_excluded:
+                continue
+            if ecproperty.is_read_only:
+                continue
+            param_str += "* \param[in] {0}\n".format(ecproperty.name)
+        param_str += "* \\return Success or error code. See \\ref {0}StatusCodes".format(self._api.get_api_name())    
+        self._file.write(self._COMMENT_GroupBriefLong.format("Initialize a {0} buffer".format(ecrelclass.get_lower_name()), param_str))
+        self._file.write(ecrelclass.get_buf_init_definition())
+        self._write_spacing()
+
     def __write_read_class_list_definition(self, ecclass):
         self._file.write(self._COMMENT_GroupBriefLong.format("Query WSG to get list of {0}s".format(ecclass.get_lower_name()),
                                                              "\param[in] apiHandle API object\n"
