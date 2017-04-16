@@ -43,6 +43,13 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
             self._file.write(' {0}'.format(count) + '\n')
             count += 1
 
+        for ecrelclass in self._ecschema.get_relationships():
+            if ecrelclass.should_exclude_entire_class():
+                continue
+            self._file.write('#define BUFF_TYPE_' + ecrelclass.get_upper_name())
+            self._file.write(' {0}'.format(count) + '\n')
+            count += 1
+
     def __write_buffer_free_defintion(self):
         self._file.write(self.__COMMENT_Function
                          .format('Schema-level free'))
@@ -191,4 +198,10 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
             self._file.write(ecclass.get_struct_typedef())
             self._write_spacing()
             self._file.write(ecclass.get_buffer_stuffer_function_definition())
+            self._write_spacing()
+
+        if len(self._ecschema.get_relationships()) == 0:
+            return        
+        for ecrelclass in self._ecschema.get_relationships():
+            self._file.write(ecrelclass.get_struct_typedef())
             self._write_spacing()

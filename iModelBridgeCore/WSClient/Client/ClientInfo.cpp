@@ -267,7 +267,7 @@ void ClientInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                   Robert.Priest 06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientInfo::CacheAndroidDeviceId(UTF8String deviceId)
+void ClientInfo::CacheAndroidDeviceId(Utf8String deviceId)
     {
     Device::CacheAndroidDeviceId(deviceId);
     }

@@ -119,7 +119,7 @@ struct ClientInfo : public IHttpHeaderProvider
 
 #if defined (__ANDROID__)
 
-        WCLIENT_EXPORT void CacheAndroidDeviceId(UTF8String deviceId);
+        WSCLIENT_EXPORT static void CacheAndroidDeviceId(Utf8String deviceId);
 
 #endif
     };
