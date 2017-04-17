@@ -438,6 +438,15 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
+    {
+    BeAssert(scopeModel.GetModelId().IsValid() && IsModelScope());
+    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), value, scopeModel.GetModelId()) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const

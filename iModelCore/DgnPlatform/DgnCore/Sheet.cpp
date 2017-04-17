@@ -30,7 +30,7 @@ using namespace SheetStrings;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
+DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_Sheet, *model.GetModeledElement(), name);
     }
@@ -58,12 +58,12 @@ DgnCode Sheet::Element::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name)
+ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(Handlers::Element::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
         {
         BeAssert(false);
         return nullptr;
@@ -79,12 +79,12 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name)
+ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();       
     DgnClassId classId = db.Domains().GetClassId(Handlers::Element::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
         {
         BeAssert(false);
         return nullptr;
@@ -733,7 +733,8 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
 Dgn::ViewController::FitComplete Sheet::ViewController::_ComputeFitRange(FitContextR context) 
     {
     context.ExtendFitRange(AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0.0)
-    ));
+    ));
+
     return FitComplete::Yes;
     }
 

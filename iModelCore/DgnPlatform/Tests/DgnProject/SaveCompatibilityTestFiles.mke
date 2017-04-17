@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/DgnProject/SaveCompatibilityTestFiles.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)CompatibilityTestFiles/CompatibilityTestSeed.bim : $(OutputRootDir)Product/DgnPlatform-Gtest/run/Output/CompatibilityTests/CompatibilityTestSeed.bim
+    $(LinkFirstDepToFirstTarget)
