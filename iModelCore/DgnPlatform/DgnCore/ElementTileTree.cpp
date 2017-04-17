@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG)
+#if defined(NDEBUG) || true
 #define ELEMENT_TILE_DEBUG_RANGE false
 #else
 #define ELEMENT_TILE_DEBUG_RANGE true
@@ -228,7 +228,7 @@ constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit 
 constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
-constexpr size_t s_minLeafTolerance = 0.001;
+constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
 //=======================================================================================
