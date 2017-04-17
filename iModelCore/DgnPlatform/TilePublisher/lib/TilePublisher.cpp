@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                       
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -2469,7 +2469,9 @@ static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>
 *  the miter direction.  For a start or end point the previous and next directions are 
 *  along the line segment and the miter direction is therefore perpendicular to the line segment.
 *  Param.x is the direction to offset along the miter line -- (0, -1 or 1).   
-*  Param.y is an inelegant horrible conglomeration -- 0 indicates the start point, 4 indicates end point.
+*  Param.y is an inelegant horrible conglomeration --
+*       0 indicates the start point with miter, 1.0 = start point with joint, 
+*       4 indicates end point with miter, 5 indicates end point with joint
 *
 *  The joint geometry fills the void between the two miter triangles.  Currently we are just
 *  Creating two triangles -- but we could create a single triangle (as QVision does) or additional
@@ -2507,6 +2509,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
         
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
+            static              double s_maxJointDot = -.90;
             DPoint3d            p0 = polylinePoints[i], p1 = polylinePoints[i+1];
             double              thisLength = p0.Distance(p1), 
                                 length0 = cumulativeLength, 
@@ -2521,6 +2524,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                 prevDir1 = negatedThisDir,
                                 nextDir1 = isEnd ? (isClosed ? DVec3d::FromStartEndNormalize(p1, polylinePoints[1]) : thisDir) : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
             size_t              baseIndex = tesselation.m_points.size();
+            bool                jointAt0 = prevDir0.DotProduct(nextDir0) > s_maxJointDot, jointAt1 = prevDir1.DotProduct(nextDir1) > s_maxJointDot;
+
                         
             if (doColors)
                 {
@@ -2534,33 +2539,54 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 attributes1 = polylineAttributes[i+1];
                 }
 
-            tesselation.AddTriangle(baseIndex, 2, 4, 1);
-            tesselation.AddTriangle(baseIndex, 2, 1, 0);
-            tesselation.AddTriangle(baseIndex, 0, 1, 5);
-            tesselation.AddTriangle(baseIndex, 0, 5, 3);
-
-            for (size_t j=0; j<6; j++)
+            if (jointAt0 || jointAt1)
                 {
-                static bool     basePoints[6]  = {true, false, true, true, false, false};
-                static double   deltaYs[6] = {0.0, 0.0, -1.0, 1.0, -1.0, 1.0 };
-                bool            basePoint = basePoints[j];
+                tesselation.AddTriangle(baseIndex, 2, 4, 1);
+                tesselation.AddTriangle(baseIndex, 2, 1, 0);
+                tesselation.AddTriangle(baseIndex, 0, 1, 5);
+                tesselation.AddTriangle(baseIndex, 0, 5, 3);
+
+                for (size_t j=0; j<6; j++)
+                    {
+                    static bool     basePoints[6]  = {true, false, true, true, false, false};
+                    static double   deltaYs[6] = {0.0, 0.0, -1.0, 1.0, -1.0, 1.0 };
+                    bool            basePoint = basePoints[j];
                 
-                tesselation.AddPoint (basePoint ? p0 : p1,
-                                      basePoint ? prevDir0 : prevDir1,
-                                      basePoint ? nextDir0 : nextDir1,
-                                      basePoint ? length0 : length1,
-                                      DVec2d::From(deltaYs[j], basePoint ? 0.0 : 4.001),
-                                      basePoint ? attributes0 : attributes1,
-                                      basePoint ? colors0 : colors1,
-                                      rangeCenter);
-                }
+                    tesselation.AddPoint (basePoint ? p0 : p1,
+                                          basePoint ? prevDir0 : prevDir1,
+                                          basePoint ? nextDir0 : nextDir1,
+                                          basePoint ? length0 : length1,
+                                          DVec2d::From(deltaYs[j], basePoint ? (jointAt0 ? 1.0 : 0.0) : (jointAt1 ? 5.01 : 4.01)),
+                                          basePoint ? attributes0 : attributes1,
+                                          basePoint ? colors0 : colors1,
+                                          rangeCenter);
+                    }
             
-            if (isClosed || !isStart)
-                tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
+                if (jointAt0)
+                    tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
-            if (isClosed || !isEnd)
-                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
+                if (jointAt1)
+                    tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
+                }
+            else
+                {
+                tesselation.AddTriangle(baseIndex, 0, 2, 1);
+                tesselation.AddTriangle(baseIndex, 1, 2, 3);
 
+                for (size_t j=0; j<4; j++)
+                    {
+                    bool        basePoint = j<2;
+                    double      deltaY = (0 == (j & 0x01)) ? -1.0 : 1.0;
+                    tesselation.AddPoint (basePoint ? p0 : p1,
+                                          basePoint ? prevDir0 : prevDir1,
+                                          basePoint ? nextDir0 : nextDir1,
+                                          basePoint ? length0 : length1,
+                                          DVec2d::From(deltaY, basePoint ? 0.0 : 4.001),
+                                          basePoint ? attributes0 : attributes1,
+                                          basePoint ? colors0 : colors1,
+                                          rangeCenter);
+                    }
+                }
             }
         maxLength = std::max(maxLength, cumulativeLength);
         }
@@ -3024,12 +3050,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     val["asset"]["version"] = "0.0";
     val["asset"]["gltfUpAxis"] = "Z";
-
-    auto&       root = val[JSON_Root];
-
-    if (rootTile.GetModel().IsSpatialModel())
-        root[JSON_Transform] = TransformToJson(m_spatialToEcef);
-
+ 
     DRange3d    rootRange;
     WriteModelMetadataTree (rootRange, modelRoot, rootTile, maxDepth);
 
@@ -3045,6 +3066,9 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
         {
         val[JSON_Root] = std::move(modelRoot);
         }
+
+    if (rootTile.GetModel().IsSpatialModel())
+        val[JSON_Root][JSON_Transform] = TransformToJson(m_spatialToEcef);
 
     TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
     }
