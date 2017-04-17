@@ -1160,7 +1160,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1281,7 +1281,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.HasTexture(db);
 
-    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), true);
+    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
@@ -1339,7 +1339,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
 
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
-    MeshMergeKey key(displayParams, false, false);
+    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetFillColor();

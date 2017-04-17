@@ -1630,6 +1630,7 @@ struct IndexedPolylineArgs
     uint32_t        m_numLines = 0;
     ColorIndex      m_colors;
     FeatureIndex    m_features;
+    bool            m_disjoint = false;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
