@@ -1033,15 +1033,16 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
     StrokesList         tileStrokes;
 
+    bvector<bvector<DPoint3d>>  strokePoints;
     if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
         {
-        size_t nPointStrings = curveVector->CountPrimitivesOfType(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString);
-        BeAssert((0 == nPointStrings || curveVector->size() == nPointStrings) && "###TODO_ELEMENT_TILE: Disjoint and continuous curve primitives");
-        bool disjoint = (curveVector->size() == nPointStrings);
-
-        bvector<bvector<DPoint3d>>  strokePoints;
-
+        strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
+
+        // A 'point' is actually a zero-length line...
+        bool disjoint = 1 == strokePoints.size();
+        if (!disjoint && 2 == strokePoints.size())
+            disjoint = *strokePoints.begin() == *(strokePoints.begin()+1);
 
         if (!strokePoints.empty())
             tileStrokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), disjoint));

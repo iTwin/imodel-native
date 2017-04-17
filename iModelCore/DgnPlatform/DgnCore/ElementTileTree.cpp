@@ -517,7 +517,8 @@ public:
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        return range.DiagonalDistance() < m_minRangeDiagonal;
+        auto diag = range.DiagonalDistance();
+        return diag < m_minRangeDiagonal && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
 
     IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
@@ -1186,7 +1187,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     {
     DRange3dCR geomRange = geom.GetTileRange();
     double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
-    if (rangePixels < s_minRangeBoxSize)
+    if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
     bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
