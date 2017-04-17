@@ -2734,6 +2734,7 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
+
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
