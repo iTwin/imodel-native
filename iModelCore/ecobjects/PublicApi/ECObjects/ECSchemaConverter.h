@@ -41,11 +41,13 @@ private:
     static ECSchemaConverterP GetSingleton();
     bool m_convertedOK = true;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
+    bvector<Utf8String> m_schemaReferencesToRemove;
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
     void ConvertSchemaLevel(ECSchemaR schema) {ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());}
     void ConvertClassLevel(bvector<ECClassP>& classes);
     void ConvertPropertyLevel(bvector<ECClassP>& classes);
+    void RemoveSchemaReferences(ECSchemaR schema);
     IECCustomAttributeConverterP GetConverter(Utf8StringCR converterName);
 
     //---------------------------------------------------------------------------------------
@@ -86,6 +88,10 @@ public:
     //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
     //! @remarks   Overwrites converter if key already exists. 
     ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
+
+    //! Adds the name of a schema to remove at the end of schema conversion.
+    //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
+    ECOBJECTS_EXPORT static void AddSchemaReferenceToRemove(Utf8CP schemaName) { ECSchemaConverter::GetSingleton()->m_schemaReferencesToRemove.push_back(schemaName); };
 
     //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
     //! @param[in] schema           The schema whose classes are to be sorted

@@ -583,9 +583,9 @@ bool isKindOfQuantityCompatible(ECPropertyCR ecProp, ECPropertyCP baseProp, Kind
     if (nullptr == baseUnit || nullptr == compareUnit)
         return true;
 
-    if (!Units::Unit::AreEqual(baseUnit, compareUnit))
+    if (!Units::Unit::AreCompatible(baseUnit, compareUnit))
         {
-        LOG.errorv("The ECProperty '%s:%s' has a base property '%s:%s' with KindOfQuantity '%s' with persistence unit '%s' which differs from the persistence unit '%s' of the provided KindOfQuantity '%s'.",
+        LOG.errorv("The ECProperty '%s:%s' has a base property '%s:%s' with KindOfQuantity '%s' with persistence unit '%s' belongs to a different Phenomenon than the persistence unit '%s' of the provided KindOfQuantity '%s'.",
                    ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetName(),
                    compareUnit->GetName(), compareKOQ->GetFullName().c_str());
         return false;

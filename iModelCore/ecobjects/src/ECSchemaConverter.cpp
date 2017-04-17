@@ -140,17 +140,21 @@ struct UnitSpecification
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECSchemaConverter::Convert(ECSchemaR schema)
     {
-    ECSchemaConverterP eCSchemaConverter = GetSingleton();
-    eCSchemaConverter->m_convertedOK = true;
+    ECSchemaConverterP ecSchemaConverter = GetSingleton();
+    ecSchemaConverter->m_convertedOK = true;
 
     auto classes = GetHierarchicallySortedClasses(schema);
-    eCSchemaConverter->ConvertClassLevel(classes);
+    ecSchemaConverter->ConvertClassLevel(classes);
 
-    eCSchemaConverter->ConvertPropertyLevel(classes);
+    ecSchemaConverter->ConvertPropertyLevel(classes);
 
-    eCSchemaConverter->ConvertSchemaLevel(schema);
+    ecSchemaConverter->ConvertSchemaLevel(schema);
 
-    return eCSchemaConverter->m_convertedOK;
+    ecSchemaConverter->RemoveSchemaReferences(schema);
+
+    schema.RemoveUnusedSchemaReferences();
+
+    return ecSchemaConverter->m_convertedOK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -173,6 +177,8 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
 
+        ECSchemaConverterSingleton->AddSchemaReferenceToRemove("Unit_Attributes");
+
         // Iterates over the Custom Attributes classes that will be converted. This converter basically
         // handles Custom Attributes that moved into a new schema but with no content change.
         auto const& mappingDictionary = StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping();
@@ -181,7 +187,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
             {
             ECSchemaConverterSingleton->AddConverter(classMapping.first, standardClassConverter);
             }
-        }    
+        }
 
     return ECSchemaConverterSingleton;
     }
@@ -310,6 +316,23 @@ void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
             ProcessCustomAttributeInstance(ecProp->GetCustomAttributes(false), *ecProp, debugName);
             }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                         4/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::RemoveSchemaReferences(ECSchemaR schema)
+    {
+    for(Utf8StringCR schemaName : m_schemaReferencesToRemove)
+        {
+        SchemaKey key(schemaName.c_str(), 1, 0, 0);
+        ECObjectsStatus status = schema.RemoveReferencedSchema(key, SchemaMatchType::Latest);
+        if (ECObjectsStatus::Success == status || ECObjectsStatus::SchemaNotFound == status)
+            continue;   // Schema successfully removed
+        
+        LOG.errorv("Failed to remove schema referenced for '%s' because it is still referenced by '%s'", schemaName.c_str(), schema.GetFullSchemaName().c_str());
+        m_convertedOK = false;
         }
     }
 
@@ -835,7 +858,6 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
 
     container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
     container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
-    schema.RemoveReferencedSchema(instance.GetClass().GetSchema().GetSchemaKey());
     return ECObjectsStatus::Success;
     }
 

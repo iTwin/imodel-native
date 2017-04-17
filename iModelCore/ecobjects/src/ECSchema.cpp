@@ -1502,10 +1502,10 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey)
+ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType)
     {
     ECSchemaReferenceListCR schemas = GetReferencedSchemas();
-    auto schemaIt = schemas.Find(schemaKey, SchemaMatchType::Exact);
+    auto schemaIt = schemas.Find(schemaKey, matchType);
     return schemaIt != schemas.end() ? RemoveReferencedSchema(*schemaIt->second) : ECObjectsStatus::SchemaNotFound;
     }
 
@@ -1522,7 +1522,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
     ECSchemaPtr foundSchema = schemaIterator->second;
     for (auto ca : GetCustomAttributes(false))
         {
-        if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+        if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
             return ECObjectsStatus::SchemaInUse;
         }
 
@@ -1532,7 +1532,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
         // First, check each base class to see if the base class uses that schema
         for (ECClassP baseClass: ecClass->GetBaseClasses())
             {
-            if ((ECSchemaP) &(baseClass->GetSchema()) == foundSchema.get())
+            if (baseClass->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 {
                 return ECObjectsStatus::SchemaInUse;
                 }
@@ -1540,7 +1540,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
 
         for (auto ca : ecClass->GetCustomAttributes(false))
             {
-            if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+            if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 return ECObjectsStatus::SchemaInUse;
 
             if (ECClass::ClassesAreEqualByName(&ca->GetClass(), CoreCustomAttributeHelper::GetCustomAttributeClass("IsMixin")))
@@ -1568,13 +1568,13 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
             ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
             for (auto ca : targetConstraint.GetCustomAttributes(false))
                 {
-                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
             if (targetConstraint.IsAbstractConstraintDefinedLocally())
                 {
-                if ((ECSchemaP) &(targetConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
+                if (targetConstraint.GetAbstractConstraint()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
@@ -1582,7 +1582,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 {
                 for (auto target : relClass->GetTarget().GetConstraintClasses())
                     {
-                    if ((ECSchemaP) &(target->GetSchema()) == foundSchema.get())
+                    if (target->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                         {
                         return ECObjectsStatus::SchemaInUse;
                         }
@@ -1592,13 +1592,13 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
             ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
             for (auto ca : sourceConstraint.GetCustomAttributes(false))
                 {
-                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
             if (sourceConstraint.IsAbstractConstraintDefinedLocally())
                 {
-                if ((ECSchemaP) &(sourceConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
+                if (sourceConstraint.GetAbstractConstraint()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
@@ -1606,7 +1606,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 {
                 for (auto source : relClass->GetSource().GetConstraintClasses())
                     {
-                    if ((ECSchemaP) &(source->GetSchema()) == foundSchema.get())
+                    if (source->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                         {
                         return ECObjectsStatus::SchemaInUse;
                         }
@@ -1620,7 +1620,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
             // Check Custom Attributes before checking property type
             for (auto ca : prop->GetCustomAttributes(false))
                 {
-                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
@@ -1643,10 +1643,9 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 }
             if (NULL == typeClass)
                 continue;
-            if (this->GetName().compare(typeClass->GetSchema().GetName()) == 0 && this->GetVersionRead() == typeClass->GetSchema().GetVersionRead() &&
-                this->GetVersionMinor() == typeClass->GetSchema().GetVersionMinor())
-                continue;
-            return ECObjectsStatus::SchemaInUse;
+
+            if (typeClass->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                return ECObjectsStatus::SchemaInUse;
             }
         }
 
