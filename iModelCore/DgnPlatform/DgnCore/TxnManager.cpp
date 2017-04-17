@@ -516,7 +516,7 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
 
         m_action = TxnAction::Abandon;
         OnChangesApplied(changeset);
-		m_action = TxnAction::None;
+        m_action = TxnAction::None;
         }
 
     return OnCommitStatus::Completed;

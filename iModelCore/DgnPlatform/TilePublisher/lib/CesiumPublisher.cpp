@@ -76,7 +76,7 @@ DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value  PublisherParams::GetViewerOptions () const
     {
-    Json::Value viewerOptions;
+    Json::Value viewerOptions(Json::objectValue);
 
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
@@ -236,7 +236,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return status;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), nullptr, &progressMeter);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
 
     DRange3d            range;
 

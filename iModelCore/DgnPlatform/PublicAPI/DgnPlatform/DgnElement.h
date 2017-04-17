@@ -27,7 +27,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 20);} // we never expect to have more than 50 or so
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 50);} // we never expect to have more than 50 or so
     void Clear() {m_graphics.clear();}
     bool IsEmpty() const {return m_graphics.empty();}
 };
@@ -144,7 +144,7 @@ private:
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
 
-    void ComputeGcsAndGOadjustment();
+    void ComputeGcsAdjustment();
 
 protected:
     DGNPLATFORM_EXPORT virtual CodeSpecId _RemapCodeSpecId(CodeSpecId sourceId);
@@ -477,7 +477,7 @@ public:
 * <h2>The Central role of _CopyFrom</h2>
 *
 * _Clone, _CloneForImport, and CopyForEdit all call _CopyFrom to do one specific part of the copying work: copying the member variables. 
-* _CopyFrom must make a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
+* _CopyFrom must make a straight, faithful copy of the C++ element struct's member variables only. It must be quick. 
 * It should not load data from the Db. 
 *
 * Note that the _CopyFrom method copies <em>only</em> member variables. It must not try to read from the Db. 
@@ -539,7 +539,7 @@ public:
 * New or updated auto-handled properties are automatically written to the database when the element is inserted or updated.
 *
 * <h4>Validating Auto-Handled Properties</h4>
-* The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
+* The domain schema can specify some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
 * _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
@@ -912,7 +912,7 @@ public:
         //! Prepare to update an aspect for the specified element
         //! @param el The host element
         //! @param properties  holds the properties that are to be set on the aspect
-        //! @param id  The ID of the particular multiaspect that should be udpated
+        //! @param id  The ID of the particular multiaspect that should be updated
         //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
         //! @return non-zero error status if the specified aspect is not found or cannot be set
         DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId id);
@@ -1171,7 +1171,7 @@ protected:
     //! Called to bind the element's custom-handled property values to the ECSqlStatement when inserting
     //! a new element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
     //! @param[in] statement A statement that has been prepared for either Insert or Update of your class' CustomHandledProperties
-    //! @param[in] forInsert Indicates whether the statemeent is an insert or update statement
+    //! @param[in] forInsert Indicates whether the statement is an insert or update statement
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
     //! Then you @em must call T_Super::_BindWriteParams,
@@ -1407,7 +1407,7 @@ protected:
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
     //! Provide a description of this element to display in the "info balloon" that appears when the element is under the cursor.
-    //! @param[in] delimiter Put this string to break lines of the desciption.
+    //! @param[in] delimiter Put this string to break lines of the description.
     //! @return The information to display in the info balloon.
     //! @note If you override this method, you may decide whether to call your superclass' implementation or not (it is not required).
     //! The default implementation shows display label, category and model.
@@ -1903,7 +1903,7 @@ struct GeometryStream : ByteStream
 {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
 };
@@ -1994,12 +1994,14 @@ public:
 
     //! Get the origin of this Placement2d.
     DPoint2dCR GetOrigin() const {return m_origin;}
+    void SetOrigin(DPoint2dCR origin) {m_origin=origin;}
 
     //! Get a writable reference to the origin of this Placement2d.
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the angle of this Placement2d
     AngleInDegrees GetAngle() const {return m_angle;}
+    void SetAngle(AngleInDegrees const& angle) {m_angle=angle;}
 
     //! Get a writable reference to the angle of this Placement2d.
     AngleInDegrees& GetAngleR() {return m_angle;}
@@ -2435,9 +2437,6 @@ public:
     DGNPLATFORM_EXPORT SpatialLocationTypeCPtr GetSpatialLocationType() const;
 };
 
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS (SpatialLocationPortion)
-DEFINE_REF_COUNTED_PTR (SpatialLocationPortion)
 //=======================================================================================
 //! A SpatialLocationPortion represents an arbitrary portion of a larger SpatialLocationElement that will be broken down in more detail in a separate (sub) SpatialLocationModel.
 //! @ingroup GROUP_DgnElement
@@ -2675,16 +2674,17 @@ protected:
 
 public:
     //! Create a DgnCode for a Drawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8StringCR name);
     //! Create a unique DgnCode for a Drawing within the specified DocumentListModel
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    //! @private
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
 
     //! Creates a new Drawing in the specified DocumentListModel
     //! @param[in] model Create the Drawing element in this DocumentListModel
     //! @param[in] name This name will be used to form the Drawing element's DgnCode
-    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, Utf8StringCR name);
 };
 
 //=======================================================================================
@@ -2702,7 +2702,7 @@ public:
     //! Creates a new SectionDrawing in the specified DocumentListModel
     //! @param[in] model Create the SectionDrawing element in this DocumentListModel
     //! @param[in] name This name will be used to form the SectionDrawing element's DgnCode
-    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8StringCR name);
 };
 
 //=======================================================================================
@@ -2828,7 +2828,7 @@ protected:
 
 public:
     //! Create a DgnCode for a PhysicalType element within the scope of the specified model
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 };
 
 //=======================================================================================
@@ -2847,7 +2847,7 @@ protected:
 
 public:
     //! Create a DgnCode for a SpatialLocationType element within the scope of the specified model
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 };
 
 //=======================================================================================
@@ -2865,10 +2865,10 @@ protected:
 
 public:
     //! Create a DgnCode for a TemplateRecipe3d element within the scope of the specified model
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 
     //! Create a TemplateRecipe3d element of the specified name within the specified model
-    DGNPLATFORM_EXPORT static TemplateRecipe3dPtr Create(DefinitionModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static TemplateRecipe3dPtr Create(DefinitionModelCR model, Utf8StringCR name);
 };
 
 //=======================================================================================
@@ -2885,7 +2885,7 @@ protected:
 
 public:
     //! Create a DgnCode for a GraphicalType2d element within the scope of the specified model
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 };
 
 //=======================================================================================
@@ -2903,10 +2903,10 @@ protected:
 
 public:
     //! Create a DgnCode for a TemplateRecipe2d element within the scope of the specified model
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR model, Utf8StringCR name);
 
     //! Create a TemplateRecipe2d element of the specified name within the specified model
-    DGNPLATFORM_EXPORT static TemplateRecipe2dPtr Create(DefinitionModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static TemplateRecipe2dPtr Create(DefinitionModelCR model, Utf8StringCR name);
 };
 
 //=======================================================================================
@@ -2924,15 +2924,16 @@ private:
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
-    DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler);
+    DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8StringCR name, DgnDomain::Handler& handler);
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
     //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8StringCR name);
     //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
     //! @param[in] parentSubject The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    //! @private
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
@@ -2961,13 +2962,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DefinitionPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static DefinitionPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static DefinitionPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new DefinitionPartition
     //! @param[in] parentSubject The new DefinitionPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DefinitionPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static DefinitionPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static DefinitionPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -2990,13 +2991,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DocumentPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static DocumentPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static DocumentPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new DocumentPartition
     //! @param[in] parentSubject The new DocumentPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DocumentPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static DocumentPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static DocumentPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -3019,13 +3020,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this GroupInformationPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static GroupInformationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static GroupInformationPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new GroupInformationPartition
     //! @param[in] parentSubject The new GroupInformationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this GroupInformationPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static GroupInformationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static GroupInformationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -3048,13 +3049,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this InformationRecordPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static InformationRecordPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static InformationRecordPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new InformationRecordPartition
     //! @param[in] parentSubject The new InformationRecordPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this InformationRecordPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static InformationRecordPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static InformationRecordPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -3077,13 +3078,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this PhysicalPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static PhysicalPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static PhysicalPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new PhysicalPartition
     //! @param[in] parentSubject The new PhysicalPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this PhysicalPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -3106,13 +3107,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this SpatialLocationPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new SpatialLocationPartition
     //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this SpatialLocationPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -3148,7 +3149,7 @@ protected:
 
 public:
     //! Create a DgnCode for a Subject with a specified parent Subject
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8StringCR name);
 
     //! Creates a new child Subject of the specified parent Subject
     //! @param parentSubject    The parent of the new Subject
@@ -3156,14 +3157,14 @@ public:
     //! @param description      The description of the new Subject
     //! @return a new, non-persistent Subject element or an invalid value if any of the arguments are invalid
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Creates a new child Subject of the specified parent Subject and inserts it into the DgnDb 
     //! @param parentSubject    The parent of the new Subject
     //! @param name             The name of the new Subject
     //! @param description      The description of the new Subject
     //! @return a new persistent Subject element or an invalid value if any of the arguments are invalid or the insert fails
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 
     BE_PROP_NAME(Description)
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());}
@@ -3204,7 +3205,7 @@ protected:
 //! Abstract base class for roles played by other (typically physical) elements.
 //! For example:
 //! - <i>Lawyer</i> and <i>employee</i> are potential roles of a person
-//! - <i>Asset</i> and <i>safey hazard</i> are potential roles of a PhysicalElement
+//! - <i>Asset</i> and <i>safety hazard</i> are potential roles of a PhysicalElement
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
@@ -3311,12 +3312,13 @@ private:
     uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     uint64_t _Purge(uint64_t memTarget) override;
 
-    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
+    DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
+
     BeMutex& GetMutex() {return m_mutex;}
 
     //! @private
@@ -3348,7 +3350,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByURI(Utf8CP uri) const;
 
     //! @private Allow Navigator to create a URI that can be stored outside of the Db and resolved later.
-    //! @praam[out] uriStr  The encoded URI
+    //! @param[out] uriStr  The encoded URI
     //! @param[in] el       The element that is to be the target of the URI
     //! @param[in] fallBackOnV8Id   If  true, V8 provenance is used as a fallback if the element does not have a code
     //! @param[in] fallBackOnDgnDbId   If  true, the element's DgnDb element ID is used as a fallback if the element does not have a code or provenance. This is not recommended if the Db will be re-created by a publisher.
@@ -3544,7 +3546,7 @@ public:
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
     DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;
 
-    //! See if this collection and \a other have the equivalement set of elements
+    //! See if this collection and \a other have the equivalent set of elements
     //! @param other    The other collection
     //! @param filter   The properties to exclude from the comparison.
     //! @return true if the collections are equivalent

@@ -422,7 +422,7 @@ DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Subject::CreateCode(SubjectCR parentSubject, Utf8CP name)
+DgnCode Subject::CreateCode(SubjectCR parentSubject, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_Subject, parentSubject, name);
     }
@@ -430,7 +430,7 @@ DgnCode Subject::CreateCode(SubjectCR parentSubject, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnModelId modelId = DgnModel::RepositoryModelId();
@@ -438,7 +438,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP descript
     DgnElementId parentId = parentSubject.GetElementId();
     DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
-    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !name || !*name)
+    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || name.empty())
         return nullptr;
 
     SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, CreateCode(parentSubject, name), nullptr, parentId, parentRelClassId));
@@ -451,7 +451,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP descript
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     SubjectPtr subject = Create(parentSubject, name, description);
     return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
@@ -460,7 +460,7 @@ SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler)
+DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR parentSubject, Utf8StringCR name, DgnDomain::Handler& handler)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnModelId modelId = DgnModel::RepositoryModelId();
@@ -469,7 +469,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements);
     DgnCode code = CreateCode(parentSubject, name);
 
-    if (!parentId.IsValid() || !parentRelClassId.IsValid() || !classId.IsValid() || !name || !*name)
+    if (!parentId.IsValid() || !parentRelClassId.IsValid() || !classId.IsValid() || name.empty())
         modelId.Invalidate(); // mark CreateParams as invalid
 
     return CreateParams(db, modelId, classId, code, nullptr, parentId, parentRelClassId);
@@ -478,7 +478,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP name)
+DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_InformationPartitionElement, parentSubject, name);
     }
@@ -530,7 +530,7 @@ DgnDbStatus DefinitionPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::DefinitionPartition::GetHandler());
     if (!createParams.IsValid())
@@ -546,7 +546,7 @@ DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     DefinitionPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition) : nullptr;
@@ -564,7 +564,7 @@ DgnDbStatus DocumentPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::DocumentPartition::GetHandler());
     if (!createParams.IsValid())
@@ -580,7 +580,7 @@ DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8CP n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     DocumentPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition) : nullptr;
@@ -603,7 +603,7 @@ DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::GroupInformationPartition::GetHandler());
     if (!createParams.IsValid())
@@ -619,7 +619,7 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     GroupInformationPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
@@ -637,7 +637,7 @@ DgnDbStatus InformationRecordPartition::_OnSubModelInsert(DgnModelCR model) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::InformationRecordPartition::GetHandler());
     if (!createParams.IsValid())
@@ -653,7 +653,7 @@ InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     InformationRecordPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationRecordPartition>(*partition) : nullptr;
@@ -671,7 +671,7 @@ DgnDbStatus SpatialLocationPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::SpatialLocationPartition::GetHandler());
     if (!createParams.IsValid())
@@ -687,7 +687,7 @@ SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     SpatialLocationPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SpatialLocationPartition>(*partition) : nullptr;
@@ -704,7 +704,7 @@ DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::PhysicalPartition::GetHandler());
     if (!createParams.IsValid())
@@ -720,7 +720,7 @@ PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8CP n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     PhysicalPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition) : nullptr;
@@ -746,7 +746,7 @@ DgnDbStatus RoleElement::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
+DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, model, name);
     }
@@ -774,12 +774,12 @@ DgnCode Drawing::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8CP name)
+DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
         {
         BeAssert(false);
         return nullptr;
@@ -791,12 +791,12 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
+SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
         {
         BeAssert(false);
         return nullptr;
@@ -2517,7 +2517,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                           \
+            {                                                                          \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2616,21 +2616,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     T_Super::_RegisterPropertyAccessors(params, layout);
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                           \
+            {                                                                          \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2979,7 +2979,7 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, model, name);
     }
@@ -2995,7 +2995,7 @@ SpatialLocationTypeCPtr SpatialLocationElement::GetSpatialLocationType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, model, name);
     }
@@ -3003,7 +3003,7 @@ DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, model, name);
     }
@@ -3011,7 +3011,7 @@ DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateRecipe3dPtr TemplateRecipe3d::Create(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe3dPtr TemplateRecipe3d::Create(DefinitionModelCR model, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
@@ -3030,7 +3030,7 @@ GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, model, name);
     }
@@ -3038,7 +3038,7 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, model, name);
     }
@@ -3046,7 +3046,7 @@ DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateRecipe2dPtr TemplateRecipe2d::Create(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe2dPtr TemplateRecipe2d::Create(DefinitionModelCR model, Utf8StringCR name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
@@ -3064,7 +3064,7 @@ ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& icode, DgnElementId newParentId)
+DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnCodeCR icode, DgnElementId newParentId)
     {
     DgnElementId alreadyCopied = m_context.FindElementId(sourceElement.GetElementId());
     if (alreadyCopied.IsValid())

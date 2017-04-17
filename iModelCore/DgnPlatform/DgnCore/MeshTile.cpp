@@ -1610,10 +1610,12 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
-    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb), 
+TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
+    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
       m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
+    DPoint3d origin = dgndb.GeoLocation().GetProjectExtents().GetCenter();
+    m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -1749,7 +1751,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
                 if (root.IsValid())
                     m_totalTiles += root->GetNodeCount();
 
-                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, leafTolerance, *pCollector, GetProgressMeter());
+                status = generateMeshTiles->_GenerateMeshTiles(root, m_spatialTransformFromDgn, leafTolerance, *pCollector, GetProgressMeter());
                 }
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
@@ -1818,17 +1820,25 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGeneratorStatus status, ElementTileContext context)
     {
     auto& cache = *context.m_cache;
-    if (TileGeneratorStatus::Success != status && nullptr == context.m_model->ToSheetModel())
+    auto sheet = context.m_model->ToSheetModel();
+
+    DRange3d        range = cache.GetRange();
+    if (nullptr != sheet)
+        range.Extend(sheet->GetSheetExtents());
+
+    Transform transformFromDgn;
+    if (context.m_model->IsSpatialModel())
+        transformFromDgn = GetSpatialTransformFromDgn();
+    else
+        transformFromDgn.InitIdentity();
+
+    if (TileGeneratorStatus::Success != status && nullptr == sheet)
         {
-        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
+        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
     
-    DRange3d        range = cache.GetRange();
-    if (nullptr != context.m_model->ToSheetModel())
-        range.Extend(context.m_model->ToSheetModel()->GetSheetExtents());
-
-    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, GetTransformFromDgn(), 0, 0, nullptr);
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
 
     return ProcessParentTile(parent, context).then([=](ElementTileResult result)
         { 
@@ -1892,7 +1902,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange());
         for (auto& subRange : subRanges)
             {
-            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, tile.GetChildren().size(), &tile);
+            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, tile.GetTransformFromDgn(), tile.GetDepth()+1, tile.GetChildren().size(), &tile);
 
             tile.GetChildren().push_back(child);
             }
@@ -2723,12 +2733,12 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         }
     else if (TileGeneratorStatus::Success == status)
         {
-        Sheet::ModelCP      sheetModel;
-
-        if (nullptr != (sheetModel = m_cache.GetModel().ToSheetModel()))
+        Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
+        if (nullptr != sheetModel)
             {
-            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
-            PushCurrentGeometry();
+            m_curElemId.Invalidate();
+            //Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+            //PushCurrentGeometry();
             }
 
         // We sort by size in order to ensure the largest geometries are assigned batch IDs

@@ -50,13 +50,13 @@ public:
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this LinkPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static LinkPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static LinkPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new LinkPartition
     //! @param[in] parentSubject The new LinkPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this LinkPartition
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static LinkPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static LinkPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -382,10 +382,11 @@ protected:
 
 public:
     //! Create a DgnCode using the specified model (uniqueness scope) and name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(LinkModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(LinkModelCR model, Utf8StringCR name);
     //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    //! @private
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(LinkModelCR model, Utf8CP baseName);
 
     //! Create a RepositoryLink in memory

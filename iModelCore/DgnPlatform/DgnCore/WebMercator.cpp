@@ -60,7 +60,7 @@ struct WebMercatorPoint : DPoint2d
 {
     WebMercatorPoint() {}
     explicit WebMercatorPoint(GeoPoint);
-    static double EarthRadius() {return 6378137.0;}
+    static double RadiusOfEarth() {return 6378137.0;}
     static double LatitudeToAngle(double latitude)
         {
         double sinLatitude = sin(latitude);
@@ -76,8 +76,8 @@ struct LatLongPoint : GeoPoint
     LatLongPoint() {}
     explicit LatLongPoint(WebMercatorPoint mercator)
         {
-        longitude = Angle::RadiansToDegrees(mercator.x  / WebMercatorPoint::EarthRadius());
-        latitude  = Angle::RadiansToDegrees(angleToLatitude(mercator.y / WebMercatorPoint::EarthRadius()));
+        longitude = Angle::RadiansToDegrees(mercator.x  / WebMercatorPoint::RadiusOfEarth());
+        latitude  = Angle::RadiansToDegrees(angleToLatitude(mercator.y / WebMercatorPoint::RadiusOfEarth()));
         elevation = 0.0;
         };
 };
@@ -88,8 +88,8 @@ struct LatLongPoint : GeoPoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
     {
-    x = Angle::DegreesToRadians(latLong.longitude) * EarthRadius();
-    y = LatitudeToAngle(Angle::DegreesToRadians(latLong.latitude)) * EarthRadius();
+    x = Angle::DegreesToRadians(latLong.longitude) * RadiusOfEarth();
+    y = LatitudeToAngle(Angle::DegreesToRadians(latLong.latitude)) * RadiusOfEarth();
     }
 
 END_UNNAMED_NAMESPACE
@@ -118,9 +118,9 @@ BentleyStatus MapTile::Loader::_LoadTile()
 
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;
-    if (0 == m_contentType.CompareTo ("image/png"))
+    if (0 == m_contentType.CompareTo("image/png"))
         format = ImageSource::Format::Png;
-    if (0 == m_contentType.CompareTo ("image/jpeg"))
+    if (0 == m_contentType.CompareTo("image/jpeg"))
         format = ImageSource::Format::Jpeg;
 
     ImageSource source(format, std::move(m_tileBytes));
@@ -223,8 +223,8 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
 Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
     {
     QuadTree::Tile const* quadTile = dynamic_cast <QuadTree::Tile const*>(&tile);
-    BeAssert (nullptr != quadTile);
-    return m_imageryProvider->_ConstructUrl (*quadTile);
+    BeAssert(nullptr != quadTile);
+    return m_imageryProvider->_ConstructUrl(*quadTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,7 +232,7 @@ Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider (&imageryProvider)
+        uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
     {
     AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
@@ -294,7 +294,6 @@ void WebMercatorModel::ToJson(Json::Value& value) const
     m_provider->_ToJson(value[json_providerData()]);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -308,21 +307,21 @@ void WebMercatorModel::FromJson(Json::Value const& value)
 
     if (0 == providerName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
         {
-        m_provider = new MapBoxImageryProvider ();
+        m_provider = new MapBoxImageryProvider();
         }
     else if (0 == providerName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
         {
-        m_provider = new BingImageryProvider ();
+        m_provider = new BingImageryProvider();
         }
     else if (0 == providerName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
         {
-        m_provider = new HereImageryProvider ();
+        m_provider = new HereImageryProvider();
         }
 
     if (m_provider.IsValid())
         {
-        BeAssert (value.isMember(json_providerData()));
-        m_provider->_FromJson (value[json_providerData()]);
+        BeAssert(value.isMember(json_providerData()));
+        m_provider->_FromJson(value[json_providerData()]);
         }
     }
 
@@ -333,7 +332,7 @@ void WebMercatorModel::_OnSaveJsonProperties()
     {
     Json::Value value;
     ToJson(value);
-    SetJsonProperties (json_webMercatorModel(), value);
+    SetJsonProperties(json_webMercatorModel(), value);
     T_Super::_OnSaveJsonProperties();
     }
 
@@ -344,19 +343,19 @@ void WebMercatorModel::_OnLoadedJsonProperties()
     {
     ECN::AdHocJsonValueCR value = GetJsonProperties(json_webMercatorModel());
 
-    FromJson (value);
+    FromJson(value);
     T_Super::_OnLoadedJsonProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WebMercatorModel::_GetCopyrightMessage () const
+Utf8CP WebMercatorModel::_GetCopyrightMessage() const
     {
     if (m_provider.IsValid())
         return m_provider->_GetCreditMessage();
-    else
-        return nullptr;
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,7 +365,7 @@ void WebMercatorModel::Load(SystemP renderSys) const
     {
     if (m_provider.IsNull())
         {
-        BeAssert (false);
+        BeAssert(false);
         return;
         }
 
@@ -383,10 +382,10 @@ void WebMercatorModel::Load(SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params), m_groundBias (params.m_groundBias), m_transparency (params.m_transparency)
+WebMercatorModel::WebMercatorModel(CreateParams const& params) : T_Super(params), m_groundBias(params.m_groundBias), m_transparency(params.m_transparency)
     {
     // get the imagery provider from the properties.
-    Utf8String imageryProviderName (params.m_providerName);
+    Utf8String imageryProviderName(params.m_providerName);
 
     if (0 == imageryProviderName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
         {
@@ -406,14 +405,14 @@ WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params
 
     if (m_provider.IsValid())
         {
-        m_provider->_FromJson (params.m_providerParameters);
+        m_provider->_FromJson(params.m_providerParameters);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapBoxImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+Utf8String MapBoxImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& tile) const
     {
     /*
     @2x.png     2x scale(retina)
@@ -426,16 +425,13 @@ Utf8String MapBoxImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const&
     jpg90       90 % quality JPG
     */
 
-    Utf8String  url;    
-    url.Sprintf ("%s%d/%d/%d%s", m_baseUrl.c_str(), tile.GetZoomLevel(), tile.GetColumn(), tile.GetRow(), ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
-
-    return url;
+    return Utf8PrintfString("%s%d/%d/%d%s", m_baseUrl.c_str(), tile.GetZoomLevel(), tile.GetColumn(), tile.GetRow(), ".jpg80" "?access_token=" "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP MapBoxImageryProvider::_GetCreditMessage () const
+Utf8CP MapBoxImageryProvider::_GetCreditMessage() const
     {
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
@@ -443,7 +439,7 @@ Utf8CP MapBoxImageryProvider::_GetCreditMessage () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP MapBoxImageryProvider::_GetCacheFileName () const
+Utf8CP MapBoxImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -456,14 +452,14 @@ Utf8CP MapBoxImageryProvider::_GetCacheFileName () const
         case MapBoxImageryProvider::MapType::StreetsAndSatellite:
             return "MapBoxHybrid";
         }
-    BeAssert (false);
+    BeAssert(false);
     return "MapBoxUnknown";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MapBoxImageryProvider::_FromJson (Json::Value const& value)
+void MapBoxImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
     m_mapType = (MapBoxImageryProvider::MapType) value[json_mapType()].asInt((int)MapBoxImageryProvider::MapType::StreetMap);
@@ -490,7 +486,7 @@ void    MapBoxImageryProvider::_FromJson (Json::Value const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MapBoxImageryProvider::_ToJson (Json::Value& value) const
+void MapBoxImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
     value[json_mapType()] = (int)m_mapType;
@@ -499,21 +495,16 @@ void    MapBoxImageryProvider::_ToJson (Json::Value& value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  MapBoxImageryProvider::_GetCreditUrl() const
+Utf8CP MapBoxImageryProvider::_GetCreditUrl() const
     {
     // NEEDSWORK_MapBox
     return nullptr;
     }
 
-
-
-
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String   tileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
+static Utf8String tileXYToQuadKey(int tileX, int tileY, int levelOfDetail)
     {
     // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
     Utf8String  quadKey;
@@ -531,7 +522,7 @@ static Utf8String   tileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
             digit++;
             digit++;
             }
-        quadKey.append (1, digit);
+        quadKey.append(1, digit);
         }
     return quadKey;
     }
@@ -539,17 +530,17 @@ static Utf8String   tileXYToQuadKey (int tileX, int tileY, int levelOfDetail)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+Utf8String BingImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& tile) const
     {
     // From the tile, get a "quadkey" the Microsoft way.
     int x = tile.GetColumn();
     int y = tile.GetRow();
-    Utf8String  quadKey = tileXYToQuadKey (x, y, tile.GetZoomLevel());
+    Utf8String  quadKey = tileXYToQuadKey(x, y, tile.GetZoomLevel());
     int subdomain = (x + y) % 4;
 
     // from the template url, construct the tile url.
     Utf8String url;
-    url.Sprintf (m_urlTemplate.c_str(), subdomain, quadKey.c_str());
+    url.Sprintf(m_urlTemplate.c_str(), subdomain, quadKey.c_str());
 
     return url;
     }
@@ -557,7 +548,7 @@ Utf8String BingImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BingImageryProvider::_GetCreditMessage () const
+Utf8CP BingImageryProvider::_GetCreditMessage() const
     {
     return "(c) Microsoft";
     }
@@ -565,7 +556,7 @@ Utf8CP BingImageryProvider::_GetCreditMessage () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BingImageryProvider::_GetCacheFileName () const
+Utf8CP BingImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -578,14 +569,14 @@ Utf8CP BingImageryProvider::_GetCacheFileName () const
         case BingImageryProvider::MapType::AerialWithLabels:
             return "BingHybrid";
         }
-    BeAssert (false);
+    BeAssert(false);
     return "BingUnknown";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BingImageryProvider::_FromJson (Json::Value const& value)
+void    BingImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
     m_mapType = (BingImageryProvider::MapType) value[json_mapType()].asInt((int)BingImageryProvider::MapType::Road);
@@ -595,7 +586,7 @@ void    BingImageryProvider::_FromJson (Json::Value const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BingImageryProvider::_ToJson (Json::Value& value) const
+void    BingImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
     value[json_mapType()] = (int)m_mapType;
@@ -613,7 +604,7 @@ Utf8CP  BingImageryProvider::_GetCreditUrl() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_FetchTemplateUrl ()
+folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_FetchTemplateUrl()
     {
     // make a request to the following URL to get the http://dev.virtualearth.net/REST/v1/Imagery/Metadata/<imagerySet>?o=json&key= Metadata information
     // where <imagerySet> is Aerial, AerialWithLabels, or Road. There's an "OrdnanceSurvey" value but it's only valid for the London area.
@@ -628,15 +619,15 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
     switch (m_mapType)
         {
         case BingImageryProvider::MapType::Road:
-            imagerySetName.assign ("Road");
+            imagerySetName.assign("Road");
             break;
 
         case BingImageryProvider::MapType::Aerial:
-            imagerySetName.assign ("Aerial");
+            imagerySetName.assign("Aerial");
             break;
 
         case BingImageryProvider::MapType::AerialWithLabels:
-            imagerySetName.assign ("AerialWithLabels");
+            imagerySetName.assign("AerialWithLabels");
             break;
 
         default:
@@ -645,10 +636,10 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
 
     // prepare the url.
     Utf8String url;
-    url.Sprintf ("http://dev.virtualearth.net/REST/v1/Imagery/Metadata/%s?o=json&key=Am-FIomxQ8COwv6zeuMNoc9xx3rMoeNYo8prPUJysZeQSuGLHQ9VbrHa9hNaO23z", imagerySetName.c_str());
+    url.Sprintf("http://dev.virtualearth.net/REST/v1/Imagery/Metadata/%s?o=json&key=Am-FIomxQ8COwv6zeuMNoc9xx3rMoeNYo8prPUJysZeQSuGLHQ9VbrHa9hNaO23z", imagerySetName.c_str());
 
     // make the URL request.
-    Http::Request request (url);
+    Http::Request request(url);
     BingImageryProviderPtr me(this);
 
     return request.Perform().then([me] (Http::Response response)
@@ -686,7 +677,7 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             Http::HttpBodyPtr               body = content->GetBody();
             Utf8String                      responseString = body->AsString();
             Json::Value                     responseJson;
-            Json::Reader::Parse (responseString.c_str(), responseJson);
+            Json::Reader::Parse(responseString.c_str(), responseJson);
             if (responseJson.isNull())
                 return ImageryProvider::TemplateUrlLoadStatus::Failed;
 
@@ -701,18 +692,18 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
 
             Utf8String rawTemplate      = resourceUrl["imageUrl"].asString();
 
-            size_t  subdomain           = rawTemplate.find ("{subdomain}");
-            BeAssert (Utf8String::npos != subdomain);
-            rawTemplate.replace (subdomain, 11, "t%d");    // Note:: Depends on imageUrlSubdomains returning "t0", "t1", "t2", "t3"  !!
+            size_t  subdomain           = rawTemplate.find("{subdomain}");
+            BeAssert(Utf8String::npos != subdomain);
+            rawTemplate.replace(subdomain, 11, "t%d");    // Note:: Depends on imageUrlSubdomains returning "t0", "t1", "t2", "t3"  !!
 
-            size_t quadkey              = rawTemplate.find ("{quadkey}");
-            BeAssert (Utf8String::npos != quadkey);
-            rawTemplate.replace (quadkey, 9, "%s");
+            size_t quadkey              = rawTemplate.find("{quadkey}");
+            BeAssert(Utf8String::npos != quadkey);
+            rawTemplate.replace(quadkey, 9, "%s");
 
             // NEEDSWORK_Culture
-            size_t culture              = rawTemplate.find ("{culture}");
-            BeAssert (Utf8String::npos != culture);
-            rawTemplate.replace (culture, 9, "en-US");
+            size_t culture              = rawTemplate.find("{culture}");
+            BeAssert(Utf8String::npos != culture);
+            rawTemplate.replace(culture, 9, "en-US");
 
             me->m_urlTemplate = rawTemplate;
 
@@ -723,12 +714,10 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
         });
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-HereImageryProvider::HereImageryProvider ()
+HereImageryProvider::HereImageryProvider()
     {
     // Trial period credentials, good only until July 9, 2017.
     m_appId.assign("Eieg0LYRqg5cyHQdUPCf");
@@ -738,7 +727,7 @@ HereImageryProvider::HereImageryProvider ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HereImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& tile) const
+Utf8String HereImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& tile) const
     {
     // The general format (from Here documentation: https://developer.here.com/rest-apis/documentation/enterprise-map-tile/topics/request-constructing.html
     // {Base URL}{Path}{resource (tile type)}/{map id}/{scheme}/{zoom}/{column}/{row}/{size}/{format}
@@ -755,7 +744,7 @@ Utf8String HereImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
     int subdomain = 1 + ((x + y) % 4);
 
     Utf8String  url;
-    url.Sprintf (m_urlTemplate.c_str(), subdomain, tile.GetZoomLevel(), x, y, m_appId.c_str(), m_appCode.c_str());
+    url.Sprintf(m_urlTemplate.c_str(), subdomain, tile.GetZoomLevel(), x, y, m_appId.c_str(), m_appCode.c_str());
 
     return url;
     }
@@ -763,7 +752,7 @@ Utf8String HereImageryProvider::_ConstructUrl (TileTree::QuadTree::Tile const& t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP HereImageryProvider::_GetCreditMessage () const
+Utf8CP HereImageryProvider::_GetCreditMessage() const
     {
     return "(c) HERE";
     }
@@ -771,7 +760,7 @@ Utf8CP HereImageryProvider::_GetCreditMessage () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP HereImageryProvider::_GetCacheFileName () const
+Utf8CP HereImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -784,14 +773,14 @@ Utf8CP HereImageryProvider::_GetCacheFileName () const
         case HereImageryProvider::MapType::Combined:
             return "HereHybrid";
         }
-    BeAssert (false);
+    BeAssert(false);
     return "HereUnknown";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    HereImageryProvider::_FromJson (Json::Value const& value)
+void    HereImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
     m_mapType = (HereImageryProvider::MapType) value[json_mapType()].asInt((int)HereImageryProvider::MapType::Map);
@@ -818,7 +807,7 @@ void    HereImageryProvider::_FromJson (Json::Value const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    HereImageryProvider::_ToJson (Json::Value& value) const
+void    HereImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
     value[json_mapType()] = (int)m_mapType;
@@ -832,7 +821,6 @@ Utf8CP  HereImageryProvider::_GetCreditUrl() const
     // NEEDSWORK_MapBox
     return nullptr;
     }
-
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -849,9 +837,9 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Barry.Bentley                   04/17
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FetchTemplateUrlProgressiveTask (folly::Future<ImageryProvider::TemplateUrlLoadStatus>&& future, WebMercatorModel const* model) : m_future(std::move(future)), m_model (model) {}
+    FetchTemplateUrlProgressiveTask(folly::Future<ImageryProvider::TemplateUrlLoadStatus>&& future, WebMercatorModel const* model) : m_future(std::move(future)), m_model(model) {}
 
-    ~FetchTemplateUrlProgressiveTask () 
+    ~FetchTemplateUrlProgressiveTask() 
         {
         // The progressive display is deleted if the view is closed.
         // If the request is still outstanding, then set it back to "NotFetched"
@@ -874,7 +862,7 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
             return Completion::Aborted;
 
         // now we have the response from the server.
-        m_model->m_provider->_SetTemplateUrlLoadStatus (m_future.get());
+        m_model->m_provider->_SetTemplateUrlLoadStatus(m_future.get());
 
         switch (m_future.get())
             {
@@ -903,7 +891,6 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
 
         return Completion::Aborted;
         }
-
     };
 };
 
@@ -912,7 +899,7 @@ END_BENTLEY_DGN_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
+void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
     // need a provider to get the tiles.
     if (m_provider.IsNull())
@@ -926,7 +913,7 @@ void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
             if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
                 {
                 // don't have the tile template yet, schedule a progressive pass to get it.
-                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask (std::move(future), this));
+                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask(std::move(future), this));
                 return;
                 }
             else
@@ -938,7 +925,6 @@ void WebMercatorModel::_AddTerrainGraphics (TerrainContextR context) const
                 }
             }
         }
-
 
     // don't need or already have TemplateUrl - go on to load and display the model.
     Load(&context.GetTargetR().GetSystem());
