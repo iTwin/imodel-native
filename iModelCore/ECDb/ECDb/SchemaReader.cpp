@@ -7,7 +7,7 @@
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECDbExpressionSymbolProvider.h"
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 #include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -687,8 +687,12 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        if (nullptr == GetClass(ctx, stmt->GetValueId<ECClassId>(0)))
+        const ECClassId classId = stmt->GetValueId<ECClassId>(0);
+        if (nullptr == GetClass(ctx, classId))
+            {
+            LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), ecSchemaKey->m_cachedSchema->GetName().c_str());
             return ERROR;
+            }
 
         if (ecSchemaKey->IsFullyLoaded())
             return SUCCESS;

@@ -591,7 +591,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
         if (propertyMap->IsSystem())
             viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString().c_str());
         else
-            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<PrimitivePropertyMap>().GetColumn().GetName().c_str());
+            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str());
 
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
@@ -1399,7 +1399,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-    if (m_context.GetViewType() == ViewType::ECClassView)
+    if (m_context.GetViewType() == ViewType::ECClassView || m_context.GetViewType()==ViewType::UpdatableView)
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
     else
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());

@@ -98,6 +98,8 @@ struct ClassMapColumnFactory final : NonCopyableClass
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         void Debug() const;
+        //! Estimate Maximum number of columns required.
+        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
     };
 
 
