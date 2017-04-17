@@ -27,6 +27,16 @@ struct IECSchemaValidator : RefCountedBase, NonCopyableClass
 
 typedef RefCountedPtr<IECSchemaValidator> IECSchemaValidatorPtr;
 
+struct IECClassValidator : RefCountedBase, NonCopyableClass
+{
+    virtual ECObjectsStatus Validate(ECClassCR schema) const = 0;
+
+    //! destructor
+    virtual ~IECClassValidator() {};
+};
+
+typedef RefCountedPtr<IECClassValidator> IECClassValidatorPtr;
+
 struct ECSchemaValidator
     {
 private:
@@ -37,9 +47,11 @@ private:
     static ECSchemaValidatorP GetSingleton();
     bool m_validated;
     bvector<IECSchemaValidatorPtr> m_validators;
+    bvector<IECClassValidatorPtr> m_classValidators;
 
     void ValidateSchema(ECSchemaR schema);
     bvector<IECSchemaValidatorP> GetValidators();
+    bvector<IECClassValidatorP> GetClassValidators();
 
 public:
     //! Validates the schema based on the added validators.
@@ -48,11 +60,26 @@ public:
 
     //! Adds the supplied IECSchemaValidatorP which will be later called when ECSchemaValidator::Validate is run
     ECOBJECTS_EXPORT static ECObjectsStatus AddValidator(IECSchemaValidatorPtr& validator);
+    ECOBJECTS_EXPORT static ECObjectsStatus AddClassValidator(IECClassValidatorPtr& validator);
+
+
     };
 
 struct BaseECValidator : IECSchemaValidator
     {
     ECObjectsStatus Validate(ECSchemaR schema) const override;
+    };
+
+struct BaseECClassValidator : IECClassValidator
+    {
+    ECObjectsStatus Validate(ECClassCR schema) const override;
+    };
+
+struct MixInValidator : IECClassValidator
+    {
+    // A mixin may have 0 or 1 base class
+    // A mxin may not override an inherited property
+    ECObjectsStatus Validate(ECClassCR schema) const override;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
