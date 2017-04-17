@@ -54,11 +54,6 @@ The response from the server contained a 400, Bad Request, http error
 */
 
 /*!
-\def ERROR_ALREADY_EXISTS
-Object already exists at location
-*/
-
-/*!
 \def SUCCESS
 Successful operation
 */
