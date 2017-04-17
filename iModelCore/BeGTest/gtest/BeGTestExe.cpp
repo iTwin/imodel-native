@@ -294,6 +294,21 @@ struct GtestFailureHandler : BeTest::IFailureHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Farhad.Kabir                    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+char const * getTestName(int argC, bvector<CharP> argv)
+    {
+    for (int i = 1; i < argC; i++) 
+        {
+        Utf8String utf8Str(argv[i]);
+        if (utf8Str.Contains("--gtest_filter"))
+            {
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split(argv[i], "=", nullptr, tokens);
+
+            return tokens[1].c_str();
+            }
+        }
+    return "";
+    }
 bool umdh_Use(int argC, char *argv[]) 
     {
     for (int i = 1; i < argC; i++) 
@@ -331,6 +346,12 @@ int WinSetEnv(const char * name, const char * value)
 extern "C"
 int main(int argc, char **argv)
     {
+    int no = argc;
+    bvector<CharP> args;
+    for (int i = 0; i < no; i++) 
+        {
+        args.push_back(argv[i]);
+        }
     auto hostPtr = BeGTestHost::Create(argv[0]);
 
     //  Make sure output directies exist (and remove any results hanging around from a previous run)
@@ -373,6 +394,7 @@ int main(int argc, char **argv)
         if (!filters.empty())
             ::testing::GTEST_FLAG(filter) = filters.c_str();
         }
+    
 #if defined(BENTLEY_WIN32)   
     char strCommand[1024];
     bool spawnRet;
@@ -383,6 +405,7 @@ int main(int argc, char **argv)
     Utf8String pathComparison;
     Utf8String umdhPathJoin;
     Utf8String symbolPath;
+    
     if (umdh_Use(argc, argv))
         {
         //set _NT_SYMBOL_PATH
@@ -436,9 +459,26 @@ int main(int argc, char **argv)
         BeFileName::GetCwd(currentDirectory2);
         WString currentDirectory3 = currentDirectory2;
         CharP log2Name = "\\run\\SecondSnapshot.log";
-        CharP logComparisonName = "\\run\\Comparison.log";
+        CharP logComparisonName = "";
+
+        CharCP testName = getTestName(no, args);
+        Utf8String utf8Str(testName);
+        char pathCompComm[1024];
+
+        if (utf8Str.Equals(""))
+            {
+            logComparisonName = "\\run\\Comparison.log";
+            currentDirectory3.AppendUtf8(pathCompComm);
+            }
+        else
+            {
+            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\run\\%s.log", testName);
+            printf(pathCompComm, "\n");
+            currentDirectory3.AppendUtf8(pathCompComm);
+            }
+
         currentDirectory2.AppendUtf8(log2Name);
-        currentDirectory3.AppendUtf8(logComparisonName);
+        
 
         BeStringUtilities::WCharToUtf8(pathSnapshot2, currentDirectory2.c_str());
         BeStringUtilities::WCharToUtf8(pathComparison, currentDirectory3.c_str());
@@ -459,7 +499,9 @@ int main(int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
         printf(strCommand, "\n");
+
         }
 #endif
+    
     return errors;
     }
