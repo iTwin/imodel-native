@@ -38,7 +38,7 @@
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjects\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjects\</BaseIntermediateOutputPath>
     <NMakeOutput>ecobjects.exe</NMakeOutput>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>

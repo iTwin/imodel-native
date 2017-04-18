@@ -328,7 +328,7 @@
             </Files>
         </Bindings>
     </Part>
-
+    
     <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
@@ -339,6 +339,7 @@
         </Bindings>
     </Part>
     
+
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
@@ -368,8 +369,8 @@
 
     <ProductDirectoryList ListName="SchemaValidator">
         <ProductDirectory Name="SchemaValidatorExe" Path=""/>
-    </ProductDirectoryList>    
-
+    </ProductDirectoryList>  
+    
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
