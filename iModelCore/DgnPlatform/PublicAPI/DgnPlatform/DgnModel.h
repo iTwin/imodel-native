@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -914,8 +914,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel);
-    friend struct dgn_ModelHandler::Geometric2d;
+    DEFINE_T_SUPER(GeometricModel);
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
@@ -1251,16 +1250,10 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for GeometricModel2d
-    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
-    };
-
     //! The ModelHandler for DrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel

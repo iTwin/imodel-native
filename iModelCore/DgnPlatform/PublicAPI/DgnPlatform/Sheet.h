@@ -339,9 +339,9 @@ namespace Handlers
     };
 
     //! The ModelHandler for Sheet::Model
-    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
     };
 };
 

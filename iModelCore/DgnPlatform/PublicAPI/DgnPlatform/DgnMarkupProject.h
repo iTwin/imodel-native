@@ -537,15 +537,15 @@ struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationConte
 namespace dgn_ModelHandler
 {
 //! The ModelHandler for RedlineModel.
-struct Redline : Geometric2d
+struct Redline : Model
 {
-    MODELHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineModel, RedlineModel, Redline, Geometric2d, )
+    MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Model, )
 };
 
 //! The ModelHandler for SpatialRedlineModel.
 struct SpatialRedline : Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_SpatialRedlineModel, SpatialRedlineModel, SpatialRedline, Spatial, )
+    MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial, )
 };
 
 }
