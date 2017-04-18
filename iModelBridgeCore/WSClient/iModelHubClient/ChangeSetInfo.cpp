@@ -9,6 +9,7 @@
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
+USING_NAMESPACE_BENTLEY_SQLITE
 
 // avoid collision of a static function with the same name in another CPP file in this compiland...
 BEGIN_UNNAMED_NAMESPACE

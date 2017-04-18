@@ -13,7 +13,6 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGN
 
 typedef struct Client* ClientP;
 
@@ -21,14 +20,14 @@ typedef struct Client* ClientP;
 //! 
 // @bsiclass                                      Karolis.Dziedzelis             09/2016
 //=======================================================================================
-struct iModelAdmin : public DgnPlatformLib::Host::RepositoryAdmin
+struct iModelAdmin : public Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
 private:
     std::unique_ptr<bmap<Utf8String, iModelManagerPtr>> m_managers;
     ClientP m_client;
 public:
     iModelAdmin(ClientP client);
-    IMODELHUBCLIENT_EXPORT IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override;
+    IMODELHUBCLIENT_EXPORT Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR db) const override;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

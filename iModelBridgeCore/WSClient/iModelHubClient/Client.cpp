@@ -37,8 +37,7 @@ IWSRepositoryClientPtr Client::CreateProjectConnection() const
     project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
-    if (m_serverUrl.Contains("azurewebsites.net"))
-        client->GetWSClient()->EnableWsgServerHeader(true);
+    client->GetWSClient()->EnableWsgServerHeader(true);
     return client;
     }
 
@@ -874,8 +873,7 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
-    if (m_serverUrl.Contains("azurewebsites.net"))
-        client->GetWSClient()->EnableWsgServerHeader(true);
+    client->GetWSClient()->EnableWsgServerHeader(true);
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%u", briefcaseId);

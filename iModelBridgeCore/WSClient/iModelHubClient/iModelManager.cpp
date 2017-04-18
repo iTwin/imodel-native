@@ -8,7 +8,6 @@
 #include <WebServices/iModelHub/Client/iModelManager.h>
 #include "Utils.h"
 #include "Logging.h"
-#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
@@ -54,14 +53,12 @@ RepositoryStatus iModelManager::GetResponseStatus(Result<void> result)
         {
         map[Error::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
         map[Error::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
-        map[Error::Id::ChangeSetDoesNotExist]           = RepositoryStatus::InvalidRequest;
+        map[Error::Id::ChangeSetDoesNotExist]          = RepositoryStatus::InvalidRequest;
         map[Error::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
         map[Error::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
         map[Error::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
         map[Error::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
-        map[Error::Id::CodeStateChangeSetDenied]        = RepositoryStatus::InvalidRequest;
-        map[Error::Id::CodeAlreadyExists]              = RepositoryStatus::CodeUnavailable;
-        map[Error::Id::iModelIsLocked]             = RepositoryStatus::RepositoryIsLocked;
+        map[Error::Id::iModelIsLocked]                 = RepositoryStatus::RepositoryIsLocked;
         }
 
     auto it = map.find(result.GetError().GetId());

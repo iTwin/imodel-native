@@ -16,7 +16,6 @@
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-USING_NAMESPACE_BENTLEY_SQLITE
 struct FileInfo;
 typedef RefCountedPtr<struct FileInfo> FileInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileInfo);
@@ -46,7 +45,7 @@ friend struct iModelConnection;
 private:
     int32_t     m_index;
     Utf8String  m_fileName;
-    BeGuid      m_fileId;
+    BeSQLite::BeGuid      m_fileId;
     Utf8String  m_mergedChangeSetId;
     Utf8String  m_description;
     uint64_t    m_fileSize;
@@ -57,7 +56,7 @@ private:
     FileAccessKeyPtr m_fileAccessKey;
     bool        m_containsFileAccessKey;
 
-    FileInfo(BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false), m_index(-1), m_fileSize(0) {}
+    FileInfo(BeSQLite::BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false), m_index(-1), m_fileSize(0) {}
     IMODELHUBCLIENT_EXPORT FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
     IMODELHUBCLIENT_EXPORT FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedChangeSetId,
         Utf8StringCR description, uint64_t size, Utf8StringCR user, DateTimeCR date);
@@ -71,7 +70,7 @@ private:
 public:
     FileInfo() : m_index(-1), m_fileSize(0), m_areFileDetailsAvailable(false) {}
 
-    static FileInfoPtr Create(BeGuid fileId) {return FileInfoPtr(new FileInfo(fileId));}
+    static FileInfoPtr Create(BeSQLite::BeGuid fileId) {return FileInfoPtr(new FileInfo(fileId));}
     //! DEPRECATED: Use Parsing from Instance
     IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
     IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(WebServices::WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
@@ -82,7 +81,7 @@ public:
     static FileInfoPtr Create(Dgn::DgnDbCR db, Utf8StringCR description) {return FileInfoPtr(new FileInfo(db, description));}
     int32_t GetIndex() const {return m_index;} //!< Index of the file.
     Utf8StringCR GetFileName() const {return m_fileName;} //!< Name of the file.
-    BeGuid GetFileId() const {return m_fileId;} //!< Db Guid of the file.
+    BeSQLite::BeGuid GetFileId() const {return m_fileId;} //!< Db Guid of the file.
     Utf8StringCR GetMergedChangeSetId() const {return m_mergedChangeSetId;} //!< Get Last ChangeSet Id merged to the iModel.
     Utf8StringCR GetDescription() const {return m_description;} //!< Description of the file.
     uint64_t GetSize() const {return m_fileSize;} //!< Size of the file.

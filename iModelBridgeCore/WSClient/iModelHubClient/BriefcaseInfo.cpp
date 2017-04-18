@@ -10,6 +10,7 @@
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
+USING_NAMESPACE_BENTLEY_SQLITE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis           09/2016
@@ -31,7 +32,7 @@ BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 BriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
     {
-    BeSQLite::BeBriefcaseId id;
+    BeBriefcaseId id;
     id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
     Utf8String  userOwned = json.HasMember(ServerSchema::Property::UserOwned) ? json[ServerSchema::Property::UserOwned].GetString() : "";
     BeGuid fileId;

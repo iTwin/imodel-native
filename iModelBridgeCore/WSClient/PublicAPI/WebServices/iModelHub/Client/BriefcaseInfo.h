@@ -12,7 +12,6 @@
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef RefCountedPtr<struct BriefcaseInfo> BriefcaseInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(BriefcaseInfo);
 DEFINE_TASK_TYPEDEFS(BriefcaseInfoPtr, BriefcaseInfo);
@@ -37,7 +36,7 @@ public:
     BriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly) 
         : m_id(id), m_fileId(fileId), m_userOwned(userOwned), m_isReadOnly(isReadOnly) {}
 
-    static BriefcaseInfoPtr Parse(WSObjectsReader::Instance instance);
+    static BriefcaseInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
     //! DEPRECATED: Use Parse from Instance
     static BriefcaseInfoPtr Parse(JsonValueCR json);
 
