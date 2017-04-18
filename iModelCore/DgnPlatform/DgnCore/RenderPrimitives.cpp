@@ -1039,6 +1039,13 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
+        // ###TODO_ELEMENT_TILE: This is not precisely accurate. Need to handle:
+        //  - boundary type 'none' not actually containing point string; and
+        //  - boundary type 'none' containing multiple curves, any number of which may be point strings
+        // where 'point string' refers to any of:
+        //   - point string curve primitive type;
+        //   - line string (with any boundary type) containing 1 point
+        //   - line string (with any boundary type) containing 2 identical points
         bool disjoint = CurveVector::BOUNDARY_TYPE_None == curveVector->GetBoundaryType();
         if (!disjoint && 1 == strokePoints.size())
             {
