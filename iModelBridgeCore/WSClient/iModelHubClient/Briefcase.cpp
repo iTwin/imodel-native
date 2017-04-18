@@ -13,7 +13,7 @@
 #include <thread>
 #include <random>
 #include <WebServices/iModelHub/Client/Configuration.h>
-#include "Events\EventManager.h"
+#include "Events/EventManager.h"
 #include <WebServices/iModelHub/Client/BreakHelper.h>
 #include "Utils.h"
 
