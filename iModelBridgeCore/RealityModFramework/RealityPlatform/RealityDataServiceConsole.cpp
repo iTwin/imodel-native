@@ -242,7 +242,12 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
             DisplayInfo("Could not extract a number from provided input. Use input as was provided? [ y / n ]\n", DisplayOption::Question);
             std::getline(*s_inputSource, str);
             Utf8String use(str.c_str());
-            if (!use.EqualsI("y"))
+            if (use.EqualsI("Quit"))
+                {
+                m_lastCommand = Command::Quit;
+                return;
+                }
+            else if (!use.EqualsI("y"))
                 {
                 DisplayInfo("Retrying\n", DisplayOption::Tip);
                 return Choice(options, input);
@@ -599,11 +604,13 @@ void RealityDataConsole::ListAll()
     size_t placeholder = 0;
     size_t step;
     size_t size = filesInRepo.size();
-    while (m_lastCommand != Command::Cancel && placeholder < size)
+    while (m_lastCommand != Command::Cancel && m_lastCommand != Command::Quit && placeholder < size)
         {
         std::getline(*s_inputSource, str);
         if (Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
+        else if (Utf8String(str.c_str()).Trim().EqualsI("Quit"))
+            m_lastCommand = Command::Quit;
         else
             {
             step = (size < (placeholder + 20)) ? size : placeholder + 20;
@@ -759,6 +766,12 @@ void RealityDataConsole::Upload()
         bmap<RealityDataField, Utf8String> properties;
         DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
+        Utf8String command(input.c_str());
+        if (command.EqualsI("Quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
@@ -767,6 +780,12 @@ void RealityDataConsole::Upload()
 
         DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
+        command = Utf8String(input.c_str());
+        if (command.EqualsI("Quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
         properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
@@ -775,6 +794,12 @@ void RealityDataConsole::Upload()
 
         DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
+        command = Utf8String(input.c_str());
+        if (command.EqualsI("Quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
         properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
         propertyString = RealityDataServiceUpload::PackageProperties(properties);
@@ -1020,7 +1045,12 @@ void RealityDataConsole::Delete()
         {
         DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(*s_inputSource, str);
-        if (str != "y")
+        if(strstr(str.c_str(), "quit"))
+            {      
+            m_lastCommand = Command::Quit;
+            return;
+            }
+        else if (str != "y")
             return;
 
         RealityDataDeleteDocument documentReq = RealityDataDeleteDocument(instanceId);
@@ -1030,7 +1060,12 @@ void RealityDataConsole::Delete()
         {
         DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(*s_inputSource, str);
-        if (str != "y")
+        if (strstr(str.c_str(), "quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
+        else if (str != "y")
             return;
 
         RealityDataDeleteFolder folderReq = RealityDataDeleteFolder(instanceId);
@@ -1041,7 +1076,12 @@ void RealityDataConsole::Delete()
         DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(*s_inputSource, str);
-        if (str != "y")
+        if (strstr(str.c_str(), "quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
+        else if (str != "y")
             return;
 
         RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
@@ -1092,7 +1132,12 @@ void RealityDataConsole::Filter()
 
         std::getline(*s_inputSource, str);
         value = Utf8String(str.c_str());
-        if (filter.Equals("Name"))
+        if (value.EqualsI("Quit"))
+            {
+            m_lastCommand = Command::Quit;
+            return;
+            }
+        else if (filter.Equals("Name"))
             m_nameFilter = value;
         else if (filter.Equals("Group"))
             m_groupFilter = value;
@@ -1145,6 +1190,11 @@ void RealityDataConsole::CreateRD()
     DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
     std::getline(*s_inputSource, input);
     Utf8String name = Utf8String(input.c_str()).Trim();
+    if(name.EqualsI("Quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
     properties.Insert(RealityDataField::Name, name);
 
     Utf8String option;
@@ -1154,7 +1204,13 @@ void RealityDataConsole::CreateRD()
 
     DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
     std::getline(*s_inputSource, input);
-    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
+    Utf8String type = Utf8String(input.c_str()).Trim();
+    if (type.EqualsI("Quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    properties.Insert(RealityDataField::Type, type);
 
     DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
     Choice(m_visibilityOptions, option);
@@ -1162,6 +1218,12 @@ void RealityDataConsole::CreateRD()
 
     DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
     std::getline(*s_inputSource, input);
+    Utf8String rootDoc = Utf8String(input.c_str()).Trim();
+    if (rootDoc.EqualsI("Quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
     properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
