@@ -10,10 +10,21 @@
 #include <ImagePP\h\ImageppAPI.h>
 #include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnView/ViewManager.h>
+
 #include <DgnView/DgnViewLib.h>
+
+#ifndef VANCOUVER_API   
+#include <DgnView/ViewManager.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#define VIEWMANAGER ViewManager
+#else
+#define VIEWMANAGER IViewManager
+#include <DgnGeoCoord/DgnGeoCoord.h>
+
+using namespace Bentley::GeoCoordinates;
+#endif
+
 #include <BeXml/BeXml.h>
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -22,10 +33,17 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 namespace ScalableMeshATPexe
 {
 
-struct ExeViewManager : ViewManager
+struct ExeViewManager : VIEWMANAGER
     {
     protected:
+#ifndef VANCOUVER_API   
         virtual DgnDisplay::QvSystemContextP _GetQvSystemContext() override { return nullptr; }
+#else
+        virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override { return nullptr; }
+        virtual int                                                _GetCurrentViewNumber() override { return 0; }
+        virtual HUDManager*                                        _GetHUDManager() { return nullptr; }
+#endif
+
         virtual bool                _DoesHostHaveFocus()        override { return true; }
         virtual IndexedViewSetR     _GetActiveViewSet()         override { return *(IndexedViewSetP)nullptr; }
         virtual int                 _GetDynamicsStopInterval()  override { return 200; }
@@ -40,11 +58,15 @@ struct ScalableMeshATPexe : DgnViewLib::Host
     protected:
         enum class ParseStatus { Success, Error, NotRecognized };
 
+#ifndef VANCOUVER_API   
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new BentleyApi::Dgn::WindowsKnownLocationsAdmin(); }
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
-
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ScalableMeshATPexe"); }
-        virtual ViewManager& _SupplyViewManager() override { return *new ExeViewManager(); }
+#else
+        virtual void _SupplyProductName(WStringR name) override { name.assign(L"ScalableMeshATPexe"); }
+#endif
+
+        virtual VIEWMANAGER& _SupplyViewManager() override { return *new ExeViewManager(); }
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
         BeFileName          m_inputFileName;

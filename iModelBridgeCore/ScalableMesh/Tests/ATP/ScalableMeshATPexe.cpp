@@ -1,8 +1,12 @@
 //#include "ScalableMeshATPPch.h"
 #include "ScalableMeshATPexe.h"
+
+#ifndef VANCOUVER_API   
 #include <RasterSchema/RasterSchemaApi.h>
 #include <RasterSchema/RasterFileHandler.h>
 #include <RasterSchema/WmsHandler.h>
+#endif
+
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP\all\h\HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
@@ -22,8 +26,11 @@ namespace ScalableMeshATPexe
 DgnPlatformLib::Host::GeoCoordinationAdmin&      ScalableMeshATPexe::_SupplyGeoCoordinationAdmin()
     {
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
-
+#ifndef VANCOUVER_API  
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath);
+#else
+    return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath, IACSManager::GetManager());
+#endif
     }
 
 
@@ -42,10 +49,12 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
     {
     DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
 
-        virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;
-    virtual BentleyStatus                           _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange = false) const override;
+#ifndef VANCOUVER_API
+    virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;
     virtual BentleyStatus                           _GetGDalDataPath(WStringR gdalDataPath) const override;
     virtual BentleyStatus                           _GetECWDataPath(WStringR ecwDataPath) const override;
+#endif
+    virtual BentleyStatus                           _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange = false) const override;        
     virtual                                         ~MyImageppLibAdmin() {}
     };
 
@@ -82,13 +91,14 @@ void MyImageppLibHost::_RegisterFileFormat()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 BentleyStatus MyImageppLibAdmin::_GetDefaultTempDirectory(BeFileName& tempFileName) const
     {
     // Return the temp directory name. The directory is created if it does not exist.
     T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFileName, L"Raster");
     return BSISUCCESS;
     }
-
+#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
@@ -108,6 +118,7 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
@@ -133,7 +144,7 @@ BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
 
     return BSISUCCESS;
     }
-
+#endif
 
 
 
