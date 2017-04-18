@@ -11,7 +11,7 @@
 #include "Utils.h"
 #include "Logging.h"
 #include <WebServices/iModelHub/Client/BreakHelper.h>
-#include "Events\EventManager.h"
+#include "Events/EventManager.h"
 #include "PredownloadManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
