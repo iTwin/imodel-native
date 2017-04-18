@@ -2662,19 +2662,18 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2d& el = (GeometricElement2d&)elIn;
-            value.SetLong(el.GetCategoryId().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR elIn, ECValueCR valueIn)
+        [](DgnElementR elIn, ECValueCR value)
             {
-            ECN::ECValue value(valueIn);
-            if (value.IsNull() || !value.ConvertToPrimitiveType(PRIMITIVETYPE_Long))
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
                 }
             GeometricElement2d& el = (GeometricElement2d&)elIn;
-            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
     params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
