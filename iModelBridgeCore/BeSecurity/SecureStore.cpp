@@ -286,6 +286,9 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 
     Utf8String encrypted = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
     return Decrypt(encrypted.c_str());
+#else
+    return m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
+        
 #endif
     }
 
@@ -367,6 +370,9 @@ Utf8String SecureStore::Encrypt(Utf8CP value)
     Utf8String encrypted = Base64Utilities::Encode((Utf8CP) ciphertextBlob.pbData, (size_t) ciphertextBlob.cbData);
     LocalFree(ciphertextBlob.pbData);
     return encrypted;
+        
+#else
+        return value;
 
 #endif
     }
@@ -408,6 +414,10 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
     Utf8String decrypted((CharCP) plaintextBlob.pbData, (size_t) plaintextBlob.cbData);
     LocalFree(plaintextBlob.pbData);
     return decrypted;
+        
+#else
+        
+        return encrypted;
 
 #endif
     }
