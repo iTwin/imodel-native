@@ -205,6 +205,8 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (SUCCESS != PersistSchemas(ctx, schemas))
         return ERROR;
 
+    const_cast<ECDb&>(GetECDb()).SaveChanges();
+
     SchemaCompareContext& compareContext = ctx.GetECSchemaCompareContext();
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
@@ -507,6 +509,27 @@ BentleyStatus SchemaManager::CreateClassViewsInDb(bvector<ECN::ECClassId> const&
     {
     BeMutexHolder lock(m_mutex);
     return ViewGenerator::CreateECClassViews(m_ecdb, ecclassids);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaManager::RepopulateCacheTables() const
+    {
+    BeMutexHolder lock(m_mutex);
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
+        {
+        LOG.error("Failed to repopulate ECDb's cache table '" TABLE_ClassHierarchyCache "'.");
+        return ERROR;
+        }
+
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
+        {
+        LOG.error("Failed to repopulate ECDb's cache table '" TABLE_ClassHasTablesCache "'.");
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
