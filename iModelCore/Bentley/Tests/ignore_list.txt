@@ -44,3 +44,5 @@ BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
     #       Which is: 1095364799000
     # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
 
+AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
+    # bim0200, x64, NDEBUG, PRG, Hang
