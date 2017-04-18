@@ -9,7 +9,7 @@
 #include <WebServices/iModelHub/Client/Briefcase.h>
 #include <thread>
 #include "EventManager.h"
-#include "..\Logging.h"
+#include "../Logging.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
