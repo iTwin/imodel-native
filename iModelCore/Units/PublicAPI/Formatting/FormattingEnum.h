@@ -271,4 +271,23 @@ enum class FormatSpecType
     Numeric = 1,   // a pure numeric Spec
     Composite = 2      // a composite spec is also defined (numeric spec is implied)
     };
+
+enum class ScanSegmentType
+    {
+    Prefix = 0,
+    Sign = 1,
+    IntPart = 2,
+    DecPoint = 3,
+    FractPart = 4,
+    ExponentSymbol = 5,
+    ExponentSign = 6,
+    ExponentValue = 7,
+    Delimiter = 8,
+    UnitName = 9,
+    UnitDelim = 10,
+    Suffix = 11,
+    Total = 12,
+    Undefined = 13
+    };
+
 END_BENTLEY_FORMATTING_NAMESPACE

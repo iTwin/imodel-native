@@ -31,12 +31,48 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 TEST(FormattingTest, Preliminary)
     {
-    FormattingDividers fdiv = FormattingDividers("()[]{}");
-    const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";
+    //FormattingDividers fdiv = FormattingDividers("()[]{}");
+    const char *uni = u8"         ЯABГCDE型号sautéςερτcañón    ";
     NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
+    //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
+
+    //int n = 0;
+    //for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
+    //    {
+    //    LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
+    //    n++;
+    //    }
+
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
-      
+    //Utf8CP sig = curs.GetSignature();
+    //LOG.infov("Signature  %s (src %d  sig %d)", sig, strlen(uni), strlen(sig));
+    FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
+    FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
+    LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
+    LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
+    BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
+    Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
+    LOG.infov("TONNE_PER_HR-System  %s", sysN);
+
+    ScanSegment ss(ScanSegmentType::Undefined, 5, 10);
+    LOG.infov("%s", ss.SegmentInfo(nullptr).c_str());
+    Utf8CP testT("abcdefeghijklmnopqrstuvwxyz");
+
+    LOG.infov("TextSegment %s", ss.ExtractSegment(testT).c_str());
+
+    Utf8Char buf[82];
+    ScanBuffer sb(buf, 80);
+    size_t actL = sb.ScanBuffer::ExtractSegment(testT, ss);
+    LOG.infov("TextSegment2 %s len %d", buf, actL);
+
+    NumeriChunk nc;
+    LOG.infov("%s", nc.ChunkInfo("ChunkInfo: ").c_str());
+    }
+
+TEST(FormattingTest, PhysValues)
+    {
+    FormattingDividers fdiv = FormattingDividers("()[]{}");
     EXPECT_TRUE(fdiv.IsDivider('('));
     EXPECT_TRUE(fdiv.IsDivider(')'));
     EXPECT_TRUE(fdiv.IsDivider('{'));
@@ -51,21 +87,10 @@ TEST(FormattingTest, Preliminary)
 
     FormatUnitSet fus = FormatUnitSet("FT(fract8)");
     FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
-   
+
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
 
-    FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
-    FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
-    LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
-    LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
-    BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
-    Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
-    LOG.infov("TONNE_PER_HR-System  %s", sysN);
-    }
-
-TEST(FormattingTest, PhysValues)
-    {
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
     BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");

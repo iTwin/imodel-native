@@ -10,6 +10,151 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+
+//===================================================
+//
+// ScanBuffer Methods
+//
+//===================================================
+size_t ScanBuffer::ExtractSegment(Utf8CP text, ScanSegmentR ss)
+    {
+    size_t totLen = Utils::TextLength(text); // actual length of the text
+    int indx = ss.GetIndex();
+    int len = ss.GetLength();
+    if (0 <= ss.GetIndex())
+        {
+        size_t maxLen = totLen - indx;  // how much text we have
+        size_t subLen = (ss.GetLength() < 0) ? maxLen : len;  // how much text we will try to extract
+        size_t actLen = Utils::MinInt(m_capacity, subLen); // how much text we can actually extract
+        memcpy(m_buffer, text + indx, actLen);
+        m_buffer[actLen] = 0;
+        return actLen;
+        }
+    return 0;
+    }
+
+//===================================================
+//
+// ScanSegment Methods
+//
+//===================================================
+
+Utf8String ScanSegment::ExtractSegment(Utf8CP text)
+    {
+    if (0 > m_indx || m_len == 0)
+        return Utf8String();
+    size_t actLen = Utils::MinInt(Utils::TextLength(text) - m_indx, m_len);
+    Utf8String str(text + m_indx, text + m_indx + actLen);
+    return str;
+    }
+
+Utf8String ScanSegment::SegmentInfo(Utf8CP prefix)
+    {
+    Utf8String str;
+    Utf8String type = TypeToName(m_type);
+    if (nullptr == prefix)
+        prefix = "";
+    str.reserve(80);
+    if(IsPresent())
+        str.Sprintf("%s%s(%d, %d)",prefix, type, m_indx, m_len);
+    else
+        str.Sprintf("%s%s(absent)", prefix, type);
+    return str;
+    }
+
+ScanSegmentType ScanSegment::IndexToType(int indx)
+    {
+    if (indx < 0 || indx >= (int)ScanSegmentType::Undefined)
+        return ScanSegmentType::Undefined;
+    return (ScanSegmentType)indx;
+    }
+
+Utf8String ScanSegment::TypeToName(ScanSegmentType type)
+    {
+    switch (type)
+        {
+        case ScanSegmentType::Prefix: return "Prefix";
+        case ScanSegmentType::Sign: return "Sign";
+        case ScanSegmentType::IntPart : return "IntegerPart";
+        case ScanSegmentType::DecPoint: return "DecimalPoint";
+        case ScanSegmentType::FractPart: return "FractionalPart";
+        case ScanSegmentType::ExponentSymbol: return "ExponentSymbol";
+        case ScanSegmentType::ExponentSign: return "ExponentSign";
+        case ScanSegmentType::ExponentValue: return "ExponentPower";
+        case ScanSegmentType::Delimiter: return "Delimiter";
+        case ScanSegmentType::UnitName: return "UnitName";
+        case ScanSegmentType::UnitDelim: return "UnitDelim";
+        case ScanSegmentType::Suffix: return "Suffix";
+        case ScanSegmentType::Total: return "Total";
+        default: return "Undefined";
+        }
+    }
+
+//===================================================
+//
+// NumeriChunk Methods
+//
+//===================================================
+
+void NumeriChunk::Init()
+    {
+    for (int i = 0; i < (int)ScanSegmentType::Undefined; i++)
+        {
+        m_parts[i] = ScanSegment((ScanSegmentType)i);
+        }
+    }
+
+NumeriChunk::NumeriChunk(Utf8CP text)
+    {
+    Utf8CP ptr = text;
+    int phase = 0;
+    while (0 != *ptr && phase < (int)ScanSegmentType::Undefined)
+        {
+        switch (phase)
+            {
+            case (int)ScanSegmentType::Prefix:
+                break;
+            case (int)ScanSegmentType::Sign:
+                break;
+            case (int)ScanSegmentType::IntPart:
+                break;
+            case (int)ScanSegmentType::DecPoint:
+                break;
+            case (int)ScanSegmentType::FractPart:
+                break;
+            case (int)ScanSegmentType::ExponentSymbol:
+                break;
+            case (int)ScanSegmentType::ExponentSign:
+                break;
+            case (int)ScanSegmentType::ExponentValue:
+                break;
+            case (int)ScanSegmentType::Delimiter:
+                break;
+            case (int)ScanSegmentType::UnitName:
+                break;
+            case (int)ScanSegmentType::UnitDelim:
+                break;
+            case (int)ScanSegmentType::Suffix:
+                break;
+            case (int)ScanSegmentType::Total:
+            default:
+                break;
+            }
+        }
+
+    }
+
+
+Utf8String NumeriChunk::ChunkInfo(Utf8CP mess)
+    {
+    Utf8String str;
+    for (int i = 0; i < (int)ScanSegmentType::Total; i++)
+        {
+        str += m_parts[i].SegmentInfo(" ");
+        }
+    return str;
+    }
+
 //===================================================
 //
 // FormattingScannerCursorMethods
@@ -28,8 +173,8 @@ void FormattingScannerCursor::Rewind(bool freeBuf)
     m_status = ScannerCursorStatus::Success;
     m_effectiveBytes = 0;
     m_dividers = FormattingDividers(nullptr);
-    if (freeBuf)
-        m_unicodeBuff.Release();
+   /* if (freeBuf)
+        m_unicodeBuff.Release();*/
     return;
     }
 
@@ -151,8 +296,8 @@ size_t FormattingScannerCursor::GetNextSymbol()
     size_t seqLen = FormatConstant::GetSequenceLength(c);
     if (0 == seqLen)
         m_status = ScannerCursorStatus::InvalidSymbol;
-    if ('\0' == c || m_cursorPosition >= m_totalScanLength)
-        return m_uniCode;
+    if ('\0' == c || CursorInRange())
+        return GetUnicode();
     m_lastScannedCount++;
     switch (seqLen)
         {
@@ -211,5 +356,142 @@ size_t FormattingScannerCursor::SkipBlanks()
     m_cursorPosition += skipped;
     return skipped;
     }
+
+Utf8CP FormattingScannerCursor::GetSignature()
+    {
+    Rewind(true);
+    Utf8CP symb = "0abcdefg";
+
+    char byt = 0;
+    m_signature = new char[m_totalScanLength + 1];
+    if (nullptr == m_signature)
+        m_signature = FormatConstant::AllocError();
+    else
+        {
+        size_t c = GetNextSymbol();
+        int i = 0;
+        while(c != 0 && i < m_totalScanLength)
+            {
+            byt = 0;
+            if (m_lastScannedCount == 1)
+                byt = 0x7F & c;
+            if (isspace(byt))
+                m_signature[i] = 's';
+            else
+                m_signature[i] = symb[m_lastScannedCount & 0x7];
+            m_signature[++i] = 0;
+            c = GetNextSymbol();
+            }
+        }      
+    return m_signature;
+    }
+
+//Utf8String FormattingScannerCursor::CollapseSpaces()
+//    {
+//    Utf8CP sig = GetSignature();
+//    
+//    }
+
+
+//===================================================
+//
+// CodepointBuffer Methods
+//
+//===================================================
+//
+//CodepointSize CodepointBuffer::IntToSize(size_t cps)
+//    {
+//    if (cps == 4)
+//        return CodepointSize::Quatro;
+//    if (cps == 2)
+//        return CodepointSize::Double;
+//    if (cps == 1)
+//        return CodepointSize::Single;
+//    return CodepointSize::Zero;
+//    }
+//
+//size_t CodepointBuffer::SizeToInt(CodepointSize cps)
+//    {
+//    switch (cps)
+//        {
+//        case CodepointSize::Quatro: return 4;
+//        case CodepointSize::Double: return 2;
+//        case CodepointSize::Single: return 1;
+//        case CodepointSize::Zero:
+//        default: return 0;
+//        }
+//    }
+//
+//void CodepointBuffer::Init(CodepointSize cps, size_t capacity)
+//    {
+//    m_size = cps;
+//    m_lastIndex = -1;
+//    if (CodepointSize::Zero == m_size)
+//        {
+//        m_capacity = 0;
+//        m_bufSize = 0;
+//        m_buff.ptr = nullptr;
+//        }
+//    else
+//        {
+//        m_capacity = capacity;
+//        m_bufSize = (m_capacity + 1)* SizeToInt(m_size);  // extra bytes for terminating zero
+//        m_buff.ptr = new char[m_bufSize];
+//        }
+//    }
+//
+//void CodepointBuffer::Release()
+//    {
+//    if (nullptr != m_buff.bytes)
+//        delete m_buff.bytes;
+//    m_lastIndex = -1;
+//    m_size = CodepointSize::Zero;
+//    m_capacity = 0;
+//    m_bufSize = 0;
+//    m_buff.ptr = nullptr;
+//    }
+//
+//void CodepointBuffer::Reset(CodepointSize cps, size_t capacity)
+//    {
+//    if (nullptr != m_buff.bytes)
+//        delete m_buff.bytes;
+//    m_lastIndex = -1;
+//    if (0 == capacity)
+//        {
+//        m_size = CodepointSize::Zero;
+//        m_capacity = 0;
+//        m_bufSize = 0;
+//        m_buff.ptr = nullptr;
+//        }
+//    else
+//        {
+//        m_size = cps;
+//        m_capacity = capacity;
+//        m_bufSize = (m_capacity + 1)* SizeToInt(m_size);  // extra bytes for terminating zero
+//        m_buff.ptr = new char[m_bufSize];
+//        }
+//    }
+//
+//Utf8P CodepointBuffer::AppendByte(Utf8Char symb)
+//    {
+//    if (m_lastIndex < m_capacity)
+//        m_buff.bytes[++m_lastIndex] = symb;
+//    return  GetByteBuffer();
+//    }
+//
+//uint32_t* CodepointBuffer::AppendSymbol(uint32_t symb)
+//    {
+//    if (m_lastIndex < m_capacity)
+//        m_buff.longs[++m_lastIndex] = symb;
+//    return  GetLongBuffer();
+//    }
+//
+//uint16_t* CodepointBuffer::AppendSymbol(uint16_t symb)
+//    {
+//    if (m_lastIndex < m_capacity)
+//        m_buff.shorts[++m_lastIndex] = symb;
+//    return GetShortBuffer();
+//    }
+//
 
 END_BENTLEY_FORMATTING_NAMESPACE

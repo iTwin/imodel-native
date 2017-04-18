@@ -350,7 +350,25 @@ Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
     return buf;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+// this function scans through the given text string and returns a specially coded text string
+//  representing types of the detected charactes using ASCII letters:
+//    a - ASCII symbol occupying 1 byte
+//    d - ASCII digit occupying 1 byte
+//    . - ASCII point 
+//    , - ASCII comma
+//    e - 
+//    l - Latin Char occupying 2 bytes
+//    u - Unicode occupying 3 bytes
+//    g - Unicode glyph occupying 4 bytes
+//    v - Unicode char occupying 5 bytes  (reserved)
+//    w - Unicode char occupying 6 bytes  (reserved)
+//----------------------------------------------------------------------------------------
+//Utf8String Utils::GetSignature(Utf8CP text)
+//    {
+//
+//    }
 
  //===================================================
  //
@@ -1177,63 +1195,6 @@ void QuantityFraction::Detect(Utf8CP txt)
         }
     }
 
-//===================================================
-//
-// CodepointBuffer
-//
-//===================================================
-void CodepointBuffer::Release()
-    {
-    if (nullptr != m_buff.bytes)
-        delete m_buff.bytes;
-    m_lastIndex = -1;
-    m_size = CodepointSize::Zero;
-    m_capacity = 0;
-    m_bufSize = 0;
-    m_buff.ptr = nullptr;
-    }
-
-void CodepointBuffer::Reset(CodepointSize cps, size_t capacity)
-    {
-    if (nullptr != m_buff.bytes)
-        delete m_buff.bytes;
-    m_lastIndex = -1;
-    if (0 == capacity)
-        {
-        m_size = CodepointSize::Zero;
-        m_capacity = 0;
-        m_bufSize = 0;
-        m_buff.ptr = nullptr;
-        }
-    else
-        {
-        m_size = cps;
-        m_capacity = capacity;
-        m_bufSize = (m_capacity + 1)* SizeToInt(m_size);  // extra bytes for terminating zero
-        m_buff.ptr = new char[m_bufSize];
-        }
-    }
-
-Utf8P CodepointBuffer::AppendByte(Utf8Char symb)
-    {
-    if (m_lastIndex < m_capacity)
-        m_buff.bytes[++m_lastIndex] = symb;
-    return  GetByteBuffer();
-    }
-
-uint32_t* CodepointBuffer::AppendSymbol(uint32_t symb)
-    {
-    if (m_lastIndex < m_capacity)
-        m_buff.longs[++m_lastIndex] = symb;
-    return  GetLongBuffer();
-    }
-
-uint16_t* CodepointBuffer::AppendSymbol(uint16_t symb)
-    {
-    if (m_lastIndex < m_capacity)
-        m_buff.shorts[++m_lastIndex] = symb;
-    return GetShortBuffer();
-    }
 
 END_BENTLEY_FORMATTING_NAMESPACE
 
