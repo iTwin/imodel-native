@@ -19,7 +19,7 @@ BEGIN_SHEET_NAMESPACE
 
 //=======================================================================================
 //! A Sheet::Model is a GraphicalModel2d that has the following characteristics:
-//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Has finite  extents, specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
@@ -48,14 +48,13 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
     //! Draw border graphics (static, called during update)
-    DGNPLATFORM_EXPORT static void DrawBorder (ViewContextR viewContext, DPoint2dCR size);
+    DGNPLATFORM_EXPORT static void DrawBorder(ViewContextR viewContext, DPoint2dCR size);
 
     //! Get the sheet size.
     DPoint2d GetSheetSize() const;
 
-    //! Getthe sheet extents.
+    //! Get the sheet extents.
     AxisAlignedBox3d GetSheetExtents() const;
-
 
     //! @private
     DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
@@ -166,6 +165,7 @@ public:
     BE_PROP_NAME(View)
     BE_PROP_NAME(DisplayPriority)
     BE_PROP_NAME(Scale)
+    BE_PROP_NAME(Clip)
 
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
 
@@ -189,9 +189,9 @@ public:
     DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(prop_View());} //!< Get the Id of the view definition to be drawn by this attachment
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(prop_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
     int32_t GetDisplayPriority() const {return GetPropertyValueInt32(prop_DisplayPriority());}
-    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(prop_DisplayPriority(), v);}
+    DgnDbStatus SetDisplayPriority(int32_t priority) {return SetPropertyValue(prop_DisplayPriority(), priority);}
     double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
-    DgnDbStatus SetScale(double v) {return SetPropertyValue(prop_Scale(), v);}
+    DgnDbStatus SetScale(double scale) {return SetPropertyValue(prop_Scale(), scale);}
 
     //! Get the clip to be applied to this attachment, if any. 
     //! @return a clip vector or an invalid ptr if the attachment is not clipped.
@@ -203,9 +203,9 @@ public:
     //! @see ClearClip
     DGNPLATFORM_EXPORT DgnDbStatus SetClip(ClipVectorCR);
 
-    //! Set this attachment to be unclipped.
+    //! Clear the clip for this attachment.
     //! @see SetClip
-    DGNPLATFORM_EXPORT void ClearClip();
+    void ClearClip() {SetPropertyValue(prop_Clip(), ECN::ECValue());}
 };
 
 //=======================================================================================
@@ -343,7 +343,6 @@ namespace Handlers
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Geometric2d, DGNPLATFORM_EXPORT)
     };
-
 };
 
 END_SHEET_NAMESPACE

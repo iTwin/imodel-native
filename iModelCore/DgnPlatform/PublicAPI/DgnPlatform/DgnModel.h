@@ -258,7 +258,7 @@ protected:
     //! super class properties.
     virtual void _OnSaveJsonProperties() {}
 
-    //! Invoked after the DgnModel is loaded so that subclasses can read from the m_jsonProperites field, if necessary. 
+    //! Invoked after the DgnModel is loaded so that subclasses can read from the m_jsonProperties field, if necessary. 
     //! The properties will already have been loaded into the m_jsonProperties member.
     //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties.
     virtual void _OnLoadedJsonProperties() {}
@@ -419,7 +419,7 @@ protected:
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
     //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
     //! ECRelationships that start/end outside the model can only be copied if the foreign endpoint is also copied. 
-    //! If endpoint elements must be deep-copyed, however, that must be done in _ImportElementsFrom, not in this function. That is because
+    //! If endpoint elements must be deep-copied, however, that must be done in _ImportElementsFrom, not in this function. That is because
     //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
     //! prior to the phase where ECRelationships are copied.
     //! @note The implementation should start by calling the superclass implementation.
@@ -848,7 +848,7 @@ protected:
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
     
     //! Add "terrain" graphics for this DgnModel. Terrain graphics are drawn with the scene graphics every time the camera moves. The difference between terrain and element graphics
-    //! is that this method is called every frame whereas _AddGraphicsToSceen is only called when the query thread completes. Terrain graphics must 
+    //! is that this method is called every frame whereas _AddGraphicsToScreen is only called when the query thread completes. Terrain graphics must 
     //! be re-added every time this method is called or they will disappear.
     //! An implementation of _AddTerrain is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
@@ -1006,8 +1006,8 @@ public:
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPartitionCR modeledElement);
 
-    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create (SpatialLocationPortionCR modeledElement);
-    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert (SpatialLocationPortionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPortionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPortionCR modeledElement);
 };
 
 //=======================================================================================
@@ -1022,7 +1022,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
 protected:
     RoleModelCP _ToRoleModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    explicit RoleModel(CreateParams const& params) : T_Super(params) { }
+    explicit RoleModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1055,7 +1055,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
-    static DefinitionModelPtr Create(CreateParams const& params) { return new DefinitionModel(params); }
+    static DefinitionModelPtr Create(CreateParams const& params) {return new DefinitionModel(params);}
 public:
     DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionPartitionCR modeledElement);
@@ -1110,7 +1110,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
     explicit InformationRecordModel(CreateParams const& params) : T_Super(params) {}
-    static InformationRecordModelPtr Create(CreateParams const& params) { return new InformationRecordModel(params); }
+    static InformationRecordModelPtr Create(CreateParams const& params) {return new InformationRecordModel(params);}
 public:
     DGNPLATFORM_EXPORT static InformationRecordModelPtr Create(InformationRecordPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static InformationRecordModelPtr CreateAndInsert(InformationRecordPartitionCR modeledElement);

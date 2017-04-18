@@ -147,12 +147,12 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
         //! Flag to enable import of schemas to fix schema validation errors when opening the DgnDb
         //! @note Only used in Project Administrator workflows to allow upgrading/importing domain schemas. 
-        enum class EnableSchemaImport : bool { Yes = true, No = false };
+        enum class EnableSchemaImport : bool {Yes = true, No = false};
 
     private:
         EnableSchemaImport m_enableSchemaImport;
 
-        bool IsSchemaImportEnabled() const { return m_enableSchemaImport == EnableSchemaImport::Yes; }
+        bool IsSchemaImportEnabled() const {return m_enableSchemaImport == EnableSchemaImport::Yes;}
         BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
 
     protected:
@@ -167,7 +167,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! with those supplied by the various DgnDomain-s. @see DgnDb::OpenDgnDb(). 
         explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, EnableSchemaImport enableSchemaImport = EnableSchemaImport::No) : Db::OpenParams(openMode, startDefaultTxn), m_enableSchemaImport(enableSchemaImport) {}
 
-        void SetEnableSchemaImport(EnableSchemaImport value) { m_enableSchemaImport = value; }
+        void SetEnableSchemaImport(EnableSchemaImport value) {m_enableSchemaImport = value;}
         virtual ~OpenParams() {}
     };
 

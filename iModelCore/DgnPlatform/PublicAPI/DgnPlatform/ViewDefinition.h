@@ -66,11 +66,11 @@ protected:
 
 public:
     BE_JSON_NAME(styles);
-    BE_JSON_NAME(viewflags)
-    BE_JSON_NAME(backgroundColor)
-    BE_JSON_NAME(monochromeColor)
-    BE_JSON_NAME(subCategory)
-    BE_JSON_NAME(subCategoryOvr)
+    BE_JSON_NAME(viewflags);
+    BE_JSON_NAME(backgroundColor);
+    BE_JSON_NAME(monochromeColor);
+    BE_JSON_NAME(subCategory);
+    BE_JSON_NAME(subCategoryOvr);
 
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
@@ -213,6 +213,7 @@ public:
     BE_JSON_NAME(brightness);
     BE_JSON_NAME(hline)
     BE_JSON_NAME(fstop);
+    BE_JSON_NAME(environment);
 
     //! Construct a new DisplayStyle3d.
     //! @param[in] model The DefinitionModel to contain the DisplayStyle3d
@@ -399,8 +400,8 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP prop_Description() {return "Description";}
-    BE_JSON_NAME(viewDetails)
+    BE_PROP_NAME(Description);
+    BE_JSON_NAME(viewDetails);
 
     static bool IsValidCode(DgnCodeCR code);
 
