@@ -10,6 +10,8 @@
 #include <queue>
 #include <thread>
 
+#include <ImagePP\h\hstdcpp.h>
+
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
 
@@ -39,7 +41,11 @@ using namespace std;
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
+
+#ifndef VANCOUVER_API   
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#endif
+
 #include <Bentley/BeTimeUtilities.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include <Vu/VuApi.h>
@@ -66,6 +72,9 @@ using namespace std;
 #include <CloudDataSource/DataSourceManager.h>
 #include <CloudDataSource/DataSourceAccount.h>
 #include <CloudDataSource/DataSourceBuffered.h>
+
+
+#pragma warning( disable : 4456 ) 
 
 //#define ABORT(ERROR + 1)
 
@@ -327,7 +336,8 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : cannot open 3SM file\r\n");
         return;
         }
-                                
+                         
+#ifndef VANCOUVER_API          
     clock_t t = clock();     
     WString terrainPath =    smFileName+L"Terrain.3sm";    
     IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(terrainPath,scalableMeshPtr));        
@@ -337,9 +347,11 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (statusGround != SUCCESS)
         return;
-    
-    
+
     t = clock() - t;
+#endif    
+    
+    
     /*
     double delay = (double)t / CLOCKS_PER_SEC;
     double minutes = delay / 60.0;
@@ -1682,7 +1694,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
 
-    BeFileName baseFiles(outputDir);
+    BeFileName baseFiles(outputDir.c_str());
     baseFiles.PopDir(); // remove //g
     baseFiles.PopDir(); // remove //headers
     Utf8String baseFilesDir(baseFiles.GetName());
@@ -1831,10 +1843,19 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", 0);
 
     BeFile file;
+
+#ifndef VANCOUVER_API  
     if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read))
         {
         return;
         }
+#else 
+    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        {
+        return;
+        }    
+#endif
+
     char* linesFileBuffer = nullptr;
     size_t fileSize;
     file.GetSize(fileSize);
@@ -2463,10 +2484,19 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     BeFile file;
+
+#ifndef VANCOUVER_API  
     if (BeFileStatus::Success != file.Open(importFileName.c_str(), BeFileAccess::Read))
         {
         return;
         }
+#else
+    if (BeFileStatus::Success != file.Open(importFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        {
+        return;
+        }
+#endif
+
     char* meshFileBuffer = nullptr;
     size_t fileSize;
     file.GetSize(fileSize);

@@ -393,7 +393,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
 
                     WString filePaths;
                     WString filter;
-                    StatusInt status = pTestChildNode->GetAttributeStringValue(filter, "filter");
+                    status = pTestChildNode->GetAttributeStringValue(filter, "filter");
                     WString ext;
                     status = pTestChildNode->GetAttributeStringValue(ext, "extension");
                     fileFinder.FindFiles(datasetPath, filePaths, true);
@@ -473,6 +473,14 @@ BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAME
     BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".3sm");
     BENTLEY_NAMESPACE_NAME::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
 
+#ifdef VANCOUVER_API   
+    bvector<WString> newPathStrings;    
+    newPathStrings.push_back(prefix.c_str());    
+    newPathStrings.push_back(suffix.c_str());    
+    newPathStrings.push_back(stmFileExtension.c_str());    
+    WString newPathWstring = BeStringUtilities::Join(newPathStrings, nullptr);    
+    return newPathWstring;
+#else
     bvector<Utf8CP> newPathStrings;
     Utf8String prefixString;
     BeStringUtilities::WCharToUtf8(prefixString, prefix.c_str());
@@ -489,6 +497,7 @@ BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAME
     BeStringUtilities::Utf8ToWChar(newPathWstring, newPath.c_str(), newPath.size());
 
     return newPathWstring;
+#endif
     }
 
 WString GetMesherTypeName(ScalableMeshMesherType mesherType)

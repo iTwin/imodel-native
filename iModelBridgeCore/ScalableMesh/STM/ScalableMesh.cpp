@@ -2857,9 +2857,22 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
         s_stream_using_curl = true;
 
         const auto smFileName = BeFileName(this->GetPath());
+
+#ifndef VANCOUVER_API   
         path += smFileName.GetDirectoryName();
+#else
+        WChar pathBuffer[5000];
+        path += smFileName.GetDirectoryName(pathBuffer);
+#endif
+        
         path += L"cloud\\";
+        
+#ifndef VANCOUVER_API   
         path += smFileName.GetFileNameWithoutExtension();
+#else        
+        path += smFileName.GetFileNameWithoutExtension(pathBuffer);
+#endif
+
         }
     else
         {
