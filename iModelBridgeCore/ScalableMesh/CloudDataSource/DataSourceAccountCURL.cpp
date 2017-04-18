@@ -212,10 +212,10 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     buffer.size = size;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
-    std::string utf8URL = Utf8String(url);
+    Utf8String utf8URL = Utf8String(url.c_str());
     std::string contentLength = "Content-Length " + std::to_string(size);
     std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-    contentDisposition += Utf8String(filename);
+    contentDisposition += Utf8String(filename.c_str()).c_str();
     contentDisposition += "\"";
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
