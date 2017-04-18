@@ -17,20 +17,21 @@ public:
     enum class Id
         {
         Unknown = -1,
-        //DgnDbServer Errors
+
+        //iModel Hub Services Errors
         MissingRequiredProperties = 1,
         InvalidPropertiesValues,
         UserDoesNotHavePermission,
         InvalidBriefcase,
+        BriefcaseDoesNotExist,
         BriefcaseDoesNotBelongToUser,
         AnotherUserPushing,
         ChangeSetAlreadyExists,
         ChangeSetDoesNotExist,
         FileIsNotUploaded,
-        ChangeSetExistsButNoBackingFile,
         iModelIsNotInitialized,
         ChangeSetPointsToBadiModel,
-        BIMCSOperationFailed,
+        iModelHubOperationFailed,
         PullIsRequired,
         MaximumNumberOfBriefcasesPerUser,
         MaximumNumberOfBriefcasesPerUserPerMinute,
@@ -43,34 +44,26 @@ public:
         UserAlreadyExists,
         UserDoesNotExist,
         CodeStateInvalid,
-        CodeStateChangeSetDenied,
         CodeReservedByAnotherBriefcase,
-        CodeAlreadyExists,
         CodeDoesNotExist,
         CodesExist,
         FileDoesNotExist,
         iModelIsLocked,
+        EventTypeDoesNotExist,
+        EventSubscriptionDoesNotExist,
+        EventSubscriptionAlreadyExists,
+        ProjectAssociationIsNotEnabled,
+        ProjectIdIsNotSpecified,
+        FailedToGetProjectPermissions,
 
         //Long Running Processes Errors
-        FileIsNotYetInitialized,
+        FileIsNotYetInitialized = 100,
         FileIsOutdated,
         FileHasDifferentId,
         FileInitializationFailed,
 
-        //WebServices Errors
-        LoginFailed,
-        SslRequired,
-        NotEnoughRights,
-        NoServerLicense,
-        NoClientLicense,
-        TooManyBadLoginAttempts,
-        InternalServerError,
-        WebServicesError,
-        ConnectionError,
-        Canceled,
-
-        //DgnDbServer Client API Errors
-        NoRepositoriesFound,
+        //iModel Hub Client API Errors
+        NoRepositoriesFound = 200,
         FileIsNotBriefcase,
         CredentialsNotSet,
         FileNotFound,
@@ -84,12 +77,8 @@ public:
         BriefcaseIsReadOnly,
         TrackingNotEnabled,
 
-        //Revision Manager Errors
-        MergeError,
-        RevisionManagerError,
-
         //Event Errors
-        NoEventsFound,
+        NoEventsFound = 300,
         NoSubscriptionFound,
         NoSASFound,
         NotSubscribedToEventService,
@@ -97,7 +86,23 @@ public:
         EventCallbackNotFound,
         EventCallbackAlreadySubscribed,
         EventCallbackNotSpecified,
-			
+
+        //WebServices Errors
+        LoginFailed = 400,
+        SslRequired,
+        NotEnoughRights,
+        NoServerLicense,
+        NoClientLicense,
+        TooManyBadLoginAttempts,
+        InternalServerError,
+        WebServicesError,
+        ConnectionError,
+        Canceled,
+
+        //Revision Manager Errors
+        MergeError = 500,
+        RevisionManagerError,
+
         AzureError,
         DgnDbError
         };

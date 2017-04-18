@@ -12,7 +12,7 @@
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubClientError)
+BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     //Missing argument errors
     L10N_STRING(MESSAGE_CredentialsNotSet)                 // =="Credentials were not specified."==
     L10N_STRING(MESSAGE_InvalidServerURL)                  // =="Server URL was not specified."==

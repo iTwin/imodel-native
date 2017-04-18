@@ -372,7 +372,7 @@ DgnRevisionsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool
         case Error::Id::AnotherUserPushing:
         case Error::Id::PullIsRequired:
         case Error::Id::DatabaseTemporarilyLocked:
-        case Error::Id::BIMCSOperationFailed:
+        case Error::Id::iModelHubOperationFailed:
             break;
         default:
             {

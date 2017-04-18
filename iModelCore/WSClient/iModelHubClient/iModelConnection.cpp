@@ -2048,7 +2048,7 @@ ICancellationTokenPtr cancellationToken
 
     auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::BIMCSOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
+        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
 
     auto requestString = changeset->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
@@ -2098,7 +2098,7 @@ ICancellationTokenPtr cancellationToken
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::BIMCSOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
+        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return ExecutionManager::ExecuteWithRetry<CodeTemplate>([=]()

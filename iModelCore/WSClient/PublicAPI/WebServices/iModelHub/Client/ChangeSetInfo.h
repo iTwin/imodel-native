@@ -13,7 +13,6 @@
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef RefCountedPtr<struct ChangeSetInfo> ChangeSetInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetInfo);
 DEFINE_TASK_TYPEDEFS(ChangeSetInfoPtr, ChangeSetInfo);
@@ -63,7 +62,7 @@ public:
         m_briefcaseId(briefcaseId), m_userCreated(userCreated), m_pushDate(pushDate), m_containingChanges(containingChanges) {}
 
     bool operator==(ChangeSetInfoCR changeSet) const {return changeSet.GetId() == GetId();}
-    static ChangeSetInfoPtr Parse(WSObjectsReader::Instance instance);
+    static ChangeSetInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
     //! DEPRECATED: Use Parse from Instance
     static ChangeSetInfoPtr Parse(JsonValueCR json);
 
