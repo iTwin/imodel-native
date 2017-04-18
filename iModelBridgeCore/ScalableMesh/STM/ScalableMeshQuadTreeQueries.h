@@ -258,13 +258,15 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         bool m_useAllRes;
         bool m_alwaysVisible;
         bool m_ignoreFaceIndexes;
+        double m_pixelTolerance;
 
     public:
 
-                            ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent, 
-                                                              size_t         level,                                                     
-                                                              const DPoint3d viewBox[]) 
-                                                              : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_ignoreFaceIndexes(false)
+        ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+            size_t         level,
+            const DPoint3d viewBox[],
+            double pixelTol=0.0)
+            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
                                 {                                                             
                                 memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);                                
                                 }    
@@ -273,7 +275,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                                                                     size_t         level,
                                                                     bool alwaysVisible,
                                                                     bool ignoreIndexes)
-                                                                    : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_ignoreFaceIndexes(ignoreIndexes)
+                                                                    : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_ignoreFaceIndexes(ignoreIndexes), m_pixelTolerance(0.0)
                                 {
                                 
                                 }
@@ -281,8 +283,9 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                             ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
                                                                     size_t         level,
                                                                     ClipVectorCP extent3d,
-                                                                    bool useAllResolutions)
-                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_ignoreFaceIndexes(false)
+                                                                    bool useAllResolutions,
+                                                                   double pixelTol = 0.0)
+                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
                                 {
 
                                 }
