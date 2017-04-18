@@ -260,3 +260,72 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
 ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
     # bim0200dev, x64 & x86, DEBUG, 
     # hangs
+
+DataSourceCacheTests.Create_ValidParameters_Success
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.Create_ValidParameters_Success
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(27): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: result
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.Create_ValidParameters_Success (398 ms)
+DataSourceCacheTests.Open_SimpleECDb_Succeeds
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.Open_SimpleECDb_Succeeds
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(51): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: DataSourceCache().Open(path, CacheEnvironment())
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.Open_SimpleECDb_Succeeds (501 ms)
+DataSourceCacheTests.Open_ExistingDb_Success
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.Open_ExistingDb_Success
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(59): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache.Create(path, StubCacheEnvironemnt())
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.Open_ExistingDb_Success (441 ms)
+DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(84): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache.Create(BeFileName(":memory:"), CacheEnvironment())
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty (374 ms)
+DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(100): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache.Create(BeFileName(":memory:"), baseEnv)
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment (366 ms)
+DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(115): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache.Create(BeFileName(":memory:"), baseEnv)
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir (352 ms)
+DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(261): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache->Create(filePath, environment)
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds (821 ms)
+DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp(377): error:       Expected: SUCCESS
+    #       Which is: 0
+    # To be equal to: cache.Create(path, StubCacheEnvironemnt())
+    #       Which is: 32768
+    # [  FAILED  ] DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success (871 ms)
+
+DataSourceCacheTests.*
+    # bim0200dev, x64, DEBUG
+    # These will fail one-by-one as you start ignoring them.
