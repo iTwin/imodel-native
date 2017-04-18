@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_closestPoint.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -208,7 +208,6 @@ SolidLocationDetailR pickData
     Transform localToWorld, worldToLocal;
     double radiusA, radiusB;
     double sweepRadians;
-    double u, v;
     InitClosestPoint (pickData);
     if (TryGetFrame (center, axes, radiusA, radiusB, sweepRadians))
         {
@@ -227,10 +226,11 @@ SolidLocationDetailR pickData
         double thetaTest = thetaTestFraction * m_sweepAngle;
         localTorusPoint = torus.EvaluateThetaPhi (thetaTest, phi);
         localToWorld.Multiply (worldTorusPoint, localTorusPoint);
-        v = Angle::NormalizeToSweep (phi, 0.0, Angle::TwoPi ());
-        UpdatePick (pickData, spacePoint, worldTorusPoint, thetaTestFraction, v, 0, 0, 0);
+        double phi1 = Angle::NormalizeToSweep (phi, 0.0, Angle::TwoPi ());
+        UpdatePick (pickData, spacePoint, worldTorusPoint, phi1, thetaTestFraction, 0, 0, 0);
         if (HasRealCaps ())
             {
+            double u, v;
             // Project the point onto each cap disk.  Retract to unit disk and return to space.
             for (int capIndex = 0; capIndex < 2; capIndex++)
                 {
