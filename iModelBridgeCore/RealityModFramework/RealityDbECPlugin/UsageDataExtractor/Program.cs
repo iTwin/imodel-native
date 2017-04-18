@@ -283,7 +283,7 @@ namespace UsageDataExtractor
             {
             string beginningCriteria = beginning.ToString("yyyy-MM-dd");
             string endCriteria = end.ToString("yyyy-MM-dd");
-            string requestURL = serverURL + "v2.4/Repositories/IndexECPlugin--Server/RealityModeling/PackageStats?$filter=CreationTime+gt+datetime'" + beginningCriteria + "'+and+CreationTime+lt+datetime'" + endCriteria +"'";
+            string requestURL = serverURL + "v2.4/Repositories/IndexECPlugin--Server/RealityModeling/PackageStats?$filter=CreationTime+gt+datetime'" + beginningCriteria + "'+and+CreationTime+lt+datetime'" + endCriteria + "'";
 
             using ( HttpClient client = new HttpClient() )
                 {
@@ -329,8 +329,20 @@ namespace UsageDataExtractor
 
                             jsonResult = JObject.Parse(response.Content.ReadAsStringAsync().Result) as JObject;
 
-                            var result = jsonResult["results"].First(r => r["types"].Any(entry => entry.Value<string>() == "country"));
-                            return result["address_components"].First(r => r["types"].Any(entry => entry.Value<string>() == "country"))["long_name"].Value<string>();
+                            var result = jsonResult["results"].FirstOrDefault(r => r["types"].Any(entry => entry.Value<string>() == "country"));
+                            if(result == null)
+                                {
+                                result = jsonResult["results"].FirstOrDefault();
+                                }
+                            var countryJson = result["address_components"].FirstOrDefault(r => r["types"].Any(entry => entry.Value<string>() == "country"));
+                            if ( countryJson != null )
+                                {
+                                return result["address_components"].First(r => r["types"].Any(entry => entry.Value<string>() == "country"))["long_name"].Value<string>();
+                                }
+                            else
+                                {
+                                return "None";
+                                }
                             }
                         catch ( Exception )
                             {
