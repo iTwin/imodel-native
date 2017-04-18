@@ -529,7 +529,7 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
-    inch->SetPersistenceUnit("MM");
+    inch->SetPersistenceUnit("M");
     inch->SetDefaultPresentationUnit("IN");
     inch->SetRelativeError(10e-4);
     
