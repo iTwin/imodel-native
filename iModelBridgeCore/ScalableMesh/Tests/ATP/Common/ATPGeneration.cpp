@@ -180,10 +180,6 @@ IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
         WString model = L"Default";
         WString level = L"Default";
 
-
-
-
-
         StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model");
 
         assert(status == SUCCESS);
