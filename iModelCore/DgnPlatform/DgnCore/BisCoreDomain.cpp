@@ -39,6 +39,7 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(Repository)
 };
@@ -116,6 +117,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
     RegisterHandler(Sheet::Handlers::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
