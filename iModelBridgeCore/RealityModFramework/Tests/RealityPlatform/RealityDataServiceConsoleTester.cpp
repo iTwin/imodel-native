@@ -51,8 +51,8 @@ public:
         outfile.AppendToPath(L"consoleOutput.txt");
         BeFile commandFile;
         commandFile.Create(infile, true);
-        commandFile.Create(outfile, true);
-        commandFile.Open(infile, BeFileAccess::Write);
+        BeFile outputFile;
+        outputFile.Create(outfile, true);
         uint32_t bytesWritten;
         commandFile.Write(&bytesWritten, commands.c_str(), (uint32_t)(commands.length() * sizeof(char)));
         commandFile.Close();
@@ -60,18 +60,21 @@ public:
         RealityDataConsole console = RealityDataConsole();
         console.Run(infile, outfile);
 
-        BeFile outputFile;
-        outputFile.Open(outfile, BeFileAccess::Read);
+        // For some reason having a BeFile open, close then reopen the same file causes handle duplication
+        // which makes the file impossible to delete, until the program closes. To workaround this, I use 
+        // a new BeFile..
+        BeFile outputFile2; 
+        outputFile2.Open(outfile, BeFileAccess::Read);
         const uint32_t bufferSize = 32768;
         uint32_t bytesRead;
         char buffer[bufferSize];
 
         do {
-            outputFile.Read(buffer, &bytesRead, bufferSize);
+            outputFile2.Read(buffer, &bytesRead, bufferSize);
             output.append(buffer);
         } while (bytesRead == bufferSize);
 
-        outputFile.Close();
+        outputFile2.Close();
         }
     };
 
@@ -82,7 +85,7 @@ public:
 TEST_F(RealityDataServiceConsoleTestFixture, ConnectivityTest)
     {
     WString directory(GetDirectory());
-    directory.append(L"ConnectionTest");
+    directory.append(L"ConnectivityTest");
     InitTestDirectory(directory.c_str());
 
     Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
@@ -97,7 +100,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, ConnectivityTest)
     //if the Repo structure changes, all subsequent tests will fail as well
     ASSERT_TRUE(consoleOutput.ContainsI("8 \t S3MX"));
 
-    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
     }
 
 //-------------------------------------------------------------------------------------
@@ -142,7 +145,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
     ASSERT_TRUE(consoleOutput.ContainsI("CreateRD"));
     ASSERT_TRUE(consoleOutput.ContainsI("Delete"));
 
-    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
     }
 
 //-------------------------------------------------------------------------------------
@@ -166,5 +169,151 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
     ASSERT_TRUE(consoleOutput.ContainsI("NbRealityData"));
     ASSERT_TRUE(consoleOutput.ContainsI("TotalSize"));
 
-    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            04/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
+    {
+    WString directory(GetDirectory());
+    directory.append(L"CompleteTest");
+    InitTestDirectory(directory.c_str());
+
+    BeFileName dummyRoot = BeFileName(directory.c_str());
+    dummyRoot.AppendToPath(L"DummyFolder");
+    BeFileName::CreateNewDirectory(dummyRoot.c_str());
+
+    BeFileName dummyFile = BeFileName(dummyRoot.c_str());
+    dummyFile.AppendToPath(L"DummyRootDocument.json");
+
+    FILE* pFile;
+    pFile = fopen (dummyFile.GetNameUtf8().c_str(), "w");
+    fseek (pFile, 5000000, SEEK_SET); //5Mb
+    fwrite ("1", sizeof(char), 1, pFile);
+    fclose (pFile);
+
+    dummyFile.PopDir(); // .../DummyFolder/
+    dummyFile.AppendToPath(L"DummySubFolder");
+    BeFileName::CreateNewDirectory(dummyFile.c_str());
+    dummyFile.AppendToPath(L"smallfile1.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile2.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile3.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile4.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile5.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    Utf8String id = "945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780";
+
+    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
+                                "n\n"
+                                "8\n"
+                                "upload\n";
+    commandString.append(dummyRoot.GetNameUtf8().c_str());
+    commandString.append("\n");
+    commandString.append(id);
+    commandString.append("\n");
+    Utf8String commandString2 = "1\n"
+                                "3DTiles\n"
+                                "1\n"
+                                "DummyRootDocument.json\n"
+                                "filter\n"
+                                "1\n";
+
+    commandString.append(commandString2);
+    commandString.append(id.c_str());
+    commandString.append("\n");
+
+    dummyRoot.PopDir();
+    dummyRoot.AppendToPath(L"DownloadFolder");
+    BeFileName::CreateNewDirectory(dummyRoot.c_str());
+
+    commandString2 = "7\n"
+                    "dir\n"
+                    "cd 1\n"
+                    "details\n"
+                    "listall\n"
+                    "\n"
+                    "fileAccess w\n"
+                    "azureaddress r\n"
+                    "Link\n"
+                    "1\n"
+                    "Unlink\n"
+                    "1\n"
+                    "changeprops\n"
+                    "5\n"
+                    "CHANGE PROP TEST\n"
+                    "20\n"
+                    "download\n";
+
+    commandString.append(commandString2);
+    commandString.append(dummyRoot.GetNameUtf8().c_str());
+    commandString.append("\n");
+    commandString2 = "delete\n"
+                    "y\n"
+                    "quit\n";
+    
+    commandString.append(commandString2);
+
+    Utf8String consoleOutput;
+
+    Execute(directory.c_str(), commandString, consoleOutput);
+
+    ASSERT_TRUE(consoleOutput.ContainsI("New RealityData created with GUID")); //upload
+    ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("Name : %s", id.c_str()))); //filter
+    ASSERT_TRUE(consoleOutput.ContainsI("1 \t 945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780")); //list
+    ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : PUBLIC")); //details
+    ASSERT_TRUE(consoleOutput.ContainsI("DummyRootDocument.json 5000001 bytes"));
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile1.txt 1000001 bytes")); // Upload/ListAll
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile2.txt 1000001 bytes"));
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile3.txt 1000001 bytes"));
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile4.txt 1000001 bytes"));
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile5.txt 1000001 bytes"));
+    ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")); //changeprops
+    ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")); //FileAccess
+    ASSERT_TRUE(consoleOutput.ContainsI("?sv=")); //AzureAddress
+    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
+    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
+    Utf8String outRoot = dummyRoot.GetNameUtf8();
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot))));
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot))));//Download
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile2.txt", outRoot))));
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile3.txt", outRoot))));
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile4.txt", outRoot))));
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile5.txt", outRoot))));
+
+    ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
     }

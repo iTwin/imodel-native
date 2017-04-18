@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatform/RealityDataDownloadTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -257,5 +257,7 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
         }
 
     ASSERT_TRUE(fileCount == 3);
+    cache1.Close();
+    cache2.Close();
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }

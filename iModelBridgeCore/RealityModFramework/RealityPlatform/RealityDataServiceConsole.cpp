@@ -262,8 +262,7 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
         }
     
     BeFile outFileStream;
-    if ((outFileStream.Create(outfile.GetNameUtf8().c_str(), true) == BeFileStatus::Success) &&
-        (outFileStream.Open(outfile.GetNameUtf8().c_str(), BeFileAccess::Write) == BeFileStatus::Success))
+    if (outFileStream.Create(outfile.GetNameUtf8().c_str(), true) == BeFileStatus::Success)
         {
         outFileStream.Close();
         std::ofstream* ofs = new std::ofstream();
@@ -276,6 +275,10 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
 
     _Run();
     s_outputDestination->flush();
+    (dynamic_cast<std::ifstream*>(s_inputSource))->close();
+    (dynamic_cast<std::ofstream*>(s_outputDestination))->close();
+    delete s_inputSource;
+    delete s_outputDestination;
     }
 
 void RealityDataConsole::Run()
