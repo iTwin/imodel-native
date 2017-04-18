@@ -1039,10 +1039,21 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
-        // A 'point' is actually a zero-length line...
-        bool disjoint = 1 == strokePoints.size();
-        if (!disjoint && 2 == strokePoints.size())
-            disjoint = *strokePoints.begin() == *(strokePoints.begin()+1);
+        bool disjoint = CurveVector::BOUNDARY_TYPE_None == curveVector->GetBoundaryType();
+        if (!disjoint && 1 == strokePoints.size())
+            {
+            // A 'point' is actually a zero-length line...
+            auto const& points = strokePoints.front();
+            switch (points.size())
+                {
+                case 1:
+                    disjoint = true;
+                    break;
+                case 2:
+                    disjoint = *points.begin() == *(points.begin()+1);
+                    break;
+                }
+            }
 
         if (!strokePoints.empty())
             tileStrokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), disjoint));
