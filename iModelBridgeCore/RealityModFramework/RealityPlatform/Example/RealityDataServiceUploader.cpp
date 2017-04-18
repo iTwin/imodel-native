@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 #endif
 #if (1) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Donald Test");
+    properties.Insert(RealityDataField::Name, "Speed Test");
     properties.Insert(RealityDataField::Dataset, "ContextCapture");
     properties.Insert(RealityDataField::Group, "SPAR Demo");
     properties.Insert(RealityDataField::Description, "SPAR Demo Scenario 0");
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     properties.Insert(RealityDataField::OwnedBy, "Cyril.Novel@bentley.com");
 
     properties.Insert(RealityDataField::Visibility, "PUBLIC");
-    BeFileName fName = BeFileName("C:/_prod");
+    BeFileName fName = BeFileName("C:/Helsinki");
 #endif
 
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         std::cout << Utf8PrintfString("Upload file : %s \n", fName.GetNameUtf8());
 
         upload->SetProgressCallBack(progressFunc);
-        upload->SetProgressStep(0.05);
+        upload->SetProgressStep(0.5);
         upload->OnlyReportErrors(true);
         time_t time = std::time(nullptr);
         const TransferReport& ur = upload->Perform();

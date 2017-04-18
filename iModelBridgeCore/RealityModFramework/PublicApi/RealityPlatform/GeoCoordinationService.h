@@ -85,6 +85,10 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
     };
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//! All fields for a GCS entry, on the server
+//=====================================================================================
 enum class GeoCoordinationField
     {
     Id,

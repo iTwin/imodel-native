@@ -118,6 +118,7 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataProjectRelationshipByProjectIdRequest
+//! Requests all relationships for a given ProjectId
 //=====================================================================================
 struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
@@ -134,6 +135,7 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataProjectRelationshipByRealityDataIdRequest
+//! Requests all relationships for a give Reality Data
 //=====================================================================================
 struct RealityDataProjectRelationshipByRealityDataIdRequest : public RealityDataUrl
     {
@@ -186,19 +188,24 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                         Spencer.Mason            12/2016
+//! AzureHandshake
+//! Requests the direct access url in the azure blob for a specified RealityData or 
+//! document. Also provides methods to parse the response received
 //=====================================================================================
 struct AzureHandshake : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT AzureHandshake(Utf8String sourcePath, bool isWrite);
     REALITYDATAPLATFORM_EXPORT AzureHandshake();
+
+    //! Parses the json response received from the server and extracts the server's URL,
+    //! the azure token, and the a system timestamp for when the token should be renewed
     REALITYDATAPLATFORM_EXPORT BentleyStatus ParseResponse(Utf8StringCR jsonresponse, Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 private:
     bool       m_isWrite;
     };
-
 
 
 //=====================================================================================
@@ -497,6 +504,7 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
+//! AllRealityDataByRootId
 //! A request for a list of all documents in a repository
 //=====================================================================================
 struct AllRealityDataByRootId : public RealityDataDocumentContentByIdRequest
@@ -518,11 +526,10 @@ private:
     };
 
 //=====================================================================================
-//! @bsimethod                                   Spencer.Mason 02/2017
-//! The following are the declaration for callback for the upload process.
+//! @bsimethod                          Spencer.Mason                          02/2017
+//! The following are the declarations for callbacks that can be used with the
+//! RealityData uploader or downloader.
 //=====================================================================================
-
-
 
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
@@ -623,13 +630,17 @@ struct RealityDataRelationshipDelete : public RealityDataUrl
 
 
 //=====================================================================================
-//! @bsimethod                                   Spencer.Mason 02/2017
+//! @bsimethod                                   Spencer.Mason          02/2017
 //! The base class to upload/download classes. This class defines the interface
 //! common to both upload and download to/from Reality Data Service
 //=====================================================================================
 struct RealityDataFileTransfer;
 
-//where the curl upload ended, either in success or failure
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason          02/2017
+//! TransferResult
+//! struct that stores information relative to the success or failure of the transfer
+//=====================================================================================
 struct TransferResult
     {
     int                     errorCode; //code returned by curl
@@ -639,9 +650,14 @@ struct TransferResult
     RawServerResponse       response;
     };
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason          02/2017
+//! TransferReport
+//! struct that stores multiple TransferResult objects and can be used to write their
+//! Contents to an XML string
+//=====================================================================================
 struct TransferReport
     {
-    size_t                  packageId;
     bvector<TransferResult*>  results;
     ~TransferReport()
         {
@@ -649,6 +665,7 @@ struct TransferReport
             delete result;
         }
 
+    //! Writes the contents of each TranferResult as an attribute of and XML string
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
 
@@ -692,18 +709,18 @@ struct RealityDataServiceTransfer : public CurlConstructor
     //! Start the upload progress for all links.
     //! Returns a reference to the internal transfer report structure.
     REALITYDATAPLATFORM_EXPORT virtual const TransferReport& Perform();
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
-
+    
+    //! Specifies if the the transfer report will track every operation or only those that failed
     REALITYDATAPLATFORM_EXPORT void OnlyReportErrors(bool onlyErrors) { m_onlyReportErrors = onlyErrors; }
 
+    //! Returns the system time for when the azure token should be renewed
     REALITYDATAPLATFORM_EXPORT int64_t GetTokenTimer() { return m_azureTokenTimer; }
 
-    REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
-
+    //! Validates that files have been found in the paths provided by the user
     REALITYDATAPLATFORM_EXPORT bool IsValidTransfer() { return m_filesToTransfer.size() > 0; }
 
 protected:
+    REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
     void SetupCurlforFile(RealityDataUrl* upload, bool verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);

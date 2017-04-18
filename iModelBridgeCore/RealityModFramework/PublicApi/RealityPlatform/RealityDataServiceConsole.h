@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/RealityDataService/RealityDataServiceConsole.h $
+|     $Source: PublicApi/RealityPlatform/RealityDataServiceConsole.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,6 +15,7 @@
 #include <Bentley/DateTime.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <RealityPlatform/RealityDataService.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -61,16 +62,19 @@ struct RealityDataConsole
     {
 public:
     enum class DisplayOption
-    {
+        {
         Info,
         Question,
         Tip,
         Error
-    };
+        };
 
-    RealityDataConsole();
+    REALITYDATAPLATFORM_EXPORT RealityDataConsole();
 
-    void Run();
+    REALITYDATAPLATFORM_EXPORT void Run();
+    REALITYDATAPLATFORM_EXPORT void Run(BeFileName infile, BeFileName outfile);
+private:
+    void _Run();
     void ConfigureServer();
     void PrintResults(bvector<Utf8String> results);
     void Usage();
