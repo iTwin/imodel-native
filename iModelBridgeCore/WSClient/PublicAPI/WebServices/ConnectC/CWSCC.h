@@ -53,10 +53,12 @@ The response from the server contained a 401, Unauthorized, http error
 The response from the server contained a 400, Bad Request, http error
 */
 
+#if !defined (DOCUMENTATION_GENERATOR)
 /*!
 \def ERROR_ALREADY_EXISTS
 Object already exists at location
 */
+#endif
 
 /*!
 \def SUCCESS
