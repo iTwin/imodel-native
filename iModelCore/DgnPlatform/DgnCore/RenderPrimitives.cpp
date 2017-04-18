@@ -384,7 +384,7 @@ Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d Mesh::GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const
     {
-    auto fpoint = from.at(index);
+    auto fpoint = from[index];
     return DPoint3d::FromXYZ(fpoint.x, fpoint.y, fpoint.z);
     }
 
@@ -624,14 +624,14 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
 
-    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
-    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
-    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
-    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
-
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.z, rhs.m_point.z, m_tolerance);
+
+    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
+    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
+    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
+    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
 
     if (lhs.m_normalValid != rhs.m_normalValid)
         return rhs.m_normalValid;
@@ -698,7 +698,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
         {
         DVec3d      cross;
 
-        cross.CrossProductToPoints (points.at(0), points.at(1), points.at(2));
+        cross.CrossProductToPoints (points[0], points[1], points[3]);
         if (cross.MagnitudeSquared() < m_areaTolerance)
             return;
         }
@@ -722,7 +722,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), feature, fillColor);
+        VertexKey vertex(points[i], haveNormals ? &visitor.Normal()[i] : nullptr, !includeParams || params.empty() ? nullptr : &params[i], feature, fillColor);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -740,9 +740,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
             size_t reverseIndex = 2 - i;
             DVec3d reverseNormal;
             if (haveNormals)
-                reverseNormal.Negate(visitor.Normal().at(reverseIndex));
+                reverseNormal.Negate(visitor.Normal()[reverseIndex]);
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), feature, fillColor);
+            VertexKey vertex(points[reverseIndex], haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params[reverseIndex], feature, fillColor);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
