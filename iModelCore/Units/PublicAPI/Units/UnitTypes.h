@@ -166,8 +166,11 @@ public:
     UnitCP MultiplyUnit (UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
     static bool IsNegligible(double dval) { return (1.0e-16 > dval); }
+    //! Returns true if the input units have the same id, false if not or if one or both are null.
     static bool AreEqual(UnitCP unitA, UnitCP unitB)
         { return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId(); }
+    //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
+    UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
     };
 
 struct Phenomenon final : UnitsSymbol
