@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG) || true
+#if defined(NDEBUG)
 #define ELEMENT_TILE_DEBUG_RANGE false
 #else
 #define ELEMENT_TILE_DEBUG_RANGE true
@@ -762,7 +762,7 @@ BentleyStatus Loader::_LoadTile()
             gfParams.SetLineColor(color);
             gfParams.SetFillColor(ColorDef::Green());
             gfParams.SetWidth(0);
-            gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
+            gfParams.SetLinePixels(tile.IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
 
             Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
             rangeGraphic->ActivateGraphicParams(gfParams);
