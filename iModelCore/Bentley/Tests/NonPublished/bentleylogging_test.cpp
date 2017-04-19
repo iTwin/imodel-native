@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/bentleylogging_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)
@@ -149,6 +149,7 @@ TEST_F(BentleyLoggingTests, LogggerCheck)
     //will not work because provider is inactive
     logger->messagev(NativeLogging::LOG_ERROR, "Error Log (Utf-8) %c", 67);
     // *** TBD: read file logfile and check results
+    loggerActivatorInScope.~ProviderActivator();
     }
 
 //#endif // defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
