@@ -18,13 +18,22 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Assemblies\BeCurlB02.dll"        target="lib\native\BeCurlB02.dll" />
-        <file src="Assemblies\BeFollyB02.dll"       target="lib\native\BeFollyB02.dll" />
-        <file src="Assemblies\BeIcu4cB02.dll"       target="lib\native\BeIcu4cB02.dll" />
-        <file src="Assemblies\DgnPlatformB02.dll"   target="lib\native\DgnPlatformB02.dll" />
-        <file src="Assemblies\freetype2B02.dll"     target="lib\native\freetype2B02.dll" />
-        <file src="Assemblies\pskernel.dll"         target="lib\native\pskernel.dll" />
-        <file src="Assemblies\BeHttpB02.dll"        target="lib\native\BeHttpB02.dll" />
-        <file src="ECSchemas\**\*.*"                target="Assets\" />
+        <file src="SubParts\Assemblies\BeCurlB02.dll"        target="lib\native\BeCurlB02.dll" />
+        <file src="SubParts\Assemblies\BeFollyB02.dll"       target="lib\native\BeFollyB02.dll" />
+        <file src="SubParts\Assemblies\BeIcu4cB02.dll"       target="lib\native\BeIcu4cB02.dll" />
+        <file src="SubParts\Assemblies\DgnPlatformB02.dll"   target="lib\native\DgnPlatformB02.dll" />
+        <file src="SubParts\Assemblies\freetype2B02.dll"     target="lib\native\freetype2B02.dll" />
+        <file src="SubParts\Assemblies\pskernel.dll"         target="lib\native\pskernel.dll" />
+        <file src="SubParts\Assemblies\BeHttpB02.dll"        target="lib\native\BeHttpB02.dll" />
+        <file src="ECSchemas\BisCore.ecschema.xml"           target="Assets\ECSchemas\Dgn\BisCore.ecschema.xml" />
+        <file src="ECSchemas\Generic.ecschema.xml"           target="Assets\ECSchemas\Dgn\Generic.ecschema.xml" />
+        <file src="ECSchemas\Markup.ecschema.xml"            target="Assets\ECSchemas\Dgn\Markup.ecschema.xml" />
+        <file src="ECSchemas\Functional.ecschema.xml"        target="Assets\ECSchemas\Domain\Functional.ecschema.xml" />
+        <file src="ECSchemas\Script.ecschema.xml"            target="Assets\ECSchemas\Domain\Script.ecschema.xml" />
+        <file src="Delivery\lastresortfonts"                 target="Assets\lastresortfonts" />
+        <file src="Delivery\SkyBox\SkyBox.jpg"               target="Assets\SkyBox\SkyBox.jpg" />
+        <file src="Delivery\icons\*.*"                       target="Assets\decorators\dgncore\" />
+        <file src="Delivery\sqlang\DgnPlatform_en.sqlang.db3"    target="Assets\sqlang\DgnPlatform_en.sqlang.db3" />
+        
     </files>
 </package>
