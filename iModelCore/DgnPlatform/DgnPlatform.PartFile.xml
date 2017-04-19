@@ -400,7 +400,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="DgnPlatform-Gtest">
+    <Product Name="DgnPlatform-Gtest" SaveProduct="true">
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
@@ -413,13 +413,16 @@
         </Bindings>
     </Part>
 
-    <Product Name="CompatibilityTestFiles" SaveProduct="true" AddIn="true">
+    <Product Name="CompatibilityTestFiles" SaveProduct="true">
         <SubPart PartName="SaveCompatibilityTestFiles"/>
         <Directories DirectoryListName="CompatibilityTestFiles"/>
     </Product>
 
     <ProductDirectoryList ListName="CompatibilityTestFiles" >
         <ProductDirectory Name="CompatibilityTestFiles" Path=""/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="SaveCompatibilityTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/DgnProject/SaveCompatibilityTestFiles.mke">

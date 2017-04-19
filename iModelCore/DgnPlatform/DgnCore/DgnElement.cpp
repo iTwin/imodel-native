@@ -2517,7 +2517,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                           \
+            {                                                                          \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2616,21 +2616,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     T_Super::_RegisterPropertyAccessors(params, layout);
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                           \
+            {                                                                          \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
@@ -2662,19 +2662,18 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2d& el = (GeometricElement2d&)elIn;
-            value.SetLong(el.GetCategoryId().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR elIn, ECValueCR valueIn)
+        [](DgnElementR elIn, ECValueCR value)
             {
-            ECN::ECValue value(valueIn);
-            if (value.IsNull() || !value.ConvertToPrimitiveType(PRIMITIVETYPE_Long))
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
                 }
             GeometricElement2d& el = (GeometricElement2d&)elIn;
-            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
     params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
