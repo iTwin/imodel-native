@@ -330,9 +330,6 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-    if (!schemaOut->Validate(true))
-        return SchemaReadStatus::InvalidECSchemaXml;
-
     return status;
     }
 
@@ -878,7 +875,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     if (SchemaReadStatus::Success != status)
         return status;
 
-    Utf8String alias; 
+    Utf8String alias;
     // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
     if ((ecXmlMajorVersion == 3 && ecXmlMinorVersion >= 1) || ecXmlMajorVersion > 3)
         {
@@ -933,7 +930,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     if (SchemaReadStatus::Success != status)
         return status;
-    
+
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
@@ -942,7 +939,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     if (SchemaReadStatus::Success != status)
         return status;
-    
+
     readingEnumerations.Stop();
     LOG.tracev("Reading enumerations for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
 
@@ -959,7 +956,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     StopWatch readingClassContents("Reading class contents", true);
     if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
         return status;
-    
+
     readingClassContents.Stop();
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
@@ -969,7 +966,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         LOG.errorv("Failed to read schema because one or more invalid custom attributes were applied to it.", schemaOut->GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    
+
     readingCustomAttributes.Stop();
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 
@@ -982,6 +979,15 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     //Compute the schema checkSum
     overallTimer.Stop();
     LOG.debugv("Overall schema de-serialization for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), overallTimer.GetElapsedSeconds());
+
+    if (m_schemaContext.GetSkipValidation())
+        {
+        LOG.infov("Skipping validation for '%s' because the read context has skip validation property set to true", schemaOut->GetFullSchemaName().c_str());
+        return SchemaReadStatus::Success;
+        }
+
+    if (!schemaOut->Validate(true))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     return SchemaReadStatus::Success;
     }
