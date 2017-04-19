@@ -333,6 +333,7 @@
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="SchemaValidatorExe">
+            
                 Delivery/SchemaValidator.exe
                 Delivery/SchemaValidator.logging.config.xml
             </Files>
