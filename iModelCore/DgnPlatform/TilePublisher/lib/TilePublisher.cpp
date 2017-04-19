@@ -2862,8 +2862,6 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::WriteSheetAttachmentTree (Sheet::ModelCR sheetModel, bvector<DgnElementId>& attachmentIds, Json::Value&& modelRoot, DRange3dCR rootModelRange)
     {
-#define WIP_SHEET_ATTACHMENTS
-#ifdef WIP_SHEET_ATTACHMENTS
     Json::Value     root, sheetChild;
     DRange3d        compositeRange = rootModelRange;
 
@@ -2929,9 +2927,6 @@ Json::Value PublisherContext::WriteSheetAttachmentTree (Sheet::ModelCR sheetMode
     TilePublisher::WriteBoundingVolume(root, compositeRange);
 
     return root;
-#else
-    return modelRoot;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3248,6 +3243,32 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             modelJson["extents"] = RangeToJson(modelRange);
 
+            Sheet::ModelCP  sheetModel;
+            if (nullptr != (sheetModel = model->ToSheetModel()))
+                {
+                bvector<DgnElementId>   attachmentIds = sheetModel->GetSheetAttachmentIds();
+
+                for (auto& attachmentId : attachmentIds)
+                    {
+                    auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+                    if (attachmentElement.IsValid()) 
+                        {
+                        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
+
+                        if (viewDefinition.IsValid() && nullptr != viewDefinition->ToView2d())
+                            {
+                            Json::Value    attachedView;
+
+                            attachedView["attachmentId"] = attachmentId.ToString();
+                            attachedView["baseModelId"] = viewDefinition->ToView2d()->GetBaseModelId().ToString();
+                            attachedView["categorySelector"] = viewDefinition->GetCategorySelectorId().ToString();
+                            modelJson["attachedViews"].append (std::move (attachedView));
+                            }
+                        }
+                    }
+                }
+    
+
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName = TileUtil::GetRootNameForModel(*model);
 
@@ -3372,7 +3393,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
-    DgnModelIdSet all2dModelIds;
+    DgnModelIdSet   all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto const& viewId : m_viewIds)
@@ -3381,14 +3402,35 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         if (!viewDefinition.IsValid())
             continue;
 
-        auto                spatialView = viewDefinition->ToSpatialView();
-        ViewDefinition2dCP  view2d;
+        auto                        spatialView = viewDefinition->ToSpatialView();
+        DrawingViewDefinitionCP     drawingView;
+        SheetViewDefinitionCP       sheetView;
 
         if (nullptr != spatialView)
+            {
             allModelSelectors.insert(spatialView->GetModelSelectorId());
-        else if (nullptr != (view2d = viewDefinition->ToDrawingView()) ||
-                 nullptr != (view2d = viewDefinition->ToSheetView()))
-            all2dModelIds.insert(view2d->GetBaseModelId());
+            }
+        else if (nullptr != (drawingView = viewDefinition->ToDrawingView()))    
+            {
+            all2dModelIds.insert(drawingView->GetBaseModelId());
+            }
+        else if (nullptr != (sheetView = viewDefinition->ToSheetView()))
+            {
+            all2dModelIds.insert(sheetView->GetBaseModelId());
+
+            auto const&  model = GetDgnDb().Models().GetModel (sheetView->GetBaseModelId());
+
+            if (model.IsValid() && nullptr != model->ToSheetModel())
+                {
+                auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
+                for (auto& attachedView : attachedViews)
+                    {
+                    allCategorySelectors.insert(attachedView->GetCategorySelectorId());
+                    if (nullptr != attachedView->ToView2d())
+                        all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
+                    }
+                }
+            }
 
         Json::Value entry(Json::objectValue);
  

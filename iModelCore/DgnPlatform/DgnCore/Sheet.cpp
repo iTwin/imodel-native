@@ -581,7 +581,7 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
     return nullptr;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/
+* @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
     {
@@ -596,6 +596,35 @@ bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
     return attachIds;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ViewDefinitionCPtr>  Sheet::Model::GetSheetAttachmentViews(DgnDbR db) const
+    {
+    bvector<DgnElementId>       attachmentIds = GetSheetAttachmentIds();
+    bvector<ViewDefinitionCPtr>  attachmentViews;
+
+    for (auto& attachmentId : attachmentIds)
+        {
+        auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+        if (!attachmentElement.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        
+        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
+        if (!viewDefinition.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        attachmentViews.push_back(viewDefinition);
+        }
+
+    return attachmentViews;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/

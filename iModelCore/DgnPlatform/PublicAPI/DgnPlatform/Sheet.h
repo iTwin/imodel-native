@@ -59,6 +59,10 @@ public:
     //! Get the sheet attachment IDs.
     DGNPLATFORM_EXPORT bvector<DgnElementId> GetSheetAttachmentIds() const;
 
+    //! Get the sheet attachment views.
+    DGNPLATFORM_EXPORT bvector<ViewDefinitionCPtr> GetSheetAttachmentViews(DgnDbR db) const;
+
+
     //! @private
     DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
 };
