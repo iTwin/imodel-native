@@ -205,8 +205,6 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (SUCCESS != PersistSchemas(ctx, schemas))
         return ERROR;
 
-    const_cast<ECDb&>(GetECDb()).SaveChanges();
-
     SchemaCompareContext& compareContext = ctx.GetECSchemaCompareContext();
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
