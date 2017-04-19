@@ -89,6 +89,8 @@ EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
 EC_TYPEDEFS(ECSchemaValidator);
+EC_TYPEDEFS(MixinValidator);
+EC_TYPEDEFS(EntityValidator);
 EC_TYPEDEFS(IECSchemaValidator);
 EC_TYPEDEFS(IECClassValidator);
 
