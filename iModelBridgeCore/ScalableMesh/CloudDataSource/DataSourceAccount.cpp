@@ -140,7 +140,12 @@ const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccount
     return accountSSLCertificatePath;
     }
 
-CLOUD_EXPORT void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::string(void)>& )
+void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::string(void)>& )
+    {
+    // Nothing to do
+    }
+
+void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>&)
     {
     // Nothing to do
     }

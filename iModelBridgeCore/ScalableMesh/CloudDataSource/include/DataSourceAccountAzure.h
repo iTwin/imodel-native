@@ -80,11 +80,16 @@ class DataSourceAccountAzureCURL : public DataSourceAccountCURL
         typedef       DataSourceAccountAzure    SuperAzure;
         typedef       DataSourceAccountCURL     SuperCURL;
 
+    private:
+        std::function<std::string(const Utf8String& docGuid)>   m_getSASToken;
+
     public:
                                             DataSourceAccountAzureCURL          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountAzureCURL          (void) = default;
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+
+        virtual void                        SetSASTokenGetterCallback           (const std::function<std::string(const Utf8String& docGuid)>& tokenUpdater);
 
         DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);

@@ -82,6 +82,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                 return WString(m_guid.c_str(), BentleyCharEncoding::Utf8);
                 }
 
+            Utf8String GetUtf8GUID() const
+                {
+                return m_guid;
+                }
+
             WString GetURL() const
                 {
                 return WString(m_url.c_str(), BentleyCharEncoding::Utf8);

@@ -303,9 +303,15 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
     return DataSourceStatus();
     }
 
+void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>& tokenGetter)
+    {
+    m_getSASToken = tokenGetter;
+    }
+
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+    uriEncodedBlobUrl += ("?" + this->m_getSASToken(Utf8String(this->getAccountKey().c_str()))).c_str();
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str()).c_str()));
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();

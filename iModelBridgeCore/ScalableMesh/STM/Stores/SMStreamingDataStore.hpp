@@ -182,7 +182,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceAccount::AccountKey               account_key;
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
-    std::unique_ptr<std::function<string(void)>> callback = nullptr;
+    std::unique_ptr<std::function<string()>> wsgCallback = nullptr;
+    std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
     if (settings->IsLocal() && settings->IsUsingCURL())
@@ -222,7 +223,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
         assert(!sslCertificatePath.empty());
 
-        callback.reset(new std::function<string(void)>([]() -> std::string
+        wsgCallback.reset(new std::function<string()>([]() -> std::string
             {
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
             }));
@@ -230,12 +231,19 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
+        //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
+        account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
         BeFileName url(settings->GetURL().c_str());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
         account_prefix = DataSourceURL(settings->GetGUID().c_str());
         account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
         account_identifier = settings->GetServerID().c_str();
+
+        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
+            {
+            return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
+            }));
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -301,7 +309,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-    if (callback != nullptr) account->setWSGTokenGetterCallback(*callback.get());
+    if (wsgCallback != nullptr) account->setWSGTokenGetterCallback(*wsgCallback.get());
+    if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
     account->setPrefixPath(account_prefix);
     auto* casted_account = dynamic_cast<DataSourceAccountWSG*>(account);
