@@ -22,8 +22,10 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct DisplayMetricsHandler
 {
+    DGNPLATFORM_EXPORT static void RecordGraphicsStats(int graphicsPerSecond, int sceneTarget, int progressiveTarget, double frameRateGoal);
     DGNPLATFORM_EXPORT static void RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults);
     DGNPLATFORM_EXPORT static void RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete);
+    DGNPLATFORM_EXPORT static void RecordError(Utf8CP errorMessage);
     DGNPLATFORM_EXPORT static bool HandleForceHealImmediate(DgnViewportP vp, UpdatePlan& plan);
 };
 
@@ -37,6 +39,7 @@ struct IDisplayMetricsHandler :  DgnHost::IHostObject
     DGNPLATFORM_EXPORT static void SetHandler(IDisplayMetricsHandler*logger);
     virtual bool _IsRecorderActive() const = 0;
     virtual void _RecordMeasurement(Utf8CP measurementType, JsonValueCR measurement) = 0;
+    virtual void _RecordError(JsonValueCR errror) = 0;
     virtual bool _HandleForceHealImmediate(DgnViewportP vp, UpdatePlan& plan) { return false; }
 };
 #endif

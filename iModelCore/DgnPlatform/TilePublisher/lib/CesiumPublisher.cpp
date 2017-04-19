@@ -76,7 +76,7 @@ DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value  PublisherParams::GetViewerOptions () const
     {
-    Json::Value viewerOptions;
+    Json::Value viewerOptions(Json::objectValue);
 
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
@@ -236,7 +236,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return status;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), nullptr, &progressMeter);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
 
     DRange3d            range;
 
@@ -260,12 +260,20 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         }
     else
         {
-        Transform   tileToDb;
+        if (range.IsNull())
+            {
+            groundPoint.x = groundPoint.y = 0.0;
+            }
+        else
+            {
+            Transform   tileToDb;
 
-        tileToDb.InverseOf (m_dbToTile);
-        
-        groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
-        tileToDb.Multiply (groundPoint);
+            tileToDb.InverseOf (m_dbToTile);
+            
+            groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
+            tileToDb.Multiply (groundPoint);
+            }
+
         groundPoint.z = params.GetGroundHeight();
         }
 
@@ -322,4 +330,16 @@ void TilesetPublisher::GenerateModelNameList()
     else
         m_modelNameList.append(1, ']');
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const
+    {
+    WString     modelRootName = TileUtil::GetRootNameForModel(tile.GetModel());
+
+    return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
+    }
+
 

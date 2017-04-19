@@ -2176,6 +2176,24 @@ bool IDisplayMetricsHandler::IsRecorderActive()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsHandler::RecordGraphicsStats(int graphicsPerSecond, int sceneTarget, int progressiveTarget, double frameRateGoal)
+    {
+    if (!IDisplayMetricsHandler::IsRecorderActive())
+        return;
+
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
+    Json::Value measurement(Json::objectValue);
+    measurement["graphicsPerSecond"] = graphicsPerSecond;
+    measurement["sceneTarget"] = sceneTarget;
+    measurement["progressiveTarget"] = progressiveTarget;
+    measurement["frameRateGoal"] = (int)frameRateGoal;
+        
+    handler->_RecordMeasurement("GraphicsStats", measurement);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
 void DisplayMetricsHandler::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
@@ -2185,7 +2203,7 @@ void DisplayMetricsHandler::RecordQuerySceneComplete(double seconds, ViewControl
 
     IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
-    measurement["seconds"] = seconds;
+    measurement["time"] = (int)(seconds * 1000.0);
     measurement["count"] = queryResults.GetCount();
     if (queryResults.m_incomplete)
         measurement["incomplete"] = 1;
@@ -2203,13 +2221,25 @@ void DisplayMetricsHandler::RecordCreateSceneComplete(double seconds, ViewContro
 
     IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
-    measurement["seconds"] = seconds;
+    measurement["time"] = (int)(seconds * 1000.0);
     if (aborted)
         measurement["aborted"] = 1;
     if (!complete)
         measurement["incomplete"] = 1;
         
     handler->_RecordMeasurement("CreateSceneComplete", measurement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsHandler::RecordError(Utf8CP errorMessage)
+    {
+    if (!IDisplayMetricsHandler::IsRecorderActive())
+        return;
+
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
+    handler->_RecordError(Json::Value(errorMessage));
     }
 
 //---------------------------------------------------------------------------------------

@@ -45,10 +45,8 @@ CodeSpecId DgnImportContext::_RemapCodeSpecId(CodeSpecId source)
             BeDataAssert(false && "Invalid source CodeSpec");
             return source;
             }
-        else
-            {
-            dest = destCodeSpec->GetCodeSpecId();
-            }
+
+        dest = destCodeSpec->GetCodeSpecId();
         }
 
     return m_remap.Add(source, dest);
@@ -283,9 +281,7 @@ void CodeSpec::FromPropertiesJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::ReadProperties(Utf8StringCR jsonStr)
     {
-    Json::Value props(Json::objectValue);
-    if (Json::Reader::Parse(jsonStr, props))
-        FromPropertiesJson(props);
+    FromPropertiesJson(Json::Value::From(jsonStr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -439,6 +435,15 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
     CodeSpecCPtr codeSpec = scopeElement.GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid());
     return codeSpec.IsValid() ? codeSpec->CreateCode(scopeElement, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
+    {
+    BeAssert(scopeModel.GetModelId().IsValid() && IsModelScope());
+    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), value, scopeModel.GetModelId()) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**

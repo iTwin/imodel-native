@@ -26,10 +26,10 @@ DEFINE_REF_COUNTED_PTR(Location);
 enum class LightType
 {
     Invalid = 0,
-    Solar = 1,      //!< Sunlight
-    Ambient = 2,    //!< ambient light
-    Flash = 3,      //!< flash bulb at camera
-    Portrait = 4, //!< over the sholder (left and right)
+    Solar = 1, //!< Sunlight
+    Ambient = 2, //!< ambient light
+    Flash = 3,   //!< flash bulb at camera
+    Portrait = 4, //!< over the shoulder (left and right)
     Point = 5, //<! non directional point light source
     Spot = 6,
     Area = 7,
@@ -54,18 +54,18 @@ private:
     JsonValueCR Value(Utf8CP name) const {return (*this)[name];}
 
 public:
-    BE_JSON_NAME(type)
-    BE_JSON_NAME(intensity)
-    BE_JSON_NAME(color)
-    BE_JSON_NAME(intensity2)
-    BE_JSON_NAME(color2)
-    BE_JSON_NAME(kelvin) 
-    BE_JSON_NAME(shadows)
-    BE_JSON_NAME(bulbs)
-    BE_JSON_NAME(lumens)
-    BE_JSON_NAME(spot)
-    BE_JSON_NAME(inner)
-    BE_JSON_NAME(outer)
+    BE_JSON_NAME(type)          // the type of light from LightType enum
+    BE_JSON_NAME(intensity)     // intensity of the light
+    BE_JSON_NAME(color)         // color of the light. ColorDef as integer
+    BE_JSON_NAME(intensity2)    // for portrait lights, intensity of the "over the left shoulder" light (intensity is the right shoulder light).
+    BE_JSON_NAME(color2)        // for left portrait light
+    BE_JSON_NAME(kelvin)        // color temperature, in kelvins. Note that color and kelvins are not independent. Useful for UI, I guess?
+    BE_JSON_NAME(shadows)       // the number of shadow samples
+    BE_JSON_NAME(bulbs)         // number of bulbs 
+    BE_JSON_NAME(lumens)        
+    BE_JSON_NAME(spot)          // container for spotlight parameters
+    BE_JSON_NAME(inner)         //  spotlight inner angle, in degrees
+    BE_JSON_NAME(outer)         //  spotlight outer angle, in degrees
 
     LightType GetType() const {return (LightType) Value(json_type()).asInt((int) LightType::Invalid);}
     void SetType(LightType type) {SetOrRemoveInt(json_type(), (int) type, (int) LightType::Invalid);}

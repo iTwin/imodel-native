@@ -18,12 +18,13 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Assemblies\BeCurlB02.dll" target="lib\native\BeCurlB02.dll" />
-        <file src="Assemblies\BeFollyB02.dll" target="lib\native\BeFollyB02.dll" />
-        <file src="Assemblies\BeIcu4cB02.dll" target="lib\native\BeIcu4cB02.dll" />
-        <file src="Assemblies\DgnPlatformB02.dll" target="lib\native\DgnPlatformB02.dll" />
-        <file src="Assemblies\freetype2B02.dll" target="lib\native\freetype2B02.dll" />
-        <file src="Assemblies\pskernel.dll" target="lib\native\pskernel.dll" />
-        <file src="Assemblies\BeHttpB02.dll" target="lib\native\BeHttpB02.dll" />
+        <file src="Assemblies\BeCurlB02.dll"        target="lib\native\BeCurlB02.dll" />
+        <file src="Assemblies\BeFollyB02.dll"       target="lib\native\BeFollyB02.dll" />
+        <file src="Assemblies\BeIcu4cB02.dll"       target="lib\native\BeIcu4cB02.dll" />
+        <file src="Assemblies\DgnPlatformB02.dll"   target="lib\native\DgnPlatformB02.dll" />
+        <file src="Assemblies\freetype2B02.dll"     target="lib\native\freetype2B02.dll" />
+        <file src="Assemblies\pskernel.dll"         target="lib\native\pskernel.dll" />
+        <file src="Assemblies\BeHttpB02.dll"        target="lib\native\BeHttpB02.dll" />
+        <file src="ECSchemas\**\*.*"                target="Assets\" />
     </files>
 </package>
