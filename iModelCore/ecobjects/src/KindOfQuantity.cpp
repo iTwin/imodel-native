@@ -148,6 +148,11 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     if (!displayLabel.empty())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 
+    if (GetPersistenceUnit().HasProblem())
+        {
+        LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
+        return SchemaWriteStatus::FailedToSaveXml;
+        }
     Utf8String persistenceUnitString = GetPersistenceUnit().ToText(false);
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
@@ -161,6 +166,11 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
         bool first = true;
         for(Formatting::FormatUnitSetCR fus : presentationUnits)
             {
+            if (fus.HasProblem())
+                {
+                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
+                return SchemaWriteStatus::FailedToSaveXml;
+                }
             if (!first)
                 presentationUnitString += ";";
             presentationUnitString += fus.ToText(false);
