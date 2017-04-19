@@ -510,6 +510,27 @@ BentleyStatus SchemaManager::CreateClassViewsInDb(bvector<ECN::ECClassId> const&
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaManager::RepopulateCacheTables() const
+    {
+    BeMutexHolder lock(m_mutex);
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
+        {
+        LOG.error("Failed to repopulate ECDb's cache table '" TABLE_ClassHierarchyCache "'.");
+        return ERROR;
+        }
+
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
+        {
+        LOG.error("Failed to repopulate ECDb's cache table '" TABLE_ClassHasTablesCache "'.");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle   02/2017
 //---------------------------------------------------------------------------------------
 //static

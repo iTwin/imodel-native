@@ -201,6 +201,13 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         ECDB_EXPORT BentleyStatus CreateClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
+        //! Truncates and repopulates ECDb's cache tables. 
+        //! @remarks ECDb maintains a few cache tables that cache meta data for performance reasons.
+        //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas) 
+        //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
+        //! @return SUCCESS or ERROR
+        ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
+
         //! Only use this until we solved handling legacy v8 class inheritance issues when BISifying v8 ECSchemas.
         //! Gets the SQLite SELECT SQL statement to detect those issues. The SELECT clause of the SQL has these columns:
         //! ECSchema Name, ECSchema Alias, ECClass Name, Table Name, Issue Type (INT), Issue Type Description, Issue (JSON)
