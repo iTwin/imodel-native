@@ -212,11 +212,14 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     {
     DgnElementCP el = source->ToElement();
 
+    if (nullptr == el)
+        return;
+
     RevisionComparisonElementKeeper::PairWithState<DgnElementId>* elementIdData = NULL;
     RevisionComparisonElementKeeper::PairWithState<DgnElementPtr>* elementData = NULL;
 
     // Get the override for element IDs
-    if (((m_flags & SHOW_CURRENT) != 0) && RevisionComparisonElementKeeper::ContainsElementId(el->GetElementId(), elementIdData))
+    if (((m_flags & SHOW_CURRENT) != 0) && !m_visitingTransientElements && RevisionComparisonElementKeeper::ContainsElementId(el->GetElementId(), elementIdData))
         {
         elementIdData->GetOverrideGraphicParams(symbologyOverrides);
         return;
@@ -261,6 +264,8 @@ void    RevisionComparisonViewController::_CreateTerrain(TerrainContextR context
     {
     T_Super::_CreateTerrain(context);
 
+    m_visitingTransientElements = true;
+
     // Visit the transient elements
     bvector<RevisionComparisonElementKeeper::PairWithState<DgnElementPtr>> elements;
     RevisionComparisonElementKeeper::CollectTransientElements(elements);
@@ -272,4 +277,6 @@ void    RevisionComparisonViewController::_CreateTerrain(TerrainContextR context
 
         context.VisitGeometry(*geomElem);
         }
+
+    m_visitingTransientElements = false;
     }

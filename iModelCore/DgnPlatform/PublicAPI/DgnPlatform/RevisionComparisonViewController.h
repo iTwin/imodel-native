@@ -161,6 +161,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionComparisonViewController : SpatialViewCon
 
 protected:
     unsigned int        m_flags;
+    bool                m_visitingTransientElements;
 
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
     void _VisitAllElements(ViewContextR context) override;
@@ -179,8 +180,8 @@ public:
     DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }
 
     //! Constructors
-    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view) : T_Super(view), m_flags((unsigned int)Flags::SHOW_BOTH) { }
-    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view, unsigned int flags) : T_Super(view), m_flags(flags) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view) : T_Super(view), m_flags((unsigned int)Flags::SHOW_BOTH), m_visitingTransientElements(false) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view, unsigned int flags) : T_Super(view), m_flags(flags), m_visitingTransientElements(false) { }
 };
 
 END_BENTLEY_DGN_NAMESPACE
