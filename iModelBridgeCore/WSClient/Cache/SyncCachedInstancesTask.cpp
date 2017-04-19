@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesTask.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ ICancellationTokenPtr ct
 CachingTaskBase(ds, ct),
 m_objectsToCache(objects.begin(), objects.end()),
 m_objectsLeftToCache(objects.begin(), objects.end()),
-m_onProgress(onProgress ? onProgress : [] (size_t) {})
+m_onProgress(onProgress ? onProgress : [] (size_t, CacheTransactionCR, const bset<ECInstanceKey>&) {})
     {
     std::sort(m_objectsLeftToCache.begin(), m_objectsLeftToCache.end());
     }
@@ -35,8 +35,14 @@ m_onProgress(onProgress ? onProgress : [] (size_t) {})
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedInstancesTask::_OnExecute()
     {
-    m_ds->GetCacheAccessThread()->ExecuteAsync(std::bind(&SyncCachedInstancesTask::CacheNextObjects, this))
-        ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedInstancesTask::ResolveNotFoundInstances, this));
+    m_ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        m_onProgress(m_cachedInstances.size(), txn, bset<ECInstanceKey>());
+        txn.Commit();
+        })
+    ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedInstancesTask::CacheNextObjects, this))
+    ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedInstancesTask::ResolveNotFoundInstances, this));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -44,12 +50,8 @@ void SyncCachedInstancesTask::_OnExecute()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedInstancesTask::CacheNextObjects()
     {
-    m_onProgress(m_cachedInstances.size());
-
     if (IsTaskCanceled() || m_objectsLeftToCache.empty())
-        {
         return;
-        }
 
     auto cancellationtoken = GetCancellationToken();
 
@@ -65,11 +67,16 @@ void SyncCachedInstancesTask::CacheNextObjects()
             }
 
         auto txn = m_ds->StartCacheTransaction();
-        if (SUCCESS != txn.GetCache().UpdateInstances(result.GetValue(), nullptr, &m_cachedInstances, cancellationtoken))
+        bset<ECInstanceKey> cachedInstances;
+        if (SUCCESS != txn.GetCache().UpdateInstances(result.GetValue(), nullptr, &cachedInstances, cancellationtoken))
             {
             SetError({CachingDataSource::Status::InternalCacheError, cancellationtoken});
             return;
             }
+
+        m_cachedInstances.insert(cachedInstances.begin(), cachedInstances.end());
+        m_onProgress(m_cachedInstances.size(), txn, cachedInstances);
+
         txn.Commit();
 
         CacheNextObjects();
@@ -119,9 +126,9 @@ void SyncCachedInstancesTask::ResolveNotFoundInstances()
         objectsToResolve.insert(objectId);
         }
 
-    auto onProgress = [=] (size_t synced)
+    auto onProgress = [=] (size_t synced, CacheTransactionCR txn, const bset<ECInstanceKey>& handled)
         {
-        m_onProgress(m_cachedInstances.size() + synced);
+        m_onProgress(m_cachedInstances.size() + synced, txn, handled);
         };
 
     auto task = std::make_shared<SyncCachedInstancesSeperatelyTask>(m_ds, objectsToResolve, onProgress, GetCancellationToken());

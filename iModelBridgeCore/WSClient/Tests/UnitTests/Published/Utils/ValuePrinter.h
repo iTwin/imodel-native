@@ -36,6 +36,7 @@ std::ostream& operator << (std::ostream &o, ObjectIdCR id);
 std::ostream& operator << (std::ostream &o, ICachingDataSource::Status status);
 std::ostream& operator << (std::ostream &o, ICachingDataSource::DataOrigin origin);
 std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress::State value);
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress progress);
 std::ostream& operator << (std::ostream &o, CacheStatus status);
 std::ostream& operator << (std::ostream &o, FileCache location);
 std::ostream& operator << (std::ostream &o, IChangeManager::ChangeStatus status);

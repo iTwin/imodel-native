@@ -18,6 +18,11 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
+#define EXPECT_PROGRESS_EQ(expectedProgress, actualProgress)                    \
+    EXPECT_EQ(expectedProgress.GetBytes(), actualProgress.GetBytes());          \
+    EXPECT_EQ(expectedProgress.GetInstances(), actualProgress.GetInstances());  \
+    EXPECT_NEAR(expectedProgress.GetSynced(), actualProgress.GetSynced(), 0.01);
+
 CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid().ToString())
     {
     auto txn = ds->StartCacheTransaction();
@@ -671,14 +676,11 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
 
     // Act & Assert
     int onProgressCalled = 0;
+    ICachingDataSource::Progress expectedProgress({0, 42}, std::make_shared<Utf8String>("TestFileName"));
     CachingDataSource::ProgressCallback onProgress =
         [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(0, progress.GetBytes().current);
-        EXPECT_EQ(42, progress.GetBytes().total);
-        EXPECT_EQ(0, progress.GetInstances().current);
-        EXPECT_EQ(0, progress.GetInstances().total);
-        EXPECT_EQ("TestFileName", progress.GetLabel());
+        EXPECT_EQ(expectedProgress, progress);
         onProgressCalled++;
         };
 
@@ -939,11 +941,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     CachingDataSource::ProgressCallback onProgress =
         [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(0, progress.GetBytes().current);
-        EXPECT_EQ(0, progress.GetBytes().total);
-        EXPECT_EQ(0, progress.GetInstances().current);
-        EXPECT_EQ(0, progress.GetInstances().total);
-        EXPECT_EQ("", progress.GetLabel());
+        EXPECT_PROGRESS_EQ(ICachingDataSource::Progress(), progress);
         onProgressCalled++;
         };
 
@@ -4218,14 +4216,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassThatHasLab
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult())));
 
     int onProgressCount = 0;
+    ICachingDataSource::Progress expectedProgress({}, std::make_shared<Utf8String>("TestLabel"));
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         onProgressCount++;
-        EXPECT_EQ(0, progress.GetBytes().current);
-        EXPECT_EQ(0, progress.GetBytes().total);
-        EXPECT_EQ(0, progress.GetInstances().current);
-        EXPECT_EQ(0, progress.GetInstances().total);
-        EXPECT_EQ("TestLabel", progress.GetLabel());
+        EXPECT_EQ(expectedProgress, progress);
         };
 
     ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4419,15 +4414,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "B"}))));
 
         int onProgressCount = 0;
-        double expectedBytesTransfered[7] = {0, 0, 2, 2, 2, 6, 6};
-
+        CachingDataSource::Progress::State expectedBytes[] = {{0, 6}, {0, 6}, {2, 6}, {2, 6}, {2, 6}, {6, 6}, {6, 6}};
         auto onProgress = [&] (CachingDataSource::ProgressCR progress)
             {
-            EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
+            EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes());
+            EXPECT_EQ(CachingDataSource::Progress::State(), progress.GetInstances());
             onProgressCount++;
-            EXPECT_EQ(6, progress.GetBytes().total);
-            EXPECT_EQ(0, progress.GetInstances().current);
-            EXPECT_EQ(0, progress.GetInstances().total);
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4685,6 +4677,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesNotReturnedInQuery
     EXPECT_CALL(*cache, FindInstance(instanceKeyA)).WillRepeatedly(Return(objectIdA));
     EXPECT_CALL(*cache, FindInstance(instanceKeyB)).WillRepeatedly(Return(objectIdB));
     EXPECT_CALL(*cache, FindInstance(instanceKeyC)).WillRepeatedly(Return(objectIdC));
+
+    EXPECT_CALL(*cache, FindInstance(objectIdA)).WillRepeatedly(Return(instanceKeyA));
+    EXPECT_CALL(*cache, FindInstance(objectIdB)).WillRepeatedly(Return(instanceKeyB));
+    EXPECT_CALL(*cache, FindInstance(objectIdC)).WillRepeatedly(Return(instanceKeyC));
 
     StubInstances queryInstances;
     queryInstances.Add(objectIdB);
@@ -5211,11 +5207,21 @@ TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstances_OnProgress
     auto instanceB = StubECInstanceKey(3, 4);
     auto instanceC = StubECInstanceKey(5, 6);
     auto instanceD = StubECInstanceKey(7, 8);
+    auto objectA = ObjectId("TestSchema.TestClass", "A");
+    auto objectB = ObjectId("TestSchema.TestClass", "B");
+    auto objectC = ObjectId("TestSchema.TestClass", "C");
+    auto objectD = ObjectId("TestSchema.TestClass", "D");
 
-    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
-    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
-    ON_CALL(*cache, FindInstance(instanceC)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "C")));
-    ON_CALL(*cache, FindInstance(instanceD)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "D")));
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(objectA));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(objectB));
+    ON_CALL(*cache, FindInstance(instanceC)).WillByDefault(Return(objectC));
+    ON_CALL(*cache, FindInstance(instanceD)).WillByDefault(Return(objectD));
+
+    ON_CALL(*cache, FindInstance(objectA)).WillByDefault(Return(instanceA));
+    ON_CALL(*cache, FindInstance(objectB)).WillByDefault(Return(instanceB));
+    ON_CALL(*cache, FindInstance(objectC)).WillByDefault(Return(instanceC));
+    ON_CALL(*cache, FindInstance(objectD)).WillByDefault(Return(instanceD));
+
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
     ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(CacheStatus::OK));
@@ -5249,12 +5255,17 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
 
     auto instanceA = StubECInstanceKey(1, 2);
     auto instanceB = StubECInstanceKey(3, 4);
+    auto objectA = ObjectId("TestSchema.TestClass", "A");
+    auto objectB = ObjectId("TestSchema.TestClass", "B");
+
     IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
     IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
 
     ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
-    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
-    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(objectA));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(objectB));
+    ON_CALL(*cache, FindInstance(objectA)).WillByDefault(Return(instanceA));
+    ON_CALL(*cache, FindInstance(objectB)).WillByDefault(Return(instanceB));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
     ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
@@ -5291,12 +5302,16 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
 
     auto instanceA = StubECInstanceKey(1, 2);
     auto instanceB = StubECInstanceKey(3, 4);
+    auto objectA = ObjectId("TestSchema.TestClass", "A");
+    auto objectB = ObjectId("TestSchema.TestClass", "B");
     IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
     IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
 
     ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
-    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
-    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(objectA));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(objectB));
+    ON_CALL(*cache, FindInstance(objectA)).WillByDefault(Return(instanceA));
+    ON_CALL(*cache, FindInstance(objectB)).WillByDefault(Return(instanceB));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
     ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
@@ -5310,15 +5325,15 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
     ON_CALL(*provider, DoUpdateFile(_, _, _)).WillByDefault(Return(false));
 
     int progressCalled = 0;
-    double expectedSyncedValues[5] = {0, 0.50, 1.00, 0.75, 1};
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 2}, {0, 2}, {0, 2}, {1, 2}, {2, 2}};
+    ICachingDataSource::Progress expectedProgress[] = {
+        {0,       {0, 2}},
+        {0.25,    {0, 2}},
+        {0.50,    {0, 2}},
+        {0.75,    {1, 2}},
+        {1,       {2, 2}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
-        EXPECT_THAT(progress.GetBytes().current, 0);
-        EXPECT_THAT(progress.GetBytes().total, 0);
-        EXPECT_THAT(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_THAT(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5415,11 +5430,13 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsT
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
     
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {3, 3}};
+    CachingDataSource::Progress expectedProgress[] = {
+        {0,   {0, 1}}, 
+        {0.5, {0, 1}},
+        {1,   {3, 3}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5462,11 +5479,14 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesRet
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesQB.ToWSObjectsResult())));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {2, 3}, {5, 5}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0,    {0, 1}},
+            {0.33, {0, 1}},
+            {0.66, {2, 3}},
+            {1,    {5, 5}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
      
@@ -5510,11 +5530,14 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 2}, {2, 2}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0,    {0, 1}},
+            {0.5,  {0, 1}},
+            {0.66, {1, 2}},
+            {1,    {2, 2}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5549,11 +5572,13 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 1}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0,   {0, 1}},
+            {0.5, {0, 1}},
+            {1,   {1, 1}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5581,11 +5606,12 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_Progres
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 1}, {0, 1}, {1, 1}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0, {0, 1}},
+            {1, {1, 1}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5613,11 +5639,12 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressC
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
     
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {1, 1}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0, {0, 0}},
+            {1, {1, 1}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5657,11 +5684,13 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturn
     EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(Return(StubBVector({queryB})));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {0, 1}, {2, 2}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0,   {0, 0}},
+            {0.5, {0, 1}},
+            {1,   {2, 2}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 
@@ -5711,11 +5740,16 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatRetur
     EXPECT_CALL(*provider, GetQueries(_, instanceBKey, _)).WillOnce(Return(StubBVector({queryB1, queryB2})));
 
     int progressCalled = 0;
-    CachingDataSource::Progress::State expectedInstancesStates[] = {{0, 0}, {0, 2}, {0, 2}, {1, 2}, {1, 2}, {2, 2}};
+    CachingDataSource::Progress expectedProgress[] = {
+            {0,   {0, 0}},
+            {0.2, {0, 2}},
+            {0.4, {0, 2}},
+            {0.6, {1, 2}},
+            {0.8, {1, 2}},
+            {1,   {2, 2}}};
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedInstancesStates[progressCalled].current, progress.GetInstances().current);
-        EXPECT_EQ(expectedInstancesStates[progressCalled].total, progress.GetInstances().total);
+        EXPECT_PROGRESS_EQ(expectedProgress[progressCalled], progress);
         progressCalled++;
         };
 

@@ -51,7 +51,6 @@ struct SyncCachedDataTask : public CachingTaskBase
 
         bvector<Instance>        			       m_initialInstances;
         std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
-        bset<ObjectId>                      m_instancesToRedownload;
         bset<ECInstanceKey>                 m_filesToDownload;
 
         bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
@@ -61,7 +60,6 @@ struct SyncCachedDataTask : public CachingTaskBase
 
         size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
-        size_t m_syncedRejectedInstances = 0;
         size_t m_syncedQueries = 0;
         size_t m_totalQueries = 0;
         CachingDataSource::Progress::State m_downloadBytesProgress;
@@ -78,7 +76,6 @@ struct SyncCachedDataTask : public CachingTaskBase
         void InvalidatePersistentInstances();
         bool IsInstancePersistent(CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
 
-        void CacheRejectedInstances();
         void CacheFiles();
 
         void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error);
