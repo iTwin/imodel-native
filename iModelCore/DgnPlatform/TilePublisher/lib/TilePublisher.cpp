@@ -761,7 +761,7 @@ PublisherContext::Status TilePublisher::Publish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex)
+Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex, bool doBatchIds)
     {
     Json::Value     jsonMesh = Json::objectValue;
     Json::Value     primitives;
@@ -769,10 +769,10 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
     for (auto& tileMesh : tileMeshes)
         {
         if (!tileMesh->Triangles().empty())
-            AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++);
+            AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
         if (!tileMesh->Polylines().empty())
-            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex++);
+            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
         }
     BeAssert (!primitives.empty());
     jsonMesh["primitives"] = primitives;
@@ -962,7 +962,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     AddExtensions(partData);
     AddDefaultScene(partData);
-    AddMeshes (partData, part->Meshes());
+    AddMeshes (partData, part->Meshes(), validIdsPresent);
 
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
@@ -1045,11 +1045,15 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList const& meshes)
     {
     PublishTileData     tileData;
-    bool                validIdsPresent = meshes.front()->ValidIdsPresent();
+    bool                validIdsPresent = false;
+
+    for (auto& mesh : meshes)
+        if (mesh->ValidIdsPresent())
+            validIdsPresent = true;
 
     AddExtensions(tileData);
     AddDefaultScene(tileData);
-    AddMeshes(tileData, meshes);
+    AddMeshes(tileData, meshes, validIdsPresent);
 
     FeatureAttributesMapCR attributes = m_tile.GetAttributes();
     Utf8String batchTableStr;
@@ -1111,7 +1115,7 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData tileData)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& meshList)
+void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& meshList, bool doBatchIds)
     {
     size_t          meshIndex = 0, primitiveIndex = 0;
     Json::Value     meshes     = Json::objectValue;
@@ -1120,7 +1124,7 @@ void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& mes
 
     Utf8PrintfString    meshName("Mesh_%d", meshIndex++);
 
-    meshes[meshName] = CreateMesh (meshList, tileData, primitiveIndex);
+    meshes[meshName] = CreateMesh (meshList, tileData, primitiveIndex, doBatchIds);
     rootNode["meshes"].append (meshName);
     nodes["rootNode"] = rootNode;
     tileData.m_json["meshes"] = meshes;
@@ -1843,7 +1847,7 @@ void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix)
+MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
     {
     MeshMaterial mat(mesh,  m_tile.GetModel().Is3d(), suffix, m_context.GetDgnDb());
 
@@ -1864,7 +1868,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
     else
         AddMaterialColor (matJson, mat, tileData, mesh, suffix);
 
-    matJson["technique"] = AddMeshShaderTechnique(tileData, mat, mesh.ValidIdsPresent()).c_str();
+    matJson["technique"] = AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
 
     if (!mat.IgnoresLighting())
         {
@@ -2300,8 +2304,8 @@ void TilePublisher::AddMeshPointRange (Json::Value& positionValue, DRange3dCR po
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
-    {
+void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+    {                                                                                                                                     
     if (mesh.Triangles().empty())
         return;
 
@@ -2322,12 +2326,12 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 
     Json::Value         primitive = Json::objectValue;
 
-    if (mesh.ValidIdsPresent())
+    if (doBatchIds)
         AddMeshBatchIds(tileData, primitive, mesh.Attributes(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
 
-    MeshMaterial meshMat = AddMeshMaterial(tileData, mesh, idStr.c_str());
+    MeshMaterial meshMat = AddMeshMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     primitive["material"] = meshMat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
@@ -2363,15 +2367,15 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
+void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
     if (mesh.Polylines().empty())
         return;
 
     if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
-        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index);
+        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
     else
-        AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index);
+        AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
     }    
   
 
@@ -2480,14 +2484,14 @@ static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>
 *    the segment perpendicular and the miter direction.
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
+void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
     Utf8String idStr(std::to_string(index).c_str());
 
     static double               s_degenerateSegmentTolerance = 1.0E-5;
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
 
-    PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     PolylineTesselation         tesselation;
     bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
     double                      minLength = 0.0, maxLength = 0.0;
@@ -2497,7 +2501,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
         bvector<DPoint3d>       polylinePoints;
         bvector<uint16_t>       polylineColors, polylineAttributes;
 
-        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, mesh.ValidIdsPresent());
+        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
         if (polylinePoints.size() < 2)
             continue;
@@ -2533,7 +2537,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 colors1 = polylineColors[i+1];
                 }
 
-            if (mesh.ValidIdsPresent())
+            if (doBatchIds)
                 {
                 attributes0 = polylineAttributes[i];
                 attributes1 = polylineAttributes[i+1];
@@ -2611,7 +2615,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
         }
 
 
-    if (mesh.ValidIdsPresent())
+    if (doBatchIds)
         AddMeshBatchIds(tileData, primitive, tesselation.m_attributes, idStr);
 
     if (doColors)
@@ -2626,13 +2630,13 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
+void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
     if (mesh.Polylines().empty())
         return;
 
     Utf8String idStr(std::to_string(index).c_str());
-    PolylineMaterial            mat = AddSimplePolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    PolylineMaterial            mat = AddSimplePolylineMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     bvector<DPoint3d>           points, scalePoints;
     bvector<uint16_t>           attributes, colors;
     bvector<uint32_t>           indices;
@@ -2645,7 +2649,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
         bvector<DPoint3d>       polylinePoints;
         bvector<uint16_t>       polylineColors, polylineAttributes;
 
-        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, mesh.ValidIdsPresent());
+        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
         DRange3d        polylineRange = DRange3d::From(polylinePoints);
         DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
@@ -2664,7 +2668,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
                 }
 
             points.push_back (p0);
-            if (mesh.ValidIdsPresent())
+            if (doBatchIds)
                 attributes.push_back(polylineAttributes[i]);
 
             if (doColors)
@@ -2692,7 +2696,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
         primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 
-    if (mesh.ValidIdsPresent())
+    if (doBatchIds)
         AddMeshBatchIds(tileData, primitive, attributes, idStr);
 
     if (doColors)

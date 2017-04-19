@@ -376,7 +376,7 @@ private:
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData tileData);
 
-    void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
+    void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry, bool doBatchIds);
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
     Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
@@ -387,15 +387,15 @@ private:
     void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr);
     void AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colors, Utf8StringCR idStr);
 
-    Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex, bool doBatchIds);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
-    void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
-    void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
-    void AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
-    void AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
+    void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
+    void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
+    void AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
+    void AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void TesselatePolylineSegment(bvector<DPoint3d>& origins, bvector<DVec3d>& directions, bvector<DPoint2d>& params, bvector<uint16_t>& colors, bvector<uint16_t>& attributes, bvector<uint32_t>& indices, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, double& currLength, TileMeshR mesh, size_t meshIndex, bool doBatchIds);
-    MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix);
+    MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchids);
     void  AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix);
     PolylineMaterial AddSimplePolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     PolylineMaterial AddTesselatedPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
