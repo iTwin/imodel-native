@@ -2868,77 +2868,41 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
+* @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PublisherContext::WriteSheetAttachmentTree (Sheet::ModelCR sheetModel, bvector<DgnElementId>& attachmentIds, Json::Value&& modelRoot, DRange3dCR rootModelRange)
+Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
     {
-    Json::Value     root, sheetChild;
-    DRange3d        compositeRange = rootModelRange;
-
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = 1.0E6;      // Always use children.
-    root[JSON_Children].append(std::move(modelRoot));
-
-    for (auto& attachmentId : attachmentIds)
+    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
+    Json::Value attachmentsJson(Json::arrayValue);
+    for (DgnElementId attachmentId : attachmentIds)
         {
-        auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-        if (!attachmentElement.IsValid())
-            {
-            BeAssert(false);
+        auto attachment = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+        DrawingViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<DrawingViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
+        if (view.IsNull())
             continue;
-            }
-        
-        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
-        if (!viewDefinition.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
 
-        if (nullptr == viewDefinition->ToView2d())
-            {
-            // Do we need to handle 3d attachments -- right now they are coming through due to bug in Sam's unnesting code.
-            continue;
-            }
+        Json::Value viewJson;
+        viewJson["baseModelId"] = view->GetBaseModelId().ToString();
+        viewJson["categorySelector"] = view->GetCategorySelectorId().ToString();
 
-        auto attachedModel = GetDgnDb().Models().GetModel(viewDefinition->ToView2d()->GetBaseModelId());
-        if (!attachedModel.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        DPoint3d            viewOrigin = viewDefinition->GetOrigin();
-        AxisAlignedBox3d    sheetRange = attachmentElement->GetPlacement().CalculateRange();
-        double              sheetScale = sheetRange.XLength() / viewDefinition->GetExtents().x; 
+        DPoint3d            viewOrigin = view->GetOrigin();
+        AxisAlignedBox3d    sheetRange = attachment->GetPlacement().CalculateRange();
+        double              sheetScale = sheetRange.XLength() / view->GetExtents().x;
         Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
-                            viewRotation = Transform::From(viewDefinition->GetRotation()),
+                            viewRotation = Transform::From(view->GetRotation()),
                             scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
-                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, 0.0));
-
-        Transform           tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)), sheetToTile;
-        Json::Value         attachmentChild;
-        WString             attachModelRootName = TileUtil::GetRootNameForModel(*attachedModel);
-        WString             metadataRelativePath = BeFileName(nullptr, nullptr, attachModelRootName.c_str(), s_metadataExtension);
-        DRange3d            tileSheetRange;
+                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, 0.0)),
+                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)),
+                            sheetToTile;
 
         sheetToTile.InverseOf(tileToSheet);
-        sheetToTile.Multiply(tileSheetRange, sheetRange);
+        viewJson["transform"] = TransformToJson(tileToSheet);
 
-        attachmentChild[JSON_Content]["url"] = Utf8String(metadataRelativePath);
-        TilePublisher::WriteBoundingVolume (attachmentChild, tileSheetRange);
-        attachmentChild["refine"] = "replace";
-        attachmentChild[JSON_GeometricError] = 0.0;
-        attachmentChild[JSON_Transform] = TransformToJson(tileToSheet);
-
-        root[JSON_Children].append(std::move(attachmentChild));
-        compositeRange.Extend(sheetRange);
+        attachmentsJson.append(std::move(viewJson));
         }
-    TilePublisher::WriteBoundingVolume(root, compositeRange);
 
-    return root;
+    return attachmentsJson;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3061,18 +3025,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     DRange3d    rootRange;
     WriteModelMetadataTree (rootRange, modelRoot, rootTile, maxDepth);
 
-    Sheet::ModelCP          sheetModel;
-    bvector<DgnElementId>   attachmentIds;
-
-    if (nullptr != (sheetModel = rootTile.GetModel().ToSheetModel()) &&
-        !(attachmentIds = sheetModel->GetSheetAttachmentIds()).empty()) 
-        {
-        val[JSON_Root] = WriteSheetAttachmentTree (*sheetModel, attachmentIds, std::move(modelRoot), rootRange);
-        }
-    else
-        {
-        val[JSON_Root] = std::move(modelRoot);
-        }
+    val[JSON_Root] = std::move(modelRoot);
 
     if (rootTile.GetModel().IsSpatialModel())
         val[JSON_Root][JSON_Transform] = TransformToJson(m_spatialToEcef);
@@ -3253,33 +3206,12 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 m_spatialToEcef.Multiply(modelRange, modelRange);
                 modelJson["transform"] = TransformToJson(m_spatialToEcef);
                 }
+            else if (nullptr != sheetModel)
+                {
+                modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
+                }
 
             modelJson["extents"] = RangeToJson(modelRange);
-
-            if (nullptr != sheetModel)
-                {
-                bvector<DgnElementId>   attachmentIds = sheetModel->GetSheetAttachmentIds();
-
-                for (auto& attachmentId : attachmentIds)
-                    {
-                    auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-                    if (attachmentElement.IsValid()) 
-                        {
-                        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
-
-                        if (viewDefinition.IsValid() && nullptr != viewDefinition->ToView2d())
-                            {
-                            Json::Value    attachedView;
-
-                            attachedView["attachmentId"] = attachmentId.ToString();
-                            attachedView["baseModelId"] = viewDefinition->ToView2d()->GetBaseModelId().ToString();
-                            attachedView["categorySelector"] = viewDefinition->GetCategorySelectorId().ToString();
-                            modelJson["attachedViews"].append (std::move (attachedView));
-                            }
-                        }
-                    }
-                }
-    
 
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName = TileUtil::GetRootNameForModel(*model);

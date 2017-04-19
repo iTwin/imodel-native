@@ -277,7 +277,7 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteModelMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    Json::Value WriteSheetAttachmentTree (Sheet::ModelCR sheetModel, bvector<DgnElementId>& attachmentIds, Json::Value&& modelRoot, DRange3dCR rootRange);
+    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet);
 
     void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
     void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
