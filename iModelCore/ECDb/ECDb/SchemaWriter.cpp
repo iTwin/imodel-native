@@ -860,7 +860,7 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(Id,ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(Id,ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?,?)"))
         return ERROR;
 
     BeInt64Id id;
@@ -890,13 +890,7 @@ BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassI
     if (BE_SQLITE_OK != stmt->BindText(6, caXml.c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    DbResult r = stmt->Step();
-    if (r != BE_SQLITE_DONE)
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
