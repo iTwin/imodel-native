@@ -2820,7 +2820,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
         if (m_constraintClasses.size() == 0)
             return ECObjectsStatus::Success;
 
-        LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+        LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
             "Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
                 (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
 
@@ -2829,7 +2829,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
             // Attempt to resolve the issue by finding a common base class between all constraint classes
             if (m_constraintClasses.size() > 1)
                 {
-                LOG.warningv("Attempting to find a common base class between all constraint classes to use as the abstract constraint...");
+                LOG.infov("Attempting to find a common base class between all constraint classes to use as the abstract constraint...");
 
                 ECEntityClassCP commonClass = nullptr;
                 FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
@@ -2838,7 +2838,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
                     {
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
                         {
-                        LOG.warningv("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
+                        LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
                                      ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, 
                                      m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
                         return ECObjectsStatus::Success;
