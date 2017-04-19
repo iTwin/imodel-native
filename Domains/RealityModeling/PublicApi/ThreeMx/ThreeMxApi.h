@@ -148,12 +148,14 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct Scene : Dgn::TileTree::Root
 {
+    DEFINE_T_SUPER(Dgn::TileTree::Root);
     friend struct Node;
     friend struct Geometry;
     friend struct ThreeMxModel;
 
 private:
-    SceneInfo m_sceneInfo;
+    Utf8String  m_sceneFile;
+    SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args) {return new Geometry(args, *this);}
@@ -162,7 +164,8 @@ private:
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:
-    using Root::Root;
+    Scene(Dgn::DgnDbR db, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super (db, location, sceneFile, system), m_sceneFile (sceneFile) {}
+
     ~Scene() {ClearAllTiles();}
 
     SceneInfo const& GetSceneInfo() const {return m_sceneInfo;}
