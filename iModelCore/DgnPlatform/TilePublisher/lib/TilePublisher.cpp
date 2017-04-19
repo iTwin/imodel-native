@@ -761,10 +761,18 @@ PublisherContext::Status TilePublisher::Publish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex, bool doBatchIds)
+Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex)
     {
     Json::Value     jsonMesh = Json::objectValue;
     Json::Value     primitives;
+    bool            doBatchIds = false;
+
+    for (auto& tileMesh : tileMeshes)
+        if (tileMesh->ValidIdsPresent())
+            {
+            doBatchIds = true;
+            break;
+            }
 
     for (auto& tileMesh : tileMeshes)
         {
@@ -962,7 +970,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     AddExtensions(partData);
     AddDefaultScene(partData);
-    AddMeshes (partData, part->Meshes(), validIdsPresent);
+    AddMeshes (partData, part->Meshes());
 
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
@@ -1053,7 +1061,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
 
     AddExtensions(tileData);
     AddDefaultScene(tileData);
-    AddMeshes(tileData, meshes, validIdsPresent);
+    AddMeshes(tileData, meshes);
 
     FeatureAttributesMapCR attributes = m_tile.GetAttributes();
     Utf8String batchTableStr;
@@ -1115,7 +1123,7 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData tileData)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& meshList, bool doBatchIds)
+void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& meshList)
     {
     size_t          meshIndex = 0, primitiveIndex = 0;
     Json::Value     meshes     = Json::objectValue;
@@ -1124,7 +1132,7 @@ void TilePublisher::AddMeshes(PublishTileData& tileData, TileMeshList const& mes
 
     Utf8PrintfString    meshName("Mesh_%d", meshIndex++);
 
-    meshes[meshName] = CreateMesh (meshList, tileData, primitiveIndex, doBatchIds);
+    meshes[meshName] = CreateMesh (meshList, tileData, primitiveIndex);
     rootNode["meshes"].append (meshName);
     nodes["rootNode"] = rootNode;
     tileData.m_json["meshes"] = meshes;

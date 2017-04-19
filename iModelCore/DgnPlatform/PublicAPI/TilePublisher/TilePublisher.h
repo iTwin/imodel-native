@@ -376,7 +376,7 @@ private:
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData tileData);
 
-    void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry, bool doBatchIds);
+    void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
     Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
@@ -387,7 +387,7 @@ private:
     void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr);
     void AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colors, Utf8StringCR idStr);
 
-    Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex, bool doBatchIds);
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
     void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
