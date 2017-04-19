@@ -56,9 +56,9 @@ Utf8String ScanSegment::SegmentInfo(Utf8CP prefix)
         prefix = "";
     str.reserve(80);
     if(IsPresent())
-        str.Sprintf("%s%s(%d, %d)",prefix, type, m_indx, m_len);
+        str.Sprintf("%s%s(%d, %d)",prefix, type.c_str(), m_indx, m_len);
     else
-        str.Sprintf("%s%s(absent)", prefix, type);
+        str.Sprintf("%s%s(absent)", prefix, type.c_str());
     return str;
     }
 
@@ -365,7 +365,7 @@ Utf8CP FormattingScannerCursor::GetSignature()
     char byt = 0;
     m_signature = new char[m_totalScanLength + 1];
     if (nullptr == m_signature)
-        m_signature = FormatConstant::AllocError();
+        return FormatConstant::AllocError();
     else
         {
         size_t c = GetNextSymbol();

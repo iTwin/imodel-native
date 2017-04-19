@@ -177,7 +177,7 @@ public:
     static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
     UNITS_EXPORT static const unsigned char TriadBitMask(size_t threeBit);
     static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
-    static const Utf8P AllocError() { return "AllocError"; }
+    static const Utf8CP AllocError() { return "AllocError"; }
     static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const size_t* SpecialUOM()
