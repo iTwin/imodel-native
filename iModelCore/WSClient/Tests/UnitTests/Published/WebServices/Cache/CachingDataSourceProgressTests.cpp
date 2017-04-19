@@ -94,3 +94,49 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelPassed_ReturnsByt
     EXPECT_EQ(0, progress.GetSynced());
     }
 
+TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndBytesValuesAndLabelAndSyncedPassed_ReturnsInstancesValuesAndBytesValuesAndLabelAndSyncedOnly)
+    {
+    double current = 20;
+    double total = 50;
+    auto instances = ICachingDataSource::Progress::State(current, total);
+    auto transfered = ICachingDataSource::Progress::State(current, total);
+    Utf8String label = "FooBar";
+    auto labelPtr = std::make_shared<Utf8String>(label);
+    double synced = 0.99;
+    auto progress = ICachingDataSource::Progress(synced, instances, transfered, labelPtr);
+
+    EXPECT_EQ(ICachingDataSource::Progress::State(current, total), progress.GetInstances());
+    EXPECT_EQ(ICachingDataSource::Progress::State(current, total), progress.GetBytes());
+    EXPECT_EQ(label, progress.GetLabel());
+    EXPECT_EQ(synced, progress.GetSynced());
+    }
+
+TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndLabelAndSyncedPassed_ReturnsInstancesValuesAndLabelAndSyncedOnly)
+    {
+    double current = 20;
+    double total = 50;
+    auto instances = ICachingDataSource::Progress::State(current, total);
+    Utf8String label = "FooBar";
+    auto labelPtr = std::make_shared<Utf8String>(label);
+    double synced = 0.99;
+    auto progress = ICachingDataSource::Progress(synced, instances, {}, labelPtr);
+
+    EXPECT_EQ(ICachingDataSource::Progress::State(current, total), progress.GetInstances());
+    EXPECT_EQ(ICachingDataSource::Progress::State(), progress.GetBytes());
+    EXPECT_EQ(label, progress.GetLabel());
+    EXPECT_EQ(synced, progress.GetSynced());
+    }
+
+TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndSyncedPassed_ReturnsInstancesValuesAndSyncedOnly)
+    {
+    double current = 20;
+    double total = 50;
+    auto instances = ICachingDataSource::Progress::State(current, total);
+    double synced = 0.99;
+    auto progress = ICachingDataSource::Progress(synced, instances);
+
+    EXPECT_EQ(ICachingDataSource::Progress::State(current, total), progress.GetInstances());
+    EXPECT_EQ(ICachingDataSource::Progress::State(), progress.GetBytes());
+    EXPECT_EQ("", progress.GetLabel());
+    EXPECT_EQ(synced, progress.GetSynced());
+    }
