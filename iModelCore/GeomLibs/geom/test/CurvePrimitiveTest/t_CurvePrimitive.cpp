@@ -2222,6 +2222,83 @@ TEST(CurveVector, LengthOfPrimitives)
     
     double posterior = curve->Length();
     }
-TEST(CurveVector, LengthPostRotation)
+TEST(CurveVector, CloneBetweenFractions) 
     {
+    DPoint3d points[5] = { DPoint3d::From(1,0,0),
+                           DPoint3d::From(2,2,0),
+                           DPoint3d::From(2,2,4),
+                           DPoint3d::From(2,2,6),
+                           DPoint3d::From(6,6,6) };
+    auto cShapeLineString = ICurvePrimitive::CreateLineString(points, 5);
+    CurveVectorPtr cVec = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    cVec->push_back(cShapeLineString);
+    
+
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
+    ICurvePrimitivePtr linePrim = ICurvePrimitive::CreateLineString(pointsLineStringN);
+    curve->push_back(linePrim);
+    DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(segN);
+    curve->push_back(segPrim);
+    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(10, 0, 0),
+                                                    DPoint3d::From(12, 1, 0),
+                                                    DPoint3d::From(11, 2, 0));
+    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
+    curve->push_back(ellipsePrim);
+    Check::SaveTransformed(*curve);
+    Check::Shift(10, 0, 0);
+    Check::SaveTransformed(*curve->CloneBetweenDirectedFractions(1, 0.5, 2, 0.7, false));
+    Check::Shift(0, 10, 0);
+    //checking cyclic indexing
+    Check::SaveTransformed(*curve->CloneBetweenCyclicIndexedFractions(1, 0.5, 2, 0.7));
+    Check::ClearGeometry("CurveVector.CloneBetweenFractions");
     }
+TEST(CurveVector, ChangeAreaByOffset)
+    {
+    CurveOffsetOptions offset(5);
+    CurveVectorPtr curve = CurveVector::CreateRectangle(2, 2, 6, 6, CurveVector::BOUNDARY_TYPE_None);
+    Check::SaveTransformed(*curve);
+    Check::Shift(15, 0, 0);
+
+    auto offsetCurve = curve->AreaOffset(offset);
+    Check::SaveTransformed(*offsetCurve);
+    Check::Shift(15, 0, 0);
+    offset.SetOffsetDistance(15);
+    offsetCurve = curve->AreaOffset(offset);
+    Check::SaveTransformed(*offsetCurve);
+    Check::Shift(15, 0, 0);
+    offset.SetOffsetDistance(10);
+    offsetCurve = curve->AreaOffset(offset);
+    Check::SaveTransformed(*offsetCurve);
+
+    Check::ClearGeometry("CurveVector.ChangeAreaByOffset");
+    }
+//to be done yet
+TEST(CurveVector, CloneOffsetCurvesXY)
+    {
+
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,0), DPoint3d::From(9,8,0) };
+    ICurvePrimitivePtr linePrim = ICurvePrimitive::CreateLineString(pointsLineStringN);
+    curve->push_back(linePrim);
+    DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(segN);
+    curve->push_back(segPrim);
+    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 0, 0),
+                                                    DPoint3d::From(2, 1, 0),
+                                                    DPoint3d::From(1, 2, 0));
+    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
+    curve->push_back(ellipsePrim);
+
+    Check::SaveTransformed(*curve);
+    Check::Shift(20, 0, 0);
+    CurveOffsetOptions offset(5);
+   // offset.SetTolerance(6);
+    auto offsetCurve = curve->CloneOffsetCurvesXY(offset);
+    Check::SaveTransformed(*offsetCurve);
+    Check::ClearGeometry("CurveVector.CloneOffsetCurvesXY");
+
+    }//still in doubt as to why it is removing linestring primitive
+
+
