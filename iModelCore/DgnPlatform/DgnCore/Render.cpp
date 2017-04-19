@@ -16,13 +16,6 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
-void Render::Target::Debug::RecordGraphicsStats()
-    {
-    if (IDisplayMetricsHandler::IsRecorderActive())
-        DisplayMetricsHandler::RecordGraphicsStats(s_gps, s_sceneTarget, s_progressiveTarget, s_frameRateGoal);
-    }
-    if (!isFromProgressiveDisplay)
-        Render::Target::Debug::RecordGraphicsStats();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/16
@@ -166,9 +159,6 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
-
-    if (m_elapsedTime>.125 && IDisplayMetricsHandler::IsRecorderActive())
-        DisplayMetricsHandler::RecordError(Utf8PrintfString("[%d] task=%s, elapsed=%d", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), (int)(m_elapsedTime*1000)).c_str());
 
     if (m_elapsedTime>.5)
         ERROR_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);

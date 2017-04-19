@@ -821,6 +821,7 @@ Utf8CP  HereImageryProvider::_GetCreditUrl() const
     return nullptr;
     }
 
+#if defined(TODO_ELEMENT_TILE)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace WebMercator
@@ -893,6 +894,44 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
 };
 
 END_BENTLEY_DGN_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
+    {
+    // need a provider to get the tiles.
+    if (m_provider.IsNull())
+        return;
+
+    folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
+    if (!future.isReady() || ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
+        {
+        for (;;)
+            {
+            if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
+                {
+                // don't have the tile template yet, schedule a progressive pass to get it.
+                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask(std::move(future), this));
+                return;
+                }
+            else
+                {
+                // this is for the thumbnail case - wait for the fetch to finish.
+                BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+                if (ImageryProvider::TemplateUrlLoadStatus::Received == m_provider->_GetTemplateUrlLoadStatus())
+                    break;
+                }
+            }
+        }
+
+    // don't need or already have TemplateUrl - go on to load and display the model.
+    Load(&context.GetTargetR().GetSystem());
+
+    if (m_root.IsValid())
+        m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16

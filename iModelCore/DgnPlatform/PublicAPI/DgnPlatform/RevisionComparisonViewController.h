@@ -16,136 +16,116 @@
 #include <DgnPlatform/ViewDefinition.h>
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
+#include <DgnPlatform/Render.h>
 
+#define BEGIN_REVISION_COMPARISON_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace RevisionComparison {
+#define END_REVISION_COMPARISON_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
+#define USING_REVISION_COMPARISON_NAMESPACE using namespace BentleyApi::Dgn::RevisionComparison;
 
-DGNPLATFORM_TYPEDEFS(RevisionComparisonViewController)
-DGNPLATFORM_REF_COUNTED_PTR(RevisionComparisonViewController)
+BEGIN_REVISION_COMPARISON_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_SQLITE
+using DbOpcode = BeSQLite::DbOpcode;
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+DEFINE_POINTER_SUFFIX_TYPEDEFS(RevisionComparisonViewController);
+DEFINE_REF_COUNTED_PTR(RevisionComparisonViewController);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Symbology);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ComparisonData);
+DEFINE_REF_COUNTED_PTR(ComparisonData);
 
 //=======================================================================================
-//! Maintains the settings for the symbology used to display element comparison
-//! This class is used to provide the user with overridable settings for the
-//! revision comparison
-// @bsistruct                                                   Diego.Pinate    04/17
+// @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionComparisonSettings
+struct Symbology
 {
-public:
-    //=======================================================================================
-    //! Container for the symbology overrides
-    //! Contains overrides for the current loaded revision, the target revision,
-    //! and elements that were not affected
-    // @bsistruct                                                   Diego.Pinate    04/17
-    //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE ComparisonSymbologyOverrides
+    using Appearance = Render::FeatureSymbologyOverrides::Appearance;
+private:
+    struct Overrides
     {
-    private:
-    bmap<DbOpcode,Render::OvrGraphicParams> m_currentRevisionOverrides;
-    bmap<DbOpcode,Render::OvrGraphicParams> m_targetRevisionOverrides;
-    Render::OvrGraphicParams                m_untouchedOverride;
+        Appearance  m_appearance[3];
 
-    public:
-    //! Sets the symbology overrides for a particular opcode
-    //void     SetOverride (DbOpcode const& opcode, Render::OvrGraphicParamsCR overrides);
-    void    GetCurrentRevisionOverrides(DbOpcode const& opcode, Render::OvrGraphicParamsR overrides);
-    void    GetTargetRevisionOverrides(DbOpcode const& opcode, Render::OvrGraphicParamsR overrides);
-    void    GetUntouchedOverrides(Render::OvrGraphicParamsR overrides);
-    //! Sets the color override for a particular opcode
-    //void     SetColor (DbOpcode const& opcode, ColorDef const& color);
-    //! Sets the transparency override for a particular opcode
-    //void     SetTransparency (DbOpcode const& opcode, Byte transparency);
-    //! Initialize hard-coded default values
-    void    InitializeDefaults();
+        static constexpr size_t GetIndex(DbOpcode opcode) { return DbOpcode::Insert == opcode ? 0 : (DbOpcode::Update == opcode ? 1 : 2); }
+
+        Appearance& GetAppearance(DbOpcode opcode) { return m_appearance[GetIndex(opcode)]; }
+        Appearance const& GetAppearance(DbOpcode opcode) const { return m_appearance[GetIndex(opcode)]; }
+        void SetAppearance(DbOpcode opcode, Appearance const& app) { m_appearance[GetIndex(opcode)] = app; }
     };
 
-private:
-    static ComparisonSymbologyOverrides*        s_symbologyOverrides;
-
+    Overrides   m_current;
+    Overrides   m_target;
+    Appearance  m_untouched;
 public:
-    //! Initialize the default overrides
-    static ComparisonSymbologyOverrides *       Overrides();
+    Symbology() { InitializeDefaults(); }
 
-    static void                                 DeleteOverrides();
+    Appearance GetCurrentRevisionOverrides(DbOpcode opcode) const { return m_current.GetAppearance(opcode); }
+    Appearance GetTargetRevisionOverrides(DbOpcode opcode) const { return m_target.GetAppearance(opcode); }
+    Appearance GetUntouchedOverrides() const { return m_untouched; }
+
+    void InitializeDefaults();
 };
 
-
 //=======================================================================================
-//! Maintains data necessary to show the diffs between the current revision and
-//! a target revision.
-//! Maintains DgnElementPtr of elements that were inserted/modified
-//! Maintains a list of element IDs that were modified in the Db and deleted
-// @bsistruct                                                   Diego.Pinate    03/17
+// @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct  EXPORT_VTABLE_ATTRIBUTE RevisionComparisonElementKeeper
+struct State
 {
-public:
-    //=======================================================================================
-    //! Provides a way to pair a type with an Opcode
-    //! Useful to know which symbology to use on each DgnElementPtr or Element IDs in Db
-    //! Later on it should obtain symbology automatically based on user settings
-    // @bsistruct                                                   Diego.Pinate    03/17
-    //=======================================================================================
-    template<typename T_class>
-    struct PairWithState
-    {
-    T_class         m_data;
-    DbOpcode        m_opcode;
+    DbOpcode    m_opcode;
 
-    PairWithState() { }
-    PairWithState(T_class data, DbOpcode opcode) : m_data(data), m_opcode(opcode) { }
+    explicit State(DbOpcode opcode=DbOpcode::Insert) : m_opcode(opcode) { }
 
-    bool IsInsertion() const    { return m_opcode == DbOpcode::Insert; }
-    bool IsDeletion() const     { return m_opcode == DbOpcode::Delete; }
-    bool IsModified() const     { return m_opcode == DbOpcode::Update; }
+    bool IsInsertion() const { return DbOpcode::Insert == m_opcode; }
+    bool IsDeletion() const { return DbOpcode::Delete == m_opcode; }
+    bool IsModified() const { return DbOpcode::Update == m_opcode; }
+};
 
-    void    GetOverrideGraphicParams(Render::OvrGraphicParamsR symbologyOverrides) const;
-    };
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
+//=======================================================================================
+struct PersistentState : State
+{
+    DgnElementId    m_elementId;
 
-    //=======================================================================================
-    //! This will be saved statically to show the "transient" elements in the view with
-    //! the correct symbology based on their opcodes, and also show the elements in the db
-    //! that need to be re-colored
-    // @bsistruct                                                   Diego.Pinate    03/17
-    //=======================================================================================
-    struct ComparisonData : RefCountedBase
-    {
-    bvector<PairWithState<DgnElementPtr>>   m_elements;
-    bvector<PairWithState<DgnElementId>>    m_elementIds;
-    };
+    PersistentState() = default;
+    PersistentState(DgnElementId elementId, DbOpcode opcode) : State(opcode), m_elementId(elementId) { }
 
-    DEFINE_REF_COUNTED_PTR(ComparisonData)
+    bool IsValid() const { return m_elementId.IsValid(); }
 
+    bool operator<(PersistentState const& rhs) const { return m_elementId < rhs.m_elementId; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
+//=======================================================================================
+struct TransientState : State
+{
+    DgnElementCPtr  m_element;
+
+    TransientState() = default;
+    TransientState(DgnElementCR el, DbOpcode opcode) : State(opcode), m_element(&el) { }
+
+    bool IsValid() const { return m_element.IsValid(); }
+
+    bool operator<(TransientState const& rhs) const { return m_element.get() < rhs.m_element.get(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
+//=======================================================================================
+struct ComparisonData : RefCountedBase
+{
 private:
-    static ComparisonDataPtr                 s_comparisonData;
-
+    bset<PersistentState>   m_persistent;
+    bset<TransientState>    m_transient;
 public:
-    //! Checks if our data contains an element ID with a symbology override
-    //! @param[in] id DgnElementId of the element to check
-    //! @param[out] pair PairWithState<DgnElementId> object containing the element
-    //! @return true if the element is contained
-    static bool     ContainsElementId(DgnElementId const& id, PairWithState<DgnElementId>*& pair);
-    //! Checks if our data contains an element ptr with the supplied ID
-    //! @param[in] id DgnElementId of the element to check
-    //! @param[out] pair PairWithState<DgnElementPtr> object containing the element
-    //! @return true if the element is contained
-    static bool     ContainsElement(DgnElementId const& id, PairWithState<DgnElementPtr>*& pair);
-    //! Obtains all the DgnElementPtrs in the comparison data into a vector
-    //! @param[out] elements The elements
-    static void     CollectTransientElements(bvector<DgnElementPtr> & elements);
-    static void     CollectTransientElements(bvector<PairWithState<DgnElementPtr>> & elements);
-    
+    PersistentState GetPersistentState(DgnElementId elementId) const;
+    TransientState GetTransientState(DgnElementId elementId) const;
 
-    //! Clears the elements being shown, view controller should default elements in the db to Grey
-    DGNPLATFORM_EXPORT static void    ClearComparisonData();
-    //! Add an element to be drawn and its status/opcode that will define symbology
-    DGNPLATFORM_EXPORT static void    AddElement (DgnElementPtr element, DbOpcode opcode);
-    //! Adds an element ID of an object in the Db that must be drawn and its status/opcode
-    DGNPLATFORM_EXPORT static void    AddElementId (DgnElementId elementId, DbOpcode opcode);
+    bset<PersistentState> const& GetPersistentStates() const { return m_persistent; }
+    bset<TransientState> const& GetTransientStates() const { return m_transient; }
 
-}; // RevisionComparisonElementKeeper
+    void Clear() { m_persistent.clear(); m_transient.clear(); }
+    void Add(DgnElementCR el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
+    void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
+};
 
 //=======================================================================================
 //! Used to compare two revisions, showing the elements with different symbology
@@ -159,28 +139,28 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionComparisonViewController : SpatialViewCon
     DEFINE_T_SUPER(SpatialViewController)
     friend struct SpatialViewDefinition;
 
+    enum Show
+    {
+        kShowCurrent = 1 << 0,
+        kShowTarget = 1 << 1,
+        kShowBoth = kShowCurrent | kShowTarget,
+    };
 protected:
-    unsigned int        m_flags;
+    Symbology           m_symbology;
+    ComparisonDataCPtr  m_comparisonData;
+    Show                m_show;
 
-    void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
-    void _VisitAllElements(ViewContextR context) override;
-
+    DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
 public:
-    enum Flags
-        {
-        SHOW_CURRENT    = 1,
-        SHOW_TARGET     = 1 << 1,
-        SHOW_BOTH       = SHOW_CURRENT | SHOW_TARGET,
-        };
+    RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth, SymbologyCR symb=Symbology()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
 
-    void    _CreateTerrain(TerrainContextR context) override;
+    void SetShow(Show show) { m_show = show; }
+    void SetSymbology(SymbologyCR symb) { m_symbology = symb; }
 
-    //! Set flags for what's shown in the comparison
-    DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }
-
-    //! Constructors
-    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view) : T_Super(view), m_flags((unsigned int)Flags::SHOW_BOTH) { }
-    DGNPLATFORM_EXPORT RevisionComparisonViewController (SpatialViewDefinition const& view, unsigned int flags) : T_Super(view), m_flags(flags) { }
+    bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
+    bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
 };
 
-END_BENTLEY_DGN_NAMESPACE
+END_REVISION_COMPARISON_NAMESPACE
+
