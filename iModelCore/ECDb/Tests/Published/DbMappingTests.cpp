@@ -9409,5 +9409,311 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [FK_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([FK_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([Id]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan Khan                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelationshipEndPoint)
+{
+    SchemaItem testItem = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+            <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+	        <!-- Subset of BisCore schema -->
+	        <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"  >
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                            <DateTimeKind>Utc</DateTimeKind>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
+                <BaseClass>SpatialElement</BaseClass>
+            </ECEntityClass>	
+	            <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
+                <BaseClass>GeometricElement3d</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract"  >
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>32</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream"  />
+                <ECProperty propertyName="Origin" typeName="point3d" />
+                <ECProperty propertyName="Yaw" typeName="double" />
+                <ECProperty propertyName="Pitch" typeName="double" />
+                <ECProperty propertyName="Roll" typeName="double" />
+                <ECProperty propertyName="BBoxLow" typeName="point3d"  />
+                <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
+            </ECEntityClass>	
+	        <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DefinitionElement" modifier="Abstract"  >
+                <BaseClass>InformationContentElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>32</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="IsPrivate" typeName="boolean"  />
+            </ECEntityClass>
+	        <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+	        <!-- Test classes causing the issue -->
+	        <ECEntityClass typeName="ILinearElement" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ILinearlyLocatedElement" modifier="Abstract">
+                <BaseClass>ILinearlyLocated</BaseClass>
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>GeometricElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+	        <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
+                <BaseClass>PhysicalElement</BaseClass>
+                <BaseClass>ILinearElement</BaseClass>
+            </ECEntityClass>
+	        <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+                <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="LinearlyLocatedFurnitureElement" modifier="Abstract" >
+                <BaseClass>FurnitureElement</BaseClass>
+                <BaseClass>ILinearlyLocatedElement</BaseClass>
+            </ECEntityClass>    
+	        <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
+                <BaseClass>DefinitionElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
+                <BaseClass>GeometryDefinitionElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
+                <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
+            </ECEntityClass>
+	        <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
+                <BaseClass>DefinitionElement</BaseClass>
+                <ECProperty propertyName="Thumbnail" typeName="binary" />
+                <ECProperty propertyName="LightsJson" typeName="string" />
+                <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
+                    <Class class="ILinearlyLocated"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N entities linearly located along 1 linear-element">
+                    <Class class="ILinearElement"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Abstract">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
+                    <Class class="FurnitureElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
+                    <Class class="FurnitureDefinitionElement"/>
+                </Target>
+            </ECRelationshipClass>
+	        <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
+                    <Class class="FurnitureDefinitionElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more furniture definitions">
+                    <Class class="GeometryDefinitionElement"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml", true);
+
+    ECDb& ecdb = SetupECDb("concept_station_mixin_issue.ecdb");
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ecdb.Schemas().CreateClassViewsInDb();
+}
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan Khan                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, NullViewForMixIn)
+    {
+    SchemaItem testItem = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+            <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+	        <!-- Subset of BisCore schema -->
+	        <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"  >
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                            <DateTimeKind>Utc</DateTimeKind>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
+                <BaseClass>SpatialElement</BaseClass>
+            </ECEntityClass>	
+	            <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
+                <BaseClass>GeometricElement3d</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract"  >
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>32</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream"  />
+                <ECProperty propertyName="Origin" typeName="point3d" />
+                <ECProperty propertyName="Yaw" typeName="double" />
+                <ECProperty propertyName="Pitch" typeName="double" />
+                <ECProperty propertyName="Roll" typeName="double" />
+                <ECProperty propertyName="BBoxLow" typeName="point3d"  />
+                <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
+            </ECEntityClass>	
+	        <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DefinitionElement" modifier="Abstract"  >
+                <BaseClass>InformationContentElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>32</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="IsPrivate" typeName="boolean"  />
+            </ECEntityClass>
+	        <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+	        <!-- Test classes causing the issue -->
+	        <ECEntityClass typeName="ILinearElement" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ILinearlyLocatedElement" modifier="Abstract">
+                <BaseClass>ILinearlyLocated</BaseClass>
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                        <AppliesToEntityClass>GeometricElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+	        <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
+                <BaseClass>PhysicalElement</BaseClass>
+                <BaseClass>ILinearElement</BaseClass>
+            </ECEntityClass>
+	        <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+                <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
+            </ECEntityClass>
+  
+	        <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
+                <BaseClass>DefinitionElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
+                <BaseClass>GeometryDefinitionElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
+                <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
+            </ECEntityClass>
+	        <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
+                <BaseClass>DefinitionElement</BaseClass>
+                <ECProperty propertyName="Thumbnail" typeName="binary" />
+                <ECProperty propertyName="LightsJson" typeName="string" />
+                <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
+                    <Class class="ILinearlyLocated"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N entities linearly located along 1 linear-element">
+                    <Class class="ILinearElement"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Abstract">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
+                    <Class class="FurnitureElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
+                    <Class class="FurnitureDefinitionElement"/>
+                </Target>
+            </ECRelationshipClass>
+	        <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
+                    <Class class="FurnitureDefinitionElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more furniture definitions">
+                    <Class class="GeometryDefinitionElement"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml", true);
+
+
+    ECDb& ecdb = SetupECDb("nullview.ecdb");
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ecdb.Schemas().CreateClassViewsInDb();
+
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
  

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <Formatting/Formatting.h>
+#include <Formatting/FormattingApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
