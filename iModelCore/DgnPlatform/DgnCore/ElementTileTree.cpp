@@ -228,7 +228,7 @@ constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit 
 constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
-constexpr size_t s_minLeafTolerance = 0.001;
+constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
 //=======================================================================================
@@ -517,7 +517,8 @@ public:
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        return range.DiagonalDistance() < m_minRangeDiagonal;
+        auto diag = range.DiagonalDistance();
+        return diag < m_minRangeDiagonal && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
 
     IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
@@ -761,7 +762,7 @@ BentleyStatus Loader::_LoadTile()
             gfParams.SetLineColor(color);
             gfParams.SetFillColor(ColorDef::Green());
             gfParams.SetWidth(0);
-            gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
+            gfParams.SetLinePixels(tile.IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
 
             Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
             rangeGraphic->ActivateGraphicParams(gfParams);
@@ -1160,7 +1161,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1186,7 +1187,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     {
     DRange3dCR geomRange = geom.GetTileRange();
     double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
-    if (rangePixels < s_minRangeBoxSize)
+    if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
     bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
@@ -1281,7 +1282,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.HasTexture(db);
 
-    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), true);
+    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
@@ -1339,7 +1340,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
 
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
-    MeshMergeKey key(displayParams, false, false);
+    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetFillColor();

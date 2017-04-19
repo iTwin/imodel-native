@@ -300,6 +300,12 @@ public:
 //=======================================================================================
 struct Mesh : RefCountedBase
 {
+    enum class PrimitiveType
+    {
+        Mesh,
+        Polyline,
+        Point
+    };
 private:
     struct Features
     {
@@ -323,8 +329,9 @@ private:
     ColorTable              m_colorTable;
     bvector<uint16_t>       m_colors;
     Features                m_features;
+    PrimitiveType           m_type;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable) : m_displayParams(&params), m_features(featureTable) { }
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
 
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 
@@ -333,7 +340,7 @@ private:
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable) { return new Mesh(params, featureTable); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) { return new Mesh(params, featureTable, type); }
 
     DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
@@ -351,12 +358,13 @@ public:
     void ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    PrimitiveType GetType() const { return m_type; }
 
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
 
-    void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
-    void AddPolyline(PolylineCR polyline) { m_polylines.push_back(polyline); }
+    void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
+    void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
 };
 
@@ -365,13 +373,13 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct MeshMergeKey
 {
-    DisplayParamsCP m_params;                                                                                                                                                     
-    bool            m_hasNormals;
-    bool            m_hasFacets;
+    DisplayParamsCP     m_params;                                                                                                                                                     
+    bool                m_hasNormals;
+    Mesh::PrimitiveType m_primitiveType;
 
-    MeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets(false) { }
-    MeshMergeKey(DisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets(hasFacets) { }
-    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
+    MeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_primitiveType(Mesh::PrimitiveType::Mesh) { }
+    MeshMergeKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type) : m_params(&params), m_hasNormals(hasNormals), m_primitiveType(type) { }
+    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), mesh.GetType()) { }
 
     bool operator<(MeshMergeKey const& rhs) const
         {
@@ -379,8 +387,8 @@ struct MeshMergeKey
         if(m_hasNormals != rhs.m_hasNormals)
             return !m_hasNormals;
 
-        if(m_hasFacets != rhs.m_hasFacets)
-            return !m_hasFacets;
+        if (m_primitiveType != rhs.m_primitiveType)
+            return m_primitiveType < rhs.m_primitiveType;
 
         return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
         }
@@ -452,13 +460,14 @@ private:
     DgnMaterialCPtr     m_materialEl;
     RenderingAssetCP    m_material = nullptr;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable)
-        : m_mesh(Mesh::Create(params, featureTable)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
+        : m_mesh(Mesh::Create(params, featureTable, type)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
           m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
 
     bool GetMaterial(DgnMaterialId materailId, DgnDbR db);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable) { return new MeshBuilder(params, tolerance, areaTolerance, featureTable); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor);
@@ -498,8 +507,9 @@ struct Strokes
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
+    bool                m_disjoint;
 
-    Strokes(DisplayParamsCR displayParams, PointLists&& strokes) : m_displayParams(&displayParams), m_strokes(std::move(strokes)) { }
+    Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
 
     void Transform(TransformCR transform);
 };
@@ -715,8 +725,8 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 //=======================================================================================
 struct PolylineArgs : IndexedPolylineArgs
 {
-    bvector<IndexedPolyline>        m_polylines;
-    bvector<uint32_t>               m_colorTable;
+    bvector<IndexedPolyline>    m_polylines;
+    bvector<uint32_t>           m_colorTable;
 
     bool IsValid() const { return !m_polylines.empty(); }
 

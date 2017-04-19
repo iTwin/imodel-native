@@ -1033,14 +1033,37 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
     StrokesList         tileStrokes;
 
+    bvector<bvector<DPoint3d>>  strokePoints;
     if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
         {
-        bvector<bvector<DPoint3d>>  strokePoints;
-
+        strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
+        // ###TODO_ELEMENT_TILE: This is not precisely accurate. Need to handle:
+        //  - boundary type 'none' not actually containing point string; and
+        //  - boundary type 'none' containing multiple curves, any number of which may be point strings
+        // where 'point string' refers to any of:
+        //   - point string curve primitive type;
+        //   - line string (with any boundary type) containing 1 point
+        //   - line string (with any boundary type) containing 2 identical points
+        bool disjoint = CurveVector::BOUNDARY_TYPE_None == curveVector->GetBoundaryType();
+        if (!disjoint && 1 == strokePoints.size())
+            {
+            // A 'point' is actually a zero-length line...
+            auto const& points = strokePoints.front();
+            switch (points.size())
+                {
+                case 1:
+                    disjoint = true;
+                    break;
+                case 2:
+                    disjoint = *points.begin() == *(points.begin()+1);
+                    break;
+                }
+            }
+
         if (!strokePoints.empty())
-            tileStrokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints)));
+            tileStrokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), disjoint));
         }
 
     return tileStrokes;
@@ -1308,14 +1331,14 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->HasTexture(GetDgnDb());
 
-            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), true);
+            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
 
             MeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1328,14 +1351,14 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
-                MeshMergeKey key(*displayParams, false, false);
+                MeshMergeKey key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
 
                 MeshBuilderPtr meshBuilder;
                 auto found = builderMap.find(key);
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType);
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1515,7 +1538,7 @@ StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions)
             collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
     if (!strokePoints.empty())
-        strokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints)));
+        strokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), false));
 
     return strokes;
     }
@@ -1647,6 +1670,7 @@ void MeshArgs::Transform(TransformCR tf)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PolylineArgs::Reset()
     {
+    m_disjoint = false;
     m_numPoints = m_numLines = 0;
     m_points = nullptr;
     m_lines = nullptr;
@@ -1667,6 +1691,7 @@ bool PolylineArgs::Init(MeshCR mesh)
     m_numPoints = static_cast<uint32_t>(mesh.Points().size());
     m_points = &mesh.Points()[0];
     m_polylines.reserve(mesh.Polylines().size());
+    m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
 
     for (auto const& polyline : mesh.Polylines())
         {
