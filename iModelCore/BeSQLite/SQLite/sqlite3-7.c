@@ -1038,9 +1038,9 @@ static int sqlite3Fts5IndexBeginWrite(
 
 /*
 ** Flush any data stored in the in-memory hash tables to the database.
-** If the bCommit flag is true, also close any open blob handles.
+** Also close any open blob handles.
 */
-static int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
+static int sqlite3Fts5IndexSync(Fts5Index *p);
 
 /*
 ** Discard any data stored in the in-memory hash tables. Do not write it
@@ -1210,7 +1210,7 @@ static int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
 static int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
 static int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
-static int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
+static int sqlite3Fts5StorageSync(Fts5Storage *p);
 static int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 static int sqlite3Fts5StorageConfigValue(
@@ -8612,7 +8612,6 @@ static void fts5CloseReader(Fts5Index *p){
   }
 }
 
-
 /*
 ** Retrieve a record from the %_data table.
 **
@@ -13115,10 +13114,10 @@ static int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 /*
 ** Commit data to disk.
 */
-static int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
+static int sqlite3Fts5IndexSync(Fts5Index *p){
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  if( bCommit ) fts5CloseReader(p);
+  fts5CloseReader(p);
   return fts5IndexReturn(p);
 }
 
@@ -16055,7 +16054,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
   pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
   fts5TripCursors(pTab);
-  rc = sqlite3Fts5StorageSync(pTab->pStorage, 1);
+  rc = sqlite3Fts5StorageSync(pTab->pStorage);
   pTab->pConfig->pzErrmsg = 0;
   return rc;
 }
@@ -16866,7 +16865,7 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
   fts5TripCursors(pTab);
-  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage);
 }
 
 /*
@@ -16879,7 +16878,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
   fts5TripCursors(pTab);
-  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage);
 }
 
 /*
@@ -17090,7 +17089,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2017-04-03 12:04:39 84fa069c5bdfe41d03d03875c9157cc6785150b677c04e40b8916ba5af073dc8", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-04-11 20:48:30 7aae5c0f99aa2fda85654242cfc9e23a0f981d9ce4ab17610d619cd208540b3d", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
@@ -17426,7 +17425,7 @@ static void fts5StorageRenameOne(
 
 static int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
   Fts5Config *pConfig = pStorage->pConfig;
-  int rc = sqlite3Fts5StorageSync(pStorage, 1);
+  int rc = sqlite3Fts5StorageSync(pStorage);
 
   fts5StorageRenameOne(pConfig, &rc, "data", zName);
   fts5StorageRenameOne(pConfig, &rc, "idx", zName);
@@ -18289,15 +18288,15 @@ static int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
 /*
 ** Flush any data currently held in-memory to disk.
 */
-static int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit){
+static int sqlite3Fts5StorageSync(Fts5Storage *p){
   int rc = SQLITE_OK;
   i64 iLastRowid = sqlite3_last_insert_rowid(p->pConfig->db);
   if( p->bTotalsValid ){
     rc = fts5StorageSaveTotals(p);
-    if( bCommit ) p->bTotalsValid = 0;
+    p->bTotalsValid = 0;
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5IndexSync(p->pIndex, bCommit);
+    rc = sqlite3Fts5IndexSync(p->pIndex);
   }
   sqlite3_set_last_insert_rowid(p->pConfig->db, iLastRowid);
   return rc;

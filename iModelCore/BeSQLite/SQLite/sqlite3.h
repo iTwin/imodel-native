@@ -123,7 +123,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.19.0"
 #define SQLITE_VERSION_NUMBER 3019000
-#define SQLITE_SOURCE_ID      "2017-04-03 12:04:39 84fa069c5bdfe41d03d03875c9157cc6785150b677c04e40b8916ba5af073dc8"
+#define SQLITE_SOURCE_ID      "2017-04-11 20:48:30 7aae5c0f99aa2fda85654242cfc9e23a0f981d9ce4ab17610d619cd208540b3d"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -2211,9 +2211,6 @@ SQLITE_API int sqlite3_total_changes(sqlite3*);
 ** ^A call to sqlite3_interrupt(D) that occurs when there are no running
 ** SQL statements is a no-op and has no effect on SQL statements
 ** that are started after the sqlite3_interrupt() call returns.
-**
-** If the database connection closes while [sqlite3_interrupt()]
-** is running then bad things will likely happen.
 */
 SQLITE_API void sqlite3_interrupt(sqlite3*);
 
@@ -3705,7 +3702,7 @@ SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 ** The [sqlite3_value_blob | sqlite3_value_type()] family of
 ** interfaces require protected sqlite3_value objects.
 */
-typedef struct Mem sqlite3_value;
+typedef struct sqlite3_value sqlite3_value;
 
 /*
 ** CAPI3REF: SQL Function Context Object

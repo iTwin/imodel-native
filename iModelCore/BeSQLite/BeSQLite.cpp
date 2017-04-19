@@ -2482,7 +2482,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade && !params.m_rawSQLite)
         {
         //ensure that profile upgraders have an active transaction even if DefaultTxn::No was passed
-        if (params.m_startDefaultTxn == DefaultTxn::No)
+        if (params.m_startDefaultTxn == DefaultTxn::No && !m_dbFile->m_defaultTxn.IsActive())
             m_dbFile->m_defaultTxn.Begin();
 
         rc = _VerifyProfileVersion(params);
@@ -2491,7 +2491,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
             rc = _OnDbOpened();
 
         //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
-        if (params.m_startDefaultTxn == DefaultTxn::No)
+        if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())
             m_dbFile->m_defaultTxn.Commit(nullptr);
         }
 
