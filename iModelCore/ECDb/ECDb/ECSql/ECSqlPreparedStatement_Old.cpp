@@ -428,7 +428,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
     ECSqlBinder* ecinstanceidBinder = m_ecInstanceKeyInfo.GetECInstanceIdBinder();
     BeAssert(ecinstanceidBinder != nullptr);
 
-    DbResult dbStat = GetECDb().GetECDbImplR().GetSequence(IdSequences::ECInstanceId).GetNextValue(generatedECInstanceId);
+    DbResult dbStat = GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::InstanceId).GetNextValue(generatedECInstanceId);
     if (dbStat != BE_SQLITE_OK)
         {
         ECDbLogger::LogSqliteError(GetECDb(), dbStat, "ECSqlStatement::Step failed: Could not generate an " ECDBSYS_PROP_ECInstanceId ".");

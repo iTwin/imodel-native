@@ -56,7 +56,7 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, Persi
         }
 
     DbTableId tableId;
-    m_ecdb.GetECDbImplR().GetSequence(IdSequences::TableId).GetNextValue(tableId);
+    m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
     return CreateTable(tableId, finalName, tableType, persType, exclusiveRootClassId, primaryTable);
     }
 
@@ -256,7 +256,7 @@ DbIndex* DbSchema::CreateIndex(DbTable& table, Nullable<Utf8String> const& index
         }
 
     DbIndexId id;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::IndexId).GetNextValue(id))
+    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::IndexId).GetNextValue(id))
         {
         BeAssert(false);
         return nullptr;
@@ -854,27 +854,36 @@ BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
 
     stmt->BindBoolean(8, index.AppliesToSubclassesIfPartial());
 
-    DbResult stat = stmt->Step();
-    if (stat != BE_SQLITE_DONE)
+    if (BE_SQLITE_DONE != stmt->Step())
         {
         LOG.errorv("Failed to insert index metadata into " TABLE_ECIndex " for index %s (Id: %s): %s",
                    index.GetName().c_str(), index.GetId().ToString().c_str(), m_ecdb.GetLastError().c_str());
         return ERROR;
         }
 
-    CachedStatementPtr indexColStmt = m_ecdb.GetCachedStatement("INSERT INTO " TABLE_ECIndexColumn "(IndexId,ColumnId,Ordinal) VALUES(?,?,?)");
+    stmt = nullptr; //free resources
+
+    CachedStatementPtr indexColStmt = m_ecdb.GetCachedStatement("INSERT INTO " TABLE_ECIndexColumn "(Id,IndexId,ColumnId,Ordinal) VALUES(?,?,?,?)");
     if (indexColStmt == nullptr)
         return ERROR;
 
     int i = 0;
     for (DbColumn const* col : index.GetColumns())
         {
-        indexColStmt->BindId(1, index.GetId());
-        indexColStmt->BindId(2, col->GetId());
-        indexColStmt->BindInt(3, i);
+        BeInt64Id id;
+        if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::IndexColumnId).GetNextValue(id))
+            return ERROR;
 
-        stat = indexColStmt->Step();
-        if (stat != BE_SQLITE_DONE)
+        if (BE_SQLITE_OK != indexColStmt->BindId(1, id) ||
+            BE_SQLITE_OK != indexColStmt->BindId(2, index.GetId()) ||
+            BE_SQLITE_OK != indexColStmt->BindId(3, col->GetId()) ||
+            BE_SQLITE_OK != indexColStmt->BindInt(4, i))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (BE_SQLITE_DONE != indexColStmt->Step())
             {
             LOG.errorv("Failed to insert index column metadata into " TABLE_ECIndexColumn " for index %s (Id: %s) and column %s (Id: %s): %s",
                        index.GetName().c_str(), index.GetId().ToString().c_str(), col->GetName().c_str(), col->GetId().ToString().c_str(), m_ecdb.GetLastError().c_str());
@@ -1233,7 +1242,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         resolvePersistenceType = PersistenceType::Virtual;
 
     if (!id.IsValid())
-        m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::ColumnId).GetNextValue(id);
+        m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 
     std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
     DbColumn* newColumnP = newColumn.get();

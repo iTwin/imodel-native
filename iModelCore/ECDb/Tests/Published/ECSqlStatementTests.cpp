@@ -2206,7 +2206,7 @@ TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
 
     auto assertSequence = [] (ECDbCR ecdb, BeInt64Id expectedSequenceValue)
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_ecinstanceidsequence'");
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_instanceidsequence'");
         ASSERT_TRUE(stmt != nullptr);
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
         ASSERT_EQ(expectedSequenceValue.GetValue(), stmt->GetValueUInt64(0));
