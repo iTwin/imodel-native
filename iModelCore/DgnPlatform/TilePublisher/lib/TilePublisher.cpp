@@ -3232,8 +3232,9 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             Json::Value modelJson(Json::objectValue);
 
+            auto sheetModel = model->ToSheetModel();
             modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : (nullptr != sheetModel ? "sheet" : "drawing");
 
             if (nullptr != spatialModel)
                 {
@@ -3243,8 +3244,7 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             modelJson["extents"] = RangeToJson(modelRange);
 
-            Sheet::ModelCP  sheetModel;
-            if (nullptr != (sheetModel = model->ToSheetModel()))
+            if (nullptr != sheetModel)
                 {
                 bvector<DgnElementId>   attachmentIds = sheetModel->GetSheetAttachmentIds();
 
