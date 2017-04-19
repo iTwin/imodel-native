@@ -43,6 +43,8 @@ protected:
 
 public:
     DataCaptureDomain();
+	enum SchemaOperation { None, Import, MinorSchemaUpdate, MajorSchemaUpgrade, UnsupportedSchema, Undetermined };
+
     DATACAPTURE_EXPORT static Dgn::DgnAuthorityId QueryDataCaptureAuthorityId(Dgn::DgnDbCR dgndb);
     DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
     //! Format a BeBriefcaseBasedId as BeBriefcaseId-LocalId 
@@ -52,6 +54,7 @@ public:
     DATACAPTURE_EXPORT static Utf8String BuildDefaultName(Utf8CP prefix, BeSQLite::BeBriefcaseBasedId id);
 
     DATACAPTURE_EXPORT Dgn::DgnDbStatus UpdateSchema(SchemaUpdateDataCaptureDgnDbParams& params) const;
+	DATACAPTURE_EXPORT SchemaOperation SchemaOperationNeeded(Dgn::DgnDbCR db) const;
 
     static uint32_t GetExpectedSchemaVersionDigit1() { return 1; }
     static uint32_t GetExpectedSchemaVersionDigit2() { return 0; }
