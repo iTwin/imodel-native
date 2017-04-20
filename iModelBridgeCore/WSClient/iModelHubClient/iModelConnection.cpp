@@ -1206,17 +1206,15 @@ DgnDbStatus GenerateValuePattern(CodeSpec codeSpec, Utf8StringR valuePattern, ui
 DgnDbStatus CreateCodeTemplateJson
 (
 JsonValueR                   properties,
+uint64_t                     codeSpecId,
+Utf8StringCR                 codeScope,
 Utf8StringCR                 valuePattern,
-CodeSpecCR                   codeSpec,
-CodeTemplate::Type      templateType,
+CodeTemplate::Type           templateType,
 int                          startIndex,
 int                          incrementBy
 )
     {
-    Utf8String codeScope;
-    codeScope.Sprintf("%d", static_cast<int>(codeSpec.GetScope().GetType()));
-
-    properties[ServerSchema::Property::CodeSpecId] = codeSpec.GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::CodeSpecId] = codeSpecId;
     properties[ServerSchema::Property::CodeScope] = codeScope;
     properties[ServerSchema::Property::ValuePattern] = valuePattern;
     properties[ServerSchema::Property::Type] = (int)templateType;
@@ -1233,10 +1231,10 @@ int                          incrementBy
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus SetCodeTemplatesJsonRequestToChangeSet
+DgnDbStatus SetCodeSpecJsonRequestToChangeSet
 (
 CodeSpecCR                      codeSpec,
-const CodeTemplate::Type   templateType,
+const CodeTemplate::Type        templateType,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState
 )
@@ -1251,7 +1249,34 @@ const WSChangeset::ChangeState& changeState
     if (DgnDbStatus::Success != status)
         return status;
 
-    status = CreateCodeTemplateJson(codeJson, valuePattern, codeSpec, templateType, startIndex, incrementBy);
+    Utf8String codeScope;
+    codeScope.Sprintf("%d", static_cast<int>(codeSpec.GetScope().GetType()));
+
+    status = CreateCodeTemplateJson(codeJson, codeSpec.GetCodeSpecId().GetValue(), codeScope, valuePattern, templateType, startIndex, incrementBy);
+    if (DgnDbStatus::Success != status)
+        return status;
+    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus SetCodeTemplatesJsonRequestToChangeSet
+(
+CodeTemplateCR                  codeTemplate,
+int                             startIndex,
+int                             incrementBy,
+const CodeTemplate::Type        templateType,
+WSChangeset&                    changeset,
+const WSChangeset::ChangeState& changeState
+)
+    {
+    ObjectId codeObject(ServerSchema::Schema::iModel, ServerSchema::Class::CodeTemplate, "");
+
+    Json::Value codeJson;
+    auto status = CreateCodeTemplateJson(codeJson, codeTemplate.GetCodeSpecId().GetValue(), codeTemplate.GetScope(), codeTemplate.GetValuePattern(), templateType, startIndex, incrementBy);
     if (DgnDbStatus::Success != status)
         return status;
     changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
@@ -2035,22 +2060,17 @@ Json::Value GetChangedInstances(Utf8String response)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             08/2016
 //---------------------------------------------------------------------------------------
-CodeTemplateTaskPtr iModelConnection::QueryCodeMaximumIndex
+CodeTemplateTaskPtr iModelConnection::QueryCodeMaximumIndexInternal
 (
-CodeSpecCR codeSpec,
+std::shared_ptr<WSChangeset> changeSet,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndex";
+    const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndexInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-
-    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
-    if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
-
-    auto requestString = changeset->ToRequestString();
+    
+    auto requestString = changeSet->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
     return ExecutionManager::ExecuteWithRetry<CodeTemplate>([=]()
         {
@@ -2083,24 +2103,58 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             03/2017
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
 //---------------------------------------------------------------------------------------
-CodeTemplateTaskPtr iModelConnection::QueryCodeNextAvailable
+CodeTemplateTaskPtr iModelConnection::QueryCodeMaximumIndex
 (
-CodeSpecCR codeSpec, 
+CodeSpecCR codeSpec,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryCodeNextAvailable";
+    const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndex";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
+    auto status = SetCodeSpecJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
         return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
 
-    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+    return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
+    }
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2017
+//---------------------------------------------------------------------------------------
+CodeTemplateTaskPtr iModelConnection::QueryCodeMaximumIndex
+(
+CodeTemplateCR codeTemplate, 
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndex";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeTemplate, 0, 1, CodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
+    if (DgnDbStatus::Success != status)
+        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({ Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError) }));
+
+    return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             03/2017
+//---------------------------------------------------------------------------------------
+CodeTemplateTaskPtr iModelConnection::QueryCodeNextAvailableInternal
+(
+std::shared_ptr<WSChangeset> changeSet,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodeNextAvailableInternal";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    HttpStringBodyPtr request = HttpStringBody::Create(changeSet->ToRequestString());
     return ExecutionManager::ExecuteWithRetry<CodeTemplate>([=]()
         {
         return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<CodeTemplateResult>
@@ -2129,6 +2183,48 @@ ICancellationTokenPtr cancellationToken
                 }
             });
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             03/2017
+//---------------------------------------------------------------------------------------
+CodeTemplateTaskPtr iModelConnection::QueryCodeNextAvailable
+(
+CodeSpecCR codeSpec, 
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodeNextAvailable";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    auto status = SetCodeSpecJsonRequestToChangeSet(codeSpec, CodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
+    if (DgnDbStatus::Success != status)
+        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError)}));
+
+    return QueryCodeNextAvailableInternal(changeset, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             03/2017
+//---------------------------------------------------------------------------------------
+CodeTemplateTaskPtr iModelConnection::QueryCodeNextAvailable
+(
+CodeTemplateCR codeTemplate,
+int startIndex,
+int incrementBy,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodeNextAvailable";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    auto status = SetCodeTemplatesJsonRequestToChangeSet(codeTemplate, startIndex, incrementBy, CodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
+    if (DgnDbStatus::Success != status)
+        return CreateCompletedAsyncTask<CodeTemplateResult>(CodeTemplateResult::Error({ Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeTemplateRequestError) }));
+
+    return QueryCodeNextAvailableInternal(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
