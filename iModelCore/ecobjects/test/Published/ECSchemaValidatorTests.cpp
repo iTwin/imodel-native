@@ -88,139 +88,56 @@ TEST_F(SchemaValidatorTests, TestBaseECValidation)
 
 TEST_F(SchemaValidatorTests, MixinClassMayOnlyHaveOneBaseClass)
     {
-    {
-    // Invalid schema test
+    // Test mixin base class validation
     ECSchemaPtr schema;
     ECEntityClassP entity0;
-    ECEntityClassP entity1;
-    ECEntityClassP entity2;
     ECEntityClassP mixin0;
     ECEntityClassP mixin1;
     ECEntityClassP mixin2;
+    ECEntityClassP mixin3;
 
     ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
     schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(entity1, "Entity1");
-    entity1->AddBaseClass(*entity0);
-    schema->CreateEntityClass(entity2, "Entity2");
     schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
     schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
     schema->CreateMixinClass(mixin2, "Mixin2", *entity0);
-   
-    mixin0->AddBaseClass(*mixin1);
-    mixin0->AddBaseClass(*mixin2);
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has more than one base class. Should fail validation";
-    }
-    {
-    Utf8CP badSchema = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
-            <ECEntityClass typeName="BaseClass1">
-                <ECCustomAttributes>
-                    <IsMixin xmlns="CoreCustomAttributes.01.00">
-                        <AppliesToEntityClass>TestClass</AppliesToEntityClass>   
-                    </IsMixin>
-                </ECCustomAttributes>
-            </ECEntityClass>
-            <ECEntityClass typeName="BaseClass2">
-            <ECCustomAttributes>
-                    <IsMixin xmlns="CoreCustomAttributes.01.00">
-                        <AppliesToEntityClass>TestClass</AppliesToEntityClass>   
-                    </IsMixin>
-                </ECCustomAttributes>
-            </ECEntityClass>
-            <ECEntityClass typeName="TestClass"/>
-            <ECEntityClass typeName="A">
-                <BaseClass>BaseClass1</BaseClass>
-                <BaseClass>BaseClass2</BaseClass>
-                <ECCustomAttributes>
-                    <IsMixin xmlns="CoreCustomAttributes.01.00">
-                        <AppliesToEntityClass>TestClass</AppliesToEntityClass>   
-                    </IsMixin>
-                </ECCustomAttributes>
-            </ECEntityClass>
-            <ECRelationshipClass typeName="ARelB" modifier="None">
-                <Source multiplicity="(1..1)" polymorphic="true" roleLabel="Source">
-                    <Class class="TestClass"/>
-                </Source>
-                <Target multiplicity="(1..1)" polymorphic="true" roleLabel="Target">
-                    <Class class="A"/>
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml";
+    schema->CreateMixinClass(mixin3, "Mixin3", *entity0);
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema, badSchema, *context);
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has more than one base class. Should fail validation";
-    }
-    {
-    // Valid mixin base class
-    ECSchemaPtr schema;
-    ECEntityClassP entity0;
-    ECEntityClassP entity1;
-    ECEntityClassP entity2;
-    ECEntityClassP mixin0;
-    ECEntityClassP mixin1;
-
-    ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
-    schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(entity1, "Entity1");
-    entity1->AddBaseClass(*entity0);
-    schema->CreateEntityClass(entity2, "Entity2");
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
-
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin has no base classes. Should succeed validation";
     mixin0->AddBaseClass(*mixin1);
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin has one base class. Should succeed validation";
-    }
+    mixin0->AddBaseClass(*mixin2);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has two base classes. Should fail validation";
+    mixin0->AddBaseClass(*mixin3);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has multiple base classes. Should fail validation";
     }
 
 TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     {
-    {
-    // Invalid schema test
+    // Test that a mixin class may not override an inherited property
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP entity1;
-
     ECEntityClassP mixin0;
+    ECEntityClassP mixin1;
     PrimitiveECPropertyP prop;
 
     ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
     schema->CreateEntityClass(entity0, "Entity0");
     schema->CreateEntityClass(entity1, "Entity1");
     schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
+    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
     mixin0->CreatePrimitiveProperty(prop, "P1");
-    prop->SetBaseProperty(prop);
+    mixin1->AddBaseClass(*mixin0);
 
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
+    mixin1->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
-    {
-    // Valid schema test
-    ECSchemaPtr schema;
-    ECEntityClassP entity0;
-    ECEntityClassP entity1;
 
-    ECEntityClassP mixin0;
-    PrimitiveECPropertyP prop;
-
-    ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
-    schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(entity1, "Entity1");
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    mixin0->CreatePrimitiveProperty(prop, "P1");
-
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property does not override so validation should succeed";
-    }
-    }
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromMultipleBaseClasses)
     {
-    {
-    // Invalid schema test
+    // Test that an entity class may not inherit from multiple base classes
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP baseEntity1;
@@ -231,72 +148,34 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromMultipleBaseClasses)
     schema->CreateEntityClass(entity0, "Entity0");
     schema->CreateEntityClass(baseEntity1, "BaseEntity1");
     schema->CreateEntityClass(baseEntity2, "BaseEntity2");
-
-    baseEntity1->CreatePrimitiveProperty(prop, "P1");
-    baseEntity2->CreatePrimitiveProperty(prop, "P1");
-
     entity0->AddBaseClass(*baseEntity1);
-    entity0->AddBaseClass(*baseEntity2);
-    entity0->CreatePrimitiveProperty(prop, "P1");
 
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class and its base classes have no properties yet so validation should succeed";
+    baseEntity1->CreatePrimitiveProperty(prop, "P1");
+    entity0->CreatePrimitiveProperty(prop, "P1");
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may inherit a property from just one base class so validation should succeed";
+    entity0->AddBaseClass(*baseEntity2);
+    baseEntity2->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
     }
+    
+TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     {
-    // Valid schema test
+    // Test that an entity class may not override a property inherited from mixin class
     ECSchemaPtr schema;
     ECEntityClassP entity0;
-    ECEntityClassP baseEntity;
-    PrimitiveECPropertyP prop;
-
-    ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1);
-    schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(baseEntity, "BaseEntity");
-
-    baseEntity->CreatePrimitiveProperty(prop, "P1");
-    entity0->AddBaseClass(*baseEntity);
-    entity0->CreatePrimitiveProperty(prop, "P1");
-
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may  inherit a property from just one base class so validation should succeed";
-    }
-    }
-TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMixin)
-    {
-    {
-    // Invalid schema test
-    ECSchemaPtr schema;
-    ECEntityClassP entity0;
-    ECEntityClassP entity1;
     ECEntityClassP mixin0;
     PrimitiveECPropertyP base;
 
     ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1);
     schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(entity1, "Entity1");
     entity0->CreatePrimitiveProperty(base, "P1");
-
     schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
     mixin0->CreatePrimitiveProperty(base, "P1");
+    
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin is not a base class so the property is not inherited from mixin class so validation should succeed";
     entity0->AddBaseClass(*mixin0);
-
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
     }
-    {
-    // Valid schema test
-    ECSchemaPtr schema;
-    ECEntityClassP entity0;
-    ECEntityClassP entity1;
-    ECEntityClassP mixin0;
-    PrimitiveECPropertyP base;
 
-    ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1);
-    schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateEntityClass(entity1, "Entity1");
-    entity0->CreatePrimitiveProperty(base, "P1");
-
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    mixin0->CreatePrimitiveProperty(base, "P1");
-
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin is not a base class so the property is not inherited from mixin class so validation should succeed";
-    }
-    }
 END_BENTLEY_ECN_TEST_NAMESPACE
