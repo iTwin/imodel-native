@@ -1671,7 +1671,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
     {
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(!(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK)))
+    if(!m_onlyReportErrors && ErrorCode != static_cast<int>(CURLE_OK))
         {
         if (m_pStatusFunc)
             m_pStatusFunc(index, pClient, ErrorCode, pMsg);
@@ -1735,7 +1735,7 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func) :
-    m_overwrite(overwrite)
+    RealityDataServiceTransfer(), m_overwrite(overwrite)
     { 
     m_id = id;
     m_azureTokenTimer = 0;
@@ -1807,7 +1807,8 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func)
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func) :
+    RealityDataServiceTransfer()
     {
     m_id = serverId;
     m_azureTokenTimer = 0;
@@ -1902,7 +1903,8 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func)
+RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func) :
+    RealityDataServiceTransfer()
     {
     m_id = serverId;
     m_azureTokenTimer = 0;
