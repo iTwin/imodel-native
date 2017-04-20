@@ -2873,6 +2873,7 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
         Json::Value viewJson;
         viewJson["baseModelId"] = view->GetBaseModelId().ToString();
         viewJson["categorySelector"] = view->GetCategorySelectorId().ToString();
+        viewJson["displayStyle"] = view->GetDisplayStyleId().ToString();
 
         DPoint3d            viewOrigin = view->GetOrigin();
         AxisAlignedBox3d    sheetRange = attachment->GetPlacement().CalculateRange();
@@ -3358,6 +3359,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
                 for (auto& attachedView : attachedViews)
                     {
                     allCategorySelectors.insert(attachedView->GetCategorySelectorId());
+                    allDisplayStyles.insert(attachedView->GetDisplayStyleId());
                     if (nullptr != attachedView->ToView2d())
                         all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
                     }
