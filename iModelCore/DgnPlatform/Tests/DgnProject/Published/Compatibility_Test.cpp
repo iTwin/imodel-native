@@ -137,7 +137,7 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 //---------------------------------------------------------------------------------------
 TEST_F(CompatibilityTests, DISABLED_ModifyBaseline_1_0_0)
     {
-    SetUpFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaImportRequired);
+    SetUpFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -867,7 +867,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(BeFileNameCR sourceFileName, Utf8
         m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(expectedFirstOpenStatus, openStatus);
         ASSERT_FALSE(m_db.IsValid());
-        openParams.SetEnableSchemaImport(DgnDb::OpenParams::EnableSchemaImport::Yes);
+        openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
         }
 
     m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
