@@ -22,11 +22,16 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
     
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
     if (stat != ECSqlStatus::Success)
         return stat;
+#endif
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
@@ -35,8 +40,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         return ECSqlStatus::InvalidECSql;
         }
 
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto info = ctx.GetJoinedTableInfo())
         {
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
@@ -50,7 +53,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             }
         }
-#endif
     if (classMap.IsRelationshipClassMap())
         {
         if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
@@ -62,6 +64,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             return ECSqlStatus::InvalidECSql;
             }
         }
+#endif
 
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
@@ -205,6 +208,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     return status;
     }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                         05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -232,7 +237,7 @@ ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext&
 
     return ECSqlStatus::Success;
     }
-
+#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------

@@ -306,6 +306,8 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     private:
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
+        static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);
+
     public:
         explicit ECSqlUpdatePreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Update) {}
 

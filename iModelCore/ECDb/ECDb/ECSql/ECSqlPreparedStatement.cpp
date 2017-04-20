@@ -782,7 +782,7 @@ DbResult ECSqlInsertPreparedStatement::ECInstanceKeyHelper::BindPrimaryTableECIn
     if (m_mode == Mode::UserProvidedParameterExp && !m_idProxyBinder->IsBoundValueNull())
         return BE_SQLITE_OK;
 
-    const DbResult dbStat = ecdb.GetECDbImplR().GetSequence(IdSequences::ECInstanceId).GetNextValue(m_generatedECInstanceId);
+    const DbResult dbStat = ecdb.GetECDbImplR().GetSequence(IdSequences::Key::InstanceId).GetNextValue(m_generatedECInstanceId);
     if (dbStat != BE_SQLITE_OK)
         {
         ECDbLogger::LogSqliteError(ecdb, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
@@ -835,6 +835,70 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         return ECSqlStatus::InvalidECSql;
         }
 
+    AssignmentListExp const* assignmentListExp = updateExp.GetAssignmentListExp();
+    ECSqlStatus stat = CheckForReadonlyProperties(ctx, *assignmentListExp, updateExp);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = assignmentListExp->GetSpecialTokenExpIndexMap();
+    if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    if (classMap.IsRelationshipClassMap())
+        {
+        if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECClassId()) ||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
+
+    std::map<DbTable const*, std::vector<AssignmentExp const*>> expsByMappedTable;
+    //Holds all tables per parameter index (index into the vector + 1) which are affected by the parameter
+    std::vector<std::set<DbTable const*>> parameterIndexInTables;
+
+    for (Exp const* childExp : assignmentListExp->GetChildren())
+        {
+        AssignmentExp const& assignmentExp = childExp->GetAs<AssignmentExp>();
+        PropertyNameExp const* lhsExp = assignmentExp.GetPropertyNameExp();
+        PropertyMap const& lhsPropMap = lhsExp->GetPropertyMap();
+        if (!lhsPropMap.IsData())
+            {
+            BeAssert(lhsPropMap.IsData());
+            return ECSqlStatus::Error;
+            }
+
+        DbTable const& table = lhsPropMap.GetAs<DataPropertyMap>().GetTable();
+        expsByMappedTable[&table].push_back(&assignmentExp);
+
+        ValueExp const* rhsExp = assignmentExp.GetValueExp();
+        for (Exp const* exp : rhsExp->Find(Exp::Type::Parameter, true /* recursive*/))
+            {
+            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
+            if (zeroBasedParameterIndex == parameterIndexInTables.size())
+                {
+                parameterIndexInTables.push_back(std::set<DbTable const*> {&table});
+                m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+                }
+            else if (zeroBasedParameterIndex < parameterIndexInTables.size())
+                parameterIndexInTables[zeroBasedParameterIndex].insert(&table);
+            else
+                {
+                BeAssert(false);
+                }
+            }
+
+
+        }
+   
     return ECSqlStatus::Error;
     }
 
@@ -859,7 +923,34 @@ DbResult ECSqlUpdatePreparedStatement::Step()
     return BE_SQLITE_DONE;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+//static
+ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, AssignmentListExp const& assignmentListExp, UpdateStatementExp const& exp)
+    {
+    OptionsExp const* optionsExp = ctx.GetCurrentScope().GetOptions();
+    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
+        return ECSqlStatus::Success;
 
+    for (Exp const* expr : assignmentListExp.GetChildren())
+        {
+        PropertyNameExp const* lhsOperandOfAssignmentExp = expr->GetAs<AssignmentExp>().GetPropertyNameExp();
+        if (!lhsOperandOfAssignmentExp->IsPropertyRef())
+            {
+            ECPropertyCR prop = lhsOperandOfAssignmentExp->GetPropertyMap().GetProperty();
+
+            if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
+                {
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                                                                       prop.GetName().c_str(), exp.ToECSql().c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+            }
+        }
+
+    return ECSqlStatus::Success;
+    }
 
 //***************************************************************************************
 //    ECSqlDeletePreparedStatement
