@@ -1072,8 +1072,8 @@ TEST(CurveCurve,MultiRadiusBlendInCorner)
     double dx = 15.0;
     double dy = 15.0;
     DPoint3d origin = DPoint3d::From (0,0,0);
-    DVec3d   vectorU = DVec3d::From (1,0,0);
-    DVec3d   vectorV = DVec3d::From (0,1,0);
+    DVec3d   vectorU = DVec3d::From (10,0,0);
+    DVec3d   vectorV = DVec3d::From (-2,10,0);
     for (bool reverse : bvector<bool> {false, true})
         {
         SaveAndRestoreCheckTransform shifter (0, dy,0);
@@ -1150,8 +1150,8 @@ TEST(CurveCurve,MultiRadiusBlend)
     Angle angleA1 = Angle::FromDegrees (-15.0);
     Angle angleB = Angle::FromDegrees (3.0);
 
-    double distanceA = 0.25;
-    double distanceA1 = 1.0;
+    double distanceA = 1.25;
+    double distanceA1 = 2.0;
     double distanceB = 0.5;
     size_t errors = 0;
     for (bool reverse : bvector<bool> {false, true})
