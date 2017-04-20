@@ -3485,6 +3485,8 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
     bgColorJson["green"] = bgColor.GetGreen() / 255.0;
     bgColorJson["blue"] = bgColor.GetBlue() / 255.0;
 
+    json["viewFlags"] = style.GetViewFlags().ToJson();
+
     auto style3d = style.ToDisplayStyle3d();
     if (nullptr != style3d)
         json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled();

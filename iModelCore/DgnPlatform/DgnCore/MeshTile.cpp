@@ -3262,6 +3262,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_linePixels);
     TEST_EQUAL(m_gradient);
+    TEST_EQUAL(m_class);
 
     return true;
     }
