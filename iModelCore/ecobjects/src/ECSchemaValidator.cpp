@@ -71,51 +71,25 @@ bool ECSchemaValidator::Validate(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECSchemaValidatorP> ECSchemaValidator::GetValidators()
-    {
-    bvector<IECSchemaValidatorP> validatorVector;
-
-    for (auto validator : m_validators)
-        validatorVector.push_back(validator.get());
-
-    return validatorVector;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECClassValidatorP> ECSchemaValidator::GetClassValidators()
-{
-    bvector<IECClassValidatorP> validatorVector;
-
-    for (IECClassValidatorPtr validator : m_classValidators)
-        validatorVector.push_back(validator.get());
-
-    return validatorVector;
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer                  02/2017
-//+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
     {
      for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (IECClassValidatorP classValidator : GetClassValidators())
+        for (IECClassValidatorPtr classValidator : GetClassValidators())
             {
-            if (!classValidator->DoesValidate(*ecClass))
+            if (!classValidator->CanValidate(*ecClass))
                 continue;
             ECObjectsStatus status = classValidator->Validate(*ecClass);
             if (ECObjectsStatus::Success != status)
                 {
                 LOG.errorv("Failed class validation of class %s", ecClass->GetName().c_str());
                 m_validated = false;
-                return;
                 }
             else
                 LOG.debugv("Succeeded class validation of class %s", ecClass->GetName().c_str());
             }
         }
-    for (IECSchemaValidatorP validator : GetValidators())
+    for (IECSchemaValidatorPtr validator : GetValidators())
         {
         ECObjectsStatus status = validator->Validate(schema);
         if (ECObjectsStatus::Success != status)
@@ -204,7 +178,7 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool EntityValidator::DoesValidate(ECClassCR ecClass) const
+bool EntityValidator::CanValidate(ECClassCR ecClass) const
     {
     return (ecClass.IsEntityClass());
     }
@@ -212,7 +186,7 @@ bool EntityValidator::DoesValidate(ECClassCR ecClass) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool MixinValidator::DoesValidate(ECClassCR ecClass) const
+bool MixinValidator::CanValidate(ECClassCR ecClass) const
     {
     return (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin());
     }
