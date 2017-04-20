@@ -40,6 +40,7 @@ typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeTemplate);
 
 DEFINE_TASK_TYPEDEFS(iModelConnectionPtr, iModelConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, File);
@@ -339,6 +340,9 @@ private:
     WSQuery CreateChangeSetsAfterIdQuery (Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
 
+    CodeTemplateTaskPtr QueryCodeMaximumIndexInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
+    CodeTemplateTaskPtr QueryCodeNextAvailableInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
+
 public:
     virtual ~iModelConnection();
 
@@ -576,6 +580,18 @@ public:
     //! @param[in] codeSpec
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT CodeTemplateTaskPtr QueryCodeNextAvailable(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken=nullptr) const;
+
+    //! Returns maximum used code value by the given pattern.
+    //! @param[in] codeTemplate
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeTemplateTaskPtr QueryCodeMaximumIndex(CodeTemplateCR codeTemplate, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns next available code by the given pattern, index start and increment by value.
+    //! @param[in] codeTemplate
+    //! @param[in] startIndex
+    //! @param[in] incrementBy
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeTemplateTaskPtr QueryCodeNextAvailable(CodeTemplateCR codeTemplate, int startIndex = 0, int incrementBy = 1, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Checks if iModelConnection is subscribed to EventService
     IMODELHUBCLIENT_EXPORT bool IsSubscribedToEvents() const;
