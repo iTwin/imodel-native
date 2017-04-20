@@ -30,7 +30,7 @@ typedef RefCountedPtr<IECSchemaValidator> IECSchemaValidatorPtr;
 struct IECClassValidator : RefCountedBase, NonCopyableClass
 {
     virtual ECObjectsStatus Validate(ECClassCR ecClass) const = 0;
-    virtual bool DoesValidate(ECClassCR ecClass) const = 0;
+    virtual bool CanValidate(ECClassCR ecClass) const = 0;
 
     //! destructor
     virtual ~IECClassValidator() {};
@@ -51,8 +51,8 @@ private:
     bvector<IECClassValidatorPtr> m_classValidators;
 
     void ValidateSchema(ECSchemaR schema);
-    bvector<IECSchemaValidatorP> GetValidators();
-    bvector<IECClassValidatorP> GetClassValidators();
+    bvector<IECSchemaValidatorPtr>const & GetValidators() { return m_validators; }
+    bvector<IECClassValidatorPtr>const & GetClassValidators() { return m_classValidators; }
 
 public:
     //! Validates the schema based on the added validators.
@@ -81,7 +81,7 @@ struct MixinValidator : IECClassValidator
     // A mixin may have 0 or 1 base class
     // A mxin may not override an inherited property
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool DoesValidate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override;
 
     };
 
@@ -90,7 +90,7 @@ struct EntityValidator : IECClassValidator
     // An entity class may not inherit a property from more than one base class
     // An entity class may not override a property inherited from a mixin class
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool DoesValidate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override;
 
 };
 END_BENTLEY_ECOBJECT_NAMESPACE
