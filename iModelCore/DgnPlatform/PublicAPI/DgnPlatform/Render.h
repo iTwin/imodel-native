@@ -2027,8 +2027,9 @@ struct FeatureSymbologyOverrides
     bool                                m_dimensions;
     bool                                m_patterns;
     bool                                m_alwaysDrawnExclusive;
+    bool                                m_lineWeights;
 
-    FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false) { }
+    FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
 
     // Returns false if the feature is invisible.
