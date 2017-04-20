@@ -59,7 +59,7 @@ TransientState ComparisonData::GetTransientState(DgnElementId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RevisionComparisonViewController::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
+void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
     if (WantShowCurrent())
         {
@@ -81,7 +81,7 @@ void RevisionComparisonViewController::_AddFeatureOverrides(Render::FeatureSymbo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RevisionComparisonViewController::_CreateScene(RenderContextR context)
+BentleyStatus Controller::_CreateScene(RenderContextR context)
     {
     auto status = T_Super::_CreateScene(context);
     if (WantShowTarget())

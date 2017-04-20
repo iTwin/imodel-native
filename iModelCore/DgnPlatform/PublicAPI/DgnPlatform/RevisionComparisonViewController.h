@@ -26,8 +26,8 @@ BEGIN_REVISION_COMPARISON_NAMESPACE
 
 using DbOpcode = BeSQLite::DbOpcode;
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(RevisionComparisonViewController);
-DEFINE_REF_COUNTED_PTR(RevisionComparisonViewController);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Controller);
+DEFINE_REF_COUNTED_PTR(Controller);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Symbology);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ComparisonData);
 DEFINE_REF_COUNTED_PTR(ComparisonData);
@@ -60,7 +60,11 @@ public:
     Appearance GetTargetRevisionOverrides(DbOpcode opcode) const { return m_target.GetAppearance(opcode); }
     Appearance GetUntouchedOverrides() const { return m_untouched; }
 
-    void InitializeDefaults();
+    Appearance& GetCurrentRevisionOverrides(DbOpcode opcode) { return m_current.GetAppearance(opcode); }
+    Appearance& GetTargetRevisionOverrides(DbOpcode opcode) { return m_target.GetAppearance(opcode); }
+    Appearance& GetUntouchedOverrides() { return m_untouched; }
+
+    DGNPLATFORM_EXPORT void InitializeDefaults();
 };
 
 //=======================================================================================
@@ -116,8 +120,8 @@ private:
     bset<PersistentState>   m_persistent;
     bset<TransientState>    m_transient;
 public:
-    PersistentState GetPersistentState(DgnElementId elementId) const;
-    TransientState GetTransientState(DgnElementId elementId) const;
+    DGNPLATFORM_EXPORT PersistentState GetPersistentState(DgnElementId elementId) const;
+    DGNPLATFORM_EXPORT TransientState GetTransientState(DgnElementId elementId) const;
 
     bset<PersistentState> const& GetPersistentStates() const { return m_persistent; }
     bset<TransientState> const& GetTransientStates() const { return m_transient; }
@@ -134,7 +138,7 @@ public:
 //! "Green" for inserted, etc.
 // @bsistruct                                                   Diego.Pinate    03/17
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionComparisonViewController : SpatialViewController
+struct EXPORT_VTABLE_ATTRIBUTE Controller : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController)
     friend struct SpatialViewDefinition;
@@ -150,13 +154,18 @@ protected:
     ComparisonDataCPtr  m_comparisonData;
     Show                m_show;
 
+    Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
+
     DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
 public:
-    RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth, SymbologyCR symb=Symbology()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
+    static ControllerPtr Create(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth, SymbologyCR symb=Symbology())
+        {
+        return new Controller(view, data, show, symb);
+        }
 
-    void SetShow(Show show) { m_show = show; }
-    void SetSymbology(SymbologyCR symb) { m_symbology = symb; }
+    void SetShow(Show show) { m_show = show; SetFeatureSymbologyDirty(); }
+    void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureSymbologyDirty(); }
 
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
