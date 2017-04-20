@@ -1867,8 +1867,7 @@ void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
     {
-    if (!m_includeFilesWithNoVersionExt)
-        return;
+    BeAssert(m_includeFilesWithNoVersionExt && "Should be called only when no-extension schemas are to be examined");
 
     BeFileName schemaPathname(schemaPath.c_str());
     schemaPathname.AppendUtf8(schemaName);
@@ -1951,7 +1950,8 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
         {
         LOG.debugv("(SearchPathSchemaFileLocater) Attempting to locate schema %s in path %ls", schemaName, schemaPathStr.c_str());
 
-        AddCandidateNoExtensionSchema(foundFiles, schemaPathStr, schemaName, desiredSchemaKey, matchType, schemaContext);
+        if (m_includeFilesWithNoVersionExt)
+            AddCandidateNoExtensionSchema(foundFiles, schemaPathStr, schemaName, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
         }
