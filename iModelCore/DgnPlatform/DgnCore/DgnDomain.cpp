@@ -542,7 +542,7 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
             LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
         }
     
-    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, isImportingFromV8, dgndb.GetSchemaImportToken()))
+    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, isImportingFromV8 ? SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues : SchemaManager::SchemaImportOptions::None, dgndb.GetSchemaImportToken()))
         {
         DbResult result = dgndb.AbandonChanges();
         BeAssert(result == BE_SQLITE_OK);
