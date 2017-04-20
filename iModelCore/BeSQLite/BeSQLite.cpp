@@ -1592,7 +1592,7 @@ BeGuid Db::QueryProjectGuid() const
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry)
-    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_forSchemaUpgrade(false), m_rawSQLite(false), m_busyRetry(retry)
+    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_forProfileUpgrade(false), m_rawSQLite(false), m_busyRetry(retry)
     {
     }
 
@@ -2021,7 +2021,7 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
     if (tracker && !isTempTableOrIndex(tableName))
-        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+        result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
     }
@@ -2056,7 +2056,7 @@ DbResult Db::AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP column
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
     if (tracker && !isTempTableOrIndex(tableName))
-        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+        result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
     }
@@ -2077,7 +2077,7 @@ DbResult Db::CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
     if (tracker && !isTempTableOrIndex(indexName))
-        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+        result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
     }
@@ -2434,13 +2434,13 @@ bool Db::OpenParams::_ReopenForProfileUpgrade(Db& db) const
     db.CloseDb();
 
     m_openMode = OpenMode::ReadWrite;
-    m_forSchemaUpgrade = true;
+    m_forProfileUpgrade = true;
 
     const bool succeeded = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
 
     // Caller may attempt to reopen Bim using same params...do not leave this flag modified
     // (See e.g. sample navigator, which will re-open for read-only if we upgrade the schema)
-    m_forSchemaUpgrade = false;
+    m_forProfileUpgrade = false;
 
     return succeeded;
     }
@@ -2452,7 +2452,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
     DbResult rc = DoOpenDb(dbName, params);
 
-    if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade && !params.m_rawSQLite)
+    if (rc == BE_SQLITE_OK && !params.m_forProfileUpgrade && !params.m_rawSQLite)
         {
         //ensure that profile upgraders have an active transaction even if DefaultTxn::No was passed
         if (params.m_startDefaultTxn == DefaultTxn::No && !m_dbFile->m_defaultTxn.IsActive())
@@ -2461,7 +2461,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
         rc = _VerifyProfileVersion(params);
 
         if (rc == BE_SQLITE_OK)
-            rc = _OnDbOpened();
+            rc = _OnDbOpened(params);
 
         //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
         if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())

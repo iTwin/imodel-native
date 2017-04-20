@@ -22,19 +22,19 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeTracker::RecordSchemaChange(Utf8CP ddl)
+DbResult ChangeTracker::RecordDbSchemaChange(Utf8CP ddl)
     {
     if (!IsTracking())
         return BE_SQLITE_OK;
 
-    m_schemaChanges.AddDDL(ddl);
+    m_dbSchemaChanges.AddDDL(ddl);
     return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaChangeSet::AddDDL(Utf8CP ddl)
+void DbSchemaChangeSet::AddDDL(Utf8CP ddl)
     {
     if (Utf8String::IsNullOrEmpty(ddl))
         {
@@ -51,7 +51,7 @@ void SchemaChangeSet::AddDDL(Utf8CP ddl)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaChangeSet::Dump(Utf8CP label) const
+void DbSchemaChangeSet::Dump(Utf8CP label) const
     {
     if (label)
         LOG.infov("%s", label);
@@ -110,7 +110,7 @@ void ChangeTracker::EndTracking()
         sqlite3session_delete(m_session);
         m_session = nullptr;
         }
-    m_schemaChanges.Clear();
+    m_dbSchemaChanges.Clear();
     m_isTracking = false;
     }
 
@@ -158,7 +158,7 @@ bool ChangeTracker::HasDataChanges() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeTracker::HasChanges() const 
     { 
-    return HasDataChanges() || HasSchemaChanges();
+    return HasDataChanges() || HasDbSchemaChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,34 +520,6 @@ Utf8String DbValue::Format(int detailLevel) const
     return "?";
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::DumpColumns(int startCol, int endCol, Stage stage, bvector<Utf8String> const& columns, int detailLevel) const
-    {
-    Byte* pcols;
-    int npcols;
-    GetPrimaryKeyColumns(&pcols, &npcols);
-
-    bool firstValue = true;
-    Utf8String line;
-    for (int i=startCol; i <= endCol; ++i)
-        {
-        if (pcols[i] > 0)
-            continue;
-
-        auto v = GetValue(i, stage);
-        if (!v.IsValid() || v.IsNull())
-            continue;
-
-        Utf8PrintfString valueStr("%s%s=%s", firstValue ? "" : " ", columns[i].c_str(), v.Format(detailLevel).c_str());
-        line += valueStr;
-
-        firstValue = false;
-        }
-
-    LOG.infov(line.c_str());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -582,6 +554,74 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert, int detailLev
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcode opcode, int indirect, int detailLevel) const
+    {
+    bvector<Utf8String> columnNames;
+    db.GetColumns(columnNames, tableName);
+
+    Byte* pcols;
+    int npcols;
+    GetPrimaryKeyColumns(&pcols, &npcols);
+
+    Utf8PrintfString line("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
+
+    switch (opcode)
+        {
+        case DbOpcode::Delete:
+            line.append(",DELETE");
+            break;
+        case DbOpcode::Insert:
+            line.append(",INSERT");
+            break;
+        case DbOpcode::Update:
+            line.append(",UPDATE");
+            break;
+        default:
+            BeAssert(false);
+            line.append(",INVALID");
+            return line;;
+        }
+
+    line.append(Utf8PrintfString("(%s)", indirect ? "indirect" : "direct"));
+
+    for (int i = 0; i <= npcols; ++i)
+        {
+        if (pcols[i] > 0)
+            continue;
+
+        Utf8String valStr;
+        if (opcode == DbOpcode::Insert)
+            {
+            auto newVal = GetValue(i, Stage::New);
+            if (newVal.IsNull())
+                continue;
+            valStr = newVal.Format(detailLevel);
+            }
+        else if (opcode == DbOpcode::Delete)
+            {
+            auto oldVal = GetValue(i, Stage::Old);
+            if (oldVal.IsNull())
+                continue;
+            valStr = oldVal.Format(detailLevel);
+            }
+        else /* if (opcode == DbOpcode::Update) */
+            {
+            auto oldVal = GetValue(i, Stage::Old);
+            auto newVal = GetValue(i, Stage::New);
+            if (!oldVal.IsValid() && !newVal.IsValid())
+                continue;
+            valStr = Utf8PrintfString("%s->%s", oldVal.Format(detailLevel).c_str(), newVal.Format(detailLevel).c_str());
+            }
+
+        line.append(Utf8PrintfString(",%s=%s", columnNames[i].c_str(), valStr.c_str()));
+        }
+
+    return line;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const
@@ -595,39 +635,11 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        LOG.infov("Table: %s", tableName);
+        LOG.infov("\nTable: %s", tableName);
         tablesSeen.insert(tableName);
         }
 
-    LOG.infov("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
-
-    bvector<Utf8String> columnNames;
-    db.GetColumns(columnNames, tableName);
-
-    switch (opcode)
-        {
-        case DbOpcode::Delete:
-            LOG.infov("DELETE (%s)", indirect ? "indirect" : "direct");
-            DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
-            break;
-        case DbOpcode::Insert:
-            LOG.infov("INSERT (%s)", indirect ? "indirect" : "direct");
-            DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
-            break;
-        case DbOpcode::Update:
-            LOG.infov("UPDATE (%s)", indirect ? "indirect" : "direct");
-            if (!isPatchSet)
-                {
-                LOG.infov("old: ");
-                DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
-                LOG.infov("new: ");
-                }
-            DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
-            break;
-
-        default:
-            BeAssert(false);
-        }
+    LOG.info(FormatChange(db, tableName, opcode, indirect, detailLevel).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

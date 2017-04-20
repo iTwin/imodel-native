@@ -15,7 +15,7 @@ BESQLITE_TYPEDEFS(ChangeGroup);
 BESQLITE_TYPEDEFS(IChangeSet);
 BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
-BESQLITE_TYPEDEFS(SchemaChangeSet);
+BESQLITE_TYPEDEFS(DbSchemaChangeSet);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
@@ -38,7 +38,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   1/17
 //=======================================================================================
-struct SchemaChangeSet : IByteArray
+struct DbSchemaChangeSet : IByteArray
 {
 private:
     Utf8String m_ddl;
@@ -48,7 +48,7 @@ private:
 
 public:
     //! Create a new schema change set
-    SchemaChangeSet(Utf8CP ddl = nullptr) { m_ddl.AssignOrClear(ddl); }
+    DbSchemaChangeSet(Utf8CP ddl = nullptr) { m_ddl.AssignOrClear(ddl); }
 
     //! Add new DDL statements to the schema change set (separate multiple commands by ';')
     BE_SQLITE_EXPORT void AddDDL(Utf8CP ddl);
@@ -84,8 +84,8 @@ friend struct Db;
 friend struct DbFile;
 
 private:
-    SchemaChangeSet m_schemaChanges;
-    DbResult RecordSchemaChange(Utf8CP ddl);
+    DbSchemaChangeSet m_dbSchemaChanges;
+    DbResult RecordDbSchemaChange(Utf8CP ddl);
 
 protected:
     bool            m_isTracking;
@@ -102,7 +102,7 @@ protected:
     Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
 
-    SchemaChangeSetCR GetSchemaChanges() const { return m_schemaChanges; }
+    DbSchemaChangeSetCR GetDbSchemaChanges() const { return m_dbSchemaChanges; }
 
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_db=0; m_isTracking=false;}
@@ -144,8 +144,8 @@ public:
     //! Determine whether any data changes tracked by this ChangeTracker
     BE_SQLITE_EXPORT bool HasDataChanges() const;
 
-    //! Determine whether any schema changes have beeen tracked by this ChangeTracker
-    bool HasSchemaChanges() const { return !m_schemaChanges.IsEmpty(); } 
+    //! Determine whether any db-schema changes have beeen tracked by this ChangeTracker
+    bool HasDbSchemaChanges() const { return !m_dbSchemaChanges.IsEmpty(); } 
 
     //! Clear the contents of this ChangeTracker and re-start it.
     void Restart() {EndTracking(); EnableTracking(true);}
@@ -190,6 +190,8 @@ public:
             bool  m_isValid;
             SqlChangesetIterP m_iter;
 
+            Utf8String FormatChange(Db const& db, Utf8CP tableName, DbOpcode opcode, int indirect, int detailLevel) const;
+
         public:
             Change(SqlChangesetIterP iter, bool isValid) {m_iter=iter; m_isValid=isValid;}
             //! get the "operation" that happened to this row.
@@ -232,9 +234,6 @@ public:
             BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const;
 
             void Dump(Db const& db, bool isPatchSet, int detailLevel) const {bset<Utf8String> tablesSeen; Dump(db, isPatchSet, tablesSeen, detailLevel);}
-
-            //! Dump one or more columns to stdout for debugging purposes.
-            BE_SQLITE_EXPORT void DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns, int detailLevel) const;
 
             //! Format the primary key columns of this change for debugging purposes.
             BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns(bool isInsert, int detailLevel) const;
