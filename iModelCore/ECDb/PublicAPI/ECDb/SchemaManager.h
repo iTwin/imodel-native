@@ -74,6 +74,18 @@ enum class ResolveSchema
 //+===============+===============+===============+===============+===============+======
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
+    public:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //! Schema import options. Not needed by regular callers. They are specific to certain
+        //! exceptional workflows and therefore only used by them.
+        enum class SchemaImportOptions
+            {
+            None = 0,
+            DoNotFailSchemaValidationForLegacyIssues,
+            Poisoning
+            };
+#endif
+
     private:
         ECDb const& m_ecdb;
         SchemaReader* m_schemaReader;
@@ -120,7 +132,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //only for legacy support which cannot yet follow the strict bim rules
-        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions, SchemaImportToken const* token = nullptr) const;
 #endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.

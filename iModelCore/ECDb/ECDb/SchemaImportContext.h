@@ -69,10 +69,10 @@ private:
     ClassMapSaveContext m_saveContext;
     SchemaCompareContext m_compareContext;
 
-    bool m_doNotFailSchemaValidationForLegacyIssues = false;
+    SchemaManager::SchemaImportOptions m_options;
 
 public:
-    explicit SchemaImportContext(bool doNotFailSchemaValidationForLegacyIssues = true) : m_doNotFailSchemaValidationForLegacyIssues(doNotFailSchemaValidationForLegacyIssues) {}
+    explicit SchemaImportContext(SchemaManager::SchemaImportOptions options) : m_options(options) {}
 
     ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
     ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
@@ -86,7 +86,7 @@ public:
     ClassMapSaveContext& GetClassMapSaveContext() { return m_saveContext; }
     SchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
 
-    bool DoNotFailSchemaValidationForLegacyIssues() const { return m_doNotFailSchemaValidationForLegacyIssues; }
+    SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
