@@ -484,10 +484,18 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
 
-    if (nullptr != rootResource)
-        m_rootResource.assign (rootResource);
+    if (nullptr == rootResource)
+        return;
 
-    if (!m_rootResource.empty())
+    m_isHttp = (0 == strncmp("http:", rootResource, 5) || 0 == strncmp("https:", rootResource, 6));
+
+    m_rootResource.assign (rootResource);
+
+    if (m_isHttp)
+        {
+        m_rootResource = m_rootResource.substr(0, m_rootResource.find_last_of("/"));
+        }
+    else if (!m_rootResource.empty())
         {
         BeFileName rootDirectory(BeFileName::DevAndDir, BeFileName(m_rootResource));
         BeFileName::FixPathName(rootDirectory, rootDirectory, false);

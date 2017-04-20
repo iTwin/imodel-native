@@ -98,7 +98,7 @@ public:
     void InitRange(uint64_t min, uint64_t max) const {m_range.Init(min, max); m_isSloppy = false;}
     void InitRange() const {InitRange(ULLONG_MAX, 0);}
     ElemIdRange const& GetExactNodeRange() const {CheckSloppy(); return m_range;}
-    void SetNodeRange(ElemIdRange const& range) const { m_range = range; m_isSloppy = false; }
+    void SetNodeRange(ElemIdRange const& range) const {m_range = range; m_isSloppy = false;}
     void SetLastUnReferenced(uint64_t val) {m_lastUnreferenced=val; m_allReferenced=false;}
     uint64_t GetLastUnReferenced() const {return m_lastUnreferenced;}
     uint64_t GetLowestId() const {return m_range.m_low;}
@@ -234,7 +234,7 @@ public:
     void RemoveElement(DgnElementCR element);
     void Purge(int64_t memTarget);
     void Destroy();
-    void VisitElements(T_VisitElemFunc func) const { if (nullptr != m_root) m_root->_Visit(func); }
+    void VisitElements(T_VisitElemFunc func) const {if (nullptr != m_root) m_root->_Visit(func);}
 };
 END_BENTLEY_DGN_NAMESPACE
 

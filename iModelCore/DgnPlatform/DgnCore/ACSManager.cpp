@@ -249,7 +249,7 @@ ColorDef AuxCoordSystem::_GetAdjustedColor(ColorDef inColor, bool isFill, DgnVie
     color = viewport.AdjustColorForContrast(color, viewport.GetBackgroundColor());
 
     if (isFill)
-        color.SetAlpha(ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized) ? 225 : 200);
+        color.SetAlpha(ACSDisplayOptions::None != (options & (ACSDisplayOptions::Deemphasized | ACSDisplayOptions::Dynamics)) ? 225 : 200);
     else
         color.SetAlpha(ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized) ? 150 : 75);
 
@@ -340,7 +340,7 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
         builder.SetSymbology(lineColor, lineColor, 6);
         builder.AddPointString(2, linePts);
 
-        builder.SetSymbology(lineColor, lineColor, 1);
+        builder.SetSymbology(lineColor, lineColor, 1, ACSDisplayOptions::None == (options & ACSDisplayOptions::Dynamics) ? GraphicParams::LinePixels::Solid : GraphicParams::LinePixels::Code2);
         builder.AddLineString(2, linePts);
 
         double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
@@ -366,7 +366,6 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
 
         builder.SetBlankingFill(fillColor);
         builder.AddArc(ellipse, true, true);
-
         return;
         }
 
@@ -393,7 +392,7 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
     ColorDef    lineColor = _GetAdjustedColor(color, false, vp, options);
     ColorDef    fillColor = _GetAdjustedColor(color, true, vp, options);
 
-    builder.SetSymbology(lineColor, lineColor, 1);
+    builder.SetSymbology(lineColor, lineColor, 1, ACSDisplayOptions::None == (options & ACSDisplayOptions::Dynamics) ? GraphicParams::LinePixels::Solid : GraphicParams::LinePixels::Code2);
     builder.AddLineString(8, shapePts);
 
     _AddAxisLabel(builder, axis, options, vp);

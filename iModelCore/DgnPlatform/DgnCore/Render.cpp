@@ -610,6 +610,7 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
     m_constructions = vf.ShowConstructions();
     m_dimensions = vf.ShowDimensions();
     m_patterns = vf.ShowPatterns();
+    m_lineWeights = vf.ShowWeights();
 
     // Features are defined by subcategory, which only implies category...
     // A subcategory is visible if it belongs to a viewed category and its appearance's visibility flag is set
@@ -756,6 +757,9 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
     bool visible = alwaysDrawn || IsClassVisible(feat.GetClass());
     if (visible && app.OverridesAlpha())
         visible = app.GetAlpha() < 0xff; // don't bother rendering something with full transparency...
+
+    if (!m_lineWeights)
+        app.SetWeight(1);
 
     return visible;
     }

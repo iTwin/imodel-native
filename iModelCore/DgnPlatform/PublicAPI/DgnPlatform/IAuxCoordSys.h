@@ -28,12 +28,12 @@ enum class ACSType
 
 enum class ACSDisplayOptions
     {
-    None            = 0,        // used for testing individual bits.
-    Inactive        = 0,
+    None            = 0, // used for testing individual bits.
     Active          = (1 << 0),
-    Hilite          = (1 << 2),
     Deemphasized    = (1 << 1),
+    Hilite          = (1 << 2),
     CheckVisible    = (1 << 3),
+    Dynamics        = (1 << 4),
     };
 
 ENUM_IS_FLAGS (ACSDisplayOptions)
