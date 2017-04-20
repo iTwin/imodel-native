@@ -315,7 +315,7 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
         {
-        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()), relInstanceProperties);
         }
     
     //! Update one or more properties of an existing non-Navigation ECRelationship instance. 
