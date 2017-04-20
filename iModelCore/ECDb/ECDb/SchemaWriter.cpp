@@ -1241,6 +1241,15 @@ BentleyStatus SchemaWriter::TryParseId(Utf8StringR schemaName, Utf8StringR class
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
+    int customAttributeIndex = 0;
+    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
+    auto itor = customAttributes.begin();
+    while (itor != customAttributes.end())
+        {
+        customAttributeIndex++;
+        ++itor;
+        }
+
     if (instanceChanges.Empty() || instanceChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -1277,7 +1286,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
             if (ImportClass(ca->GetClass()) != SUCCESS)
                 return ERROR;
 
-            if (InsertCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
+            if (InsertCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex) != SUCCESS)
                 return ERROR;
             }
         else if (change.GetState() == ChangeState::Deleted)
