@@ -427,7 +427,24 @@ CurveVectorPtr CurveCurve::ConstructMultiRadiusBlend
 DPoint3dCR corner,          //!< [in] corner of nominal sharp turn.
 DVec3dCR   vectorA,         //!< [in] outbound vector on A side.
 DVec3dCR   vectorB,         //!< [in] outbound vector on B side.
-bvector<double> radii,       //!< [in] vector of successive radii on the transition.
+bvector<double> radii,      //!< [in] radii for fillets
+bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
+)
+    {
+    return ConstructMultiRadiusBlend (corner, vectorA, vectorB, Angle::FromDegrees (0.0), 0.0, radii, 0.0, Angle::FromDegrees (0.0), reverse);
+    }
+//! Construct a mutiple-radius fillet in a corner.
+//! The turn angle is distributed evenly among the radii.
+CurveVectorPtr CurveCurve::ConstructMultiRadiusBlend
+(
+DPoint3dCR corner,          //!< [in] corner of nominal sharp turn.
+DVec3dCR   vectorA,         //!< [in] outbound vector on A side.
+DVec3dCR   vectorB,         //!< [in] outbound vector on B side.
+Angle hardAngleAtStart,     //!< hard angle to turn from start tangent onto start line
+double startDistance,       //!< distance to move on start line
+bvector<double> radii,      //!< [in] radii for fillets
+double endDistance,         //!< distance to move beyond tangent from final arc
+Angle hardAngleAtEnd,       //!< hard angle to turn from end tangent to end line
 bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
 )
     {
@@ -437,6 +454,7 @@ bool reverse                  //!<  [in] true to do reverse blend (e.g in a righ
     DVec3d vectorA1 = vectorA, currentTangent;
     vectorA1.Negate ();
     double interiorTurnRadians = vectorA1.AngleTo (vectorB);
+    double hardTurnRadians = hardAngleAtStart.Radians () + hardAngleAtEnd.Radians ();   // expected to be small. Can be negative
     double totalTurnRadians;
     double radiusSign;
     // set up so   ..
@@ -455,11 +473,21 @@ bool reverse                  //!<  [in] true to do reverse blend (e.g in a righ
         radiusSign = 1.0;
         }
     auto planeNormal = DVec3d::FromCrossProduct (vectorB, vectorA1);
-    // start out along the x axis and append successive radii.
-    double singleTurnRadians = totalTurnRadians / (double)radii.size ();
+    // start out along the currentTangent and append successive lines or arcs
+    double arcTurnRadians = totalTurnRadians - hardTurnRadians;
+    double singleTurnRadians = arcTurnRadians / (double)radii.size ();
 
     DPoint3d xyz = corner;
     auto curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    currentTangent.Normalize ();
+    if (startDistance != 0.0)
+        {
+        auto rotatedTangent = DVec3d::FromRotateVectorAroundVector (currentTangent, planeNormal, radiusSign * hardAngleAtStart);
+        auto xyz1 = xyz + rotatedTangent * startDistance;
+        auto segment = DSegment3d::From (xyz, xyz1);
+        curves->push_back (ICurvePrimitive::CreateLine (segment));
+        curves->back ()->FractionToPoint (1.0, xyz, currentTangent);    // well, that's identical to the rotated tangent, but maintain the formality of asking the curve.
+        }
     for(auto &radius : radii)
         {
         auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (xyz, currentTangent, planeNormal, radiusSign * radius, singleTurnRadians);
@@ -468,6 +496,16 @@ bool reverse                  //!<  [in] true to do reverse blend (e.g in a righ
         curves->push_back (ICurvePrimitive::CreateArc (arc.Value ()));
         curves->back ()->FractionToPoint (1.0, xyz, currentTangent);
         }
+    currentTangent.Normalize ();
+    if (endDistance != 0.0)
+        {
+        auto xyz1 = xyz + currentTangent * endDistance;
+        auto segment = DSegment3d::From (xyz, xyz1);
+        curves->push_back (ICurvePrimitive::CreateLine (segment));
+        curves->back ()->FractionToPoint (1.0, xyz, currentTangent); 
+        currentTangent = DVec3d::FromRotateVectorAroundVector (currentTangent, planeNormal, radiusSign * hardAngleAtEnd);
+        }
+
 
     // xyz is the final point.
     // It is not "on" the BC line -- but it only differs by some translation along vectorA to contact with the vectorB axis -- i.e. to u=0.0
@@ -709,15 +747,21 @@ struct MultiRadiusBlendConstructionObject : public CompoundBlendConstructionObje
 {
 bvector<double> m_radii;
 bool m_reverseBlend;
-MultiRadiusBlendConstructionObject (bvector<double> radii, bool reverseBlend)
+Angle m_thetaA, m_thetaB;
+double m_distanceA, m_distanceB;
+MultiRadiusBlendConstructionObject (Angle thetaA, double distanceA, bvector<double> radii, double distanceB, Angle thetaB, bool reverseBlend)
     :
     m_radii (radii),
-    m_reverseBlend (reverseBlend)
+    m_reverseBlend (reverseBlend),
+    m_thetaA (thetaA),
+    m_thetaB (thetaB),
+    m_distanceA (distanceA),
+    m_distanceB (distanceB)
     {}
 
 CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override 
     {
-    return CurveCurve::ConstructMultiRadiusBlend (corner, tangentA, tangentB, m_radii, m_reverseBlend);
+    return CurveCurve::ConstructMultiRadiusBlend (corner, tangentA, tangentB, m_thetaA, m_distanceA, m_radii, m_distanceB, m_thetaB, m_reverseBlend);
     }
 };
 
@@ -917,7 +961,6 @@ double offsetB
 
 
 
-//! Search for a multi-radius blend near given start fractions.
 CurveVectorPtr CurveCurve::ConstructMultiRadiusBlend
 (
 ICurvePrimitiveR curveA,    //!< First source set
@@ -928,10 +971,28 @@ double &fractionB,           //!< [in,out] fraction on curveB
 bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
 )
     {
+    return CurveCurve::ConstructMultiRadiusBlend (curveA, curveB, Angle::FromDegrees (0.0), 0.0, radii, 0.0, Angle::FromDegrees (0.0), fractionA, fractionB, reverse);
+    }
+
+//! Search for a multi-radius blend near given start fractions.
+CurveVectorPtr CurveCurve::ConstructMultiRadiusBlend
+(
+ICurvePrimitiveR curveA,    //!< First source set
+ICurvePrimitiveR curveB,    //!< second source set
+Angle hardAngleAtStart,     //!< hard angle to turn from start tangent onto start line
+double startDistance,       //!< distance to move on start line
+bvector<double> radii,      //!< [in] radii for fillets
+double endDistance,         //!< distance to move beyond tangent from final arc
+Angle hardAngleAtEnd,       //!< hard angle to turn from end tangent to end line
+double &fractionA,          //!< [in,out] fraction on curveA
+double &fractionB,           //!< [in,out] fraction on curveB
+bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
+)
+    {
     double maxStep = 0.30;
     double tol = Angle::SmallAngle ();
     NewtonIterationsRRToRR newton (tol);
-    MultiRadiusBlendConstructionObject blendBuilder (radii, reverse);
+    MultiRadiusBlendConstructionObject blendBuilder (hardAngleAtStart, startDistance, radii, endDistance, hardAngleAtEnd, reverse);
     ParameterToPointEvaluator::CurvePrimitiveEvaluator evaluatorA (curveA);
     ParameterToPointEvaluator::CurvePrimitiveEvaluator evaluatorB (curveB);
     CompoundBlendFunction F (blendBuilder, evaluatorA, evaluatorB);
