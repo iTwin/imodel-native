@@ -126,6 +126,7 @@ private:
     size_t m_totalScanLength;    // this is the total length of the byte sequence that ought to be scanned/parsed
     size_t m_cursorPosition;     // the index of the next byte to be scanned
     size_t m_lastScannedCount;   // the number of bytes processed in the last step
+    size_t m_breakIndex;         // special position  dividing the string into two parts
     size_t m_uniCode;
     FormattingDividers m_dividers;
     //union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
@@ -177,6 +178,8 @@ public:
     bool IsDivider() { return m_isASCII ? m_dividers.IsDivider(m_detail.GetASCII()) : false; }
     size_t GetEffectiveBytes() { return m_effectiveBytes; }
     UNITS_EXPORT FormattingWord ExtractWord();
+    UNITS_EXPORT FormattingWord ExtractLastEnclosure();
+    UNITS_EXPORT FormattingWord ExtractBeforeEnclosure();
     //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
     //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
     UNITS_EXPORT Utf8CP GetSignature();

@@ -215,7 +215,8 @@ enum class ScannerCursorStatus
     {
     Success = 0,
     InvalidSymbol = 1,
-    IncompleteSequence = 2
+    IncompleteSequence = 2,
+    NoEnclosure = 3
     };
 
 //! Codes of problems might help in finding the source of the problem

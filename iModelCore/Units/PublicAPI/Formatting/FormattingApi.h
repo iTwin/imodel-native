@@ -51,7 +51,7 @@ struct Utils
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
-    static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
+    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name);
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return IsNameNullOrEmpty(name) ? subs : name; }
     //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
     UNITS_EXPORT static bool AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP u2);
@@ -62,8 +62,10 @@ struct Utils
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
-    UNITS_EXPORT static Utf8String GetSignature(Utf8CP text);
-
+    //UNITS_EXPORT static Utf8String GetSignature(Utf8CP text);
+    UNITS_EXPORT static Utf8String HexDump(Utf8CP txt, int len);
+    UNITS_EXPORT static Utf8CP HexByte(Utf8Char c, Utf8P buf, size_t bufLen);
+    UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
     //#endif
     };
 
@@ -178,19 +180,20 @@ public:
     UNITS_EXPORT static const unsigned char TriadBitMask(size_t threeBit);
     static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
     static const Utf8CP AllocError() { return "AllocError"; }
+    static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
+    static const Utf8CP FUSDividers() { return "()[]{}"; }
+    static const Utf8CP FUSDividerMatch() { return ")(][}{"; }
     static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const size_t* SpecialUOM()
-        {
-        // the array of codes holds integer codes of several special unicode characters that could be used in a specific
-        //   context for denoting units Of Measurement. two characters 'degC' and 'degF' are included for the future growth
-        //     they represent a special case of degrees of Celsius and degrees of Fahrenheit that could be used with Chinese characters
-                               // $      %   deg    degC    degF
-        static size_t cod[6] = { 0x24, 0x25, 0xB0, 0x2103, 0x2109};
-        return cod;
-        }
-
-
+    {
+    // the array of codes holds integer codes of several special unicode characters that could be used in a specific
+    //   context for denoting units Of Measurement. two characters 'degC' and 'degF' are included for the future growth
+    //     they represent a special case of degrees of Celsius and degrees of Fahrenheit that could be used with Chinese characters
+                            // "      $     %    '     ^    deg    degC    degF
+    static size_t cod[8] = { 0x22, 0x24, 0x25, 0x27, 0x5e, 0xB0, 0x2103, 0x2109};
+    return cod;
+    }
 };
 
 struct FormatProblemDetail

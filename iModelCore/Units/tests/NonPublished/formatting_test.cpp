@@ -32,42 +32,55 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 TEST(FormattingTest, Preliminary)
     {
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
-    const char *uni = u8"         ЯABГCDE型号sautéςερτcañón    ";
+   // const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
     NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
+    //LOG.infov("UNI: |%s|", uni);
     //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
 
-    //int n = 0;
-    //for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
-    //    {
-    //    LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
-    //    n++;
-    //    }
+   /* int n = 0;
+    for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
+        {
+        LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
+        n++;
+        }*/
 
-    FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
+    /*Utf8P hexBuf = (Utf8P)alloca(6);
+    Utf8CP hexC =  Utils::HexByte('A', hexBuf, 5);
+    LOG.infov("HEX-A: %s", hexC);*/
+
+    //Utf8CP degS = u8"135 ° 11 ' 30 \" S";
+    //Utf8String hd = Utils::HexDump(degS, 30);
+    //LOG.infov("HEX: %s", hd.c_str());
+
+    //FormattingScannerCursor curs = FormattingScannerCursor(degS, -1);
     //Utf8CP sig = curs.GetSignature();
+    //Utf8String cols = curs.CollapseSpaces();
+    //hd = Utils::HexDump(cols.c_str(), 30);
+    //LOG.infov(u8"COL: %s", hd.c_str());
     //LOG.infov("Signature  %s (src %d  sig %d)", sig, strlen(uni), strlen(sig));
-    FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
-    FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
-    LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
-    LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
-    BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
-    Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
-    LOG.infov("TONNE_PER_HR-System  %s", sysN);
+    //LOG.infov("Collapsed  %s (len %d)", cols.c_str(), cols.length());
+    //FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
+    //FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
+    //LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
+    //LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
+    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
+    //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
+    //LOG.infov("TONNE_PER_HR-System  %s", sysN);
 
-    ScanSegment ss(ScanSegmentType::Undefined, 5, 10);
-    LOG.infov("%s", ss.SegmentInfo(nullptr).c_str());
-    Utf8CP testT("abcdefeghijklmnopqrstuvwxyz");
+    //ScanSegment ss(ScanSegmentType::Undefined, 5, 10);
+    //LOG.infov("%s", ss.SegmentInfo(nullptr).c_str());
+    //Utf8CP testT("abcdefeghijklmnopqrstuvwxyz");
 
-    LOG.infov("TextSegment %s", ss.ExtractSegment(testT).c_str());
+    //LOG.infov("TextSegment %s", ss.ExtractSegment(testT).c_str());
 
-    Utf8Char buf[82];
-    ScanBuffer sb(buf, 80);
-    size_t actL = sb.ScanBuffer::ExtractSegment(testT, ss);
-    LOG.infov("TextSegment2 %s len %d", buf, actL);
+    //Utf8Char buf[82];
+    //ScanBuffer sb(buf, 80);
+    //size_t actL = sb.ScanBuffer::ExtractSegment(testT, ss);
+    //LOG.infov("TextSegment2 %s len %d", buf, actL);
 
-    NumeriChunk nc;
-    LOG.infov("%s", nc.ChunkInfo("ChunkInfo: ").c_str());
+    //NumeriChunk nc;
+    //LOG.infov("%s", nc.ChunkInfo("ChunkInfo: ").c_str());
     }
 
 TEST(FormattingTest, PhysValues)
@@ -77,6 +90,16 @@ TEST(FormattingTest, PhysValues)
     EXPECT_TRUE(fdiv.IsDivider(')'));
     EXPECT_TRUE(fdiv.IsDivider('{'));
     EXPECT_FALSE(fdiv.IsDivider('A'));
+
+    /*FormattingScannerCursor curs4 = FormattingScannerCursor("W/(M*C)(DefaultReal)", -1, FormatConstant::FUSDividers());
+    FormattingWord word = curs4.ExtractLastEnclosure();
+    FormattingWord word1 = curs4.ExtractBeforeEnclosure();
+    LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());
+
+    curs4 = FormattingScannerCursor("CUB.M(real)", -1, FormatConstant::FUSDividers());
+    word = curs4.ExtractLastEnclosure();
+    word1 = curs4.ExtractBeforeEnclosure();
+    LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());*/
 
     FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
     EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());
@@ -91,6 +114,10 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
 
+    FormatUnitSet fus2 = FormatUnitSet("W/(M*C)(DefaultReal)");
+    //LOG.infov("FUS2 %s", fus2.ToText(false).c_str());
+    EXPECT_STREQ ("W/(M*C)(real)", fus2.ToText(true).c_str());
+    EXPECT_STREQ ("W/(M*C)(DefaultReal)", fus2.ToText(false).c_str());
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
     BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");

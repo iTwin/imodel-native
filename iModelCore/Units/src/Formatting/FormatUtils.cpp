@@ -350,6 +350,64 @@ Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
     return buf;
     }
 
+Utf8CP Utils::HexByte(Utf8Char c, Utf8P buf, size_t bufLen)
+    {
+    static Utf8CP s = FormatConstant::HexSymbols();
+    if (bufLen > 2)
+        {
+        size_t h = (size_t)(c & 0xF);
+        buf[1] = s[h];
+        h = (size_t)((c >> 4) & 0xF);
+        buf[0] = s[h];
+        buf[2] = '\0';
+        }
+    else if (nullptr != buf)
+        buf[0] = '\0';
+    return buf;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+Utf8String Utils::HexDump(Utf8CP txt, int len)
+    {
+    Utf8String str;
+    int totL = 16;
+    Utf8P buf = (char*)alloca(totL);
+    buf[0] = ' ';
+    buf[1] = '0';
+    buf[2] = 'x';
+    if (!Utils::IsNameNullOrEmpty(txt))
+        {
+        size_t actLen = strlen(txt);
+        if (len < actLen)
+            actLen = len;
+        for (int i = 0; i < actLen; i++)
+            {
+            HexByte(txt[i], buf + 3, 10);
+            str += Utf8String(buf);
+            }
+        }
+    return str;
+    }
+
+bool Utils::IsNameNullOrEmpty(Utf8CP name) 
+    { 
+    size_t len = (nullptr == name) ? 0 : strlen(name);
+     return (len == 0); 
+    }
+
+Utf8Char Utils::MatchingDivider(Utf8Char div)
+    {
+    Utf8CP fd= FormatConstant::FUSDividers();
+    Utf8CP df = FormatConstant::FUSDividerMatch();
+    for (int i = 0; fd[i] != '\0'; i++)
+        {
+        if (div == fd[i])
+            return df[i];
+        }
+    return '\0';
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 // this function scans through the given text string and returns a specially coded text string
@@ -906,8 +964,8 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
     m_problem = FormatProblemDetail();
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1, "()[]{}");
-    FormattingWord unit = curs.ExtractWord();
-    FormattingWord fnam = curs.ExtractWord();
+    FormattingWord fnam = curs.ExtractLastEnclosure();
+    FormattingWord unit = curs.ExtractBeforeEnclosure();
     if (Utf8String::IsNullOrEmpty(fnam.GetText()))
         m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
     else

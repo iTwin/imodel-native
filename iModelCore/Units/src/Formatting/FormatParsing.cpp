@@ -173,6 +173,7 @@ void FormattingScannerCursor::Rewind(bool freeBuf)
     m_status = ScannerCursorStatus::Success;
     m_effectiveBytes = 0;
     m_dividers = FormattingDividers(nullptr);
+    m_breakIndex = 0;
    /* if (freeBuf)
         m_unicodeBuff.Release();*/
     return;
@@ -278,6 +279,88 @@ FormattingWord FormattingScannerCursor::ExtractWord()
     FormattingWord word = FormattingWord(this, buff, delim, m_isASCII);
     return word;
     }
+
+//---------------------------------------------------------------------------------------
+//  This method attempts to extract the content of the last "enclosure" - that is a group of
+//    characters enclosed into one of brackets: parenthesis, curvy bracket or square brackets
+//     if brackets are not detected - the returned word wil be empty
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
+    {
+    Utf8Char emptyBuf[2];
+    emptyBuf[0] = 0;
+    m_status = ScannerCursorStatus::Success;
+    m_lastScannedCount = 0;
+    m_isASCII = true;
+    m_breakIndex = m_totalScanLength - 1; // points to the terminating zero
+    Utf8CP txt = m_text.c_str();
+    
+    while (isspace(txt[m_breakIndex]) && 0 < m_breakIndex) --m_breakIndex;
+
+    if (!m_dividers.IsDivider(txt[m_breakIndex]))
+        {
+        m_status = ScannerCursorStatus::NoEnclosure;
+        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        }
+    Utf8Char div = txt[m_breakIndex];
+    Utf8Char m = Utils::MatchingDivider(txt[m_breakIndex]);
+    if('\0' == m)
+        {
+        m_status = ScannerCursorStatus::NoEnclosure;
+        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        }
+    size_t endDivPosition = m_breakIndex;
+    while (0 < m_breakIndex && txt[m_breakIndex] != m) --m_breakIndex;
+
+    if(txt[m_breakIndex] != m || endDivPosition <= m_breakIndex)
+        {
+        m_status = ScannerCursorStatus::NoEnclosure;
+        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        }
+    // ready to extract content
+
+    size_t len = endDivPosition - m_breakIndex - 1;
+    Utf8P buf = (Utf8P)alloca(len + 2);
+
+    memcpy(buf, txt + m_breakIndex + 1, len);
+    buf[len] = '\0';
+    emptyBuf[0] = div;
+    emptyBuf[1] = '\0';
+    FormattingWord word = FormattingWord(this, buf, emptyBuf, m_isASCII);
+    return word;
+    }
+
+FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
+    {
+    Utf8Char emptyBuf[2];
+    emptyBuf[0] = 0;
+    m_status = ScannerCursorStatus::Success;
+    m_lastScannedCount = 0;
+    m_isASCII = true;
+    Utf8CP txt = m_text.c_str();
+    size_t indx = 0;
+    while (isspace(txt[indx]) && indx <= m_totalScanLength) ++indx;
+
+    if (m_breakIndex <= indx || !m_dividers.IsDivider(txt[m_breakIndex]))
+        {
+        m_status = ScannerCursorStatus::NoEnclosure;
+        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        }
+
+    size_t len = m_breakIndex - indx;
+    
+    Utf8P buf = (Utf8P)alloca(len + 2);
+
+    memcpy(buf, txt + indx, len);
+    buf[len] = '\0';
+    emptyBuf[0] = txt[m_breakIndex];
+    emptyBuf[1] = '\0';
+    FormattingWord word = FormattingWord(this, buf, emptyBuf, m_isASCII);
+    return word;
+    }
+
+
 POP_MSVC_IGNORE
 
 //---------------------------------------------------------------------------------------
@@ -362,7 +445,6 @@ Utf8CP FormattingScannerCursor::GetSignature()
     Rewind(true);
     Utf8CP symb = "0abcdefg";
 
-    char byt = 0;
     m_signature = new char[m_totalScanLength + 1];
     if (nullptr == m_signature)
         return FormatConstant::AllocError();
@@ -372,10 +454,7 @@ Utf8CP FormattingScannerCursor::GetSignature()
         int i = 0;
         while(c != 0 && i < m_totalScanLength)
             {
-            byt = 0;
-            if (m_lastScannedCount == 1)
-                byt = 0x7F & c;
-            if (isspace(byt))
+            if (m_lastScannedCount == 1 && isspace(0x7F & c))
                 m_signature[i] = 's';
             else
                 m_signature[i] = symb[m_lastScannedCount & 0x7];
@@ -386,11 +465,60 @@ Utf8CP FormattingScannerCursor::GetSignature()
     return m_signature;
     }
 
-//Utf8String FormattingScannerCursor::CollapseSpaces()
-//    {
-//    Utf8CP sig = GetSignature();
-//    
-//    }
+Utf8String FormattingScannerCursor::CollapseSpaces()
+    {
+    Utf8CP sig = GetSignature();
+    size_t sigLen = Utils::IsNameNullOrEmpty(sig) ? 0 : strlen(sig);
+    Utf8String str;
+
+    if (sigLen > 0)
+        {
+        size_t start = 0;
+        size_t end = sigLen - 1;
+        for (Utf8CP p = sig; *p == 's'; ++p, ++start);
+        if (start < sigLen)
+            {
+            while (end > start && sig[end] == 's') --end;
+            if (end >= start)
+                {
+                Utf8P buf = (Utf8P)alloca(m_totalScanLength + 2);
+                bool notSpace = true;
+                for (size_t i = start, j = start, k = 0; i <= end && j < m_totalScanLength; i++)
+                    {
+                    switch (sig[i])
+                        {
+                        case 's':
+                            if (notSpace)
+                                buf[k++] = m_text[j++];
+                            else
+                                j++;
+                            notSpace = false;
+                            break;
+                        case 'f':
+                            buf[k++] = m_text[j++];
+                        case 'e':
+                            buf[k++] = m_text[j++];
+                        case 'd':
+                            buf[k++] = m_text[j++];
+                        case 'c':
+                            buf[k++] = m_text[j++];
+                        case 'b':
+                            buf[k++] = m_text[j++];
+                        case 'a':
+                        default:
+                            buf[k++] = m_text[j++];
+                            notSpace = true;
+                            break;
+                        }
+                    buf[k] = '\0';    
+                    }
+                str = Utf8String(buf);
+                }
+            }
+        }
+
+    return str;
+    }
 
 
 //===================================================
