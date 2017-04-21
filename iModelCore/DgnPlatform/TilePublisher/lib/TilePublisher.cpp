@@ -2892,7 +2892,7 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
         Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
                             viewRotation = Transform::From(view->GetRotation()),
                             scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
-                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, 0.0)),
+                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0)),
                             tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)),
                             sheetToTile;
 
