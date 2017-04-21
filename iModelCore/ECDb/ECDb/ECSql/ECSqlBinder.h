@@ -135,7 +135,9 @@ struct ECSqlParameterMap : NonCopyableClass
     private:
         std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
         std::vector<ECSqlBinder*> m_binders;
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         ECSqlBinder* m_internalECInstanceIdBinder = nullptr;
+#endif
         bmap<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
         std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
@@ -152,13 +154,15 @@ struct ECSqlParameterMap : NonCopyableClass
         //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
         ECSqlStatus TryGetBinder(ECSqlBinder*&, int ecsqlParameterIndex) const;
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         ECSqlBinder* GetInternalECInstanceIdBinder() const { return m_internalECInstanceIdBinder; }
+#endif
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
-        ECSqlBinder* AddInternalECInstanceIdBinder(ECSqlPrepareContext&);
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+        ECSqlBinder* AddInternalECInstanceIdBinder(ECSqlPrepareContext&);
         //@deprecated
         ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder&, Utf8StringCR parameterName);
 #endif

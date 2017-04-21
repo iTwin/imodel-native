@@ -20,6 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IECSqlPreparedStatement;
 struct SingleECSqlPreparedStatement;
+struct SingleContextTableECSqlPreparedStatement;
 
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013

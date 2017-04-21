@@ -96,6 +96,22 @@ public:
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement and
+//! refers to a single table
+// @bsiclass                                                Krischan.Eberle      04/2017
+//+===============+===============+===============+===============+===============+======
+struct SingleContextTableECSqlPreparedStatement final : SingleECSqlPreparedStatement
+    {
+private:
+    DbTable const* m_contextTable = nullptr;
+
+public:
+    SingleContextTableECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, DbTable const& contextTable) : SingleECSqlPreparedStatement(ecdb, type), m_contextTable(&contextTable) {}
+    ~SingleContextTableECSqlPreparedStatement() {}
+    DbTable const& GetContextTable() const { return *m_contextTable; }
+
+    };
+//=======================================================================================
 //! IECSqlPreparedStatement for ECSQL that requires multiple SQLite statements to be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
@@ -188,9 +204,9 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             };
 
 
-        std::vector<std::unique_ptr<SingleECSqlPreparedStatement>> m_statements;
+        std::vector<std::unique_ptr<SingleContextTableECSqlPreparedStatement>> m_statements;
         mutable std::vector<std::unique_ptr<IProxyECSqlBinder>> m_proxyBinders;
-        mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
+        mutable bmap<Utf8String, int, CompareIUtf8Ascii> m_parameterNameMap;
 
     private:
         mutable Utf8String m_compoundNativeSql;
@@ -207,7 +223,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     public:
         virtual ~CompoundECSqlPreparedStatement() {}
 
-        SingleECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
+        SingleContextTableECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
     };
 
 //=======================================================================================
@@ -245,13 +261,6 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
 private:
-    struct LeafPreparedStatement final : SingleECSqlPreparedStatement
-        {
-    public:
-        explicit LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
-        ~LeafPreparedStatement() {}
-        };
-
     struct ECInstanceKeyHelper final : NonCopyableClass
             {
             public:
@@ -304,6 +313,8 @@ private:
 struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     {
     private:
+        std::unique_ptr<ECSqlSelectPreparedStatement> m_whereClauseSelector;
+
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
         static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);

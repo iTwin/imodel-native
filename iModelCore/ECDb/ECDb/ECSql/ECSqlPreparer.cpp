@@ -519,14 +519,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
         BeAssert(!exp.IsPolymorphic());
-        table = &classMap.GetJoinedTable();
+        SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+        table = &preparedStmt.GetContextTable();
         }
     else
         {
         if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
             {
             if (currentScopeECSqlType == ECSqlType::Update)
-                table = &classMap.GetJoinedTable();
+                {
+                SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+                table = &preparedStmt.GetContextTable();
+                }
             else if (currentScopeECSqlType == ECSqlType::Delete)
                 table = &classMap.GetPrimaryTable();
             }
@@ -930,7 +934,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     {
     BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
 
-    BeAssert(ctx.GetPreparedStatement().GetType() != ECSqlType::Insert || exp.IsNamedParameter() && "For INSERT parameters ECDb conversts all params to named ones");
+    BeAssert((ctx.GetPreparedStatement().GetType() != ECSqlType::Insert && ctx.GetPreparedStatement().GetType() != ECSqlType::Update) || exp.IsNamedParameter() && "For INSERT and UPDATE parameters ECDb converts all params to named ones");
 
     ECSqlParameterMap& ecsqlParameterMap = ctx.GetPreparedStatement().GetParameterMapR();
     ECSqlBinder* binder = nullptr;
