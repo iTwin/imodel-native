@@ -147,17 +147,17 @@ void ConnectInterfaceNative::Initialize(
 
     //Init logging
     NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
-    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_OUTPUT_FILE, L"/sdcard/Android/data/com.bentley.loadprojects/debug2.log");
     NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_TRACE);
-    NativeLogging::LoggingConfig::ActivateProvider  (NativeLogging::SIMPLEFILE_LOGGING_PROVIDER );
-    //NativeLogging::LoggingConfig::SetSeverity( L"", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::ActivateProvider  (NativeLogging::CONSOLE_LOGGING_PROVIDER );
+    NativeLogging::LoggingConfig::SetSeverity( L"", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity("Bentley.Http", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity("Bentley.Tasks", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity("WSCache", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity("WSClient", BentleyApi::NativeLogging::LOG_TRACE);
-
-    LOG_DEBUG("Initializing ConnectInterface...");
+    NativeLogging::LoggingConfig::SetSeverity("ConnectC", BentleyApi::NativeLogging::LOG_TRACE);
+    
+    NativeLogging::LoggingManager::GetLogger("ConnectC")->messagev(BentleyApi::NativeLogging::LOG_DEBUG, "Initializing ConnectInterface...");
 
     ConnectInitializationInfo::SetAssetsDir(appDir);
     ConnectInitializationInfo::SetTempDir(tempDir);
