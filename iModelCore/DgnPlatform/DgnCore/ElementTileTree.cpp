@@ -220,9 +220,6 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 #endif
 
-#if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
-constexpr double s_half2dDepthRange = 10.0;
-#endif
 constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 1000.0;
@@ -253,20 +250,8 @@ struct RangeAccumulator : RangeIndex::Traverser
         {
         if (Stop::Yes == tree.Traverse(*this))
             return false;
-        else if (m_range.IsNull())
-            return false;
-
-#if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
-        // ###TODO_ELEMENT_TILE: This was required for the tile publisher because Cesium does not support true 2d views.
-        if (m_is2d)
-            {
-            BeAssert(m_range.low.z == m_range.high.z == 0.0);
-            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
-            m_range.high.z = s_half2dDepthRange*2;
-            }
-#endif
-
-        return true;
+        else
+            return !m_range.IsNull();
         }
 };
 
@@ -440,9 +425,6 @@ private:
     DRange3d                    m_range;
     DRange3d                    m_tileRange;
     GeometryListBuilder         m_geometryListBuilder;
-#if defined(ELEMENT_TILE_REGENERATION)
-    TileModelDeltaP             m_modelDelta;
-#endif
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
     double                      m_tolerance;
@@ -466,21 +448,7 @@ private:
 
     double _AdjustZDepth(double zDepthIn) override
         {
-#if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
-        // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
-        // Coming from mstn, priorities tend to be in [-500..500]
-        // Let's assume that mstn's range is the full range and clamp anything outside that.
-        // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
-        constexpr double priorityRange = 500;
-        constexpr double ratio = s_half2dDepthRange / priorityRange;
-
-        auto zDepth = std::min(zDepthIn, priorityRange);
-        zDepth = std::max(zDepth, -priorityRange);
-
-        return zDepth * ratio;
-#else
         return Target::DepthFromDisplayPriority(static_cast<int32_t>(zDepthIn));
-#endif
         }
 
     UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
@@ -488,24 +456,7 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-#if defined(ELEMENT_TILE_REGENERATION)
-    TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
-#else
-    TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
-#endif
-      : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(root.GetDgnDb(), transformFromDgn, surfacesOnly), 
-#if defined(ELEMENT_TILE_REGENERATION)
-        m_modelDelta(modelDelta),
-#endif
-        m_tolerance(tolerance), m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
-        {
-        static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
-
-        m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
-        m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
-        m_minTextBoxSize  = s_minTextBoxSize * tolerance;
-        GetTransformFromDgn().Multiply (m_tileRange, m_range);
-        }
+    TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) ;
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     Result OutputGraphics(GeometryProcessorContext& context);
@@ -570,6 +521,21 @@ public:
     DisplayParamsCR CreateDisplayParams(SimplifyGraphic& gf, bool ignoreLighting) const { return m_geometryListBuilder.GetDisplayParamsCache().Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), ignoreLighting); }
     DisplayParamsCR CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometryProcessor::TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
+  : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(root.GetDgnDb(), transformFromDgn, surfacesOnly), 
+    m_tolerance(tolerance), m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
+    {
+    static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
+
+    m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
+    m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
+    m_minTextBoxSize  = s_minTextBoxSize * tolerance;
+    GetTransformFromDgn().Multiply (m_tileRange, m_range);
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -653,27 +619,6 @@ struct GeometryCollector : RangeIndex::Traverser
         return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGeometryProcessor::Result::Aborted : TileGeometryProcessor::Result::Success;
         }
 };
-
-//#define ELEMENT_TILE_TRUNCATE_PLANAR
-#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS) || defined(ELEMENT_TILE_TRUNCATE_PLANAR)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void adjustGeometryTolerance(GeometryList& geometries, double tolerance)
-    {
-    // Remove any geometry too small for inclusion in at this tolerance
-    double minRangeDiagonal = s_minRangeBoxSize * tolerance;
-    auto eraseAt = std::remove_if(geometries.begin(), geometries.end(), [=](GeometryPtr const& geom)
-        {
-        DRange3dCR tileRange = geom->GetTileRange();
-        double tileDiagonal = tileRange.DiagonalDistance();
-        return tileDiagonal < minRangeDiagonal;
-        });
-
-    if (eraseAt != geometries.end())
-        geometries.erase(eraseAt, geometries.end());
-    }
-#endif
 
 END_UNNAMED_NAMESPACE
 
@@ -822,13 +767,9 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
-#define ETT_ENLARGE_ROOT_RANGE
-#if defined(ETT_ENLARGE_ROOT_RANGE)
+
         // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
-        // It also means that 75% of root's children are empty
-        // ###TODO_ELEMENT_TILE: Avoid traversing range index for those known-empty tiles
         range.ScaleAboutCenter(range, 4.0);
-#endif
         }
     else
         {
@@ -836,12 +777,8 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
             {
-#if defined(TODO_ELEMENT_TILE)
-            // Empty models exist...
-            return nullptr;
-#else
+            // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
-#endif
             }
         }
 
@@ -1389,54 +1326,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR 
     Render::Primitives::GeometryCollection geom;
 
     auto const& root = GetElementRoot();
-
-#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS)
-    // Always collect geometry at the target leaf tolerance.
-    // If we exceed our leaf threshold, we'll keep the geometry but adjust this tile's target tolerance
-    bool leafThresholdExceeded = false;
-    GeometryList geometries = CollectGeometry(&leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
-
-    if (context.WasAborted())
-        return geom;
-
-    if (!m_isLeaf && !leafThresholdExceeded)
-        SetIsLeaf();
-
-    if (geometries.empty())
-        return geom;
-
-    if (m_isLeaf)
-        m_tolerance = root.GetLeafTolerance();
-    else
-        adjustGeometryTolerance(geometries, m_tolerance);
-#elif defined(ELEMENT_TILE_TRUNCATE_PLANAR)
-    // Always collect geometry at the target leaf tolerance.
-    // If we find no curved geometry, there's no point in creating child nodes.
-    // Otherwise, keep all the geometry that is large enough to display at this tile's tolerance and facet to that tolerance
-    GeometryList geometries = CollectGeometry(nullptr, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
-    if (context.WasAborted())
-        return geom;
-
-    bool anyCurved = false;
-    for (auto const& geometry : geometries)
-        {
-        if (anyCurved = geometry->IsCurved())
-            break;
-        }
-
-    if (!anyCurved)
-        {
-        m_tolerance = root.GetLeafTolerance();
-        SetIsLeaf();
-        }
-    else
-        {
-        adjustGeometryTolerance(geometries, m_tolerance);
-        }
-#else
     GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
-#endif
-
     return CreateGeometryCollection(geometries, options, context);
     }
 
@@ -1525,30 +1415,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     try
         {
-#if defined(ELEMENT_TILE_REGENERATION)
-        TileModelDelta::ElementState*    elementState = nullptr;
-        if (nullptr != m_modelDelta)
-            {
-            if (nullptr == (elementState = m_modelDelta->GetElementState(elemId)))
-                {
-                BeAssert (false && "Unexpected Element");
-                return;
-                }
-            if (!m_modelDelta->DoPublish(elemId))
-                {
-                DRange3d intersection = DRange3d::FromIntersection (dgnRange, m_range, true);
-
-                if (intersection.IsNull())
-                    return;
-
-                m_leafCount += (size_t) ((double) elementState->GetFacetCount() * intersection.DiagonalDistance() / dgnRange.DiagonalDistance());
-                *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
-
-                return;
-                }
-            }
-#endif
-
         m_geometryListBuilder.Clear();
         bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, dgnRange);
         if (!haveCached)
@@ -1562,12 +1428,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 
         if (!haveCached)
             m_root.AddCachedGeometry(std::move(m_geometryListBuilder.GetGeometries()), elemId, dgnRange);
-
-#if defined(ELEMENT_TILE_REGENERATION)
-        if (nullptr != elementState && 0 == elementState->GetFacetCount())    
-            for (auto& geom : m_geometryListBuilder.GetGeometries())
-                elementState->SetFacetCount(elementState->GetFacetCount() + geom->GetFacetCount(*m_targetFacetOptions));
-#endif
         }
     catch (...)
         {
@@ -1734,26 +1594,7 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
     GeometryCollector collector(m_range, *this, context);
     auto status = collector.Collect();
     if (Result::Aborted == status)
-        {
         m_geometries.clear();
-        }
-#if defined(ELEMENT_TILE_BATCHIDS)
-    else if (Result::Success == status)
-        {
-        // We sort by size in order to ensure the largest geometries are assigned batch IDs
-        // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
-        if (m_geometries.size() > s_maxGeometryIdCount)
-            {
-            std::sort(m_geometries.begin(), m_geometries.end(), [&](GeometryPtr const& lhs, GeometryPtr const& rhs)
-                {
-                DRange3d lhsRange, rhsRange;
-                lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
-                rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
-                return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
-                });
-            }
-        }
-#endif
 
     return status;
     }

@@ -1116,13 +1116,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
                 GeometryParams faceParams;
 
                 params[i].ToGeometryParams(faceParams, baseParams);
-
-#if defined(ELEMENT_TILE_FILL_COLOR_ONLY)
-                DisplayParamsPtr displayParams = DisplayParams::Create (GetDisplayParams().GetFillColorDef(), faceParams);
-#else
                 DisplayParamsCPtr displayParams = GetDisplayParamsPtr();
-#endif
-
                 tilePolyfaces.push_back (Polyface(*displayParams, *polyface));
                 }
             }
