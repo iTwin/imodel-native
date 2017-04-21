@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaValidationTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -223,6 +223,47 @@ TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
 
     EXPECT_TRUE(schema->Validate());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "Since the validation passed, the schema should not be an EC3.1 schema.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr     04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaValidationTests, TestSchemaValidationCanBeDelayed)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+           <ECEntityClass typeName='A' modifier='abstract' />
+           <ECEntityClass typeName='B' modifier='abstract' />
+           <ECEntityClass typeName='C' modifier='abstract' />
+           <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward' modifier='abstract'>
+               <Source multiplicity='(1..1)' polymorphic='True' roleLabel='source'>
+                   <Class class='A' />
+               </Source>
+               <Target multiplicity='(1..1)' polymorphic='True' roleLabel='target'>
+                   <Class class='B' />
+               </Target>
+           </ECRelationshipClass>
+           <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>
+               <BaseClass>ARelB</BaseClass>
+               <Source multiplicity='(0..1)' polymorphic='True'>
+                   <Class class='A' />
+               </Source>
+               <Target multiplicity='(0..*)' polymorphic='True'>
+                   <Class class='C' />
+               </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Relationship constraints do not narrow but ECSchema::ReadFromXmlString did not return the expected error status";
+    
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetSkipValidation(true);
+    status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Skip validation was set on the schema read context but relationship constraints that do not narrow still caused a schema read error.";
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
