@@ -135,9 +135,9 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
 
-TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromMultipleBaseClasses)
+TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)
     {
-    // Test that an entity class may not inherit from multiple base classes
+    // Test that an entity class may not inherit a property from multiple base classes
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP baseEntity1;
@@ -155,6 +155,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromMultipleBaseClasses)
     entity0->CreatePrimitiveProperty(prop, "P1");
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may inherit a property from just one base class so validation should succeed";
     entity0->AddBaseClass(*baseEntity2);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may have multiple base classes so validation should succeed";
     baseEntity2->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
     }
@@ -165,16 +166,16 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP mixin0;
-    PrimitiveECPropertyP base;
+    PrimitiveECPropertyP prop;
 
     ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1);
     schema->CreateEntityClass(entity0, "Entity0");
-    entity0->CreatePrimitiveProperty(base, "P1");
     schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    mixin0->CreatePrimitiveProperty(base, "P1");
-    
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin is not a base class so the property is not inherited from mixin class so validation should succeed";
+    mixin0->CreatePrimitiveProperty(prop, "P1");
     entity0->AddBaseClass(*mixin0);
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits a property from mixin class so validation should succeed";
+    entity0->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
     }
 
