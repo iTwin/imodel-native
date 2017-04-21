@@ -427,8 +427,14 @@ private:
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
     double                      m_tolerance;
+    DgnElementIdSet             m_excludedElements;
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
+protected:
+    bool                        m_anyCurvedGeometry = false;
+
+    virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId);
+    virtual bool _AcceptElement(DRange3dCR range, DgnElementId elemId);
 
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
@@ -516,6 +522,48 @@ public:
     TransformCR GetTransformFromDgn() const { return m_geometryListBuilder.GetTransform(); }
     DisplayParamsCR CreateDisplayParams(SimplifyGraphic& gf, bool ignoreLighting) const { return m_geometryListBuilder.GetDisplayParamsCache().Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), ignoreLighting); }
     DisplayParamsCR CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
+
+    bool ContainsCurvedGeometry() const { return m_anyCurvedGeometry; }
+    bool AnyElementsExcluded() const { return !m_excludedElements.empty(); }
+    DgnElementIdSet const& GetExcludedElements() const { return m_excludedElements; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* After TileGeometryProcessor processes elements within tile range and large enough
+* to contribute to tile mesh, we may determine that the mesh consists entirely of uncurved
+* geometry. We want to treat it as a leaf node as there is no point in subdividing
+* a tile containing only uncurved stuff. But we need to add in any geometry which was
+* excluded previously for being too small.
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExcludedGeometryProcessor : TileGeometryProcessor
+{
+private:
+    virtual bool _AcceptElement(DRange3dCR range, DgnElementId elemId) override { return true; }
+    virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId) override
+        {
+        if (!BelowMinRange(geom.GetTileRange()))
+            return false;
+
+        m_anyCurvedGeometry = geom.IsCurved();
+        return true;
+        }
+public:
+    ExcludedGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, bool surfacesOnly, bool is2d) : TileGeometryProcessor(geometries, root, range, facetOptions, transformFromDgn, tolerance, surfacesOnly, is2d)
+    {
+    //
+    }
+
+    void ProcessElements(ViewContextR context, DgnElementIdSet const& elemIds)
+        {
+        DRange3d unusedElementRange;
+        for (auto const& elemId : elemIds)
+            {
+            ProcessElement(context, elemId, unusedElementRange);
+            if (ContainsCurvedGeometry())
+                break; // turns out we do have curved geometry - don't make a leaf tile
+            }
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1397,11 +1445,28 @@ GeometryList Tile::CollectGeometry(double tolerance, bool surfacesOnly, LoadCont
     TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, tolerance, surfacesOnly, is2d);
 
     GeometryProcessorContext context(processor, root, loadContext);
-    processor.OutputGraphics(context);
+    if (TileGeometryProcessor::Result::Success != processor.OutputGraphics(context) || processor.ContainsCurvedGeometry() || m_isLeaf)
+        return geometries;
+
+    // This tile contains no curved geometry, and it is not a leaf.
+    // Add in geometry from any elements which were considered too small to contribute.
+    // If none of that geometry is curved either, there's no point subdividing this tile - convert it to a leaf
+    size_t numGeoms = geometries.size();
+    ExcludedGeometryProcessor reprocessor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, root.GetLeafTolerance(), surfacesOnly, is2d);
+    reprocessor.ProcessElements(context, processor.GetExcludedElements());
+    if (reprocessor.ContainsCurvedGeometry())
+        {
+        // ProcessElements() returns as soon it encounters curved geometry...remove anything it added before that.
+        geometries.erase(geometries.begin() + numGeoms, geometries.end());
+        }
+    else
+        {
+        m_tolerance = root.GetLeafTolerance();
+        SetIsLeaf();
+        }
 
     return geometries;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -1410,6 +1475,9 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     try
         {
+        if (!_AcceptElement(dgnRange, elemId))
+            return;
+
         m_geometryListBuilder.Clear();
         bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, dgnRange);
         if (!haveCached)
@@ -1518,10 +1586,42 @@ void TileGeometryProcessor::AddElementGeometry(GeometryR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::PushGeometry(GeometryR geom)
     {
-    if (BelowMinRange(geom.GetTileRange()))
-        return;
+    if (_AcceptGeometry(geom, m_geometryListBuilder.GetElementId()))
+        m_geometries.push_back(&geom);
+    }
 
-    m_geometries.push_back(&geom);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_AcceptGeometry(GeometryCR geom, DgnElementId elemId)
+    {
+    if (BelowMinRange(geom.GetTileRange()))
+        {
+        // It's possible only some portions of an element's geometry are excluded by range.
+        if (!m_anyCurvedGeometry)
+            m_excludedElements.insert(elemId);
+
+        return false;
+        }
+
+    if (!m_anyCurvedGeometry)
+        m_anyCurvedGeometry = geom.IsCurved();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_AcceptElement(DRange3dCR range, DgnElementId elemId)
+    {
+    if (!BelowMinRange(range))
+        return true;
+
+    if (!m_anyCurvedGeometry)
+        m_excludedElements.insert(elemId);
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
