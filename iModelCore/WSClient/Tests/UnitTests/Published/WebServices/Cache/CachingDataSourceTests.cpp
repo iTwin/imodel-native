@@ -660,7 +660,7 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -696,7 +696,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -777,7 +777,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -850,7 +850,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -923,7 +923,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId);
@@ -960,7 +960,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestClass", Utf8String(10000, 'x')};
+    ObjectId fileId {"TestSchema.TestClass", Utf8String(10000, 'x')};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId);
@@ -987,7 +987,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId{"TestSchema.TestLabeledClass", "TestId"};
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"Name", "TestLabel"}});
@@ -1019,14 +1019,123 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     EXPECT_EQ(1, onProgressCalled);
     }
 
+TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndConnectionError_ReturnsError)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        return CreateCompletedAsyncTask(WSFileResult::Error(StubHttpResponse()));
+        }));
+
+    auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ConnectionError, result.GetError().GetWSError().GetStatus());
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndServerReturnsFile_CachesFile)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        SimpleWriteToFile("Foo", filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(filePath)));
+        }));
+
+    auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("Foo", SimpleReadFile(result.GetValue().GetFilePath()));
+    EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndConnectionError_ReturnsCachedFile)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("Foo"))));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        return CreateCompletedAsyncTask(WSFileResult::Error(StubHttpResponse()));
+        }));
+
+    auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("Foo", SimpleReadFile(result.GetValue().GetFilePath()));
+    EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerReturnsNewFile_CachesNewFile)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("OldFile"))));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        SimpleWriteToFile("NewFile", filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(filePath)));
+        }));
+
+    auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("NewFile", SimpleReadFile(result.GetValue().GetFilePath()));
+    EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerReturnsNotModified_LeavesCachedFile)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("OldFile"))));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponseNotModified()));
+        }));
+
+    auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("OldFile", SimpleReadFile(result.GetValue().GetFilePath()));
+    EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    }
+
 TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileRequestAndSuccess)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
@@ -1050,8 +1159,8 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
@@ -1079,8 +1188,8 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
@@ -3627,11 +3736,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                 {"TestSchema.TestClass", "NewC"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "NewB"}));
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewB"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewB"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewB"}))));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewC"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
 
@@ -3758,7 +3867,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                 );
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewC"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
 
@@ -4891,7 +5000,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesPathToChild_
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryParent.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
-    auto result = ds->SyncCachedData(StubBVector({ instanceKeyB, instanceKeyParent }), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    auto result = ds->SyncCachedData(StubBVector({instanceKeyB, instanceKeyParent}), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), SizeIs(1));
     EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
