@@ -28,6 +28,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     bool m_lastClipSet;
     uint64_t m_lastClipID;
     bvector<DPoint3d> m_lastClipValue;
+	std::mutex m_lastClipMutex;
 
     ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 

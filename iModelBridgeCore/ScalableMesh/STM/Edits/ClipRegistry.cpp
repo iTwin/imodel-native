@@ -35,11 +35,14 @@ uint64_t ClipRegistry::AddClip(const DPoint3d* clip, size_t clipSize)
 
 void ClipRegistry::ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize)
     {    
-    if (m_lastClipSet && m_lastClipID == id)
-        {
-        m_lastClipValue.resize(clipSize);
-        memcpy(&m_lastClipValue[0], clip, clipSize*sizeof(DPoint3d));
-        }
+		{
+			std::lock_guard<std::mutex> lock(m_lastClipMutex);
+			if (m_lastClipSet && m_lastClipID == id)
+			{
+				m_lastClipValue.resize(clipSize);
+				memcpy(&m_lastClipValue[0], clip, clipSize * sizeof(DPoint3d));
+			}
+		}
     ISM3DPtDataStorePtr dataStore;
     m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, true);
     dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
@@ -47,11 +50,15 @@ void ClipRegistry::ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize
 
 void ClipRegistry::AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, size_t ptsSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
     {
-    if (m_lastClipSet && m_lastClipID == clipID)
-        {
-        m_lastClipValue.resize(ptsSize);
-        memcpy(&m_lastClipValue[0], pts, ptsSize*sizeof(DPoint3d));
-        }
+		{
+			std::lock_guard<std::mutex> lock(m_lastClipMutex);
+			if (m_lastClipSet && m_lastClipID == clipID)
+			{
+				m_lastClipValue.resize(ptsSize);
+				memcpy(&m_lastClipValue[0], pts, ptsSize * sizeof(DPoint3d));
+				
+			}
+		}
     ISM3DPtDataStorePtr dataStore;
     m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, true);
 
@@ -101,12 +108,15 @@ bool ClipRegistry::HasSkirt(uint64_t id)
     }
 
 void ClipRegistry::GetClip(uint64_t id, bvector<DPoint3d>& clip)
-    {        
-       if (m_lastClipSet && m_lastClipID == id)
-            {
-            clip = m_lastClipValue;
-            return;
-            }
+    {  
+		{
+			std::lock_guard<std::mutex> lock(m_lastClipMutex);
+			if (m_lastClipSet && m_lastClipID == id)
+			{
+				clip = m_lastClipValue;
+				return;
+			}
+		}
     ISM3DPtDataStorePtr dataStore;
     if (!m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, false))
         return;
@@ -115,9 +125,12 @@ void ClipRegistry::GetClip(uint64_t id, bvector<DPoint3d>& clip)
     if (nOfPts == 0) return;
     else clip.resize(nOfPts);
     dataStore->LoadBlock(&clip[0], nOfPts, id);
-    m_lastClipSet = true;
-    m_lastClipID = id;
-    m_lastClipValue = clip;
+	{
+		std::lock_guard<std::mutex> lock(m_lastClipMutex);
+		m_lastClipSet = true;
+		m_lastClipID = id;
+		m_lastClipValue = clip;
+	}
     }
 
 void ClipRegistry::GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
@@ -134,9 +147,12 @@ void ClipRegistry::GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, S
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
     clipDefinitionExOpsPtr->LoadClipWithParameters(clip, id, geom, type, isActive);
-    m_lastClipSet = true;
-    m_lastClipID = id;
-    m_lastClipValue = clip;
+	{
+		std::lock_guard<std::mutex> lock(m_lastClipMutex);
+		m_lastClipSet = true;
+		m_lastClipID = id;
+		m_lastClipValue = clip;
+	}
     }
 
 uint64_t ClipRegistry::AddSkirts(const bvector<bvector<DPoint3d>>& skirts)
