@@ -111,13 +111,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStrea
 private:
     DgnDbCR m_dgndb; // Used only for debugging
     BeFileName m_pathname;
-    BeSQLite::SchemaChangeSet m_schemaChanges;
+    BeSQLite::DbSchemaChangeSet m_dbSchemaChanges;
 
     BeSQLite::LzmaDecoder m_lzmaDecoder;
     BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
     
     BeSQLite::DbResult StartInput();
-    BeSQLite::DbResult ReadSchemaChanges();
+    BeSQLite::DbResult ReadDbSchemaChanges();
     void FinishInput();
     
     DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
@@ -127,7 +127,7 @@ private:
 public:
     RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}
 
-    BeSQLite::DbResult GetSchemaChanges(BeSQLite::SchemaChangeSetR schemaChanges);
+    BeSQLite::DbResult GetDbSchemaChanges(BeSQLite::DbSchemaChangeSetR schemaChanges);
 
     ~RevisionChangesFileReader() {}
 };
@@ -169,9 +169,9 @@ private:
     Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
 
-    RevisionStatus GroupChanges(BeSQLite::SchemaChangeSetR schemaChangeSet, BeSQLite::ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const;
+    RevisionStatus GroupChanges(BeSQLite::DbSchemaChangeSetR schemaChangeSet, BeSQLite::ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const;
     DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeFileNameCR tempRevisionPathname);
-    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::SchemaChangeSetCR schemaChangeSet, BeSQLite::ChangeGroupCR dataChangeGroup);
+    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DbSchemaChangeSetCR schemaChangeSet, BeSQLite::ChangeGroupCR dataChangeGroup);
 
     // If valid, currently creating a revision with all transactions upto *but* excluding this id
     RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId);

@@ -1734,10 +1734,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     if (nullptr != geometricModel)
         {
-        double      rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-        double      minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+        double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+        double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+        static  double  s_minLeafTolerance = 1.0E-6;
 
-        leafTolerance = std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio);
+        leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
     if (nullptr != generateMeshTiles)
@@ -1839,15 +1840,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
         }
     
     ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
-
-    return ProcessParentTile(parent, context).then([=](ElementTileResult result)
-        { 
-        return ProcessChildTiles(result.m_status, parent, context);
-        })
-    .then([=](ElementTileResult result)
-        {
-        return result;
-        });
+    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3262,6 +3255,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_linePixels);
     TEST_EQUAL(m_gradient);
+    TEST_EQUAL(m_class);
 
     return true;
     }

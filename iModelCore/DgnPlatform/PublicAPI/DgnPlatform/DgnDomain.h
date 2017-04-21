@@ -382,10 +382,11 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
+    friend struct TxnManager;
 
     DomainList    m_domains;
     Handlers      m_handlers;
-    bool          m_isSchemaImportEnabled;
+    bool          m_isSchemaUpgradeEnabled;
 
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
@@ -393,12 +394,12 @@ private:
     bool GetHandlerInfo(uint64_t* restrictions, DgnClassId handlerId, DgnDomain::Handler& handler);
     BeSQLite::DbResult InsertDomain(DgnDomainCR);
     ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
-    BeSQLite::DbResult OnDbOpened();
+    BeSQLite::DbResult OnDbOpened(bool isSchemaUpgradeEnabled);
     void OnDbClose();
     void SyncWithSchemas();
 
-    void SetEnableSchemaImport(bool enable) { m_isSchemaImportEnabled = enable; }
-    bool GetEnableSchemaImport() const { return m_isSchemaImportEnabled; }
+    void SetEnableSchemaUpgrade(bool enable) { m_isSchemaUpgradeEnabled = enable; }
+    bool IsSchemaUpgradeEnabled() const { return m_isSchemaUpgradeEnabled; }
 
     BeSQLite::DbResult ValidateSchemas();
     BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
@@ -407,7 +408,7 @@ private:
     static BeSQLite::DbResult DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     static BeSQLite::DbResult DoImportSchemas(DgnDbR dgndb, bvector<ECN::ECSchemaCP> const& schemasToImport, bool isImportingFromV8);
     
-    explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_isSchemaImportEnabled(false) {}
+    explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_isSchemaUpgradeEnabled(false) {}
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.

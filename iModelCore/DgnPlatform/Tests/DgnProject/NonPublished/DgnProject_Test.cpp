@@ -431,17 +431,15 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------------------*/
         void InsertInstancesForGeometricElement2d(ECClassCP className)
             {
+            //Emptying vector
+            List.clear();
+            ASSERT_TRUE(List.empty());
+
             printf("\nInserting Instances for GeometricElement2d heirarchy: \n");
 
             //Inserting category
             DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "TestCategory");
             ASSERT_TRUE(categoryId.IsValid());
-
-            //Inserting drawing Model
-            DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
-            DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
-            drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
-            ASSERT_TRUE(drawingModel->Is2dModel());
 
             //Inserting sheet Model
             DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "SheetListModel");
@@ -1019,14 +1017,21 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
 // @bsimethod                                      Maha Nasir                             04/17
 // Walks through the heirarchy of Element Class and insert instances of the Classes of the Biscore Schema
 //+---------------+---------------+---------------+---------------+---------------+-----------------------
-TEST_F(DgnProjectPackageTest, InstanceInstanceForElementHeirarchy)
+TEST_F(DgnProjectPackageTest, InstanceInsertionForElementHeirarchy)
     {
     SetupSeedProject();
-    m_db->Schemas().CreateClassViewsInDb();
+
+    //m_db->Schemas().CreateClassViewsInDb();  //Uncomment this to generate class views.
 
     //Getting the BisCore Schema
     ECSchemaCP BisSchema = m_db->Schemas().GetSchema(BIS_ECSCHEMA_NAME);
     ASSERT_TRUE(BisSchema != nullptr);
+
+    //Inserts a drawing Model
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
+    drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    ASSERT_TRUE(drawingModel->Is2dModel());
 
     //Getting the pointer of the Class
     ECClassCP ElementClass = BisSchema->GetClassCP("Element");
