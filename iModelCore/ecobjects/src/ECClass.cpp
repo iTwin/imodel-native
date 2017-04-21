@@ -3074,24 +3074,24 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         Utf8String className;
         if (ECObjectsStatus::Success != ECClass::ParseClassName (alias, className, constraintClassName))
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be parsed.",
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
+            LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on ECRelationship %s contains a %s attribute with the value '%s' that can not be parsed.",
+                m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         
         ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByAliasP (alias);
         if (NULL == resolvedSchema)
             {
-            LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
-                CONSTRAINTCLASSNAME_ATTRIBUTE, alias.c_str());
+            LOG.errorv("Invalid ECSchemaXML: %s ECRelationshipConstraint on ECRelationship %s contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
+                m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, alias.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
         ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+            LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on ECRelationship %s contains a %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
+                m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
@@ -3099,14 +3099,14 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             {
             if (2 == m_relClass->GetSchema().GetVersionRead())
                 {
-                LOG.warningv("Invalid ECSchemaXML: The ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
-                            m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                LOG.warningv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
+                             m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
                 continue;
                 }
             else
                 {
-                LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
-                           CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                           m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
             }
