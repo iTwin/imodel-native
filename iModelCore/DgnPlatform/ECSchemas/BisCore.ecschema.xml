@@ -107,6 +107,7 @@
     <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
@@ -268,6 +269,7 @@
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the ModelId foreign key column in the bis_Element table -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
@@ -290,6 +292,7 @@
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
@@ -531,9 +534,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- Note: not configured as a foreign key because the RecipeDefinitionElement may be excluded in a filtered briefcase -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="TypeDefinitionElement" />
         </Source>
@@ -562,6 +563,7 @@
 
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
+            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
@@ -572,9 +574,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <BaseClass>GeometricElement2dHasTypeDefinition</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="GraphicalElement2d" />
         </Source>
@@ -585,6 +585,7 @@
     
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
+            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
@@ -1441,6 +1442,7 @@
         <!-- WIP: Should be abstract? -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the ParentId foreign key column in the bis_Element table -->
                 <!-- The Element API will handle cascading the delete -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
@@ -1518,6 +1520,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
         <ECCustomAttributes>
+            <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1549,6 +1552,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
         <ECCustomAttributes>
+            <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1713,6 +1717,7 @@
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
@@ -1726,6 +1731,7 @@
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
