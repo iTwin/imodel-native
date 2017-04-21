@@ -224,7 +224,6 @@ constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we con
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
-constexpr size_t s_maxPointsPerTile = 10000;
 constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
@@ -428,9 +427,6 @@ private:
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
     double                      m_tolerance;
-    bool*                       m_leafThresholdExceeded;
-    size_t                      m_leafCountThreshold;
-    size_t                      m_leafCount;
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
 
@@ -456,7 +452,7 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) ;
+    TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, bool surfacesOnly, bool is2d) ;
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     Result OutputGraphics(GeometryProcessorContext& context);
@@ -525,9 +521,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryProcessor::TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
+TileGeometryProcessor::TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, bool surfacesOnly, bool is2d) 
   : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(root.GetDgnDb(), transformFromDgn, surfacesOnly), 
-    m_tolerance(tolerance), m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
+    m_tolerance(tolerance), m_is2d(is2d)
     {
     static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
@@ -746,8 +742,7 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()),
-    m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(true)
+    m_leafTolerance(s_minLeafTolerance), m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(false)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -1326,7 +1321,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR 
     Render::Primitives::GeometryCollection geom;
 
     auto const& root = GetElementRoot();
-    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
+    GeometryList geometries = CollectGeometry(m_tolerance, options.WantSurfacesOnly(), context);
     return CreateGeometryCollection(geometries, options, context);
     }
 
@@ -1385,7 +1380,7 @@ DRange3d Tile::GetDgnRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, LoadContextCR loadContext)
+GeometryList Tile::CollectGeometry(double tolerance, bool surfacesOnly, LoadContextCR loadContext)
     {
     auto& root = GetElementRoot();
     auto is2d = root.Is2d();
@@ -1399,7 +1394,7 @@ GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance
     if (loadContext.WasAborted())
         return geometries;
 
-    TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
+    TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, tolerance, surfacesOnly, is2d);
 
     GeometryProcessorContext context(processor, root, loadContext);
     processor.OutputGraphics(context);
@@ -1526,17 +1521,6 @@ void TileGeometryProcessor::PushGeometry(GeometryR geom)
     if (BelowMinRange(geom.GetTileRange()))
         return;
 
-    if (nullptr != m_leafThresholdExceeded && !(*m_leafThresholdExceeded))
-        {
-        DRange3d intersection = DRange3d::FromIntersection (geom.GetTileRange(), m_tileRange, true);
-
-        if (intersection.IsNull())
-            return;
-
-        m_leafCount += (size_t) ((double) geom.GetFacetCount(*m_targetFacetOptions) * intersection.DiagonalDistance() / geom.GetTileRange().DiagonalDistance());
-        *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
-        }
-        
     m_geometries.push_back(&geom);
     }
 

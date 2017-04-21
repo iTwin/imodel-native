@@ -102,7 +102,6 @@ private:
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
     double                          m_leafTolerance;
-    size_t                          m_maxPointsPerTile;
     mutable BeMutex                 m_mutex;
     mutable BeSQLite::BeDbMutex     m_dbMutex;
     mutable GeomPartMap             m_geomParts;
@@ -128,7 +127,6 @@ public:
     bool Is2d() const { return !Is3d(); }
     bool WantDebugRanges() const { return m_debugRanges; }
     double GetLeafTolerance() const { return m_leafTolerance; }
-    size_t GetMaxPointsPerTile() const { return m_maxPointsPerTile; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 
@@ -157,7 +155,7 @@ private:
     double _GetMaximumSize() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryOptionsCR options, Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-    Render::Primitives::GeometryList CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, LoadContextCR context);
+    Render::Primitives::GeometryList CollectGeometry(double tolerance, bool surfacesOnly, LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, Render::Primitives::GeometryOptionsCR, LoadContextCR context) const;
 
     bool IsElementCountLessThan(uint32_t threshold, double tolerance) const;
