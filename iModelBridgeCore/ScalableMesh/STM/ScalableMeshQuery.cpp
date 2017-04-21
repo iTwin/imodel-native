@@ -1548,13 +1548,15 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
-    WString name = L"E:\\output\\scmesh\\2017-02-26\\bcdtm_";
+#ifndef NDEBUG
+   /* WString name = L"C:\\work\\2017q2\\CS\\bcdtm_";
     name.append(std::to_wstring(indices.size()).c_str());
     name.append(L".bcdtm");
-    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());
+    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
 
     std::cout << " Writing to " << std::to_string(indices.size())<<std::endl;
     assert(status == SUCCESS);
+#endif
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
