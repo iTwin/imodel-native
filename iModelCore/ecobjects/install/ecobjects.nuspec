@@ -8,18 +8,22 @@
         <owners>Bentley Systems, Incorporated</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Native ECObjects and its dependencies</description>
-        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
         <language>en-US</language>
     </metadata>
     <files>
-        <file src="Assemblies\ECObjectsB02.dll" target="lib\native\ECObjectsB02.dll" />
-        <file src="Assemblies\BeLibxml2B02.dll" target="lib\native\BeLibxml2B02.dll" />
-        <file src="Assemblies\BentleyB02.dll" target="lib\native\BentleyB02.dll" />
-        <file src="Assemblies\BentleyGeomB02.dll" target="lib\native\BentleyGeomB02.dll" />
-        <file src="Assemblies\BentleyGeomSerializationB02.dll" target="lib\native\BentleyGeomSerializationB02.dll" />
-        <file src="Assemblies\BeXmlB02.dll" target="lib\native\BeXmlB02.dll" />
-        <file src="Assemblies\bentleylog4cxx.dll" target="lib\native\bentleylog4cxx.dll" />
-        <file src="Assemblies\bentleylog4cxxB02.dll" target="lib\native\bentleylog4cxxB02.dll" />
-        <file src="Assemblies\UnitsB02.dll" target="lib\native\UnitsB02.dll" />
+        <file src="ECObjectsB02.dll"                            target="lib\native\ECObjectsB02.dll" />
+        <file src="BeIcu4cB02.dll"                              target="lib\native\BeIcu4cB02.dll" />
+        <file src="BeLibxml2B02.dll"                            target="lib\native\BeLibxml2B02.dll" />
+        <file src="BentleyB02.dll"                              target="lib\native\BentleyB02.dll" />
+        <file src="BentleyGeomB02.dll"                          target="lib\native\BentleyGeomB02.dll" />
+        <file src="BentleyGeomSerializationB02.dll"             target="lib\native\BentleyGeomSerializationB02.dll" />
+        <file src="bentleylog4cxxB02.dll"                       target="lib\native\bentleylog4cxxB02.dll" />
+        <file src="BeXmlB02.dll"                                target="lib\native\BeXmlB02.dll" />
+        <file src="UnitsB02.dll"                                target="lib\native\UnitsB02.dll" />
+
+        <file src="Assets\ECSchemas\Standard\*"                 target="Assets\ECSchemas\Standard" />
+        <file src="Notices\*"                                   target="Notices" />
+        <file src="Assets\icudt58l.dat"                         target="Assets\icudt58l.dat" />
     </files>
 </package>

@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: install/NuGetPacking.mke $
+#     $Source: install/ecobjects.NuGetPackage.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -8,8 +8,8 @@
 %include mdl.mki
 %include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
-NUGET_BUILD_DIR=$(OutBuildDir)ECObjects/
-NUGET_BASE_PATH=$(BuildContext)SubParts\
+NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
+NUGET_BASE_PATH=$(OutputRootDir)\Product\__ECObjects-NuGet
 
 NuGetBaseName=ecobjects
 %include $(sharedMki)nuspecCreate.mki
