@@ -1,4 +1,3 @@
-m_parameterNameMap
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.cpp $

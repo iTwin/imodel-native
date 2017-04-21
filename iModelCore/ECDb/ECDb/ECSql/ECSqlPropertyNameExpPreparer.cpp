@@ -157,11 +157,15 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     else
         scope = exp.IsLhsAssignmentOperandExpression() ? ToSqlPropertyMapVisitor::ECSqlScope::NonSelectAssignmentExp : ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp;
 
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     DbTable const* contextTable = nullptr;
     if (ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
         contextTable = &ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
     else
         contextTable = &propMap.GetClassMap().GetJoinedTable();
+#else
+    DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
+#endif
 
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, scope, classIdentifier, exp.HasParentheses());
 

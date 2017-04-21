@@ -519,8 +519,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
         BeAssert(!exp.IsPolymorphic());
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
         SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
         table = &preparedStmt.GetContextTable();
+#else
+        table = &classMap.GetJoinedTable();
+#endif
         }
     else
         {
@@ -528,8 +532,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             {
             if (currentScopeECSqlType == ECSqlType::Update)
                 {
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
                 SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
                 table = &preparedStmt.GetContextTable();
+#else
+                table = &classMap.GetJoinedTable();
+#endif
                 }
             else if (currentScopeECSqlType == ECSqlType::Delete)
                 table = &classMap.GetPrimaryTable();
