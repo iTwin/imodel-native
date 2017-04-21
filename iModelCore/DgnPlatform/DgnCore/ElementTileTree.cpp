@@ -450,6 +450,7 @@ private:
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
     bool                        m_is2d;
+    bool                        m_wantCacheSolidPrimitives = false;
 
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
@@ -1590,16 +1591,20 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     DisplayParamsCR displayParams = CreateDefaultDisplayParams(gf);
 
     // ###TODO: Determine if the synchronization overhead of caching solid primitives is worth it.
-    DRange3d range, thisTileRange;
-    Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
-    prim.GetRange(range);
-    tf.Multiply(thisTileRange, range);
-    if (thisTileRange.IsContained(m_tileRange))
+    // Appears not - we spend significant time in IsSameStructureAndGeometry()
+    if (m_wantCacheSolidPrimitives)
         {
-        ISolidPrimitivePtr clone = prim.Clone();
-        GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, displayParams, GetCurrentElementId());
-        AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), displayParams, GetDgnDb()));
-        return true;
+        DRange3d range, thisTileRange;
+        Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
+        prim.GetRange(range);
+        tf.Multiply(thisTileRange, range);
+        if (thisTileRange.IsContained(m_tileRange))
+            {
+            ISolidPrimitivePtr clone = prim.Clone();
+            GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, displayParams, GetCurrentElementId());
+            AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), displayParams, GetDgnDb()));
+            return true;
+            }
         }
 
     return m_geometryListBuilder.AddSolidPrimitive(prim, displayParams, gf.GetLocalToWorldTransform());
