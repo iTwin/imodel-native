@@ -300,7 +300,7 @@
     <!-- *********************************************************** -->
     <Part Name="NuGetPackage" BMakeFile="install\ecobjects.NuGetPackage.mke"  OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="__ECObjects-NuGet"/>
+        <SubProduct ProductName="ECObjects"/>
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\ecobjects.*.nupkg</Files>
@@ -351,12 +351,12 @@
         <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
     </ProductDirectoryList>
 
-    <Product Name="__ECObjects-NuGet">
+    <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
         <SubPart PartName="PublishedApi_Doc" />
         <Directories DirectoryListName="ECObjects"/>
     </Product>
-
+    
     <Product Name="ECObjectsStatic">
         <!-- Only here to avoid putting directory list on ECObjectsTested -->
         <SubPart PartName="ECObjectsNative"  LibType="Static"/>
