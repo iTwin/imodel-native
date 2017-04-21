@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Cpp_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -182,6 +182,7 @@ static void test_thread()
     t2.join();
 
     ASSERT_EQ( g_thr_i, 2 );
+    g_thr_i = 0;
     }
 
 static void test_thread_sleep_for()
