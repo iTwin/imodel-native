@@ -1209,6 +1209,34 @@ bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
     }
 
 /*---------------------------------------------------------------------------------**//**
+* NB: This is just for testing the performance impact of cloning geometry (which is
+* unnecessary in most cases).
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> RefCountedPtr<T> cloneGeometry(T const& geom)
+    {
+#if defined(ETT_PROFILE_CLONE)
+    return const_cast<T*>(&geom);
+#else
+    return geom.Clone();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr cloneGeometry(PolyfaceQueryCR query)
+    {
+#if defined(ETT_PROFILE_CLONE)
+    auto header = dynamic_cast<PolyfaceHeaderCP>(&query);
+    if (nullptr != header)
+        return const_cast<PolyfaceHeaderP>(header);
+    else
+#endif
+        return query.Clone();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
@@ -1217,7 +1245,7 @@ bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, Disp
         return true;    // ignore...
 
     bool isCurved = curves.ContainsNonLinearPrimitive();
-    CurveVectorPtr clone = curves.Clone();
+    CurveVectorPtr clone = cloneGeometry(curves);
     IGeometryPtr geom = IGeometry::Create(clone);
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
@@ -1228,7 +1256,7 @@ bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, Disp
 bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform)
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
-    ISolidPrimitivePtr clone = primitive.Clone();
+    ISolidPrimitivePtr clone = cloneGeometry(primitive);
     IGeometryPtr geom = IGeometry::Create(clone);
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
@@ -1251,7 +1279,7 @@ bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
-    PolyfaceHeaderPtr clone = polyface.Clone();
+    PolyfaceHeaderPtr clone = cloneGeometry(polyface);
     if (!clone->IsTriangulated() && SUCCESS != clone->Triangulate())
         {
         BeAssert(false && "Failed to triangulate...");

@@ -223,7 +223,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 #if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
 constexpr double s_half2dDepthRange = 10.0;
 #endif
-constexpr double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
@@ -654,7 +654,7 @@ struct GeometryCollector : RangeIndex::Traverser
         }
 };
 
-#define ELEMENT_TILE_TRUNCATE_PLANAR
+//#define ELEMENT_TILE_TRUNCATE_PLANAR
 #if defined(ELEMENT_TILE_CHECK_FACET_COUNTS) || defined(ELEMENT_TILE_TRUNCATE_PLANAR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
@@ -822,6 +822,13 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
+#define ETT_ENLARGE_ROOT_RANGE
+#if defined(ETT_ENLARGE_ROOT_RANGE)
+        // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
+        // It also means that 75% of root's children are empty
+        // ###TODO_ELEMENT_TILE: Avoid traversing range index for those known-empty tiles
+        range.ScaleAboutCenter(range, 4.0);
+#endif
         }
     else
         {
