@@ -498,6 +498,11 @@ BentleyStatus   IScalableMesh::SetReprojection(GeoCoordinates::BaseGCSCR targetC
     return _SetReprojection(targetCS, approximateTransform);
     }
 
+BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+    {
+    return _Reproject(targetCS, dgnModel);
+    }
+
 IScalableMeshPtr IScalableMesh::GetGroup()
     {
     return _GetGroup();
@@ -2834,6 +2839,44 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
         }
 
     return ERROR;
+    }
+
+template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+    {
+    Transform computedTransform = Transform::FromIdentity();
+
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS       gcs(this->GetGCS());
+    assert(gcs.HasGeoRef()); // Missing GeoRef in SM
+
+    GeoCoordinates::DgnGCSPtr          smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
+    assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
+
+    if (smGCS != nullptr && !targetCS.IsEquivalent(*smGCS))
+        {
+        DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+        smGCS->UorsFromCartesian(scale, scale);
+        computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scale.x, scale.y, scale.z);
+
+        DRange3d smExtent, smExtentUors;
+        this->GetRange(smExtent);
+        computedTransform.Multiply(smExtentUors, smExtent);
+
+        DPoint3d extent;
+        extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+        Transform       approxTransform;
+
+        auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+
+        auto status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, static_cast<DgnGCSCR>(targetCS));
+
+        if (0 == status || 1 == status)
+            {
+            computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+            }
+        }
+
+    return _SetReprojection(targetCS, computedTransform);
     }
 
 template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)
