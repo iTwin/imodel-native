@@ -992,7 +992,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 
         for (DbTable const* table : classPersistInTables)
             {
-            if (DbTable const* primaryTable = table->GetParentOfJoinedTable())
+            if (DbTable const* primaryTable = table->GetBaseTable())
                 {
                 joinedTables[primaryTable].insert(table);
                 tables.insert(table);
@@ -1008,7 +1008,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
         bool isPrimaryTableSelected = tables.find(primaryTable) != tables.end();
         if (ignoreJoinedTables)
             {
-            for (auto childTable : primaryTable->GetJoinedTables())
+            for (auto childTable : primaryTable->GetDerivedTables())
                 tables.erase(childTable);
 
             tables.insert(primaryTable);

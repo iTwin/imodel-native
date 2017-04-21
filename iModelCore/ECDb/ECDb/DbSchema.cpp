@@ -411,6 +411,9 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
         // This would be null in case a table is not loaded yet and if its not loaded then we do not need to update it
         if (table != nullptr)
             {
+            if (table->Validate(true) == ERROR)
+                return ERROR;
+
             auto itor = persistedTableMap.find(table->GetName());
             if (itor == persistedTableMap.end())
                 {
@@ -428,6 +431,70 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        04/2017
+//---------------------------------------------------------------------------------------
+DbTable* DbSchema::CreateJoinedTable(DbTable const& baseTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId)
+    {
+    if (baseTable.GetType() != DbTable::Type::Primary)
+        {
+        BeAssert(false && "Base table must be primary or joined table");
+        return nullptr;
+        }
+
+    if (baseTable.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Base table must not be virtual");
+        return nullptr;
+        }
+
+    if (baseTable.GetDerivedTables().size() == 1 && baseTable.GetDerivedTables().front()->GetType() == DbTable::Type::Overflow)
+        {
+        BeAssert(false && "Base table have overflow derive table. Derive table can only be of one type");
+        return nullptr;
+        }
+
+    if (baseTable.Validate(true) == ERROR)
+        {
+        return nullptr;
+        }
+
+    return CreateTable(joinedTableName, DbTable::Type::Joined, PersistenceType::Physical, exclusiveRootClassId, &baseTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        04/2017
+//---------------------------------------------------------------------------------------
+DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
+    {
+    if (!(baseTable.GetType() == DbTable::Type::Primary ||
+          baseTable.GetType() == DbTable::Type::Joined))
+        {
+        BeAssert(false && "Base table must be primary or joined table");
+        return nullptr;
+        }
+
+    if (baseTable.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Base table must not be virtual");
+        return nullptr;
+        }
+
+    if (!baseTable.GetDerivedTables().empty())
+        {
+        BeAssert(false && "Base table must not have any dervied table at this time");
+        return nullptr;
+        }
+
+    if (baseTable.Validate(true) == ERROR)
+        {
+        return nullptr;
+        }
+
+    Utf8String name = baseTable.GetName();
+    name.append("_Overflow");
+    return CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -567,7 +634,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
     if (table.HasExclusiveRootECClass())
         stmt->BindId(5, table.GetExclusiveRootECClassId());
 
-    DbTable const* parentTable = table.GetParentOfJoinedTable();
+    DbTable const* parentTable = table.GetBaseTable();
     if (parentTable != nullptr)
         stmt->BindId(6, parentTable->GetId());
 
@@ -619,7 +686,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
     stmt->BindText(1, table.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(table.GetType()));
     stmt->BindBoolean(3, table.GetPersistenceType() == PersistenceType::Virtual);
-    DbTable const* parentTable = table.GetParentOfJoinedTable();
+    DbTable const* parentTable = table.GetBaseTable();
     if (parentTable != nullptr)
         stmt->BindId(4, parentTable->GetId());
     else
@@ -1082,17 +1149,117 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* baseTable)
     : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
+      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_baseTable(baseTable)
     {
-    BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
-        (tableType != Type::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for Type::Joined and must be null for any other DbTable::Type.");
+    if (IsDerivedTable() && baseTable != nullptr)
+        {
+        const_cast<DbTable*>(baseTable)->m_derviedTables.push_back(this);
+        }
 
-    if (tableType == Type::Joined && parentOfJoinedTable != nullptr)
-        const_cast<DbTable*>(parentOfJoinedTable)->m_joinedTables.push_back(this);
+    //!Assert must be called after above
+    BeAssert(Validate(true) == SUCCESS);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan   04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus DbTable::Validate(bool bAssert) const
+    {
+    if (IsDerivedTable() && GetBaseTable() == nullptr)
+        {
+        BeAssert(!bAssert && "For dervied tables parent must not be null");
+        return ERROR;
+        }
+
+    if (GetType() == Type::Primary && GetPersistenceType() == PersistenceType::Physical)
+        {
+        int overflow = 0;
+        int joined = 0;
+        for (DbTable const* derivedTable : GetDerivedTables())
+            {
+            if (derivedTable->GetType() == Type::Joined)
+                joined++;
+            else if (derivedTable->GetType() == Type::Overflow)
+                overflow++;
+            }
+
+        if (overflow > 0 && joined > 0)
+            {
+            BeAssert(!bAssert && "Primary table can only have either one or more joined Tables or a single overflow table but not both");
+            return ERROR;
+            }
+
+        if (overflow > 1 && joined == 0)
+            {
+            BeAssert(!bAssert && "Primary table can only have single dervied overflow table");
+            return ERROR;
+            }
+        }
+
+    if (GetBaseTable() != nullptr)
+        {
+        if (GetBaseTable()->GetType() != Type::Existing)
+            {
+            BeAssert(!bAssert && "Existing table cannot be use as base tables");
+            return ERROR;
+            }
+        if (GetBaseTable()->GetType() != Type::Overflow)
+            {
+            BeAssert(!bAssert && "Overflow table cannot be use as base tables");
+            return ERROR;
+            }
+
+        if (GetPersistenceType() == PersistenceType::Virtual)
+            {
+            BeAssert(!bAssert && "Derived table cannot be virtual");
+            return ERROR;
+            }
+
+        if (GetBaseTable()->GetPersistenceType() == PersistenceType::Virtual)
+            {
+            BeAssert(!bAssert && "Derived table cannot have base virtual tables");
+            return ERROR;
+            }
+
+        if (!IsDerivedTable())
+            {
+            BeAssert(!bAssert && "Base table can only be specified for derived tables");
+            return ERROR;
+            }
+        
+        if (GetType() == Type::Overflow && GetBaseTable()->GetType() != Type::Overflow)
+            {
+            BeAssert(!bAssert && "Overflow table cannot have base table that is of type existing");
+            return ERROR;
+            }
+
+        if (GetType() == Type::Joined)
+            {
+            if (GetBaseTable()->GetType() != Type::Primary)
+                {
+                BeAssert(!bAssert && "JoinedTable can only have Primary as base table");
+                return ERROR;
+                }
+            if (GetDerivedTables().size() > 1)
+                {
+                BeAssert(!bAssert && "Joined Table can only have single derived overflow table");
+                return ERROR;
+                }
+
+            }
+        if (GetType() == Type::Overflow && !GetDerivedTables().empty())
+            {
+            BeAssert(!bAssert && "Ovverflow table cannot have derived tables");
+            return ERROR;
+            }
+        }
+
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
@@ -1165,6 +1332,12 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateTrigger(Utf8CP triggerName, DbTrigger::Type type, Utf8CP condition, Utf8CP body)
     {
+    if (!IsOwnedByECDb())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     if (m_triggers.find(triggerName) == m_triggers.end())
         {
         std::unique_ptr<DbTrigger> trigger = std::unique_ptr<DbTrigger>(new DbTrigger(triggerName, *this, type, condition, body));

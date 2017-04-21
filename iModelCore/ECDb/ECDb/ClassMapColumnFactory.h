@@ -91,15 +91,38 @@ struct ClassMapColumnFactory final : NonCopyableClass
 
         DbTable& GetTable() const;
         ECDbCR GetECDb() const;
-
+        struct ColumnReservationInfo
+            {
+            private:
+                ECN::ECPropertyCR m_property;
+                int m_createdColumnCount;
+                int m_reservedColumnsCount;
+                int m_reusedColumnCount;
+                static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
+            public:
+                ColumnReservationInfo(ECN::ECPropertyCR property):m_property(property),
+                    m_reservedColumnsCount(MaxColumnsRequiredToPersistAProperty(property)), m_createdColumnCount(0), m_reusedColumnCount(0)
+                    {}
+                ~ColumnReservationInfo(){}
+                int GetReservedColumnCount() const { m_reservedColumnsCount; }
+                int GetCreatedColumnCount() const { m_createdColumnCount; }
+                int GetReusedColumnCount() const { return m_reusedColumnCount; }
+                ECN::ECPropertyCR GetProperty() const { return m_property; }
+                bool CanAllocateColumns(int nColumns) const { return (m_createdColumnCount + nColumns)< m_reservedColumnsCount; }
+                bool IsValid()const { return CanAllocateColumns(0); }
+                void AllocateNew(int nColumns) { m_createdColumnCount += nColumns; }
+                void AllocateExisting(int nColumns) { m_reusedColumnCount += nColumns; }
+            };
+        mutable std::unique_ptr<ColumnReservationInfo> m_columnReservationInfo;
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         //This function either creates a column or grabs an existing column
+        BentleyStatus BeginAllocation(Utf8CP propertyName) const;
+        BentleyStatus EndAllocation() const;
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         void Debug() const;
-        //! Estimate Maximum number of columns required.
-        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
+
     };
 
 

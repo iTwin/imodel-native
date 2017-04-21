@@ -20,13 +20,55 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
     Initialize();
     }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04/2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMapColumnFactory::BeginAllocation(Utf8CP propertyName) const
+    {
+    if (m_columnReservationInfo != nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    BeAssert(propertyName != nullptr);
+    ECN::ECPropertyCP property = m_classMap.GetClass().GetPropertyP(propertyName);
+    if (property == nullptr)
+        {
+        BeAssert(false && "Property must exist in associated class map");
+        return ERROR;
+        }
+
+    m_columnReservationInfo = std::unique_ptr <ColumnReservationInfo>(new ColumnReservationInfo(*property));
+    return SUCCESS;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04/2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMapColumnFactory::EndAllocation() const
+    {
+    if (m_columnReservationInfo == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    if (!m_columnReservationInfo->IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    m_columnReservationInfo = nullptr;
+    return SUCCESS;
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ClassMapColumnFactory::Initialize()const
+void ClassMapColumnFactory::Initialize() const
     {
-    UsedColumnFinder::ColumnMap columnMap;
+        UsedColumnFinder::ColumnMap columnMap;
     if (SUCCESS != UsedColumnFinder::Find(columnMap, m_classMap))
         {
         BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
@@ -128,6 +170,13 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
 
         if (outColumn == nullptr)
             outColumn = CreateColumn(property, type, param, accessString);
+        else
+            {
+            if (m_columnReservationInfo)
+                {
+                m_columnReservationInfo->AllocateExisting(1);
+                }
+            }
         }
     else
         {
@@ -268,7 +317,11 @@ DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR pro
 
     DbColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn))
+        {
+        if(m_columnReservationInfo)
+
         return const_cast<DbColumn*>(reusableColumn);
+        }
 
     DbColumn* col = GetTable().CreateSharedColumn(colType);
     if (col == nullptr)
@@ -420,43 +473,6 @@ void ClassMapColumnFactory::Debug() const
     printf("%s\n", sql.ToString());
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       04 / 2017
-//------------------------------------------------------------------------------------------
-//static 
-int ClassMapColumnFactory::MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty)
-    {
-    int columnsRequired = 0;
-    if (ecProperty.GetIsNavigation())
-        {
-        columnsRequired = 2;
-        }
-    else if (PrimitiveECPropertyCP primitive = ecProperty.GetAsPrimitiveProperty())
-        {
-        if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
-            columnsRequired = 3;
-        else if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
-            columnsRequired = 2;
-        else
-            columnsRequired = 1;
-        }
-    else if (ecProperty.GetIsArray())
-        {
-        columnsRequired = 1;
-        }
-    else if (StructECPropertyCP structProperty = ecProperty.GetAsStructProperty())
-        {
-        for (ECN::ECPropertyCP prop : structProperty->GetType().GetProperties(true))
-            columnsRequired += MaxColumnsRequiredToPersistAProperty(*prop);
-        }
-    else
-        {
-        columnsRequired = std::numeric_limits<int>().max();
-        BeAssert(false && "Unknow type of ECProperty");
-        }
-
-    return columnsRequired;
-    }
 //**************************ClassMapColumnFactory::UsedColumnFinder*************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
@@ -806,6 +822,47 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Find(ClassMapColumnFactor
     {
     UsedColumnFinder calc(classMap);
     return calc.Execute(columnMap);
+    }
+
+
+
+//**************************ClassMapColumnFactory::ColumnReservationInfo*************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       02 / 2017
+//------------------------------------------------------------------------------------------
+//static 
+int ClassMapColumnFactory::ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty)
+    {
+    int columnsRequired = 0;
+    if (ecProperty.GetIsNavigation())
+        {
+        columnsRequired = 2;
+        }
+    else if (PrimitiveECPropertyCP primitive = ecProperty.GetAsPrimitiveProperty())
+        {
+        if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
+            columnsRequired = 3;
+        else if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
+            columnsRequired = 2;
+        else
+            columnsRequired = 1;
+        }
+    else if (ecProperty.GetIsArray())
+        {
+        columnsRequired = 1;
+        }
+    else if (StructECPropertyCP structProperty = ecProperty.GetAsStructProperty())
+        {
+        for (ECN::ECPropertyCP prop : structProperty->GetType().GetProperties(true))
+            columnsRequired += MaxColumnsRequiredToPersistAProperty(*prop);
+        }
+    else
+        {
+        columnsRequired = std::numeric_limits<int>().max();
+        BeAssert(false && "Unknow type of ECProperty");
+        }
+
+    return columnsRequired;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
