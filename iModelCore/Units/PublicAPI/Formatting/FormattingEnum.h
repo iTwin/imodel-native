@@ -237,7 +237,8 @@ enum class FormatProblemCode
     QT_InvalidUnitCombination = 20105,
     FUS_InvalidSyntax = 20151,
     NFS_InvalidSpecName = 20161,
-    NFS_DuplicateSpecName = 20162
+    NFS_DuplicateSpecName = 20162,
+    DIV_UnknownDivider = 25001
     };
 
 enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
@@ -289,6 +290,32 @@ enum class ScanSegmentType
     Suffix = 11,
     Total = 12,
     Undefined = 13
+    };
+
+struct FormatProblemDetail
+    {
+    private:
+        FormatProblemCode  m_code;
+
+    public:
+
+        FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
+
+        FormatProblemDetail(FormatProblemCode code)
+            {
+            m_code = code;
+            }
+        bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
+        bool IsWarning() const {
+            return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
+                static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Warning));
+            }
+        bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
+        bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
+
+        FormatProblemCode const GetProblemCode() { return m_code; }
+        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+        UNITS_EXPORT Utf8String GetProblemDescription() const;
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

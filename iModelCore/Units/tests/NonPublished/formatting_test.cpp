@@ -101,6 +101,20 @@ TEST(FormattingTest, PhysValues)
     word1 = curs4.ExtractBeforeEnclosure();
     LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());*/
 
+    FormatUnitSet fusInv = FormatUnitSet("MM");
+    FormatDividerInstance fdi = FormatDividerInstance("W/(M*C)(DefaultReal)", '(');
+    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
+    fdi = FormatDividerInstance("W/(M*C)|DefaultReal", '|');
+    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
+    fdi = FormatDividerInstance("W/(M*C)|DefaultReal|", '|');
+    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
+
+    LOG.infov("MM: %s", FormatUnitSet("MM").ToText(true).c_str());
+    LOG.infov("MM: %s", FormatUnitSet("MM|fract8").ToText(true).c_str());
+    LOG.infov("W/(M*C)R: %s", FormatUnitSet("W/(M*C)(DefaultReal)").ToText(true).c_str());
+    LOG.infov("W/(M*C): %s", FormatUnitSet("W/(M*C)").ToText(true).c_str());
+
+
     FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
     EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());
     EXPECT_STREQ ("CUB.M(real)", fus1.ToText(true).c_str());

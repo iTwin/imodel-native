@@ -293,11 +293,10 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     m_status = ScannerCursorStatus::Success;
     m_lastScannedCount = 0;
     m_isASCII = true;
-    m_breakIndex = m_totalScanLength - 1; // points to the terminating zero
+    m_breakIndex = m_totalScanLength; // points to the terminating zero
     Utf8CP txt = m_text.c_str();
     
-    while (isspace(txt[m_breakIndex]) && 0 < m_breakIndex) --m_breakIndex;
-
+    while (isspace(txt[--m_breakIndex]) && 0 < m_breakIndex);
     if (!m_dividers.IsDivider(txt[m_breakIndex]))
         {
         m_status = ScannerCursorStatus::NoEnclosure;
@@ -360,6 +359,27 @@ FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
     return word;
     }
 
+FormattingWord FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
+{
+    Utf8Char emptyBuf[2];
+    emptyBuf[0] = 0;
+    m_status = ScannerCursorStatus::Success;
+    m_lastScannedCount = 0;
+    m_isASCII = true;
+    Utf8CP txt = m_text.c_str();
+
+    if(from < to && to <= m_totalScanLength)
+        {
+        size_t len = to - from +1;
+        Utf8P buf = (Utf8P)alloca(len + 2);
+        memcpy(buf, txt + from, len);
+        buf[len] = '\0';
+        return FormattingWord(this, buf, emptyBuf, m_isASCII);
+        }
+ 
+    m_status = ScannerCursorStatus::NoEnclosure;
+    return FormattingWord(this, emptyBuf, emptyBuf, true);
+}
 
 POP_MSVC_IGNORE
 
@@ -440,6 +460,9 @@ size_t FormattingScannerCursor::SkipBlanks()
     return skipped;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8CP FormattingScannerCursor::GetSignature()
     {
     Rewind(true);
@@ -464,7 +487,9 @@ Utf8CP FormattingScannerCursor::GetSignature()
         }      
     return m_signature;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String FormattingScannerCursor::CollapseSpaces()
     {
     Utf8CP sig = GetSignature();
@@ -519,7 +544,111 @@ Utf8String FormattingScannerCursor::CollapseSpaces()
 
     return str;
     }
+//----------------------------------------------------------------------------------------
+// detects a number of groups surrounded by brackes of a special kind (), [], {}  and ||
+//   the caller provides only the opening bracket and the function will infer what is a closing bracket
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+int FormattingScannerCursor::DetectEnclosures(Utf8Char bracket)
+    {
+    int openN = 0;
+    /*int closN = 0;
+    Utf8Char closBrk = Utils::MatchingDivider(bracket);
+    if ('\0' == closBrk)
+        return -1;
 
+    for (size_t ind = 0; ind < m_totalScanLength; ++ind)
+        {
+ 
+        }
+*/
+    return openN;
+    }
+
+FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8Char div)
+    {
+    m_div = div;
+    m_divCount = 0;
+    m_mateCount = 0;
+    m_totLen = 0;
+    m_mate = Utils::MatchingDivider(div);
+    if ('\0' == m_mate)
+        m_problem = FormatProblemDetail(FormatProblemCode::DIV_UnknownDivider);
+    else
+        {
+        m_problem = FormatProblemDetail();
+        if (nullptr != txt)
+            {
+            while ('\0' != *txt)
+                {
+                if (*txt == m_div)
+                    {
+                    m_positions.push_back(m_totLen+1);
+                    m_divCount++;
+                    }
+                else if (*txt == m_mate)
+                    {
+                    m_positions.push_back(-m_totLen-1);
+                    m_mateCount++;
+                    }
+                ++txt;
+                ++m_totLen;
+                }
+            }
+        }
+    }
+
+FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
+    {
+    m_div = '\0';
+    m_divCount = 0;
+    m_mateCount = 0;
+    m_totLen = 0;
+    m_mate = '\0';
+    int indx;
+    if (Utils::IsNameNullOrEmpty(divs))
+        m_problem = FormatProblemDetail(FormatProblemCode::DIV_UnknownDivider);
+    else
+        {
+        m_problem = FormatProblemDetail();
+        if (nullptr != txt)
+            {
+            while ('\0' != *txt)
+                {
+                indx = Utils::IndexOf(*txt, divs);
+                if (indx >= 0)
+                    {
+                    m_positions.push_back((indx << 8) + (int)*txt);
+                    m_divCount++;
+                    }
+                ++txt;
+                ++m_totLen;
+                }
+            }
+        }
+    }
+
+
+Utf8String FormatDividerInstance::ToText()
+    {
+    if (m_problem.IsProblem())
+     return "Unknown Divider";
+    Utf8String str;
+    str.Sprintf("Dividers: %d  mates %d", m_divCount, m_mateCount);
+    if (m_positions.size() > 0 )
+        {
+        Utf8String tmp;
+        for(int* pos = m_positions.begin(), *end = m_positions.end(); pos != end; ++pos)
+            {
+            if (*pos >= 0)
+                tmp.Sprintf(" %c[%d]", m_div, *pos - 1);
+            else
+                tmp.Sprintf(" %c[%d]", m_mate, -(*pos) - 1);
+            str += tmp;
+            }
+        }
+    return str;
+    }
 
 //===================================================
 //

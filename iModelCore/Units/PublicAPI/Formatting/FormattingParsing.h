@@ -116,6 +116,34 @@ public:
     };
 
 //=======================================================================================
+// can be used for detecting occurances of dividers and their "mates" in text strings
+//  
+// @bsiclass                                                    David.Fox-Rabinovitz
+//=======================================================================================
+struct FormatDividerInstance
+    {
+private:
+    Utf8Char m_div;
+    Utf8Char m_mate;
+    bvector<int> m_positions;
+    int m_divCount;
+    int m_mateCount;
+    int m_totLen;
+    FormatProblemDetail m_problem;  //DIV_UnknownDivider
+
+public:
+    UNITS_EXPORT FormatDividerInstance(Utf8CP  txt, Utf8Char div);
+    UNITS_EXPORT FormatDividerInstance(Utf8CP  txt, Utf8CP divs);
+    UNITS_EXPORT FormatDividerInstance():m_div('\0'), m_mate('\0'), m_divCount(0), m_mateCount(0), m_totLen(0){}
+    int GetDivCount() { return m_divCount; }
+    int GetMateCount() { return m_mateCount; }
+    bool BracketsMatched() { return (0 < m_divCount && m_divCount == m_mateCount); }
+    bool IsDivLast() { return (0 < m_divCount && m_totLen == -(m_positions.back())); }
+    int  GetFirstLocation() { return (m_positions.size() > 0) ? m_positions.front()-1 : -1; }
+    UNITS_EXPORT Utf8String ToText();
+    };
+
+//=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
 struct FormattingScannerCursor
@@ -154,6 +182,7 @@ public:
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
     ~FormattingScannerCursor() { ReleaseSignature(); }
 
+    size_t GetTotalLength() { return m_totalScanLength; }
     //UnicodeConstant* GetConstants() { return m_unicodeConst; }
    // void ResetScanCount() { m_detail.SetScanCount(0); }
    // void ResetUnicode() { m_detail.SetUnicode(0); }
@@ -180,10 +209,12 @@ public:
     UNITS_EXPORT FormattingWord ExtractWord();
     UNITS_EXPORT FormattingWord ExtractLastEnclosure();
     UNITS_EXPORT FormattingWord ExtractBeforeEnclosure();
+    UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
     //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
     //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
     UNITS_EXPORT Utf8CP GetSignature();
     UNITS_EXPORT Utf8String CollapseSpaces();
+    UNITS_EXPORT int DetectEnclosures(Utf8Char bracket);
     };
 
 //=======================================================================================
@@ -199,6 +230,7 @@ private:
     bool m_isASCII;
 public:
     UNITS_EXPORT FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii);
+    FormattingWord() :m_cursor(nullptr), m_isASCII(false) {}
     Utf8String GetWord() { return m_word; }
     Utf8Char GetDelim() { return m_delim[0]; }
     Utf8CP GetText() { return m_word.c_str(); }

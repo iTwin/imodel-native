@@ -66,6 +66,7 @@ struct Utils
     UNITS_EXPORT static Utf8String HexDump(Utf8CP txt, int len);
     UNITS_EXPORT static Utf8CP HexByte(Utf8Char c, Utf8P buf, size_t bufLen);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
+    UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
     //#endif
     };
 
@@ -181,8 +182,8 @@ public:
     static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
     static const Utf8CP AllocError() { return "AllocError"; }
     static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
-    static const Utf8CP FUSDividers() { return "()[]{}"; }
-    static const Utf8CP FUSDividerMatch() { return ")(][}{"; }
+    static const Utf8CP FUSDividers() { return "()[]{}|"; }
+    static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
     static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const size_t* SpecialUOM()
@@ -195,32 +196,6 @@ public:
     return cod;
     }
 };
-
-struct FormatProblemDetail
-    {
-    private:
-        FormatProblemCode  m_code;
-
-    public:
-
-        FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
-
-        FormatProblemDetail(FormatProblemCode code)
-            {
-            m_code = code;
-            }
-        bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
-        bool IsWarning() const {
-            return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
-                static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Warning));
-            }
-        bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
-        bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
-
-        FormatProblemCode const GetProblemCode() { return m_code; }
-        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-        UNITS_EXPORT Utf8String GetProblemDescription() const;
-    };
 
 struct FactorPower
     {
