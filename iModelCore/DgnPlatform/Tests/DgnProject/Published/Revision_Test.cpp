@@ -1261,7 +1261,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 1");
@@ -1270,7 +1270,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     DumpRevision(*revision1, "Revision 1 with only schema changes:");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_FALSE(m_db->Txns().HasChanges());
 
     // Create Revision 2 (Data changes - inserts to both tables)
@@ -1278,7 +1278,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable2(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
 
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 2");
@@ -1287,7 +1287,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     DumpRevision(*revision2, "Revision 2 with only data changes:");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_FALSE(m_db->Txns().HasChanges());
 
     // Create Revision 3 (Schema changes to first table, and data changes to the second)
@@ -1296,7 +1296,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable2(Id, Column1) VALUES(2,2)"), BE_SQLITE_OK);
 
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
-    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 3");
@@ -1305,7 +1305,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     DumpRevision(*revision3, "Revision 3 with schema and data changes:");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_FALSE(m_db->Txns().HasChanges());
 
     // Create Revision 4 (Data changes to the first table, and schema changes to the other)
@@ -1315,7 +1315,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     ASSERT_EQ(m_db->CreateIndex("idx_TestTable2_Column1", "TestTable2", false, "Column1"), BE_SQLITE_OK);
 
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
-    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 4");
@@ -1324,7 +1324,7 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     DumpRevision(*revision4, "Revision 4 with schema and data changes:");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     ASSERT_FALSE(m_db->Txns().HasChanges());
 
     // Revert Db to initial state
@@ -1466,7 +1466,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column1", "TestTable", false, "Column1"), BE_SQLITE_OK);
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
-    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasDbSchemaChanges());
    
     m_db->SaveChanges("Schema changes");
     DgnRevisionPtr schemaChangesRevision = CreateRevision();
@@ -1478,7 +1478,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
     
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     
     m_db->SaveChanges("Data changes");
     RevisionStatus status = m_db->Revisions().MergeRevision(*schemaChangesRevision);
@@ -1494,7 +1494,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
    
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
-    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
 
     m_db->SaveChanges("More data changes");
     DgnRevisionPtr moreDataChangesRevision = CreateRevision();

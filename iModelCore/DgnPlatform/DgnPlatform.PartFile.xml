@@ -400,7 +400,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="DgnPlatform-Gtest" >
+    <Product Name="DgnPlatform-Gtest" SaveProduct="true">
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
@@ -413,6 +413,28 @@
         </Bindings>
     </Part>
 
+    <Product Name="CompatibilityTestFiles" SaveProduct="true">
+        <SubPart PartName="SaveCompatibilityTestFiles"/>
+        <Directories DirectoryListName="CompatibilityTestFiles"/>
+    </Product>
+
+    <ProductDirectoryList ListName="CompatibilityTestFiles" >
+        <ProductDirectory Name="CompatibilityTestFiles" Path=""/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="SaveCompatibilityTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/DgnProject/SaveCompatibilityTestFiles.mke">
+        <!-- Must run after the tests are complete -->
+        <SubPart PartName="RunGtest" />
+        <Bindings>
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTestSeed.bim
+            </Files>
+        </Bindings>
+    </Part>
+    
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
@@ -650,13 +672,35 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
+    <!-- *********************************************************** -->
+    <!-- **** NuGet package creation                            **** -->
+    <!-- *********************************************************** -->
     <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="__DgnPlatform-NuGet"/>
         <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform.*.nupkg</Files>
         </Bindings>
     </Part>
+
+    <Product Name="__DgnPlatform-NuGet" >
+        <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <Directories DirectoryListName="DgnPlatformDirList"/>
+    </Product>
     
+    <ProductDirectoryList ListName="DgnPlatformDirList" >
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="Libs"                                       Path="libs"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
+    </ProductDirectoryList>
 
 </BuildContext>

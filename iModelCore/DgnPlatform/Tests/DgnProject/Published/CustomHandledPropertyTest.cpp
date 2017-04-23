@@ -1166,7 +1166,6 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, rindex));
         ASSERT_EQ(checkValue, ECN::ECValue(4.5));
         checkValue.Clear();
-        //ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(caindex, ECN::ECValue(22))); -- We don't type-check this property. All attempts to set it result in in ReadOnly error.
         ASSERT_EQ(DgnDbStatus::ReadOnly, view.SetPropertyValue(caindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(laindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(laindex, ECN::ECValue(5.5)));

@@ -74,11 +74,11 @@ struct DGN_placement
 struct BlobFunction : ScalarFunction
 {
 protected:
-    BlobFunction(Utf8CP name, int nArgs) : ScalarFunction(name, nArgs, DbValueType::BlobVal) { }
+    BlobFunction(Utf8CP name, int nArgs) : ScalarFunction(name, nArgs, DbValueType::BlobVal) {}
 
-    DPoint3d const& ToPoint(DbValue& value) const { return *reinterpret_cast<DPoint3d const*>(value.GetValueBlob()); }
-    YawPitchRollAngles const& ToAngles(DbValue& value) const { return *reinterpret_cast<YawPitchRollAngles const*>(value.GetValueBlob()); }
-    ElementAlignedBox3d const& ToBBox(DbValue& value) const { return *reinterpret_cast<ElementAlignedBox3d const*>(value.GetValueBlob()); }
+    DPoint3d const& ToPoint(DbValue& value) const {return *reinterpret_cast<DPoint3d const*>(value.GetValueBlob());}
+    YawPitchRollAngles const& ToAngles(DbValue& value) const {return *reinterpret_cast<YawPitchRollAngles const*>(value.GetValueBlob());}
+    ElementAlignedBox3d const& ToBBox(DbValue& value) const {return *reinterpret_cast<ElementAlignedBox3d const*>(value.GetValueBlob());}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,7 +86,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DGN_point : BlobFunction
 {
-    DGN_point() : BlobFunction("DGN_point", 3) { }
+    DGN_point() : BlobFunction("DGN_point", 3) {}
 
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -100,7 +100,7 @@ struct DGN_point : BlobFunction
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DGN_placement : BlobFunction
 {
-    DGN_placement() : BlobFunction("DGN_placement", 3) { }
+    DGN_placement() : BlobFunction("DGN_placement", 3) {}
 
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {

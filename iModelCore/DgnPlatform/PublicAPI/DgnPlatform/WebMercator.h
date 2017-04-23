@@ -50,43 +50,42 @@ struct  ImageryProvider : RefCountedBase
     virtual Utf8CP      _GetCreditUrl() const = 0;
 
     // Gets the tile width (usually 256)
-    virtual int         _GetTileWidth () { return 256; }
+    virtual int         _GetTileWidth() { return 256; }
 
     // Gets the tile height (usually 256)
-    virtual int         _GetTileHeight () { return 256; }
+    virtual int         _GetTileHeight() { return 256; }
 
     // Gets the minimum zoom level (usually 0)
-    virtual uint8_t     _GetMinimumZoomLevel () { return 0; }
+    virtual uint8_t     _GetMinimumZoomLevel() { return 0; }
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t     _GetMaximumZoomLevel (bool forPrinting) = 0;
+    virtual uint8_t     _GetMaximumZoomLevel(bool forPrinting) = 0;
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
     virtual Utf8CP      _GetCacheFileName() const = 0;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
-    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile)  const = 0;
+    virtual Utf8String  _ConstructUrl(TileTree::QuadTree::Tile const& tile)  const = 0;
     
     // Gets the Json that is saved to the model and used to reconstruct the ImageryProvider in subsequent sessions.
-    virtual void        _ToJson (Json::Value&) const = 0;
+    virtual void        _ToJson(Json::Value&) const = 0;
 
     // Reconstructs the ImageryProvider parameters from the Json that is saved to the model.
-    virtual void        _FromJson (Json::Value const& value) = 0;
+    virtual void        _FromJson(Json::Value const& value) = 0;
 
     // Retrieve the Tile Template Url from the service.
-    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl () { return TemplateUrlLoadStatus::Received; }
+    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() { return TemplateUrlLoadStatus::Received; }
 
     // if a Tile Template Url must be retrieved, return the current status. If none is needed, return "Received"
-    virtual TemplateUrlLoadStatus _GetTemplateUrlLoadStatus () const { return TemplateUrlLoadStatus::Received; }
+    virtual TemplateUrlLoadStatus _GetTemplateUrlLoadStatus() const { return TemplateUrlLoadStatus::Received; }
 
     // sets the Tile Template Url retrieval status.
-    virtual void _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus) {}
+    virtual void _SetTemplateUrlLoadStatus(TemplateUrlLoadStatus) {}
 
 };
 
 DEFINE_REF_COUNTED_PTR(ImageryProvider)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageryProvider)
-
 
 //=======================================================================================
 //! The root of a multi-resolution web mercator map.
@@ -99,7 +98,7 @@ struct MapRoot : TileTree::QuadTree::Root
     ImageryProviderPtr          m_imageryProvider;  //! procures the image tiles from the source tile server.
 
     DPoint3d ToWorldPoint(GeoPoint);
-    Utf8String _ConstructTileResource (TileTree::TileCR tile) const override;
+    Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
     MapRoot(DgnDbR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
@@ -236,17 +235,17 @@ public:
     virtual Utf8CP      _GetCreditUrl() const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t     _GetMaximumZoomLevel (bool forPrinting) override { return 19; }
+    virtual uint8_t     _GetMaximumZoomLevel(bool forPrinting) override { return 19; }
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
     virtual Utf8CP      _GetCacheFileName() const override;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
-    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile) const override;
+    Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;
     
     virtual void _FromJson(Json::Value const& value) override;
 
-    virtual void _ToJson (Json::Value&) const override;
+    virtual void _ToJson(Json::Value&) const override;
     };
 
 
@@ -255,14 +254,14 @@ public:
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
 struct BingImageryProvider : ImageryProvider
-    {
+{
     // the map types available from Bing
     enum class MapType
-        {
+    {
         Road = 0,
         Aerial = 1,
         AerialWithLabels = 2,
-        };
+    };
 
 private:
     Utf8String                      m_urlTemplate;
@@ -279,10 +278,10 @@ public:
     BE_JSON_NAME(mapType)
 
     // constructor used prior to specifying from stored Json values.
-    BingImageryProvider () { m_templateUrlLoadStatus.store (TemplateUrlLoadStatus::NotFetched); }
+    BingImageryProvider() {m_templateUrlLoadStatus.store(TemplateUrlLoadStatus::NotFetched);}
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
-    virtual Utf8CP      _GetProviderName() const override { return prop_BingProvider(); }
+    virtual Utf8CP      _GetProviderName() const override {return prop_BingProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
     virtual Utf8CP      _GetCreditMessage() const override;
@@ -291,32 +290,32 @@ public:
     virtual Utf8CP      _GetCreditUrl() const override;
 
     // Gets the tile width (usually 256)
-    virtual int         _GetTileWidth () override { return m_tileWidth; }
+    virtual int         _GetTileWidth() override {return m_tileWidth;}
 
     // Gets the tile height (usually 256)
-    virtual int         _GetTileHeight() override { return m_tileHeight; }
+    virtual int         _GetTileHeight() override {return m_tileHeight;}
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t     _GetMaximumZoomLevel (bool forPrinting) override { return m_maximumZoomLevel; }
+    virtual uint8_t     _GetMaximumZoomLevel(bool forPrinting) override { return m_maximumZoomLevel; }
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t     _GetMinimumZoomLevel () override { return m_minimumZoomLevel; }
+    virtual uint8_t     _GetMinimumZoomLevel() override { return m_minimumZoomLevel; }
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
     virtual Utf8CP      _GetCacheFileName() const override;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
-    virtual Utf8String  _ConstructUrl (TileTree::QuadTree::Tile const& tile) const override;
+    virtual Utf8String  _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;
     
     virtual void        _FromJson(Json::Value const& value) override;
 
-    virtual void        _ToJson (Json::Value&) const override;
+    virtual void        _ToJson(Json::Value&) const override;
 
-    virtual TemplateUrlLoadStatus   _GetTemplateUrlLoadStatus () const override { return m_templateUrlLoadStatus; }
+    virtual TemplateUrlLoadStatus   _GetTemplateUrlLoadStatus() const override {return m_templateUrlLoadStatus;}
 
-    virtual void                    _SetTemplateUrlLoadStatus (TemplateUrlLoadStatus status) override { m_templateUrlLoadStatus.store (status); }
+    virtual void                    _SetTemplateUrlLoadStatus(TemplateUrlLoadStatus status) override {m_templateUrlLoadStatus.store(status);}
 
-    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl () override;
+    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() override;
     };
 
 DEFINE_REF_COUNTED_PTR(BingImageryProvider)
@@ -326,14 +325,14 @@ DEFINE_REF_COUNTED_PTR(BingImageryProvider)
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
 struct HereImageryProvider : ImageryProvider
-    {
+{
     enum class MapType
-        {
+    {
         // Note: Here provides a big assortment of different types, I picked these to simplify it.
         Map      = 0,
         Aerial   = 1,
         Combined = 2,
-        };
+    };
 
 private:
     Utf8String                      m_urlTemplate;
@@ -352,7 +351,7 @@ public:
     BE_JSON_NAME(mapType)
 
     // constructor used prior to specifying from stored Json values.
-    HereImageryProvider ();
+    HereImageryProvider();
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     virtual Utf8CP      _GetProviderName() const override { return prop_HereProvider(); }
@@ -364,10 +363,10 @@ public:
     virtual Utf8CP      _GetCreditUrl() const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t     _GetMaximumZoomLevel (bool forPrinting) override { return m_maximumZoomLevel; }
+    virtual uint8_t     _GetMaximumZoomLevel(bool forPrinting) override { return m_maximumZoomLevel; }
 
     // Gets the maximum zoom level alllowed (provider dependent)
-    virtual uint8_t      _GetMinimumZoomLevel () override { return m_minimumZoomLevel; }
+    virtual uint8_t      _GetMinimumZoomLevel() override { return m_minimumZoomLevel; }
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
     virtual Utf8CP      _GetCacheFileName() const override;
@@ -379,7 +378,6 @@ public:
 
     virtual void        _ToJson (Json::Value&) const override;
     };
-
 
 }; // end WebMercator namespace
 

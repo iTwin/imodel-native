@@ -213,8 +213,10 @@ DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
 DGNPLATFORM_TYPEDEFS(SnapContext)
 DGNPLATFORM_TYPEDEFS(SnapDetail)
 DGNPLATFORM_TYPEDEFS(SpatialElement)
+DGNPLATFORM_TYPEDEFS(SpatialLocationElement)
 DGNPLATFORM_TYPEDEFS(SpatialLocationModel)
 DGNPLATFORM_TYPEDEFS(SpatialLocationPartition)
+DGNPLATFORM_TYPEDEFS(SpatialLocationPortion)
 DGNPLATFORM_TYPEDEFS(SpatialLocationType)
 DGNPLATFORM_TYPEDEFS(SpatialModel)
 DGNPLATFORM_TYPEDEFS(SpatialRedlineModel)
@@ -285,6 +287,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricElement3d)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricPrimitive)
+DGNPLATFORM_REF_COUNTED_PTR(GraphicalModel2d)
 DGNPLATFORM_REF_COUNTED_PTR(GraphicalType2d)
 DGNPLATFORM_REF_COUNTED_PTR(GroupInformationElement)
 DGNPLATFORM_REF_COUNTED_PTR(GroupInformationModel)
@@ -321,8 +324,10 @@ DGNPLATFORM_REF_COUNTED_PTR(SectionDrawing)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(SnapDetail)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationElement)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationPartition)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationPortion)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationType)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
@@ -403,7 +408,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup GROUP_DgnElement
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup GROUP_DgnModel
-BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnGeometryPartId, DgnElementId) //!< A DgnElementId that identifies a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
@@ -992,10 +996,5 @@ public:
     static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //<! Bluish color used to denote unselected state
     static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state
 };
-
-//__PUBLISH_SECTION_END__
-// Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
-#define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
-/*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_DGN_NAMESPACE
