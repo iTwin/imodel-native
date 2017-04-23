@@ -135,7 +135,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     return SUCCESS;*/
     pTextureBitmap = 0;
 
-    return RasterUtilities::CopyFromArea(texData, width, height, area, *m_targetMosaic);
+    return RasterUtilities::CopyFromArea(texData, width, height, area, nullptr, *m_targetMosaic);
     }
 
 MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)

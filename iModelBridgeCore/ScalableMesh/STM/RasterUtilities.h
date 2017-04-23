@@ -41,7 +41,7 @@ class RasterUtilities
         static HFCPtr<HRARASTER> LoadRaster(WString path);
         static HFCPtr<HRARASTER> LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS);
 
-        static StatusInt CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, HRARASTER& raster);
+        static StatusInt CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
