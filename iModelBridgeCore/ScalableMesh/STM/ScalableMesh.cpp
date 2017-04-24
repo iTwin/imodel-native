@@ -1332,7 +1332,7 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
             for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
             meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
         }
-
+		meshP->RemoveDuplicates();
         DTMStatusInt val = meshP->GetAsBcDTM(m_dtm);
         if (val == DTM_ERROR) 
             {

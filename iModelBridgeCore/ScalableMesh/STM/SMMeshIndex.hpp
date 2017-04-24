@@ -32,6 +32,9 @@
 #include <map>
 #include <json/json.h>
 
+
+#include "MapBoxTextureProvider.h"
+
 #include "ScalableMeshQuadTreeQueries.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -2893,8 +2896,14 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     {
     HPRECONDITION(IsLeaf());
     POINT splitPosition = GetDefaultSplitPosition();
+    
+    if (m_nodeHeader.m_arePoints3d)
+        SetNumberOfSubNodesOnSplit(8);            
+    else
+        SetNumberOfSubNodesOnSplit(4);                 
+    
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
-        {
+        {        
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
@@ -3710,6 +3719,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
+
+    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+        {
+        textureWidthInPixels = 256;
+        textureHeightInPixels = 256;
+        }
+
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
