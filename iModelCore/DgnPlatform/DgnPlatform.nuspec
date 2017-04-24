@@ -8,23 +8,28 @@
         <owners>Bentley Systems, Incorporated</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Bentley DgnPlatform library</description>
-        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
         <language>en-US</language>
         <dependencies>
             <group>
-                <dependency id="BeSQLiteEC" version="[#DgnClientSdk_version#]" />
                 <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
+                <dependency id="BeSQLiteEC" version="[#DgnClientSdk_version#]" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="Assemblies\BeCurlB02.dll"        target="lib\native\BeCurlB02.dll" />
-        <file src="Assemblies\BeFollyB02.dll"       target="lib\native\BeFollyB02.dll" />
-        <file src="Assemblies\BeIcu4cB02.dll"       target="lib\native\BeIcu4cB02.dll" />
-        <file src="Assemblies\DgnPlatformB02.dll"   target="lib\native\DgnPlatformB02.dll" />
-        <file src="Assemblies\freetype2B02.dll"     target="lib\native\freetype2B02.dll" />
-        <file src="Assemblies\pskernel.dll"         target="lib\native\pskernel.dll" />
-        <file src="Assemblies\BeHttpB02.dll"        target="lib\native\BeHttpB02.dll" />
-        <file src="ECSchemas\**\*.*"                target="Assets\" />
+        <file src="DgnPlatformB02.dll"                      target="lib\native\DgnPlatformB02.dll" />
+        <file src="BaseGeoCoordB02.dll"                     target="lib\native\BaseGeoCoordB02.dll" />
+        <file src="BeCurlB02.dll"                           target="lib\native\BeCurlB02.dll" />
+        <file src="BeFollyB02.dll"                          target="lib\native\BeFollyB02.dll" />
+        <file src="BeHttpB02.dll"                           target="lib\native\BeHttpB02.dll" />
+        <file src="BeOpenSSLB02.dll"                        target="lib\native\BeOpenSSLB02.dll" />
+        <file src="freetype2B02.dll"                        target="lib\native\freetype2B02.dll" />
+        <file src="libv8.dll"                               target="lib\native\libv8.dll" />
+        <file src="pskernel.dll"                            target="lib\native\pskernel.dll" />
+
+        <file src="Assets\**\*"                             target="Assets" />
+        <file src="Notices\*.txt"                           target="notices\" />
+
     </files>
 </package>

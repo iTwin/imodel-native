@@ -27,7 +27,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 struct BatchTableBuilder
 {
 private:
-    struct SubcatInfo { uint32_t m_index; uint32_t m_catIndex; };
     struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
     struct AssemInfo { uint32_t m_index; uint32_t m_catIndex; };
     struct Assembly { DgnElementId m_elemId; DgnCategoryId m_catId; };
@@ -39,9 +38,9 @@ private:
         kClass_Dimension,
         kClass_Pattern,
         kClass_Element,
+        kClass_Assembly,
         kClass_SubCategory,
         kClass_Category,
-        kClass_Assembly,
 
         kClass_COUNT,
         kClass_FEATURE_COUNT = kClass_Pattern+1,
@@ -49,7 +48,7 @@ private:
 
     static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        "Primary", "Construction", "Dimension", "Pattern", "Element", "SubCategory", "Category", "Assembly"
+        "Primary", "Construction", "Dimension", "Pattern", "Element", "Assembly", "SubCategory", "Category"
         };
 
     Json::Value                         m_json; // "HIERARCHY": object
@@ -57,8 +56,9 @@ private:
     FeatureAttributesMapCR              m_attrs;
     bmap<DgnElementId, ElemInfo>        m_elems;
     bmap<DgnElementId, AssemInfo>       m_assemblies;
-    bmap<DgnSubCategoryId, SubcatInfo>  m_subcats;
+    bmap<DgnSubCategoryId, uint32_t>    m_subcats;
     bmap<DgnCategoryId, uint32_t>       m_cats;
+    DgnCategoryId                       m_uncategorized;
     bool                                m_is3d;
 
     template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
@@ -87,8 +87,8 @@ private:
     AssemInfo MapAssemblyInfo(Assembly assem);
     uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
     uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
-    SubcatInfo MapSubCategoryInfo(DgnSubCategoryId id);
-    SubcatInfo GetSubCategoryInfo(DgnSubCategoryId id);
+    uint32_t MapSubCategoryIndex(DgnSubCategoryId id) { return FindOrInsert(m_subcats, id); }
+    uint32_t GetSubCategoryIndex(DgnSubCategoryId id) { return GetIndex(m_subcats, id); }
 
     Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
     static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
@@ -99,14 +99,17 @@ private:
     void MapParents();
     void MapElements(uint32_t offset, uint32_t assembliesOffset);
     void MapAssemblies(uint32_t offset, uint32_t categoriesOffset);
-    void MapSubCategories(uint32_t offset, uint32_t categoriesOffset);
+    void MapSubCategories(uint32_t offset);
     void MapCategories(uint32_t offset);
 
     void Build();
+    void InitUncategorizedCategory();
+    bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
 public:
     BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d)
         : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d)
         {
+        InitUncategorizedCategory();
         Build();
         }
 
@@ -118,6 +121,18 @@ public:
         return Json::FastWriter().write(json);
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::InitUncategorizedCategory()
+    {
+    // This is dumb. See OfficeBuilding.dgn - cells have no level in V8, which translates to 'Uncategorized' (2d and 3d variants) in DgnDb
+    // We don't want to create an 'Uncategorized' assembly if its children belong to a real category.
+    // We only can detect this because for whatever reason, "Uncategorized" is not a localized string.
+    DgnCode code = m_is3d ? SpatialCategory::CreateCode(m_db, "Uncategorized") : DrawingCategory::CreateCode(m_db.GetDictionaryModel(), "Uncategorized");;
+    m_uncategorized = DgnCategory::QueryCategoryId(m_db, code);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
@@ -165,7 +180,7 @@ auto BatchTableBuilder::GetFeatureClassIndex(DgnGeometryClass geomClass) -> Clas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapSubCategories(uint32_t offset, uint32_t categoriesOffset)
+void BatchTableBuilder::MapSubCategories(uint32_t offset)
     {
     Json::Value& subcats = GetClass(kClass_SubCategory);
     subcats["length"] = m_subcats.size();
@@ -173,18 +188,13 @@ void BatchTableBuilder::MapSubCategories(uint32_t offset, uint32_t categoriesOff
     Json::Value &instances = (subcats["instances"] = Json::objectValue),
                 &subcat_id = (instances["subcategory"] = Json::arrayValue),
                 &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"],
-                &parentIds = m_json["parentIds"];
+                &parentCounts = m_json["parentCounts"];
 
-    uint32_t parentIdsOffset = static_cast<uint32_t>(m_attrs.size()) * 2; // 2 parents per feature followed by 1 parent per subcategory
     for (auto const& kvp : m_subcats)
         {
-        Json::Value::ArrayIndex index = kvp.second.m_index;
-        subcat_id[index] = kvp.first.ToString();
-
-        classIds[index + offset] = kClass_SubCategory;
-        parentCounts[index + offset] = 1;
-        parentIds.append(kvp.second.m_catIndex + categoriesOffset);
+        classIds[offset + kvp.second] = kClass_SubCategory;
+        parentCounts[offset + kvp.second] = 0;
+        subcat_id[kvp.second] = kvp.first.ToString();
         }
     }
 
@@ -279,7 +289,7 @@ void BatchTableBuilder::MapParents()
         uint32_t index = kvp.second * 2; // 2 parents per feature
 
         parentIds[index] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
-        parentIds[index+1] = subcatsOffset + GetSubCategoryInfo(attr.GetSubCategoryId()).m_index;
+        parentIds[index+1] = subcatsOffset + GetSubCategoryIndex(attr.GetSubCategoryId());
         }
 
     // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
@@ -287,7 +297,7 @@ void BatchTableBuilder::MapParents()
     MapAssemblies(assembliesOffset, catsOffset);
 
     // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
-    MapSubCategories(subcatsOffset, catsOffset);
+    MapSubCategories(subcatsOffset);
     MapCategories(catsOffset);
     }
 
@@ -314,7 +324,7 @@ void BatchTableBuilder::MapFeatures()
 
         // Ensure all parent instances are mapped
         MapElementInfo(attr.GetElementId());
-        MapSubCategoryInfo(attr.GetSubCategoryId());
+        MapSubCategoryIndex(attr.GetSubCategoryId());
         }
 
     // Set the number of instances of each class
@@ -333,33 +343,6 @@ void BatchTableBuilder::DefineClasses()
         auto& cls = (classes[i] = Json::objectValue);
         cls["name"] = s_classNames[i];
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::MapSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
-    {
-    auto iter = Find(m_subcats, id);
-    if (iter != m_subcats.end())
-        return iter->second;
-
-    DgnCategoryId catId = DgnSubCategory::QueryCategoryId(m_db, id);
-    SubcatInfo info;
-    info.m_index = static_cast<uint32_t>(m_subcats.size());
-    info.m_catIndex = MapCategoryIndex(catId);
-    m_subcats[id] = info;
-    return info;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
-    {
-    auto iter = Find(m_subcats, id);
-    BeAssert(iter != m_subcats.end());
-    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,9 +405,14 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
 
     BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(m_is3d ? s_3dsql : s_2dsql);
     stmt->BindId(1, childId);
+
     while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
-        assem.m_catId = stmt->GetValueId<DgnCategoryId>(1);
+        auto thisCatId = stmt->GetValueId<DgnCategoryId>(1);
+        if (assem.m_catId.IsValid() && IsUncategorized(thisCatId) && !IsUncategorized(assem.m_catId))
+            break; // yuck. if have children with valid categories, stop before first uncategorized parent (V8 complex header).
+
+        assem.m_catId = thisCatId;
         assem.m_elemId = childId;
 
         childId = stmt->GetValueId<DgnElementId>(0);
@@ -2868,77 +2856,42 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
+* @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PublisherContext::WriteSheetAttachmentTree (Sheet::ModelCR sheetModel, bvector<DgnElementId>& attachmentIds, Json::Value&& modelRoot, DRange3dCR rootModelRange)
+Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
     {
-    Json::Value     root, sheetChild;
-    DRange3d        compositeRange = rootModelRange;
-
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = 1.0E6;      // Always use children.
-    root[JSON_Children].append(std::move(modelRoot));
-
-    for (auto& attachmentId : attachmentIds)
+    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
+    Json::Value attachmentsJson(Json::arrayValue);
+    for (DgnElementId attachmentId : attachmentIds)
         {
-        auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-        if (!attachmentElement.IsValid())
-            {
-            BeAssert(false);
+        auto attachment = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+        DrawingViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<DrawingViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
+        if (view.IsNull())
             continue;
-            }
-        
-        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
-        if (!viewDefinition.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
 
-        if (nullptr == viewDefinition->ToView2d())
-            {
-            // Do we need to handle 3d attachments -- right now they are coming through due to bug in Sam's unnesting code.
-            continue;
-            }
+        Json::Value viewJson;
+        viewJson["baseModelId"] = view->GetBaseModelId().ToString();
+        viewJson["categorySelector"] = view->GetCategorySelectorId().ToString();
+        viewJson["displayStyle"] = view->GetDisplayStyleId().ToString();
 
-        auto attachedModel = GetDgnDb().Models().GetModel(viewDefinition->ToView2d()->GetBaseModelId());
-        if (!attachedModel.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        DPoint3d            viewOrigin = viewDefinition->GetOrigin();
-        AxisAlignedBox3d    sheetRange = attachmentElement->GetPlacement().CalculateRange();
-        double              sheetScale = sheetRange.XLength() / viewDefinition->GetExtents().x; 
+        DPoint3d            viewOrigin = view->GetOrigin();
+        AxisAlignedBox3d    sheetRange = attachment->GetPlacement().CalculateRange();
+        double              sheetScale = sheetRange.XLength() / view->GetExtents().x;
         Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
-                            viewRotation = Transform::From(viewDefinition->GetRotation()),
+                            viewRotation = Transform::From(view->GetRotation()),
                             scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
-                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, 0.0));
-
-        Transform           tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)), sheetToTile;
-        Json::Value         attachmentChild;
-        WString             attachModelRootName = TileUtil::GetRootNameForModel(*attachedModel);
-        WString             metadataRelativePath = BeFileName(nullptr, nullptr, attachModelRootName.c_str(), s_metadataExtension);
-        DRange3d            tileSheetRange;
+                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0)),
+                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)),
+                            sheetToTile;
 
         sheetToTile.InverseOf(tileToSheet);
-        sheetToTile.Multiply(tileSheetRange, sheetRange);
+        viewJson["transform"] = TransformToJson(tileToSheet);
 
-        attachmentChild[JSON_Content]["url"] = Utf8String(metadataRelativePath);
-        TilePublisher::WriteBoundingVolume (attachmentChild, tileSheetRange);
-        attachmentChild["refine"] = "replace";
-        attachmentChild[JSON_GeometricError] = 0.0;
-        attachmentChild[JSON_Transform] = TransformToJson(tileToSheet);
-
-        root[JSON_Children].append(std::move(attachmentChild));
-        compositeRange.Extend(sheetRange);
+        attachmentsJson.append(std::move(viewJson));
         }
-    TilePublisher::WriteBoundingVolume(root, compositeRange);
 
-    return root;
+    return attachmentsJson;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3061,18 +3014,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     DRange3d    rootRange;
     WriteModelMetadataTree (rootRange, modelRoot, rootTile, maxDepth);
 
-    Sheet::ModelCP          sheetModel;
-    bvector<DgnElementId>   attachmentIds;
-
-    if (nullptr != (sheetModel = rootTile.GetModel().ToSheetModel()) &&
-        !(attachmentIds = sheetModel->GetSheetAttachmentIds()).empty()) 
-        {
-        val[JSON_Root] = WriteSheetAttachmentTree (*sheetModel, attachmentIds, std::move(modelRoot), rootRange);
-        }
-    else
-        {
-        val[JSON_Root] = std::move(modelRoot);
-        }
+    val[JSON_Root] = std::move(modelRoot);
 
     if (rootTile.GetModel().IsSpatialModel())
         val[JSON_Root][JSON_Transform] = TransformToJson(m_spatialToEcef);
@@ -3244,42 +3186,21 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             Json::Value modelJson(Json::objectValue);
 
+            auto sheetModel = model->ToSheetModel();
             modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : (nullptr != sheetModel ? "sheet" : "drawing");
 
             if (nullptr != spatialModel)
                 {
                 m_spatialToEcef.Multiply(modelRange, modelRange);
                 modelJson["transform"] = TransformToJson(m_spatialToEcef);
                 }
+            else if (nullptr != sheetModel)
+                {
+                modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
+                }
 
             modelJson["extents"] = RangeToJson(modelRange);
-
-            Sheet::ModelCP  sheetModel;
-            if (nullptr != (sheetModel = model->ToSheetModel()))
-                {
-                bvector<DgnElementId>   attachmentIds = sheetModel->GetSheetAttachmentIds();
-
-                for (auto& attachmentId : attachmentIds)
-                    {
-                    auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-                    if (attachmentElement.IsValid()) 
-                        {
-                        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
-
-                        if (viewDefinition.IsValid() && nullptr != viewDefinition->ToView2d())
-                            {
-                            Json::Value    attachedView;
-
-                            attachedView["attachmentId"] = attachmentId.ToString();
-                            attachedView["baseModelId"] = viewDefinition->ToView2d()->GetBaseModelId().ToString();
-                            attachedView["categorySelector"] = viewDefinition->GetCategorySelectorId().ToString();
-                            modelJson["attachedViews"].append (std::move (attachedView));
-                            }
-                        }
-                    }
-                }
-    
 
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName = TileUtil::GetRootNameForModel(*model);
@@ -3438,6 +3359,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
                 for (auto& attachedView : attachedViews)
                     {
                     allCategorySelectors.insert(attachedView->GetCategorySelectorId());
+                    allDisplayStyles.insert(attachedView->GetDisplayStyleId());
                     if (nullptr != attachedView->ToView2d())
                         all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
                     }
@@ -3552,6 +3474,8 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
     bgColorJson["red"] = bgColor.GetRed() / 255.0;
     bgColorJson["green"] = bgColor.GetGreen() / 255.0;
     bgColorJson["blue"] = bgColor.GetBlue() / 255.0;
+
+    json["viewFlags"] = style.GetViewFlags().ToJson();
 
     auto style3d = style.ToDisplayStyle3d();
     if (nullptr != style3d)

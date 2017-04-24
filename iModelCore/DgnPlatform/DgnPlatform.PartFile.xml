@@ -672,13 +672,35 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
+    <!-- *********************************************************** -->
+    <!-- **** NuGet package creation                            **** -->
+    <!-- *********************************************************** -->
     <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="__DgnPlatform-NuGet"/>
         <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform.*.nupkg</Files>
         </Bindings>
     </Part>
+
+    <Product Name="__DgnPlatform-NuGet" >
+        <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <Directories DirectoryListName="DgnPlatformDirList"/>
+    </Product>
     
+    <ProductDirectoryList ListName="DgnPlatformDirList" >
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="Libs"                                       Path="libs"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
+    </ProductDirectoryList>
 
 </BuildContext>
