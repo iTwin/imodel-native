@@ -14,6 +14,58 @@
 
 using namespace ::testing;
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    StephanePoulin  08/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt local_reproject
+(
+DPoint3d& outCartesian,
+const DPoint3d&  inCartesian,
+GeoCoordinates::BaseGCSCR SrcGcs,
+GeoCoordinates::BaseGCSCR DstGcs
+)
+    {
+
+    StatusInt   status = SUCCESS;
+    StatusInt   stat1;
+    StatusInt   stat2;
+    StatusInt   stat3;
+
+
+    GeoPoint inLatLong;
+    stat1 = SrcGcs.LatLongFromCartesian (inLatLong, inCartesian);
+
+    GeoPoint outLatLong;
+    stat2 = SrcGcs.LatLongFromLatLong(outLatLong, inLatLong, DstGcs);
+
+    stat3 = DstGcs.CartesianFromLatLong(outCartesian, outLatLong);
+
+    if (SUCCESS == status)
+        {
+        // Status returns hardest error found in the three error statuses
+        // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
+        if (SUCCESS != stat1)
+            status = stat1;
+        if ((SUCCESS != stat2) && ((SUCCESS == status) || (cs_CNVRT_USFL == status))) // If stat2 has error and status not already hard error
+            {
+            if (0 > stat2) // If stat2 is negative ... this is the one ...
+                status = stat2;
+            else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
+                status = (stat2 > status ? stat2 : status);
+            }
+        if ((SUCCESS != stat3) && ((SUCCESS == status) || (cs_CNVRT_USFL == status))) // If stat3 has error and status not already hard error
+            {
+            if (0 > stat3) // If stat3 is negative ... this is the one ...
+                status = stat3;
+            else  // Both are positive (status may be SUCCESS) we use the highest value
+                status = (stat3 > status ? stat3 : status);
+            }
+        }
+    
+    return status;
+    }
+
 GCSSpecificTransformTester::GCSSpecificTransformTester() 
     {
         BeTest::Host& host = BeTest::GetHost();
@@ -261,8 +313,6 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT6)
    
     currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-//    WString wellKnownText = L"PROJCS[\"NAD83(2011) / Florida East (ftUS)\",GEOGCS[\"NAD83(2011)\",DATUM[\"NAD83_National_Spatial_Reference_System_2011\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1116\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6318\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",24.33333333333333],PARAMETER[\"central_meridian\",-81],PARAMETER[\"scale_factor\",0.999941177],PARAMETER[\"false_easting\",656166.667],PARAMETER[\"false_northing\",0],UNIT[\"US survey foot\",0.3048006096012192,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],AUTHORITY[\"EPSG\",\"6438\"]]";
-
     WString wellKnownText = L"PROJCS[\"NAD83(2011) / Florida East (ftUS)\",GEOGCS[\"NAD83(2011)\",DATUM[\"NAD_1983_2011\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1116\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6318\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",24.33333333333333],PARAMETER[\"central_meridian\",-81],PARAMETER[\"scale_factor\",0.999941177],PARAMETER[\"false_easting\",656166.667],PARAMETER[\"false_northing\",0],UNIT[\"US survey foot\",0.3048006096012192,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],AUTHORITY[\"EPSG\",\"6438\"]]";
 
     EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
@@ -270,6 +320,26 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT6)
     EXPECT_TRUE(currentGCS->IsValid());
 
     }
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT7)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    // This WKT originates from a 3MX file that did not work. As expected the WKT parsing worked so the problem was elsewhere but we kept this test as regression.
+    WString wellKnownText = L"PROJCS[\"WGS 84 / UTM zone 18N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-75],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32618\"]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+
 
 
 //==================================================================================
@@ -904,4 +974,536 @@ TEST_F (GCSSpecificTransformTester, IndianaDOT_InGCSTests)
     }
    
 
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, VirginiaDOT_Tests)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
 
+    // TEST COUNTY IN THE SOUTH ZONE
+    DPoint3d testPointUSFoot;
+    // Longitude      Latitude
+    // -76.632285     36.980671
+    testPointUSFoot.x = 12028435.08574;
+    testPointUSFoot.y = 3521917.71242;
+    testPointUSFoot.z = 0.0;
+    
+    DPoint3d resultPoint;
+    resultPoint.z = 0.0;
+    
+    GeoCoordinates::BaseGCSPtr VirginiaSouthFoot = GeoCoordinates::BaseGCS::CreateGCS(L"VA83/2011-SF");
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAccomack-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAlbermarle-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAlleghany-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826925.7052, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241120.5417, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAmelia-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAmherst-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826696.1241, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241106.0767, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAppomattox-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826657.8606, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241103.6658, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBedford-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826696.1241, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241106.0767, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBland-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3827002.2322, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241125.3634, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBotetourt-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826772.6511, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241110.8984, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBrunswick-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826390.0159, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241086.7899, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBuchanan-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826925.7052, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241120.5417, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBuckingham-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCampbell-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCarroll-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826772.6511, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241110.8984, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCharlesCity-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCharlotte-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTChesterfield-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCraig-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3827002.2322, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241125.3634, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCumberland-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTDickenson-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826887.4417, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241118.1309, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTDinwiddie-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCityOfHampton-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTEssex-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826390.0159, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241086.7899, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFloyd-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826810.9146, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241113.3092, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFluvanna-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFranklin-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826696.1241, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241106.0767, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGiles-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3827002.2322, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241125.3634, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGloucester-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGoochland-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGrayson-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826772.6511, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241110.8984, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGreensville-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTHalifax-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTHanover-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTHenrico-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTHenry-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826466.5430, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241091.6116, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTIsleOfWight-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTJamesCity-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTKingAndQueen-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTKingWilliam-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTLancaster-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826466.5430, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241091.6116, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTLee-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTLouisa-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTLunenburg-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTMathews-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTMecklenburg-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTMiddlesex-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTMontgomery-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826925.7052, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241120.5417, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCityOfHR-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNelson-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNewKent-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNorChesPort-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNorthampton-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNorthumberland-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNottoway-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPatrick-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPittsylvania-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPowhatan-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPrinceEdward-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826619.5970, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241101.2550, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPrinceGeorge-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826581.3335, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241098.8442, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTVirginiaBeach-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPulaski-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826887.4417, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241118.1309, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRichmond-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826390.0159, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241086.7899, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRoanoke-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826849.1781, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241115.7201, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRockbridge-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826657.8606, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241103.6658, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRussell-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826810.9146, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241113.3092, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTScott-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826772.6511, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241110.8984, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTSmyth-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826925.7052, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241120.5417, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTSouthampton-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826351.7524, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241084.3791, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTSurry-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTSussex-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826466.5430, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241091.6116, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTTazewell-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3827078.7592, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241130.1851, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTNewportNews-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826504.8065, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241094.0225, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTWashington-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826428.2795, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241089.2008, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTWise-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826925.7052, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241120.5417, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTWythe-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826887.4417, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241118.1309, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTYork-SF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaSouthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3826543.0700, 0.001);
+    EXPECT_NEAR(resultPoint.y, 241096.4333, 0.001);
+
+
+    // TEST COUNTY IN THE NORTH ZONE
+    // Longitude      Latitude
+    // -76.632285     36.980671
+    testPointUSFoot.x = 11475744.52;
+    testPointUSFoot.y = 6875090.213;
+    testPointUSFoot.z = 0.0;
+    
+   
+    GeoCoordinates::BaseGCSPtr VirginiaNorthFoot = GeoCoordinates::BaseGCS::CreateGCS(L"VA83/2011-NF");
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTArlington-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273857.6022, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313442.3515, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTAugusta-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273955.8120, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313451.7542, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTBath-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3274054.0218, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313461.1569, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCaroline-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273693.9191, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313426.6804, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTClarke-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273792.1289, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313436.0831, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTCulpeper-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273890.3388, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313445.4858, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFairfax-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273857.6022, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313442.3515, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFauquier-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273923.0754, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313448.6200, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTFrederick-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273792.1289, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313436.0831, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTGreene-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273890.3388, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313445.4858, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTHighland-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3274184.9683, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313473.6939, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTKingGeorge-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273792.1289, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313436.0831, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTLoudoun-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273824.8656, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313439.2173, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTMadison-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273890.3388, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313445.4858, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTOrange-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273857.6022, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313442.3515, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPage-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273988.5486, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313454.8885, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTPrinceWilliam-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273857.6022, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313442.3515, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRappahannock-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273955.8120, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313451.7542, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTRockhingham-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3274021.2852, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313458.0227, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTShenandoah-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273955.8120, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313451.7542, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTSpotsylvania-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273792.1289, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313436.0831, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTStafford-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273857.6022, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313442.3515, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTWarren-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3273890.3388, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313445.4858, 0.001);
+
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"VDOTWestmoreland-NF");
+    EXPECT_TRUE(SUCCESS == local_reproject(resultPoint, testPointUSFoot, *VirginiaNorthFoot, *currentGCS));
+    EXPECT_NEAR(resultPoint.x, 3274152.2317, 0.005);
+    EXPECT_NEAR(resultPoint.y, 313470.5597, 0.001);
+
+    }
+   
