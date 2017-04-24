@@ -298,7 +298,7 @@
     <!-- *********************************************************** -->
     <!-- **** NuGet package creation                            **** -->
     <!-- *********************************************************** -->
-    <Part Name="NuGetPackage" BMakeFile="install\ecobjects.NuGetPackage.mke"  OnlyPlatforms="x64">
+    <Part Name="NuGetPackage" DeferType="BuildSamples" BMakeFile="install\ecobjects.NuGetPackage.mke"  OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubProduct ProductName="ECObjects"/>
         <SubPart PartName="ECObjectsNative" />
