@@ -235,6 +235,32 @@ static void AddCone (bvector<IGeometryPtr> &data)
         rA, rB, true);
     data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData)));
     }
+static void AddAllCones (bvector<IGeometryPtr> &data, bool capped)
+    {
+    double rA = 1.0;
+    double rB = 0.5;
+    double zA = 0.0;
+    double zB = 1.0;
+    for (double rA : bvector<double>{1.0, 2.0, 0.0})
+        {
+        for (double rB : bvector<double>{1.0, 2.0, 0.0})
+            {
+            if (rA != 0.0 || rB != 0.0)
+                {
+                DgnConeDetail ConeData (
+                    DPoint3d::From (0,0,zA),
+                    DPoint3d::From (0,0,zB),
+                    rA, rB, capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData)));
+                DgnConeDetail ConeData1 (
+                    DPoint3d::From (0,0,zB),
+                    DPoint3d::From (0,0,zA),
+                    rA, rB, capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData1)));
+                }
+            }
+        }
+    }
 
 static void AddExtrusion (bvector<IGeometryPtr> &data)
     {
