@@ -1734,10 +1734,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     if (nullptr != geometricModel)
         {
-        double      rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-        double      minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+        double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+        double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+        static  double  s_minLeafTolerance = 1.0E-6;
 
-        leafTolerance = std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio);
+        leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
     if (nullptr != generateMeshTiles)
@@ -1839,15 +1840,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
         }
     
     ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
-
-    return ProcessParentTile(parent, context).then([=](ElementTileResult result)
-        { 
-        return ProcessChildTiles(result.m_status, parent, context);
-        })
-    .then([=](ElementTileResult result)
-        {
-        return result;
-        });
+    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2734,11 +2727,12 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
+
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            //Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
-            //PushCurrentGeometry();
+            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+            PushCurrentGeometry();
             }
 
         // We sort by size in order to ensure the largest geometries are assigned batch IDs
@@ -3009,7 +3003,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (0 == polyface->GetPointCount())
                 continue;
 
-            TileMeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+            TileMeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid(), geom->GetEntityId().IsValid());
 
             TileMeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
@@ -3046,7 +3040,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 TileDisplayParamsCPtr   displayParams = tileStrokes.m_displayParams;
-                TileMeshMergeKey key(*displayParams, false, false);
+                TileMeshMergeKey key(*displayParams, false, false, geom->GetEntityId().IsValid());
 
                 TileMeshBuilderPtr meshBuilder;
                 auto found = builderMap.find(key);
@@ -3261,6 +3255,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_linePixels);
     TEST_EQUAL(m_gradient);
+    TEST_EQUAL(m_class);
 
     return true;
     }

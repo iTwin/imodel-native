@@ -310,17 +310,17 @@ private:
 
     void AddChanges(BeSQLite::Changes const&);
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
-    BeSQLite::DbResult SaveSchemaChanges(BeSQLite::SchemaChangeSetCR schemaChangeSet, Utf8CP operation);
+    BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
 
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
-    void ReadSchemaChanges(BeSQLite::SchemaChangeSet&, TxnId rowid);
+    void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 	
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction);
-    BeSQLite::DbResult ApplySchemaChangeSet(BeSQLite::SchemaChangeSetCR schemaChanges);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges);
+    BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
 	void OnChangesApplied(BeSQLite::IChangeSet& changeset);
@@ -336,8 +336,8 @@ private:
     DgnDbStatus ReinstateActions(TxnRange& revTxn);
 
     RevisionStatus MergeRevision(DgnRevisionCR revision);
-    RevisionStatus MergeSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
-    RevisionStatus MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
+    RevisionStatus MergeDbSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
+    RevisionStatus MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader, bool containsSchemaChanges);
     RevisionStatus ApplyRevision(DgnRevisionCR revision, bool invert);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;

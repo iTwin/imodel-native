@@ -65,7 +65,7 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TxnManager::SaveSchemaChanges(BeSQLite::SchemaChangeSetCR schemaChangeSet, Utf8CP operation)
+BeSQLite::DbResult TxnManager::SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation)
     { 
     return SaveChanges(schemaChangeSet, operation, true /*=isSchemaChange*/); 
     }
@@ -495,6 +495,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     if (DgnSearchableText::IsUntrackedFts5Table(tableName))
         return  TrackChangesForTable::No;
 
+    if (0 == strncmp("ec_cache_", tableName, sizeof("ec_cache_")-1))
+        return  TrackChangesForTable::No;
+
     return TrackChangesForTable::Yes;
     }
 
@@ -615,9 +618,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     BeAssert(!InDynamicTxn() && "How is this being invoked when we have dynamic change trackers on the stack?");
     CancelDynamics();
 
-    SchemaChangeSet schemaChanges;
-    if (HasSchemaChanges())
-        schemaChanges = GetSchemaChanges();
+    DbSchemaChangeSet schemaChanges;
+    if (HasDbSchemaChanges())
+        schemaChanges = GetDbSchemaChanges();
 
     // Create a ChangeSet from modified data records. We'll use this to drive indirect changes.
     UndoChangeSet dataChangeSet;
@@ -702,20 +705,20 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RevisionStatus TxnManager::MergeSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
+RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
     {
-    SchemaChangeSet schemaChanges;
-    DbResult result = changeStream.GetSchemaChanges(schemaChanges);
+    DbSchemaChangeSet dbSchemaChanges;
+    DbResult result = changeStream.GetDbSchemaChanges(dbSchemaChanges);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
         return RevisionStatus::MergeError;
         }
 
-    if (schemaChanges.IsEmpty())
+    if (dbSchemaChanges.IsEmpty())
         return RevisionStatus::Success;
 
-    result = ApplySchemaChangeSet(schemaChanges);
+    result = ApplyDbSchemaChangeSet(dbSchemaChanges);
     if (BE_SQLITE_OK != result)
         return RevisionStatus::MergeError;
 
@@ -725,9 +728,9 @@ RevisionStatus TxnManager::MergeSchemaChangesInRevision(DgnRevisionCR revision, 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
+RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream, bool containsSchemaChanges)
     {
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
@@ -845,7 +848,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     DbResult result = changeStream.ToChangeSet(changeSet, reverse);
     BeAssert(result == BE_SQLITE_OK);
 
-    result = ApplyChanges(changeSet, reverse ? TxnAction::Reverse : TxnAction::Reinstate);
+    result = ApplyChanges(changeSet, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false);
     if (result != BE_SQLITE_OK)
         return RevisionStatus::ApplyError;
 
@@ -888,17 +891,24 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     BeAssert(!InDynamicTxn());
     
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
-
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
 
-    RevisionStatus status = MergeSchemaChangesInRevision(revision, changeStream);
+    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb); 
+
+    RevisionStatus status;
+    if (containsSchemaChanges)
+        {
+        // Note: Schema changes may not necessary imply db-schema changes. They could just be 'minor' ecschema/mapping changes. 
+        status = MergeDbSchemaChangesInRevision(revision, changeStream);
+        if (RevisionStatus::Success != status)
+            return status;
+        }
+
+    status = MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
     if (RevisionStatus::Success != status)
         return status;
 
-    if (revision.ContainsSchemaChanges(m_dgndb))
-        m_dgndb.ClearECDbCache(); // Recreate the ECDb cache since the merge would have affected the schema entries. 
-
-    return MergeDataChangesInRevision(revision, changeStream);
+    return RevisionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -981,7 +991,7 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action)
+DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges)
     {
     BeAssert(action != TxnAction::None);
     m_action = action;
@@ -994,6 +1004,21 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action)
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     EnableTracking(wasTracking);
+
+    if (containsSchemaChanges)
+        {
+        m_dgndb.ClearECDbCache();
+        m_dgndb.Schemas().RepopulateCacheTables();
+        m_dgndb.Domains().SyncWithSchemas();
+        /*
+        * Caches related to schemas need to be cleared/recreated before handlers can be invoked
+        * + Data changes in the change set could include changes to the ec_ class, ec-mapping and dgn_Handler tables.
+        * + Recreate the ECDb cache since the merge would have affected the schema entries. (TODO: Ideally this
+        *   wouldn't be necessary since the tables representing the cache should be in the change set, but need to check with
+        *   the ECDb team on why that doesn't work)
+        * + Reinitialize any handler-class associations with the newly imported classes.
+        */
+        }
 
     BeAssert(result == BE_SQLITE_OK);
     if (result == BE_SQLITE_OK)
@@ -1013,12 +1038,12 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplySchemaChangeSet(SchemaChangeSetCR schemaChanges)
+DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
     {
-    BeAssert(!schemaChanges.IsEmpty() && "SchemaChangeSet is empty");
+    BeAssert(!dbSchemaChanges.IsEmpty() && "DbSchemaChangeSet is empty");
     bool wasTracking = EnableTracking(false);
 
-    DbResult result = m_dgndb.ExecuteSql(schemaChanges.ToString().c_str());
+    DbResult result = m_dgndb.ExecuteSql(dbSchemaChanges.ToString().c_str());
     
     EnableTracking(wasTracking);
     return result;
@@ -1027,14 +1052,14 @@ DbResult TxnManager::ApplySchemaChangeSet(SchemaChangeSetCR schemaChanges)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadSchemaChanges(BeSQLite::SchemaChangeSet& schemaChanges, TxnId rowId)
+void TxnManager::ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet& dbSchemaChanges, TxnId rowId)
     {
     uint32_t sizeRead;
     Byte* data = ReadChanges(sizeRead, rowId);
     if (data == nullptr)
         return;
 
-    schemaChanges.AddDDL((Utf8CP) data);
+    dbSchemaChanges.AddDDL((Utf8CP) data);
     delete[] data;
     }
 
@@ -1101,7 +1126,7 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action)
     UndoChangeSet changeset;
     ReadDataChanges(changeset, rowId, action);
 
-    auto rc = ApplyChanges(changeset, action);
+    auto rc = ApplyChanges(changeset, action, false);
     BeAssert(!HasDataChanges());
 
     if (BE_SQLITE_OK != rc)
@@ -2237,7 +2262,7 @@ void TxnManager::EndDynamicOperation(DynamicTxnProcessor* processor)
         OnEndValidate();
 
         changeset.Invert();
-        ApplyChanges(changeset, TxnAction::Abandon);
+        ApplyChanges(changeset, TxnAction::Abandon, false);
         }
 
     m_dynamicTxns.pop_back();

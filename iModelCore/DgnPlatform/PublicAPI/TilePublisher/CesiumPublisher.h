@@ -97,7 +97,7 @@ protected:
     bool                        m_wantProgressOutput;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
-    WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
+    TILEPUBLISHER_EXPORT WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override;
     bool _AllTilesPublished() const override { return true; }
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;

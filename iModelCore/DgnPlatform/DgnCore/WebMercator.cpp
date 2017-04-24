@@ -271,13 +271,6 @@ namespace WebMercatorStrings
 BE_JSON_NAME(webMercatorModel)
 
 // property names common to all providers
-BE_JSON_NAME(providerName)
-BE_JSON_NAME(groundBias)
-BE_JSON_NAME(transparency)
-
-// identifier of ProviderData subfolder
-BE_JSON_NAME(providerData)
-
 };
 
 using namespace WebMercatorStrings;
@@ -382,31 +375,15 @@ void WebMercatorModel::Load(SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::WebMercatorModel(CreateParams const& params) : T_Super(params), m_groundBias(params.m_groundBias), m_transparency(params.m_transparency)
+WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params)
     {
-    // get the imagery provider from the properties.
-    Utf8String imageryProviderName(params.m_providerName);
+    // if the jsonParameters aren't filled in, that's because this is creating an existing the model from the DgnDb.
+    // We will get the json parameters later when _OnLoadedJsonProperties() is called.
+    if (params.m_jsonParameters.isNull())
+        return;
 
-    if (0 == imageryProviderName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
-        {
-        m_provider = new MapBoxImageryProvider();
-        }
-    else if (0 == imageryProviderName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
-        {
-        m_provider = new BingImageryProvider();
-        }
-    else if (0 == imageryProviderName.CompareToI (WebMercator::GoogleImageryProvider::prop_GoogleProvider()))
-        {
-        }
-    else if (0 == imageryProviderName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
-        {
-        m_provider = new HereImageryProvider();
-        }
-
-    if (m_provider.IsValid())
-        {
-        m_provider->_FromJson(params.m_providerParameters);
-        }
+    // if not null, this is a new model creation. Get the parameters from those passed in to the constructor of CreateParams.
+    FromJson (params.m_jsonParameters);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -849,10 +826,10 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
+    * Called periodically (on a timer) on the client thread to check for arrival of the template Url.
     * @bsimethod                                    Keith.Bentley                   08/16
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
+    virtual ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow) override
         {
         // won't affect the screen.
         wantShow = WantShow::No;
@@ -906,7 +883,7 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
 
     folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
-    if (!future.isReady() || ImageryProvider::TemplateUrlLoadStatus::NotFetched == future.get())
+    if (!future.isReady())
         {
         for (;;)
             {

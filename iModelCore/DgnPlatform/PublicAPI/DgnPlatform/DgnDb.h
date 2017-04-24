@@ -62,7 +62,7 @@ public:
     bool IsVersion_1_5() const {return *this == DgnDbProfileVersion::Version_1_5();}
     bool IsVersion_1_6() const {return *this == DgnDbProfileVersion::Version_1_6();}
 
-    //! Extract the DgnDbProfileVersion from the specfied file
+    //! Extract the DgnDbProfileVersion from the specified file
     DGNPLATFORM_EXPORT static DgnDbProfileVersion Extract(BeFileNameCR fileName);
     static DgnDbProfileVersion GetCurrent() {return DgnDbProfileVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
     static DgnDbProfileVersion Version_1_0() {return DgnDbProfileVersion(1, 0);} // DgnV8
@@ -146,14 +146,14 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     {
         friend struct DgnDb;
 
-        //! Flag to enable import of schemas to fix schema validation errors when opening the DgnDb
+        //! Flag to enable upgrade of schemas to fix schema validation errors when opening the DgnDb
         //! @note Only used in Project Administrator workflows to allow upgrading/importing domain schemas. 
-        enum class EnableSchemaImport : bool {Yes = true, No = false};
+        enum class EnableSchemaUpgrade : bool {Yes = true, No = false};
 
     private:
-        EnableSchemaImport m_enableSchemaImport;
+        EnableSchemaUpgrade m_enableSchemaUpgrade;
 
-        bool IsSchemaImportEnabled() const {return m_enableSchemaImport == EnableSchemaImport::Yes;}
+        bool IsSchemaUpgradeEnabled() const { return m_enableSchemaUpgrade == EnableSchemaUpgrade::Yes; }
         BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
 
     protected:
@@ -163,12 +163,12 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! Constructor
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database
-        //! @param[in] enableSchemaImport Enables opening the DgnDb if the ECSchema-s in the database fail 
-        //! to validate. This is used in Project Administrator work flows to upgrade the ECSchemas in the DgnDb
+        //! @param[in] enableSchemaUpgrade Enables opening the DgnDb if the ECSchema-s in the database fail 
+        //! to validate. This is used in Project Administrator work flows to upgrade/re-import the ECSchemas in the DgnDb
         //! with those supplied by the various DgnDomain-s. @see DgnDb::OpenDgnDb(). 
-        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, EnableSchemaImport enableSchemaImport = EnableSchemaImport::No) : Db::OpenParams(openMode, startDefaultTxn), m_enableSchemaImport(enableSchemaImport) {}
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, EnableSchemaUpgrade enableSchemaUpgrade = EnableSchemaUpgrade::No) : Db::OpenParams(openMode, startDefaultTxn), m_enableSchemaUpgrade(enableSchemaUpgrade) {}
 
-        void SetEnableSchemaImport(EnableSchemaImport value) {m_enableSchemaImport = value;}
+        void SetEnableSchemaUpgrade(EnableSchemaUpgrade value) { m_enableSchemaUpgrade = value; }
         virtual ~OpenParams() {}
     };
 
@@ -205,7 +205,7 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdChanged(BeSQLite::BeBriefcaseId newBriefcaseId) override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
@@ -245,7 +245,7 @@ public:
     //! @note A DgnDb can have an expiration date. See Db::IsExpired
     //! @note The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
     //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
-    //! If the error status is BE_SQLITE_ERROR_SchemaImportRequired, it may be possible to import (or upgrade) the schemas in the DgnDb. 
+    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to import (or upgrade) the schemas in the DgnDb. 
     //! This is done by temporarily opening the DgnDb by setting the option to enable schema import ((@see DgnDb::OpenParams), and calling
     //! DgnDomains::ImportSchemas() (or DgnDomain::ImportSchema() if it's a single known domain). 
     //! <pre>
@@ -261,8 +261,8 @@ public:
     //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
     //! ----------------------------------------------------------------------------------------------
     //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
-    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaImportRequired  | BE_SQLITE_ERROR_SchemaImportRequired
-    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaImportRequired  | BE_SQLITE_ERROR_SchemaImportRequired
+    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
     //! ----------------------------------------------------------------------------------------------
     //! </pre>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
@@ -323,7 +323,7 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
         {
-        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()), relInstanceProperties);
         }
     
     //! Update one or more properties of an existing non-Navigation ECRelationship instance. 

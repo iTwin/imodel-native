@@ -147,8 +147,15 @@ bool DgnDomain::IsSchemaImported(DgnDbCR dgndb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr DgnDomain::ReadSchema(ECSchemaReadContextR schemaContext) const
     {
+    BeFileName pathname = GetSchemaPathname();
+    if (!pathname.DoesPathExist())
+        {
+        BeAssert(false && "Schema for domain doesn't exist");
+        return nullptr;
+        }
+
     ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, GetSchemaPathname().GetName(), schemaContext);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), schemaContext);
 
     // CreateSearchPathSchemaFileLocater
     if (SchemaReadStatus::Success != status)
@@ -189,7 +196,7 @@ DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
         return BE_SQLITE_ERROR_SchemaReadFailed;
 
     DbResult result = ValidateSchema(*schema, dgndb);
-    if (result != BE_SQLITE_ERROR_SchemaNotFound && result != BE_SQLITE_ERROR_SchemaImportRequired)
+    if (result != BE_SQLITE_ERROR_SchemaNotFound && result != BE_SQLITE_ERROR_SchemaUpgradeRequired)
         return result;
 
     bvector<ECSchemaCP> schemasToImport;
@@ -330,11 +337,13 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDomains::OnDbOpened()
+DbResult DgnDomains::OnDbOpened(bool isSchemaUpgradeEnabled)
     {
+    SetEnableSchemaUpgrade(isSchemaUpgradeEnabled);
+
     DbResult result = ValidateSchemas();
 
-    if (result == BE_SQLITE_ERROR_SchemaImportRequired && GetEnableSchemaImport())
+    if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && IsSchemaUpgradeEnabled())
         result = BE_SQLITE_OK;
 
     if (result != BE_SQLITE_OK)
@@ -402,7 +411,7 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
             
         if (locResult == BE_SQLITE_ERROR_SchemaNotFound && domain->IsRequired())
             {
-            result = BE_SQLITE_ERROR_SchemaImportRequired; // It could get worse!
+            result = BE_SQLITE_ERROR_SchemaUpgradeRequired; // It could get worse!
             if (doImport)
                 importDomains.push_back(domain);
             else
@@ -411,7 +420,7 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
             continue;
             }
 
-        if (locResult == BE_SQLITE_ERROR_SchemaImportRequired)
+        if (locResult == BE_SQLITE_ERROR_SchemaUpgradeRequired)
             {
             result = locResult; 
             continue;
@@ -421,7 +430,7 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
         return locResult;
         }
 
-    BeAssert(result == BE_SQLITE_OK || result == BE_SQLITE_ERROR_SchemaImportRequired);
+    BeAssert(result == BE_SQLITE_OK || result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
     /* Validate all reference schemas */
     bvector<ECSchemaCP> schemasToImport = schemaContext->GetCache().GetSchemas();
@@ -439,9 +448,9 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
             continue;
             }
             
-        if (locResult == BE_SQLITE_ERROR_SchemaNotFound || locResult == BE_SQLITE_ERROR_SchemaImportRequired)
+        if (locResult == BE_SQLITE_ERROR_SchemaNotFound || locResult == BE_SQLITE_ERROR_SchemaUpgradeRequired)
             {
-            result = BE_SQLITE_ERROR_SchemaImportRequired;
+            result = BE_SQLITE_ERROR_SchemaUpgradeRequired;
             ++it;
             continue;
             }
@@ -500,7 +509,7 @@ DbResult DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonl
     if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
         {
         LOG.warningv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-        return BE_SQLITE_ERROR_SchemaImportRequired;
+        return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         }
 
     BeAssert(appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite());
@@ -668,7 +677,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
     DgnClassId classId = m_dgndb.Schemas().GetClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    BeAssert((classId.IsValid() || GetEnableSchemaImport()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
+    BeAssert((classId.IsValid() || IsSchemaUpgradeEnabled()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
     return classId;
     }
 
