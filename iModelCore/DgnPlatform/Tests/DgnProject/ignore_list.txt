@@ -45,3 +45,7 @@ TransactionManagerTests.TestRelationshipLinkTableTracking
 
 # Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
 DgnElementTests.NavigationPropertyOnTargetDelete
+
+# Test merged from Bim0200Dev, and is not meant to work yet on the holdouts branch
+CompatibilityTests.ModifyBaseline
+
