@@ -9,7 +9,7 @@
 %include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
 NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
-NUGET_BASE_PATH=$(OutputRootDir)\Product\__ECObjects-NuGet
+NUGET_BASE_PATH=$(OutputRootDir)\Product\ECObjects
 
 NuGetBaseName=ecobjects
 %include $(sharedMki)nuspecCreate.mki
