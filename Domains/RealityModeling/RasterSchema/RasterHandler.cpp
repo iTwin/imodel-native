@@ -352,22 +352,27 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
         return;
 
-    Transform depthTransfo;
-    ComputeDepthTransformation(depthTransfo, context);
+    Transform depthTransform;
+    ComputeDepthTransformation(depthTransform, context);
 
-    m_root->DrawInView(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), GetClip().GetClipVector());
+    m_root->DrawInView(context, Transform::FromProduct(depthTransform, m_root->GetLocation()), GetClip().GetClipVector());
     }
 
 
+#ifdef WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (double leafTolerance) const
+Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (TransformR transform, ClipVectorPtr& clip, double leafTolerance) const
     { 
+    transform = Transform::FromProduct(depthTransform, m_root->GetLocation());
+    clip = GetClip().GetClipVexctor();
+
     _Load(&context.GetTargetR().GetSystem());
 
     return m_root;
     }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
