@@ -2491,7 +2491,7 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
     BaseGCS::ProjectionCodeValue ID = BaseGCS::pcvInvalid;
 
     WString upperMethodName = name;
-    std::transform(upperMethodName.begin(), upperMethodName.end(), upperMethodName.begin(), (int (*)(int))std::toupper);
+    std::transform(upperMethodName.begin(), upperMethodName.end(), upperMethodName.begin(), [](wchar_t const& c){return (wchar_t)towupper(c);});
 
     if (upperMethodName == L"GEOGRAPHIC (LAT/LONG)") // Strange value ... should not occur but it does ..
         ID = BaseGCS::pcvUnity;
@@ -2859,7 +2859,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
 
     // Obtain uppercase value
     WString upperParameterName = parameterName;
-    std::transform(upperParameterName.begin(), upperParameterName.end(), upperParameterName.begin(), (int (*)(int))std::toupper);
+    std::transform(upperParameterName.begin(), upperParameterName.end(), upperParameterName.begin(), [](wchar_t const& c){return (wchar_t)towupper(c);});
 
     if ((upperParameterName == L"FALSE_EASTING") ||
         (upperParameterName == L"FALSEEASTING") ||
@@ -6786,7 +6786,7 @@ bool                 anyWord
             }
 
         // second half of the input strings are the upper case versions.
-        std::transform(concatString.begin(), concatString.end(), concatString.begin(), ::toupper);
+        std::transform(concatString.begin(), concatString.end(), concatString.begin(), [](char const& c){return (char)toupper(c);});
         iScoreMultiple = numMixedCase + 1;
         for (int iString=numMixedCase; iString < numMixedCase + numUpperCase; iString++, iScoreMultiple--)
             {
@@ -6798,7 +6798,7 @@ bool                 anyWord
     else
         {
         AString upperCaseConcatString(concatString);
-        std::transform(upperCaseConcatString.begin(), upperCaseConcatString.end(), upperCaseConcatString.begin(), ::toupper);
+        std::transform(upperCaseConcatString.begin(), upperCaseConcatString.end(), upperCaseConcatString.begin(), [](char const& c){return (char)toupper(c);});
 
         // can match any word, so use a score based on the word position, and whether it matches the original or upper case.
         // first half of the input strings are the users typed-in case versions. Those are more valuable matches.
