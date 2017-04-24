@@ -988,9 +988,6 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         const ECSqlStatus stat = m_whereClauseSelector->Prepare(ctx, *parseTree, whereClauseSelectorECSql.c_str());
         if (!stat.IsSuccess())
             return stat;
-
-        printf("WHERE selector ECSQL: %s\r\n", whereClauseSelectorECSql.c_str());
-        printf("WHERE selector SQLite: %s\r\n", m_whereClauseSelector->GetNativeSql());
         }
 
     Utf8String optionsECSql;
