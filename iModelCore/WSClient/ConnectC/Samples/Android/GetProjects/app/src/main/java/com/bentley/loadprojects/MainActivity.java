@@ -1,5 +1,6 @@
 package com.bentley.loadprojects;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -64,6 +65,9 @@ public class MainActivity extends AppCompatActivity {
                             getApplicationContext(),
                             "Position :"+itemPosition+"  ListItem : " +itemValue,
                             Toast.LENGTH_LONG).show();
+
+                    Intent intent = new Intent(getApplicationContext(), ProjectDetailsActivity.class);
+                    startActivity(intent);
                 }
             });
         }
