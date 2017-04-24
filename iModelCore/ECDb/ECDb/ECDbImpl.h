@@ -8,7 +8,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
-#include "BeBriefcaseBasedIdSequence.h"
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include "ProfileManager.h"
 #include "IssueReporter.h"
 
