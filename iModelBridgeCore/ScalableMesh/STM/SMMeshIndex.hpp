@@ -31,6 +31,9 @@
 #include <map>
 #include <json/json.h>
 
+
+#include "MapBoxTextureProvider.h"
+
 #include "ScalableMeshQuadTreeQueries.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -3713,6 +3716,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
+
+    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+        {
+        textureWidthInPixels = 256;
+        textureHeightInPixels = 256;
+        }
+
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);

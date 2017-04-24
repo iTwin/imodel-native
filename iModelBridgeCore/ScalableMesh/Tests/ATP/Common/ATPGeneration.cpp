@@ -12,8 +12,10 @@
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh\IScalableMeshPolicy.h>
 #include <DgnPlatform\DgnPlatformErrors.r.h>
 #include <DgnPlatform\DgnPlatformBaseType.r.h>
+
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -114,7 +116,21 @@ bool AddOptionToSource(IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
         data.SetLinearFeatureType(type);
 
         sourceImportConfig.SetReplacementSMData(data);
-        }
+        }    
+
+    WString gcsKeyName;
+    status = pTestChildNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+    if (status == BEXML_Success)
+        {        
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));        
+        
+        GeoCoords::GCS gcs(GetGCSFactory().Create(baseGCSPtr));
+       
+        SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+
+        sourceImportConfig.SetReplacementGCS(gcs);        
+        }    
 
     return true;
     }
@@ -381,7 +397,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
 
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
-                    {
+                    {                  
                     IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath.c_str(), dataType, pTestChildNode);
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
