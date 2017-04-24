@@ -1216,6 +1216,38 @@ public:
 };
 
 //=======================================================================================
+//! A user-defined callback which is invoked whenever a row is updated, inserted or 
+//! deleted in a rowid table.
+//! Call Db::AddDataUpdateCallback to register a callback with the db connection
+//! @see https://sqlite.org/c3ref/update_hook.html for details
+// @bsiclass                                                   Krischan.Eberle   04/17
+//=======================================================================================
+struct DataUpdateCallback : NonCopyableClass
+    {
+public:
+    enum class SqlType
+        {
+        Insert, //!< Row, for which callback was invoked, was inserted
+        Update, //!< Row, for which callback was invoked, was updated
+        Delete //!< Row, for which callback was invoked, was deleted
+        };
+
+protected:
+    DataUpdateCallback() {}
+
+public:
+    virtual ~DataUpdateCallback() {}
+
+    //! Called by SQLite when a row is updated, inserted or deleted.
+    //! @param[in] sqlType SQL operation that caused the callback to be invoked
+    //! @param[in] dbName Name of the database containing the table of the affected row
+    //! @param[in] tableName Name of the table containing the affected row
+    //! @param[in] rowid Rowid of the affected row. In case of SqlType::Update, this is the rowid after the update
+    //! takes place
+    virtual void _OnRowModified(SqlType sqlType, Utf8CP dbName, Utf8CP tableName, BeInt64Id rowid) = 0;
+    };
+
+//=======================================================================================
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
@@ -2007,9 +2039,13 @@ protected:
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetBLVCache();
 
+    void AddDataUpdateCallback(DataUpdateCallback&) const;
+    void RemoveDataUpdateCallback() const;
+
 public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
+
     bool UseSettingsTable(PropertySpecCR spec) const;
     void OnSettingsDirtied() {m_settingsDirty=true;}
     bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
@@ -2629,6 +2665,16 @@ public:
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
 
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
+
+    //! Add a callback to this Db that is invoked whenever a row is updated, inserted or deleted in a 
+    //! <a href="https://sqlite.org/rowidtable.html">rowid</a> table.
+    //! @see DataUpdateHook
+    //! @see https://sqlite.org/c3ref/update_hook.html
+    BE_SQLITE_EXPORT void AddDataUpdateCallback(DataUpdateCallback&) const;
+    //! Removes the data change callback from this Db
+    //! @see DataUpdateHook
+    //! @see https://sqlite.org/c3ref/update_hook.html
+    BE_SQLITE_EXPORT void RemoveDataUpdateCallback() const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
