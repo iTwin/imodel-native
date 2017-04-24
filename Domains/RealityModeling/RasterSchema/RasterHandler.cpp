@@ -358,6 +358,17 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     m_root->DrawInView(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), GetClip().GetClipVector());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (double leafTolerance) const
+    { 
+    _Load(&context.GetTargetR().GetSystem());
+
+    return m_root;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
@@ -537,3 +548,6 @@ void RasterModel::_OnLoadedJsonProperties()
 // @bsimethod                                                   Mathieu.Marchand  10/2016
 //----------------------------------------------------------------------------------------
 bool RasterModel::IsParallelToGround() const {return _IsParallelToGround();}
+
+
+
