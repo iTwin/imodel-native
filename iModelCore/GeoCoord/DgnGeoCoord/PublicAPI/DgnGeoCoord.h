@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/PublicAPI/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,12 @@ enum GeoCoordinationState
     NoGeoCoordination   = 0,
     Reprojected         = 1,
     AECTransform        = 2,
+    };
+
+enum GeoCoordInterpretation
+    {
+    Cartesian = 0,
+    XYZ       = 1
     };
 
 /*=================================================================================**//**
@@ -356,6 +362,19 @@ DPoint3dCR              inUors
 ) const;
 
 /*---------------------------------------------------------------------------------**//**
+* Calculates the longitude, latitude, and elevation from design coordinates (UORS) interpreted as XYZ coordinates.
+* @param    outLatLong      OUT     The calculated longitude,latitude,elevation in the datum of this GCS.
+* @param    inUors          IN      The input design coordinates.
+* @return   SUCCESS or a CS_MAP error code if any of the points could not be reprojected.
+* @bsimethod                                                    Barry.Bentley   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNGEOCOORD_EXPORTED  ReprojectStatus       LatLongFromUorsXYZ
+(
+GeoPointR               outLatLong,
+DPoint3dCR              inUors
+) const;
+
+/*---------------------------------------------------------------------------------**//**
 * Reprojects an array of points in the design coordinates (UORs) of this model to the
 * design coordinates (UORs) of the design file associated with destMstnGCS.
 * @param    outUorsDest     OUT     An array dimensioned to numPoints to hold the calculated UORs.
@@ -378,6 +397,34 @@ GeoPointP               outLatLongDest,
 GeoPointP               outLatLongSrc,
 DPoint3dCP              inUors,
 int                     numPoints,
+DgnGCSCR                destMstnGCS
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Reprojects an array of points in the design coordinates (UORs) of this model to the
+* design coordinates (UORs) of the design file associated with destMstnGCS.
+* @param    outUorsDest     OUT     An array dimensioned to numPoints to hold the calculated UORs.
+* @param    outLatLongDest  OUT     An optional array that will be filled with the geographic
+*                                   coordinates in the datum of the destMstnGCS. If not NULL,
+*                                   the array must be dimensioned to numPoints.
+* @param    outLatLongSrc   OUT     An optional array that will be filled with the geographic
+*                                   coordinates in the datum of this GCS. If not NULL,
+*                                   the array must be dimensioned to numPoints.
+* @param    inUors          IN      An array holding the input points in design file coordinaates.
+* @param    numPoints       IN      The number of points in inUors.
+* @param    interpretation  IN      Indicates how input points should be interpreted.
+* @param    destMstnGCS     OUT     The destination DgnGCS .
+* @return   SUCCESS or a CS_MAP error code if any of the points could not be reprojected.
+* @bsimethod                                                    Barry.Bentley   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNGEOCOORD_EXPORTED    ReprojectStatus     ReprojectUors
+(
+DPoint3dP               outUorsDest,
+GeoPointP               outLatLongDest,
+GeoPointP               outLatLongSrc,
+DPoint3dCP              inUors,
+int                     numPoints,
+GeoCoordInterpretation  interpretation,
 DgnGCSCR                destMstnGCS
 ) const;
 
@@ -451,6 +498,31 @@ DPoint3dCR              elementOrigin,
 DPoint3dCP              extent,
 bool                    doRotate,
 bool                    doScale,
+DgnGCSCR                destMstnGCS
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Calculates the best approximate transform that can be applied at the elementOrigin to
+* transform coordinates from this GCS's design coordinates to those of the destination GCS.
+* @param    outTransform    OUT     The calculated Transform.
+* @param    elementOrigin   IN      The point, in design coordinates (UORs) of this GCS, at which the transform will be applied.
+* @param    extent          IN      The extent, in design coordinates (UORs) of a bvector that tells the span of the data to which
+*                                   the transform will be applied. If NULL, a reasonable guess is used.
+* @param    doRotate        IN      true to allow rotation in the transform.
+* @param    doScale         IN      true to allow scaling in the transform.
+* @param    isCartesian     IN      true to allow cartesian coordinates, XYZ otherwise
+* @param    destMstnGCS     OUT     The destination DgnGCS .
+* @return   SUCCESS or a CS_MAP error code if elementOrigin could not be reprojected.
+* @bsimethod                                                    Barry.Bentley   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNGEOCOORD_EXPORTED  ReprojectStatus       GetLocalTransform
+(
+TransformP              outTransform,
+DPoint3dCR              elementOrigin,
+DPoint3dCP              extent,
+bool                    doRotate,
+bool                    doScale,
+GeoCoordInterpretation  interpretation,
 DgnGCSCR                destMstnGCS
 ) const;
 
