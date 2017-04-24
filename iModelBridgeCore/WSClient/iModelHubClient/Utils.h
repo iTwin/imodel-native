@@ -32,26 +32,26 @@ namespace ServerSchema
     static Utf8CP ClassName = "className";
     namespace Schema
         {
-        static Utf8CP iModel = "BIMCSRepository";
-        static Utf8CP Project = "BIMCSProject";
+        static Utf8CP iModel = "iModelScope";
+        static Utf8CP Project = "ProjectScope";
         }
     namespace Plugin
         {
-        static Utf8CP iModel = "BIMCSRepository";
-        static Utf8CP Project = "BIMCSProject";
+        static Utf8CP iModel = "iModel";
+        static Utf8CP Project = "Project";
         }
     namespace Class
         {
-        static Utf8CP iModelLock = "RepositoryLock";
-        static Utf8CP Briefcase = "BIMBriefcase";
-        static Utf8CP ChangeSet = "Revision";
-        static Utf8CP File = "BIMFile";
+        static Utf8CP iModelLock = "iModelLock";
+        static Utf8CP Briefcase = "Briefcase";
+        static Utf8CP ChangeSet = "ChangeSet";
+        static Utf8CP File = "SeedFile";
         static Utf8CP AccessKey = "AccessKey";
-        static Utf8CP iModel = "BIMRepository";
+        static Utf8CP iModel = "iModel";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
         static Utf8CP Code = "Code";
-        static Utf8CP CodeTemplate = "CodeTemplate";
+        static Utf8CP CodeSequence = "CodeSequence";
         static Utf8CP MultiCode = "MultiCode";
         static Utf8CP EventSAS = "EventSAS";
         static Utf8CP EventSubscription = "EventSubscription";
@@ -59,13 +59,13 @@ namespace ServerSchema
         }
     namespace Relationship
         {
-        static Utf8CP FollowingChangeSet = "FollowingRevision";
+        static Utf8CP FollowingChangeSet = "FollowingChangeSet";
         static Utf8CP FileAccessKey = "FileAccessKey";
         }
     namespace Property
         {
         static Utf8CP Id = "Id";
-        static Utf8CP iModelName = "RepositoryName";
+        static Utf8CP iModelName = "Name";
         static Utf8CP FileName = "FileName";
         static Utf8CP Name = "Name";
         static Utf8CP Password = "Password";
@@ -74,7 +74,7 @@ namespace ServerSchema
         static Utf8CP Index = "Index";
         static Utf8CP Description = "Description";
         static Utf8CP FileDescription = "FileDescription";
-        static Utf8CP iModelDescription = "RepositoryDescription";
+        static Utf8CP iModelDescription = "Description";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP UserOwned = "UserOwned";
         static Utf8CP CreatedDate = "CreatedDate";
@@ -84,8 +84,8 @@ namespace ServerSchema
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP BriefcaseIds = "BriefcaseIds";
         static Utf8CP ParentId = "ParentId";
-        static Utf8CP MasterFileId = "MasterFileId";
-        static Utf8CP MergedChangeSetId = "MergedRevisionId";
+        static Utf8CP MasterFileId = "SeedFileId";
+        static Utf8CP MergedChangeSetId = "MergedChangeSetId";
         static Utf8CP PushDate = "PushDate";
         static Utf8CP ObjectId = "ObjectId";
         static Utf8CP ObjectIds = "ObjectIds";
@@ -95,8 +95,8 @@ namespace ServerSchema
         static Utf8CP LockOwners = "LockOwners";
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
-        static Utf8CP ReleasedWithChangeSet = "ReleasedWithRevision";
-        static Utf8CP ReleasedWithChangeSetIndex = "ReleasedWithRevisionIndex";
+        static Utf8CP ReleasedWithChangeSet = "ReleasedWithChangeSet";
+        static Utf8CP ReleasedWithChangeSetIndex = "ReleasedWithChangeSetIndex";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         static Utf8CP CodesRequiresPull = "CodesRequiresPull";
@@ -154,8 +154,8 @@ namespace Db
     {
     namespace Local
         {
-        static Utf8CP iModelURL = "ServerURL";
-        static Utf8CP iModelId = "RepositoryId";
+        static Utf8CP iModelURL = "iModelHubServiceURL";
+        static Utf8CP iModelId = "iModelId";
         static Utf8CP ParentChangeSetId = "ParentRevisionId";
         }
     namespace Properties
@@ -196,7 +196,7 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
 bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
 void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId);
-bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, CodeTemplate& codeTemplate);
+bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& codeSequence);
 rapidjson::Document ToRapidJson(JsonValueCR source);
 
 //=======================================================================================
