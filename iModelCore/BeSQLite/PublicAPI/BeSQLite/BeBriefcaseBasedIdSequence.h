@@ -42,9 +42,11 @@ public:
 
     BeBriefcaseBasedIdSequence& operator=(BeBriefcaseBasedIdSequence&& rhs);
 
-    DbResult Initialize() const;
-    DbResult Reset(BeBriefcaseId briefcaseId) const;
+    BE_SQLITE_EXPORT DbResult Initialize() const;
 
+    BE_SQLITE_EXPORT DbResult Reset(uint64_t minimumId) const;
+
+    //! Get the next value in the sequence
     template <typename TBeBriefcaseBasedId>
     DbResult GetNextValue(TBeBriefcaseBasedId& nextValue) const
         {
@@ -70,6 +72,7 @@ private:
 
 public:
     BE_SQLITE_EXPORT BeBriefcaseBasedIdSequenceManager(DbR, bvector<Utf8CP> const& sequenceNames);
+
     BeBriefcaseBasedIdSequence const& GetSequence(uint32_t sequenceKey) const { BeAssert(sequenceKey < (uint32_t) m_sequences.size()); return m_sequences[(size_t) sequenceKey]; }
 
     BE_SQLITE_EXPORT DbResult InitializeSequences() const;

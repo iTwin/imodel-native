@@ -43,15 +43,12 @@ DbResult BeBriefcaseBasedIdSequence::Initialize() const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeBriefcaseBasedIdSequence::Reset(BeBriefcaseId briefcaseId) const
+DbResult BeBriefcaseBasedIdSequence::Reset(uint64_t minimumId) const
     {
     if (GetDb().IsReadonly())
         return BE_SQLITE_READONLY;
 
-    //set the sequence start value (first id generated should be 1 for the given repo id.
-    //Therefore call GetValueUnchecked as the stored last value is not a valid id yet.
-    const BeBriefcaseBasedId initialId(briefcaseId, 0);
-    const DbResult stat = GetDb().GetBLVCache().SaveValue(m_briefcaseLocalValueIndex, initialId.GetValueUnchecked());
+    const DbResult stat = GetDb().GetBLVCache().SaveValue(m_briefcaseLocalValueIndex, minimumId);
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Could not save initial sequence value or BeBriefcaseBasedIdSequence '%s' in file '%s'.", m_briefcaseLocalValueName, GetDb().GetDbFileName());
@@ -76,6 +73,13 @@ DbResult BeBriefcaseBasedIdSequence::GetNextInt64Value(uint64_t& nextValue) cons
         LOG.fatalv("Could not increment sequence value for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName);
         BeAssert(false && "BeBriefcaseBasedIdSequence::GetNextValue could not increment sequence value from be_Local via IncrementBriefcaseLocalValueInt64.");
         return stat;
+        }
+
+    BeBriefcaseBasedId lastId(GetDb().GetBriefcaseId().GetNextBriefcaseId(), 0);
+    if (deserializedLastValue >= lastId.GetValueUnchecked())
+        {
+        BeAssert(false && "Ran out of Ids for briefcase");
+        return BE_SQLITE_TOOBIG;
         }
 
     nextValue = deserializedLastValue;
@@ -114,9 +118,12 @@ DbResult BeBriefcaseBasedIdSequenceManager::InitializeSequences() const
 DbResult BeBriefcaseBasedIdSequenceManager::ResetSequences(BeBriefcaseId* repoId) const
     {
     BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_db.GetBriefcaseId();
+
+    BeBriefcaseBasedId firstId(actualRepoId, 0);
+    
     for (BeBriefcaseBasedIdSequence const& sequence : m_sequences)
         {
-        const DbResult stat = sequence.Reset(actualRepoId);
+        const DbResult stat = sequence.Reset(firstId.GetValueUnchecked());
         if (stat != BE_SQLITE_OK)
             return stat;
         }
