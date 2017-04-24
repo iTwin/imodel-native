@@ -358,6 +358,7 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
 
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray) const;
+        BENTLEY_SM_EXPORT bool IntersectRay(bvector<DPoint3d>& points, const DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
 

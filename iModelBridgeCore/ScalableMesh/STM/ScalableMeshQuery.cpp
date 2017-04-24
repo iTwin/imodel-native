@@ -1632,7 +1632,7 @@ struct myClassCompare {
         return ( (pt1-source).Magnitude() < (pt2 - source).Magnitude());
         }
     DPoint3d source;
-    } myPointComparator;
+    };
 
 bool ScalableMeshMesh::_IntersectRay(bvector<DPoint3d>& points, const DRay3d& ray) const
     {
