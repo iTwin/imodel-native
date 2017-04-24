@@ -18,7 +18,7 @@
 #define BEGIN_BENTLEY_IMODELHUB_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace iModel { namespace Hub {
 #define END_BENTLEY_IMODELHUB_NAMESPACE        } } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_IMODELHUB      using namespace BentleyApi::iModel::Hub;
-#define LOGGER_NAMESPACE_IMODELHUB             "DgnDbServer"
+#define LOGGER_NAMESPACE_IMODELHUB             "iModelHub"
 
 #ifdef __iModelHubClient_DLL_BUILD__
 #define IMODELHUBCLIENT_EXPORT EXPORT_ATTRIBUTE

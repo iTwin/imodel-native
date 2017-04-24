@@ -53,8 +53,8 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
 
     //Code template errors
-    L10N_STRING(MESSAGE_CodeTemplateRequestError)          // =="Code template request formatting has failed."==
-    L10N_STRING(MESSAGE_CodeTemplateResponseError)         // =="Code template response parsing has failed."==
+    L10N_STRING(MESSAGE_CodeSequenceRequestError)          // =="Code sequence request formatting has failed."==
+    L10N_STRING(MESSAGE_CodeSequenceResponseError)         // =="Code sequence response parsing has failed."==
 
     //Event service errors
     L10N_STRING(MESSAGE_EventCallbackAlreadySubscribed)    // =="Event callback is already registered."==

@@ -68,7 +68,7 @@ public:
         CredentialsNotSet,
         FileNotFound,
         FileAlreadyExists,
-        DgnDbServerClientNotInitialized,
+        iModelHubClientNotInitialized,
         InvalidServerURL,
         InvalidiModelName,
         InvalidiModelId,
