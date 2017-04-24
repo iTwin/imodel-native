@@ -358,10 +358,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
             }
 
         m_toLoadNodeMutexes[threadInd].unlock();
-        
-        if (threadInd != m_toLoadNodes.size())
-            return false;
-
+                
         return true;
         }
 
@@ -413,12 +410,12 @@ private:
     bvector<int>                  m_processingQueryIndexes;
     ProcessingQueryList           m_processingQueries;
     std::mutex                    m_processingQueriesMutex;
+    std::condition_variable       m_processingQueriesCondition;
     atomic<bool>                  m_run;
 
     int                           m_numWorkingThreads;
-    std::thread*                  m_workingThreads;    
-    atomic<bool>*                 m_areWorkingThreadRunning;    
-       
+    std::thread*                  m_workingThreads;           
+               
     struct InLoadingNode;
 
     typedef RefCountedPtr<InLoadingNode> InLoadingNodePtr;
@@ -528,9 +525,11 @@ private:
         do
             {            
             processingQueryPtr = nullptr;
+            
+            //assert(m_processingQueries.size() <= 1);            
 
-            m_processingQueriesMutex.lock();
-            //assert(m_processingQueries.size() <= 1);
+            {
+            std::unique_lock<std::mutex> lck(m_processingQueriesMutex);
 
             for (auto& processingQuery : m_processingQueries)
                 {
@@ -539,12 +538,14 @@ private:
                     processingQueryPtr = processingQuery;
                     break;
                     }
-                }            
+                }           
 
-            m_processingQueriesMutex.unlock();
+            if (processingQueryPtr == nullptr) 
+                m_processingQueriesCondition.wait(lck);
+            }
 
             //NEEDS_WORK_MST : Maybe we should prioritize the first processing query found
-            if (processingQueryPtr != 0)
+            if (processingQueryPtr != 0 && m_run)
                 {
                 HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
@@ -649,11 +650,9 @@ private:
                         processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();                    
                         }
                     }                
-                }
+                }            
 
-            } while (m_run && (processingQueryPtr != 0));
-
-        m_areWorkingThreadRunning[threadId] = false;
+            } while (m_run);        
         }
          
 public:
@@ -667,10 +666,6 @@ public:
         m_numWorkingThreads = 1;        
 #endif
         m_workingThreads = new std::thread[m_numWorkingThreads];
-        m_areWorkingThreadRunning = new std::atomic<bool>[m_numWorkingThreads];
-
-        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
-            m_areWorkingThreadRunning[ind] = false;
                 
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
@@ -678,14 +673,9 @@ public:
 
     virtual ~QueryProcessor()
         {
-        for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
-            {
-            if (m_workingThreads[threadInd].joinable())
-                m_workingThreads[threadInd].join();
-            }
-
-        delete[] m_workingThreads;
-        delete[] m_areWorkingThreadRunning;
+        Stop();
+        
+        delete[] m_workingThreads;        
         }
 
     void AddQuery(int                                                             queryId,
@@ -707,7 +697,7 @@ public:
 
         size_t currentNbProcessingQueries;
 
-        m_processingQueriesMutex.lock();
+        std::unique_lock<std::mutex> lck(m_processingQueriesMutex);        
 
 #ifndef NDEBUG
         for (auto& query : m_processingQueries)
@@ -718,14 +708,14 @@ public:
 #endif
 
         currentNbProcessingQueries = m_processingQueries.size();
-        m_processingQueries.push_back(processingQueryPtr);
-        m_processingQueriesMutex.unlock();
+        m_processingQueries.push_back(processingQueryPtr);        
         
         if (currentNbProcessingQueries == 0)
-            {
-            Stop();
+            {            
             Start();
             }        
+        
+        m_processingQueriesCondition.notify_all();
         }
 
 
@@ -757,12 +747,8 @@ public:
 
         m_processingQueriesMutex.unlock();
 
-        for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
-            {
-            if (m_workingThreads[threadInd].joinable())
-                m_workingThreads[threadInd].join();
-            }
-
+        Stop();
+    
         return SUCCESS;
         }
      
@@ -856,32 +842,30 @@ public:
                         m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
                         }
                     else
-                        {
-                        if (m_areWorkingThreadRunning[threadId] == false)
-                            {
-                            if (m_workingThreads[threadId].joinable())                            
-                                m_workingThreads[threadId].join();
+                        {                                              
+                        if (m_workingThreads[threadId].joinable())                            
+                            m_workingThreads[threadId].join();
 
-                            m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
-                            m_areWorkingThreadRunning[threadId] = true;
-                            }
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);                        
                         }
                     }
                 }
             }
         
         void Stop()
-            {                        
+            {        
+            
+            {
+            std::unique_lock<std::mutex> lck(m_processingQueriesMutex);            
             m_run = false;
-
-            if (!s_delayJoinThread)
-                {                
-                for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                    {
-                    if (m_workingThreads[threadId].joinable())
-                        m_workingThreads[threadId].join();                    
-                    }         
-                }
+            m_processingQueriesCondition.notify_all();
+            }
+            
+            for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+                {
+                if (m_workingThreads[threadId].joinable())
+                    m_workingThreads[threadId].join();                    
+                }                                
             }
        
         StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId)
