@@ -376,14 +376,21 @@
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Federation GUID" description="The GUID used to federate this element across repositories.">
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward" readOnly="True" description="The Model that contains this element.">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
-                    <StatementTypes>6</StatementTypes>
+                    <StatementTypes>2</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" displayLabel="Last Modified" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications.">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+                <CustomHandledProperty>
+                    <StatementTypes>0</StatementTypes>
                 </CustomHandledProperty>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
@@ -421,22 +428,6 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward" readOnly="True" description="The Model that contains this element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty>
-                    <StatementTypes>2</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
-        <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty>
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECNavigationProperty> 
         <ECProperty propertyName="UserLabel" typeName="string" displayLabel="User Label" description="An optional name given by the user (as opposed to the formal name stored in the Code value).">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
@@ -449,23 +440,32 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
+        <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty>
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Federation GUID" description="The GUID used to federate this element across repositories.">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+                <CustomHandledProperty>
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" displayLabel="Last Modified" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications.">
-            <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
-                    <DateTimeKind>Utc</DateTimeKind>
-                </DateTimeInfo>
-                <CustomHandledProperty>
-                    <StatementTypes>0</StatementTypes>
-                </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -958,12 +958,6 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean" displayLabel="In Spatial Index" description="If true, this element will have an entry in the Spatial Index.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -1003,6 +997,12 @@
         <ECProperty propertyName="BBoxHigh" typeName="point3d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1078,12 +1078,6 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Origin" typeName="point2d" description="The placement origin of the Element.">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1102,6 +1096,12 @@
         <ECProperty propertyName="BBoxHigh" typeName="point2d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="GeometricElement2dHasTypeDefinition" direction="Forward" displayLabel="Type Definition">
