@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -23,6 +23,12 @@ $(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTest
 
 $(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTests/DgnDbTestUtils.h
     $(LinkFirstDepToFirstTarget)
+
+#------------------------------------------------------------------------------------------
+#   Deliver CompatibilityTestFiles for use by unit tests
+#------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-36/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-36/
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
 #   -------------------------------------------------------------------------------------------
 #   Compile .ts files to .js files, ready to be executed by script tests
