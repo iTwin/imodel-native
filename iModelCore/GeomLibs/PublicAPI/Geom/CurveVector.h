@@ -1860,6 +1860,17 @@ double targetDistance,
 PathLocationDetail &detail
 ) const;
 
+//! Return a ray with point on the curve, unit vector in curve tangent direction.
+//!<ul>
+//!<li>If extrapolate is false, points out of range return with the end point and tangent marked invalid.
+//!<li>If extrapolate is true, poitns out of range return as linear extrapolation of the end point.
+//!</ul>
+GEOMDLLIMPEXP ValidatedDRay3d DistanceAlongToPointAndUnitTangent
+(
+double distanceAlong,       //!< [in] distance along path computed ponit.
+bool extrapolate = true     //!< [in] true to allow extropolation of end tangent.
+) const;
+
 //! Return detailed curve location for the position at targetDistance along the curve, measuring in path distance.
 //! WARNING: The distance entry in the PositionLocationDetail is true distance (with z variation)
 GEOMDLLIMPEXP_XY bool SearchByDistanceFromPathStartXY

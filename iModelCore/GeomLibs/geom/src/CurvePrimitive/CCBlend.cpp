@@ -790,11 +790,7 @@ struct CurveVectorWithDistanceIndexEvaluator : public IParameterToPointAndUnitTa
     CurveVectorWithDistanceIndexEvaluator (CurveVectorWithDistanceIndex const & curve) : m_curve (curve) {}
     ValidatedDRay3d ParameterToPointAndUnitTangent (double u) const override 
         {
-        PathLocationDetail pathDetail;
-        m_curve.SearchByDistanceFromPathStart (u, pathDetail);
-        DVec3d tangent;
-        DPoint3d xyz = pathDetail.PointAndUnitTangent (tangent);
-        return ValidatedDRay3d (DRay3d::FromOriginAndVector (xyz, tangent), true);
+        return m_curve.DistanceAlongToPointAndUnitTangent (u, true);
         }
     };
 };
