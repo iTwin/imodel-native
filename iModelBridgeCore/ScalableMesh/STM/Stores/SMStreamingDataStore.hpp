@@ -1137,6 +1137,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
     __super::SaveSisterFiles();
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
+    {
+    assert(!"No implemented yet");
+    }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
+    {
+    assert(!"No implemented yet");
+    }
+
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
@@ -1654,14 +1664,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     }
 
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {   
     if (!IsProjectFilesPathSet())
         return false;
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
-    assert(sqliteFilePtr.IsValid() == true);
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
 
+    if (!sqliteFilePtr.IsValid())
+        return false;
+    
     dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
 
     return true;
@@ -1675,34 +1687,43 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon)
-        {
-        SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
-        assert(sqlFilePtr.IsValid());
-        dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
-        }
-    else
-        {
-        auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-        // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
-        //assert(nodeGroup.IsValid());
+    assert(dataType != SMStoreDataType::Skirt && dataType != SMStoreDataType::ClipDefinition && dataType != SMStoreDataType::CoveragePolygon);
+    
+    auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+    // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
+    //assert(nodeGroup.IsValid());
         dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
-        }
-
+    
     return true;    
     }
 
-
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {
-    
-    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName);
-    assert(sqlFilePtr.IsValid());
+    SMSQLiteFilePtr sqlFilePtr;
+
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+
     dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
 
     return true;
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
+    {
+    assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+
+    return true;
+    }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                

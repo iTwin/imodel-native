@@ -16,6 +16,10 @@
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+//#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
@@ -27,8 +31,9 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
+        {    
         pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        //pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
 #endif
@@ -185,26 +190,42 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
 
     // Get the raster from the store
     HFCPtr<HRARaster> rasterSource = pObjectStore->LoadRaster();
-
+    
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
 
-   
+    return rasterSource;
+
+   /*
     HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetWorldCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
     mosaicPtr->Add(rasterSource);
     return mosaicPtr.GetPtr();
+*/
 
     }
 
 
-StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, HRARASTER& raster)
+StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
     {
     HFCMatrix<3, 3> transfoMatrix;
-    transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
+
+    if (textureResolution != nullptr)
+        transfoMatrix[0][0] = *textureResolution;
+    else
+        transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
+
+
+    
+
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = area.low.x;
     transfoMatrix[1][0] = 0;
-    transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
+
+    if (textureResolution != nullptr)
+        transfoMatrix[1][1] = -*textureResolution;
+    else
+        transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
+
     transfoMatrix[1][2] = area.high.y;
     transfoMatrix[2][0] = 0;
     transfoMatrix[2][1] = 0;

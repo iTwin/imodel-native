@@ -31,6 +31,9 @@
 #include <map>
 #include <json/json.h>
 
+
+#include "MapBoxTextureProvider.h"
+
 #include "ScalableMeshQuadTreeQueries.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -274,7 +277,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
             {
             GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
             ISDiffSetDataStorePtr nodeDiffsetStore;
-            result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);
+            result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &m_nodeHeader, false);
             if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
             m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
@@ -2024,7 +2027,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                     DPoint3d direction;
                     direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
                     DPoint2d dir2d = DPoint2d::From(direction);
-                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && par1 > 1e-5 && par2 > 1e-5 && par1 < 1+1e-5 && par2 < 1+1e-5)
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && ((par1 > 1e-5 && par1 < 1 + 1e-5) ||( par2 > 1e-5  && par2 < 1+1e-5)))
                     noIntersect = false;
                     }
                 }
@@ -2338,12 +2341,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             assert(added >= featurePoints[i].size() - sentinels[i]);
             }
         }
-/*    for (auto& vec : m_featureDefinitions)
-        {
-        vec.clear();
-        vec.Discard();
-        }
-    m_featureDefinitions.clear();*/
+
     linearFeaturesPtr->clear();
 
     }
@@ -2895,8 +2893,14 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     {
     HPRECONDITION(IsLeaf());
     POINT splitPosition = GetDefaultSplitPosition();
+    
+    if (m_nodeHeader.m_arePoints3d)
+        SetNumberOfSubNodesOnSplit(8);            
+    else
+        SetNumberOfSubNodesOnSplit(4);                 
+    
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
-        {
+        {        
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
@@ -3483,13 +3487,16 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
+    if (!GetClipRegistry()->IsClipDefinitionFileExist())
+        return false;
+
    //if (m_SMIndex->IsTerrain() == false) 
     //   return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
         ISDiffSetDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        bool result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDataStore, &m_nodeHeader, true);
         assert(result == true);
         
         RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(
@@ -3709,6 +3716,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
+
+    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+        {
+        textureWidthInPixels = 256;
+        textureHeightInPixels = 256;
+        }
+
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
@@ -4112,8 +4126,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
-    {
+    {   
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
+    
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
     for (const auto& diffSet : *diffsetPtr)
@@ -4383,8 +4398,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 if (other.clientID == ((uint64_t)-1)) const_cast<DifferenceSet&>(other).upToDate = false;
                 }
 
-            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+          /*  GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
             
             }
 
@@ -4436,9 +4451,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
     if (found)
     {
         diffSetPtr->erase(indices);
-        //force commit
+       /* //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
     }
     return found;
     }
@@ -4480,9 +4495,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         }
     else
     {
-        //force commit
+  /*      //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
 
     }
     return found;

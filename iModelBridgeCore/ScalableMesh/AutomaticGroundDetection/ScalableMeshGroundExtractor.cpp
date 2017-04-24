@@ -392,6 +392,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
             DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
         closedPolygonPoints.assign(rangePts, rangePts + 5);
+        if (m_createProgress.IsCanceled()) return status;
 
         textureGenerator->GenerateTexture(closedPolygonPoints, &m_createProgress);
 
@@ -414,6 +415,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     m_createProgress.Progress() = 1.0f;
     m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_createProgress.IsCanceled()) return status;
+
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
@@ -523,7 +527,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     m_createProgress.ProgressStepIndex() = 0;
     m_createProgress.Progress() = 0.0f;
     m_groundPreviewer->UpdateProgress(&m_createProgress);
-
+    if (m_createProgress.IsCanceled()) return SUCCESS;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
 
@@ -556,6 +560,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     m_createProgress.Progress() = 1.0f;
     m_groundPreviewer->UpdateProgress(&m_createProgress);
+    if (m_createProgress.IsCanceled()) return status;
     assert(status == SUCCESS);
 
     clock_t endTime = clock() - startTime;

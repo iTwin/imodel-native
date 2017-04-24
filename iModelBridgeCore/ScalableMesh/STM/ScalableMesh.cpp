@@ -473,6 +473,11 @@ void IScalableMesh::GetCoverageIds(bvector<uint64_t>& ids) const
     return _GetCoverageIds(ids);
     }
 
+void IScalableMesh::GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    return _GetCoverageName(name, id);
+    }
+
 BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
     {
     return _DeleteCoverage(id);
@@ -1404,12 +1409,24 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
             for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
             meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
         }
-
+		meshP->RemoveDuplicates();
         DTMStatusInt val = meshP->GetAsBcDTM(m_dtm);
         if (val == DTM_ERROR) 
             {
             m_dtm = nullptr;
+            return nullptr;
             }
+        
+        if (!m_transformToUors.IsIdentity())
+            {
+            val = m_dtm->Transform(m_transformToUors);
+
+            if (val == DTM_ERROR)
+                {
+                m_dtm = nullptr;
+                return nullptr;
+                }            
+            }        
         }
 
     return m_dtm.get();    
@@ -1651,7 +1668,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         return DTM_ERROR;
         }
 
-    Transform totalTrans = Transform::FromProduct(m_transformToUors, *transformation);
+    Transform totalTrans = Transform::FromProduct(*transformation, m_transformToUors);
     return dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);    
 #else
         assert(0 && "Not Implemented !!!");
@@ -2444,6 +2461,8 @@ template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
     if (m_scmIndexPtr->m_isInsertingClips == true)
         return;
 
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+
     m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
     }
 
@@ -2490,15 +2509,11 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
         swprintf(idStr, L"%llu", id);
                     
         //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
-        fileName.clear();
-#ifdef VANCOUVER_API
-        fileName = BeFileName(m_baseExtraFilesPath.GetWCharCP());
-#else
-        fileName = BeFileName(m_baseExtraFilesPath);
-#endif
-        fileName.AppendString(L"_terrain_");
-        fileName.AppendString(idStr);
-        fileName.AppendString(L".3sm");
+        fileName.clear();   
+        Utf8String coverageName; 
+        GetCoverageName(coverageName, id);
+     
+        GetCoverageTerrainAbsFileName(fileName, m_baseExtraFilesPath, coverageName);
         extraFileNames.push_back(fileName);        
         }    
     }
@@ -2735,12 +2750,15 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
-    {
-    WString newPath = m_baseExtraFilesPath + L"_terrain_";
-    newPath.append(std::to_wstring(id).c_str());
-    newPath.append(L".3sm");
-     
+    {    
+    BeFileName terrainAbsName;
 
+    Utf8String coverageName(createdTerrain);
+
+    GetCoverageTerrainAbsFileName(terrainAbsName, m_baseExtraFilesPath, coverageName);
+
+    assert(!terrainAbsName.DoesPathExist());
+          
 #ifndef VANCOUVER_API
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {
@@ -2752,7 +2770,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         int result = _wremove(newPath.c_str());
         assert(result == 0);
         */
-        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));
+        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
 
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
@@ -2760,12 +2778,13 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
         assert(status == SUCCESS);
-
+/*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
+*/
 
         StatusInt openStatus;
-        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(terrainAbsName, false, openStatus));
         if (openStatus && smSQLiteFile != nullptr)
             {
  /*           m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
@@ -2775,7 +2794,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         }
 #endif
 
-    createdTerrain = BeFileName(newPath.c_str());    
+    createdTerrain = terrainAbsName;
     return SUCCESS;
     }
 
@@ -2808,6 +2827,12 @@ template <class POINT> void ScalableMesh<POINT>::_GetCoverageIds(bvector<uint64_
     {
     if (nullptr == m_scmIndexPtr) return;
     m_scmIndexPtr->GetClipRegistry()->GetAllCoverageIds(ids);
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    if (nullptr == m_scmIndexPtr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetCoverageName(id, name);    
     }
 
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64_t id)

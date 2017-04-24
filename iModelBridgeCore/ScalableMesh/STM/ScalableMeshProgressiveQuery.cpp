@@ -705,7 +705,7 @@ public:
             if (query->m_queryId == queryId)
                 assert(!"Query already processing");
             }
-#endif
+#endif   
 
         currentNbProcessingQueries = m_processingQueries.size();
         m_processingQueries.push_back(processingQueryPtr);        
@@ -1394,6 +1394,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
     }
 
 static bool s_loadNodeNearCamFirst = true;
+static bool s_doPreLoad = false;
     
 void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
@@ -1443,6 +1444,23 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
+    //PRE
+    //smP->m_scmIndexPtr->GetDataStore()->CancelPreloadData();
+    if (toLoadNodes.size() > 0 && s_doPreLoad)
+        { 
+        bvector<DRange3d> tileRanges;
+
+        for (auto& loadNode : toLoadNodes)
+            {
+            //tileRanges.push_back(loadNode->GetContentExtent());
+            tileRanges.push_back(loadNode->GetNodeExtent());
+            }
+    
+        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));    
+        ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore()); 
+        dataStore->PreloadData(tileRanges);
+        }
+    //PRE
 
 
     if (s_sortOverviewBySize == true)
