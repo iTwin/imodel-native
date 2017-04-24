@@ -28,12 +28,12 @@ struct Briefcase : RefCountedBase
 private:
     friend struct Client;
 
-    static const int                       s_maxDelayTime = 5000;
-    iModelConnectionPtr           m_imodelConnection;
-    Dgn::DgnDbPtr                          m_db;
-    EventCallbackPtr            m_pullMergeAndPushCallback;
-    Event::EventType m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
-    bool                                   m_eventsAvailable;
+    static const int    s_maxDelayTime = 5000;
+    iModelConnectionPtr m_imodelConnection;
+    Dgn::DgnDbPtr       m_db;
+    EventCallbackPtr    m_pullMergeAndPushCallback;
+    Event::EventType    m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
+    bool                m_eventsAvailable;
 
     Briefcase(Dgn::DgnDbPtr db, iModelConnectionPtr connection);
     //! Create an instance of a briefcase from previously downloaded briefcase file.
