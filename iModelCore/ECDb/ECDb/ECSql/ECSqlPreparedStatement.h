@@ -272,17 +272,49 @@ private:
                     UserProvidedOtherExp
                     };
 
+                struct UpdateHook final : NonCopyableClass
+                    {
+                    private:
+                        struct Callback final : DataUpdateCallback
+                            {
+                            private:
+                                ECInstanceId m_rowId;
+
+                                void _OnRowModified(DataUpdateCallback::SqlType sqlType, Utf8CP dbName, Utf8CP tableName, BeInt64Id rowid) override
+                                    {
+                                    BeAssert(sqlType == DataUpdateCallback::SqlType::Update);
+                                    m_rowId = ECInstanceId(rowid);
+                                    }
+
+                            public:
+                                Callback() : DataUpdateCallback() {}
+                                ~Callback() {}
+
+                                ECInstanceId GetRowId() const { return m_rowId; }
+                            };
+
+                        ECDb const& m_ecdb;
+                        Callback m_callback;
+
+                    public:
+                        explicit UpdateHook(ECDb const& ecdb) : m_ecdb(ecdb) { m_ecdb.AddDataUpdateCallback(m_callback); }
+                        ~UpdateHook() { m_ecdb.RemoveDataUpdateCallback(); }
+                        ECInstanceId GetUpdatedRowid() const { return m_callback.GetRowId(); }
+                    };
+
             private:
+                ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr;
                 Mode m_mode = Mode::NotUserProvided;
-                ECN::ECClassId m_ecClassId;
-                IECSqlBinder* m_primaryTableECSqlECInstanceIdBinder = nullptr;
-                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr;
+                ECN::ECClassId m_classId;
+                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr; //in case user specified parametrized id expression
                 mutable ECInstanceId m_generatedECInstanceId;
+
+                static Mode DetermineMode(int& expIx, ECSqlSystemPropertyInfo const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
 
             public:
                 ECInstanceKeyHelper() {}
 
-                void Initialize(int &ecInstanceIdPropNameExpIx, ECN::ECClassId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
+                void Initialize(int &idPropNameExpIx, ClassMap const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
 
                 void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
                     { 
@@ -290,17 +322,20 @@ private:
                     BeAssert(m_idProxyBinder == nullptr && "Must not be called twice"); 
                     m_idProxyBinder = &idBinder; 
                     }
-                ECSqlStatus InitializeIdPrimaryTableECInstanceIdBinder(SingleECSqlPreparedStatement&);
-                DbResult BindPrimaryTableECInstanceId(ECDbCR);
-                ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
+                ECN::ECClassId GetClassId() const { return m_classId; }
+                bool IsEndTableRelationshipInsert() const { return *m_sysPropInfo != ECSqlSystemPropertyInfo::ECInstanceId(); }
+                bool MustGenerateECInstanceId() const;
+                //Is not null in case user specified parametrized id expression
+                ProxyECInstanceIdECSqlBinder* GetIdProxyBinder() const { return m_idProxyBinder; }
                 Mode GetMode() const { return m_mode; }
             };
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
-        bool m_checkModifiedRowCountAfterStep = false;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
+        DbResult StepForEndTableRelationship(ECInstanceKey&);
 
     public:
         explicit ECSqlInsertPreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}

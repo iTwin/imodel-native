@@ -77,13 +77,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     {
     BeAssert(classMap.IsRelationshipClassMap());
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     SystemPropertyExpIndexMap const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
         return ECSqlStatus::InvalidECSql;
         }
-
+#endif
     if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
         return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
 

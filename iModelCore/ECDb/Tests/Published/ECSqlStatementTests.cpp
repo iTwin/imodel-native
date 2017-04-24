@@ -1738,7 +1738,6 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(ecdb);
 
     ECSqlStatement stmt;
-
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ECST.Product SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Product GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Product WHERE UnitPrice >500))"));
     ASSERT_TRUE(BE_SQLITE_DONE == stmt.Step());
     stmt.Finalize();
@@ -1746,7 +1745,6 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM ECST.Product WHERE ProductName='Laptop'"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(3, stmt.GetValueInt(0));
-    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1755,7 +1753,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
     const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
@@ -2127,22 +2125,18 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(pKey));
-
     statement.Finalize();
-    stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(psaKey));
     ecdb.SaveChanges();
     }
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, psaKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(2, pKey.GetInstanceId()));
 
@@ -2155,18 +2149,14 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, (int) psaKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, (int) pKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     }
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, psaKey.GetInstanceId().GetValue()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(2, pKey.GetInstanceId().GetValue()));
 
@@ -2179,8 +2169,7 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
 
     Utf8Char psaIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
     psaKey.GetInstanceId().ToString(psaIdStr);
@@ -4861,7 +4850,11 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[sc2],[sc3],[sc4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+#else
     expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[Id],ECClassId) VALUES (1.1,:_ecdb_sqlparam_ix1_col1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseId],ECClassId) VALUES (:_ecdb_sqlparam_ix1_col1,:_ecdb_sqlparam_ix1_col2,:_ecdb_sqlparam_ix1_col3,:_ecdb_sqlparam_id_col1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+#endif
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
