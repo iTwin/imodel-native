@@ -30,7 +30,7 @@ public:
         ChangeSetDoesNotExist,
         FileIsNotUploaded,
         iModelIsNotInitialized,
-        ChangeSetPointsToBadiModel,
+        ChangeSetPointsToBadSeed,
         iModelHubOperationFailed,
         PullIsRequired,
         MaximumNumberOfBriefcasesPerUser,
