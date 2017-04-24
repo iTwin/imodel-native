@@ -1009,7 +1009,7 @@ private:
                                                                                 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
-    FutureStatus GenerateTilesFromTileTree(TileTree::RootR root);
+    FutureStatus GenerateTilesFromTileTree(TileTree::RootR root, double leafTolerance, TransformCR transform, ClipVectorCP clip);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -1039,7 +1039,7 @@ struct IGenerateMeshTiles
 //=======================================================================================
 struct IGetTileTreeForPublishing
 {
-    virtual TileTree::RootCPtr _GetPublishingTileTree(double leafTolerance) const = 0;
+    virtual TileTree::RootCPtr _GetPublishingTileTree(TransformR transform, ClipVectorPtr& clip) const = 0;
 
 };  // IGetTileTreeForPublishing
 

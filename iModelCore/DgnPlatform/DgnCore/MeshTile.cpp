@@ -1717,15 +1717,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
         return TileGeneratorStatus::Aborted == reduced || TileGeneratorStatus::Aborted == next ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
         });
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017 
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(TileTree::RootR root)
-    {
-    return folly::makeFuture(TileGeneratorStatus::Success);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1779,9 +1770,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             {
             if (TileGeneratorStatus::Success == status)
                 {
-                TileTree::RootCPtr tileRoot = getTileTree->_GetPublishingTileTree(leafTolerance);
+                Transform           transform;
+                ClipVectorPtr       clip;
+                TileTree::RootCPtr  tileRoot = getTileTree->_GetPublishingTileTree(transform, clip)
 
-                status = tileRoot.IsValid() ? GenerateTilesFromTileTree(*getTileTree->_GetPublishingTileTree(leafTolerance)) : folly::makeFuture(TileGeneratorStatus::NoGeometry); 
+                status = tileRoot.IsValid() ? GenerateTilesFromTileTree(*tileRoot, leafTolerance, transform, clip.get()) : folly::makeFuture(TileGeneratorStatus::NoGeometry); 
                 }
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
@@ -1822,6 +1815,21 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             });
         }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(TileTree::RootR root, double leafTolerance, TransformCR transformFromRaster, ClipVectorCP clip)
+    {
+    ElementTileNodePtr publishParent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
+
+
+    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
+
+    return folly::makeFuture(TileGeneratorStatus::Success);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
