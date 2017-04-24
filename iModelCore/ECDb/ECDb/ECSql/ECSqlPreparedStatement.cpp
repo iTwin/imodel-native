@@ -265,7 +265,7 @@ int CompoundECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) con
 ECSqlStatus CompoundECSqlPreparedStatement::_ClearBindings()
     {
     ECSqlStatus totalStat = ECSqlStatus::Success;
-    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleContextTableECSqlPreparedStatement>& stmt : m_statements)
         {
         const ECSqlStatus stat = stmt->ClearBindings();
         //in case of error, we continue to clear all bindings, but capture just the first error
@@ -289,7 +289,7 @@ ECSqlStatus CompoundECSqlPreparedStatement::_Reset()
         return ECSqlStatus::Success;
 
     ECSqlStatus totalStat = ECSqlStatus::Success;
-    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleContextTableECSqlPreparedStatement>& stmt : m_statements)
         {
         ECSqlStatus stat = stmt->Reset();
         //in case of error, we continue to clear all bindings, but capture just the first error
@@ -313,7 +313,7 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
         else
             {
             bool isFirstStmt = true;
-            for (std::unique_ptr<SingleECSqlPreparedStatement> const& stmt : m_statements)
+            for (std::unique_ptr<SingleContextTableECSqlPreparedStatement> const& stmt : m_statements)
                 {
                 if (!isFirstStmt)
                     m_compoundNativeSql.append(";");
@@ -550,7 +550,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
     bool isPrimaryTable = true;
-    bmap<DbTable const*, SingleECSqlPreparedStatement const*> perTableStatements;
+    bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
         {
         auto it = expsByMappedTable.find(table);
@@ -604,9 +604,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 
-        m_statements.push_back(std::make_unique<LeafPreparedStatement>(m_ecdb));
+        m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Insert, *table));
 
-        SingleECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
         ctx.Reset(preparedStmt);
         const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
@@ -621,6 +621,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         int paramIndex = parameterNameMapping.first;
         BeAssert(paramIndex >= 0 && paramIndex <= (int) m_proxyBinders.size());
         Utf8StringCR paramName = parameterNameMapping.second.m_name;
+        if (!parameterNameMapping.second.m_isSystemGeneratedName)
+            m_parameterNameMap[paramName] = paramIndex;
+
         const size_t zeroBasedParamIndex = (size_t) (paramIndex - 1);
         IProxyECSqlBinder& proxyBinder = *m_proxyBinders[zeroBasedParamIndex];
         BeAssert(zeroBasedParamIndex < parameterIndexInTables.size());
@@ -681,8 +684,14 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
     for (size_t i = 1; i < leafStmtCount; i++)
         {
-        SingleECSqlPreparedStatement& leafECSqlStmt = *m_statements[i];
-        IECSqlBinder* idBinder = leafECSqlStmt.GetParameterMap().GetInternalECInstanceIdBinder();
+        SingleContextTableECSqlPreparedStatement& leafECSqlStmt = *m_statements[i];
+        ECSqlBinder* idBinder = nullptr;
+        if (!leafECSqlStmt.GetParameterMap().TryGetBinder(idBinder, ECSQLSYS_PARAM_Id))
+            {
+            BeAssert(false);
+            return BE_SQLITE_ERROR;
+            }
+
         BeAssert(idBinder != nullptr);
         if (ECSqlStatus::Success != idBinder->BindId(instanceKey.GetInstanceId()))
             return BE_SQLITE_ERROR;
@@ -690,7 +699,6 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         const DbResult stat = leafECSqlStmt.DoStep();
         if (BE_SQLITE_DONE != stat)
             return stat;
-
         }
 
     return BE_SQLITE_DONE;
@@ -826,9 +834,12 @@ ECInstanceKey ECSqlInsertPreparedStatement::ECInstanceKeyHelper::RetrieveLastIns
 ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
     UpdateStatementExp const& updateExp = exp.GetAs<UpdateStatementExp>();
-    ClassMap const& classMap = updateExp.GetClassNameExp()->GetInfo().GetMap();
 
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    ClassNameExp const* classNameExp = updateExp.GetClassNameExp();
+    const bool isPolymorphicUpdate = classNameExp->IsPolymorphic();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, classNameExp->IsPolymorphic()));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
@@ -843,7 +854,8 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = assignmentListExp->GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
+                                                        updateExp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -854,7 +866,8 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
+                                                            updateExp.ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -879,6 +892,28 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         expsByMappedTable[&table].push_back(&assignmentExp);
 
         ValueExp const* rhsExp = assignmentExp.GetValueExp();
+
+        //for now this just checks that the SET exp doesn't involve multiple tables
+        for (Exp const* exp : rhsExp->Find(Exp::Type::PropertyName, true /* recursive*/))
+            {
+            PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
+            if (propNameExp.IsPropertyRef())
+                continue;
+
+            GetTablesPropertyMapVisitor getTablesVisitor;
+            if (SUCCESS != propNameExp.GetPropertyMap().AcceptVisitor(getTablesVisitor))
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
+            if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
+                                                                updateExp.ToECSql().c_str(), assignmentExp.ToECSql().c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+            }
+
         for (Exp const* exp : rhsExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
@@ -895,11 +930,135 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 BeAssert(false);
                 }
             }
+        }
 
+    Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
+    WhereExp const* whereClause = updateExp.GetWhereClauseExp();
+    if (whereClause != nullptr)
+        {
+        for (Exp const* exp : whereClause->Find(Exp::Type::Parameter, true /* recursive*/))
+            {
+            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
+            if (zeroBasedParameterIndex == parameterIndexInTables.size())
+                {
+                parameterIndexInTables.push_back({});
+                m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+                }
+            }
+
+        Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
+        whereClauseSelectorECSql.append(classMap.GetClass().GetECSqlName()).append(" ");
+        whereClause->ToECSql(ecsqlRenderCtx);
+        whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
+        ecsqlRenderCtx.ResetECSqlBuilder();
+
+        ECSqlParser parser;
+        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
+        if (parseTree == nullptr)
+            return ECSqlStatus::InvalidECSql;
+
+        m_whereClauseSelector = std::make_unique<ECSqlSelectPreparedStatement>(m_ecdb);
+        ctx.Reset(*m_whereClauseSelector);
+        const ECSqlStatus stat = m_whereClauseSelector->Prepare(ctx, *parseTree, whereClauseSelectorECSql.c_str());
+        if (!stat.IsSuccess())
+            return stat;
+        }
+
+    Utf8String optionsECSql;
+    OptionsExp const* optionsClause = updateExp.GetOptionsClauseExp();
+    if (optionsClause != nullptr)
+        optionsECSql.assign(optionsClause->ToECSql());
+
+    bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
+
+    for (std::pair<DbTable const*, std::vector<AssignmentExp const*>> const& kvPair : expsByMappedTable)
+        {
+        DbTable const* table = kvPair.first;
+        Utf8String ecsql("UPDATE ");
+        if (!isPolymorphicUpdate)
+            ecsql.append("ONLY ");
+
+        ecsql.append(classMap.GetClass().GetECSqlName()).append(" SET ");
+
+        bool isFirstAssignment = true;
+        for (AssignmentExp const* assignmentExp : kvPair.second)
+            {
+            if (!isFirstAssignment)
+                ecsql.append(",");
+
+            assignmentExp->ToECSql(ecsqlRenderCtx);
+            ecsql.append(ecsqlRenderCtx.GetECSql());
+            isFirstAssignment = false;
+            ecsqlRenderCtx.ResetECSqlBuilder();
+            }
+
+        if (whereClause != nullptr)
+            ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
+
+        if (optionsClause != nullptr)
+            ecsql.append(" ").append(optionsECSql);
+
+        ECSqlParser parser;
+        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
+        if (parseTree == nullptr)
+            return ECSqlStatus::InvalidECSql;
+
+        m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Update, *table));
+
+        SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        ctx.Reset(preparedStmt);
+        const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
+        if (!stat.IsSuccess())
+            return stat;
+
+        perTableStatements[table] = &preparedStmt;
         }
    
-    return ECSqlStatus::Error;
+    for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : ecsqlRenderCtx.GetParameterIndexNameMap())
+        {
+        int paramIndex = parameterNameMapping.first;
+        BeAssert(paramIndex >= 0 && paramIndex <= (int) m_proxyBinders.size());
+        Utf8StringCR paramName = parameterNameMapping.second.m_name;
+        if (!parameterNameMapping.second.m_isSystemGeneratedName)
+            m_parameterNameMap[paramName] = paramIndex;
+
+        const size_t zeroBasedParamIndex = (size_t) (paramIndex - 1);
+        IProxyECSqlBinder& proxyBinder = *m_proxyBinders[zeroBasedParamIndex];
+        BeAssert(zeroBasedParamIndex < parameterIndexInTables.size());
+        std::set<DbTable const*> const& affectedTables = parameterIndexInTables[zeroBasedParamIndex];
+        if (affectedTables.empty())
+            {
+            ECSqlParameterMap const& parameterMap = m_whereClauseSelector->GetParameterMap();
+            ECSqlBinder* binder = nullptr;
+            if (!parameterMap.TryGetBinder(binder, paramName))
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
+
+            proxyBinder.AddBinder(*binder);
+            }
+        else
+            {
+            for (DbTable const* affectedTable : affectedTables)
+                {
+                BeAssert(perTableStatements.find(affectedTable) != perTableStatements.end());
+                ECSqlParameterMap const& leafStatementParameterMap = perTableStatements[affectedTable]->GetParameterMap();
+                ECSqlBinder* binder = nullptr;
+                if (!leafStatementParameterMap.TryGetBinder(binder, paramName))
+                    {
+                    BeAssert(false);
+                    return ECSqlStatus::Error;
+                    }
+
+                proxyBinder.AddBinder(*binder);
+                }
+            }
+        }
+
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -913,8 +1072,35 @@ DbResult ECSqlUpdatePreparedStatement::Step()
     if (m_isNoopInSqlite)
         return BE_SQLITE_DONE;
 
-    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
+    IdSet<BeInt64Id> idSet;
+    if (m_whereClauseSelector != nullptr)
         {
+        while (BE_SQLITE_ROW == m_whereClauseSelector->Step())
+            {
+            idSet.insert(m_whereClauseSelector->GetValue(0).GetId<BeInt64Id>());
+            }
+
+        m_whereClauseSelector->Reset();
+        }
+
+    for (std::unique_ptr<SingleContextTableECSqlPreparedStatement>& stmt : m_statements)
+        {
+        if (m_whereClauseSelector != nullptr)
+            {
+            ECSqlBinder* binder = nullptr;
+            if (!stmt->GetParameterMap().TryGetBinder(binder, ECSQLSYS_PARAM_Id))
+                {
+                BeAssert(false);
+                return BE_SQLITE_ERROR;
+                }
+
+            if (ECSqlStatus::Success != binder->BindVirtualSet(idSet))
+                {
+                BeAssert(false);
+                return BE_SQLITE_ERROR;
+                }
+            }
+
         DbResult stat = stmt->DoStep();
         if (BE_SQLITE_DONE != stat)
             return stat;
@@ -929,7 +1115,7 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //static
 ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, AssignmentListExp const& assignmentListExp, UpdateStatementExp const& exp)
     {
-    OptionsExp const* optionsExp = ctx.GetCurrentScope().GetOptions();
+    OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
     if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
         return ECSqlStatus::Success;
 
@@ -961,9 +1147,10 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(ECSqlPrepar
 ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
     DeleteStatementExp const& deleteExp = exp.GetAs<DeleteStatementExp>();
-    ClassMap const& classMap = deleteExp.GetClassNameExp()->GetInfo().GetMap();
+    ClassNameExp const* classNameExp = deleteExp.GetClassNameExp();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
 
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, classNameExp->IsPolymorphic()));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());

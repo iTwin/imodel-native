@@ -68,7 +68,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, exp, effectivePropMap->GetAs<ConstraintECClassIdPropertyMap>(), classIdentifier.c_str());
 
             default:
-                PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, exp, *effectivePropMap, classIdentifier.c_str());
+                PrepareDefault(nativeSqlSnippets, ctx, currentScopeECSqlType, exp, *effectivePropMap, classIdentifier.c_str());
                 return ECSqlStatus::Success;
         }
     }
@@ -149,7 +149,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
+void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
     ToSqlPropertyMapVisitor::ECSqlScope scope;
     if (ecsqlType == ECSqlType::Select)
@@ -157,8 +157,17 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     else
         scope = exp.IsLhsAssignmentOperandExpression() ? ToSqlPropertyMapVisitor::ECSqlScope::NonSelectAssignmentExp : ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp;
 
-    ToSqlPropertyMapVisitor sqlVisitor(propMap.GetClassMap().GetJoinedTable(),
-                                       scope, classIdentifier, exp.HasParentheses());
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    DbTable const* contextTable = nullptr;
+    if (ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
+        contextTable = &ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+    else
+        contextTable = &propMap.GetClassMap().GetJoinedTable();
+#else
+    DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
+#endif
+
+    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, scope, classIdentifier, exp.HasParentheses());
 
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())

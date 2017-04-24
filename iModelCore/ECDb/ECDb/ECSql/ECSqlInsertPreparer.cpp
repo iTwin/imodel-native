@@ -38,6 +38,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         if (info->GetPrimaryECInstanceIdParameterIndex() > 0)
             parentOfJoinedTableStmt->SetECInstanceIdBinder((int) info->GetPrimaryECInstanceIdParameterIndex());
         }
+
 #endif
 
     NativeSqlSnippets insertNativeSqlSnippets;
@@ -217,7 +218,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     for (Exp const* childExp : propNameListExp->GetChildren())
         {
         PropertyNameExp const& propNameExp = childExp->GetAs<PropertyNameExp>();
-
+        BeAssert(!propNameExp.IsPropertyRef() && "PropertyRefs are not supported in ECSQL INSERT");
         NativeSqlBuilder::List nativeSqlSnippets;
         ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
         if (!stat.IsSuccess())

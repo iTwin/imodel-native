@@ -20,8 +20,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
+
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
-    
+
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
     if (stat != ECSqlStatus::Success)
@@ -101,7 +102,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     if (sqlSnippets.m_propertyNamesNativeSqlSnippets.empty())
         ctx.SetNativeStatementIsNoop(true);
 
-    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
     if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
@@ -110,7 +110,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete.
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+        topLevelWhereClause = whereClause;
+#else
+        //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         auto const & currentClassMap = classMap;
         if (!currentClassMap.IsMappedToSingleTable())
             {
@@ -150,6 +153,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             }
         else
             topLevelWhereClause = whereClause;
+#endif
         }
 
     if (!topLevelWhereClause.IsEmpty())
