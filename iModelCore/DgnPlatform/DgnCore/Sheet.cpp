@@ -554,9 +554,54 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 
     return nullptr;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
+    {
+    bvector<DgnElementId>   attachIds;
+    // Scan for viewAttachments...
+    auto stmt =  GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    stmt->BindId(1, GetModelId());
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        attachIds.push_back (stmt->GetValueId<DgnElementId>(0));
+
+    return attachIds;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ViewDefinitionCPtr>  Sheet::Model::GetSheetAttachmentViews(DgnDbR db) const
+    {
+    bvector<DgnElementId>       attachmentIds = GetSheetAttachmentIds();
+    bvector<ViewDefinitionCPtr>  attachmentViews;
+
+    for (auto& attachmentId : attachmentIds)
+        {
+        auto attachmentElement = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
+        if (!attachmentElement.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        
+        auto viewDefinition = GetDgnDb().Elements().Get<ViewDefinition>(attachmentElement->GetAttachedViewId());
+        if (!viewDefinition.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        attachmentViews.push_back(viewDefinition);
+        }
+
+    return attachmentViews;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d Sheet::Model::GetSheetSize() const
     {
@@ -579,6 +624,7 @@ AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
     DPoint2d size = GetSheetSize();
     return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(size.x, size.y, 0.0));
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
