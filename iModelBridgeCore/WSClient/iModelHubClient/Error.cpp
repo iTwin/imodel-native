@@ -25,23 +25,23 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["BIMCS.BriefcaseDoesNotExist"]                     = Id::BriefcaseDoesNotExist;
         map["BIMCS.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
         map["BIMCS.AnotherUserPushing"]                        = Id::AnotherUserPushing;
-        map["BIMCS.RevisionAlreadyExists"]                     = Id::ChangeSetAlreadyExists;
+        map["BIMCS.ChangeSetAlreadyExists"]                    = Id::ChangeSetAlreadyExists;
         map["BIMCS.UserAlreadyExists"]                         = Id::UserAlreadyExists;
         map["BIMCS.UserDoesNotExist"]                          = Id::UserDoesNotExist;
-        map["BIMCS.RevisionDoesNotExist"]                      = Id::ChangeSetDoesNotExist;
+        map["BIMCS.ChangeSetDoesNotExist"]                     = Id::ChangeSetDoesNotExist;
         map["BIMCS.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
-        map["BIMCS.RepositoryIsNotInitialized"]                = Id::iModelIsNotInitialized;
-        map["BIMCS.RevisionPointsToBadBIM"]                    = Id::ChangeSetPointsToBadiModel;
-        map["BIMCS.OperationFailed"]                           = Id::iModelHubOperationFailed;
+        map["BIMCS.iModelIsNotInitialized"]                    = Id::iModelIsNotInitialized;
+        map["BIMCS.ChangeSetPointsToBadSeed"]                  = Id::ChangeSetPointsToBadSeed;
+        map["BIMCS.iModelHubOperationFailed"]                  = Id::iModelHubOperationFailed;
         map["BIMCS.PullIsRequired"]                            = Id::PullIsRequired;
         map["BIMCS.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
         map["BIMCS.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
         map["BIMCS.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
-        map["BIMCS.RepositoryIsLocked"]                        = Id::iModelIsLocked;
+        map["BIMCS.iModelIsLocked"]                            = Id::iModelIsLocked;
         map["BIMCS.CodesExist"]                                = Id::CodesExist;
         map["BIMCS.LocksExist"]                                = Id::LocksExist;
-        map["BIMCS.RepositoryAlreadyExists"]                   = Id::iModelAlreadyExists;
-        map["BIMCS.RepositoryDoesNotExist"]                    = Id::iModelDoesNotExist;
+        map["BIMCS.iModelAlreadyExists"]                       = Id::iModelAlreadyExists;
+        map["BIMCS.iModelDoesNotExist"]                        = Id::iModelDoesNotExist;
         map["BIMCS.FileDoesNotExist"]                          = Id::FileDoesNotExist;
         map["BIMCS.FileAlreadyExists"]                         = Id::FileAlreadyExists;
         map["BIMCS.LockDoesNotExist"]                          = Id::LockDoesNotExist;
@@ -104,6 +104,8 @@ bool Error::RequiresExtendedData(Id id)
             case Id::iModelAlreadyExists:
             case Id::FileAlreadyExists:
             case Id::PullIsRequired:
+            case Id::CodeStateInvalid:
+            case Id::CodeReservedByAnotherBriefcase:
                 return true;
             default:
                 return false;
