@@ -1174,7 +1174,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
             // Check for view flag changes that may require us to re-generate cached graphic...
             if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
                 newFlags.ShowConstructions() == oldFlags.ShowConstructions() &&
-                newFlags.ShowText() == oldFlags.ShowText() &&
                 newFlags.ShowDimensions() == oldFlags.ShowDimensions() &&
                 newFlags.ShowFill() == oldFlags.ShowFill())
                 {

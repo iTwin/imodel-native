@@ -198,21 +198,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : dgn_ModelHandler::Spatial
     MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, ModelHandler, dgn_ModelHandler::Spatial, DGNPLATFORM_EXPORT)
 };
 
-
 //=======================================================================================
 // MapBox Imagery Provider
 // This is the default, free provider. The same Bentley-provided key is used by all users.
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
 struct MapBoxImageryProvider : ImageryProvider
-    {
+{
     // the map types available from MapBox
     enum class MapType
-        {
+    {
         StreetMap = 0,
         Satellite = 1,
         StreetsAndSatellite = 2,
-        };
+    };
 
 private:
     Utf8String      m_baseUrl;
@@ -223,7 +222,7 @@ public:
     BE_PROP_NAME(MapBoxProvider)
 
     // constructor used prior to specifying from stored Json values.
-    MapBoxImageryProvider () {};
+    MapBoxImageryProvider() {}
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     virtual Utf8CP      _GetProviderName() const override { return prop_MapBoxProvider(); }
@@ -243,11 +242,10 @@ public:
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
     Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;
     
-    virtual void _FromJson(Json::Value const& value) override;
+    void _FromJson(Json::Value const& value) override;
 
-    virtual void _ToJson(Json::Value&) const override;
-    };
-
+    void _ToJson(Json::Value&) const override;
+};
 
 //=======================================================================================
 // Bing Imagery Provider

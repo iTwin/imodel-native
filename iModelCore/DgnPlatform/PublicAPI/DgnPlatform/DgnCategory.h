@@ -41,6 +41,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DefinitionElement);
 public:
+    BE_PROP_NAME(Properties)
+    BE_PROP_NAME(Description)
+
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
     //! @ingroup GROUP_Appearance
@@ -281,6 +284,9 @@ protected:
     explicit DgnCategory(CreateParams const& params) : T_Super(params), m_rank(Rank::User), m_descr("") {}
 
 public:
+    BE_PROP_NAME(Description)
+    BE_PROP_NAME(Rank)
+
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetElementId().GetValue());} //!< Returns the ID of this category.
