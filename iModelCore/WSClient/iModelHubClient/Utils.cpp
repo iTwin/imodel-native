@@ -248,7 +248,7 @@ bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              08/2016
 //---------------------------------------------------------------------------------------
-bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, CodeTemplate& codeTemplate)
+bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& codeSequence)
     {
     BeInt64Id      codeSpecId;
     Utf8String     scope = "";
@@ -263,7 +263,7 @@ bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, CodeTemplate& co
         !StringFromJson(valuePattern, serverJson[ServerSchema::Property::ValuePattern]))
         return false;
     
-    codeTemplate = CodeTemplate(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
+    codeSequence = CodeSequence(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
 
     return true;
     }

@@ -26,12 +26,12 @@ namespace Event
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP BriefcaseId = "BriefcaseId";
-        static Utf8CP ReleasedWithChangeSet = "ReleasedWithRevision";
+        static Utf8CP ReleasedWithChangeSet = "ReleasedWithChangeSet";
         }
     namespace ChangeSetPostPushEventProperties
         {
-        static Utf8CP ChangeSetId = "RevisionId";
-        static Utf8CP ChangeSetIndex = "RevisionIndex";
+        static Utf8CP ChangeSetId = "ChangeSetId";
+        static Utf8CP ChangeSetIndex = "ChangeSetIndex";
         static Utf8CP BriefcaseId = "BriefcaseId";
         }
     namespace CodeEventProperties
@@ -70,14 +70,14 @@ namespace Event
             {
             switch (eventType)
                 {
-                    case EventType::LockEvent:             return "LockEvent";
-                    case EventType::ChangeSetPostPushEvent:         return "ChangeSetPostPushEvent";
+                    case EventType::LockEvent:               return "LockEvent";
+                    case EventType::ChangeSetPostPushEvent:  return "ChangeSetPostPushEvent";
                     case EventType::ChangeSetPrePushEvent:   return "ChangeSetPrePushEvent";
-                    case EventType::CodeEvent:             return "CodeEvent";
-                    case EventType::AllLocksDeletedEvent:  return "AllLocksDeletedEvent";
-                    case EventType::AllCodesDeletedEvent:  return "AllCodesDeletedEvent";
+                    case EventType::CodeEvent:               return "CodeEvent";
+                    case EventType::AllLocksDeletedEvent:    return "AllLocksDeletedEvent";
+                    case EventType::AllCodesDeletedEvent:    return "AllCodesDeletedEvent";
                     case EventType::UnknownEventType:
-                    default:      return "UnknownEventType";
+                    default:                                 return "UnknownEventType";
                 }
             }
 

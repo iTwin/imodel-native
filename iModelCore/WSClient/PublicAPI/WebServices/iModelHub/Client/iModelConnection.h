@@ -28,8 +28,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelConnection);
 typedef RefCountedPtr<struct iModelConnection> iModelConnectionPtr;
 
 struct CodeLockSetResultInfo;
-struct CodeTemplate;
-struct CodeTemplateSetResultInfo;
+struct CodeSequence;
+struct CodeSequenceSetResultInfo;
 
 typedef std::function<void(EventPtr)> EventCallback;
 typedef std::shared_ptr<EventCallback> EventCallbackPtr;
@@ -40,6 +40,7 @@ typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeSequence);
 
 DEFINE_TASK_TYPEDEFS(iModelConnectionPtr, iModelConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, File);
@@ -48,7 +49,7 @@ DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerString);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(CodeLockSetResultInfo, CodeLockSet);
-DEFINE_TASK_TYPEDEFS(CodeTemplate, CodeTemplate);
+DEFINE_TASK_TYPEDEFS(CodeSequence, CodeSequence);
 DEFINE_TASK_TYPEDEFS(Http::Response, EventReponse);
 
 //=======================================================================================
@@ -81,10 +82,10 @@ public:
 };
 
 //=======================================================================================
-//! CodeTemplate instance
+//! CodeSequence instance
 //@bsiclass                                    Algirdas.Mikoliunas              08/2016
 //=======================================================================================
-struct CodeTemplate
+struct CodeSequence
 {
 private:
     Dgn::CodeSpecId m_codeSpecId;
@@ -105,16 +106,16 @@ public:
     Utf8StringCR GetScope() const {return m_scope;}
 
     //! Determine if two DgnDbTemplates are equivalent
-    bool operator==(CodeTemplate const& other) const {return m_codeSpecId == other.m_codeSpecId && m_value == other.m_value && m_scope == other.m_scope && m_valuePattern == other.m_valuePattern;}
+    bool operator==(CodeSequence const& other) const {return m_codeSpecId == other.m_codeSpecId && m_value == other.m_value && m_scope == other.m_scope && m_valuePattern == other.m_valuePattern;}
     //! Determine if two DgnDbTemplates are not equivalent
-    bool operator!=(CodeTemplate const& other) const {return !(*this == other);}
+    bool operator!=(CodeSequence const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
-    IMODELHUBCLIENT_EXPORT bool operator<(CodeTemplate const& rhs) const;
+    IMODELHUBCLIENT_EXPORT bool operator<(CodeSequence const& rhs) const;
     
-    //! Creates CodeTemplate instance.
-    CodeTemplate() : m_value(""), m_scope(""), m_valuePattern("") {}
-    CodeTemplate(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value("") {}
-    CodeTemplate(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value(value) {}
+    //! Creates CodeSequence instance.
+    CodeSequence() : m_value(""), m_scope(""), m_valuePattern("") {}
+    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value("") {}
+    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value(value) {}
 };
 
 //=======================================================================================
@@ -125,15 +126,15 @@ public:
 struct iModelConnection : RefCountedBase
 {
 private:
-    iModelInfo             m_iModelInfo;
+    iModelInfo                 m_iModelInfo;
 
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
 
-    EventServiceClient*                m_eventServiceClient = nullptr;
-    EventSubscriptionPtr    m_eventSubscription;
-    AzureServiceBusSASDTOPtr           m_eventSAS;
-    EventManagerPtr         m_eventManagerPtr;
+    EventServiceClient*        m_eventServiceClient = nullptr;
+    EventSubscriptionPtr       m_eventSubscription;
+    AzureServiceBusSASDTOPtr   m_eventSAS;
+    EventManagerPtr            m_eventManagerPtr;
 
     bool m_subscribedForPreDownload = false;
     static PredownloadManagerPtr s_preDownloadManager;
@@ -338,6 +339,9 @@ private:
 
     WSQuery CreateChangeSetsAfterIdQuery (Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
+
+    CodeSequenceTaskPtr QueryCodeMaximumIndexInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
+    CodeSequenceTaskPtr QueryCodeNextAvailableInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
     virtual ~iModelConnection();
@@ -570,12 +574,24 @@ public:
     //! Returns maximum used code value by the given pattern.
     //! @param[in] codeSpec
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeTemplateTaskPtr QueryCodeMaximumIndex(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns next available code by the given pattern, index start and increment by value.
     //! @param[in] codeSpec
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeTemplateTaskPtr QueryCodeNextAvailable(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken=nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeNextAvailable(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken=nullptr) const;
+
+    //! Returns maximum used code value by the given pattern.
+    //! @param[in] codeSequence
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSequenceCR codeSequence, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns next available code by the given pattern, index start and increment by value.
+    //! @param[in] codeSequence
+    //! @param[in] startIndex
+    //! @param[in] incrementBy
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeNextAvailable(CodeSequenceCR codeSequence, int startIndex = 0, int incrementBy = 1, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Checks if iModelConnection is subscribed to EventService
     IMODELHUBCLIENT_EXPORT bool IsSubscribedToEvents() const;

@@ -34,7 +34,7 @@ BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDi
 IWSRepositoryClientPtr Client::CreateProjectConnection() const
     {
     Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+    project.Sprintf("%s--%s", ServerSchema::Plugin::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
     client->GetWSClient()->EnableWsgServerHeader(true);
@@ -906,7 +906,7 @@ StatusTaskPtr Client::DeleteiModel(iModelInfoCR iModelInfo, ICancellationTokenPt
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
-    ObjectId iModelId = ObjectId(ServerSchema::Plugin::Project, ServerSchema::Class::iModel, iModelInfo.GetId());
+    ObjectId iModelId = ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId());
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete iModel request. iModel ID: %s.", iModelInfo.GetId().c_str());
     return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
         {
