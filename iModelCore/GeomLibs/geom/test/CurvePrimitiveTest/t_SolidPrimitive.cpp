@@ -2331,3 +2331,94 @@ TEST(Polynomials,Torus)
         Check::EndScope ();
         }
     }
+
+bool ShowFrame (ISolidPrimitivePtr &solid, SolidLocationDetail::FaceIndices &indices, double u, double v, double frameScale = 0.10)
+    {
+    DPoint3d X;
+    DVec3d dXdu, dXdv;
+    if (Check::True (solid->TryUVFractionToXYZ (indices, u, v, X, dXdu, dXdv)))
+        {
+        DVec3d normal;
+        normal.GeometricMeanCrossProduct (dXdu, dXdv);
+        bvector<DPoint3d> points
+            {
+            X + frameScale * dXdv,
+            X,
+            X + frameScale * dXdu,
+            X + (0.1 * frameScale * dXdv),
+            X,
+            X + frameScale * normal
+            };
+        Check::SaveTransformed (points);
+        return true;
+        }
+    return false;
+    }
+
+void TestFaceUV (IGeometryPtr const& geometry)
+    {
+    auto solid = geometry->GetAsISolidPrimitive ();
+    if (!solid.IsValid ())
+        return;
+    Check::SaveTransformed (*solid);
+    bvector<DPoint2d> allUV
+        {
+        DPoint2d::From (0.25, 0.25),
+        DPoint2d::From (0.5, 0.25),
+        DPoint2d::From (0.25, 0.5),
+        DPoint2d::From (0.5, 0.5)
+        };
+    bvector<SolidLocationDetail::FaceIndices> allFaces;
+    solid->GetFaceIndices (allFaces);
+    for (auto &f : allFaces)
+        {
+        for (auto uv : allUV)
+            {
+            ShowFrame (solid, f, uv.x, uv.y);
+            }
+        }
+    }
+
+bool IsSameTopType (IGeometryPtr &g0, IGeometryPtr &g1)
+    {
+    if (g0.IsNull () || g1.IsNull ())
+        return false;
+    if (g0->GetGeometryType () != g1->GetGeometryType ())
+        return false;
+    if (g0->GetGeometryType () == IGeometry::GeometryType::SolidPrimitive)
+        {
+        auto s0 = g0->GetAsISolidPrimitive ();
+        auto s1 = g1->GetAsISolidPrimitive ();
+        if (s0.IsValid () && s1.IsValid ())
+            return s0->GetSolidPrimitiveType () == s1->GetSolidPrimitiveType ();
+        }
+    return true;
+    }
+TEST(SolidPrimitive,FaceUV)
+    {
+    Check::QuietFailureScope scoper;
+
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddAllSolidTypes (geometry);
+    SampleGeometryCreator::AddAllCones (geometry, true);
+    SampleGeometryCreator::AddAllCones (geometry, false);
+
+    SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
+
+    //SampleGeometryCreator::AddAllSolidTypes (geometry);
+    IGeometryPtr g0 = nullptr;
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        IGeometryPtr g = geometry[i];
+        DRange3d range;
+        if (g->TryGetRange (range))
+            {
+            SaveAndRestoreCheckTransform shifter (3.0 * range.XLength (), 0,0);
+            if (!IsSameTopType (g0, g))
+                Check::SaveTransformed (bvector<DPoint3d>{range.low, range.low + DVec3d::From (0, 3.0 * range.YLength (), 0.0)});
+            TestFaceUV (g);
+            g0 = g;
+            }
+        }
+    Check::ClearGeometry ("SolidPrimitive.FaceUV");
+    }
