@@ -2200,6 +2200,16 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     return _GetLevel();
     }
 
+double IScalableMeshMeshQueryParams::GetTargetPixelTolerance()
+{
+    return _GetTargetPixelTolerance();
+}
+
+void IScalableMeshMeshQueryParams::SetTargetPixelTolerance(double pixelTol)
+{
+    return _SetTargetPixelTolerance(pixelTol);
+}
+
 bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
     {
     return _GetUseAllResolutions();

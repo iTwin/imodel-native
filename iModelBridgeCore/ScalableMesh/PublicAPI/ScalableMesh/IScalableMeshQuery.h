@@ -664,12 +664,16 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         virtual bool  _GetUseAllResolutions() = 0;
 
+        virtual double  _GetTargetPixelTolerance() = 0;
+
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
 
         virtual void _SetLevel(size_t depth) = 0;
 
         virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) = 0;
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -680,12 +684,16 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool GetUseAllResolutions();
 
+        BENTLEY_SM_EXPORT double GetTargetPixelTolerance();
+
         BENTLEY_SM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
         BENTLEY_SM_EXPORT void SetLevel(size_t depth);
 
         BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
+
+        BENTLEY_SM_EXPORT void SetTargetPixelTolerance(double pixelTol);
     };
 
 

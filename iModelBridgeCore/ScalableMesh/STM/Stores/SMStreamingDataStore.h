@@ -14,7 +14,6 @@
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
-#include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_wsg;
@@ -39,7 +38,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
     {
     public:
         enum FormatType { Binary, Json, Cesium3DTiles };
-        class SMStreamingSettings
+        class SMStreamingSettings : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             {
             public:
 
@@ -71,22 +70,38 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool IsPublishing()       const   { return m_isPublishing; }
             bool IsCesium3DTiles()    const   { return m_dataType == CESIUM3DTILES; }
             bool IsSMCesium3DTiles()  const   { return m_dataType == SMCESIUM3DTILES; }
+            bool IsGCSStringSet()     const   { return m_isGCSSet; }
 
             WString GetServerID() const
                 {
-                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_serverID).c_str();
+                return WString(m_serverID.c_str(), BentleyCharEncoding::Utf8);
                 }
 
             WString GetGUID() const
                 {
-                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_guid).c_str();
+                return WString(m_guid.c_str(), BentleyCharEncoding::Utf8);
+                }
+
+            Utf8String GetUtf8GUID() const
+                {
+                return m_guid;
                 }
 
             WString GetURL() const
                 {
-                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_url).c_str();
+                return WString(m_url.c_str(), BentleyCharEncoding::Utf8);
                 }
 
+            WString GetGCSString() const
+                {
+                return WString(m_gcs.c_str(), BentleyCharEncoding::Utf8);
+                }
+
+            void SetGCSString(const Utf8String& gcs)
+                {
+                m_isGCSSet = !gcs.empty();
+                m_gcs = gcs;
+                }
 
             public:
 
@@ -95,16 +110,19 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             DataType m_dataType = CESIUM3DTILES;
             bool m_public = false;
             bool m_isPublishing = false;
-            string m_guid;
-            string m_serverID;
-            string m_url;
+            bool m_isGCSSet = false;
+            Utf8String m_guid;
+            Utf8String m_serverID;
+            Utf8String m_url;
+            Utf8String m_gcs;
             };
+        typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMStreamingSettings> SMStreamingSettingsPtr;
 
     private : 
         
         bool m_use_node_header_grouping = false;
         bool m_use_virtual_grouping = false;
-        SMStreamingSettings m_settings;
+        SMStreamingSettingsPtr m_settings;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
         WString m_rootDirectory;
@@ -131,13 +149,13 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
     private :
 
-        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings);
 
     public : 
     
         SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
 
-        SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+        SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings);
 
         virtual ~SMStreamingStore();
 
@@ -146,7 +164,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
             {
             return new SMStreamingStore(dataSourceManager, settings);
             }
@@ -162,7 +180,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SetIsPublishing(bool isPublishing)
             {
-            m_settings.m_isPublishing = isPublishing;
+            m_settings->m_isPublishing = isPublishing;
             }
 
         static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize);

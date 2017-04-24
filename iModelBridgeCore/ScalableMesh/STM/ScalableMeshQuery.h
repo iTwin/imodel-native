@@ -741,6 +741,17 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_maxPixelError;
         }
 
+        virtual double _GetTargetPixelTolerance() override
+        {
+            assert(false && "Not supported by this query");
+            return 0.0;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+        {
+            assert(false && "Not supported by this query");
+        }
+
         virtual StopQueryCallbackFP _GetStopQueryCallback() const
             {
             return m_stopQueryCallbackFP;
@@ -832,6 +843,8 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         size_t m_depth;
         bool m_useAllResolutions;
 
+        double m_pixelTolerance;
+
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -850,6 +863,16 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         virtual bool _GetUseAllResolutions() override
             {
             return m_useAllResolutions;
+            }
+
+        virtual double _GetTargetPixelTolerance() override
+        {
+            return m_pixelTolerance;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+            {
+            m_pixelTolerance = pixelTol;
             }
 
         virtual void _SetLevel(size_t depth) override
@@ -874,6 +897,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {
             m_depth = (size_t)-1;
             m_useAllResolutions = false;
+            m_pixelTolerance = 0.0;
             }
 
         virtual ~ScalableMeshMeshQueryParams()
@@ -1164,6 +1188,17 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             {
             return m_depth;
             }
+
+        virtual double _GetTargetPixelTolerance() override
+        {
+            assert(false && "Not supported by this query");
+            return 0.0;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+        {
+            assert(false && "Not supported by this query");
+        }
 
         virtual size_t _GetLevel() override { return 0; }
         virtual void _SetLevel(size_t depth) override {};

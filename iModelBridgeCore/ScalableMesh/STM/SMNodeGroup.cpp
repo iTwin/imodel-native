@@ -1,3 +1,4 @@
+#include "SMNodeGroup.h"
 //:>--------------------------------------------------------------------------------------+
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
@@ -8,7 +9,9 @@
 
 #include <ScalableMeshPCH.h>
 #include "SMNodeGroup.h"
-#include <codecvt>
+#include <ScalableMesh/GeoCoords/GCS.h>
+#include <STMInternal/GeoCoords/WKTUtils.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 //#ifndef NDEBUG
 std::mutex s_consoleMutex;
@@ -125,7 +128,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                                     assert(L"b3dm" == BEFILENAME(GetExtension, contentURL)); // only b3dm supported at the moment
                                     auto newURLUtf16 = this->m_dataSourcePrefix;
                                     newURLUtf16.append(contentURL.c_str());
-                                    auto newURLUtf8 = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(newURLUtf16.c_str());
+                                    auto newURLUtf8 = Utf8String(newURLUtf16.c_str());
                                     jsonNode["content"]["url"] = Json::Value(newURLUtf8.c_str());
                                     }
                                 }
@@ -319,6 +322,30 @@ void SMNodeGroup::LoadGroupParallel()
         group->m_groupCV.notify_all();
         });
     thread.detach();
+    }
+
+bool SMNodeGroup::GetWKTString(Utf8String & wkt)
+    {
+    assert(m_RootTileTreeNode.isMember("root"));
+    auto const& root = m_RootTileTreeNode["root"];
+    if (!root.isMember("SMHeader")) return false;
+    auto const& smHeader = root["SMHeader"];
+    if (!smHeader.isMember("GCS")) return false;
+    wkt = Utf8String(smHeader["GCS"].asCString());
+    //ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wkt, wkt);
+    //BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
+    //
+    //bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
+    //
+    //assert(result);
+    //
+    //SMStatus gcsCreateStatus;
+    //GCS gcs(GetGCSFactory().Create(wkt.c_str(), wktFlavor, gcsCreateStatus));
+    //
+    //if (SMStatus::S_SUCCESS != gcsCreateStatus)
+    //    return false;
+
+    return true;
     }
 
 DataSourceURL SMNodeGroup::GetDataURLForNode(HPMBlockID blockID)

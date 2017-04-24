@@ -13,7 +13,6 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
-#include <codecvt>
 #ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
 #endif
@@ -135,7 +134,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     //    }
     }
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
     : SMSQLiteSisterFile(nullptr),
       m_settings(settings)
     {
@@ -159,7 +158,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
-    //if (settings.IsLocal())
+    //if (settings->IsLocal())
     //    {
     //    // Create base directory structure to store information if not already done
     //    BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
@@ -173,7 +172,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
     }
 
-template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
     {
     DataSourceStatus                            status;
     DataSourceAccount                       *   account;
@@ -183,15 +182,16 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceAccount::AccountKey               account_key;
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
-    std::unique_ptr<std::function<string(void)>> callback = nullptr;
+    std::unique_ptr<std::function<string()>> wsgCallback = nullptr;
+    std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
-    if (settings.IsLocal() && settings.IsUsingCURL())
+    if (settings->IsLocal() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        BeFileName url(settings.GetURL().c_str());
-        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
+        BeFileName url(settings->GetURL().c_str());
+        if (m_settings->IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
             {
             BeFileName::CreateNewDirectory(url.c_str());
             }
@@ -202,18 +202,18 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             }
         account_prefix = DataSourceURL((L"file:///" + url).c_str());
         }
-    else if (settings.IsLocal())
+    else if (settings->IsLocal())
         {
         service_name = L"DataSourceServiceFile";
         account_name = L"LocalFileAccount";
-        account_prefix = DataSourceURL(settings.GetURL().c_str());
+        account_prefix = DataSourceURL(settings->GetURL().c_str());
         }
-    else if (!settings.IsPublic())
+    else if (!settings->IsPublic())
         {
         service_name = L"DataSourceServiceWSG";
         account_name = L"WSGAccount";
-        account_prefix = DataSourceURL(settings.GetURL().c_str());
-        account_identifier = settings.GetServerID().c_str();
+        account_prefix = DataSourceURL(settings->GetURL().c_str());
+        account_identifier = settings->GetServerID().c_str();
 
         Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
         assert(!tokenUtf8.empty());
@@ -223,29 +223,36 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
         assert(!sslCertificatePath.empty());
 
-        callback.reset(new std::function<string(void)>([]() -> std::string
+        wsgCallback.reset(new std::function<string()>([]() -> std::string
             {
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
             }));
         }
-    else if (settings.IsDataFromRDS() && settings.IsUsingCURL())
+    else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
+        //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
-        BeFileName url(settings.GetURL().c_str());
+        account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
+        BeFileName url(settings->GetURL().c_str());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
-        account_prefix = DataSourceURL(settings.GetGUID().c_str());
+        account_prefix = DataSourceURL(settings->GetGUID().c_str());
         account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
-        account_identifier = settings.GetServerID().c_str();
+        account_identifier = settings->GetServerID().c_str();
+
+        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
+            {
+            return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
+            }));
         }
-    else if (settings.IsDataFromAzure() && settings.IsUsingCURL())
+    else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
         service_name = L"DataSourceServiceAzureCURL";
         account_name = L"AzureCURLAccount";
         assert(!"Not implemented...");
         }
-    else if (settings.IsDataFromAzure())
+    else if (settings->IsDataFromAzure())
         {
         // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
         assert(!"Not implemented...");
@@ -302,7 +309,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-    if (callback != nullptr) account->setWSGTokenGetterCallback(*callback.get());
+    if (wsgCallback != nullptr) account->setWSGTokenGetterCallback(*wsgCallback.get());
+    if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
     account->setPrefixPath(account_prefix);
     auto* casted_account = dynamic_cast<DataSourceAccountWSG*>(account);
@@ -312,7 +320,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         casted_account->setUseDirectAzureCalls(s_use_qa_azure);
         }
 
-    if (!settings.IsLocal())
+    if (!settings->IsLocal())
         {
         // Setup Caching service + set up local file based caching
         DataSourceService                       *   serviceCaching;
@@ -434,7 +442,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     //    }
 
 
-    if (m_settings.IsCesium3DTiles())
+    if (m_settings->IsCesium3DTiles())
         {
         //headerSize = readSize;
         //Json::Value masterHeader;
@@ -462,6 +470,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         m_CesiumGroup->ResetNodeIDGenerator();
+        //m_CesiumGroup->Load(rootNodeBlockID);
+        //Utf8String wkt;
+        //m_CesiumGroup->GetWKTString(wkt);
+        //m_settings->SetGCSString(wkt);
         }
     else
         {
@@ -1674,7 +1686,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
         // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
         //assert(nodeGroup.IsValid());
-        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings.IsPublishing(), nodeGroup);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
         }
 
     return true;    
@@ -1736,14 +1748,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings.IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings->IsPublishing());
     return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings.IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings->IsPublishing());
     return true;
     }
 
@@ -2083,8 +2095,8 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         if (m_jsonHeader->isMember("content"))
             {
             assert((*m_jsonHeader)["content"].isMember("url"));
-            auto dataURL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes((*m_jsonHeader)["content"]["url"].asCString());
-            block->SetURL(DataSourceURL(dataURL));
+            auto dataURL = WString((*m_jsonHeader)["content"]["url"].asCString(), BentleyCharEncoding::Utf8);
+            block->SetURL(DataSourceURL(dataURL.c_str()));
             block->SetDataSourceURL(m_dataSourceURL);
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
             block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
@@ -2335,9 +2347,6 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     {
     Json::Reader    reader;
     Json::Value     cesiumBatchTableHeader;
-    // We copy the batch file and clear data from the block so we can re-fill it with exactly the data we need
-    //bvector<uint8_t> batchFile(*this);
-    //this->clear();
     auto batchTable = cesiumData;
     uint32_t version = *(uint32_t*)(batchTable + sizeof(uint32_t));
     assert(version == 1);
@@ -2527,13 +2536,15 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
         auto transform = Transform::FromIdentity();
-        //transform = Transform::From(333011, 4728426, 0);
+        bool isTransformIdentity = true;
         if (!RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];
             Transform rtcTransform = Transform::From(center[0].asDouble(), center[1].asDouble(), center[2].asDouble());
             transform = Transform::FromProduct(rtcTransform, transform);
+            isTransformIdentity = transform.IsIdentity();
             }
+        // NEEDS_WORK_SM_STREAMING : Ray's TilePublisher stores vertices using the Z-up convention while CC follows the 3DTiles spec which stores vertices using the Y-up convention
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
@@ -2548,7 +2559,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
                 m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
-                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
 
             }
@@ -2557,8 +2568,9 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (float*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
-                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                // The 3DTiles spec suggests using y-up so convert those back to z-up here
+                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], -point_array[3 * i + 2], point_array[3 * i + 1]);
+                if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
             }
         }

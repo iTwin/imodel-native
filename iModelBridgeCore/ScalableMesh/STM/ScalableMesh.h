@@ -110,6 +110,7 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     virtual                             ~ScalableMeshBase                 () = 0;
 
 
+    bool                                LoadGCSFrom(WString wktStr);
     bool                                LoadGCSFrom();
 
 
@@ -195,6 +196,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_computeTileBoundary;
         bool                            m_isInvertingClips;
         bool                            m_needsNeighbors;
+        bool                            m_isCesium3DTiles;
         double                          m_minScreenPixelsPerPoint;            
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
@@ -257,6 +259,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool          _IsTerrain() override;
 
         virtual bool          _IsTextured() override;
+
+        virtual bool          _IsCesium3DTiles() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -425,6 +429,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool          _IsTerrain() override;
 
         virtual bool          _IsTextured() override { return false; }
+
+        virtual bool           _IsCesium3DTiles() override { return false; }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
