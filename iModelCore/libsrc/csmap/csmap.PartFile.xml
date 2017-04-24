@@ -71,7 +71,7 @@
         <SubPart PartName="PublicAPI"/>
         <!-- This MKE file can also produce a shared library with MFC support; you will need to create another part if you want that. -->
         <Bindings>
-            <Libs ProductDirectoryName="CsmapStaticLibDir" Required="false">Delivery/$(stlibprefix)BeCsmapStatic$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeCsmapStatic$(stlibext)</Libs>
             <Libs>Delivery/$(stlibprefix)BeCsmapStatic$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
