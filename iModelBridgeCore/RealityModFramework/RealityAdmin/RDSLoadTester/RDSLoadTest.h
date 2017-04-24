@@ -21,16 +21,16 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 enum OperationType
     {
-    LIST,
-    NAVNODE,
-    STAT,
+    CREATE_REALITYDATA,
+    CREATE_RELATIONSHIP,
     DETAILS,
+    LIST_REALITYDATA,
+    NAVNODE,
+    ENTERPRISE_STAT,
     AZURE_ADDRESS,
-    CREATE,
-    CHANGE,
-    LINK,
-    UNLINK,
-    REMOVE,
+    MODIFY_REALITYDATA,
+    DELETE_RELATIONSHIP,
+    DELETE_REALITYDATA,
     DOWNLOAD,
     last
     };
@@ -113,26 +113,26 @@ public:
     
     void ValidatePrevious(int activeUsers);
 
-    CURL* List();
-    void ValidateList(int activeUsers);
+    CURL* ListRealityData();
+    void ValidateListRealityData(int activeUsers);
     CURL* NavNodeFunc();
     void ValidateNavNode(int activeUsers);
-    CURL* Stat();
-    void ValidateStat(int activeUsers);
+    CURL* EnterpriseStat();
+    void ValidateEnterpriseStat(int activeUsers);
     CURL* Details();
     void ValidateDetails(int activeUsers);
     CURL* AzureAddress();
     void ValidateAzureAddress(int activeUsers);
-    CURL* Create();
-    void ValidateCreate(int activeUsers);
-    CURL* Change();
-    void ValidateChange(int activeUsers);
-    CURL* Link();
-    void ValidateLink(int activeUsers);
-    CURL* Unlink();
-    void ValidateUnlink(int activeUsers);
-    CURL* Delete();
-    void ValidateDelete(int activeUsers);
+    CURL* CreateRealityData();
+    void ValidateCreateRealityData(int activeUsers);
+    CURL* ModifyRealityData();
+    void ValidateModifyRealityData(int activeUsers);
+    CURL* CreateRelationship();
+    void ValidateCreateRelationship(int activeUsers);
+    CURL* DeleteRelationship();
+    void ValidateDeleteRelationship(int activeUsers);
+    CURL* DeleteRealityData();
+    void ValidateDeleteRealityData(int activeUsers);
     CURL* Download();
     void ValidateDownload(int activeUsers);
 
