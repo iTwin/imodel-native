@@ -633,6 +633,22 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
     return false;
     }
 
+// Get all intesection with ray in an ordered vector (closest -> fardest)
+bool IntersectRay3D(bvector<DPoint3d>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint, IScalableMeshNodePtr& target)
+    {
+    DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    flags->SetSaveToCache(true);
+    flags->SetPrecomputeBoxes(true);
+    auto meshP = target->GetMesh(flags);
+    if (meshP != nullptr) return meshP->IntersectRay(pointsOnDTM, ray);
+    return false;
+    }
+
+bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    return false;
+    }
 
 bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {    

@@ -744,6 +744,11 @@ bool IScalableMeshMesh::IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return _IntersectRay(pt,ray);
     }
 
+bool IScalableMeshMesh::IntersectRay(bvector<DPoint3d>& pts, const DRay3d& ray) const
+    {
+    return _IntersectRay(pts, ray);
+    }
+
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
     {
     return _FindTriangleForProjectedPoint(outTriangle, point, use2d);
@@ -1618,6 +1623,51 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
             minParam = param;
             }
         }
+    return minParam < DBL_MAX;
+    }
+
+struct myClassCompare {
+    myClassCompare(const DPoint3d& _s) { source = _s; }
+    bool operator() (DPoint3d pt1, DPoint3d pt2) { 
+        return ( (pt1-source).Magnitude() < (pt2 - source).Magnitude());
+        }
+    DPoint3d source;
+    } myPointComparator;
+
+bool ScalableMeshMesh::_IntersectRay(bvector<DPoint3d>& points, const DRay3d& ray) const
+    {
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+    double minParam = DBL_MAX;
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+        DPoint3d projectedPt;
+        DPoint3d bary;
+        double param;
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (m_boxes.size() > 0)
+                if (!m_boxes[i / 3].IsContainedXY(ray.origin)) continue;
+                else
+                    if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
+
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
+        //&& param < minParam;
+        if (intersectTri)
+            {
+            points.push_back(projectedPt);
+            minParam = param;
+            }
+        }
+
+    myClassCompare Comparator(ray.origin);
+    std::sort(points.begin(), points.end(), Comparator);
+
     return minParam < DBL_MAX;
     }
 
@@ -2508,6 +2558,12 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
     {
     return _GetChildrenNodes();
     }
+
+IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
+    {
+    return _GetParentNode();
+    }
+
 
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {

@@ -2542,6 +2542,19 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     return children;
     }
 
+template <class POINT> 
+IScalableMeshNodePtr ScalableMeshNode<POINT>::_GetParentNode() const
+    {
+    LOAD_NODE
+
+    IScalableMeshNodePtr parent = nullptr;
+    if (m_node->m_nodeHeader.m_IsRoot) 
+        return parent;
+
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    return meshNode->GetParentNodePtr();
+    }
+
 #ifdef WIP_MESH_IMPORT
 
 template <class POINT> void ScalableMeshNode<POINT>::_GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const
