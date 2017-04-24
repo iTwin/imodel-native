@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
     RealityDataService::Request(*contentRequest, &file, contentResponse);
     file.Close();
     
-    bvector<Utf8String> filter1 = bvector<Utf8String>();
-    bvector<Utf8String> filter2 = bvector<Utf8String>();
+    bvector<RDSFilter> filter1 = bvector<RDSFilter>();
+    bvector<RDSFilter> filter2 = bvector<RDSFilter>();
     filter1.push_back(RealityDataFilterCreator::FilterByOwner("francis.boily@bentley.com"));
     filter1.push_back(RealityDataFilterCreator::FilterByCreationDate(DateTime(2016,12,01), DateTime(2017,01,05))); 
     filter1.push_back(RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification::MODEL));
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     
     // important note: parentheses are not currently supported, which means that all filters (AND/OR) are evaluated together
     // results may differ from their intended goal
-    Utf8String filters = RealityDataFilterCreator::GroupFiltersOR(filter2);
+    RDSFilter filters = RealityDataFilterCreator::GroupFiltersOR(filter2);
 
     RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
 

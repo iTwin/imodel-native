@@ -385,8 +385,10 @@ Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf
         {
         filter.append(Utf8PrintfString("[%f,%f],", footprint[i].longitude, footprint[i].latitude));
         }
-    filter.append(Utf8PrintfString("[%f,%f]", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
-    filter.append(Utf8PrintfString("], \\\"coordinate_system\\\":\\\"%s\\\"}", coordSys));
+    filter.append(Utf8PrintfString("[%f,%f]]", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
+    if(coordSys.length() > 0)
+        filter.append(Utf8PrintfString(", \\\"coordinate_system\\\":\\\"%s\\\"", coordSys));
+    filter.append("}");
 
     return filter;
     }
@@ -417,9 +419,14 @@ bvector<GeoPoint2d> RealityDataBase::StringToFootprint(Utf8String footprintStr, 
         footprint.push_back(pt);
         }
 
-    coordSys = coordSys.substr(coordSys.find_first_of("c"), coordSys.find_last_of("}") - coordSys.find_first_of("c")); // c-oordinate_system
-    coordSys.ReplaceAll("coordinate_system\" : \"", "");
-    coordSys.ReplaceAll("\" }", "");
+    if(coordSys.ContainsI("coordinate_system"))
+        {
+        coordSys = coordSys.substr(coordSys.find_first_of("c"), coordSys.find_last_of("}") - coordSys.find_first_of("c")); // c-oordinate_system
+        coordSys.ReplaceAll("coordinate_system\" : \"", "");
+        coordSys.ReplaceAll("\" }", "");
+        }
+    else
+        coordSys = "";
     
     return footprint;
     }

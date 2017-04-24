@@ -118,6 +118,7 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataProjectRelationshipByProjectIdRequest
+//! Requests all relationships for a given ProjectId
 //=====================================================================================
 struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
@@ -134,6 +135,7 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataProjectRelationshipByRealityDataIdRequest
+//! Requests all relationships for a give Reality Data
 //=====================================================================================
 struct RealityDataProjectRelationshipByRealityDataIdRequest : public RealityDataUrl
     {
@@ -186,19 +188,24 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                         Spencer.Mason            12/2016
+//! AzureHandshake
+//! Requests the direct access url in the azure blob for a specified RealityData or 
+//! document. Also provides methods to parse the response received
 //=====================================================================================
 struct AzureHandshake : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT AzureHandshake(Utf8String sourcePath, bool isWrite);
+    REALITYDATAPLATFORM_EXPORT AzureHandshake();
+
+    //! Parses the json response received from the server and extracts the server's URL,
+    //! the azure token, and the a system timestamp for when the token should be renewed
     REALITYDATAPLATFORM_EXPORT BentleyStatus ParseResponse(Utf8StringCR jsonresponse, Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 private:
     bool       m_isWrite;
-    AzureHandshake();
     };
-
 
 
 //=====================================================================================
@@ -233,7 +240,8 @@ private:
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : m_handshakeRequest(0)
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : 
+        m_handshakeRequest(nullptr), m_allowAzureRedirection(false), m_AzureRedirected(false)
     { m_validRequestString = false; m_id = identifier; }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
@@ -281,6 +289,26 @@ protected:
 
     };
 
+struct RealityDataFilterCreator; // forward decl
+
+//=====================================================================================
+//! @bsiclass                                Spencer.Mason                     04/2017
+//! RDSFilter
+//! Struct exists only to impose specific usage on client code. Due to a quirk in WSG
+//! UriEncoding must only be applied to specific parts of an Url. To ensure this, filters
+//! must percolate through the RealityDataFilterCreator
+//=====================================================================================
+struct RDSFilter
+    {
+friend struct RealityDataFilterCreator;
+public:
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR ToString() const { return m_filter; }
+private:
+    RDSFilter(Utf8StringCR filter) : m_filter(filter){}
+
+    Utf8String m_filter;
+    };
+
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataFilterCreator
@@ -291,43 +319,43 @@ protected:
 struct RealityDataFilterCreator
     {
     //! Sets filtering upon the name. 
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByName(Utf8String name);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByName(Utf8String name);
 
     //! Sets filtering upon the classification. The classification may contain
     //!  more than one classification by bitwise oring the classification
     //!  values.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(RealityDataBase::Classification classification);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByClassification(RealityDataBase::Classification classification);
 
     //! Filters the returned set by the reality data size.
     //! Both the min and max size must be specified
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterBySize(double minSize, double maxSize);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterBySize(uint64_t minSize, uint64_t maxSize);
 
     //! Sets a spatial filter. Only RealityData for which the footprint overlaps (even
     //! partially) the given region will be selected.
     //! The area provided is a list of geo points (longitude/latitude)
     //!  that must form a closed area. The last point of the list must
     //!  be equal to the first point.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys);
 
     //! Filters the list by owner. Only reality data belonging to given owner
     //!  will be returned. The owner is specified by the email address
     //!  and is case insensitive.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByOwner(Utf8String owner);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByOwner(Utf8String owner);
 
     //! Filters the list by creation date. To indicate either min or max date
     //!  are unbounded simply provide an invalid/unset DataTime object
     //!  If both dates are invalid/unset then the command will return an error
     //!  and no filtering will be set.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByCreationDate(DateTime minDate, DateTime maxDate);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByCreationDate(DateTime minDate, DateTime maxDate);
 
     //! Filters the list by modification date. To indicate either min or max date
     //!  are unbounded simply provide an invalid/unset DataTime object.
     //! If both dates are invalid/unset then the command will return an error
     //!  and no filtering will be set.  
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByModificationDate(DateTime minDate, DateTime maxDate);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByModificationDate(DateTime minDate, DateTime maxDate);
 
     //! Filters in or out public data as specified
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterVisibility(RealityDataBase::Visibility visibility);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterVisibility(RealityDataBase::Visibility visibility);
         
     //! Filter by resolution. As resolution may be confusing since minimum resolution is
     //!  expressed a higher number the resolution can be specified in any order and
@@ -335,7 +363,7 @@ struct RealityDataFilterCreator
     //! Reality data that have no resolution set will be considered 'unspecified' and
     //!  will be returned whatever the resolution bracket given if filterOutUnspecified is false
     //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
 
     //! Filter by accuracy. As accuracy may be confusing since minimum accuracy is
     //!  expressed a higher number the accuracy can be specified in any order and
@@ -343,33 +371,33 @@ struct RealityDataFilterCreator
     //! Reality data that have no accuracy set will be considered 'unspecified' and
     //!  will be returned whatever the bracket given if filterOutUnspecified is false
     //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
 
     //! Filter by type. The type is specified by a string in the reality data.
     //! The filter type specification here can contain many types
     //!  separated by semi-colons. All reality data of any of the specified types
     //!  will be returned in the list.
     //!  types are case insensitive
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByType(Utf8String types);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByType(Utf8String types);
 
     //! Filter by dataset. Only reality data of specified dataset will be returned
     //!  note that Dataset names are case-sensitive.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByDataset(Utf8String dataset);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByDataset(Utf8String dataset);
 
     //! Sets filtering upon the group. 
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByGroup(Utf8String group);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByGroup(Utf8String group);
 
     //! Filter relationship by RealityDataId. Only relationships for specified RealityDataId will be returned
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterRelationshipByRealityDataId(Utf8String realityDataId);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterRelationshipByRealityDataId(Utf8String realityDataId);
 
     //! Filter relationship by ProjectId. Only relationships for specified ProjectId will be returned
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterRelationshipByProjectId(Utf8String projectId);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterRelationshipByProjectId(Utf8String projectId);
     
     //! Groups all filters inside of parentheses, all criteria must be met ( && )
-    REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersAND(bvector<Utf8String> filters);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter GroupFiltersAND(bvector<RDSFilter> filters);
 
     //! Groups all filters inside of parentheses, only one of the criteria must be met ( || )
-    REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersOR(bvector<Utf8String> filters);
+    REALITYDATAPLATFORM_EXPORT static RDSFilter GroupFiltersOR(bvector<RDSFilter> filters);
     };
 
 
@@ -394,7 +422,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
-    REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
+    REALITYDATAPLATFORM_EXPORT void SetFilter(const RDSFilter& filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
     REALITYDATAPLATFORM_EXPORT void SetProject(Utf8StringCR project);
 
@@ -477,6 +505,7 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
+//! AllRealityDataByRootId
 //! A request for a list of all documents in a repository
 //=====================================================================================
 struct AllRealityDataByRootId : public RealityDataDocumentContentByIdRequest
@@ -498,11 +527,10 @@ private:
     };
 
 //=====================================================================================
-//! @bsimethod                                   Spencer.Mason 02/2017
-//! The following are the declaration for callback for the upload process.
+//! @bsimethod                          Spencer.Mason                          02/2017
+//! The following are the declarations for callbacks that can be used with the
+//! RealityData uploader or downloader.
 //=====================================================================================
-
-
 
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
@@ -603,13 +631,17 @@ struct RealityDataRelationshipDelete : public RealityDataUrl
 
 
 //=====================================================================================
-//! @bsimethod                                   Spencer.Mason 02/2017
+//! @bsimethod                                   Spencer.Mason          02/2017
 //! The base class to upload/download classes. This class defines the interface
 //! common to both upload and download to/from Reality Data Service
 //=====================================================================================
 struct RealityDataFileTransfer;
 
-//where the curl upload ended, either in success or failure
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason          02/2017
+//! TransferResult
+//! struct that stores information relative to the success or failure of the transfer
+//=====================================================================================
 struct TransferResult
     {
     int                     errorCode; //code returned by curl
@@ -619,9 +651,14 @@ struct TransferResult
     RawServerResponse       response;
     };
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason          02/2017
+//! TransferReport
+//! struct that stores multiple TransferResult objects and can be used to write their
+//! Contents to an XML string
+//=====================================================================================
 struct TransferReport
     {
-    size_t                  packageId;
     bvector<TransferResult*>  results;
     ~TransferReport()
         {
@@ -629,6 +666,7 @@ struct TransferReport
             delete result;
         }
 
+    //! Writes the contents of each TranferResult as an attribute of and XML string
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
 
@@ -641,12 +679,12 @@ struct TransferReport
 //=====================================================================================
 struct RealityDataServiceTransfer : public CurlConstructor
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceTransfer(){}
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceTransfer() : CurlConstructor() {}
 
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataServiceTransfer();
 
     //! Set proxy informations
-    //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
 
     //! Set certificate path for https upload.
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
@@ -672,18 +710,18 @@ struct RealityDataServiceTransfer : public CurlConstructor
     //! Start the upload progress for all links.
     //! Returns a reference to the internal transfer report structure.
     REALITYDATAPLATFORM_EXPORT virtual const TransferReport& Perform();
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
-
+    
+    //! Specifies if the the transfer report will track every operation or only those that failed
     REALITYDATAPLATFORM_EXPORT void OnlyReportErrors(bool onlyErrors) { m_onlyReportErrors = onlyErrors; }
 
+    //! Returns the system time for when the azure token should be renewed
     REALITYDATAPLATFORM_EXPORT int64_t GetTokenTimer() { return m_azureTokenTimer; }
 
-    REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
-
+    //! Validates that files have been found in the paths provided by the user
     REALITYDATAPLATFORM_EXPORT bool IsValidTransfer() { return m_filesToTransfer.size() > 0; }
 
 protected:
+    REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
     void SetupCurlforFile(RealityDataUrl* upload, bool verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);

@@ -282,7 +282,6 @@ namespace IndexECPlugin.Source
                         }
                     else
                         {
-                        //TODO : We should rename queryType, as it has taken the role of a default parameter
                         sources = new string[] { searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue };
                         }
 
@@ -425,7 +424,8 @@ namespace IndexECPlugin.Source
 
             IEnumerable<IECInstance> rdsInstances = null;
             Thread rdsQuery = null;
-            if ( sources.Contains(DataSource.RDS) || sources.Contains(DataSource.All) )
+            //TODO: Reenable RDS when using All. This requires the operator "IN" to be usable in RDS (ideally) and some changes to the sub-index.
+            if ( sources.Contains(DataSource.RDS) /* || sources.Contains(DataSource.All)*/ )
                 {
 
                 rdsQuery = new Thread(() =>

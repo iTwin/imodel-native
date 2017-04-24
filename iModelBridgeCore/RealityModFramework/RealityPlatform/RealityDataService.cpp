@@ -454,157 +454,156 @@ void RealityDataDocumentContentByIdRequest::EncodeId() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
+RDSFilter RealityDataFilterCreator::FilterByName(Utf8String name)
     {   
-    return Utf8PrintfString("Name+eq+'%s'", name);
+    return RDSFilter(Utf8PrintfString("Name+eq+'%s'", BeStringUtilities::UriEncode(name.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification classification)
+RDSFilter RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification classification)
     {
-    return Utf8PrintfString("Classification+eq+'%s'", RealityDataBase::GetTagFromClassification(classification));
+    return RDSFilter(Utf8PrintfString("Classification+eq+'%s'", BeStringUtilities::UriEncode(RealityDataBase::GetTagFromClassification(classification).c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize)
+RDSFilter RealityDataFilterCreator::FilterBySize(uint64_t minSize, uint64_t maxSize)
     {
-    return Utf8PrintfString("Size+ge+%f+and+Size+le+%f", minSize, maxSize);
+    return RDSFilter(Utf8PrintfString("Size+ge+%u+and+Size+le+%u", minSize, maxSize));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
+RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    return Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToString(area, Utf8PrintfString("%lu", coordSys)));
+    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToString(area, Utf8PrintfString("%lu", coordSys))));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
+RDSFilter RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     {
-    return Utf8PrintfString("OwnedBy+eq+'%s'", owner);
+    return RDSFilter(Utf8PrintfString("OwnedBy+eq+'%s'", BeStringUtilities::UriEncode(owner.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
+RDSFilter RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
-    return Utf8PrintfString("CreatedTimestamp+ge+'%s'+and+CreatedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString());
+    return RDSFilter(Utf8PrintfString("CreatedTimestamp+ge+'%s'+and+CreatedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
+RDSFilter RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
-    return Utf8PrintfString("ModifiedTimestamp+ge+'%s'+and+ModifiedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString());
+    return RDSFilter(Utf8PrintfString("ModifiedTimestamp+ge+'%s'+and+ModifiedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
+RDSFilter RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    return Utf8PrintfString("Visibility+eq+'%s'", RealityDataBase::GetTagFromVisibility(visibility));
+    return RDSFilter(Utf8PrintfString("Visibility+eq+'%s'", RealityDataBase::GetTagFromVisibility(visibility)));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double resMax, bool filterOutUnspecified)
+RDSFilter RealityDataFilterCreator::FilterByResolution(double resMin, double resMax, bool filterOutUnspecified)
     {
-    return Utf8PrintfString("ResolutionInMeters+ge+'%f'+and+ResolutionInMeters+le+'%f'", resMin, resMax);
+    return RDSFilter(Utf8PrintfString("ResolutionInMeters+ge+'%f'+and+ResolutionInMeters+le+'%f'", resMin, resMax));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified)
+RDSFilter RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified)
     {
-    return Utf8PrintfString("AccuracyInMeters+ge+'%f'+and+AccuracyInMeters+le+'%f'", accuracyMin, accuracyMax);
+    return RDSFilter(Utf8PrintfString("AccuracyInMeters+ge+'%f'+and+AccuracyInMeters+le+'%f'", accuracyMin, accuracyMax));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
+RDSFilter RealityDataFilterCreator::FilterByType(Utf8String types)
     {
-    return Utf8PrintfString("Type+eq+'%s'", types);
+    return RDSFilter(Utf8PrintfString("Type+eq+'%s'", BeStringUtilities::UriEncode(types.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
+RDSFilter RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     {
-    return Utf8PrintfString("Dataset+eq+'%s'", dataset);
+    return RDSFilter(Utf8PrintfString("Dataset+eq+'%s'", BeStringUtilities::UriEncode(dataset.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByGroup(Utf8String group)
+RDSFilter RealityDataFilterCreator::FilterByGroup(Utf8String group)
     {   
-    return Utf8PrintfString("Group+eq+'%s'", group);
+    return RDSFilter(Utf8PrintfString("Group+eq+'%s'", BeStringUtilities::UriEncode(group.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String realityDataId)
+RDSFilter RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String realityDataId)
     {
-    return Utf8PrintfString("RealityDataId+eq+'%s'", realityDataId);
+    return RDSFilter(Utf8PrintfString("RealityDataId+eq+'%s'", BeStringUtilities::UriEncode(realityDataId.c_str())));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
+RDSFilter RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
     {
-    return Utf8PrintfString("ProjectId+eq+'%s'", projectId);
+    return RDSFilter(Utf8PrintfString("ProjectId+eq+'%s'", BeStringUtilities::UriEncode(projectId.c_str())));
     }
 
 //=====================================================================================
-//! @bsimethod                                   Spencer.Mason              02/2017
+//! @bsimethod                                   Spencer.Mason              04/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::GroupFiltersAND(bvector<Utf8String> filters)
-    {
+RDSFilter RealityDataFilterCreator::GroupFiltersAND(bvector<RDSFilter> filters)
+{
     Utf8String filter = "";//"(";
-    filter.append(filters[0]);
-    for(int i = 1; i < filters.size(); i++)
-        {
-        filter.append("+and+");
-        filter.append(filters[i]);
-        }
-
-    //filter.append(")");
-    return filter;
-    }
-
-//=====================================================================================
-//! @bsimethod                                   Spencer.Mason              02/2017
-//=====================================================================================
-Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
-    {
-    Utf8String filter = "";//"(";
-    filter.append(filters[0]);
+    filter.append(filters[0].ToString());
     for (int i = 1; i < filters.size(); i++)
-        {
-        filter.append("+or+");
-        filter.append(filters[i]);
-        }
-
-    //filter.append(")");
-    return filter;
+    {
+        filter.append("+and+");
+        filter.append(filters[i].ToString());
     }
 
+    //filter.append(")");
+    return RDSFilter(filter);
+}
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              04/2017
+//=====================================================================================
+RDSFilter RealityDataFilterCreator::GroupFiltersOR(bvector<RDSFilter> filters)
+{
+    Utf8String filter = "";//"(";
+    filter.append(filters[0].ToString());
+    for (int i = 1; i < filters.size(); i++)
+    {
+        filter.append("+or+");
+        filter.append(filters[i].ToString());
+    }
+
+    //filter.append(")");
+    return RDSFilter(filter);
+}
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -741,9 +740,9 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) 
+void RealityDataPagedRequest::SetFilter(const RDSFilter& filter) 
     { 
-    m_filter = BeStringUtilities::UriEncode(filter.c_str()); 
+    m_filter = filter.ToString();
     }
 
 //=====================================================================================
@@ -1078,6 +1077,13 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
 
     m_requestHeader.clear();
+    if(m_fileUrl.EndsWith(".js"))
+        m_requestHeader.push_back("Content-Type: application/javascript");
+    else if (m_fileUrl.EndsWith(".html"))
+        m_requestHeader.push_back("Content-Type: text/html");
+    else if (m_fileUrl.EndsWith(".css"))
+        m_requestHeader.push_back("Content-Type: text/css");
+    
     if(m_moreToSend)
         m_requestHeader.push_back("x-ms-blob-type: BlockBlob");
     }
@@ -1185,6 +1191,12 @@ void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
 
     m_requestHeader.clear();
+    }
+
+AzureHandshake::AzureHandshake() : m_isWrite(false)
+    {
+    m_validRequestString = false;
+    m_id = "";
     }
 
 AzureHandshake::AzureHandshake(Utf8String sourcePath, bool isWrite) : m_isWrite(isWrite) 
@@ -1659,7 +1671,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
     {
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(!(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK)))
+    if(!m_onlyReportErrors && ErrorCode != static_cast<int>(CURLE_OK))
         {
         if (m_pStatusFunc)
             m_pStatusFunc(index, pClient, ErrorCode, pMsg);
@@ -1723,7 +1735,7 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func) :
-    m_overwrite(overwrite)
+    RealityDataServiceTransfer(), m_overwrite(overwrite)
     { 
     m_id = id;
     m_azureTokenTimer = 0;
@@ -1795,7 +1807,8 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func)
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func) :
+    RealityDataServiceTransfer()
     {
     m_id = serverId;
     m_azureTokenTimer = 0;
@@ -1890,7 +1903,8 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func)
+RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func) :
+    RealityDataServiceTransfer()
     {
     m_id = serverId;
     m_azureTokenTimer = 0;

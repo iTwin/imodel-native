@@ -76,7 +76,17 @@
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
     </Part>
-
+    
+    <Part Name="RDSLoadTest" BentleyBuildMakeFile="RealityAdmin\RDSLoadTester\RDSLoadTest.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <Bindings>
+            <Assemblies>Delivery/RDSLoadTest.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
         <SubPart PartName="WMSCapabilitiesNET"/>
@@ -254,6 +264,7 @@
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="RealityContextTest"/>
+        <SubPart PartName="RDSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
     </Part>
 
@@ -290,6 +301,16 @@
     <Part Name="RealityDbECPluginNuGetPackages">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         
+        <!--<SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
+        <SubPart PartName="Exceptions"           PartFile="platformtech"       Repository="platformtech" />
+        <SubPart PartName="ExtensionDiscovery"   PartFile="platformtech"       Repository="platformtech" />
+        <SubPart PartName="Platform"             PartFile="platformtech"       Repository="platformtech" />
+        <SubPart PartName="General"              PartFile="platformtech"       Repository="platformtech" />
+        <SubPart PartName="GeometryStructsNET"   PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
+        <SubPart PartName="BentleyGeometryNETFB" PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
+        <SubPart PartName="GeometryCommon"       PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
+        <SubPart PartName="UI"                   PartFile="platformtech"       Repository="platformtech" />-->
+        
         <!-- The following subparts have been added because BentleyDesktopClient already has a part for it. We have to get 
         this dll from that particular subpart, or else we have a conflict when building with RealityModFramework BuildStrategy 
         when using the commented lines below instead. If we do not get it from any source, we have a problem building 
@@ -299,6 +320,14 @@
         <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         
+        
+        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
         
         <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
@@ -311,6 +340,12 @@
             <Assemblies>NuGet\net45\Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
             <Assemblies>NuGet\net45-full\Microsoft.ServiceBus.dll</Assemblies> 
             <Assemblies>NuGet\net45\Bentley.Discovery.Buddi.Client.dll</Assemblies> 
+            <!--<Assemblies>NuGet\net452\Bentley.EC.AbstractUI3.dll</Assemblies>
+            <Assemblies>NuGet\net452\Bentley.EC.Persistence3.dll</Assemblies>
+            <Assemblies>NuGet\net452\Bentley.EC.PluginBuilder3.dll</Assemblies>
+            <Assemblies>NuGet\net452\Bentley.EC.Presentation3.dll</Assemblies>
+            <Assemblies>NuGet\net452\Bentley.ECObjects3.dll</Assemblies>
+            <Assemblies>NuGet\net452\Bentley.ECSystem3.dll</Assemblies>-->
             <!--<Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>-->
             <!--<Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>-->
         </Bindings>
