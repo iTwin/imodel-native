@@ -837,6 +837,11 @@ void Root::DrawInView(RenderContextR context)
     bmap<int, uint32_t> debugMap;
 #endif
 
+    std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
+        {
+        return args.ComputeTileDistance(*lhs) < args.ComputeTileDistance(*rhs);
+        });
+
     for (auto const& selectedTile : selectedTiles)
         {
         BeAssert(!selectedTile->IsCulled(args));

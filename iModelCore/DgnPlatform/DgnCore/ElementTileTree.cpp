@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG)
+#if defined(NDEBUG) && false
 #define ELEMENT_TILE_DEBUG_RANGE false
 #else
 #define ELEMENT_TILE_DEBUG_RANGE true
@@ -222,10 +222,12 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
-constexpr double s_minToleranceRatio = 1000.0;
+constexpr double s_tileScreenSize = 512.0;
+constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
+constexpr double s_spatialRangeMultiplier = 4.0;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -431,7 +433,11 @@ private:
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
 protected:
+#if defined(ELEMENT_TILE_TRUNCATE_PLANAR)
     bool                        m_anyCurvedGeometry = false;
+#else
+    bool                        m_anyCurvedGeometry = true;
+#endif
 
     virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId);
     virtual bool _AcceptElement(DRange3dCR range, DgnElementId elemId);
@@ -812,7 +818,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
 
         // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
-        range.ScaleAboutCenter(range, 4.0);
+        range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
         }
     else
         {
@@ -1082,7 +1088,7 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return 512; // ###TODO: come up with a decent value, and account for device ppi
+    return s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 //=======================================================================================
