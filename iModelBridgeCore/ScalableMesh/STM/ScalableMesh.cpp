@@ -2757,9 +2757,9 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
 
     GetCoverageTerrainAbsFileName(terrainAbsName, m_baseExtraFilesPath, coverageName);
 
-    assert(!terrainAbsName.DoesPathExist());
-          
 #ifndef VANCOUVER_API
+    assert(!terrainAbsName.DoesPathExist());
+
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {
         IScalableMeshPtr scalableMeshPtr(this);
@@ -2792,6 +2792,8 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
             m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();*/
             }
         }
+#else
+    assert(false); // NEEDS_WORK_SM : enable ground detection in vancouver
 #endif
 
     createdTerrain = terrainAbsName;

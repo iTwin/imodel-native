@@ -417,10 +417,17 @@ DbResult SMSQLiteFile::CreateTables()
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
     {
-    BeFileName sqlFileName(filename);
+    BeFileName sqlFileName(filename.GetWCharCP());
 
+#ifndef VANCOUVER_API
     if (!sqlFileName.GetDirectoryName().DoesPathExist())
         BeFileName::CreateNewDirectory(sqlFileName.GetDirectoryName().GetWCharCP());
+#else
+    BeFileName path(sqlFileName.GetWCharCP());
+    BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+    if (!BeFileName::DoesPathExist(dirname))
+        BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
 
     Utf8String utf8FileName(filename);            
     return Create(utf8FileName.c_str(), type);
