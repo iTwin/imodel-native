@@ -330,6 +330,11 @@ void DgnDb::SetupNewDgnDb(CreateDgnDbParams const& params)
     ExecuteSql("PRAGMA defer_foreign_keys = false;");
     CreateDictionaryModel();
     CreateRealityDataSourcesModel();
+
+    DbResult result = InitializeElementIdSequence();
+    BeAssert(result == BE_SQLITE_OK);
+    result = ResetElementIdSequence(GetBriefcaseId());
+    BeAssert(result == BE_SQLITE_OK);
     }
 
 /*---------------------------------------------------------------------------------**//**

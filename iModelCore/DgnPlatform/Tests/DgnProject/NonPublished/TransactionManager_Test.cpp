@@ -1144,6 +1144,12 @@ TEST_F(DynamicTxnsTest, TxnMonitors)
     EXPECT_FALSE(monitor.HasInstances());
     EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
 
+    ExpectAllExist(persistentIds);
+    ExpectNoneExist(dynamicIds);
+
+    persistentIds.clear();
+    dynamicIds.clear();
+
     monitor.Clear();
     InsertElement(persistentIds);
     txns.BeginDynamicOperation();

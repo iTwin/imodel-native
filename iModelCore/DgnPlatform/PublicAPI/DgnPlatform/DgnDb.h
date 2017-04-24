@@ -14,6 +14,7 @@
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -172,9 +173,13 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     };
 
 private:
+    BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
+
     void Destroy();
     BeSQLite::DbResult PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
     void SetupNewDgnDb(CreateDgnDbParams const& params);
+    BeSQLite::DbResult InitializeElementIdSequence();
+    BeSQLite::DbResult ResetElementIdSequence(BeSQLite::BeBriefcaseId briefcaseId);
 
 protected:
     friend struct Txns;
@@ -199,7 +204,10 @@ protected:
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdChanged(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnAfterSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
@@ -406,6 +414,10 @@ public:
 
     //! @private internal use only (v8 importer)
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
+
+    //! Utility method to get the next id in a sequence
+    //! @private internal use only
+    BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
 };
 
 END_BENTLEY_DGN_NAMESPACE

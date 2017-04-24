@@ -1248,24 +1248,14 @@ Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueT
 DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::InitNextId()
-    {
-    if (!m_nextAvailableId.IsValid())
-        m_nextAvailableId = DgnElementId(m_dgndb, BIS_TABLE(BIS_CLASS_Element), "Id");
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
     if (!element.m_flags.m_preassignedId)
         {
-        InitNextId();
-        m_nextAvailableId.UseNext(m_dgndb);
-        element.m_elementId = m_nextAvailableId; 
+        if (BE_SQLITE_OK != m_dgndb.GetElementIdSequence().GetNextValue(element.m_elementId))
+            return nullptr;
         }
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
@@ -1500,10 +1490,6 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
         return DgnDbStatus::BadElement;
 
     DgnElementCR element = *el;
-
-    // Get the next available id now, before we perform any deletes, so if we delete and then undo the last element we don't reuse its id.
-    // Otherwise, we may mistake a new element as being a modification to a deleted element in a changeset.
-    InitNextId(); 
 
     DgnDbStatus stat = element._OnDelete();
     if (DgnDbStatus::Success != stat)

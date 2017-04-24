@@ -45,7 +45,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
@@ -127,6 +127,57 @@ DbResult DgnDb::_OnDbOpened()
     return BE_SQLITE_OK;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnDbOpening()
+    {
+    DbResult result = T_Super::_OnDbOpening();
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return InitializeElementIdSequence();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
+    {
+    DbResult result = T_Super::_OnBriefcaseIdChanged(newBriefcaseId);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return ResetElementIdSequence(newBriefcaseId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::InitializeElementIdSequence()
+    {
+    return m_elementIdSequence.Initialize();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
+    {
+    BeBriefcaseBasedId firstId(briefcaseId, 0);
+    BeBriefcaseBasedId lastId(briefcaseId.GetNextBriefcaseId(), 0);
+
+    Statement stmt;
+    stmt.Prepare(*this, "SELECT max(Id) FROM " BIS_TABLE(BIS_CLASS_Element)  " WHERE Id >= ? AND Id < ?");
+    stmt.BindInt64(1, firstId.GetValueUnchecked());
+    stmt.BindInt64(2, lastId.GetValueUnchecked());
+    stmt.Step();
+
+    uint64_t minimumId = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0);
+
+    return m_elementIdSequence.Reset(minimumId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -154,9 +205,9 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
     return *m_briefcaseManager;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/15
+//--------------------------------------------------------------------------------------
 RevisionManagerR DgnDb::Revisions() const
     {
     if (nullptr == m_revisionManager)
