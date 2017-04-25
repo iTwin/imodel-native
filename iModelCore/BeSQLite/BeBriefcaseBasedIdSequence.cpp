@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
+#include <Logging/bentleylogging.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
