@@ -961,22 +961,65 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         }
 
+    DbTable const* singleTableInvolved = expsByMappedTable.begin()->first;
+
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
     WhereExp const* whereClause = updateExp.GetWhereClauseExp();
+    bool isWhereClauseSelectorNeeded = false;
     if (whereClause != nullptr)
         {
+        if (expsByMappedTable.size() > 1)
+            isWhereClauseSelectorNeeded = true;
+        else
+            {
+            for (Exp const* exp : whereClause->Find(Exp::Type::PropertyName, true /* recursive*/))
+                {
+                PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
+                if (propNameExp.IsPropertyRef())
+                    continue;
+
+                GetTablesPropertyMapVisitor getTablesVisitor;
+                if (SUCCESS != propNameExp.GetPropertyMap().AcceptVisitor(getTablesVisitor))
+                    {
+                    BeAssert(false);
+                    return ECSqlStatus::Error;
+                    }
+
+                std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
+                if (mappedTables.find(singleTableInvolved) == mappedTables.end())
+                    {
+                    isWhereClauseSelectorNeeded = true;
+                    break;
+                    }
+                }
+            }
+
+
         for (Exp const* exp : whereClause->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
             const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
             if (zeroBasedParameterIndex == parameterIndexInTables.size())
                 {
-                parameterIndexInTables.push_back({});
+                if (isWhereClauseSelectorNeeded)
+                    parameterIndexInTables.push_back({});
+                else
+                    parameterIndexInTables.push_back({singleTableInvolved});
+
                 m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
                 }
             }
+        }
 
+    Utf8String optionsECSql;
+    OptionsExp const* optionsClause = updateExp.GetOptionsClauseExp();
+    if (optionsClause != nullptr)
+        optionsECSql.assign(optionsClause->ToECSql());
+
+
+    if (isWhereClauseSelectorNeeded)
+        {
         Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
         if (!classNameExp->IsPolymorphic())
             whereClauseSelectorECSql.append(" ONLY ");
@@ -985,6 +1028,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         whereClause->ToECSql(ecsqlRenderCtx);
         whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
         ecsqlRenderCtx.ResetECSqlBuilder();
+
+        if (!optionsECSql.empty())
+            whereClauseSelectorECSql.append(" ").append(optionsECSql);
 
         ECSqlParser parser;
         std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
@@ -997,11 +1043,6 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (!stat.IsSuccess())
             return stat;
         }
-
-    Utf8String optionsECSql;
-    OptionsExp const* optionsClause = updateExp.GetOptionsClauseExp();
-    if (optionsClause != nullptr)
-        optionsECSql.assign(optionsClause->ToECSql());
 
     bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
 
@@ -1026,8 +1067,17 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             ecsqlRenderCtx.ResetECSqlBuilder();
             }
 
-        if (m_whereClauseSelector != nullptr)
-            ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
+        if (whereClause != nullptr)
+            {
+            if (m_whereClauseSelector != nullptr)
+                ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
+            else
+                {
+                whereClause->ToECSql(ecsqlRenderCtx);
+                ecsql.append(" ").append(ecsqlRenderCtx.GetECSql());
+                ecsqlRenderCtx.ResetECSqlBuilder();
+                }
+            }
 
         if (optionsClause != nullptr)
             ecsql.append(" ").append(optionsECSql);
