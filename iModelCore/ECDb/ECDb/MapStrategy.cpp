@@ -88,7 +88,6 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         else
             m_shareColumnsMode = ShareColumnsMode::Yes;
 
-        Nullable<uint32_t> m_sharedColumnCount;
         if (SUCCESS != shareColumnsCA.TryGetSharedColumnCount(m_sharedColumnCount))
             {
             issues.Report("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'SharedColumnCount'. Either provide a non-negative value or omit the property.",
