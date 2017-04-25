@@ -991,7 +991,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
                 ASSERT_TRUE(ClassInstance.IsValid());
 
-                if (className == "ViewAttachment")
+                if (className == BIS_CLASS_ViewAttachment)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_sheetModelId)));
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("View", ECN::ECValue(m_viewId)));
@@ -1090,11 +1090,11 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the heirarchy
         for (ECClassCP ecClass : GeometricElementHeirarchy)
             {
-            if (ecClass->GetName() == "GeometricElement2d")
+            if (ecClass->GetName() == BIS_CLASS_GeometricElement2d)
                 {
                 InsertInstancesForGeometricElement2d(ecClass);
                 }
-            else if (ecClass->GetName() == "GeometricElement3d")
+            else if (ecClass->GetName() == BIS_CLASS_GeometricElement3d)
                 {
                 InsertInstancesForGeometricElement3d(ecClass);
                 }
@@ -1185,7 +1185,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 
                 //Setting values for Model and Code
                 DgnCode code = DgnCode::CreateEmpty();
-                if (className == "Subject")
+                if (className == BIS_CLASS_Subject)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(rootSubject->GetModelId())));
                     }
@@ -1342,23 +1342,23 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the immediate derived classes of InformationContentElementHeirarchy
         for (ECClassCP ecClass : InformationContentElementHeirarchy)
             {
-            if (ecClass->GetName() == "Document")
+            if (ecClass->GetName() == BIS_CLASS_Document)
                 {
                 InsertInstancesForDocument(ecClass);
                 }
 
-            else if (ecClass->GetName() == "InformationReferenceElement")
+            else if (ecClass->GetName() == BIS_CLASS_InformationReferenceElement)
                 {
                 InsertInstancesForInformationReferenceElement(ecClass);
                 }
 
-            else if (ecClass->GetName() == "DefinitionElement")
+            else if (ecClass->GetName() == BIS_CLASS_DefinitionElement)
                 {
                 InsertInstancesForDefinitionElement(ecClass);
                 }
 
             //Uncomment when implementation is fixed.
-            //else if (ecClass->GetName() == "InformationPartitionElement")
+            //else if (ecClass->GetName() == BIS_CLASS_InformationPartitionElement)
             //    {
             //    InsertInstancesForInformationPartitionElement(ecClass);
             //    }
@@ -1382,7 +1382,7 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
     ASSERT_TRUE(BisSchema != nullptr);
 
     //Getting the pointer of the Class
-    ECClassCP ElementClass = BisSchema->GetClassCP("Element");
+    ECClassCP ElementClass = BisSchema->GetClassCP(BIS_CLASS_Element);
     ASSERT_TRUE(ElementClass != nullptr);
 
     //Emptying the contents of the vector.
@@ -1401,12 +1401,12 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
         {
         List.push_back(ecClass);
 
-        if (ecClass->GetName() == "GeometricElement")
+        if (ecClass->GetName() == BIS_CLASS_GeometricElement)
             {
             InsertInstancesForGeometricElementHeirarchy(ecClass);
             }
 
-        else if (ecClass->GetName() == "InformationContentElement")
+        else if (ecClass->GetName() == BIS_CLASS_InformationContentElement)
             {
             InsertInstancesForInformationContentElementHeirarchy(ecClass);
             }
