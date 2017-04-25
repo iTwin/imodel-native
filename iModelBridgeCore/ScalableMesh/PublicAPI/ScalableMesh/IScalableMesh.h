@@ -274,6 +274,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
 
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) = 0;
+
         virtual Transform              _GetReprojectionTransform() const = 0;
 
 
@@ -440,6 +442,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
+
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel);
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;
 
