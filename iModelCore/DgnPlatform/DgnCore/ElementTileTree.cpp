@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG) && false
+#if defined(NDEBUG)
 #define ELEMENT_TILE_DEBUG_RANGE false
 #else
 #define ELEMENT_TILE_DEBUG_RANGE true
@@ -433,6 +433,7 @@ private:
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
 protected:
+#define ELEMENT_TILE_TRUNCATE_PLANAR
 #if defined(ELEMENT_TILE_TRUNCATE_PLANAR)
     bool                        m_anyCurvedGeometry = false;
 #else
@@ -796,7 +797,7 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_leafTolerance(s_minLeafTolerance), m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(false)
+    m_leafTolerance(s_minLeafTolerance), m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(m_is3d)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -957,6 +958,8 @@ bool Root::WantCacheGeometry(DRange3dCR range) const
     if (0.0 == diag)
         return false;
 
+    BeAssert(m_is3d); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
+    diag /= s_spatialRangeMultiplier;
     return range.DiagonalDistance() / diag >= rangeRatio;
     }
 

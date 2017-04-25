@@ -478,6 +478,10 @@ void TileSizeAdjuster::Record(double frameTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
     {
+#define NO_TILESIZE_ADJUSTMENT
+#if defined(NO_TILESIZE_ADJUSTMENT)
+    return curMod;
+#else
     BeAssert(m_numFrames == m_frameWindow);
     BeAssert(0 < target.GetMinimumFrameRate());
 
@@ -506,6 +510,7 @@ double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
         }
 
     return newMod;
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**

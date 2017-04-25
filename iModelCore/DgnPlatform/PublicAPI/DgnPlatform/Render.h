@@ -1848,7 +1848,7 @@ struct Plan
 //!
 //! As a simple example, a single mesh primitive may contain geometry for 3 elements,
 //! all belonging to the same subcategory and geometry class. The mesh would therefore
-//! contain 3 primitives. Each vertex within the mesh would be associated with the
+//! contain 3 Features. Each vertex within the mesh would be associated with the
 //! index of the Feature to which it belongs, where the index is determined by the
 //! FeatureTable associated with the primitive.
 // @bsistruct                                                   Paul.Connelly   03/17
