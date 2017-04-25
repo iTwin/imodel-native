@@ -1294,8 +1294,6 @@ public:
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
 
-
-
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
 };
@@ -1359,7 +1357,6 @@ public:
     // NOTE: subToGraphic is provided to allow stroking in world coords...
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
 
-    // ###TODO_ELEMENT_TILE: Temporary...
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
     DgnDbR GetDgnDb() const {return m_createParams.m_dgndb;}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
