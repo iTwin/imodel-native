@@ -9,6 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include <Raster/RasterTypes.h>
+#include <DgnPlatform/MeshTile.h>
+#include <DgnPlatform/TileTree.h>
+
 
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
@@ -67,7 +70,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel// , Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
     BE_JSON_NAME(depthBias)
@@ -102,6 +105,10 @@ protected:
 
     virtual bool _IsParallelToGround() const {return false;}
 
+#ifdef WIP
+    virtual Dgn::TileTree::RootCPtr _GetPublishingTileTree (double leafTolerance) const override;
+#endif
+
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
@@ -119,6 +126,7 @@ public:
     void SetDepthBias(double val) { BeAssert(IsParallelToGround()); m_depthBias = val; }
     double GetDepthBias() const { return m_depthBias; }
     void ComputeDepthTransformation(TransformR transfo, Dgn::ViewContextR context) const;
+
     };
 
 //=======================================================================================
@@ -131,6 +139,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spati
     RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTER_EXPORT)
 
     virtual void _GetClassParams(Dgn::ECSqlClassParamsR params) override;
+
 };
 
 END_BENTLEY_RASTER_NAMESPACE

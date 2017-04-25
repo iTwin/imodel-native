@@ -349,6 +349,33 @@ RasterRootP RasterModel::Load(Dgn::Render::SystemP system) const
     return static_cast<RasterRootP>(root.get());
     }
 
+    {
+    _Load(&context.GetTargetR().GetSystem());
+
+    if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
+        return;
+
+    Transform depthTransform;
+    ComputeDepthTransformation(depthTransform, context);
+
+    m_root->DrawInView(context, Transform::FromProduct(depthTransform, m_root->GetLocation()), GetClip().GetClipVector());
+    }
+
+
+#ifdef WIP
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (TransformR transform, ClipVectorPtr& clip, double leafTolerance) const
+    { 
+    transform = Transform::FromProduct(depthTransform, m_root->GetLocation());
+    clip = GetClip().GetClipVexctor();
+    _Load(&context.GetTargetR().GetSystem());
+
+    return m_root;
+    }
+#endif
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
@@ -529,3 +556,5 @@ void RasterModel::_OnLoadedJsonProperties()
 // @bsimethod                                                   Mathieu.Marchand  10/2016
 //----------------------------------------------------------------------------------------
 bool RasterModel::IsParallelToGround() const {return _IsParallelToGround();}
+
+
