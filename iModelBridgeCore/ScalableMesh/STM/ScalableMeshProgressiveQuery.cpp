@@ -934,9 +934,8 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
-    if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false);
+    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || node->GetNbPoints() == 0);
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
@@ -1017,7 +1016,8 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     _SetActiveClips(activeClips, scalableMeshPtr);
 
     if (rootNodePtr == nullptr) return;
-    PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
+	if (std::find(m_smOverviews.begin(), m_smOverviews.end(), scalableMeshPtr.get()) == m_smOverviews.end())
+		PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
     if (rootNodePtr->GetMinResolution() == 0)
         {
