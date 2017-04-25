@@ -749,7 +749,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     bool shouldHaveHandler = GetHandlerInfo(&restrictions, id, handler);
     if (!shouldHaveHandler)
         {
-        BeAssert(false && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
+        BeAssert(IsSchemaUpgradeEnabled() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
 
 #if !defined (NDEBUG)
         LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
