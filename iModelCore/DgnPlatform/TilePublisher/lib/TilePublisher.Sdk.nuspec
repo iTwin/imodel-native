@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>Bentley.TilePublisher.Sdk</id>
+        <id>TilePublisher.Sdk</id>
         <version>$version$</version>
         <title>3D Tile Publisher SDK</title>
         <authors>Bentley Systems, Incorporated</authors>
         <owners>Bentley Systems, Incorporated</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>Required to develop using Bentley.TilePublisher NuGet.</description>
-        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <description>Required to develop using TilePublisher NuGet.</description>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
         <language>en-US</language>
     </metadata>
     <files>
