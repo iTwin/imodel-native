@@ -2189,7 +2189,7 @@ public:
     ECOBJECTS_EXPORT bool IsAbstractConstraintDefined() const;
 
     //! Determine whether the abstract constraint is set in this constraint and not inherited a base constraint.
-    bool IsAbstractConstraintDefinedLocally() const {return nullptr != m_abstractConstraint;}
+    bool IsAbstractConstraintDefinedLocally() const {return nullptr != m_abstractConstraint || m_constraintClasses.size() == 1;}
 
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
