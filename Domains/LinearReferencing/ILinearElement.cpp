@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <LinearReferencingInternal.h>
 
+HANDLER_DEFINE_MEMBERS(GeometricElementAsReferentHandler)
+HANDLER_DEFINE_MEMBERS(LinearlyLocatedReferentHandler)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -175,4 +178,22 @@ ILinearlyLocatedAttribution::ILinearlyLocatedAttribution()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILinearlyLocatedElement::ILinearlyLocatedElement()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId GeometricElementAsReferent::QueryGeometricElementId() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT SourceECInstanceId FROM " BLR_SCHEMA(BLR_REL_GeometricElementDrivesReferent)
+        " WHERE TargetECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return DgnElementId();
+
+    return stmtPtr->GetValueId<DgnElementId>(0);
     }

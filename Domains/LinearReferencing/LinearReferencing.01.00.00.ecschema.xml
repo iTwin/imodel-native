@@ -99,16 +99,7 @@
             </IsMixin>
         </ECCustomAttributes>
         <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
-        <!--ECNavigationProperty propertyName="LinearlyLocatedElement" relationshipName="IReferentRefersToILinearlyLocatedElement" direction="forward"/-->
     </ECEntityClass>
-    <ECRelationshipClass typeName="IReferentRefersToILinearlyLocatedElement" strength="referencing" modifier="None">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N IReferents">
-            <Class class="IReferent"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="may refer to 1 ILinearlyLocatedElement">
-            <Class class="ILinearlyLocatedElement"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
@@ -133,8 +124,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
-        <!--ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
-        <ECProperty propertyName="FromReferent" typeName="long" />
+        <ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
@@ -142,20 +132,42 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="FromPosition" typeName="DistanceExpression"/>
-        <!--ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
-        <ECProperty propertyName="FromPositionFromReferent" typeName="long" />
+        <ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
         <ECStructProperty propertyName="ToPosition" typeName="DistanceExpression"/>
-        <!--ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
-        <ECProperty propertyName="ToPositionFromReferent" typeName="long" />
+        <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="LinearlyReferencedLocationRefersToReferent" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true">
+    <ECRelationshipClass typeName="LinearlyReferencedLocationRefersToReferent" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
             <Class class="LinearlyReferencedLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
             <Class class="IReferent"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
+    <ECEntityClass typeName="LinearlyLocatedReferent" modifier="Abstract">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>IReferent</BaseClass>
+        <BaseClass>ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElementAsReferent" modifier="Abstract">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>IReferent</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="GeometricElementDrivesReferent" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementDrivesElement</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+            <Class class="bis:GeometricElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+            <Class class="GeometricElementAsReferent"/>
+        </Target>
+    </ECRelationshipClass>
     
     <!-- Offset and towards referent-support to be added when needed
     <ECEntityClass typeName="IOffsetReferent" description="Interface to be mixed-in by Element-subclasses that can play the role of a Referent to be used to establish offset positions by projecting (laterally or vertically) to it along a vector perpendicular to the reference line (Linear-Element) from the distance-along point." modifier="Abstract"/>

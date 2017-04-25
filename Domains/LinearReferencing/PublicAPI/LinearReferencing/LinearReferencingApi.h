@@ -70,10 +70,12 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // ECClass names
 //-----------------------------------------------------------------------------------------
+#define BLR_CLASS_GeometricElementAsReferent                        "GeometricElementAsReferent"
 #define BLR_CLASS_ILinearElement                                    "ILinearElement"
 #define BLR_CLASS_ILinearlyLocated                                  "ILinearlyLocated"
 #define BLR_CLASS_ILinearlyLocatedAttribution                       "ILinearlyLocatedAttribution"
 #define BLR_CLASS_ILinearlyLocatedElement                           "ILinearlyLocatedElement"
+#define BLR_CLASS_LinearlyLocatedReferent                           "LinearlyLocatedReferent"
 #define BLR_CLASS_LinearlyReferencedAtLocation                      "LinearlyReferencedAtLocation"
 #define BLR_CLASS_LinearlyReferencedFromToLocation                  "LinearlyReferencedFromToLocation"
 #define BLR_CLASS_LinearlyReferencedLocation                        "LinearlyReferencedLocation"
@@ -88,7 +90,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // ECRelationship names
 //-----------------------------------------------------------------------------------------
-//#define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
+#define BLR_REL_GeometricElementDrivesReferent                      "GeometricElementDrivesReferent"
 
 
 //-----------------------------------------------------------------------------------------
@@ -123,6 +125,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // Define typedefs and Ptrs in the LinearReferencing namespace
 //-----------------------------------------------------------------------------------------
 LINEARREFERENCING_TYPEDEFS(DistanceExpression)
+LINEARREFERENCING_TYPEDEFS(GeometricElementAsReferent)
 LINEARREFERENCING_TYPEDEFS(ICascadeLinearLocationChangesAlgorithm)
 LINEARREFERENCING_TYPEDEFS(ILinearElement)
 LINEARREFERENCING_TYPEDEFS(ILinearElementSource)
@@ -130,10 +133,13 @@ LINEARREFERENCING_TYPEDEFS(ILinearlyLocated)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocatedElement)
 LINEARREFERENCING_TYPEDEFS(IReferent)
 LINEARREFERENCING_TYPEDEFS(ISegmentableLinearElement)
+LINEARREFERENCING_TYPEDEFS(LinearlyLocatedReferent)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedAtLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedFromToLocation)
 
+LINEARREFERENCING_REFCOUNTED_PTR(GeometricElementAsReferent)
+LINEARREFERENCING_REFCOUNTED_PTR(LinearlyLocatedReferent)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedAtLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
 

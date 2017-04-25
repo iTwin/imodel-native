@@ -2,7 +2,7 @@
 |
 |     $Source: LinearReferencingDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <LinearReferencingInternal.h>
@@ -14,6 +14,8 @@ DOMAIN_DEFINE_MEMBERS(LinearReferencingDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearReferencingDomain::LinearReferencingDomain() : DgnDomain(BLR_SCHEMA_NAME, "Bentley LinearReferencing Domain", 1)
     {
+    RegisterHandler(GeometricElementAsReferentHandler::GetHandler());
+    RegisterHandler(LinearlyLocatedReferentHandler::GetHandler());
     RegisterHandler(LinearlyReferencedAtLocationHandler::GetHandler());
     RegisterHandler(LinearlyReferencedFromToLocationHandler::GetHandler());
     }
