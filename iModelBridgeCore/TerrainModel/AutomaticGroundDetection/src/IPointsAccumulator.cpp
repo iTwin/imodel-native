@@ -11,7 +11,7 @@
 #include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_TERRAINMODEL
+USING_NAMESPACE_BENTLEY_TERRAINMODEL 
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -21,6 +21,14 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 void IGroundPointsAccumulator::AddPoints(const bvector<DPoint3d>& points)
     {
     return _AddPoints(points);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void IGroundPointsAccumulator::GetPreviewTransform(Transform& transform) const
+    {
+    return _GetPreviewTransform(transform);
     }
 
 /*---------------------------------------------------------------------------------**//**

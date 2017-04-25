@@ -90,6 +90,8 @@ struct TINPointContainer : public PointCollection, RefCountedBase
 
     private:
 
+        BeMutex  m_pointContainerMutex;
+
         explicit TINPointContainer();
         ~TINPointContainer();
     }; // SeedPointContainer
@@ -172,6 +174,8 @@ private:
     TINPointContainerPtr                    m_pAcceptedPointCollection;
     size_t                                  m_memorySize;
     IPointsProviderPtr                      m_pPointsProvider;
+    BeMutex                                 m_queryPointMutex;
+    
     };
 
 
@@ -285,7 +289,6 @@ struct ClassifyPointCloudWork /*: RefCounted<PointCloudWork>*/
             }
     };
 #endif
-
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
@@ -297,6 +300,7 @@ static const double HISTO_STEP_PRECISION_FACTOR;
 static const size_t MAX_HISTO_STEP;
 static const size_t MAX_NB_SEEDPOINTS_TO_ADD;
 static const double SEED_BORDER_FACTOR;
+
 
 public:
     enum FindTriangleResult
