@@ -1,0 +1,20 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: LicensingCrossPlatform/Licensing.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include MultiCppCompileRule.mki
+
+Headers =
+Headers + $(PublicApiDir)Licensing.h
+Headers + $(PublicApiDir)Client.h
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki

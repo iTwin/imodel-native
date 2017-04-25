@@ -1,0 +1,18 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: LicensingCrossPlatform/Licensing/Client.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <Licensing/Client.h>
+
+USING_NAMESPACE_BENTLEY_LICENSING
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                              
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::TestMethod()
+    {
+    return SUCCESS;
+    }
