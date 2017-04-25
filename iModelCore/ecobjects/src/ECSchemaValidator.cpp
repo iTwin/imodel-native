@@ -160,12 +160,16 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
             }
         if (numBaseClasses > 1)
             {
-            LOG.errorv("Error at property '%s'. There are %i base classes and entity class '%s' may not inherit a property from more than one base class", prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
+            LOG.errorv("Error at property '%s'. There are %i base classes and entity class '%s' may not inherit a property from more than one base class",
+                prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
+
             status = ECObjectsStatus::Error;
             }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
-        LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'", prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+        LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'",
+            prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+
         status = ECObjectsStatus::Error;
         }
     
@@ -210,7 +214,8 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
     if (!constraint.IsAbstractConstraintDefinedLocally())
         {
         if (constraint.IsAbstractConstraintDefined())
-            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s", className, constraint.GetAbstractConstraint()->GetFullName(), constraintType);
+            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s",
+                className, constraint.GetAbstractConstraint()->GetFullName(), constraintType);
         else
             LOG.errorv("Abstract constraint is not defined in '%s'", constraintType);
 
