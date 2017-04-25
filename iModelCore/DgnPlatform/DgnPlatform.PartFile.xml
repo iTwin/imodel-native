@@ -696,11 +696,11 @@
     <ProductDirectoryList ListName="DgnPlatformDirList" >
         <ProductDirectory Name="ApplicationRoot" Path=""/>
         <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
-        <ProductDirectory Name="Libs"                                       Path="libs"/>
-        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
-        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
+        <ProductDirectory Name="Assets" Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets" Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="Libs" Path="libs"/>
+        <ProductDirectory Name="VendorNotices" RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="PublishedApi" Path="PublishedApi"/>
     </ProductDirectoryList>
 
 </BuildContext>
