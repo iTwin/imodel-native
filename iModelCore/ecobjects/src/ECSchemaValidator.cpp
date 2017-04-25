@@ -85,11 +85,11 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
             ECObjectsStatus status = classValidator->Validate(*ecClass);
             if (ECObjectsStatus::Success != status)
                 {
-                LOG.errorv("Failed class validation of class %s", ecClass->GetName().c_str());
+                LOG.errorv("Failed class validation of class '%s'", ecClass->GetName().c_str());
                 m_validated = false;
                 }
             else
-                LOG.debugv("Succeeded class validation of class %s", ecClass->GetName().c_str());
+                LOG.debugv("Succeeded class validation of class '%s'", ecClass->GetName().c_str());
             }
         }
     for (IECSchemaValidatorPtr validator : GetValidators())
@@ -97,7 +97,7 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
         ECObjectsStatus status = validator->Validate(schema);
         if (ECObjectsStatus::Success != status)
             {
-            LOG.errorv("Failed validation %s", schema.GetFullSchemaName().c_str());
+            LOG.errorv("Failed validation '%s'", schema.GetFullSchemaName().c_str());
             m_validated = false;
             }
         }
@@ -226,35 +226,5 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
 
     return status;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool EntityValidator::CanValidate(ECClassCR ecClass) const
-    {
-    return (ecClass.IsEntityClass());
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool MixinValidator::CanValidate(ECClassCR ecClass) const
-    {
-    return (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipValidator::CanValidate(ECClassCR ecClass) const
-    {
-    return (ecClass.IsRelationshipClass());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus BaseECClassValidator::Validate(ECClassCR schema) const
-    {
-    return ECObjectsStatus::Success;
-    }
 END_BENTLEY_ECOBJECT_NAMESPACE
