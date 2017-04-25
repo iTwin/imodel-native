@@ -402,11 +402,10 @@ private:
     bool IsSchemaUpgradeEnabled() const { return m_isSchemaUpgradeEnabled; }
 
     BeSQLite::DbResult ValidateSchemas();
-    BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
-    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
-
+    BeSQLite::DbResult DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
     static BeSQLite::DbResult DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     static BeSQLite::DbResult DoImportSchemas(DgnDbR dgndb, bvector<ECN::ECSchemaCP> const& schemasToImport, bool isImportingFromV8);
+    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
     
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_isSchemaUpgradeEnabled(false) {}
 

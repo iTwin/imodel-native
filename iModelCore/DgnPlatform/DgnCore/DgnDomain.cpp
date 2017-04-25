@@ -384,15 +384,14 @@ ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
+DbResult DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport)
     {
+    DbResult result = BE_SQLITE_OK;
     DgnDbR dgndb = GetDgnDb();
     ECSchemaReadContextPtr schemaContext = PrepareSchemaReadContext();
-   
-    /* Validate the schema for all the domains */
-    DbResult result = BE_SQLITE_OK;
-    bvector<DgnDomainP> importDomains;
+    bset<ECSchemaP> validatedSchemas;
 
+    /* Validate the schema for all the domains */
     auto& hostDomains = T_HOST.RegisteredDomains();
     for (DgnDomainP domain : hostDomains)
         {
@@ -401,28 +400,32 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
             return BE_SQLITE_ERROR_SchemaReadFailed;
 
         DbResult locResult = domain->ValidateSchema(*schema, dgndb);
+        validatedSchemas.insert(schema.get());
 
         if (locResult == BE_SQLITE_OK || (locResult == BE_SQLITE_ERROR_SchemaNotFound && !domain->IsRequired()))
-            {
-            ECObjectsStatus ecStatus = schemaContext->GetCache().DropSchema(schema->GetSchemaKey());
-            BeAssert(ecStatus == ECObjectsStatus::Success);
             continue;
-            }
-            
+
         if (locResult == BE_SQLITE_ERROR_SchemaNotFound && domain->IsRequired())
             {
             result = BE_SQLITE_ERROR_SchemaUpgradeRequired; // It could get worse!
-            if (doImport)
-                importDomains.push_back(domain);
-            else
-                LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
 
+            if (domainsToImport)
+                domainsToImport->push_back(domain);
+
+            if (schemasToImport)
+                schemasToImport->push_back(schema);
+
+            LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
             continue;
             }
 
         if (locResult == BE_SQLITE_ERROR_SchemaUpgradeRequired)
             {
-            result = locResult; 
+            result = locResult;
+
+            if (schemasToImport)
+                schemasToImport->push_back(schema);
+
             continue;
             }
 
@@ -432,45 +435,32 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
 
     BeAssert(result == BE_SQLITE_OK || result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
-    /* Validate all reference schemas */
-    bvector<ECSchemaCP> schemasToImport = schemaContext->GetCache().GetSchemas();
-    bvector<ECSchemaCP>::iterator it = schemasToImport.begin();
-    while (it != schemasToImport.end())
+    /* Validate all (remaining) reference schemas */
+    bvector<ECSchemaP> allSchemas;
+    schemaContext->GetCache().GetSchemas(allSchemas);
+    for (ECSchemaP schema : allSchemas)
         {
-        DbResult locResult = DoValidateSchema(**it, true /*=isReadonly*/, dgndb);
+        if (validatedSchemas.end() != std::find(validatedSchemas.begin(), validatedSchemas.end(), schema))
+            continue;
+
+        DbResult locResult = DoValidateSchema(*schema, true /*=isReadonly*/, dgndb);
+        validatedSchemas.insert(schema);
 
         if (locResult == BE_SQLITE_OK)
-            {
-            if (doImport)
-                it = schemasToImport.erase(it);
-            else
-                ++it;
             continue;
-            }
-            
+
         if (locResult == BE_SQLITE_ERROR_SchemaNotFound || locResult == BE_SQLITE_ERROR_SchemaUpgradeRequired)
             {
             result = BE_SQLITE_ERROR_SchemaUpgradeRequired;
-            ++it;
+
+            if (schemasToImport)
+                schemasToImport->push_back(schema);
+
             continue;
             }
 
-        ++it;
         BeAssert(locResult == BE_SQLITE_ERROR_SchemaTooNew || locResult == BE_SQLITE_ERROR_SchemaTooOld);
         return locResult;
-        }
-
-    /* Import the schemas */
-    if (doImport && !schemasToImport.empty())
-        {
-        result = DoImportSchemas(dgndb, schemasToImport, false /*=isImportingFromV8*/);
-        if (BE_SQLITE_OK != result)
-            return result;
-
-        SyncWithSchemas();
-
-        for (DgnDomainP domain : importDomains)
-            domain->CallOnSchemaImported(dgndb);
         }
 
     return result;
@@ -567,7 +557,7 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
 //---------------------------------------------------------------------------------------
 DbResult DgnDomains::ValidateSchemas()
     {
-    return ValidateAndImportSchemas(false /*=doImport*/);
+    return DoValidateSchemas(nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -575,7 +565,28 @@ DbResult DgnDomains::ValidateSchemas()
 //---------------------------------------------------------------------------------------
 DbResult DgnDomains::ImportSchemas()
     {
-    return ValidateAndImportSchemas(true /*=doImport*/);
+    bvector<ECSchemaPtr> schemasToImport;
+    bvector<DgnDomainP> domainsToImport;
+
+    DbResult result = DoValidateSchemas(&schemasToImport, &domainsToImport);
+    if (result != BE_SQLITE_ERROR_SchemaUpgradeRequired)
+        return result;
+
+    BeAssert(!schemasToImport.empty());
+    bvector<ECSchemaCP> importSchemas;
+    for (auto& schema : schemasToImport)
+        importSchemas.push_back(schema.get());
+
+    result = DoImportSchemas(m_dgndb, importSchemas, false /*=isImportingFromV8*/);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    SyncWithSchemas();
+
+    for (DgnDomainP domain : domainsToImport)
+        domain->CallOnSchemaImported(m_dgndb);
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
