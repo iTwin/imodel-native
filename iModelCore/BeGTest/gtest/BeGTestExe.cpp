@@ -20,7 +20,7 @@
 
 #if defined(BENTLEY_WIN32)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Farhad.Kabir                    07/2013
+* @bsimethod                                    Farhad.Kabir                    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SpawnProcessWin32 (char *command, DWORD &returnCode)
     {
@@ -46,7 +46,7 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
        )
         {
         DWORD error = GetLastError ();
-        printf ("error = %d\n", error);
+        printf ("error == %d\n", error);
         goto exit;
         }
 
@@ -292,7 +292,7 @@ struct GtestFailureHandler : BeTest::IFailureHandler
     };
 #if defined(BENTLEY_WIN32)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Farhad.Kabir                    07/2013
+* @bsimethod                                    Farhad.Kabir                    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 char const * getTestName(int argC, bvector<CharP> argv)
     {
@@ -320,7 +320,7 @@ bool umdh_Use(int argC, char *argv[])
 #endif
 #if defined(BENTLEY_WIN32)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Farhad.Kabir                    07/2013
+* @bsimethod                                    Farhad.Kabir                    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 const char * WinGetEnv(const char * name)
     {
@@ -394,8 +394,9 @@ int main(int argc, char **argv)
         if (!filters.empty())
             ::testing::GTEST_FLAG(filter) = filters.c_str();
         }
-    
+    int check = 0;
 #if defined(BENTLEY_WIN32)   
+
     char strCommand[1024];
     bool spawnRet;
     DWORD retCode;
@@ -408,13 +409,16 @@ int main(int argc, char **argv)
     
     if (umdh_Use(argc, argv))
         {
+        RUN_ALL_TESTS();
+        
+        check = 1;
         //set _NT_SYMBOL_PATH
         WString currentDirectory;
         BeFileName::GetCwd(currentDirectory);
 
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
         printf("%d\n",WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
-        printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
+        //printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
@@ -446,15 +450,22 @@ int main(int argc, char **argv)
         // For debugging purposes, take initial snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot1.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        printf(strCommand, "\n");
+        //printf(strCommand, "\n");
         ///assert (spawnRet);
         }
 #endif
-    //  Run the tests
-    int errors = RUN_ALL_TESTS();
+    int errors = 0;
+    if (check == 0)
+        {//  Run the tests
+        errors = RUN_ALL_TESTS(); 
+        }
 #if defined(BENTLEY_WIN32)
     if (umdh_Use(argc, argv))
         {
+        for (int i = 0; i < 5; i++)
+            {
+            RUN_ALL_TESTS();
+            }
         WString currentDirectory2;
         BeFileName::GetCwd(currentDirectory2);
         WString currentDirectory3 = currentDirectory2;
@@ -468,18 +479,16 @@ int main(int argc, char **argv)
         if (utf8Str.Equals(""))
             {
             logComparisonName = "\\run\\Comparison.log";
-            currentDirectory3.AppendUtf8(pathCompComm);
+            currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
             {
             sprintf_s(pathCompComm, sizeof(pathCompComm), "\\run\\%s.log", testName);
-            printf(pathCompComm, "\n");
             currentDirectory3.AppendUtf8(pathCompComm);
             }
 
         currentDirectory2.AppendUtf8(log2Name);
         
-
         BeStringUtilities::WCharToUtf8(pathSnapshot2, currentDirectory2.c_str());
         BeStringUtilities::WCharToUtf8(pathComparison, currentDirectory3.c_str());
 
@@ -490,7 +499,7 @@ int main(int argc, char **argv)
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot2.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
-        printf(strCommand, "\n");
+        //printf(strCommand, "\n");
 
         bvector<Utf8CP> snapshotDiff = { umdhPathJoin.c_str(), " -d ",pathSnapshot1.c_str()," ", pathSnapshot2.c_str()," -f:",pathComparison.c_str() };
         Utf8String generateComparisonLog =  BeStringUtilities::Join(snapshotDiff);
@@ -499,9 +508,10 @@ int main(int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
         printf(strCommand, "\n");
-
+        
         }
 #endif
-    
+    //  Run the tests
     return errors;
+
     }
