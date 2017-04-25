@@ -3161,7 +3161,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
 
-    if (IsAbstractConstraintDefinedLocally() && ecXmlVersion >= ECVersion::V3_1)
+    if (nullptr != m_abstractConstraint && ecXmlVersion >= ECVersion::V3_1)
         xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *GetAbstractConstraint()).c_str());
         
     WriteCustomAttributes (xmlWriter);
@@ -3270,10 +3270,7 @@ ECEntityClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::IsAbstractConstraintDefined() const
     {
-    if (IsAbstractConstraintDefinedLocally() || m_constraintClasses.size() == 1)
-        return true;
-
-    return GetAbstractConstraint() != nullptr;
+    return IsAbstractConstraintDefinedLocally() || GetAbstractConstraint() != nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3283,7 +3280,7 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
     {
     if (m_verify)
         {
-        if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
+        if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);
