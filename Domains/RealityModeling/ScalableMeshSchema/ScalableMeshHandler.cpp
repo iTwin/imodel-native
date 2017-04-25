@@ -1204,9 +1204,9 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
 
         m_smPtr->GetExtraFileNames(extraFileNames);
         //Close the 3SM file, to close extra clip files.
+		m_currentDrawingInfoPtr = nullptr;
+		m_progressiveQueryEngine = nullptr;
         m_smPtr = nullptr;
-        m_currentDrawingInfoPtr = nullptr;
-        m_progressiveQueryEngine = nullptr;
 
         for (auto& extraFileName : extraFileNames)
             {
