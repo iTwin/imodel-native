@@ -45,26 +45,25 @@ template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>
 
 template <class DATATYPE, class EXTENT> size_t SMStreamedSourceStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const 
     {
-    return 1024 * 1024 * 3;
+    return 256 * 256 * 3;
     }
 
 template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const 
     {
     assert(dataType == m_dataType);
-    return 1024 * 1024 * 3 + 3 * sizeof(int);
+    return 256 * 256 * 3 + 3 * sizeof(int);
     }
 
 template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
-    assert(maxCountData >= 1024 * 1024 * 3);
-
+    assert(maxCountData >= 256 * 256 * 3);
     
 
     //DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_contentExtentDefined ? m_nodeHeader->m_contentExtent : m_nodeHeader->m_nodeExtent);
     DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_nodeExtent);
 /*
-    double unitsPerPixelX = (nodeExtent2d.high.x - nodeExtent2d.low.x) / 1024;
-    double unitsPerPixelY = (nodeExtent2d.high.y - nodeExtent2d.low.y) / 1024;
+    double unitsPerPixelX = (nodeExtent2d.high.x - nodeExtent2d.low.x) / 256;
+    double unitsPerPixelY = (nodeExtent2d.high.y - nodeExtent2d.low.y) / 256;
     nodeExtent2d.low.x -= 5 * unitsPerPixelX;
     nodeExtent2d.low.y -= 5 * unitsPerPixelY;
     nodeExtent2d.high.x += 5 * unitsPerPixelX;
