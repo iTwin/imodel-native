@@ -1075,11 +1075,15 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
 
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
     ASSERT_TRUE(gooClassId.IsValid());
-    //Only properties in joined table accessed should not uncessary add join to base table.
+    //Only properties in joined table accessed should not unnecessarily add join to base table.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter"), ECSqlStatus::Success);
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql());
+#else
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1", stmt.GetNativeSql());
+#endif
     }
     {
     ECSqlStatement stmt;
@@ -1091,8 +1095,12 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     Utf8String expectedSql;
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId]) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
-                        gooClassId.ToString().c_str());
+#else
+    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+#endif
+    gooClassId.ToString().c_str());
     ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     }
     {
@@ -1109,7 +1117,11 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql());
+#else
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1)", stmt.GetNativeSql());
+#endif
     }
     {
     ECSqlStatement stmt;
@@ -1122,7 +1134,11 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId]) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+#else
+    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+#endif
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     }
