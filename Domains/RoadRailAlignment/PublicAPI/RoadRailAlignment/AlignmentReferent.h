@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/AlignmentReferent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,9 +17,9 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Known location along an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct AlignmentReferentElement : Dgn::SpatialLocationElement, LinearReferencing::IReferent, LinearReferencing::ILinearlyLocatedElement
+struct AlignmentReferentElement : LinearReferencing::LinearlyLocatedReferent
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, Dgn::SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, LinearReferencing::LinearlyLocatedReferent);
     friend struct AlignmentReferentElementHandler;
 
 private:
@@ -27,15 +27,13 @@ private:
 
 protected:
     //! @private
-    explicit AlignmentReferentElement(CreateParams const& params) : T_Super(params), LinearReferencing::ILinearlyLocatedElement() {}
+    explicit AlignmentReferentElement(CreateParams const& params) : T_Super(params) {}
 
     //! @private
     explicit AlignmentReferentElement(CreateParams const& params, double restartValue) :
-        T_Super(params), m_restartValue(restartValue), ILinearlyLocatedElement() {}
+        T_Super(params), m_restartValue(restartValue) {}
 
     virtual double _GetRestartValue() const override { return m_restartValue; }
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override final { return *this; }
-    virtual Dgn::DgnElementCR _IReferentToDgnElement() const override final { return *this; }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentReferentElement)    
@@ -76,9 +74,9 @@ public:
 //! ElementHandler for AlignmentReferent Elements
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentReferentElementHandler : LinearReferencing::LinearlyLocatedReferentHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, AlignmentReferentElement, AlignmentReferentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, AlignmentReferentElement, AlignmentReferentElementHandler, LinearReferencing::LinearlyLocatedReferentHandler, ROADRAILALIGNMENT_EXPORT)
 }; //AlignmentReferentElementHandler
 
 //=================================================================================

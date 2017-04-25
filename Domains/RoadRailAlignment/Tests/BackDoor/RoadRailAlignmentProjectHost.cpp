@@ -169,6 +169,9 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateClassViewsInDb();
 
+    if (DbResult::BE_SQLITE_OK != projectPtr->SaveChanges())
+        return nullptr;
+
     if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
         return nullptr;
 
@@ -274,6 +277,9 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, bool nee
 
         //! Error
         if (seedProject.IsNull())
+            return nullptr;
+
+        if (DbResult::BE_SQLITE_OK != seedProject->SaveChanges())
             return nullptr;
 
         seedProject->CloseDb();

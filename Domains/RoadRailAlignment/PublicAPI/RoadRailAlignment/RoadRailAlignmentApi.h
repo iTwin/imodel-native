@@ -64,25 +64,27 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
-#define BRRA_CLASS_AlignmentHorizontal                              "AlignmentHorizontal"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
 #define BRRA_CLASS_AlignmentReferentElement                         "AlignmentReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
-#define BRRA_CLASS_AlignmentVertical                                "AlignmentVertical"
+#define BRRA_CLASS_HorizontalAlignment                              "HorizontalAlignment"
+#define BRRA_CLASS_HorizontalAlignmentsPortion                      "HorizontalAlignmentsPortion"
+#define BRRA_CLASS_HorizontalAlignmentModel                         "HorizontalAlignmentModel"
+#define BRRA_CLASS_VerticalAlignment                                "VerticalAlignment"
+#define BRRA_CLASS_VerticalAlignmentModel                           "VerticalAlignmentModel"
 
 
 // Relationships
-#define BRRA_REL_AlignmentOwnsHorizontal                            "AlignmentOwnsHorizontal"
 #define BRRA_REL_AlignmentOwnsStations                              "AlignmentOwnsStations"
-#define BRRA_REL_AlignmentOwnsVerticals                             "AlignmentOwnsVerticals"
+#define BRRA_REL_AlignmentRefersToHorizontal                        "AlignmentRefersToHorizontal"
 #define BRRA_REL_AlignmentRefersToMainVertical                      "AlignmentRefersToMainVertical"
 #define BRRA_REL_SpatialElementRefersToAlignment                    "SpatialElementRefersToAlignment"
 
 
 // Properties
 #define BRRA_PROP_Alignment_MainVerticalAlignment                   "MainVerticalAlignment"
-#define BRRA_PROP_AlignmentHorizontal_HorizontalGeometry            "HorizontalGeometry"
-#define BRRA_PROP_AlignmentVertical_VerticalGeometry                "VerticalGeometry"
+#define BRRA_PROP_HorizontalAlignment_HorizontalGeometry            "HorizontalGeometry"
+#define BRRA_PROP_VerticalAlignment_VerticalGeometry                "VerticalGeometry"
 
 
 //-----------------------------------------------------------------------------------------
@@ -103,13 +105,18 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_CLASS_##__name__)); } \
     static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_CLASS_##__name__)); }
 
+//-----------------------------------------------------------------------------------------
+// Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
+//-----------------------------------------------------------------------------------------
+#define DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(__name__) \
+    ROADRAILALIGNMENT_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
+    ROADRAILALIGNMENT_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); }
 
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
 #define DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(__name__) \
-    ROADRAILALIGNMENT_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
-    ROADRAILALIGNMENT_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); } \
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(__name__) \
     ROADRAILALIGNMENT_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ >(*this, stat); } \
     ROADRAILALIGNMENT_EXPORT        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ >(*this, stat); }   
 
@@ -131,7 +138,6 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailAlignment namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentHorizontal)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentIntersectionInfo)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
@@ -139,20 +145,27 @@ ROADRAILALIGNMENT_TYPEDEFS(AlignmentPair)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferentElement)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentVertical)
+ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignment)
+ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentsPortion)
+ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
+ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
+ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(StationRange)
 ROADRAILALIGNMENT_TYPEDEFS(StationRangeEdit)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentHorizontal)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignment)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentsPortion)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
 

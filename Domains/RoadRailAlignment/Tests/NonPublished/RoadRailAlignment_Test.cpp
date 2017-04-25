@@ -19,19 +19,23 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
-    auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
+    auto horizAlignmPtr = HorizontalAlignment::Create(*alignmentPtr, *horizAlignVecPtr);
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
 
     // Create Vertical
+    auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
+        alignmentPtr->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, verticalModelPtr->Insert());
+
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-    auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
+    auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
 
     ASSERT_EQ(horizAlignmPtr->GetElementId(), alignmentPtr->QueryHorizontal()->GetElementId());
     ASSERT_EQ(verticalAlignmPtr->GetElementId(), alignmentPtr->QueryMainVertical()->GetElementId());
 
-    auto verticalIds = alignmentPtr->QueryAlignmentVerticalIds();
+    auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());
     ASSERT_EQ(verticalAlignmPtr->GetElementId(), *verticalIds.begin());
 
@@ -71,7 +75,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     ASSERT_TRUE(alignmentPtr->QueryHorizontal()->GetElementId().IsValid());
     ASSERT_TRUE(alignmentPtr->QueryMainVertical()->GetElementId().IsValid());
 
-    auto verticalIds = alignmentPtr->QueryAlignmentVerticalIds();
+    auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());
 
     // Get AlignmentPair

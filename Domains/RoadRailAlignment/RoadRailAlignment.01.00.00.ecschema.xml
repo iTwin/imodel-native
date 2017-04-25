@@ -4,39 +4,58 @@
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECEntityClass typeName="Alignment" modifier="Sealed">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="AlignmentHorizontal">
-        <BaseClass>bis:SpatialLocationElement</BaseClass>
+    <ECEntityClass typeName="HorizontalAlignmentsPortion">
+        <BaseClass>bis:SpatialLocationPortion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="HorizontalAlignment">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
-    <ECEntityClass typeName="AlignmentVertical">
-        <BaseClass>bis:SpatialLocationElement</BaseClass>
+    <ECEntityClass typeName="VerticalAlignment">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentModel">
-        <BaseClass>bis:SpatialModel</BaseClass>
+        <BaseClass>bis:SpatialLocationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding" modifier="Sealed">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is horizontal for 1 alignment">
-            <Class class="Alignment"/>
+    <ECEntityClass typeName="HorizontalAlignmentModel">
+        <BaseClass>bis:GeometricModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="VerticalAlignmentModel">
+        <BaseClass>bis:GeometricModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="HorizontalModelBreaksDownAlignment" strength="embedding" strengthDirection="Backward" modifier="Sealed">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="may be broken down into 1 horizontal model">
+            <Class class="HorizontalAlignmentModel"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 horizontal">
-            <Class class="AlignmentHorizontal"/>
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="breaks down 1 alignment">
+            <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SpatialElementRefersToAlignment" strength="referencing" modifier="Abstract" strengthDirection="Backward">
@@ -47,27 +66,33 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed" strengthDirection="Backward">
+        <Source multiplicity="(1..1)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="refers to 1 horizontal" polymorphic="false">
+            <Class class="HorizontalAlignment"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="has 1 main vertical" polymorphic="false">
-            <Class class="AlignmentVertical"/>
+        <Target multiplicity="(0..1)" roleLabel="refers to 1 main vertical" polymorphic="false">
+            <Class class="VerticalAlignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentOwnsVerticals" strength="embedding" modifier="Sealed">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+    <ECRelationshipClass typeName="VerticalModelBreaksDownAlignment" strength="embedding" strengthDirection="Backward" modifier="Sealed">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
-            <Class class="Alignment"/>
+            <Class class="VerticalAlignmentModel"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has N vertical alignments">
-            <Class class="AlignmentVertical"/>
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="has N vertical alignments">
+            <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="AlignmentReferentElement" modifier="Abstract">
-        <BaseClass>bis:SpatialLocationElement</BaseClass>
-        <BaseClass>lr:IReferent</BaseClass>
-        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <BaseClass>lr:LinearlyLocatedReferent</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

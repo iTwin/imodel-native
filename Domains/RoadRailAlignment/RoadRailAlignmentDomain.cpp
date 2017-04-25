@@ -16,10 +16,13 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     {
     RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
-    RegisterHandler(AlignmentHorizontalHandler::GetHandler());
+    RegisterHandler(HorizontalAlignmentModelHandler::GetHandler());
+    RegisterHandler(HorizontalAlignmentsPortionHandler::GetHandler());
+    RegisterHandler(HorizontalAlignmentHandler::GetHandler());    
     RegisterHandler(AlignmentReferentElementHandler::GetHandler());
     RegisterHandler(AlignmentStationHandler::GetHandler());
-    RegisterHandler(AlignmentVerticalHandler::GetHandler());    
+    RegisterHandler(VerticalAlignmentModelHandler::GetHandler());
+    RegisterHandler(VerticalAlignmentHandler::GetHandler());    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -29,15 +32,22 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
     {
     DgnDbStatus status;
 
-    auto alignmentPartitionPtr = PhysicalPartition::Create(*db.Elements().GetRootSubject(), "Alignments");
+    auto alignmentPartitionPtr = SpatialLocationPartition::Create(*db.Elements().GetRootSubject(), "Alignments");
     if (alignmentPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
-    auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(db, AlignmentModel::QueryClassId(db),
-        alignmentPartitionPtr->GetElementId()));
+    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(db, alignmentPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
+        return status;
+
+    auto horizontalPartitionCPtr = HorizontalAlignmentsPortion::InsertPortion(*alignmentModelPtr);
+    if (horizontalPartitionCPtr.IsNull())
+        return DgnDbStatus::BadModel;
+
+    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(HorizontalAlignmentModel::CreateParams(db, horizontalPartitionCPtr->GetElementId()));
+
+    if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
         return status;
 
     return status;
