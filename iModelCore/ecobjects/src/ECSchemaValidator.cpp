@@ -132,8 +132,7 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
         {
         if (prop->GetBaseProperty() != nullptr)
             {
-            LOG.errorv("Error at property '%s'", prop->GetName().c_str());
-            LOG.errorv("Mixin '%s' overrides an inherited property", mixin.GetFullName());
+            LOG.errorv("Error at property '%s'. Mixin '%s' overrides an inherited property", prop->GetName().c_str(), mixin.GetFullName());
             return ECObjectsStatus::Error;
             }
         }
