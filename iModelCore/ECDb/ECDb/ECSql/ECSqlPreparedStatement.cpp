@@ -556,10 +556,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
         {
-        auto it = expsByMappedTable.find(table);
-        BeAssert(it != expsByMappedTable.end());
-        std::vector<PropNameValueInfo> const& propNameValueInfos = it->second;
-
         Utf8String propNameECSqlClause;
         Utf8String valuesECSqlClause;
 
@@ -574,28 +570,35 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             isFirstToken = false;
             }
 
-        for (PropNameValueInfo const& propNameValueInfo : propNameValueInfos)
+        auto it = expsByMappedTable.find(table);
+        //If the ECSQL INSERT doesn't have expressions targeting this table.
+        //we still have to insert a row for it (which will be empty except for the id and classid
+        if (it != expsByMappedTable.end())
             {
-            if (!isFirstToken)
+            std::vector<PropNameValueInfo> const& propNameValueInfos = it->second;
+            for (PropNameValueInfo const& propNameValueInfo : propNameValueInfos)
                 {
-                propNameECSqlClause.append(",");
-                valuesECSqlClause.append(",");
+                if (!isFirstToken)
+                    {
+                    propNameECSqlClause.append(",");
+                    valuesECSqlClause.append(",");
+                    }
+
+                propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
+
+                propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
+                if (isPrimaryTable && propNameValueInfo.m_isIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNullExp)
+                    {
+                    //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
+                    //to replace the NULL by a parameter
+                    valuesECSqlClause.append(":" ECSQLSYS_PARAM_Id);
+                    }
+                else
+                    valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
+
+                ecsqlRenderCtx.ResetECSqlBuilder();
+                isFirstToken = false;
                 }
-
-            propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
-
-            propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
-            if (isPrimaryTable && propNameValueInfo.m_isIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNullExp)
-                {
-                //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
-                //to replace the NULL by a parameter
-                valuesECSqlClause.append(":" ECSQLSYS_PARAM_Id);
-                }
-            else
-                valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
-
-            ecsqlRenderCtx.ResetECSqlBuilder();
-            isFirstToken = false;
             }
 
         Utf8String ecsql;
@@ -615,6 +618,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (!stat.IsSuccess())
             return stat;
 
+        BeAssert(!preparedStmt.IsNoopInSqlite() && "ECSQL INSERT statements are not expected to translate to no-ops in SQLite. Instead this should have been caught and resulted in an error.");
         perTableStatements[table] = &preparedStmt;
         isPrimaryTable = false;
         }
@@ -930,6 +934,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 BeAssert(false);
                 return ECSqlStatus::Error;
                 }
+
             if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
@@ -973,6 +978,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
 
         Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
+        if (!classNameExp->IsPolymorphic())
+            whereClauseSelectorECSql.append(" ONLY ");
+
         whereClauseSelectorECSql.append(classMap.GetClass().GetECSqlName()).append(" ");
         whereClause->ToECSql(ecsqlRenderCtx);
         whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
@@ -1018,7 +1026,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             ecsqlRenderCtx.ResetECSqlBuilder();
             }
 
-        if (whereClause != nullptr)
+        if (m_whereClauseSelector != nullptr)
             ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
 
         if (optionsClause != nullptr)
@@ -1036,6 +1044,10 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
+
+        //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
+        if (preparedStmt.IsNoopInSqlite())
+            m_isNoopInSqlite = true;
 
         perTableStatements[table] = &preparedStmt;
         }

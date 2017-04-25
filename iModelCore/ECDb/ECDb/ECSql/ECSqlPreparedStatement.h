@@ -57,6 +57,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
 
         Utf8CP GetECSql() const { return m_ecsql.c_str(); }
         Utf8CP GetNativeSql() const;
+        bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
 
         ECDb const& GetECDb() const { return m_ecdb; }
         bool IsCompoundStatement() const { return m_isCompoundStatement; }
