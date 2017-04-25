@@ -1045,8 +1045,10 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
 //---------------------------------------------------------------------------------------
 Utf8String CreateClassViewsCommand::_GetUsage() const
     {
-    return " .createclassviews              Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
-        COMMAND_USAGE_IDENT "ECProperties rather than tables and columns.\r\n";
+    return " .createclassviews <classes>    Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
+        COMMAND_USAGE_IDENT "ECProperties rather than tables and columns.\r\n"
+        COMMAND_USAGE_IDENT "If <classes> is specified, will create views for only those classes.  This is a space-delimited list of\r\n"
+        COMMAND_USAGE_IDENT "ECClassId and/or SchemaName:ClassName.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1063,10 +1065,49 @@ void CreateClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
         return;
         }
 
-    if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb())
-        BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
+    bvector<ECClassId> classIds;
+    if (!args.empty())
+        {
+        bvector<Utf8String> classTokens;
+        BeStringUtilities::Split(args.c_str(), " ", classTokens);
+        for (Utf8String classId : classTokens)
+            {
+            ECClassId id;
+            if (ECClassId::FromString(id, classId.c_str()))
+                classIds.push_back(id);
+            else
+                {
+                bvector<Utf8String> components;
+                BeStringUtilities::Split(classId.c_str(), ":.", components);
+                if (components.size() != 2)
+                    {
+                    BimConsole::WriteErrorLine("Unable to convert %s to either an ECClassId or <SchemaName>.<ClassName>\n", classId.c_str());
+                    }
+                else
+                    {
+                    ECClassId id = session.GetFile().GetECDbHandle()->Schemas().GetClassId(components[0], components[1]);
+                    if (id.IsValid())
+                        classIds.push_back(id);
+                    else
+                        BimConsole::WriteErrorLine("Unable to convert %s to an ECClassId\n", classId.c_str());
+                    }
+                }
+            }
+        }
+    if (0 != classIds.size())
+        {
+        if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb(classIds))
+            BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
+        else
+            BimConsole::WriteLine("Created or updated ECClass views in the file.");
+        }
     else
-        BimConsole::WriteLine("Created or updated ECClass views in the file.");
+        {
+        if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb())
+            BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
+        else
+            BimConsole::WriteLine("Created or updated ECClass views in the file.");
+        }
     }
 
 

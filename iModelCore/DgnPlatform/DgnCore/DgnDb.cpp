@@ -107,14 +107,14 @@ void DgnDb::_OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_OnDbOpened()
+DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     {
     DbResult rc;
 
-    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
+    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened(params)))
         return rc;
 
-    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
+    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened(((DgnDb::OpenParams const&) params).IsSchemaUpgradeEnabled())))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 

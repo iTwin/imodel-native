@@ -100,7 +100,7 @@ private:
     BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
     BeFileLzmaOutStream* m_outLzmaFileStream;
-    SchemaChangeSet m_schemaChanges;
+    DbSchemaChangeSet m_dbSchemaChanges;
     DgnDbCR m_dgndb; // Only for debugging
 
     //---------------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ private:
             return BE_SQLITE_ERROR;
             }
 
-        return WriteSchemaChanges();
+        return WriteDbSchemaChanges();
         }
 
     //---------------------------------------------------------------------------------------
@@ -187,9 +187,9 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    01/2017
     //---------------------------------------------------------------------------------------
-    DbResult WriteSchemaChanges()
+    DbResult WriteDbSchemaChanges()
         {
-        uint32_t size = (uint32_t) m_schemaChanges.GetSize();
+        uint32_t size = (uint32_t) m_dbSchemaChanges.GetSize();
         Byte sizeBytes[4];
         UIntToByteArray(sizeBytes, size);
 
@@ -200,7 +200,7 @@ private:
         if (size == 0)
             return BE_SQLITE_OK;
 
-        zipErrors = m_lzmaEncoder.CompressNextPage(m_schemaChanges.GetData(), m_schemaChanges.GetSize());
+        zipErrors = m_lzmaEncoder.CompressNextPage(m_dbSchemaChanges.GetData(), m_dbSchemaChanges.GetSize());
         return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
         }
 
@@ -208,7 +208,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    RevisionChangesFileWriter(BeFileNameCR pathname, SchemaChangeSetCR schemaChanges, DgnDbCR dgnDb) : m_pathname(pathname), m_schemaChanges(schemaChanges), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) {}
+    RevisionChangesFileWriter(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChanges, DgnDbCR dgnDb) : m_pathname(pathname), m_dbSchemaChanges(dbSchemaChanges), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) {}
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    01/2017
@@ -258,7 +258,7 @@ DbResult RevisionChangesFileReader::StartInput()
         return BE_SQLITE_ERROR;
         }
 
-    return ReadSchemaChanges();
+    return ReadDbSchemaChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ DbResult RevisionChangesFileReader::_InputPage(void *pData, int *pnData)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReader::GetSchemaChanges(SchemaChangeSetR schemaChanges)
+DbResult RevisionChangesFileReader::GetDbSchemaChanges(DbSchemaChangeSetR dbSchemaChanges)
     {
     if (nullptr == m_inLzmaFileStream)
         {
@@ -302,14 +302,14 @@ DbResult RevisionChangesFileReader::GetSchemaChanges(SchemaChangeSetR schemaChan
             return result;
         }
     
-    schemaChanges = m_schemaChanges;
+    dbSchemaChanges = m_dbSchemaChanges;
     return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult RevisionChangesFileReader::ReadSchemaChanges()
+BeSQLite::DbResult RevisionChangesFileReader::ReadDbSchemaChanges()
     {
     Byte sizeBytes[4];
     int readSizeBytes = 4;
@@ -333,7 +333,7 @@ BeSQLite::DbResult RevisionChangesFileReader::ReadSchemaChanges()
         return BE_SQLITE_ERROR;
         }
 
-    m_schemaChanges.AddDDL((Utf8CP) schemaChangeBytes.GetData());
+    m_dbSchemaChanges.AddDDL((Utf8CP) schemaChangeBytes.GetData());
     return BE_SQLITE_OK;
     }
 
@@ -374,8 +374,14 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
-    if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
-        return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+    if (cause == ChangeSet::ConflictCause::NotFound)
+        {
+        if (opcode == DbOpcode::Delete)
+            return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+
+        BeAssert(false && "Ensure IDs are not reused - this may result in update of a record that has been previously deleted"); 
+            // Note: Cannot return ConflictResolution::Replace since that will cause BE_SQLITE_MISUSE error
+        }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
@@ -498,15 +504,15 @@ public:
         DgnRevisionIdGenerator idgen;
         idgen.AddStringToHash(parentRevId);
 
-        SchemaChangeSet schemaChangeSet;
-        DbResult result = fs.GetSchemaChanges(schemaChangeSet);
+        DbSchemaChangeSet dbSchemaChanges;
+        DbResult result = fs.GetDbSchemaChanges(dbSchemaChanges);
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false);
             return (result == BE_SQLITE_ERROR_InvalidRevisionVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
             }
-        if (schemaChangeSet.GetSize() > 0)
-            idgen._OutputPage(schemaChangeSet.GetData(), schemaChangeSet.GetSize());
+        if (dbSchemaChanges.GetSize() > 0)
+            idgen._OutputPage(dbSchemaChanges.GetData(), dbSchemaChanges.GetSize());
 
         result = idgen.FromChangeStream(fs);
         if (BE_SQLITE_OK != result)
@@ -587,10 +593,10 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
 
     RevisionChangesFileReader fs(m_revChangesFile, dgndb);
 
-    SchemaChangeSet schemaChangeSet;
-    DbResult result = fs.GetSchemaChanges(schemaChangeSet);
+    DbSchemaChangeSet dbSchemaChangeSet;
+    DbResult result = fs.GetDbSchemaChanges(dbSchemaChangeSet);
     BeAssert(result == BE_SQLITE_OK);
-    schemaChangeSet.Dump("Schema Contents: ");
+    dbSchemaChangeSet.Dump("Schema Contents: ");
 
     fs.Dump("Data Contents:\n", dgndb, false, 0);
     }
@@ -829,9 +835,9 @@ bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
 
     // Validate that there aren't any DbSchema changes in the change set
     // Note: We do NOT typically expect database schema changes without corresponding EC changes
-    SchemaChangeSet dbSchemaChanges;
-    changeStream.GetSchemaChanges(dbSchemaChanges);
-    if (!dbSchemaChanges.IsEmpty())
+    DbSchemaChangeSet dbSchemaChangeSet;
+    changeStream.GetDbSchemaChanges(dbSchemaChangeSet);
+    if (!dbSchemaChangeSet.IsEmpty())
         {
         LOG.warning("Detected database schema changes without importing shemas");
         return true;
@@ -1091,7 +1097,7 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::GroupChanges(SchemaChangeSetR schemaChangeSet, ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const
+RevisionStatus RevisionManager::GroupChanges(DbSchemaChangeSetR dbSchemaChangeSet, ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
@@ -1103,7 +1109,7 @@ RevisionStatus RevisionManager::GroupChanges(SchemaChangeSetR schemaChangeSet, C
         {
         if (txnMgr.IsSchemaChangeTxn(currTxnId))
             {
-            txnMgr.ReadSchemaChanges(schemaChangeSet, currTxnId);
+            txnMgr.ReadDbSchemaChanges(dbSchemaChangeSet, currTxnId);
             }
         else
             {
@@ -1159,9 +1165,9 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, SchemaChangeSetCR schemaChangeSet, ChangeGroupCR dataChangeGroup)
+RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup)
     {
-    RevisionChangesFileWriter writer(pathname, schemaChangeSet, m_dgndb);
+    RevisionChangesFileWriter writer(pathname, dbSchemaChangeSet, m_dgndb);
 
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
@@ -1198,13 +1204,13 @@ DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnMan
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
-    SchemaChangeSet schemaChangeSet;
+    DbSchemaChangeSet dbSchemaChangeSet;
     ChangeGroup dataChangeGroup;
-    status = GroupChanges(schemaChangeSet, dataChangeGroup, endTxnId);
+    status = GroupChanges(dbSchemaChangeSet, dataChangeGroup, endTxnId);
     if (RevisionStatus::Success != status)
         return nullptr;
 
-    status = WriteChangesToFile(m_tempRevisionPathname, schemaChangeSet, dataChangeGroup);
+    status = WriteChangesToFile(m_tempRevisionPathname, dbSchemaChangeSet, dataChangeGroup);
     if (RevisionStatus::Success != status)
         return nullptr;
 
