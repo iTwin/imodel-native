@@ -331,3 +331,15 @@ void TilesetPublisher::GenerateModelNameList()
         m_modelNameList.append(1, ']');
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const
+    {
+    WString     modelRootName = TileUtil::GetRootNameForModel(tile.GetModel());
+
+    return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
+    }
+
+

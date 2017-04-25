@@ -312,7 +312,6 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
     {
      public:
         //ScopedDgnHost m_autoDgnHost;
-         std::vector<ECClassCP> List;
 
         /*---------------------------------------------------------------------------------**//**
         * @bsiclass                                            Julija.Suboc                08/13
@@ -400,80 +399,6 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
             EXPECT_EQ(projProp.spatialCategoryCount, projPropV.spatialCategoryCount)<<"SpatialCategory count does not match";
             EXPECT_EQ(projProp.viewCount, projPropV.viewCount)<<"View count does not match";
             EXPECT_EQ(projProp.styleCount, projPropV.styleCount)<<"Style count does not match";
-            }
-
-        /*-----------------------------------------------------------------------------**//**
-        * @bsimethod                            Maha.Nasir                04/17
-        ! Returns a vector over all the derived classes of the specified class.
-        +---------------+---------------+---------------+---------------+--------------+---*/
-        std::vector<ECClassCP> getDerivedClasses(ECClassCP classToTraverse)
-            {
-            const ECDerivedClassesList& DerivedClasses = classToTraverse->GetDerivedClasses();
-
-            for (ECClassP Class : DerivedClasses)
-                {
-                List.push_back(Class);
-                if (Class != nullptr)
-                    {
-                    getDerivedClasses(Class);
-                    }
-                }
-            return List;
-            }
-
-        /*---------------------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Maha.Nasir                          04/17
-        //Inserts the instances(For only BisCore schema) for all the derived classes of the specified class.
-        //Returns the number of instances inserted.
-        +---------------+---------------+---------------+---------------+---------------+------------------*/
-        void InsertInstancesForGeometricElement3d(ECClassCP className)
-            {
-            List.clear();
-            ASSERT_TRUE(List.empty());
-
-            int NumOfInstancesInserted = 0;
-            std::vector<ECClassCP> DerivedClassList = getDerivedClasses(className);
-
-            for (ECClassCP ecClass : DerivedClassList)
-                {
-                if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
-                    {
-                    //Gets the className
-                    Utf8StringCR className = ecClass->GetName();
-                    ASSERT_TRUE(ecClass != nullptr) << "ECClass '" << className << "' not found.";
-
-                    //Creates Instance of the given class
-                    ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-                    ASSERT_TRUE(ClassInstance.IsValid());
-
-                    //Setting values for Model and Code
-                    DgnCode code = DgnCode::CreateEmpty();
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
-                    ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
-
-                    //Creating Element
-                    DgnElementPtr ele = m_db->Elements().CreateElement(*ClassInstance);
-                    ASSERT_TRUE(ele != nullptr);
-                    ASSERT_TRUE(ele.IsValid());
-
-                    //Inserting the element
-                    DgnDbStatus stat = DgnDbStatus::Success;
-                    DgnElementCPtr eleP = ele->Insert(&stat);
-                    ASSERT_TRUE(eleP.IsValid());
-                    ASSERT_EQ(DgnDbStatus::Success, stat);
-
-                    if (stat == DgnDbStatus::Success)
-                        {
-                        printf("Instance Inserted for Class: %s \n", ecClass->GetName().c_str());
-                        }
-
-                    NumOfInstancesInserted++;
-                    }
-                }
-            ASSERT_EQ(3, NumOfInstancesInserted);
             }
     };
 
@@ -772,38 +697,6 @@ TEST(DgnProject, DuplicateElementId)
     //     }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Maha Nasir                  03/17
-// Inserts instances for Geometric3d class of BisCore schema.
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DgnProjectPackageTest, InstanceInsertionForGeometricElement3d)
-    {
-    SetupSeedProject();
-    m_db->Schemas().CreateClassViewsInDb();
-
-    //Getting the BisCore Schema
-    ECSchemaCP BisSchema = m_db->Schemas().GetSchema(BIS_ECSCHEMA_NAME);
-    ASSERT_TRUE(BisSchema != nullptr);
-
-    //Getting the pointer of the Class
-    ECClassCP ElementClass = BisSchema->GetClassCP("Element");
-    ASSERT_TRUE(ElementClass != nullptr);
-
-    //Emptying the contents of the vector.
-    List.clear();
-    ASSERT_TRUE(List.empty());
-
-    std::vector<ECClassCP> DerivedClassList = getDerivedClasses(ElementClass);
-    ASSERT_TRUE(DerivedClassList.size() != 0);
-
-    for (ECClassCP ecClass : DerivedClassList)
-        {
-        if (ecClass->GetName() == "GeometricElement3d")
-            {
-            InsertInstancesForGeometricElement3d(ecClass);
-            }
-        }
-    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15

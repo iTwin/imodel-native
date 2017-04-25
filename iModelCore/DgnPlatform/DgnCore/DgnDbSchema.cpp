@@ -411,13 +411,12 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     SaveDgnDbProfileVersion();
     SaveCreationDate();
 
-    Domains().OnDbOpened();
+    Domains().OnDbOpened(false);
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
-
     m_geoLocation.Save();
-
+    
     DbResult result = params.m_createStandalone ? Txns().InitializeTableHandlers() : BE_SQLITE_OK;
 
     SaveChanges();
@@ -526,7 +525,6 @@ DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
     if (result != BE_SQLITE_OK)
         return result;
 
-    Domains().SetEnableSchemaImport(((DgnDb::OpenParams const&) params).IsSchemaImportEnabled());
     return BE_SQLITE_OK;
     }
 
@@ -586,7 +584,7 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
         if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
             return result;
 
-        BeAssert(result == BE_SQLITE_ERROR_SchemaImportRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
+        BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
 
         importSchemas.push_back(appSchema);
         }
