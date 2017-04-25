@@ -465,6 +465,7 @@ private:
           m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
 
     bool GetMaterial(DgnMaterialId materailId, DgnDbR db);
+    uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type); }
@@ -475,8 +476,8 @@ public:
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
-    uint32_t AddClusteredVertex(VertexKey const& vertex);
-    uint32_t AddVertex(VertexKey const& vertex);
+    uint32_t AddClusteredVertex(VertexKey const& vertex) { return AddVertex(m_clusteredVertexMap, vertex); }
+    uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_unclusteredVertexMap, vertex); }
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }

@@ -778,29 +778,15 @@ void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t MeshBuilder::AddVertex(VertexKey const& vertex)
+uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     {
-    auto found = m_unclusteredVertexMap.find(vertex);
-    if (m_unclusteredVertexMap.end() != found)
-        return found->second;
+    // Avoid doing lookup twice - once to find existing, again to add if not present
+    auto index = static_cast<uint32_t>(m_mesh->Points().size());
+    auto insertPair = verts.Insert(vertex, index);
+    if (insertPair.second)
+        m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
-    m_unclusteredVertexMap[vertex] = index;
-    return index;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t MeshBuilder::AddClusteredVertex(VertexKey const& vertex)
-    {
-    auto found = m_clusteredVertexMap.find(vertex);
-    if (m_clusteredVertexMap.end() != found)
-        return found->second;
-
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
-    m_clusteredVertexMap[vertex] = index;
-    return index;
+    return insertPair.first->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
