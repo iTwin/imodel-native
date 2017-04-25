@@ -189,7 +189,9 @@
     </ProductDirectoryList>
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
-        <SubPart PartName="ScalableMeshSDKexe"/>
+        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />     
+        <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
