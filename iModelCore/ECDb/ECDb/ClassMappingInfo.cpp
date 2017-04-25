@@ -466,7 +466,7 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
 
                 case MapStrategy::OwnTable:
                     //we ignore abstract classes with own table as they match with the other strategies
-                    if (baseClassMap->GetClass().GetClassModifier() != ECClassModifier::Abstract &&  ownTableBaseClassMap == nullptr)
+                    if (baseClassMap->GetClass().GetClassModifier() != ECClassModifier::Abstract && ownTableBaseClassMap == nullptr)
                         ownTableBaseClassMap = baseClassMap;
 
                     break;
