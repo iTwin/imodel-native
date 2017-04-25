@@ -96,6 +96,22 @@ public:
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement and
+//! refers to a single table
+// @bsiclass                                                Krischan.Eberle      04/2017
+//+===============+===============+===============+===============+===============+======
+struct SingleContextTableECSqlPreparedStatement final : SingleECSqlPreparedStatement
+    {
+private:
+    DbTable const* m_contextTable = nullptr;
+
+public:
+    SingleContextTableECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, DbTable const& contextTable) : SingleECSqlPreparedStatement(ecdb, type), m_contextTable(&contextTable) {}
+    ~SingleContextTableECSqlPreparedStatement() {}
+    DbTable const& GetContextTable() const { return *m_contextTable; }
+
+    };
+//=======================================================================================
 //! IECSqlPreparedStatement for ECSQL that requires multiple SQLite statements to be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
@@ -188,9 +204,9 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             };
 
 
-        std::vector<std::unique_ptr<SingleECSqlPreparedStatement>> m_statements;
+        std::vector<std::unique_ptr<SingleContextTableECSqlPreparedStatement>> m_statements;
         mutable std::vector<std::unique_ptr<IProxyECSqlBinder>> m_proxyBinders;
-        mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
+        mutable bmap<Utf8String, int, CompareIUtf8Ascii> m_parameterNameMap;
 
     private:
         mutable Utf8String m_compoundNativeSql;
@@ -207,7 +223,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     public:
         virtual ~CompoundECSqlPreparedStatement() {}
 
-        SingleECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
+        SingleContextTableECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
     };
 
 //=======================================================================================
@@ -245,13 +261,6 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
 private:
-    struct LeafPreparedStatement final : SingleECSqlPreparedStatement
-        {
-    public:
-        explicit LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
-        ~LeafPreparedStatement() {}
-        };
-
     struct ECInstanceKeyHelper final : NonCopyableClass
             {
             public:
@@ -263,17 +272,49 @@ private:
                     UserProvidedOtherExp
                     };
 
+                struct UpdateHook final : NonCopyableClass
+                    {
+                    private:
+                        struct Callback final : DataUpdateCallback
+                            {
+                            private:
+                                ECInstanceId m_rowId;
+
+                                void _OnRowModified(DataUpdateCallback::SqlType sqlType, Utf8CP dbName, Utf8CP tableName, BeInt64Id rowid) override
+                                    {
+                                    BeAssert(sqlType == DataUpdateCallback::SqlType::Update);
+                                    m_rowId = ECInstanceId(rowid);
+                                    }
+
+                            public:
+                                Callback() : DataUpdateCallback() {}
+                                ~Callback() {}
+
+                                ECInstanceId GetRowId() const { return m_rowId; }
+                            };
+
+                        ECDb const& m_ecdb;
+                        Callback m_callback;
+
+                    public:
+                        explicit UpdateHook(ECDb const& ecdb) : m_ecdb(ecdb) { m_ecdb.AddDataUpdateCallback(m_callback); }
+                        ~UpdateHook() { m_ecdb.RemoveDataUpdateCallback(); }
+                        ECInstanceId GetUpdatedRowid() const { return m_callback.GetRowId(); }
+                    };
+
             private:
+                ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr;
                 Mode m_mode = Mode::NotUserProvided;
-                ECN::ECClassId m_ecClassId;
-                IECSqlBinder* m_primaryTableECSqlECInstanceIdBinder = nullptr;
-                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr;
+                ECN::ECClassId m_classId;
+                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr; //in case user specified parametrized id expression
                 mutable ECInstanceId m_generatedECInstanceId;
+
+                static Mode DetermineMode(int& expIx, ECSqlSystemPropertyInfo const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
 
             public:
                 ECInstanceKeyHelper() {}
 
-                void Initialize(int &ecInstanceIdPropNameExpIx, ECN::ECClassId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
+                void Initialize(int &idPropNameExpIx, ClassMap const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
 
                 void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
                     { 
@@ -281,17 +322,20 @@ private:
                     BeAssert(m_idProxyBinder == nullptr && "Must not be called twice"); 
                     m_idProxyBinder = &idBinder; 
                     }
-                ECSqlStatus InitializeIdPrimaryTableECInstanceIdBinder(SingleECSqlPreparedStatement&);
-                DbResult BindPrimaryTableECInstanceId(ECDbCR);
-                ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
+                ECN::ECClassId GetClassId() const { return m_classId; }
+                bool IsEndTableRelationshipInsert() const { return *m_sysPropInfo != ECSqlSystemPropertyInfo::ECInstanceId(); }
+                bool MustGenerateECInstanceId() const;
+                //Is not null in case user specified parametrized id expression
+                ProxyECInstanceIdECSqlBinder* GetIdProxyBinder() const { return m_idProxyBinder; }
                 Mode GetMode() const { return m_mode; }
             };
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
-        bool m_checkModifiedRowCountAfterStep = false;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
+        DbResult StepForEndTableRelationship(ECInstanceKey&);
 
     public:
         explicit ECSqlInsertPreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
@@ -304,7 +348,11 @@ private:
 struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     {
     private:
+        std::unique_ptr<ECSqlSelectPreparedStatement> m_whereClauseSelector;
+
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
+        static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);
 
     public:
         explicit ECSqlUpdatePreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Update) {}

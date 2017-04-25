@@ -16,6 +16,8 @@
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE
 
+//#define ECSQLPREPAREDSTATEMENT_REFACTOR 1
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================

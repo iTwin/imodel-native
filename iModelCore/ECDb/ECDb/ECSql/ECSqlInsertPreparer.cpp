@@ -38,6 +38,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         if (info->GetPrimaryECInstanceIdParameterIndex() > 0)
             parentOfJoinedTableStmt->SetECInstanceIdBinder((int) info->GetPrimaryECInstanceIdParameterIndex());
         }
+
 #endif
 
     NativeSqlSnippets insertNativeSqlSnippets;
@@ -76,13 +77,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     {
     BeAssert(classMap.IsRelationshipClassMap());
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     SystemPropertyExpIndexMap const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
         return ECSqlStatus::InvalidECSql;
         }
-
+#endif
     if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
         return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
 
@@ -217,7 +219,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     for (Exp const* childExp : propNameListExp->GetChildren())
         {
         PropertyNameExp const& propNameExp = childExp->GetAs<PropertyNameExp>();
-
+        BeAssert(!propNameExp.IsPropertyRef() && "PropertyRefs are not supported in ECSQL INSERT");
         NativeSqlBuilder::List nativeSqlSnippets;
         ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
         if (!stat.IsSuccess())

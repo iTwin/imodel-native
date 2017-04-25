@@ -1643,6 +1643,111 @@ TEST_F(SchemaUpdateTestFixture, AddNewECDbMapCANotSupported)
     AssertSchemaUpdate(addECDbMapCA, filePath, {false, false}, "Adding New ECDbMap CA instance");
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                          04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateTestFixture, AppendNewCA)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECCustomAttributeClass typeName = 'UserCA1' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA2' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA3' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA4' appliesTo = 'Any' />"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='test class' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <UserCA1 xmlns = 'TestSchema.01.00.00' />"
+        "           <UserCA2 xmlns = 'TestSchema.01.00.00' />"
+        "           <UserCA3 xmlns = 'TestSchema.01.00.00' />"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //Add new CA
+    Utf8CP addCAOnClass =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA1' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA2' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA3' appliesTo = 'Any' />"
+        "   <ECCustomAttributeClass typeName = 'UserCA4' appliesTo = 'Any' />"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <UserCA1 xmlns = 'TestSchema.01.00.00' />"
+        "           <UserCA2 xmlns = 'TestSchema.01.00.00' />"
+        "           <UserCA3 xmlns = 'TestSchema.01.00.00' />"
+        "           <UserCA4 xmlns = 'TestSchema.01.00.00' />"
+        "           <ClassHasCurrentTimeStampProperty xmlns='CoreCustomAttributes.01.00'>"
+        "               <PropertyName>LastMod</PropertyName>"
+        "           </ClassHasCurrentTimeStampProperty>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(addCAOnClass, filePath, {true, true}, "Adding new CA instance");
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+
+        //verify tables
+        ASSERT_TRUE(GetECDb().TableExists("ts_TestClass"));
+
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
+
+        //Verify newly added CA
+        testClass = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        IECInstancePtr bsca = testClass->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+        ASSERT_TRUE(bsca != nullptr);
+
+        ECValue val;
+        ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "PropertyName"));
+        ASSERT_STRCASEEQ("LastMod", val.GetUtf8CP());
+        GetECDb().CloseDb();
+        }
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------

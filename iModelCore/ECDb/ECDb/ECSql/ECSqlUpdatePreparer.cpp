@@ -20,13 +20,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
+
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
-    
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
     if (stat != ECSqlStatus::Success)
         return stat;
+#endif
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
@@ -35,8 +41,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         return ECSqlStatus::InvalidECSql;
         }
 
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto info = ctx.GetJoinedTableInfo())
         {
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
@@ -50,7 +54,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             }
         }
-#endif
     if (classMap.IsRelationshipClassMap())
         {
         if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
@@ -62,6 +65,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             return ECSqlStatus::InvalidECSql;
             }
         }
+#endif
 
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
@@ -98,7 +102,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     if (sqlSnippets.m_propertyNamesNativeSqlSnippets.empty())
         ctx.SetNativeStatementIsNoop(true);
 
-    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
     if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
@@ -107,7 +110,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete.
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+        topLevelWhereClause = whereClause;
+#else
+        //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         auto const & currentClassMap = classMap;
         if (!currentClassMap.IsMappedToSingleTable())
             {
@@ -147,6 +153,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             }
         else
             topLevelWhereClause = whereClause;
+#endif
         }
 
     if (!topLevelWhereClause.IsEmpty())
@@ -205,6 +212,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     return status;
     }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                         05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -232,7 +241,7 @@ ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext&
 
     return ECSqlStatus::Success;
     }
-
+#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------

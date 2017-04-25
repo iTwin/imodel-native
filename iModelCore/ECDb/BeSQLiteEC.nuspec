@@ -8,17 +8,18 @@
         <owners>Bentley Systems, Incorporated</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Bentley ECSql library</description>
-        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
         <language>en-US</language>
         <dependencies>
             <group>
+                <dependency id="BeSQLite" version="[#DgnClientSdk_version#]" />
                 <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="Assemblies\BeSQLiteB02.dll"   target="lib\native\BeSQLiteB02.dll" />
-        <file src="Assemblies\BeSQLiteECB02.dll" target="lib\native\BeSQLiteECB02.dll" />
-        <file src="ECSchemas\**\*.*"             target="Assets\" />
+        <file src="Delivery\BeSQLiteECB02.dll"      target="lib\native\BeSQLiteECB02.dll" />
+        <file src="SubParts\Assemblies\BeSQLiteB02.dll"   target="lib\native\BeSQLiteB02.dll" />
+        <file src="ECSchemas\ECDb\*.*"              target="Assets\ECSchemas\ECDb" />
     </files>
 </package>

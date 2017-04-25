@@ -537,6 +537,90 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                      04/17
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(JoinedTableTestFixture, Update)
+    {
+    ECDbCR ecdb = SetupECDb("joinedtable.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                        <ECProperty propertyName="Prop2" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub">
+                      <BaseClass>Base</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                      <ECProperty propertyName="SubProp2" typeName="int" />
+                     </ECEntityClass>
+               </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    auto assertRow = [] (ECDbCR ecdb, std::tuple<Utf8CP, int, Utf8CP, int> const& expectedRowValues, ECInstanceKey const& key)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Prop1,Prop2,SubProp1,SubProp2 FROM ts.Sub WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << key.GetInstanceId().ToString().c_str();
+        ASSERT_STREQ(std::get<0>(expectedRowValues), stmt.GetValueText(0)) << key.GetInstanceId().ToString().c_str();
+        ASSERT_EQ(std::get<1>(expectedRowValues), stmt.GetValueInt(1)) << key.GetInstanceId().ToString().c_str();
+        ASSERT_STREQ(std::get<2>(expectedRowValues), stmt.GetValueText(2)) << key.GetInstanceId().ToString().c_str();
+        ASSERT_EQ(std::get<3>(expectedRowValues), stmt.GetValueInt(3)) << key.GetInstanceId().ToString().c_str();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << key.GetInstanceId().ToString().c_str();
+        };
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Sub(Prop1,Prop2,SubProp1,SubProp2) VALUES('1',1,'1',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    assertRow(ecdb, {"1",1,"1",1}, key);
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE ECInstanceId=?"));
+
+    std::tuple<Utf8CP, int, Utf8CP, int> expectedRow {"2",2,"2",2};
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, std::get<0>(expectedRow), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, std::get<1>(expectedRow)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, std::get<2>(expectedRow), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, std::get<3>(expectedRow)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(5, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << stmt.GetECSql();
+    stmt.Finalize();
+    assertRow(ecdb, expectedRow, key);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=2 AND SubProp2=2"));
+    expectedRow = std::tuple<Utf8CP, int, Utf8CP, int> {"3",3,"3",3};
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, std::get<0>(expectedRow), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, std::get<1>(expectedRow)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, std::get<2>(expectedRow), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, std::get<3>(expectedRow)));
+    int totalModifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << "SQL: " << stmt.GetNativeSql();
+    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql() << "SQL: " << stmt.GetNativeSql();
+    stmt.Finalize();
+    assertRow(ecdb, expectedRow, key);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=3 AND SubProp2=1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 4));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, 4));
+    totalModifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql();
+    //values shouldn't have been modified, so must have values from previous update
+    assertRow(ecdb, expectedRow, key);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         1/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)

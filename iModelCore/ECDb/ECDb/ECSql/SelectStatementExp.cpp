@@ -815,10 +815,7 @@ SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<Select
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
-    ctx.AppendToECSql("(").AppendToECSql(*GetQuery()).AppendToECSql(")");
-    }
+void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
 
 //****************************** SubqueryRefExp *****************************************
 

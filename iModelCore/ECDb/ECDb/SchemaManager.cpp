@@ -150,17 +150,17 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
-    return ImportSchemas(schemas, false, schemaImportToken);
+    return ImportSchemas(schemas, SchemaImportOptions::None, schemaImportToken);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, SchemaImportToken const* schemaImportToken) const
+BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* schemaImportToken) const
     {
     PERFLOG_START("ECDb", "ECSchema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
-    SchemaImportContext ctx(doNotFailSchemaValidationForLegacyIssues);
+    SchemaImportContext ctx(options);
     const BentleyStatus stat = DoImportSchemas(ctx, schemas, schemaImportToken);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas");
     m_ecdb.ClearECDbCache();
@@ -311,7 +311,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
 
-    const bool isValid = SchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), dependencyOrderedPrimarySchemas, context.DoNotFailSchemaValidationForLegacyIssues());
+    const bool isValid = SchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), dependencyOrderedPrimarySchemas, context.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
     if (!isValid)
         return ERROR;
 

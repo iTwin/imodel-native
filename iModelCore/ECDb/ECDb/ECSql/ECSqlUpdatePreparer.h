@@ -27,7 +27,10 @@ struct ECSqlUpdatePreparer final
         //static class
         ECSqlUpdatePreparer();
         ~ECSqlUpdatePreparer();
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+#endif
         static ECSqlStatus PrepareAssignmentListExp(NativeSqlSnippets& snippets, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp);
 
     public:
