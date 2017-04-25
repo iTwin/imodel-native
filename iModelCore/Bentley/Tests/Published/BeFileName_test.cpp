@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileName_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -2196,12 +2196,13 @@ TEST (BeFileNameTests, CloneDirectory)
     // Clone with sub directry 
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir1.AppendToPath(L"destDir1WithSub"), true));
     VerifyDirectory(destDir1);
-
+    BeFileName::EmptyAndRemoveDirectory(destDir1.c_str());
+    
     //--------------------------------------------------------------------------------------------------------------------
     // Clone without sub directories
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir2.AppendToPath(L"destDir2"),false));
     VerifyDirectory(destDir2, false);
-
+    BeFileName::EmptyAndRemoveDirectory(destDir2.c_str());
     //--------------------------------------------------------------------------------------------------------------------
     // Source Does not exist 
     EXPECT_TRUE(BeFileNameStatus::Success != BeFileName::CloneDirectory(BeFileName(rootDir).AppendToPath(L"DirNoExist"), BeFileName(rootDir).AppendToPath(L"DestDirNoExist")));
