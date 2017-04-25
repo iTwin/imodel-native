@@ -814,13 +814,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
         {
-        //BeFileName smFileName(((this)->m_properties).m_fileId);
-        BeFileName smFileName;
-        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+        //BeFileName smFileName(((this)->m_properties).m_fileId);        
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()))
             {
-            OpenFile(smFileName, GetDgnDb()); 
+            OpenFile(m_path, GetDgnDb());
             }
 
         m_tryOpen = true;
@@ -884,44 +883,44 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     
     DMatrix4d localToView(context.GetLocalToView());
                                    
-    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
+        DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
 
-    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
+        bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
 
-    //DPoint3d viewBox[8];
+        //DPoint3d viewBox[8];
 
-    //NEEDS_WORK_SM : Remove from query
-    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
-    DMatrix4d rootToStorage;
+        //NEEDS_WORK_SM : Remove from query
+        //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
+        DMatrix4d rootToStorage;
 
-    //Convert the view box in storage.
-    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
+        //Convert the view box in storage.
+        bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
 
-    BeAssert(inverted != 0);
+        BeAssert(inverted != 0);
     
-    status = SUCCESS;
+        status = SUCCESS;
             
-    IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
+        IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
-    viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+        viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
             
-    ClipVectorCP clip;
-    clip = context.GetTransformClipStack().GetClip();
-    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
-    //viewDependentQueryParams->SetViewBox(viewBox);
-    viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
+        ClipVectorCP clip;
+        clip = context.GetTransformClipStack().GetClip();
+        //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
+        //viewDependentQueryParams->SetViewBox(viewBox);
+        viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
 
-    //NEEDS_WORK_SM : Needed?
-    /*
-    if (s_progressiveDraw)
-        {
-        viewDependentQueryParams->SetProgressiveDisplay(true);
-        viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
-        }            
-        */
+        //NEEDS_WORK_SM : Needed?
+        /*
+        if (s_progressiveDraw)
+            {
+            viewDependentQueryParams->SetProgressiveDisplay(true);
+            viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
+            }            
+            */
 
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));    
-    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
+        ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));    
+        clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
     
 
         
@@ -935,12 +934,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     m_DTMDataRef->GetVisibleClips(clips);
     */
 
-    status = GetProgressiveQueryEngine()->StartQuery(queryId,
-                                                      viewDependentQueryParams, 
-                                                      m_currentDrawingInfoPtr->m_meshNodes, 
-                                                      true, //No wireframe mode, so always load the texture.
-                                                      clips,
-                                                      m_smPtr); 
+        status = GetProgressiveQueryEngine()->StartQuery(queryId,
+                                                          viewDependentQueryParams, 
+                                                          m_currentDrawingInfoPtr->m_meshNodes, 
+                                                          true, //No wireframe mode, so always load the texture.
+                                                          clips,
+                                                          m_smPtr); 
 
 
     assert(status == SUCCESS);
@@ -2116,13 +2115,12 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
 
     if (m_smPtr == 0 && !m_tryOpen)
     {
-        //BeFileName smFileName(((this)->m_properties).m_fileId);
-        BeFileName smFileName;
-        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+        //BeFileName smFileName(((this)->m_properties).m_fileId);        
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()))
         {
-            OpenFile(smFileName, GetDgnDb());
+            OpenFile(m_path, GetDgnDb());
         }
 
         m_tryOpen = true;
