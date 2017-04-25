@@ -565,7 +565,7 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
     {
-    m_scene = nullptr;      // Clear previous scene. (avoid trying to open twice).
+    // ###TODO? Merge. m_scene = nullptr;      // Clear previous scene. (avoid trying to open twice).
 
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, m_sceneFile.c_str(), nullptr);
     if (SUCCESS != scene->LoadScene())

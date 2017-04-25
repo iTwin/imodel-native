@@ -349,19 +349,6 @@ RasterRootP RasterModel::Load(Dgn::Render::SystemP system) const
     return static_cast<RasterRootP>(root.get());
     }
 
-    {
-    _Load(&context.GetTargetR().GetSystem());
-
-    if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
-        return;
-
-    Transform depthTransform;
-    ComputeDepthTransformation(depthTransform, context);
-
-    m_root->DrawInView(context, Transform::FromProduct(depthTransform, m_root->GetLocation()), GetClip().GetClipVector());
-    }
-
-
 #ifdef WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
