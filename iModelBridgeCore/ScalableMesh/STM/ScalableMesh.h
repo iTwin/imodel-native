@@ -331,7 +331,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
+#ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+#endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
@@ -537,10 +539,12 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             {
             return ERROR;
             }
+#ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override
             {
             return ERROR;
             }
+#endif
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override
             {
             return ERROR;
