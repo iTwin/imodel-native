@@ -65,9 +65,6 @@ public:
 
     //! Create a DgnCode for a DgnGeometryPart given a name that is meant to be unique within the scope of the specified model
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scope, name);}
-    //! @private
-    //! @deprecated
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
 
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
