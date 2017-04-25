@@ -63,7 +63,6 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus AddValidator(IECSchemaValidatorPtr& validator);
     ECOBJECTS_EXPORT static ECObjectsStatus AddClassValidator(IECClassValidatorPtr& validator);
 
-
     };
 
 struct BaseECValidator : IECSchemaValidator
@@ -73,7 +72,7 @@ struct BaseECValidator : IECSchemaValidator
 
 struct BaseECClassValidator : IECClassValidator
     {
-    ECObjectsStatus Validate(ECClassCR schema) const override;
+    ECObjectsStatus Validate(ECClassCR schema) const override {return ECObjectsStatus::Success;}
     };
 
 struct MixinValidator : IECClassValidator
@@ -81,8 +80,7 @@ struct MixinValidator : IECClassValidator
     // A mixin may have 0 or 1 base class
     // A mxin may not override an inherited property
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool CanValidate(ECClassCR ecClass) const override;
-
+    bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();}
     };
 
 struct EntityValidator : IECClassValidator
@@ -90,17 +88,15 @@ struct EntityValidator : IECClassValidator
     // An entity class may not inherit a property from more than one base class
     // An entity class may not override a property inherited from a mixin class
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool CanValidate(ECClassCR ecClass) const override;
-
+    bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass();}
 };
 
 struct RelationshipValidator : IECClassValidator
 {
     // Relationship local definition validation
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool CanValidate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsRelationshipClass();}
     ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const;
-
 };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
