@@ -164,6 +164,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel2d" modifier="Abstract" displayLabel="2D Geometric Model" description="A container for persisting 2D geometric elements.">
         <BaseClass>GeometricModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="GlobalOrigin" typeName="point2d" displayLabel="Global Origin" description="The actual coordinates of (0,0) in Model coordinates. An offest applied to all Model coordinates."/>
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalModel2d" modifier="Abstract" displayLabel="2D Graphical Model" description="A container for persisting 2D graphical elements.">
