@@ -1719,6 +1719,14 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(TileTree::RootR root)
+    {
+    return folly::makeFuture(TileGeneratorStatus::Success);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
@@ -1726,6 +1734,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1759,6 +1768,31 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
             });
         }
+#ifdef WIP_TILETREE_PUBLISH
+    else if (nullptr != getTileTree)
+        {
+        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
+            {
+            return pCollector->_BeginProcessModel(*modelPtr);
+            })
+        .then([=](TileGeneratorStatus status)
+            {
+            if (TileGeneratorStatus::Success == status)
+                {
+                TileTree::RootCPtr tileRoot = getTileTree->_GetPublishingTileTree(leafTolerance);
+
+                status = tileRoot.IsValid() ? GenerateTilesFromTileTree(*getTileTree->_GetPublishingTileTree(leafTolerance)) : folly::makeFuture(TileGeneratorStatus::NoGeometry); 
+                }
+
+            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
+            return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
+            });
+        .then([=](TileGeneratorStatus status)
+            {
+            return status;
+            });
+        }
+#endif
     else
         {
         BeFileName          dataDirectory;

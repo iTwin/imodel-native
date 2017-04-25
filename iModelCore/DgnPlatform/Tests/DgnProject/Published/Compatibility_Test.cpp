@@ -42,7 +42,7 @@ struct CompatibilityTests : public DgnDbTestFixture
     static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
 
     static void SetUpTestCase();
-    void SetUpFromBaselineCopy(BeFileNameCR, Utf8CP, DbResult);
+    void SetUpFromBaselineCopy(Utf8CP, Utf8CP, DbResult);
     void ImportFunctionalSchema();
 
     BE_JSON_NAME(inserted);
@@ -136,9 +136,9 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 // This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, DISABLED_ModifyBaseline_1_0_0)
+TEST_F(CompatibilityTests, ModifyBaseline)
     {
-    SetUpFromBaselineCopy(BeFileName(L"d:/data/dgndb/Baseline/BisCore-1.0.0-PreHoldouts.bim"), TEST_NAME, BE_SQLITE_ERROR_SchemaUpgradeRequired);
+    SetUpFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -847,31 +847,49 @@ void CompatibilityTests::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-void CompatibilityTests::SetUpFromBaselineCopy(BeFileNameCR sourceFileName, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
+void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
     {
+    BeFileName sourceFileName;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sourceFileName);
+    sourceFileName.AppendToPath(L"CompatibilityTestFiles");
+    sourceFileName.AppendToPath(BeFileName(versionString, BentleyCharEncoding::Utf8));
+    sourceFileName.AppendToPath(L"CompatibilityTestSeed.bim");
+    ASSERT_TRUE(sourceFileName.DoesPathExist());
+
     BeFileName destFileName;
     BeTest::GetHost().GetOutputRoot(destFileName);
     destFileName.AppendToPath(BeFileName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8));
-    destFileName.AppendToPath(BeFileName(destBaseName, BentleyCharEncoding::Utf8));
+    BeFileName::CreateNewDirectory(destFileName.GetName());
+    ASSERT_TRUE(destFileName.DoesPathExist());
+    destFileName.AppendToPath(BeFileName(Utf8PrintfString("%s%s", destBaseName, versionString).c_str(), BentleyCharEncoding::Utf8));
     destFileName.AppendExtension(L"bim");
     ASSERT_FALSE(destFileName.DoesPathExist());
-    ASSERT_TRUE(sourceFileName.DoesPathExist());
 
     BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceFileName, destFileName, true /*failIfFileExists*/);
     ASSERT_EQ(BeFileNameStatus::Success, copyStatus);
 
-    DbResult openStatus;
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+    DbResult openStatus = BE_SQLITE_OK;
 
     if (BE_SQLITE_OK != expectedFirstOpenStatus)
         {
-        m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_EQ(expectedFirstOpenStatus, openStatus);
-        ASSERT_FALSE(m_db.IsValid());
-        openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+        ASSERT_FALSE(db.IsValid());
         }
 
-    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+    if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
+        {
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+        openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+        ASSERT_EQ(BE_SQLITE_OK, openStatus);
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
+        ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
+        db->CloseDb();
+        }
+
+    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(m_db.IsValid());
     }
@@ -973,7 +991,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
                 ASSERT_TRUE(ClassInstance.IsValid());
 
-                if (className == "ViewAttachment")
+                if (className == BIS_CLASS_ViewAttachment)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_sheetModelId)));
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("View", ECN::ECValue(m_viewId)));
@@ -1072,11 +1090,11 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the heirarchy
         for (ECClassCP ecClass : GeometricElementHeirarchy)
             {
-            if (ecClass->GetName() == "GeometricElement2d")
+            if (ecClass->GetName() == BIS_CLASS_GeometricElement2d)
                 {
                 InsertInstancesForGeometricElement2d(ecClass);
                 }
-            else if (ecClass->GetName() == "GeometricElement3d")
+            else if (ecClass->GetName() == BIS_CLASS_GeometricElement3d)
                 {
                 InsertInstancesForGeometricElement3d(ecClass);
                 }
@@ -1167,7 +1185,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 
                 //Setting values for Model and Code
                 DgnCode code = DgnCode::CreateEmpty();
-                if (className == "Subject")
+                if (className == BIS_CLASS_Subject)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(rootSubject->GetModelId())));
                     }
@@ -1324,23 +1342,23 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the immediate derived classes of InformationContentElementHeirarchy
         for (ECClassCP ecClass : InformationContentElementHeirarchy)
             {
-            if (ecClass->GetName() == "Document")
+            if (ecClass->GetName() == BIS_CLASS_Document)
                 {
                 InsertInstancesForDocument(ecClass);
                 }
 
-            else if (ecClass->GetName() == "InformationReferenceElement")
+            else if (ecClass->GetName() == BIS_CLASS_InformationReferenceElement)
                 {
                 InsertInstancesForInformationReferenceElement(ecClass);
                 }
 
-            else if (ecClass->GetName() == "DefinitionElement")
+            else if (ecClass->GetName() == BIS_CLASS_DefinitionElement)
                 {
                 InsertInstancesForDefinitionElement(ecClass);
                 }
 
             //Uncomment when implementation is fixed.
-            //else if (ecClass->GetName() == "InformationPartitionElement")
+            //else if (ecClass->GetName() == BIS_CLASS_InformationPartitionElement)
             //    {
             //    InsertInstancesForInformationPartitionElement(ecClass);
             //    }
@@ -1364,7 +1382,7 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
     ASSERT_TRUE(BisSchema != nullptr);
 
     //Getting the pointer of the Class
-    ECClassCP ElementClass = BisSchema->GetClassCP("Element");
+    ECClassCP ElementClass = BisSchema->GetClassCP(BIS_CLASS_Element);
     ASSERT_TRUE(ElementClass != nullptr);
 
     //Emptying the contents of the vector.
@@ -1383,12 +1401,12 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
         {
         List.push_back(ecClass);
 
-        if (ecClass->GetName() == "GeometricElement")
+        if (ecClass->GetName() == BIS_CLASS_GeometricElement)
             {
             InsertInstancesForGeometricElementHeirarchy(ecClass);
             }
 
-        else if (ecClass->GetName() == "InformationContentElement")
+        else if (ecClass->GetName() == BIS_CLASS_InformationContentElement)
             {
             InsertInstancesForInformationContentElementHeirarchy(ecClass);
             }

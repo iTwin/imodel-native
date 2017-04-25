@@ -1009,6 +1009,7 @@ private:
                                                                                 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
+    FutureStatus GenerateTilesFromTileTree(TileTree::RootR root);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -1031,6 +1032,16 @@ struct IGenerateMeshTiles
 
 };  // IPublishModelMeshTiles
 
+
+//=======================================================================================
+// Interface for TileTree based models to expose their tree for publishing.
+// @bsistruct                                                   Ray.Bentley     08/2016
+//=======================================================================================
+struct IGetTileTreeForPublishing
+{
+    virtual TileTree::RootCPtr _GetPublishingTileTree(double leafTolerance) const = 0;
+
+};  // IGetTileTreeForPublishing
 
 //=======================================================================================
 // static utility methods
