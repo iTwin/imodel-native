@@ -28,6 +28,9 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
 
         IECClassValidatorPtr entityValidator = new EntityValidator();
         ECSchemaValidatorSingleton->AddClassValidator(entityValidator);
+
+        IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
         }    
 
     return ECSchemaValidatorSingleton;
@@ -94,11 +97,9 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
         ECObjectsStatus status = validator->Validate(schema);
         if (ECObjectsStatus::Success != status)
             {
-            LOG.errorv("Failed overall validation %s", schema.GetFullSchemaName().c_str());
+            LOG.errorv("Failed validation %s", schema.GetFullSchemaName().c_str());
             m_validated = false;
             }
-        else
-            LOG.debugv("Succeeded overall validation of %s", schema.GetFullSchemaName().c_str());
         }
     }
 
@@ -131,8 +132,8 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
         {
         if (prop->GetBaseProperty() != nullptr)
             {
-            LOG.errorv("Error at property %s", prop->GetName().c_str());
-            LOG.errorv("Mixin %s overrides an inherited property", mixin.GetFullName());
+            LOG.errorv("Error at property '%s'", prop->GetName().c_str());
+            LOG.errorv("Mixin '%s' overrides an inherited property", mixin.GetFullName());
             return ECObjectsStatus::Error;
             }
         }
@@ -160,21 +161,74 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
             }
         if (numBaseClasses > 1)
             {
-            LOG.errorv("Error at property %s", prop->GetName().c_str());
+            LOG.errorv("Error at property '%s'", prop->GetName().c_str());
             LOG.errorv("There are %i base classes", numBaseClasses);
-            LOG.errorv("Entity class %s may not inherit a property from more than one base class", entity.GetFullName());
+            LOG.errorv("Entity class '%s' may not inherit a property from more than one base class", entity.GetFullName());
             status = ECObjectsStatus::Error;
             }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
-        LOG.errorv("Error at property %s", prop->GetName().c_str());
-        LOG.errorv("Entity class %s overrides a property inherited from mixin class %s", entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+        LOG.errorv("Error at property '%s'", prop->GetName().c_str());
+        LOG.errorv("Entity class '%s' overrides a property inherited from mixin class '%s'", entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
         status = ECObjectsStatus::Error;
         }
     
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  04/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
+    if (nullptr == relClass)
+        return status;
+
+    ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
+    ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
+    
+    // Validate both target and source.  If one of them fails, the class fails.
+    ECObjectsStatus targetStatus, sourceStatus;
+    targetStatus = RelationshipValidator::CheckLocalDefinitions(targetConstraint, "Target");
+    sourceStatus = RelationshipValidator::CheckLocalDefinitions(sourceConstraint, "Source");
+
+    status = (ECObjectsStatus::Error == targetStatus) || (ECObjectsStatus::Error == sourceStatus) ? ECObjectsStatus::Error : ECObjectsStatus::Success;
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  04/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    Utf8String className = constraint.GetRelationshipClass().GetFullName();
+    if (!constraint.AreConstraintClassesDefinedLocally())
+        {
+        LOG.errorv("Relationship class '%s' has one or more constraint classes that are not defined locally in %s", className, constraintType);
+        status = ECObjectsStatus::Error;
+        }
+
+    if (!constraint.IsAbstractConstraintDefinedLocally())
+        {
+        if (constraint.IsAbstractConstraintDefined())
+            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s", className, constraint.GetAbstractConstraint()->GetFullName(), constraintType);
+        else
+            LOG.errorv("Abstract constraint is not defined in '%s'", constraintType);
+
+        status = ECObjectsStatus::Error;
+        }
+
+    if (!constraint.IsRoleLabelDefinedLocally())
+        {
+        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s", className, constraint.GetRoleLabel(), constraintType);
+        status = ECObjectsStatus::Error;
+        }
+
+    return status;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -194,9 +248,16 @@ bool MixinValidator::CanValidate(ECClassCR ecClass) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
+bool RelationshipValidator::CanValidate(ECClassCR ecClass) const
+    {
+    return (ecClass.IsRelationshipClass());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  04/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus BaseECClassValidator::Validate(ECClassCR schema) const
     {
     return ECObjectsStatus::Success;
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
