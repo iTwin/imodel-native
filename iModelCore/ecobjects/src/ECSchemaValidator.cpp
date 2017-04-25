@@ -161,15 +161,12 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
             }
         if (numBaseClasses > 1)
             {
-            LOG.errorv("Error at property '%s'", prop->GetName().c_str());
-            LOG.errorv("There are %i base classes", numBaseClasses);
-            LOG.errorv("Entity class '%s' may not inherit a property from more than one base class", entity.GetFullName());
+            LOG.errorv("Error at property '%s'. There are %i base classes and entity class '%s' may not inherit a property from more than one base class", prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
             status = ECObjectsStatus::Error;
             }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
-        LOG.errorv("Error at property '%s'", prop->GetName().c_str());
-        LOG.errorv("Entity class '%s' overrides a property inherited from mixin class '%s'", entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+        LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'", prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
         status = ECObjectsStatus::Error;
         }
     
