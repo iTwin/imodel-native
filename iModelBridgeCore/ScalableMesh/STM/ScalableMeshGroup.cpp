@@ -475,10 +475,12 @@ BentleyStatus                      ScalableMeshGroup::_SetReprojection(GeoCoordi
     return ERROR;
     }
 
+#ifdef VANCOUVER_API
 BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
     {
     return ERROR;
     }
+#endif
 
 Transform                          ScalableMeshGroup::_GetReprojectionTransform() const
     {

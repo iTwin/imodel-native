@@ -503,10 +503,12 @@ BentleyStatus   IScalableMesh::SetReprojection(GeoCoordinates::BaseGCSCR targetC
     return _SetReprojection(targetCS, approximateTransform);
     }
 
+#ifdef VANCOUVER_API
 BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
     {
     return _Reproject(targetCS, dgnModel);
     }
+#endif
 
 IScalableMeshPtr IScalableMesh::GetGroup()
     {
@@ -2868,6 +2870,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     return ERROR;
     }
 
+#ifdef VANCOUVER_API
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
     {
     Transform computedTransform = Transform::FromIdentity();
@@ -2905,6 +2908,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 
     return _SetReprojection(targetCS, computedTransform);
     }
+#endif
 
 template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)
     {
