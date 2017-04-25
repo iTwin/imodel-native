@@ -151,8 +151,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 if (!status.IsSuccess())
                     return status;
 
-                DbColumn const* joinedTableIdCol = joinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                DbColumn const* primaryTableIdCol = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+                DbColumn const* joinedTableIdCol = joinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
+                DbColumn const* primaryTableIdCol = primaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",

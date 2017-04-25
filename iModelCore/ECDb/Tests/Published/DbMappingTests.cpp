@@ -9715,5 +9715,86 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
 
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsiMethod                                      Affan Khan                  04/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(DbMappingTestFixture, OverflowTableTest)
+        {
+        SchemaItem testItem = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="B1" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>14</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P01" typeName="point3d" />
+                <ECProperty propertyName="P02" typeName="point3d" />
+                <ECProperty propertyName="P03" typeName="point3d" />
+                <ECProperty propertyName="P04" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B2" modifier="None" >
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName="P11" typeName="point3d" />
+                <ECProperty propertyName="P12" typeName="point3d" />
+                <ECProperty propertyName="P13" typeName="point3d" />
+                <ECProperty propertyName="P14" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B3" modifier="None" >
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName="P21" typeName="point3d" />
+                <ECProperty propertyName="P22" typeName="point3d" />
+                <ECProperty propertyName="P23" typeName="point3d" />
+                <ECProperty propertyName="P24" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B4" modifier="None" >
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName="P31" typeName="point3d" />
+                <ECProperty propertyName="P32" typeName="point3d" />
+                <ECProperty propertyName="P33" typeName="point3d" />
+                <ECProperty propertyName="P34" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B5" modifier="None" >
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName="P41" typeName="point3d" />
+                <ECProperty propertyName="P42" typeName="point3d" />
+                <ECProperty propertyName="P43" typeName="point3d" />
+                <ECProperty propertyName="P44" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B6" modifier="None" >
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName="P51" typeName="point3d" />
+                <ECProperty propertyName="P52" typeName="point3d" />
+                <ECProperty propertyName="P53" typeName="point3d" />
+                <ECProperty propertyName="P54" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B7" modifier="None" >
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName="P61" typeName="point3d" />
+                <ECProperty propertyName="P62" typeName="point3d" />
+                <ECProperty propertyName="P63" typeName="point3d" />
+                <ECProperty propertyName="P64" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B8" modifier="None" >
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName="P71" typeName="point3d" />
+                <ECProperty propertyName="P72" typeName="point3d" />
+                <ECProperty propertyName="P73" typeName="point3d" />
+                <ECProperty propertyName="P74" typeName="point3d" />
+            </ECEntityClass>
+        </ECSchema>)xml", true);
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb");
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, testItem);
+        //ecdb.Schemas().CreateClassViewsInDb();
+
+        }
 END_ECDBUNITTESTS_NAMESPACE
  

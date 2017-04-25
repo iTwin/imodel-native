@@ -190,7 +190,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
 
     DbTable const& baseClassJoinedTable = baseClassMap.GetJoinedTable();
     m_tableName = baseClassJoinedTable.GetName();
-    m_ecInstanceIdColumnName.assign(baseClassJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
+    m_ecInstanceIdColumnName.assign(baseClassJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId)->GetName());
 
     ClassMappingCACache const* baseClassCACache = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(baseClassMap.GetClass());
     if (baseClassCACache == nullptr)

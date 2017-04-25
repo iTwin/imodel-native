@@ -167,8 +167,8 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     if (&baseClassMapJoinedTable == &GetJoinedTable())
         return ClassMappingStatus::Success;
 
-    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* foreignKeyColumn = GetJoinedTable().FindFirst(DbColumn::Kind::ECInstanceId);
     PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
     PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
@@ -702,7 +702,46 @@ BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR
     tableName.append("_").append(ecclass.GetName());
     return SUCCESS;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04 / 2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
+    {
+    ECInstanceIdPropertyMap* ecInstanceIdPropertyMap = const_cast<ECInstanceIdPropertyMap*>(GetECInstanceIdPropertyMap());
+    ECClassIdPropertyMap* ecClassIdPropertyMap = const_cast<ECClassIdPropertyMap*>(GetECClassIdPropertyMap());
 
+    if (ecInstanceIdPropertyMap == nullptr || ecClassIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    //!Overflow is delay created which mean system property map are not upto day
+    AddTable(overflowTable);
+
+    DbColumn const* ecInstanceIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    if (ecInstanceIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    DbColumn const* ecClassIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECClassId);
+    if (ecClassIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecInstanceIdPropertyMap, *ecInstanceIdColumn) == ERROR)
+        return ERROR;
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
+        return ERROR;
+
+    return SUCCESS;
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       10 / 2016
 //------------------------------------------------------------------------------------------
@@ -718,14 +757,14 @@ BentleyStatus ClassMap::MapSystemColumns()
 
     for (DbTable const* table : GetTables())
         {
-        DbColumn const* ecInstanceIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* ecInstanceIdColumn = table->FindFirst(DbColumn::Kind::ECInstanceId);
         if (ecInstanceIdColumn == nullptr)
             {
             BeAssert(false);
             return ERROR;
             }
 
-        DbColumn const* ecClassIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+        DbColumn const* ecClassIdColumn = table->FindFirst(DbColumn::Kind::ECClassId);
         if (ecClassIdColumn == nullptr)
             {
             BeAssert(false);

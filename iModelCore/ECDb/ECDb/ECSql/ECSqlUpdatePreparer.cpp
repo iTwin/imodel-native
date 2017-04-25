@@ -124,8 +124,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             else
                 {
-                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+                auto joinedTableId = secondaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
+                auto parentOfjoinedTableId = primaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",

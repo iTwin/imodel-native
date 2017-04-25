@@ -80,13 +80,13 @@ void TableMap::InitColumnIndexByName()
 //---------------------------------------------------------------------------------------
 void TableMap::InitSystemColumnMaps()
     {
-    DbColumn const* instanceIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* instanceIdColumn = m_dbTable->FindFirst(DbColumn::Kind::ECInstanceId);
     Utf8StringCR instanceIdColumnName = instanceIdColumn->GetName();
     int instanceIdColumnIndex = GetColumnIndexByName(instanceIdColumnName);
     BeAssert(instanceIdColumnIndex >= 0);
     m_instanceIdColumnMap = ColumnMap(instanceIdColumnName, instanceIdColumnIndex);
 
-    DbColumn const* classIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* classIdColumn = m_dbTable->FindFirst(DbColumn::Kind::ECClassId);
     if (classIdColumn->GetPersistenceType() != PersistenceType::Virtual)
         {
         Utf8StringCR classIdColumnName = classIdColumn->GetName();

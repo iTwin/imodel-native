@@ -15,19 +15,53 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //@bsimethod                                                    Affan.Khan       12 / 2016
 //------------------------------------------------------------------------------------------
 ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) 
-    : m_classMap(classMap), m_usesSharedColumnStrategy(classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
+    : m_classMap(classMap), m_usesSharedColumnStrategy(classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes), m_sharedColumnCount(-1)
     {
+    if (m_usesSharedColumnStrategy)
+        {
+        if (m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().IsValid())
+            m_sharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().Value();
+        }
+
     Initialize();
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04/2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::BeginAllocation(Utf8CP propertyName) const
+DbTable* ClassMapColumnFactory::GetOverflowTable() const
+    {
+    if (GetTable().GetDerivedTables().empty())
+        {
+        DbTable*  overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(GetTable());
+        m_classMap.GetECInstanceIdPropertyMap()->GetDataPropertyMaps()->
+        return overflowTable;
+        }
+    else if (GetTable().GetDerivedTables().size() == 1)
+        {
+        DbTable* overflowTable = const_cast<DbTable*>(GetTable().GetDerivedTables().front());
+        if (overflowTable->GetType() == DbTable::Type::Overflow)
+            return overflowTable;
+        }
+
+    BeAssert(false && "Cannot create overflow table");
+    return nullptr;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04/2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName) const
     {
     if (m_columnReservationInfo != nullptr)
         {
         BeAssert(false);
+        return ERROR;
+        }
+
+    if (!m_usesSharedColumnStrategy)
+        {
+        BeAssert(false && "Shared Column must be enabled for this allocation to work");
         return ERROR;
         }
 
@@ -39,25 +73,47 @@ BentleyStatus ClassMapColumnFactory::BeginAllocation(Utf8CP propertyName) const
         return ERROR;
         }
 
-    m_columnReservationInfo = std::unique_ptr <ColumnReservationInfo>(new ColumnReservationInfo(*property));
+    int sharedColumnThatCanBeCreated;
+    int sharedColumnThatCanBeReused;
+    if (TryGetAvaliableColumns(sharedColumnThatCanBeCreated, sharedColumnThatCanBeReused) != SUCCESS)
+        {
+        return ERROR;
+        }
+    
+    int columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(*property);
+    if (columnsRequired < (sharedColumnThatCanBeReused + sharedColumnThatCanBeCreated))
+        {
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property,columnsRequired, sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
+        }
+    else
+        {
+        DbTable* overflowTable = GetOverflowTable();
+        if (overflowTable == nullptr)
+            {
+            return ERROR;
+            }
+
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property, columnsRequired, *overflowTable));
+        }
+
     return SUCCESS;
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04/2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::EndAllocation() const
+BentleyStatus ClassMapColumnFactory::EndSharedColumnBlock() const
     {
     if (m_columnReservationInfo == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
-    if (!m_columnReservationInfo->IsValid())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
+    //if (!m_columnReservationInfo->IsValid())
+    //    {
+    //    BeAssert(false);
+    //    return ERROR;
+    //    }
 
     m_columnReservationInfo = nullptr;
     return SUCCESS;
@@ -174,7 +230,7 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
             {
             if (m_columnReservationInfo)
                 {
-                m_columnReservationInfo->AllocateExisting(1);
+                m_columnReservationInfo->AllocateExisting();
                 }
             }
         }
@@ -278,6 +334,41 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
     return newColumn;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMapColumnFactory::TryGetAvaliableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const
+    {
+    const int maxColumnInBaseTable = 10;
+    const std::vector<DbColumn const*> physicalColumns = GetTable().FindAll(PersistenceType::Physical);
+    const std::vector<DbColumn const*> sharedColumns = GetTable().FindAll(DbColumn::Kind::SharedDataColumn);
+    const int nAvaliablePhysicalColumns = maxColumnInBaseTable - (int) physicalColumns.size();
+    sharedColumnThatCanBeReused = 0;
+    for (DbColumn const* sharedColumn : sharedColumns)
+        if (!IsColumnInUseByClassMap(*sharedColumn))
+            sharedColumnThatCanBeReused++;
+
+    if (m_sharedColumnCount >= 0)
+        {
+        if (sharedColumns.size() > m_sharedColumnCount)
+            {
+            BeAssert(false && "SharedColumnCount bypassed the limit set in CA");
+            return ERROR;
+            }
+
+        sharedColumnThatCanBeCreated = m_sharedColumnCount - (int)sharedColumns.size();
+        if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
+            sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict avaliable shared columns to avaliable physical columsn
+        }
+    else
+        {
+        sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns;
+        }
+
+
+    return SUCCESS;
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -318,12 +409,25 @@ DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR pro
     DbColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn))
         {
-        if(m_columnReservationInfo)
+        if (m_columnReservationInfo && !m_columnReservationInfo->GetOverflowTable())
+            m_columnReservationInfo->AllocateExisting();
 
         return const_cast<DbColumn*>(reusableColumn);
         }
+    
+    DbColumn* col;
+    if (m_columnReservationInfo && m_columnReservationInfo->GetOverflowTable())
+        {
+        col = m_columnReservationInfo->GetOverflowTable()->CreateSharedColumn(colType);
+        }
+    else
+        {
+        col = GetTable().CreateSharedColumn(colType);
+        }
 
-    DbColumn* col = GetTable().CreateSharedColumn(colType);
+    if (m_columnReservationInfo && !m_columnReservationInfo->GetOverflowTable())
+        m_columnReservationInfo->AllocateNew();
+
     if (col == nullptr)
         {
         BeAssert(false);
@@ -410,7 +514,7 @@ bool ClassMapColumnFactory::TryFindReusableSharedDataColumn(DbColumn const*& reu
         if (column->IsShared() && !IsColumnInUseByClassMap(*column))
             {
             reusableColumn = column;
-            return true;
+            return true; 
             }
         }
 

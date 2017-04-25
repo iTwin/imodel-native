@@ -493,7 +493,23 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
 
     Utf8String name = baseTable.GetName();
     name.append("_Overflow");
-    return CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    DbTable* table = CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    if (!table)
+        return nullptr;
+    DbColumn const* pk = baseTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* cl = baseTable.FindFirst(DbColumn::Kind::ECClassId);
+    
+    DbColumn * npk = table->CreateColumn(pk->GetName(), pk->GetType(), DbColumn::Kind::ECInstanceId, pk->GetPersistenceType());
+    DbColumn * ncl = table->CreateColumn(cl->GetName(), cl->GetType(), DbColumn::Kind::ECClassId, pk->GetPersistenceType());
+    ncl->GetConstraintsR().SetNotNullConstraint();
+
+    table->CreatePrimaryKeyConstraint({npk});
+    table->CreateForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
+
+    Nullable<Utf8String> indexName("ix_");
+    indexName.ValueR().append(table->GetName()).append("_ecclassid");
+    CreateIndex(*table, indexName, false, {ncl}, false, false, ECClassId());
+    return table;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -598,18 +614,25 @@ void DbSchema::Reset() const
 std::vector<DbTable const*> DbSchema::GetCachedTables() const
     {
     std::vector<DbTable const*> cachedTables;
+    std::vector<DbTable const*> cachedTablesJoined;
+    std::vector<DbTable const*> cachedTablesOverflow;
+
     for (auto const& tableKey : m_tableMapByName)
         {
         if (tableKey.second != nullptr)
             {
             if (tableKey.second->GetType() == DbTable::Type::Joined)
-                cachedTables.push_back(tableKey.second.get());
+                cachedTablesJoined.push_back(tableKey.second.get());
+            else if (tableKey.second->GetType() == DbTable::Type::Overflow)
+                cachedTablesOverflow.push_back(tableKey.second.get());
             else
                 cachedTables.insert(cachedTables.begin(), tableKey.second.get());
             }
         }
 
-    return cachedTables;
+    cachedTables.insert(end(cachedTables), begin(cachedTablesJoined), end(cachedTablesJoined));
+    cachedTables.insert(end(cachedTables), begin(cachedTablesOverflow), end(cachedTablesOverflow));
+        return cachedTables;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1073,7 +1096,7 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
         {
         parentTable = FindTable(parentTableName);
         BeAssert(parentTable != nullptr && "Failed to find parent table of joined table");
-        BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
+        BeAssert((DbTable::Type::Joined == tableType|| DbTable::Type::Overflow == tableType) && "Expecting JoinedTable or overflow");
         }
 
     DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, exclusiveRootClassId, parentTable);
@@ -1201,20 +1224,14 @@ BentleyStatus DbTable::Validate(bool bAssert) const
 
     if (GetBaseTable() != nullptr)
         {
-        if (GetBaseTable()->GetType() != Type::Existing)
+        if (GetBaseTable()->GetType() == Type::Existing)
             {
             BeAssert(!bAssert && "Existing table cannot be use as base tables");
             return ERROR;
             }
-        if (GetBaseTable()->GetType() != Type::Overflow)
+        if (GetBaseTable()->GetType() == Type::Overflow)
             {
             BeAssert(!bAssert && "Overflow table cannot be use as base tables");
-            return ERROR;
-            }
-
-        if (GetPersistenceType() == PersistenceType::Virtual)
-            {
-            BeAssert(!bAssert && "Derived table cannot be virtual");
             return ERROR;
             }
 
@@ -1224,18 +1241,18 @@ BentleyStatus DbTable::Validate(bool bAssert) const
             return ERROR;
             }
 
+        if (GetPersistenceType() == PersistenceType::Virtual)
+            {
+            BeAssert(!bAssert && "Derived table cannot be virtual");
+            return ERROR;
+            }
+
         if (!IsDerivedTable())
             {
             BeAssert(!bAssert && "Base table can only be specified for derived tables");
             return ERROR;
             }
         
-        if (GetType() == Type::Overflow && GetBaseTable()->GetType() != Type::Overflow)
-            {
-            BeAssert(!bAssert && "Overflow table cannot have base table that is of type existing");
-            return ERROR;
-            }
-
         if (GetType() == Type::Joined)
             {
             if (GetBaseTable()->GetType() != Type::Primary)
@@ -1515,35 +1532,37 @@ DbColumn* DbTable::FindColumnP(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, PersistenceType persistenceType) const
+const std::vector<DbColumn const*> DbTable::FindAll(PersistenceType persistenceType) const
     {
+    std::vector<DbColumn const*> columns;
     for (DbColumn const* column : m_orderedColumns)
         {
         if (column->GetPersistenceType() == persistenceType)
             columns.push_back(column);
         }
 
-    return columns.empty() ? ERROR : SUCCESS;
+    return columns;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, DbColumn::Kind kind) const
+const  std::vector<DbColumn const*> DbTable::FindAll(DbColumn::Kind kind) const
     {
+    std::vector<DbColumn const*> columns;
     for (DbColumn const* column : m_orderedColumns)
         {
         if (Enum::Intersects(column->GetKind(), kind))
             columns.push_back(column);
         }
 
-    return columns.empty() ? ERROR : SUCCESS;
+    return columns;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbColumn const* DbTable::GetFilteredColumnFirst(DbColumn::Kind kind) const
+DbColumn const* DbTable::FindFirst(DbColumn::Kind kind) const
     {
     for (DbColumn const* column : m_orderedColumns)
         {

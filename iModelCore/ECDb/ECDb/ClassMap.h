@@ -177,7 +177,7 @@ struct ClassMap : RefCountedBase
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         Utf8String GetUpdatableViewName() const;
         DbTable const* ExpectingSingleTable() const;
-
+        BentleyStatus SetOverflowTable(DbTable& overflowTable);
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 

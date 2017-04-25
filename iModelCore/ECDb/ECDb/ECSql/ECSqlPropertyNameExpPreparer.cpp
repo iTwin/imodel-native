@@ -217,7 +217,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
                 str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s]=[%s] LIMIT 1)",
                                     classIdColumn->GetName().c_str(),
                                     classIdColumn->GetTable().GetName().c_str(),
-                                    classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
+                                    classIdColumn->GetTable().FindFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
                                     ecInstanceIdVisitor.GetSingleColumn()->GetName().c_str());
 
                 nativeSqlSnippets.push_back(str);

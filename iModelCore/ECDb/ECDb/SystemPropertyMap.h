@@ -65,7 +65,7 @@ struct SystemPropertyMap : PropertyMap
         SystemPropertyMap(Type, ClassMap const&, ECN::PrimitiveECPropertyCR);
         SystemPropertyMap(Type kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString) : PropertyMap(kind, parentPropertyMap, ecProperty, accessString) {}
 
-        BentleyStatus Init(std::vector<DbColumn const*> const&);
+        BentleyStatus Init(std::vector<DbColumn const*> const&, bool appendMode=false);
 
     public:
         virtual ~SystemPropertyMap() {}
@@ -76,6 +76,7 @@ struct SystemPropertyMap : PropertyMap
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
+        static BentleyStatus AppendSystemColumnFromNewlyAddedDataTable(SystemPropertyMap& propertyMap, DbColumn const& column);
     };
 
 //=======================================================================================

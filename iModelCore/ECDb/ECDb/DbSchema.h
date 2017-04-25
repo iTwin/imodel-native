@@ -427,9 +427,9 @@ public:
     DbColumn* FindColumnP(Utf8CP name) const;
     DbColumn const& GetECClassIdColumn() const { BeAssert(m_classIdColumn != nullptr); return *m_classIdColumn; }
     bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
-    BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
-    DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
+    const std::vector<DbColumn const*> FindAll(PersistenceType) const;
+    const std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
+    DbColumn const* FindFirst(DbColumn::Kind) const;
     BentleyStatus DeleteColumn(DbColumn&);
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
@@ -439,6 +439,7 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
+
     //! Only changing to persistence type is supported in limited conditions
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }

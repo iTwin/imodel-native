@@ -232,7 +232,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     StorageDescription const& descr = classMap.GetStorageDescription();
     std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
     Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
-    DbColumn const* rootPartitionIdColumn = rootPartition.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* rootPartitionIdColumn = rootPartition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
 
     Utf8String updatableViewName;
     updatableViewName.Sprintf("[%s]", classMap.GetUpdatableViewName().c_str());
@@ -280,7 +280,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             continue;
 
         tableCount++;
-        DbColumn const* partitionIdColumn = partition.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* partitionIdColumn = partition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
         Utf8String triggerNamePrefix;
         triggerNamePrefix.Sprintf("%s_%s", rootPartition.GetTable().GetName().c_str(), partition.GetTable().GetName().c_str());
 
@@ -559,8 +559,8 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     //Join necessary table for table 
     if (requireJoinTo != nullptr)
         {
-        DbColumn const* primaryKey = contextTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-        DbColumn const* fkKey = requireJoinTo->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* primaryKey = contextTable.FindFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* fkKey = requireJoinTo->FindFirst(DbColumn::Kind::ECInstanceId);
         viewSql.Append(" INNER JOIN ").AppendEscaped(requireJoinTo->GetName().c_str());
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
         viewSql.Append(BooleanSqlOperator::EqualTo).AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
@@ -1167,8 +1167,8 @@ ConstraintECClassIdJoinInfo ConstraintECClassIdJoinInfo::Create(ConstraintECClas
         return joinInfo;
         }
 
-    DbColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* primaryECClassIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* primaryECInstanceIdColumn = primaryTable->FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* primaryECClassIdColumn = primaryTable->FindFirst(DbColumn::Kind::ECClassId);
     DbColumn const* forignECInstanceIdColumn = &releventECClassIdPropertyMap->GetColumn();
     if (primaryECInstanceIdColumn == nullptr || primaryECClassIdColumn == nullptr || forignECInstanceIdColumn == nullptr)
         {

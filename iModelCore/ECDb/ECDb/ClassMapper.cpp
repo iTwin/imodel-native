@@ -43,6 +43,10 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
         return nullptr;
         }
 
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy())
+        if (m_classMap.GetColumnFactory().BeignSharedColumnBlock(property.GetName().c_str()) != SUCCESS)
+            return nullptr;
+
     if (auto typedProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsPrimitiveArrayProperty())
@@ -62,6 +66,10 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     if (propertyMap == nullptr)
         return nullptr;
 
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy())
+        if (m_classMap.GetColumnFactory().EndSharedColumnBlock() != SUCCESS)
+            return nullptr;
+
     if (m_classMap.GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         {
         BeAssert(false && "Failed to insert property map");
@@ -77,7 +85,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecInstanceIdColumns;
-    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().FindFirst(DbColumn::Kind::ECInstanceId);
     if (ecInstanceIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -102,7 +110,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
 BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecClassIdColumns;
-    DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().FindFirst(DbColumn::Kind::ECClassId);
     if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
