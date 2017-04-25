@@ -737,10 +737,10 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     relationClass->GetTarget().AddClass(*entityClassC);
     relationClass->GetTarget().SetRoleLabel("ARelB (Reversed)");
 
-    EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefinedLocally()) << "The Source Constraint's Abstract Constraint should not be locally defined since there is only one .";
+    EXPECT_TRUE(relationClass->GetSource().IsAbstractConstraintDefinedLocally()) << "The Source Constraint's Abstract Constraint should be locally defined since there is only one.";
     EXPECT_TRUE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicity set therefore should return true.";
     EXPECT_STREQ("A", relationClass->GetSource().GetAbstractConstraint()->GetName().c_str());
-    EXPECT_FALSE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint should be implicity set therefore not locally defined.";
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint should be locally defined since there is only one.";
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicity set since therefore should return true.";
     EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
@@ -749,7 +749,7 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
-    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint has now been explicity set therefore is locally defined.";
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint is explicitly set therefore should be locally defined.";
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
     EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
     }
