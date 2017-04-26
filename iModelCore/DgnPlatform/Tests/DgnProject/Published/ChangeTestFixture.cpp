@@ -98,7 +98,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    SpatialCategory category(*m_db, categoryName, DgnCategory::Rank::Application);
+    SpatialCategory category(m_db->GetDictionaryModel(), categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());

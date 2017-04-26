@@ -218,7 +218,7 @@ void CompatibilityTests::InsertDrawingCategory()
 //---------------------------------------------------------------------------------------
 DgnCategoryId CompatibilityTests::GetSpatialCategoryId()
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), GetSpatialCategoryName()));
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), GetSpatialCategoryName());
     BeAssert(categoryId.IsValid());
     return categoryId;
     }

@@ -2375,7 +2375,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = SpatialCategory::CreateCode(db, "RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode(db.GetDictionaryModel(), "RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2430,7 +2430,7 @@ struct CodesManagerTest : RepositoryManagerTest
 
     static DgnCode MakeCode(DgnDbR db, Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
-        return nullptr != nameSpace ? DgnMaterial::CreateCode(db, nameSpace, name) : SpatialCategory::CreateCode(db, name);
+        return nullptr != nameSpace ? DgnMaterial::CreateCode(db, nameSpace, name) : SpatialCategory::CreateCode(db.GetDictionaryModel(), name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }

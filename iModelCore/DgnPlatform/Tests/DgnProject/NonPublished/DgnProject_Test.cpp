@@ -772,7 +772,7 @@ TEST_F(ElementUriTests, Test1)
 
     DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
     DgnModelId mid = db->Models().QuerySubModelId(physicalPartitionCode);
-    DgnCategoryId catId = DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName));
+    DgnCategoryId catId = SpatialCategory::QueryCategoryId(db->GetDictionaryModel(), s_seedFileInfo.categoryName);
 
     DgnElementCPtr el;
     DgnElementCPtr elNoProps;

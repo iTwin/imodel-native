@@ -131,34 +131,6 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SpatialCategory::CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace)
-    {
-    return CodeSpec::CreateCode(db, BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategory::SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name)))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategory::SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), code))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
     SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status);

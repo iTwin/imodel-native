@@ -105,6 +105,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
+        <!-- @see Element.CodeSpec ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
@@ -270,6 +271,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
+        <!-- @see Element.Model ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the ModelId foreign key column in the bis_Element table -->
@@ -293,6 +295,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <!-- @see Model.ModeledElement ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
@@ -535,6 +538,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
+        <!-- @see TypeDefinitionElement.Recipe ECNavigationProperty -->
         <!-- Note: not configured as a foreign key because the RecipeDefinitionElement may be excluded in a filtered briefcase -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="TypeDefinitionElement" />
@@ -563,6 +567,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
+        <!-- @see GeometricElement2d.TypeDefinition ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -585,6 +590,7 @@
     </ECRelationshipClass>
     
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
+        <!-- @see GeometricElement3d.TypeDefinition ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -879,6 +885,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing" modifier="Sealed">
+        <!-- @see Sheet.SheetTemplate ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="Sheet" />
         </Source>
@@ -888,6 +895,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing" modifier="Sealed">
+        <!-- @see SheetTemplate.Border ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetTemplate" />
         </Source>
@@ -897,6 +905,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing" modifier="Sealed">
+        <!-- @see SheetBorder.BorderTemplate ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetBorder" />
         </Source>
@@ -1409,6 +1418,7 @@
         <ECProperty propertyName="Clip" typeName="string" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ViewIsAttached" strength="referencing" modifier="Sealed">
+        <!-- @see ViewAttachment.View ECNavigationProperty -->
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1426,6 +1436,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <!-- @see Element.Parent ECNavigationProperty -->
         <!-- WIP: Should be abstract? -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
@@ -1506,6 +1517,7 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <!-- @see ElementUniqueAspect.Element ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -1538,6 +1550,7 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+        <!-- @see ElementMultiAspect.Element ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -1597,6 +1610,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+        <!-- Creates bis_ElementRefersToElements link table -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -1616,6 +1630,7 @@
 
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing" modifier="None">
         <!-- WIP: Rename to ElementDriveElements? -->
+        <!-- Creates bis_ElementDrivesElement link table -->
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1702,6 +1717,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <!-- @see GeometricElement2d.Category ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
@@ -1716,6 +1732,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <!-- @see GeometricElement3d.Category ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
@@ -1895,6 +1912,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="BaseModelForView2d" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition2d.BaseModel ECNavigationProperty -->
         <Source multiplicity="(1..1)" roleLabel="is base model for" polymorphic="true">
             <Class class="GeometricModel2d"/>
         </Source>
@@ -1904,6 +1922,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition3d.ModelSelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1913,6 +1932,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition.CategorySelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1922,6 +1942,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition.DisplayStyle ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1951,6 +1972,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
+        <!-- Creates the bis_ModelSelectorRefersToModels link table -->
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>

@@ -77,7 +77,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
     m_defaultModelId = m_db->Models().QuerySubModelId(physicalPartitionCode);
     ASSERT_TRUE(m_defaultModelId.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), s_seedFileInfo.categoryName));
+    m_defaultCategoryId = SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), s_seedFileInfo.categoryName);
     ASSERT_TRUE(m_defaultCategoryId.IsValid());
 
     m_db->SaveChanges();
