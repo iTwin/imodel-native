@@ -11,6 +11,8 @@
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 #include "PCGroundTIN.h"
 
+#pragma warning( disable : 4456 )  
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
