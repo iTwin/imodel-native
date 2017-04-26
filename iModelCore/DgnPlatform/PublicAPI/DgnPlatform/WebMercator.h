@@ -41,13 +41,13 @@ struct ImageryProvider : RefCountedBase
     // Imagery Providery implementation-specific methods.
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
-    virtual Utf8CP _GetProviderName() const = 0;
+    virtual Utf8String _GetProviderName() const = 0;
 
     // Gets the message to be displayed to credit provider(s).
-    virtual Utf8CP _GetCreditMessage() const = 0;
+    virtual Utf8String _GetCreditMessage() const = 0;
 
     // Gets an URL for the image to be displayed to credit the provider.
-    virtual Utf8CP _GetCreditUrl() const = 0;
+    virtual Utf8String _GetCreditUrl() const = 0;
 
     // Gets the tile width (usually 256)
     virtual int _GetTileWidth() {return 256;}
@@ -62,7 +62,7 @@ struct ImageryProvider : RefCountedBase
     virtual uint8_t _GetMaximumZoomLevel(bool forPrinting) = 0;
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
-    virtual Utf8CP _GetCacheFileName() const = 0;
+    virtual Utf8String _GetCacheFileName() const = 0;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
     virtual Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const = 0;
@@ -137,29 +137,25 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
     DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 protected:
-    ImageryProviderPtr      m_provider;
-    double                  m_groundBias;
-    double                  m_transparency;
-    mutable MapRootPtr      m_root;
+    double m_groundBias;
+    double m_transparency;
+    ImageryProviderPtr m_provider;
+    mutable MapRootPtr m_root;
     void Load(Dgn::Render::SystemP) const;
 
     void FromJson(Json::Value const& value);
     void ToJson(Json::Value& value) const;
 
 public:
-
-    BE_JSON_NAME(providerName)
-    BE_JSON_NAME(groundBias)
-    BE_JSON_NAME(transparency)
-
-    // identifier of ProviderData subfolder
-    BE_JSON_NAME(providerData)
+    BE_JSON_NAME(providerName);
+    BE_JSON_NAME(groundBias);
+    BE_JSON_NAME(transparency);
+    BE_JSON_NAME(providerData); // identifier of ProviderData subfolder
 
     struct CreateParams : T_Super::CreateParams
     {
-    friend WebMercatorModel;
-
-    DEFINE_T_SUPER(WebMercatorModel::T_Super::CreateParams);
+        friend WebMercatorModel;
+        DEFINE_T_SUPER(WebMercatorModel::T_Super::CreateParams);
 
     private:
         Json::Value m_jsonParameters;
@@ -181,7 +177,7 @@ public:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}
-    Utf8CP _GetCopyrightMessage() const override;
+    Utf8String _GetCopyrightMessage() const override;
 };
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
@@ -211,8 +207,8 @@ struct MapBoxImageryProvider : ImageryProvider
     };
 
 private:
-    Utf8String      m_baseUrl;
-    MapType         m_mapType = MapType::StreetMap;
+    Utf8String m_baseUrl;
+    MapType m_mapType = MapType::StreetMap;
 
 public:
     BE_JSON_NAME(mapType)
@@ -222,19 +218,19 @@ public:
     MapBoxImageryProvider() {}
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
-    Utf8CP _GetProviderName() const override {return prop_MapBoxProvider();}
+    Utf8String _GetProviderName() const override {return prop_MapBoxProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
-    Utf8CP _GetCreditMessage() const override;
+    Utf8String _GetCreditMessage() const override;
 
     // Gets an URL for the image to be displayed to credit the provider.
-    Utf8CP _GetCreditUrl() const override;
+    Utf8String _GetCreditUrl() const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
     uint8_t _GetMaximumZoomLevel(bool forPrinting) override {return 19;}
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
-    Utf8CP _GetCacheFileName() const override;
+    Utf8String _GetCacheFileName() const override;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
     Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;
@@ -276,13 +272,13 @@ public:
     BingImageryProvider() {m_templateUrlLoadStatus.store(TemplateUrlLoadStatus::NotFetched);}
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
-    Utf8CP _GetProviderName() const override {return prop_BingProvider();}
+    Utf8String _GetProviderName() const override {return prop_BingProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
-    Utf8CP _GetCreditMessage() const override;
+    Utf8String _GetCreditMessage() const override;
 
     // Gets an URL for the image to be displayed to credit the provider.
-    Utf8CP _GetCreditUrl() const override;
+    Utf8String _GetCreditUrl() const override;
 
     // Gets the tile width (usually 256)
     int _GetTileWidth() override {return m_tileWidth;}
@@ -297,7 +293,7 @@ public:
     uint8_t _GetMinimumZoomLevel() override {return m_minimumZoomLevel;}
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
-    Utf8CP _GetCacheFileName() const override;
+    Utf8String _GetCacheFileName() const override;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
     Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;
@@ -348,13 +344,13 @@ public:
     HereImageryProvider();
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
-    Utf8CP _GetProviderName() const override {return prop_HereProvider();}
+    Utf8String _GetProviderName() const override {return prop_HereProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
-    Utf8CP _GetCreditMessage() const override;
+    Utf8String _GetCreditMessage() const override;
 
     // Gets an URL for the image to be displayed to credit the provider.
-    Utf8CP _GetCreditUrl() const override;
+    Utf8String _GetCreditUrl() const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
     uint8_t _GetMaximumZoomLevel(bool forPrinting) override {return m_maximumZoomLevel;}
@@ -363,7 +359,7 @@ public:
     uint8_t _GetMinimumZoomLevel() override {return m_minimumZoomLevel;}
 
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
-    Utf8CP _GetCacheFileName() const override;
+    Utf8String _GetCacheFileName() const override;
 
     // Given the tile, constructs the URL needed to retrieve it. Different providers have different URL schemes.
     Utf8String _ConstructUrl(TileTree::QuadTree::Tile const& tile) const override;

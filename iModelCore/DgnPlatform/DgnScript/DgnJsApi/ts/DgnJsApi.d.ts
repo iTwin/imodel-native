@@ -1407,7 +1407,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         OnDispose(): void;
         Dispose(): void;
     }
-				  w
+
     type ECClassCollectionP = cxx_pointer<ECClassCollection>;
 
     /**
