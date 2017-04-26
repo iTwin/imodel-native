@@ -31,7 +31,9 @@
         <file src="DgnPlatformB02.dll"                 target="lib\native\DgnPlatformB02.dll" />
         <file src="ECObjectsB02.dll"                   target="lib\native\ECObjectsB02.dll" />
         <file src="freetype2B02.dll"                   target="lib\native\freetype2B02.dll" />
-        <file src="libv8.dll"                          target="lib\native\libv8.dll" />
+        <file src="v8_libbaseB02.dll"                  target="lib\native\v8_libbaseB02.dll"/>
+        <file src="v8_libplatformB02.dll"              target="lib\native\v8_libplatformB02.dll"/>
+        <file src="v8B02.dll"                          target="lib\native\v8B02.dll"/>
         <file src="PointCloudB02.dll"                  target="lib\native\PointCloudB02.dll" />
         <file src="PointoolsVortexAPIB02.dll"          target="lib\native\PointoolsVortexAPIB02.dll" />
         <file src="pskernel.dll"                       target="lib\native\pskernel.dll" />
