@@ -59,7 +59,7 @@ std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress progres
                           progress.GetBytes().current, progress.GetBytes().total, 
                           progress.GetInstances().current, progress.GetInstances().total, 
                           progress.GetSynced(), 
-                          progress.GetLabel());
+                          progress.GetLabel().c_str());
     return o;
     }
 
