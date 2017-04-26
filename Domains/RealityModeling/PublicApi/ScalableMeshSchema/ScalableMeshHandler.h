@@ -283,7 +283,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void SetRegionVisibility(uint64_t id, bool isVisible);
 
-        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id);
+        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id, const WString& basePath);
 
         SCALABLEMESH_SCHEMA_EXPORT bool HasQueuedTerrainRegions();
 

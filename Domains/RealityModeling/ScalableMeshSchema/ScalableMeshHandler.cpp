@@ -860,15 +860,25 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             return;                        
             }   
         }        
+
+    bool restartQuery = true;
+
+    if ((m_currentDrawingInfoPtr != nullptr) && m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)
+        { 
+        restartQuery = false;
+        }
+        
     BentleyStatus status;
 
-    status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
-
-
-    assert(status == SUCCESS);
+    if (restartQuery)
+        {
+        status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
+        assert(status == SUCCESS);
+        }
 
     m_forceRedraw = false;                                   
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
+    int queryId = nextDrawingInfoPtr->m_currentQuery;
 
     // Need to get the fence info.
     /*
@@ -881,7 +891,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
         */    
     
-    DMatrix4d localToView(context.GetLocalToView());
+    if (restartQuery)
+        {
+        DMatrix4d localToView(context.GetLocalToView());
                                    
         DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
 
@@ -924,15 +936,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     
 
         
-    viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
+        viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
                           
-    m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
-    m_currentDrawingInfoPtr->m_currentQuery = queryId;
-    bvector<bool> clips;
-    /*NEEDS_WORK_SM : Get clips
-    m_DTMDataRef->GetVisibleClips(clips);
-    */
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+        m_currentDrawingInfoPtr->m_currentQuery = queryId;
+        bvector<bool> clips;
+        /*NEEDS_WORK_SM : Get clips
+        m_DTMDataRef->GetVisibleClips(clips);
+        */
 
         status = GetProgressiveQueryEngine()->StartQuery(queryId,
                                                           viewDependentQueryParams, 
@@ -942,8 +954,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                                                           m_smPtr); 
 
 
-    assert(status == SUCCESS);
-
+        assert(status == SUCCESS);
+        }
 
     if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
@@ -1438,28 +1450,23 @@ BentleyStatus ScalableMeshModel::UpdateExtractedTerrainLocation(BeFileNameCR old
     m_smPtr->GetCoverageIds(coverageIds);
 
     for (auto& pMeshModel : allScalableMeshes)
-        {        
-        BeFileName coveragePath = oldLocation;
-        coveragePath.AppendString(m_basePath.GetFileNameAndExtension().c_str());
-
-         //m_basePath;
-        //coveragePath.AppendString(L"_terrain");
+        {                                 
         ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
         if (this == pScalableMesh)
-            continue;
+            continue;        
+                            
+        for (uint64_t coverageId : coverageIds)
+            {
+            BeFileName terrainPath;
+            GetPathForTerrainRegion(terrainPath, coverageId, oldLocation);
 
-        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
-            {            
-            for (uint64_t coverageId : coverageIds)
-                {
-                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
-                    {                    
-                    BeFileName newFileName(newLocation); 
-                    newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
-                    pScalableMesh->CloseFile();
-                    pScalableMesh->UpdateFilename(newFileName);                                                            
-                    }
-                }
+            if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
+                {                    
+                BeFileName newFileName(newLocation); 
+                newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
+                pScalableMesh->CloseFile();
+                pScalableMesh->UpdateFilename(newFileName);                                                            
+                }                
             }
         }
 
@@ -1686,7 +1693,7 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
             {
             BeFileName terrainPath;
 
-            GetPathForTerrainRegion(terrainPath, coverageId);
+            GetPathForTerrainRegion(terrainPath, coverageId, m_basePath);
 
             if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
                 {                                            
@@ -1787,13 +1794,13 @@ void ScalableMeshModel::RemoveRegion(uint64_t id)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2017
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id)
+void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id, const WString& basePath)
     {
     assert(m_smPtr.IsValid());
 
     Utf8String coverageName;
     GetScalableMesh(false)->GetCoverageName(coverageName, id);
-    GetCoverageTerrainAbsFileName(terrainName, m_basePath, coverageName);
+    GetCoverageTerrainAbsFileName(terrainName, basePath, coverageName);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1843,7 +1850,7 @@ void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
                 {                        
                 if (sm == this || dynamic_cast<ScalableMeshModel*>(sm)->GetScalableMesh(false) == nullptr) continue;
                 
-                GetPathForTerrainRegion(terrainPath, reg.id);
+                GetPathForTerrainRegion(terrainPath, reg.id, m_basePath);
 
                 if (dynamic_cast<ScalableMeshModel*>(sm)->GetPath().CompareToI(terrainPath) == 0)
                     {                    
