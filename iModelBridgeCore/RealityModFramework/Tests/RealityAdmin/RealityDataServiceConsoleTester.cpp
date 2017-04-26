@@ -10,7 +10,7 @@
 
 #include <Bentley/BeTest.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/RealityDataServiceConsole.h>
+#include <RealityAdmin/RealityDataServiceConsole.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
 
