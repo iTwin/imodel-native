@@ -165,6 +165,7 @@ private:
     char m_temp;
     //CodepointBuffer m_unicodeBuff;
     Utf8P  m_signature;
+    Utf8P  m_pattern;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
     // returns the physical index of the same array adjusted by endianness. The little endian is default 
@@ -173,7 +174,7 @@ private:
     int AddTrailingByte();
     size_t SetCurrentPosition(size_t position) { return m_detail.SetPosition(position); }
     //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
-    void ReleaseSignature() { if (nullptr != m_signature) delete m_signature; m_signature = nullptr; }
+    UNITS_EXPORT void ReleaseSignature();
 
 public:
     //! Construct a cursor attached to the given Utf8 string 
@@ -212,7 +213,8 @@ public:
     UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
     //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
     //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
-    UNITS_EXPORT Utf8CP GetSignature();
+    UNITS_EXPORT Utf8CP GetSignature(bool refresh);
+    Utf8CP GetPattern(bool refresh) { if (refresh) GetSignature(true); return m_pattern; }
     UNITS_EXPORT Utf8String CollapseSpaces();
     UNITS_EXPORT int DetectEnclosures(Utf8Char bracket);
     };

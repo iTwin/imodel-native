@@ -186,6 +186,7 @@ public:
     static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
     static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
     static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
+    UNITS_EXPORT static const size_t* FractionCodes();
     static const size_t* SpecialUOM()
     {
     // the array of codes holds integer codes of several special unicode characters that could be used in a specific

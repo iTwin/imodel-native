@@ -208,6 +208,7 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
         m_totalScanLength = scanLength;
     m_dividers = FormattingDividers(div);
     m_signature = nullptr;
+    m_pattern = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -223,6 +224,7 @@ FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other
     m_status = other.m_status;
     m_dividers = FormattingDividers(other.m_dividers);
     m_signature = nullptr;
+    m_pattern = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -460,28 +462,65 @@ size_t FormattingScannerCursor::SkipBlanks()
     return skipped;
     }
 
+void FormattingScannerCursor::ReleaseSignature()
+    { 
+    if (nullptr != m_signature) 
+        delete m_signature;
+    if (nullptr != m_pattern)
+        delete m_pattern;
+    m_signature = nullptr;
+    m_pattern = nullptr;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8CP FormattingScannerCursor::GetSignature()
+Utf8CP FormattingScannerCursor::GetSignature(bool refresh)
     {
-    Rewind(true);
-    Utf8CP symb = "0abcdefg";
+    if (!refresh)
+        return m_signature;
 
-    m_signature = new char[m_totalScanLength + 1];
-    if (nullptr == m_signature)
+    Rewind(true);
+    Utf8CP symb = "xabcdefg";
+    ReleaseSignature();
+    m_pattern = new char[m_totalScanLength + 20];
+    m_signature = new char[m_totalScanLength + 2];
+   
+    if (nullptr == m_signature || nullptr == m_pattern)
         return FormatConstant::AllocError();
     else
         {
         size_t c = GetNextSymbol();
         int i = 0;
+        int j = -1;
+        m_pattern[0] = '\0';
+
         while(c != 0 && i < m_totalScanLength)
             {
-            if (m_lastScannedCount == 1 && isspace(0x7F & c))
-                m_signature[i] = 's';
+            if (m_lastScannedCount == 1)
+                {
+                char cc = c & 0x7F;
+                if (isspace(cc))
+                    m_signature[i] = 's';
+                else if (isdigit(cc))
+                    m_signature[i] = '0';
+                else if (cc == '+' || cc == '-')
+                    m_signature[i] = '+';
+                else if (cc == '.' || cc == ',' || cc == '/')
+                    m_signature[i] = cc;
+                else
+                    m_signature[i] = symb[1]; // symb[m_lastScannedCount & 0x7];
+                if (j < 0 || m_pattern[j] != m_signature[i])
+                    m_pattern[++j] = m_signature[i];
+                }          
             else
+                {
                 m_signature[i] = symb[m_lastScannedCount & 0x7];
+                if (j < 0 || m_pattern[j] != 'a')
+                    m_pattern[++j] = 'a';
+                }
             m_signature[++i] = 0;
+            m_pattern[j + 1] = 0;
             c = GetNextSymbol();
             }
         }      
@@ -492,7 +531,7 @@ Utf8CP FormattingScannerCursor::GetSignature()
 //----------------------------------------------------------------------------------------
 Utf8String FormattingScannerCursor::CollapseSpaces()
     {
-    Utf8CP sig = GetSignature();
+    Utf8CP sig = GetSignature(true);
     size_t sigLen = Utils::IsNameNullOrEmpty(sig) ? 0 : strlen(sig);
     Utf8String str;
 

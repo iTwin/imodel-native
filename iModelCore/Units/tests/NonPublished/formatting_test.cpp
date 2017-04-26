@@ -32,7 +32,7 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 TEST(FormattingTest, Preliminary)
     {
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
-   // const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
+    const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
     NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
     //LOG.infov("UNI: |%s|", uni);
@@ -49,17 +49,19 @@ TEST(FormattingTest, Preliminary)
     Utf8CP hexC =  Utils::HexByte('A', hexBuf, 5);
     LOG.infov("HEX-A: %s", hexC);*/
 
-    //Utf8CP degS = u8"135 ° 11 ' 30 \" S";
-    //Utf8String hd = Utils::HexDump(degS, 30);
-    //LOG.infov("HEX: %s", hd.c_str());
+    //Utf8CP degS1 = u8"135°11'30¼\" S";
+    Utf8CP degS = u8"135°11'30-1/4\" S";
+    Utf8String hd = Utils::HexDump(degS, 30);
+    LOG.infov("HEX: %s", hd.c_str());
 
-    //FormattingScannerCursor curs = FormattingScannerCursor(degS, -1);
-    //Utf8CP sig = curs.GetSignature();
-    //Utf8String cols = curs.CollapseSpaces();
-    //hd = Utils::HexDump(cols.c_str(), 30);
-    //LOG.infov(u8"COL: %s", hd.c_str());
-    //LOG.infov("Signature  %s (src %d  sig %d)", sig, strlen(uni), strlen(sig));
-    //LOG.infov("Collapsed  %s (len %d)", cols.c_str(), cols.length());
+    FormattingScannerCursor curs = FormattingScannerCursor(degS, -1);
+    Utf8CP sig = curs.GetSignature(true);
+    Utf8CP pat = curs.GetPattern(false);
+    Utf8String cols = curs.CollapseSpaces();
+    hd = Utils::HexDump(cols.c_str(), 30);
+    LOG.infov(u8"COL: %s", hd.c_str());
+    LOG.infov("Signature  %s (src %d  sig %d) pattern: [%s]", sig, strlen(uni), strlen(sig), pat);
+    LOG.infov("Collapsed  %s (len %d)", cols.c_str(), cols.length());
     //FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
     //FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
     //LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());

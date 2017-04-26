@@ -85,11 +85,24 @@ bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
     return false;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 const unsigned char FormatConstant::TriadBitMask(size_t threeBit)
     {
     static unsigned char mask[8] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 };
     threeBit &= 0x7;
     return mask[threeBit];
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+const size_t* FormatConstant::FractionCodes()
+    {
+                          // 1/4  1/2  3/4  1/3   2/3   1/5   2/5   3/5   4/5   1/6   5/6   1/8   3/8   5/8   7/8
+    static size_t cod[16] = {188, 189, 190, 8531, 8532, 8533, 8534, 8535, 8536, 8537, 8538, 8539, 8540, 8541, 8542 };
+    return cod;
     }
 
 //===================================================
