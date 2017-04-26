@@ -1178,14 +1178,7 @@ ICancellationTokenPtr ct
 )
     {
     ct = CreateCancellationToken(ct);
-
-    // TODO: Support RemoteOrCachedData
-    if (origin == DataOrigin::RemoteOrCachedData)
-        {
-        BeAssert(false && "DataOrigin::RemoteOrCachedData is not supported yet");
-        }
-
-    auto finalResult = std::make_shared <FileResult>();
+    auto finalResult = std::make_shared<FileResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
@@ -1223,22 +1216,28 @@ ICancellationTokenPtr ct
         filesToDownload.insert(objectId);
 
         DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, ct)
-            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
+            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult result)
             {
-            if (!result.IsSuccess())
-                {
-                finalResult->SetError(result.GetError());
-                }
-            else if (!result.GetValue().empty())
-                {
-                finalResult->SetError(result.GetValue().front().GetError());
-                }
-            else
+            if (!result.GetValue().empty())
+                result.SetError(result.GetValue().front().GetError());
+
+            if (result.IsSuccess())
                 {
                 auto txn = StartCacheTransaction();
                 BeFileName cachedFilePath = txn.GetCache().ReadFilePath(objectId);
                 finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::RemoteData));
                 }
+            else if (CachingDataSource::DataOrigin::RemoteOrCachedData == origin &&
+                WSError::Status::ConnectionError == result.GetError().GetWSError().GetStatus())
+                {
+                auto txn = StartCacheTransaction();
+                BeFileName cachedFilePath = txn.GetCache().ReadFilePath(objectId);
+                if (!cachedFilePath.empty())
+                    finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::CachedData));
+                }
+
+            if (!finalResult->IsSuccess())
+                finalResult->SetError(result.GetError());
             });
         })
             ->Then<FileResult>([=]
