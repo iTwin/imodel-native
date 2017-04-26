@@ -617,12 +617,34 @@ bool TriangleKey::operator<(TriangleKeyCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+VertexKey::Flags::Flags(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param)
+    {
+    byteVal = 0;
+    pointXLessThanY = point.x < point.y;
+    if (nullptr != normal)
+        {
+        normalValid = 1;
+        normalXLessThanY = normal->x < normal->y;
+        }
+
+    if (nullptr != param)
+        {
+        paramValid = 1;
+        paramXLessThanY = param->x < param->y;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     {
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
+
+    COMPARE_VALUES(lhs.m_flags.byteVal, rhs.m_flags.byteVal);
 
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
@@ -633,21 +655,17 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
     COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
 
-    if (lhs.m_normalValid != rhs.m_normalValid)
-        return rhs.m_normalValid;
-
-    if (lhs.m_normalValid)
+    if (lhs.m_flags.normalValid)
         {
+        BeAssert(rhs.m_flags.normalValid);
         COMPARE_VALUES_TOLERANCE (lhs.m_normal.x, rhs.m_normal.x, s_normalTolerance);
         COMPARE_VALUES_TOLERANCE (lhs.m_normal.y, rhs.m_normal.y, s_normalTolerance);
         COMPARE_VALUES_TOLERANCE (lhs.m_normal.z, rhs.m_normal.z, s_normalTolerance);
         }
 
-    if (lhs.m_paramValid != rhs.m_paramValid)
-        return rhs.m_paramValid;
-
-    if (lhs.m_paramValid)
+    if (lhs.m_flags.paramValid)
         {
+        BeAssert(rhs.m_flags.paramValid);
         COMPARE_VALUES_TOLERANCE (lhs.m_param.x, rhs.m_param.x, s_paramTolerance);
         COMPARE_VALUES_TOLERANCE (lhs.m_param.y, rhs.m_param.y, s_paramTolerance);
         }

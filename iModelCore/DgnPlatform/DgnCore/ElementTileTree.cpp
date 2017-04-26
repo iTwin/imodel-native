@@ -433,7 +433,7 @@ private:
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
 protected:
-#define ELEMENT_TILE_TRUNCATE_PLANAR
+//#define ELEMENT_TILE_TRUNCATE_PLANAR
 #if defined(ELEMENT_TILE_TRUNCATE_PLANAR)
     bool                        m_anyCurvedGeometry = false;
 #else

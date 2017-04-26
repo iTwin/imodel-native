@@ -399,23 +399,41 @@ struct MeshMergeKey
 //=======================================================================================
 struct VertexKey
 {
+    struct Flags
+    {
+        union
+        {
+            uint8_t byteVal;
+            struct
+            {
+                uint32_t    normalValid: 1;
+                uint32_t    paramValid: 1;
+                uint32_t    pointXLessThanY: 1;
+                uint32_t    normalXLessThanY: 1;
+                uint32_t    paramXLessThanY: 1;
+            };
+        };
+
+        Flags() : byteVal(0) { }
+        Flags(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param);
+    };
+
     DPoint3d        m_point;
     DVec3d          m_normal;
     DPoint2d        m_param;
     Feature         m_feature;
     uint32_t        m_fillColor = 0;
-    bool            m_normalValid = false;
-    bool            m_paramValid = false;
+    Flags           m_flags;
 
     VertexKey() { }
-    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureCR feature, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_feature(feature), m_fillColor(fillColor)
+    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureCR feature, uint32_t fillColor) : m_point(point), m_feature(feature), m_fillColor(fillColor), m_flags(point, normal, param)
         {
-        if(m_normalValid) m_normal = *normal;
-        if(m_paramValid) m_param = *param;
+        if(m_flags.normalValid) m_normal = *normal;
+        if(m_flags.paramValid) m_param = *param;
         }
 
-    DVec3dCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
-    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
+    DVec3dCP GetNormal() const { return m_flags.normalValid ? &m_normal : nullptr; }
+    DPoint2dCP GetParam() const { return m_flags.paramValid ? &m_param : nullptr; }
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   12/16
