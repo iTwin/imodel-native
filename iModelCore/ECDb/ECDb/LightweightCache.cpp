@@ -211,7 +211,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
         "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
         "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined ")");
+        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined " OR t.Type<>" SQLVAL_DbTable_Type_Overflow ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
 

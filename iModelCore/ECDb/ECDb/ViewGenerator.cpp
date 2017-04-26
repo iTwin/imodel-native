@@ -53,8 +53,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
-            return ERROR;
+        //if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
+        //    return ERROR;
         }
 
     return SUCCESS;

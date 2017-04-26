@@ -73,7 +73,18 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                 needsToCreateTable = true;
                 }
             else
+                {
                 AddTable(tphBaseClassMap->GetJoinedTable());
+                                }
+            }
+
+        for (DbTable* table : GetTables())
+            {
+            if (DbTable const* overflowTable = table->FindOverflowTable())
+                {
+                AddTable(*const_cast<DbTable*>(overflowTable));
+                break;
+                }
             }
         }
 
@@ -90,6 +101,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         AddTable(*table);
         }
 
+    
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
 
@@ -461,7 +473,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     {
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
-
+    std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
         {
         SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
@@ -475,6 +487,9 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
             {
             if (column->GetTable().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
+            if (column->GetTable().GetType() == DbTable::Type::Overflow)
+                overflowTables.insert(&column->GetTableR());
+
             else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
                 {
                 tables.insert(&column->GetTableR());
@@ -486,6 +501,9 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         AddTable(*table);
 
     for (DbTable* table : joinedTables)
+        AddTable(*table);
+
+    for (DbTable* table : overflowTables)
         AddTable(*table);
 
     BeAssert(!GetTables().empty());
@@ -707,6 +725,12 @@ BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
     {
+    if (GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy)
+        {
+        BeAssert(GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+        return ERROR;
+        }
+
     ECInstanceIdPropertyMap* ecInstanceIdPropertyMap = const_cast<ECInstanceIdPropertyMap*>(GetECInstanceIdPropertyMap());
     ECClassIdPropertyMap* ecClassIdPropertyMap = const_cast<ECClassIdPropertyMap*>(GetECClassIdPropertyMap());
 
@@ -739,6 +763,10 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
 
     if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
         return ERROR;
+    
+    for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
+        if (derviedClassMap)
+            const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
 
     return SUCCESS;
     }

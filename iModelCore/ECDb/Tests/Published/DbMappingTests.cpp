@@ -9731,7 +9731,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>14</SharedColumnCount>
+                        <SharedColumnCount>20</SharedColumnCount>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>

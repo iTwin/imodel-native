@@ -160,8 +160,48 @@ struct ClassMap : RefCountedBase
         bool IsDirty() const { return m_isDirty; }
         ClassMapColumnFactory const& GetColumnFactory(bool refresh = false) const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
-        DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
+        
+        DbTable& GetPrimaryTable() const 
+            { 
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing)
+                    {
+                    return *table;
+                    }
+                }
+
+            BeAssert(false);
+            return *((DbTable*)nullptr);
+            }
+
+        DbTable& GetJoinedTable() const 
+            {
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Joined)
+                    {
+                    return *table;
+                    }
+                }
+
+            return GetPrimaryTable();
+            }
+
+        DbTable& GetOverflowTable() const
+            {
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Overflow)
+                    {
+                    return *table;
+                    }
+                }
+
+            BeAssert(false);
+            return *((DbTable*)nullptr);
+            }
+
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
         //! Returns the class maps of the classes derived from this class map's class.

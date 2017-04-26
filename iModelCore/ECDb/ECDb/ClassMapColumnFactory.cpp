@@ -34,7 +34,7 @@ DbTable* ClassMapColumnFactory::GetOverflowTable() const
     if (GetTable().GetDerivedTables().empty())
         {
         DbTable*  overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(GetTable());
-        m_classMap.GetECInstanceIdPropertyMap()->GetDataPropertyMaps()->
+        const_cast<ClassMap&>(m_classMap).SetOverflowTable(*overflowTable);
         return overflowTable;
         }
     else if (GetTable().GetDerivedTables().size() == 1)
@@ -51,7 +51,7 @@ DbTable* ClassMapColumnFactory::GetOverflowTable() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04/2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName) const
+BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter) const
     {
     if (m_columnReservationInfo != nullptr)
         {
@@ -73,10 +73,12 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName)
         return ERROR;
         }
 
+    SetupCompoundFilter(additionalFilter);
     int sharedColumnThatCanBeCreated;
     int sharedColumnThatCanBeReused;
     if (TryGetAvaliableColumns(sharedColumnThatCanBeCreated, sharedColumnThatCanBeReused) != SUCCESS)
         {
+        RemoveCompoundFilter();
         return ERROR;
         }
     
@@ -90,12 +92,14 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName)
         DbTable* overflowTable = GetOverflowTable();
         if (overflowTable == nullptr)
             {
+            RemoveCompoundFilter();
             return ERROR;
             }
 
         m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property, columnsRequired, *overflowTable));
         }
 
+    RemoveCompoundFilter();
     return SUCCESS;
     }
 
@@ -339,7 +343,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMapColumnFactory::TryGetAvaliableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const
     {
-    const int maxColumnInBaseTable = 10;
+    const int maxColumnInBaseTable = 63;
     const std::vector<DbColumn const*> physicalColumns = GetTable().FindAll(PersistenceType::Physical);
     const std::vector<DbColumn const*> sharedColumns = GetTable().FindAll(DbColumn::Kind::SharedDataColumn);
     const int nAvaliablePhysicalColumns = maxColumnInBaseTable - (int) physicalColumns.size();

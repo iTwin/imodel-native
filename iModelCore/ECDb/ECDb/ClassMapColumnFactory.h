@@ -127,7 +127,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         //This function either creates a column or grabs an existing column
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
-        BentleyStatus BeignSharedColumnBlock(Utf8CP propertyName) const;
+        BentleyStatus BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter =nullptr) const;
         BentleyStatus EndSharedColumnBlock() const;
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }

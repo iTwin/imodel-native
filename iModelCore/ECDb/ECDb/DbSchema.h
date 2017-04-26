@@ -62,7 +62,8 @@ public:
     ~DbSchemaNameGenerator() {}
 
     void Initialize(int lastId) { m_lastId = lastId; }
-
+    void SetSeed(int seed) { m_lastId = seed; }
+    int GetSeed() const { return m_lastId; }
     void Generate(Utf8StringR generatedName)
         {
         m_lastId++;
@@ -414,6 +415,8 @@ public:
 
         return m_exclusiveRootECClassId; 
         }
+    DbSchemaNameGenerator const& GetSharedColumnNameGenerator() const { return m_sharedColumnNameGenerator; }
+    DbSchemaNameGenerator & GetSharedColumnNameGeneratorR()  { return m_sharedColumnNameGenerator; }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
@@ -439,7 +442,7 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
-
+    DbTable const* FindOverflowTable() const;
     //! Only changing to persistence type is supported in limited conditions
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }

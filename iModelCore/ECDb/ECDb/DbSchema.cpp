@@ -505,7 +505,8 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
 
     table->CreatePrimaryKeyConstraint({npk});
     table->CreateForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
-
+    //63- ECInstanceId and ECClassId is gap that we leave in base for mor eshared columns
+    table->GetSharedColumnNameGeneratorR().SetSeed(baseTable.GetSharedColumnNameGenerator().GetSeed() + 61);
     Nullable<Utf8String> indexName("ix_");
     indexName.ValueR().append(table->GetName()).append("_ecclassid");
     CreateIndex(*table, indexName, false, {ncl}, false, false, ECClassId());
@@ -1344,6 +1345,7 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
     return constraints;
     }
 
+DbTable const* DbTable::FindOverflowTable() const { return m_derviedTables.size() == 1 && m_derviedTables.front()->GetType() == Type::Overflow ? m_derviedTables.front() : nullptr; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
