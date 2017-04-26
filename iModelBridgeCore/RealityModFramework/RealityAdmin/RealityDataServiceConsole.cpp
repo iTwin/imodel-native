@@ -11,7 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/RealityDataService.h>
 #include <RealityPlatform/WSGServices.h>
-#include <RealityPlatform/RealityDataServiceConsole.h>
+#include <RealityAdmin/RealityDataServiceConsole.h>
 
 #include <stdio.h>
 #include <conio.h>
