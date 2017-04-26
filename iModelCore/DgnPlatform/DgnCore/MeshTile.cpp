@@ -1734,7 +1734,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
+    // unused - auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
