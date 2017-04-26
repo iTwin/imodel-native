@@ -42,13 +42,16 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         struct Configuration
             {
-            //! Identity token lifetime to be requested in minutes 
+            //! Identity token lifetime to be requested in minutes. Defaults to 1 week.
+            //! If application is offline for given lifetime, signed-in state still persist because user would not be able to sign-in anyway.
+            //! First connection to network after lifetime will reject expired token and session expiration will be forced.
+            //! Session expiration will require user to be re-signed-in.
             uint32_t identityTokenLifetime = 7 * 24 * 60;
-            //! Identity token lifetime refresh rate in minutes 
+            //! Identity token lifetime refresh rate in minutes. Renews token to keep maximum lifetime available.
             uint32_t identityTokenRefreshRate = 60;
-            //! Delegation token lifetime to be requested in minutes
+            //! Delegation token lifetime to be requested in minutes. Delegation tokens with limited lifetime are meant for services.
             uint32_t delegationTokenLifetime = 60;
-            //! Renew delegation token 5 minutes (or other) before it expires
+            //! Renew delegation token 5 minutes (or other) before it expires. Gets new token before old one expires.
             uint32_t delegationTokenExpirationThreshold = 5;
             };
 

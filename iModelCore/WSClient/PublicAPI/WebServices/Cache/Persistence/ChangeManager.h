@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/ChangeManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -143,8 +143,8 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT RelationshipChange GetRelationshipChange(ECInstanceKeyCR relationshipKey) override;
         WSCACHE_EXPORT FileChange GetFileChange(ECInstanceKeyCR instanceKey) override;
 
-        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT InstanceRevisionPtr ReadInstanceRevision(ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) override;
