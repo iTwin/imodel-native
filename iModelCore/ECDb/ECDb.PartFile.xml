@@ -72,7 +72,7 @@
     <!-- *********************************************************** -->
     <!-- **** NuGet package creation                            **** -->
     <!-- *********************************************************** -->
-    <Part Name="NuGetPackage" BentleyBuildMakeFile="BeSQLiteEC.NuGetPackage.mke" OnlyPlatforms="x64">
+    <Part Name="NuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="BeSQLiteEC.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="ECDbLibrary" />
         <Bindings>
