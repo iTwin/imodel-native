@@ -57,6 +57,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
 
         Utf8CP GetECSql() const { return m_ecsql.c_str(); }
         Utf8CP GetNativeSql() const;
+        bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
 
         ECDb const& GetECDb() const { return m_ecdb; }
         bool IsCompoundStatement() const { return m_isCompoundStatement; }
@@ -348,11 +349,73 @@ private:
 struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     {
     private:
+        struct PrepareInfo final : NonCopyableClass
+            {
+        private:
+            ECSqlPrepareContext& m_ctx;
+            UpdateStatementExp const& m_exp;
+            ClassNameExp const& m_classNameExp;
+            AssignmentListExp const& m_assignmentListExp;
+            WhereExp const* m_whereExp = nullptr;
+            OptionsExp const* m_optionsExp = nullptr;
+            Exp::ECSqlRenderContext m_ecsqlRenderContext;
+            bset<DbTable const*> m_tablesInvolvedInAssignmentClause;
+            bmap<DbTable const*, bvector<AssignmentExp const*>> m_assignmentExpsByTable;
+            //Holds all tables per parameter index
+            bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
+
+        public:
+            PrepareInfo(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp) 
+                : m_ctx(ctx), m_exp(exp), m_classNameExp(*exp.GetClassNameExp()), m_assignmentListExp(*exp.GetAssignmentListExp()), m_whereExp(exp.GetWhereClauseExp()), m_optionsExp(exp.GetOptionsClauseExp()),
+                m_ecsqlRenderContext(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter) {}
+
+            ECSqlPrepareContext& GetContext() const { return m_ctx; }
+            UpdateStatementExp const& GetExp() const { return m_exp; }
+            ClassNameExp const& GetClassNameExp() const { return m_classNameExp; }
+            AssignmentListExp const& GetAssignmentListExp() const { return m_assignmentListExp; }
+            bool HasWhereExp() const { return m_whereExp != nullptr; }
+            WhereExp const* GetWhereExp() const { return m_whereExp; }
+            bool HasOptionsExp() const { return m_optionsExp != nullptr; }
+            OptionsExp const* GetOptionsExp() const { return m_optionsExp; }
+
+            Exp::ECSqlRenderContext const& GetECSqlRenderContext() const { return m_ecsqlRenderContext; }
+            Exp::ECSqlRenderContext& GetECSqlRenderContextR() { return m_ecsqlRenderContext; }
+            void AddAssignmentExp(AssignmentExp const& exp, DbTable const& table)
+                {
+                m_tablesInvolvedInAssignmentClause.insert(&table);
+                m_assignmentExpsByTable[&table].push_back(&exp);
+                }
+
+            bmap<DbTable const*, bvector<AssignmentExp const*>> const& GetAssignmentExpsByTable() const { return m_assignmentExpsByTable; }
+
+            bmap<uint32_t, bset<DbTable const*>> const& GetTablesByParameterIndex() const { return m_parameterIndexInTables; }
+            bool ParameterIndexExists(uint32_t paramIndex) const { return m_parameterIndexInTables.find(paramIndex) != m_parameterIndexInTables.end(); }
+            //!@return true if index already existed, false otherwise
+            void AddParameterIndex(uint32_t paramIndex, DbTable const& table){ m_parameterIndexInTables[paramIndex].insert(&table); }
+
+            void AddWhereClauseParameterIndex(uint32_t paramIndex)
+                {
+                m_parameterIndexInTables[paramIndex].insert(m_tablesInvolvedInAssignmentClause.begin(), m_tablesInvolvedInAssignmentClause.end());
+                }
+
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> const& GetLeafStatementsByTable() const { return m_perTableStatements; }
+            void AddLeafStatement(SingleContextTableECSqlPreparedStatement const& stmt, DbTable const& table) { m_perTableStatements[&table] = &stmt; }
+
+            bool IsSingleTableInvolvedInAssignmentClause() const { return m_assignmentExpsByTable.size() == 1; }
+            DbTable const* GetSingleTableInvolvedInAssignmentClause() const { BeAssert(IsSingleTableInvolvedInAssignmentClause()); return m_assignmentExpsByTable.begin()->first; }
+            };
+
         std::unique_ptr<ECSqlSelectPreparedStatement> m_whereClauseSelector;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
-        static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);
+        ECSqlStatus PreprocessWhereClause(PrepareInfo&);
+        bool IsWhereClauseSelectorStatementNeeded(PrepareInfo const&) const;
+        ECSqlStatus PrepareLeafStatements(PrepareInfo&);
+        ECSqlStatus PopulateProxyBinders(PrepareInfo const&);
+
+        ECSqlStatus CheckForReadonlyProperties(PrepareInfo const&) const;
 
     public:
         explicit ECSqlUpdatePreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Update) {}

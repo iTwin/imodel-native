@@ -469,7 +469,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
         "       <ECProperty propertyName='L6' typeName='long' />"
         "       <ECProperty propertyName='S6' typeName='string' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECEntityClass typeName='Goo' modifier='Abstract' >"
         "       <ECProperty propertyName='L3' typeName='long' />"
         "       <ECProperty propertyName='S3' typeName='string' />"
         "   </ECEntityClass>"
@@ -490,7 +490,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L4, S4) VALUES (10, 't10')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (11, 't11')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class is still abstract
     }
 
 //---------------------------------------------------------------------------------------
@@ -559,6 +559,52 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateTestFixture, ModifyECClassModifierFromAbstract)
+    {
+    SchemaItem schemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="Abstract">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml");
+    SetupECDb("schemaupdate_modifyclassmodifiertoabstract.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+
+    {
+    //Change abstract to sealed
+    Utf8CP editedSchemaItem = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="Sealed">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml";
+
+    AssertSchemaUpdate(editedSchemaItem, filePath, {false, false}, "Change Abstract to Sealed is not supported");
+    GetECDb().AbandonChanges();
+    }
+    {
+    //Change abstract to none
+    Utf8CP editedSchemaItem = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="None">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml";
+
+    AssertSchemaUpdate(editedSchemaItem, filePath, {false, false}, "Change Abstract to None is not supported");
+    GetECDb().AbandonChanges();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -855,8 +901,8 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
         "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -864,7 +910,7 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -872,9 +918,9 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
     //Delete and Add some properties
     Utf8CP editedSchemaItem =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='D1' typeName='long' />"
         "   </ECEntityClass>"

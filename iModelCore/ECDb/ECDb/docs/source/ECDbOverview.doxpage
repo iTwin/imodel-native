@@ -228,7 +228,7 @@
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
             - from @b Sealed to @b None
-            - from @b Abstract or @b None to @b Sealed (for leaf classes only, of course)
+            - from @b None to @b Sealed (for leaf classes only, of course)
 
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"

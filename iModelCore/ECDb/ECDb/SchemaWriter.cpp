@@ -1373,12 +1373,21 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 
     if (classChange.GetClassModifier().IsValid())
         {
+        Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
         ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
+        if (oldValue == ECClassModifier::Abstract)
+            {
+            Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier from 'Abstract' to another value is not supported",
+                            oldClass.GetFullName());
+
+            return ERROR;
+            }
+
         if (newValue == ECClassModifier::Sealed)
             {
             if (!newClass.GetDerivedClasses().empty())
                 {
-                Issues().Report("ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Sealed only acceptable if class has no derived classes",
+                Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier to 'Sealed' is only valid if the class does not have derived classes.",
                                           oldClass.GetFullName());
 
                 return ERROR;
@@ -1386,7 +1395,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
             }
         else if (newValue == ECClassModifier::Abstract)
             {
-            Issues().Report("ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract is not supported",
+            Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier to 'Abstract' is not supported.",
                                       oldClass.GetFullName());
 
             return ERROR;
