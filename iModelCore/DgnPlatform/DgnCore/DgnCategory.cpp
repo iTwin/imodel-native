@@ -219,9 +219,11 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, catId, name), nullptr, catId), m_data(app, descr)
+DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, categoryId, name), nullptr, categoryId), m_data(app, descr)
     {
+    DgnCategoryCPtr category = DgnCategory::Get(db, categoryId);
+    SetModelId(category.IsValid() ? category->GetModelId() : DgnModelId()); // A SubCategory must be in the same DefinitionModel as its parent Category
     m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_CategoryOwnsSubCategories);
     }
 
