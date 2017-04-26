@@ -16,11 +16,8 @@ int main(int argc, char* argv[])
     {
     SetConsoleTitle("RealityDataService Navigator");
 
-    for (int i = 0; i < results.size(); ++i)
     char* substringPosition;
     std::string substring;
-    if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) != BentleyStatus::SUCCESS)
-    if (choice == 0)
     BeFileName infile = BeFileName("");
     BeFileName outfile = BeFileName("");
 
