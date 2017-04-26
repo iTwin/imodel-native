@@ -283,7 +283,7 @@ BentleyStatus DbMap::DoMapSchemas() const
             GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixIns);
             }
         }
-    
+
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Synchronizing existing table to which classes are mapped failed.");
@@ -308,8 +308,12 @@ BentleyStatus DbMap::DoMapSchemas() const
     if (SUCCESS != FinishTableDefinitions(true))
         return ERROR;
 
+
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
+        for (auto& k : m_classMapDictionary)
+            k.second->DeleteColumnFactory();
+
         if (ClassMappingStatus::Error == MapClass(*rootRelationshipClass))
             return ERROR;
         }
