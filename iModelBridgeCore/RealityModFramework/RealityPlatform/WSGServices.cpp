@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
+//* writes the body of a curl reponse to a Utf8String
 //+---------------+---------------+---------------+---------------+---------------+------*/
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
     {
@@ -26,6 +27,10 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                   03/2017
+//* writes the body of a curl reponse to a file
+//+---------------+---------------+---------------+---------------+---------------+------*/
 static size_t WriteFileCallback(void *contents, size_t size, size_t nmemb, BeFile *stream)
     {
     uint32_t bytesWritten = 0;

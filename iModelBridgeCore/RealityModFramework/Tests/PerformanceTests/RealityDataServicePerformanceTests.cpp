@@ -11,6 +11,8 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/RealityDataService.h>
 #include <RealityPlatform/WSGServices.h>
+#include <RealityPlatform/RealityConversionTools.h>
+
 
 #include <stdio.h>
 #include <conio.h>
@@ -61,11 +63,11 @@ int main(int argc, char* argv[])
     RealityDataServicePerformanceTests console = RealityDataServicePerformanceTests();
 
     if (argc == 2)
-        console.Run(argv[1]);
+        console.Run(argv[1], 40);
     else
         console.Usage();
 
-    //std::cout << "Press any key to continue" << std::endl;
+        //std::cout << "Press any key to continue" << std::endl;
     //getch();
     }
 
@@ -81,7 +83,7 @@ RealityDataServicePerformanceTests::RealityDataServicePerformanceTests()
     double max_lat = 23.513;
 
     m_newRealityData = RealityData::Create();
-    m_newRealityData->SetIdentifier("41d330bb-e1e6-45f3-a29b-02e145e31aa2");
+//    m_newRealityData->SetIdentifier("41d330bb-e1e6-45f3-a29b-02e145e31aa2");
     m_newRealityData->SetName("INTERNAL-ONLY TEST Reality Data");
     m_newRealityData->SetResolution("1.11x1.12");
     m_newRealityData->SetAccuracy("3.1");
@@ -148,59 +150,208 @@ RealityDataServicePerformanceTests::~RealityDataServicePerformanceTests()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-void RealityDataServicePerformanceTests::Run(Utf8String serverName)
+void RealityDataServicePerformanceTests::Run(Utf8String serverName, int numberOfLoops)
     {
-    bool relationshipCreated = false;
-
-    RealityDataService::SetErrorCallback(silentErrorCallback);
+    timeStats dummyStats;
 
     // This first call has for purpose to wake up the service in case it has fallen asleep.
-    ConfigureServerTest(serverName, true);
+    ConfigureServerTest(serverName, dummyStats, true);
+    
+    RealityDataService::SetErrorCallback(silentErrorCallback);
 
-    //// Clean existing entry in case program previously failed.
-    DeleteRealityDataTest(true);
-
-    //// This sleep is require in case the deleting did occur ... the Azure container becomes unusable for a moment then
-    std::this_thread::sleep_for(std::chrono::milliseconds(25000));
-
-
-
-    if (SUCCESS == ConfigureServerTest(serverName))
+    for (int i = 0 ; i < numberOfLoops ; i++)
         {
-        if (SUCCESS == CreateRealityDataTest())
+        bool relationshipCreated = false;
+        timeStats currentTimeStats;
+    
+        if (SUCCESS == ConfigureServerTest(serverName, currentTimeStats))
             {
-            if (SUCCESS == CreateRelationshipToProject())
+            if (SUCCESS == CreateRealityDataTest(currentTimeStats))
                 {
-                relationshipCreated = true;
+                if (SUCCESS == CreateRelationshipToProject(currentTimeStats))
+                    {
+                    relationshipCreated = true;
+                    }
+    
+                if (SUCCESS == UploadTest1(currentTimeStats))
+                    {
+                    DownloadTest(currentTimeStats);
+    
+                    GetDocumentTest(currentTimeStats);
+    
+                    GetRealityData(currentTimeStats);
+    
+                    GetRealityDataWithFilter(currentTimeStats);
+    
+                    GetRelationship(currentTimeStats);
+    
+                    UpdateTest(currentTimeStats);
+                    }
+    
+                if (relationshipCreated)
+                    {
+                    DeleteRelationship(currentTimeStats);
+                    }
+    
+                // This test must be called if creation was sucessful
+                DeleteRealityDataTest(currentTimeStats);
+    
+                EnterpriseStatTest(currentTimeStats);
+    
                 }
+            }
 
-            if (SUCCESS == UploadTest1())
-                {
-                DownloadTest();
+        m_listOfStats.push_back(currentTimeStats);
+        }
 
-                InformationExtractionTest();
+    // Compute and print summary
+    ComputeAndPrintStats();
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataServicePerformanceTests::ComputeAndPrintStats()
+    {
+        
+        int64_t mean_handshake;
+        int64_t mean_createRealityData;
+        int64_t mean_createRelationship;
+        int64_t mean_uploadTest;
+        int64_t mean_downloadTest;
+        int64_t mean_getDocument;
+        int64_t mean_getRealityData;
+        int64_t mean_listRealityData;
+        int64_t mean_getRelationship;
+        int64_t mean_modifyRealityData;
+        int64_t mean_deleteRelationship;
+        int64_t mean_deleteRealityData;
+        int64_t mean_enterpriseStats;
 
-                GetRealityData();
+        int64_t total_handshake = 0;
+        int64_t total_createRealityData = 0;
+        int64_t total_createRelationship = 0;
+        int64_t total_uploadTest = 0;
+        int64_t total_downloadTest = 0;
+        int64_t total_getDocument = 0;
+        int64_t total_getRealityData = 0;
+        int64_t total_listRealityData = 0;
+        int64_t total_getRelationship = 0;
+        int64_t total_modifyRealityData = 0;
+        int64_t total_deleteRelationship = 0;
+        int64_t total_deleteRealityData = 0;
+        int64_t total_enterpriseStats = 0;
 
-                GetRealityDataWithFilter();
 
-                GetRelationship();
 
-                UpdateTest();
-                }
+        int64_t min_handshake               = m_listOfStats[0].m_handshake;
+        int64_t min_createRealityData       = m_listOfStats[0].m_createRealityData;
+        int64_t min_createRelationship      = m_listOfStats[0].m_createRelationship;
+        int64_t min_uploadTest              = m_listOfStats[0].m_uploadTest;
+        int64_t min_downloadTest            = m_listOfStats[0].m_downloadTest;
+        int64_t min_getDocument             = m_listOfStats[0].m_getDocument;
+        int64_t min_getRealityData          = m_listOfStats[0].m_getRealityData;
+        int64_t min_listRealityData         = m_listOfStats[0].m_listRealityData;
+        int64_t min_getRelationship         = m_listOfStats[0].m_getRelationship;
+        int64_t min_modifyRealityData       = m_listOfStats[0].m_modifyRealityData;
+        int64_t min_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
+        int64_t min_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
+        int64_t min_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
 
-            if (relationshipCreated)
-                {
-                DeleteRelationship();
-                }
+        int64_t max_handshake               = m_listOfStats[0].m_handshake;
+        int64_t max_createRealityData       = m_listOfStats[0].m_createRealityData;
+        int64_t max_createRelationship      = m_listOfStats[0].m_createRelationship;
+        int64_t max_uploadTest              = m_listOfStats[0].m_uploadTest;
+        int64_t max_downloadTest            = m_listOfStats[0].m_downloadTest;
+        int64_t max_getDocument             = m_listOfStats[0].m_getDocument;
+        int64_t max_getRealityData          = m_listOfStats[0].m_getRealityData;
+        int64_t max_listRealityData         = m_listOfStats[0].m_listRealityData;
+        int64_t max_getRelationship         = m_listOfStats[0].m_getRelationship;
+        int64_t max_modifyRealityData       = m_listOfStats[0].m_modifyRealityData;
+        int64_t max_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
+        int64_t max_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
+        int64_t max_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
 
-            // This test must be called if creation was sucessful
-            DeleteRealityDataTest();
 
-            EnterpriseStatTest();
+        
+        for (timeStats currentTimeStats: m_listOfStats)
+            {
+
+            min_handshake           = min(min_handshake            ,  currentTimeStats.m_handshake           );
+            min_createRealityData   = min(min_createRealityData    ,  currentTimeStats.m_createRealityData   );
+            min_createRelationship  = min(min_createRelationship   ,  currentTimeStats.m_createRelationship  );
+            min_uploadTest          = min(min_uploadTest           ,  currentTimeStats.m_uploadTest          );
+            min_downloadTest        = min(min_downloadTest         ,  currentTimeStats.m_downloadTest        );
+            min_getDocument         = min(min_getDocument          ,  currentTimeStats.m_getDocument         );
+            min_getRealityData      = min(min_getRealityData       ,  currentTimeStats.m_getRealityData      );
+            min_listRealityData     = min(min_listRealityData      ,  currentTimeStats.m_listRealityData     );
+            min_getRelationship     = min(min_getRelationship      ,  currentTimeStats.m_getRelationship     );
+            min_modifyRealityData   = min(min_modifyRealityData    ,  currentTimeStats.m_modifyRealityData   );
+            min_deleteRelationship  = min(min_deleteRelationship   ,  currentTimeStats.m_deleteRelationship  );
+            min_deleteRealityData   = min(min_deleteRealityData    ,  currentTimeStats.m_deleteRealityData   );
+            min_enterpriseStats     = min(min_enterpriseStats      ,  currentTimeStats.m_enterpriseStats     );
+
+
+
+            max_handshake           = max(max_handshake            ,  currentTimeStats.m_handshake           );
+            max_createRealityData   = max(max_createRealityData    ,  currentTimeStats.m_createRealityData   );
+            max_createRelationship  = max(max_createRelationship   ,  currentTimeStats.m_createRelationship  );
+            max_uploadTest          = max(max_uploadTest           ,  currentTimeStats.m_uploadTest          );
+            max_downloadTest        = max(max_downloadTest         ,  currentTimeStats.m_downloadTest        );
+            max_getDocument         = max(max_getDocument          ,  currentTimeStats.m_getDocument         );
+            max_getRealityData      = max(max_getRealityData       ,  currentTimeStats.m_getRealityData      );
+            max_listRealityData     = max(max_listRealityData      ,  currentTimeStats.m_listRealityData     );
+            max_getRelationship     = max(max_getRelationship      ,  currentTimeStats.m_getRelationship     );
+            max_modifyRealityData   = max(max_modifyRealityData    ,  currentTimeStats.m_modifyRealityData   );
+            max_deleteRelationship  = max(max_deleteRelationship   ,  currentTimeStats.m_deleteRelationship  );
+            max_deleteRealityData   = max(max_deleteRealityData    ,  currentTimeStats.m_deleteRealityData   );
+            max_enterpriseStats     = max(max_enterpriseStats      ,  currentTimeStats.m_enterpriseStats     );
+
+
+            total_handshake           += currentTimeStats.m_handshake         ;
+            total_createRealityData   += currentTimeStats.m_createRealityData ;
+            total_createRelationship  += currentTimeStats.m_createRelationship;
+            total_uploadTest          += currentTimeStats.m_uploadTest        ;
+            total_downloadTest        += currentTimeStats.m_downloadTest      ;
+            total_getDocument         += currentTimeStats.m_getDocument       ;
+            total_getRealityData      += currentTimeStats.m_getRealityData    ;
+            total_listRealityData     += currentTimeStats.m_listRealityData   ;
+            total_getRelationship     += currentTimeStats.m_getRelationship   ;
+            total_modifyRealityData   += currentTimeStats.m_modifyRealityData ;
+            total_deleteRelationship  += currentTimeStats.m_deleteRelationship;
+            total_deleteRealityData   += currentTimeStats.m_deleteRealityData ;
+            total_enterpriseStats     += currentTimeStats.m_enterpriseStats   ;
+
 
             }
-        }
+        mean_handshake           = total_handshake           / m_listOfStats.size();       
+        mean_createRealityData   = total_createRealityData   / m_listOfStats.size();
+        mean_createRelationship  = total_createRelationship  / m_listOfStats.size();
+        mean_uploadTest          = total_uploadTest          / m_listOfStats.size();
+        mean_downloadTest        = total_downloadTest        / m_listOfStats.size();
+        mean_getDocument         = total_getDocument         / m_listOfStats.size();
+        mean_getRealityData      = total_getRealityData      / m_listOfStats.size();
+        mean_listRealityData     = total_listRealityData     / m_listOfStats.size();
+        mean_getRelationship     = total_getRelationship     / m_listOfStats.size();
+        mean_modifyRealityData   = total_modifyRealityData   / m_listOfStats.size();
+        mean_deleteRelationship  = total_deleteRelationship  / m_listOfStats.size();      
+        mean_deleteRealityData   = total_deleteRealityData   / m_listOfStats.size();
+        mean_enterpriseStats     = total_enterpriseStats     / m_listOfStats.size();
+
+        std::cout << "  TEST                                        mean              min             max" << std::endl;
+        std::cout << "WSG Handshake                            : " << mean_handshake           << ",         " << min_handshake             << ",           " << max_handshake           << std::endl;
+        std::cout << "Create RealityData                       : " << mean_createRealityData   << ",         " << min_createRealityData     << ",           " << max_createRealityData   << std::endl;
+        std::cout << "Create RealityDataProjectRelationship    : " << mean_createRelationship  << ",         " << min_createRelationship    << ",           " << max_createRelationship  << std::endl;
+        std::cout << "Upload                                   : " << mean_uploadTest          << ",         " << min_uploadTest            << ",           " << max_uploadTest          << std::endl;
+        std::cout << "Download                                 : " << mean_downloadTest        << ",         " << min_downloadTest          << ",           " << max_downloadTest        << std::endl;
+        std::cout << "Get Document                             : " << mean_getDocument         << ",         " << min_getDocument           << ",           " << max_getDocument         << std::endl;
+        std::cout << "Get RealityData                          : " << mean_getRealityData      << ",         " << min_getRealityData        << ",           " << max_getRealityData      << std::endl;
+        std::cout << "List RealityData                         : " << mean_listRealityData     << ",         " << min_listRealityData       << ",           " << max_listRealityData     << std::endl;
+        std::cout << "GetRelationship                          : " << mean_getRelationship     << ",         " << min_getRelationship       << ",           " << max_getRelationship     << std::endl;
+        std::cout << "Modify RealityData                       : " << mean_modifyRealityData   << ",         " << min_modifyRealityData     << ",           " << max_modifyRealityData   << std::endl;
+        std::cout << "Delete Relationship                      : " << mean_deleteRelationship  << ",         " << min_deleteRelationship    << ",           " << max_deleteRelationship  << std::endl;
+        std::cout << "Delete Reality Data                      : " << mean_deleteRealityData   << ",         " << min_deleteRealityData     << ",           " << max_deleteRealityData   << std::endl;
+        std::cout << "Enterprise stats                         : " << mean_enterpriseStats     << ",         " << min_enterpriseStats       << ",           " << max_enterpriseStats     << std::endl;
+
     }
 
 //-------------------------------------------------------------------------------------
@@ -218,7 +369,7 @@ void RealityDataServicePerformanceTests::Usage()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String serverName, bool silent)
+StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String serverName, timeStats& theTimeStats, bool silent)
     {
     bool verifyCertificate = false;
 
@@ -302,10 +453,12 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
     if (!silent)
         {
         if (SUCCESS != response.status)
-            std::cout << "Handshake Test: Failure no: " << response.status << std::endl;
+            std::cout << "WSG Handshake Test: Failure no: " << response.status << std::endl;
         else
-            std::cout << "Handshake Test : " << (endTime - startTime) / 1000.0 << std::endl;
+            std::cout << "WSG Handshake Test : " << (endTime - startTime) << std::endl;
         }
+
+    theTimeStats.m_handshake = (endTime - startTime);
 
     return SUCCESS;
     }
@@ -313,9 +466,13 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest()
+StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest(timeStats& theTimeStats)
     {
     RawServerResponse response;
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
+
+    // Clear id so we get a new one
+    m_newRealityData->SetIdentifier("");
 
     RealityDataCreateRequest creationRequest(*m_newRealityData); 
     
@@ -326,24 +483,32 @@ StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(creationRequest, response);
-    
+    Utf8String realityDataBody = RealityDataService::Request(creationRequest, response);
+  
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
+    Json::Value instance(Json::objectValue);
+    Json::Reader::Parse(realityDataBody, instance);
+    if (response.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+        {
+        m_newRealityData->SetIdentifier(instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString().c_str());
+        }
+
     // Report
     if (SUCCESS != response.status)
-        std::cout << "Creation Test: Failure no: " << response.status << std::endl;
+        std::cout << "Creation RealityData Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Creation Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Creation RealityData " << m_newRealityData->GetIdentifier() << ": " << (endTime - startTime) << std::endl;
   
+    theTimeStats.m_createRealityData = (endTime - startTime);
     return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
+StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -365,17 +530,19 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
 
     // Report
     if (OK != response.status)
-        std::cout << "Relationship creation Test: Failure no: " << response.status << std::endl;
+        std::cout << "Create RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Relationship creation Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Create RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
     
+    theTimeStats.m_createRelationship = (endTime - startTime);
+
     return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::UploadTest1()
+StatusInt RealityDataServicePerformanceTests::UploadTest1(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -405,9 +572,11 @@ StatusInt RealityDataServicePerformanceTests::UploadTest1()
 
     // Report
     if (tReport.results.size() != 0)
-        std::cout << "Upload Test error: file failed to upload" << std::endl;
+        std::cout << "Upload Files Test error: file failed to upload" << std::endl;
     else
-        std::cout << "Upload Test: " << ((endTime - startTime) / 1000.0) << std::endl;
+        std::cout << "Upload Files Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_uploadTest = (endTime - startTime);
 
     return SUCCESS;
     }
@@ -415,7 +584,7 @@ StatusInt RealityDataServicePerformanceTests::UploadTest1()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::UploadTest2()
+StatusInt RealityDataServicePerformanceTests::UploadTest2(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -447,7 +616,9 @@ StatusInt RealityDataServicePerformanceTests::UploadTest2()
     if (tReport.results.size() != 0)
         std::cout << "Upload Test error: file failed to upload" << std::endl;
     else
-        std::cout << "Upload Test: " << ((endTime - startTime) / 1000.0) << std::endl;
+        std::cout << "Upload Test: " << (endTime - startTime) << std::endl;
+
+    // theTimeStats.m_upload2 = (endTime - startTime);
 
     return SUCCESS;
     }
@@ -455,7 +626,7 @@ StatusInt RealityDataServicePerformanceTests::UploadTest2()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::DownloadTest()
+StatusInt RealityDataServicePerformanceTests::DownloadTest(timeStats& theTimeStats)
     {
     RawServerResponse response;
     int64_t startTime;
@@ -486,59 +657,22 @@ StatusInt RealityDataServicePerformanceTests::DownloadTest()
 
     // Report
     if (tReport.results.size() != 0)
-        std::cout << "Download Test error: file failed to download" << std::endl;
+        std::cout << "Download Files error: file failed to download" << std::endl;
     else
-        std::cout << "Download Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Download Files Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_downloadTest = (endTime - startTime);
 
     return SUCCESS;
     }
 
 
 
-//-------------------------------------------------------------------------------------
-// This test will extract information about the reality data, folders and documents
-// and measure the time taken to perform the operation.
-// @bsimethod                          Alain.Robert                            03/2017
-//-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
-    {
-    RawServerResponse response;
-
-    int64_t startTime;
-    int64_t endTime;
-    
-    // Obtain information about the reality data 
-    RealityDataByIdRequest myRealityDataRequest(m_newRealityData->GetIdentifier());
-
-    // Start time
-    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
-
-    // Perform operation
-    RealityDataPtr myRealityData = RealityDataService::Request(myRealityDataRequest, response);
-    
-    // End time
-    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
-
-    // Basic check
-    if (myRealityData->GetIdentifier() != m_newRealityData->GetIdentifier())
-        return ERROR;
-
-    // Report
-    if (OK != response.status)
-        std::cout << "Information Extraction Test: Failure no: " << response.status << std::endl;
-    else
-        std::cout << "Information Extraction Test: " << (endTime - startTime) / 1000.0 << std::endl;
-    
-    return (StatusInt)response.status;
-    }
-
-
-
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::UpdateTest()
+StatusInt RealityDataServicePerformanceTests::UpdateTest(timeStats& theTimeStats)
     {
     // Modify the reality data
     m_newRealityData->SetMetadataURL("");
@@ -564,17 +698,19 @@ StatusInt RealityDataServicePerformanceTests::UpdateTest()
 
     // Report
     if (SUCCESS != response.status)
-        std::cout << "Change Test: Failure no: " << response.status << std::endl;
+        std::cout << "Modify RealityData Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Change Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Modify RealityData Test: " << (endTime - startTime) << std::endl;
   
+    theTimeStats.m_modifyRealityData = (endTime - startTime);
+
     return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetRelationship()
+StatusInt RealityDataServicePerformanceTests::GetRelationship(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -600,17 +736,19 @@ StatusInt RealityDataServicePerformanceTests::GetRelationship()
 
     // Report
     if (OK != response.status)
-        std::cout << "Relationships Get Test: Failure no: " << response.status << std::endl;
+        std::cout << "Get RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Relationships Get Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Get RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
     
+    theTimeStats.m_getRelationship = (endTime - startTime);
+
     return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
+StatusInt RealityDataServicePerformanceTests::DeleteRelationship(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -630,9 +768,11 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
 
     // Report
     if (OK != response.status)
-        std::cout << "Relationship deletion Test: Failure no: " << response.status << std::endl;
+        std::cout << "Delete RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Relationship deletion Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Delete RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_deleteRelationship = (endTime - startTime);
     
     return (StatusInt)response.status;
     }
@@ -641,7 +781,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(bool silent)
+StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(timeStats& theTimeStats, bool silent)
     {
     RawServerResponse response;
   
@@ -663,10 +803,12 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(bool silent)
     if (!silent)
         {
         if (OK != response.status)
-            std::cout << "Deletion Test: Failure no: " << response.status << std::endl;
+            std::cout << "Delete RealityData: Failure no: " << response.status << std::endl;
         else
-            std::cout << "Deletion Test: " << (endTime - startTime) / 1000.0 << std::endl;
+            std::cout << "Delete RealityData Test: " << (endTime - startTime) << std::endl;
         }
+
+    theTimeStats.m_deleteRealityData = (endTime - startTime);
 
     return (StatusInt)response.status;    
     }
@@ -674,7 +816,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(bool silent)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetRealityData()
+StatusInt RealityDataServicePerformanceTests::GetRealityData(timeStats& theTimeStats)
     {
 
     RealityDataByIdRequest request = RealityDataByIdRequest(m_newRealityData->GetIdentifier());
@@ -702,10 +844,12 @@ StatusInt RealityDataServicePerformanceTests::GetRealityData()
 
     // Report
     if (SUCCESS != response.status)
-        std::cout << "GetRealityData Test: Failure no: " << response.status << std::endl;
+        std::cout << "Get RealityData Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "GetRealityData Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Get RealityData Test: " << (endTime - startTime) << std::endl;
 
+
+    theTimeStats.m_getRealityData = (endTime - startTime);
 
     return (StatusInt)response.status;
     }
@@ -713,7 +857,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityData()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
+StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter(timeStats& theTimeStats)
     {
 
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
@@ -740,7 +884,9 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
-    std::cout << "GetRealityData with filter Test: " << (endTime - startTime) / 1000.0 << std::endl;
+    std::cout << "List RealityData with filter Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_listRealityData = (endTime - startTime);
 
     return SUCCESS;
     }
@@ -748,7 +894,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon()
+StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon(timeStats& theTimeStats)
     {
 
     double min_lon = 12.402;
@@ -794,7 +940,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetDocumentTest()
+StatusInt RealityDataServicePerformanceTests::GetDocumentTest(timeStats& theTimeStats)
     {
 
 
@@ -829,10 +975,11 @@ StatusInt RealityDataServicePerformanceTests::GetDocumentTest()
 
     // Report
     if (SUCCESS != response.status)
-        std::cout << "GetDocument Test: Failure no: " << response.status << std::endl;
+        std::cout << "Get Document Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "GetDocument Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Get Document Test: " << (endTime - startTime) << std::endl;
 
+    theTimeStats.m_getDocument = (endTime - startTime);
 
     return (StatusInt)response.status;
     }
@@ -841,7 +988,7 @@ StatusInt RealityDataServicePerformanceTests::GetDocumentTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::GetFolderTest()
+StatusInt RealityDataServicePerformanceTests::GetFolderTest(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -875,7 +1022,7 @@ StatusInt RealityDataServicePerformanceTests::GetFolderTest()
     if (SUCCESS != response.status)
         std::cout << "GetFolder Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "GetFolder Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "GetFolder Test: " << (endTime - startTime) << std::endl;
 
 
     return (StatusInt)response.status;
@@ -884,7 +1031,7 @@ StatusInt RealityDataServicePerformanceTests::GetFolderTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest()
+StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest(timeStats& theTimeStats)
     {
     RawServerResponse response;
 
@@ -912,7 +1059,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest()
     if (SUCCESS != response.status)
         std::cout << "DeleteDocument Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "DeleteDocument Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "DeleteDocument Test: " << (endTime - startTime) << std::endl;
 
 
     return (StatusInt)response.status;
@@ -921,7 +1068,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest()
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest()
+StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest(timeStats& theTimeStats)
     {
     RawServerResponse response;
     RealityDataEnterpriseStatRequest ptt("");
@@ -942,9 +1089,11 @@ StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest()
 
     // Report
     if (SUCCESS != response.status)
-        std::cout << "Enterprise stats Test: Failure no: " << response.status << std::endl;
+        std::cout << "Get Enterprise stats Test: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Enterprise stats Test: " << (endTime - startTime) / 1000.0 << std::endl;
+        std::cout << "Get Enterprise stats Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_enterpriseStats = (endTime - startTime);
 
 
     return (StatusInt)response.status;

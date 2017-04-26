@@ -12,6 +12,7 @@
 #include <RealityPlatform/RealityDataService.h>
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley/BeFile.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -30,6 +31,7 @@ enum OperationType
     LINK,
     UNLINK,
     REMOVE,
+    DOWNLOAD,
     last
     };
 
@@ -98,6 +100,8 @@ public:
     NavNode*                    m_node;
     FullInfo                    m_correspondance;
     AzureHandshake              m_handshake;
+    BeFile                      m_file;
+    BeFileName                  m_fileName;
 
     int                         m_userId;
 
@@ -129,6 +133,8 @@ public:
     void ValidateUnlink(int activeUsers);
     CURL* Delete();
     void ValidateDelete(int activeUsers);
+    CURL* Download();
+    void ValidateDownload(int activeUsers);
 
     void WrapUp(UserManager* owner);
     };

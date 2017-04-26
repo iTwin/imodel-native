@@ -28,6 +28,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
+//! converts bvector of geopoints to a Polygon string that can be passed to GCS
 //=====================================================================================
 static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
     {
@@ -46,6 +47,10 @@ static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
     return polygon;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//! writes the body of a curl response to a file
+//=====================================================================================
 static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, BeFile* fileStream)
     {
     uint32_t bytesRead = 0;
@@ -61,13 +66,9 @@ static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, BeFi
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
 Utf8StringCR GeoCoordinationServiceRequest::GetServerName() const { return GeoCoordinationService::GetServerName(); }
-
 Utf8StringCR GeoCoordinationServiceRequest::GetVersion() const { return GeoCoordinationService::GetWSGProtocol(); }
-
 Utf8StringCR GeoCoordinationServiceRequest::GetSchema() const { return GeoCoordinationService::GetSchemaName(); }
-
 Utf8StringCR GeoCoordinationServiceRequest::GetRepoId() const { return GeoCoordinationService::GetRepoName(); }
-
 
 
 //=====================================================================================
