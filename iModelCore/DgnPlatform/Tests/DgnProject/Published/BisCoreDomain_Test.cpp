@@ -252,7 +252,6 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     // Validate CodeSpecs of RepositoryScope
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_NullCodeSpec)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TrueColor)->IsRepositoryScope());
 
     // Validate CodeSpecs of ModelScope
@@ -278,6 +277,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe2d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe3d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TextAnnotationSeed)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ViewDefinition)->IsModelScope());
 
     // Validate CodeSpecs of ParentElementScope

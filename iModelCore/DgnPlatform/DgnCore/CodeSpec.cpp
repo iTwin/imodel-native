@@ -349,7 +349,6 @@ DbResult DgnDb::CreateCodeSpecs()
     if (// CodeSpecs with Repository scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_NullCodeSpec, CodeScopeSpec::CreateRepositoryScope(), CodeSpec::GetNullCodeSpecId())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_MaterialElement, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Texture, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TrueColor, CodeScopeSpec::CreateRepositoryScope())) ||
         // CodeSpecs with Model scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationFrameStyle, CodeScopeSpec::CreateModelScope())) ||
@@ -374,6 +373,7 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe2d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe3d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TextAnnotationSeed, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Texture, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ViewDefinition, CodeScopeSpec::CreateModelScope())) || 
         // CodeSpecs with ParentElement scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
