@@ -35,22 +35,12 @@ ILinearlyLocated::ILinearlyLocated():
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocated::_SetLinearElement(ILinearElementCP linearElement)
-    {
-    if (linearElement)
-        _SetLinearElement(linearElement->ToElement().GetElementId(), linearElement->ToElement().GetElementClassId());
-    else
-        _SetLinearElement(DgnElementId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocated::_SetLinearElement(DgnElementId elementId, DgnClassId classId)
+void ILinearlyLocated::_SetLinearElement(DgnElementId elementId)
     {
-    DgnDbStatus status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, elementId, classId);
+    DgnDbStatus status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, elementId, 
+        DgnClassId(ToElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearlyLocatedAlongILinearElement)));
     BeAssert(DgnDbStatus::Success == status);
     }
 

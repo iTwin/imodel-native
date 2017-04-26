@@ -91,6 +91,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // ECRelationship names
 //-----------------------------------------------------------------------------------------
 #define BLR_REL_GeometricElementDrivesReferent                      "GeometricElementDrivesReferent"
+#define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
 
 
 //-----------------------------------------------------------------------------------------

@@ -71,8 +71,7 @@ private:
 protected:
     LINEARREFERENCING_EXPORT ILinearlyLocated();
 
-    LINEARREFERENCING_EXPORT void _SetLinearElement(ILinearElementCP);
-    LINEARREFERENCING_EXPORT void _SetLinearElement(Dgn::DgnElementId elementId, Dgn::DgnClassId classId = Dgn::DgnClassId());
+    LINEARREFERENCING_EXPORT void _SetLinearElement(Dgn::DgnElementId elementId);
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const = 0;
     LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);
     bset<LinearlyReferencedLocationId> const& _GetLinearlyReferencedAtLocationIdsAccessed() const { return m_accessedAtLocationIds; }
