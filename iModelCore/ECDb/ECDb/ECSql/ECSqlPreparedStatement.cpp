@@ -464,8 +464,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         return ECSqlStatus::InvalidECSql;
         }
 
-    const bool isEndTableRelationship = classMap.GetType() == ClassMap::Type::RelationshipEndTable;
-
     BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
@@ -861,48 +859,43 @@ bool ECSqlInsertPreparedStatement::ECInstanceKeyHelper::MustGenerateECInstanceId
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
-    UpdateStatementExp const& updateExp = exp.GetAs<UpdateStatementExp>();
+    PrepareInfo prepareInfo(ctx, exp.GetAs<UpdateStatementExp>());
 
-    ClassNameExp const* classNameExp = updateExp.GetClassNameExp();
-    const bool isPolymorphicUpdate = classNameExp->IsPolymorphic();
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, classNameExp->IsPolymorphic()));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic()));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
-    AssignmentListExp const* assignmentListExp = updateExp.GetAssignmentListExp();
-    ECSqlStatus stat = CheckForReadonlyProperties(ctx, *assignmentListExp, updateExp);
+    ECSqlStatus stat = CheckForReadonlyProperties(prepareInfo);
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = assignmentListExp->GetSpecialTokenExpIndexMap();
+    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = prepareInfo.GetAssignmentListExp().GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
-                                                        updateExp.ToECSql().c_str());
+                                                        prepareInfo.GetExp().ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
-    if (classMap.IsRelationshipClassMap())
+    if (prepareInfo.GetClassNameExp().GetInfo().GetMap().IsRelationshipClassMap())
         {
         if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECClassId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
-                                                            updateExp.ToECSql().c_str());
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId 
+                                                            ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. "
+                                                            "ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
+                                                            prepareInfo.GetExp().ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
         }
 
-    PrepareInfo prepareInfo(updateExp.GetOptionsClauseExp());
-
-    for (Exp const* childExp : assignmentListExp->GetChildren())
+    for (Exp const* childExp : prepareInfo.GetAssignmentListExp().GetChildren())
         {
         AssignmentExp const& assignmentExp = childExp->GetAs<AssignmentExp>();
         PropertyNameExp const* lhsExp = assignmentExp.GetPropertyNameExp();
@@ -935,7 +928,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
-                                                                updateExp.ToECSql().c_str(), assignmentExp.ToECSql().c_str());
+                                                                prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
             }
@@ -951,29 +944,185 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         }
 
-    Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
-
-    WhereExp const* whereClause = updateExp.GetWhereClauseExp();
-    if (whereClause != nullptr)
+    if (prepareInfo.HasWhereExp())
         {
-        const ECSqlStatus stat = PreprocessWhereClause(ctx, ecsqlRenderCtx, classMap, isPolymorphicUpdate, *whereClause, prepareInfo);
+        const ECSqlStatus stat = PreprocessWhereClause(prepareInfo);
         if (!stat.IsSuccess())
             return stat;
         }
     
     //Prepare leaf UPDATE statements
+    stat = PrepareLeafStatements(prepareInfo);
+    if (!stat.IsSuccess())
+        return stat;
+   
+    return PopulateProxyBinders(prepareInfo);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlUpdatePreparedStatement::PreprocessWhereClause(PrepareInfo& prepareInfo)
+    {
+    BeAssert(prepareInfo.HasWhereExp());
+    const bool isWhereClauseSelectorNeeded = IsWhereClauseSelectorStatementNeeded(prepareInfo);
+    
+    WhereExp const& whereClause = *prepareInfo.GetWhereExp();
+    for (Exp const* exp : whereClause.Find(Exp::Type::Parameter, true /* recursive*/))
+        {
+        ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+        const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
+        const bool alreadyExisted = prepareInfo.ParameterIndexExists(paramIndex);
+        if (!alreadyExisted)
+            m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+
+        if (!isWhereClauseSelectorNeeded)
+            prepareInfo.AddWhereClauseParameterIndex(paramIndex);
+        }
+
+    if (!isWhereClauseSelectorNeeded)
+        return ECSqlStatus::Success;
+
+    //prepare where clause SELECT statement
+    Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
+    whereClauseSelectorECSql.append(prepareInfo.GetClassNameExp().ToECSql()).append(" ");
+    whereClause.ToECSql(prepareInfo.GetECSqlRenderContextR());
+    whereClauseSelectorECSql.append(prepareInfo.GetECSqlRenderContext().GetECSql());
+    prepareInfo.GetECSqlRenderContextR().ResetECSqlBuilder();
+
+    if (prepareInfo.HasOptionsExp())
+        whereClauseSelectorECSql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
+
+    ECSqlParser parser;
+    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
+    if (parseTree == nullptr)
+        return ECSqlStatus::InvalidECSql;
+
+    m_whereClauseSelector = std::make_unique<ECSqlSelectPreparedStatement>(m_ecdb);
+    prepareInfo.GetContext().Reset(*m_whereClauseSelector);
+    return m_whereClauseSelector->Prepare(prepareInfo.GetContext(), *parseTree, whereClauseSelectorECSql.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareInfo const& prepareInfo) const
+    {
+    DbTable const* singleTableInvolvedInAssignment = prepareInfo.IsSingleTableInvolvedInAssignmentClause() ? prepareInfo.GetSingleTableInvolvedInAssignmentClause() : nullptr;
+    for (Exp const* exp : prepareInfo.GetWhereExp()->Find(Exp::Type::PropertyName, true /*recursive*/))
+        {
+        PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
+        if (propNameExp.IsPropertyRef())
+            continue;
+
+        PropertyMap const& propMap = propNameExp.GetPropertyMap();
+        if (propMap.GetType() == PropertyMap::Type::ECInstanceId || propMap.GetType() == PropertyMap::Type::ECClassId)
+            continue;//ECInstanceId and ECClassId exist in all tables, so they don't require a where clause selector
+
+        //if more than one table is involved and the where clause has a prop name exp other than ECInstanceId or ECClassId
+        //a separate SELECT is needed.
+        if (!prepareInfo.IsSingleTableInvolvedInAssignmentClause())
+            return true;
+
+        //A single table is involved in assignment. We can skip the extra SELECT if the where clause does not involve
+        //other tables
+        GetTablesPropertyMapVisitor getTablesVisitor;
+        if (SUCCESS != propMap.AcceptVisitor(getTablesVisitor))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
+        if (mappedTables.find(singleTableInvolvedInAssignment) == mappedTables.end())
+            return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatements(PrepareInfo& prepareInfo)
+    {
+    Exp::ECSqlRenderContext& ecsqlRenderCtx = prepareInfo.GetECSqlRenderContextR();
     for (bpair<DbTable const*, bvector<AssignmentExp const*>> const& kvPair : prepareInfo.GetAssignmentExpsByTable())
         {
         DbTable const& table = *kvPair.first;
-        SingleContextTableECSqlPreparedStatement* stmt = nullptr;
-        ECSqlStatus stat = PrepareLeafStatement(ctx, ecsqlRenderCtx, stmt, classMap, isPolymorphicUpdate, table, kvPair.second, whereClause, prepareInfo);
+
+        Utf8String ecsql("UPDATE ");
+        ecsql.append(prepareInfo.GetClassNameExp().ToECSql()).append(" SET ");
+
+        bool isFirstAssignment = true;
+        for (AssignmentExp const* assignmentExp : kvPair.second)
+            {
+            if (!isFirstAssignment)
+                ecsql.append(",");
+
+            assignmentExp->ToECSql(ecsqlRenderCtx);
+            ecsql.append(ecsqlRenderCtx.GetECSql());
+            isFirstAssignment = false;
+            ecsqlRenderCtx.ResetECSqlBuilder();
+            }
+
+        if (prepareInfo.HasWhereExp())
+            {
+            if (m_whereClauseSelector != nullptr)
+                ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
+            else
+                {
+                prepareInfo.GetWhereExp()->ToECSql(ecsqlRenderCtx);
+                ecsql.append(" ").append(ecsqlRenderCtx.GetECSql());
+                ecsqlRenderCtx.ResetECSqlBuilder();
+                }
+            }
+
+        if (prepareInfo.HasOptionsExp())
+            ecsql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
+
+        //if we have a where clause SELECT statement, we can omit the class id filter from the update statement
+        //as the selector took care of that
+        if (m_whereClauseSelector != nullptr && (!prepareInfo.HasOptionsExp() || !prepareInfo.GetOptionsExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION)))
+            {
+            if (prepareInfo.HasOptionsExp())
+                ecsql.append(" ");
+            else
+                ecsql.append(" ECSQLOPTIONS ");
+
+            ecsql.append(OptionsExp::NOECCLASSIDFILTER_OPTION);
+            }
+
+        ECSqlParser parser;
+        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
+        if (parseTree == nullptr)
+            return ECSqlStatus::InvalidECSql;
+
+        m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Update, table));
+
+        SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        prepareInfo.GetContext().Reset(preparedStmt);
+        const ECSqlStatus stat = preparedStmt.Prepare(prepareInfo.GetContext(), *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
 
-        prepareInfo.AddLeafStatement(*stmt, table);
+        //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
+        if (preparedStmt.IsNoopInSqlite())
+            m_isNoopInSqlite = true;
+
+        prepareInfo.AddLeafStatement(preparedStmt, table);
         }
-   
-    for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : ecsqlRenderCtx.GetParameterIndexNameMap())
+
+    return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const& prepareInfo)
+    {
+    for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
         const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
         BeAssert(paramIndex >= 0 && paramIndex <= (uint32_t) m_proxyBinders.size());
@@ -1017,161 +1166,6 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         }
 
-    return ECSqlStatus::Success;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        04/17
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlUpdatePreparedStatement::PreprocessWhereClause(ECSqlPrepareContext& ctx, Exp::ECSqlRenderContext& ecsqlRenderCtx, ClassMap const& classMap, bool isPolymorphicUpdate, WhereExp const& whereClause, PrepareInfo& prepareInfo)
-    {
-    const bool isWhereClauseSelectorNeeded = IsWhereClauseSelectorStatementNeeded(whereClause, prepareInfo);
-    
-    for (Exp const* exp : whereClause.Find(Exp::Type::Parameter, true /* recursive*/))
-        {
-        ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-        const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
-        const bool alreadyExisted = prepareInfo.ParameterIndexExists(paramIndex);
-        if (!alreadyExisted)
-            m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
-
-        if (!isWhereClauseSelectorNeeded)
-            prepareInfo.AddWhereClauseParameterIndex(paramIndex);
-        }
-
-    if (!isWhereClauseSelectorNeeded)
-        return ECSqlStatus::Success;
-
-    //prepare where clause SELECT statement
-    Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
-    if (!isPolymorphicUpdate)
-        whereClauseSelectorECSql.append(" ONLY ");
-
-    whereClauseSelectorECSql.append(classMap.GetClass().GetECSqlName()).append(" ");
-    whereClause.ToECSql(ecsqlRenderCtx);
-    whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
-    ecsqlRenderCtx.ResetECSqlBuilder();
-
-    if (prepareInfo.HasOptionsExp())
-        whereClauseSelectorECSql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
-
-    ECSqlParser parser;
-    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
-    if (parseTree == nullptr)
-        return ECSqlStatus::InvalidECSql;
-
-    m_whereClauseSelector = std::make_unique<ECSqlSelectPreparedStatement>(m_ecdb);
-    ctx.Reset(*m_whereClauseSelector);
-    return m_whereClauseSelector->Prepare(ctx, *parseTree, whereClauseSelectorECSql.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        04/17
-//---------------------------------------------------------------------------------------
-bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(WhereExp const& whereClause, PrepareInfo const& prepareInfo) const
-    {
-    DbTable const* singleTableInvolvedInAssignment = prepareInfo.IsSingleTableInvolvedInAssignmentClause() ? prepareInfo.GetSingleTableInvolvedInAssignmentClause() : nullptr;
-    for (Exp const* exp : whereClause.Find(Exp::Type::PropertyName, true /*recursive*/))
-        {
-        PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
-        if (propNameExp.IsPropertyRef())
-            continue;
-
-        PropertyMap const& propMap = propNameExp.GetPropertyMap();
-        if (propMap.GetType() == PropertyMap::Type::ECInstanceId || propMap.GetType() == PropertyMap::Type::ECClassId)
-            continue;//ECInstanceId and ECClassId exist in all tables, so they don't require a where clause selector
-
-        //if more than one table is involved and the where clause has a prop name exp other than ECInstanceId or ECClassId
-        //a separate SELECT is needed.
-        if (!prepareInfo.IsSingleTableInvolvedInAssignmentClause())
-            return true;
-
-        //A single table is involved in assignment. We can skip the extra SELECT if the where clause does not involve
-        //other tables
-        GetTablesPropertyMapVisitor getTablesVisitor;
-        if (SUCCESS != propMap.AcceptVisitor(getTablesVisitor))
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
-        if (mappedTables.find(singleTableInvolvedInAssignment) == mappedTables.end())
-            return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        04/17
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatement(ECSqlPrepareContext& ctx, Exp::ECSqlRenderContext& ecsqlRenderCtx, SingleContextTableECSqlPreparedStatement*& stmt, ClassMap const& classMap, bool isPolymorphicUpdate, DbTable const& table, bvector<AssignmentExp const*> assignmentExps, WhereExp const* whereClause, PrepareInfo const& prepareInfo)
-    {
-    Utf8String ecsql("UPDATE ");
-    if (!isPolymorphicUpdate)
-        ecsql.append("ONLY ");
-
-    ecsql.append(classMap.GetClass().GetECSqlName()).append(" SET ");
-
-    bool isFirstAssignment = true;
-    for (AssignmentExp const* assignmentExp : assignmentExps)
-        {
-        if (!isFirstAssignment)
-            ecsql.append(",");
-
-        assignmentExp->ToECSql(ecsqlRenderCtx);
-        ecsql.append(ecsqlRenderCtx.GetECSql());
-        isFirstAssignment = false;
-        ecsqlRenderCtx.ResetECSqlBuilder();
-        }
-
-    if (whereClause != nullptr)
-        {
-        if (m_whereClauseSelector != nullptr)
-            ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
-        else
-            {
-            whereClause->ToECSql(ecsqlRenderCtx);
-            ecsql.append(" ").append(ecsqlRenderCtx.GetECSql());
-            ecsqlRenderCtx.ResetECSqlBuilder();
-            }
-        }
-
-    if (prepareInfo.HasOptionsExp())
-        ecsql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
-
-    //if we have a where clause SELECT statement, we can omit the class id filter from the update statement
-    //as the selector took care of that
-    if (m_whereClauseSelector != nullptr && (!prepareInfo.HasOptionsExp() || !prepareInfo.GetOptionsExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION)))
-        {
-        if (prepareInfo.HasOptionsExp())
-            ecsql.append(" ");
-        else
-            ecsql.append(" ECSQLOPTIONS ");
-
-        ecsql.append(OptionsExp::NOECCLASSIDFILTER_OPTION);
-        }
-
-    ECSqlParser parser;
-    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
-    if (parseTree == nullptr)
-        return ECSqlStatus::InvalidECSql;
-
-    m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Update, table));
-
-    SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
-    ctx.Reset(preparedStmt);
-    const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
-    if (!stat.IsSuccess())
-        return stat;
-
-    //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
-    if (preparedStmt.IsNoopInSqlite())
-        m_isNoopInSqlite = true;
-
-    stmt = &preparedStmt;
     return ECSqlStatus::Success;
     }
 
@@ -1226,14 +1220,12 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        04/17
 //---------------------------------------------------------------------------------------
-//static
-ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, AssignmentListExp const& assignmentListExp, UpdateStatementExp const& exp)
+ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo const& prepareInfo) const
     {
-    OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
-    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
+    if (prepareInfo.HasOptionsExp() && prepareInfo.GetOptionsExp()->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
         return ECSqlStatus::Success;
 
-    for (Exp const* expr : assignmentListExp.GetChildren())
+    for (Exp const* expr : prepareInfo.GetAssignmentListExp().GetChildren())
         {
         PropertyNameExp const* lhsOperandOfAssignmentExp = expr->GetAs<AssignmentExp>().GetPropertyNameExp();
         if (!lhsOperandOfAssignmentExp->IsPropertyRef())
@@ -1242,8 +1234,8 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(ECSqlPrepar
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
-                                                                       prop.GetName().c_str(), exp.ToECSql().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                                                                       prop.GetName().c_str(), prepareInfo.GetExp().ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
             }

@@ -352,16 +352,35 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
         struct PrepareInfo final : NonCopyableClass
             {
         private:
+            ECSqlPrepareContext& m_ctx;
+            UpdateStatementExp const& m_exp;
+            ClassNameExp const& m_classNameExp;
+            AssignmentListExp const& m_assignmentListExp;
+            WhereExp const* m_whereExp = nullptr;
+            OptionsExp const* m_optionsExp = nullptr;
+            Exp::ECSqlRenderContext m_ecsqlRenderContext;
             bset<DbTable const*> m_tablesInvolvedInAssignmentClause;
             bmap<DbTable const*, bvector<AssignmentExp const*>> m_assignmentExpsByTable;
             //Holds all tables per parameter index
             bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
             bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
-            OptionsExp const* m_optionsExp;
 
         public:
-            explicit PrepareInfo(OptionsExp const* optionsExp) : m_optionsExp(optionsExp) {}
+            PrepareInfo(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp) 
+                : m_ctx(ctx), m_exp(exp), m_classNameExp(*exp.GetClassNameExp()), m_assignmentListExp(*exp.GetAssignmentListExp()), m_whereExp(exp.GetWhereClauseExp()), m_optionsExp(exp.GetOptionsClauseExp()),
+                m_ecsqlRenderContext(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter) {}
 
+            ECSqlPrepareContext& GetContext() const { return m_ctx; }
+            UpdateStatementExp const& GetExp() const { return m_exp; }
+            ClassNameExp const& GetClassNameExp() const { return m_classNameExp; }
+            AssignmentListExp const& GetAssignmentListExp() const { return m_assignmentListExp; }
+            bool HasWhereExp() const { return m_whereExp != nullptr; }
+            WhereExp const* GetWhereExp() const { return m_whereExp; }
+            bool HasOptionsExp() const { return m_optionsExp != nullptr; }
+            OptionsExp const* GetOptionsExp() const { return m_optionsExp; }
+
+            Exp::ECSqlRenderContext const& GetECSqlRenderContext() const { return m_ecsqlRenderContext; }
+            Exp::ECSqlRenderContext& GetECSqlRenderContextR() { return m_ecsqlRenderContext; }
             void AddAssignmentExp(AssignmentExp const& exp, DbTable const& table)
                 {
                 m_tablesInvolvedInAssignmentClause.insert(&table);
@@ -385,20 +404,18 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
 
             bool IsSingleTableInvolvedInAssignmentClause() const { return m_assignmentExpsByTable.size() == 1; }
             DbTable const* GetSingleTableInvolvedInAssignmentClause() const { BeAssert(IsSingleTableInvolvedInAssignmentClause()); return m_assignmentExpsByTable.begin()->first; }
-            bool HasOptionsExp() const { return m_optionsExp != nullptr; }
-            OptionsExp const* GetOptionsExp() const { return m_optionsExp; }
             };
 
         std::unique_ptr<ECSqlSelectPreparedStatement> m_whereClauseSelector;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
-        ECSqlStatus PreprocessWhereClause(ECSqlPrepareContext&, Exp::ECSqlRenderContext&, ClassMap const&, bool isPolymorphicUpdate, WhereExp const&, PrepareInfo&);
+        ECSqlStatus PreprocessWhereClause(PrepareInfo&);
+        bool IsWhereClauseSelectorStatementNeeded(PrepareInfo const&) const;
+        ECSqlStatus PrepareLeafStatements(PrepareInfo&);
+        ECSqlStatus PopulateProxyBinders(PrepareInfo const&);
 
-        bool IsWhereClauseSelectorStatementNeeded(WhereExp const&, PrepareInfo const&) const;
-        ECSqlStatus PrepareLeafStatement(ECSqlPrepareContext&, Exp::ECSqlRenderContext&, SingleContextTableECSqlPreparedStatement*&, ClassMap const&, bool isPolymorphicUpdate, DbTable const&, bvector<AssignmentExp const*>, WhereExp const*, PrepareInfo const&);
-
-        static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);
+        ECSqlStatus CheckForReadonlyProperties(PrepareInfo const&) const;
 
     public:
         explicit ECSqlUpdatePreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Update) {}
