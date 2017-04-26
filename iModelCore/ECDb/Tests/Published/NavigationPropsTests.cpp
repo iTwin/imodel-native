@@ -234,7 +234,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
         ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Model";
         if (colInfo.m_propAccessString.EqualsIAscii("Model.Id"))
             {
-            ASSERT_STREQ("sc4", colInfo.m_columnName.c_str()) << "Element.Model.Id";
+            ASSERT_STREQ("sc5", colInfo.m_columnName.c_str()) << "Element.Model.Id";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Model.Id";
             }
         else if (colInfo.m_propAccessString.EqualsIAscii("Model.RelECClassId"))
@@ -254,12 +254,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
         ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Parent";
         if (colInfo.m_propAccessString.EqualsIAscii("Parent.Id"))
             {
-            ASSERT_STREQ("sc2", colInfo.m_columnName.c_str()) << "Element.Parent.Id";
+            ASSERT_STREQ("sc3", colInfo.m_columnName.c_str()) << "Element.Parent.Id";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.Id";
             }
         else if (colInfo.m_propAccessString.EqualsIAscii("Parent.RelECClassId"))
             {
-            ASSERT_STREQ("sc3", colInfo.m_columnName.c_str()) << "Element.Parent.RelECClassId";
+            ASSERT_STREQ("sc4", colInfo.m_columnName.c_str()) << "Element.Parent.RelECClassId";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.RelECClassId";
             }
         else
