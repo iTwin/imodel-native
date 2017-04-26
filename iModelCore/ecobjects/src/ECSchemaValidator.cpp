@@ -207,24 +207,28 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
     Utf8String className = constraint.GetRelationshipClass().GetFullName();
     if (!constraint.AreConstraintClassesDefinedLocally())
         {
-        LOG.errorv("Relationship class '%s' has one or more constraint classes that are not defined locally in %s", className, constraintType);
+        LOG.errorv("Relationship class '%s' constraint does not define any constraint classes defined locally in %s. Each constraint must locally define at least one constraint class.",
+            className, constraintType);
+
         status = ECObjectsStatus::Error;
         }
 
     if (!constraint.IsAbstractConstraintDefinedLocally())
         {
         if (constraint.IsAbstractConstraintDefined())
-            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s",
+            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s. Each constraint must locally define the abstract constraint, not just deriving this from a base class.",
                 className, constraint.GetAbstractConstraint()->GetFullName(), constraintType);
         else
-            LOG.errorv("Abstract constraint is not defined in '%s'", constraintType);
+            LOG.errorv("Abstract constraint is not defined in '%s' but one must be because there is more than one constraint class", constraintType);
 
         status = ECObjectsStatus::Error;
         }
 
     if (!constraint.IsRoleLabelDefinedLocally())
         {
-        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s", className, constraint.GetRoleLabel(), constraintType);
+        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s. Each constraint must define a role label locally, not just deriving this from a base class.",
+            className, constraint.GetRoleLabel(), constraintType);
+
         status = ECObjectsStatus::Error;
         }
 
