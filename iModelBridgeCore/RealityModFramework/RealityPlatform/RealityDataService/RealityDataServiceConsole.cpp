@@ -223,7 +223,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     else
         {   
         if ((BeStringUtilities::ParseUInt64(choice, input.c_str()) == BentleyStatus::SUCCESS) && (choice > 0))
-            { //sometimes ParseUInt64 will return SUCCESS, even if the input wasn't a number, and set the int to 0
+            { 
             choice -= 1;
             if (choice >= options.size())
                 {
@@ -305,7 +305,7 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
     Utf8String fullOption;
     DisplayInfo("Index \t Value\n");
     std::string str;
-    for (int i = 0; i < results.size(); ++i)
+    for (size_t i = 0; i < results.size(); ++i)
         {
         DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i]));
         }
@@ -608,7 +608,8 @@ void RealityDataConsole::ChangeDir()
         }
 
     uint64_t choice;
-    if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) != BentleyStatus::SUCCESS)
+    choice = _atoi64(m_lastInput.c_str());
+    if (choice == 0)
         {
         DisplayInfo("Could not extract integer from provided input...\n", DisplayOption::Error);
         return;

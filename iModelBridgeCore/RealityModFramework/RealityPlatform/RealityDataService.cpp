@@ -578,7 +578,7 @@ RDSFilter RealityDataFilterCreator::GroupFiltersAND(bvector<RDSFilter> filters)
 {
     Utf8String filter = "";//"(";
     filter.append(filters[0].ToString());
-    for (int i = 1; i < filters.size(); i++)
+    for (size_t i = 1; i < filters.size(); i++)
     {
         filter.append("+and+");
         filter.append(filters[i].ToString());
@@ -595,7 +595,7 @@ RDSFilter RealityDataFilterCreator::GroupFiltersOR(bvector<RDSFilter> filters)
 {
     Utf8String filter = "";//"(";
     filter.append(filters[0].ToString());
-    for (int i = 1; i < filters.size(); i++)
+    for (size_t i = 1; i < filters.size(); i++)
     {
         filter.append("+or+");
         filter.append(filters[i].ToString());
@@ -1239,7 +1239,7 @@ void TransferReport::ToXml(Utf8StringR report) const
         {
         writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
 
-        for (int i = 0; i < results.size(); ++i)
+        for (size_t i = 0; i < results.size(); ++i)
             {
             writer->WriteElementStart("File");
                 {
@@ -1866,7 +1866,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
         }
     else
         {
-        for( int i = 0; i < filesInRepo.size(); ++i)
+        for( size_t i = 0; i < filesInRepo.size(); ++i)
             {
             path = filesInRepo[i].first;
 
