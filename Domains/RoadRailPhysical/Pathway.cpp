@@ -1,23 +1,23 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: SegmentRange.cpp $
+|     $Source: Pathway.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
-HANDLER_DEFINE_MEMBERS(SegmentRangeElementHandler)
-HANDLER_DEFINE_MEMBERS(RailRangeHandler)
-HANDLER_DEFINE_MEMBERS(RoadRangeHandler)
+HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
+HANDLER_DEFINE_MEMBERS(RailwayHandler)
+HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId SegmentRangeElement::QueryAlignmentId() const
+DgnElementId PathwayElement::QueryAlignmentId() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
+        "SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_PathwayRefersToMainAlignment) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -31,18 +31,18 @@ DgnElementId SegmentRangeElement::QueryAlignmentId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, AlignmentCP alignment)
+DgnDbStatus PathwayElement::SetAlignment(PathwayElementCR roadway, AlignmentCP alignment)
     {
-    if (!roadRange.GetElementId().IsValid() || (alignment && !alignment->GetElementId().IsValid()))
+    if (!roadway.GetElementId().IsValid() || (alignment && !alignment->GetElementId().IsValid()))
         return DgnDbStatus::BadArg;
 
-    auto stmtDelPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
+    auto stmtDelPtr = roadway.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_PathwayRefersToMainAlignment) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtDelPtr.IsValid());
 
-    stmtDelPtr->BindId(1, roadRange.GetElementId());
+    stmtDelPtr->BindId(1, roadway.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
         {
-        if (DbResult::BE_SQLITE_OK != roadRange.GetDgnDb().DeleteNonNavigationRelationship(
+        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().DeleteNonNavigationRelationship(
             ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
             return DgnDbStatus::BadElement;
         }
@@ -50,9 +50,9 @@ DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, A
     if (alignment)
         {
         ECInstanceKey insKey;
-        if (DbResult::BE_SQLITE_OK != roadRange.GetDgnDb().InsertNonNavigationRelationship(insKey,
-            *roadRange.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_SegmentRangeRefersToAlignment)->GetRelationshipClassCP(),
-            ECInstanceId(roadRange.GetElementId().GetValue()), ECInstanceId(alignment->GetElementId().GetValue())))
+        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().InsertNonNavigationRelationship(insKey,
+            *roadway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToMainAlignment)->GetRelationshipClassCP(),
+            ECInstanceId(roadway.GetElementId().GetValue()), ECInstanceId(alignment->GetElementId().GetValue())))
             return DgnDbStatus::BadElement;
         }
     
@@ -78,7 +78,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SegmentRangeElement::_OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const
+DgnDbStatus PathwayElement::_OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const
     {
     DgnDbStatus status = T_Super::_OnChildUpdate(original, replacement);
     if (DgnDbStatus::Success != status)
@@ -101,7 +101,7 @@ DgnDbStatus SegmentRangeElement::_OnChildUpdate(DgnElementCR original, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SegmentRangeElement::_OnChildUpdated(DgnElementCR child) const
+void PathwayElement::_OnChildUpdated(DgnElementCR child) const
     {
     if (m_cascadeAlgorithmPtr.IsValid())
         _CommitCascadeChanges(*m_cascadeAlgorithmPtr);
@@ -110,20 +110,64 @@ void SegmentRangeElement::_OnChildUpdated(DgnElementCR child) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRangePtr RoadRange::Create(PhysicalModelR model)
+RoadwayPtr Roadway::Create(PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetRoad(model.GetDgnDb()));
 
-    return new RoadRange(createParams);
+    return new Roadway(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Roadway::ValidateTravelwaySegment(DgnElementCR child) const
+    {
+    if (auto travelwaySegCP = dynamic_cast<RegularTravelwaySegmentCP>(&child))
+        {
+        auto travelwayDefId = travelwaySegCP->GetTravelwayDefinitionId();
+        if (travelwayDefId.IsValid())
+            {
+            if (RoadTravelwayDefinition::Get(GetDgnDb(), travelwayDefId).IsNull())
+                return DgnDbStatus::InvalidParent;
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Roadway::_OnChildInsert(DgnElementCR child) const
+    {
+    DgnDbStatus retVal = T_Super::_OnChildInsert(child);
+
+    if (DgnDbStatus::Success == retVal)
+        retVal = ValidateTravelwaySegment(child);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Roadway::_OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const
+    {
+    DgnDbStatus retVal = T_Super::_OnChildUpdate(original, replacement);
+
+    if (DgnDbStatus::Success == retVal)
+        retVal = ValidateTravelwaySegment(replacement);
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRangeCPtr RoadRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
+RoadwayCPtr Roadway::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
     {
     auto retVal = Insert(status);
     if (retVal.IsValid())
@@ -139,20 +183,20 @@ RoadRangeCPtr RoadRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RailRangePtr RailRange::Create(PhysicalModelR model)
+RailwayPtr Railway::Create(PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetTrack(model.GetDgnDb()));
 
-    return new RailRange(createParams);
+    return new Railway(createParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RailRangeCPtr RailRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
+RailwayCPtr Railway::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
     {
     auto retVal = Insert(status);
     if (retVal.IsValid())

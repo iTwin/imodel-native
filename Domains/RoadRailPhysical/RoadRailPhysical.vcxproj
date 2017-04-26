@@ -33,6 +33,7 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\CrossSection.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\LinearReferencing.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Pathway.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h" />
@@ -40,22 +41,21 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalDomain.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\Segment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\SegmentRange.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h" />
     <ClInclude Include="RoadRailPhysicalInternal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrossSection.cpp" />
     <ClCompile Include="ElementAspects.cpp" />
     <ClCompile Include="LinearReferencing.cpp" />
+    <ClCompile Include="Pathway.cpp" />
     <ClCompile Include="RoadClass.cpp" />
     <ClCompile Include="RoadDesignSpeed.cpp" />
     <ClCompile Include="RoadRailCategory.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />
     <ClCompile Include="RoadSegment.cpp" />
-    <ClCompile Include="Segment.cpp" />
-    <ClCompile Include="SegmentRange.cpp" />
+    <ClCompile Include="TravelwaySegment.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB423497-691B-4A7C-8793-BAA0AC67EC55}</ProjectGuid>

@@ -3,7 +3,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadDesignSpeed.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -152,7 +152,7 @@ public:
 }; // RoadDesignSpeedDefinition
 
 //=======================================================================================
-//! Linearly-located attribution on a RoadRange whose value is its design-speed.
+//! Linearly-located attribution on a Roadway whose value is its design-speed.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeed : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, ILinearlyLocatedSingleFromTo
@@ -176,7 +176,7 @@ public:
     Dgn::DgnElementId GetDesignSpeedDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadDesignSpeedDefinition"); }
     ROADRAILPHYSICAL_EXPORT void SetDesignSpeedDefinition(RoadDesignSpeedDefinitionCR designSpeedDef);
 
-    ROADRAILPHYSICAL_EXPORT static RoadDesignSpeedPtr Create(RoadRangeCR roadRange, RoadDesignSpeedDefinitionCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong);
+    ROADRAILPHYSICAL_EXPORT static RoadDesignSpeedPtr Create(RoadwayCR roadway, RoadDesignSpeedDefinitionCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadDesignSpeed
 
 

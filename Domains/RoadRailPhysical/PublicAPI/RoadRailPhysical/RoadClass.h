@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadClass.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -111,7 +111,7 @@ public:
 }; // RoadClassDefinition
 
 //=======================================================================================
-//! Linearly-located attribution on a RoadRange whose value is its Road-Class.
+//! Linearly-located attribution on a Roadway whose value is its Road-Class.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadClass : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, ILinearlyLocatedSingleFromTo
@@ -135,7 +135,7 @@ public:
     Dgn::DgnElementId GetClassDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadClassDefinition"); }
     ROADRAILPHYSICAL_EXPORT void SetClassDefinition(RoadClassDefinitionCR ClassDef);
 
-    ROADRAILPHYSICAL_EXPORT static RoadClassPtr Create(RoadRangeCR roadRange, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong);
+    ROADRAILPHYSICAL_EXPORT static RoadClassPtr Create(RoadwayCR roadway, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadClass
 
 

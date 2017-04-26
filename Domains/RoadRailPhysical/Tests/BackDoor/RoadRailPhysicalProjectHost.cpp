@@ -170,8 +170,8 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     if (DbResult::BE_SQLITE_OK != (status = Costing::CostingDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    if (DbResult::BE_SQLITE_OK != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
-        return nullptr;
+    /*if (DbResult::BE_SQLITE_OK != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
+        return nullptr;*/
 
     if (DbResult::BE_SQLITE_OK != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;

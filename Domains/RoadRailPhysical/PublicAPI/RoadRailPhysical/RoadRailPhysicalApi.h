@@ -66,25 +66,26 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Models
-#define BRRP_CLASS_CrossSectionBreakDownModel                       "CrossSectionBreakDownModel"
 #define BRRP_CLASS_CrossSectionDefinitionModel                      "CrossSectionDefinitionModel"
+#define BRRP_CLASS_CrossSectionPortionBreakDownModel                "CrossSectionPortionBreakDownModel"
+#define BRRP_CLASS_EndConditionDefinitionModel                      "EndConditionDefinitionModel"
 #define BRRP_CLASS_RoadClassDefinitionModel                         "RoadClassDefinitionModel"
 #define BRRP_CLASS_RoadClassDefinitionTableModel                    "RoadClassDefinitionTableModel"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionModel                   "RoadDesignSpeedDefinitionModel"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionTableModel              "RoadDesignSpeedDefinitionTableModel"
 #define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
+#define BRRP_CLASS_TravelwayDefinitionModel                         "TravelwayDefinitionModel"
 
 
 // Elements
+#define BRRP_CLASS_AlignmentIntersectionElement                     "AlignmentIntersectionElement"
 #define BRRP_CLASS_CrossSectionElement                              "CrossSectionElement"
-#define BRRP_CLASS_IntersectionElement                              "IntersectionElement"
-#define BRRP_CLASS_ElevatedRoadIntersection                         "ElevatedRoadIntersection"
-#define BRRP_CLASS_ElevatedRoadIntersectionSegment                  "ElevatedRoadIntersectionSegment"
-#define BRRP_CLASS_ElevatedRoadSegment                              "ElevatedRoadSegment"
-#define BRRP_CLASS_IntersectionSegment                              "IntersectionSegment"
-#define BRRP_CLASS_IntersectionSegmentElement                       "IntersectionSegmentElement"
-#define BRRP_CLASS_RailRange                                        "RailRange"
-#define BRRP_CLASS_RegularSegmentElement                            "RegularSegmentElement"
+#define BRRP_CLASS_CrossSectionPortionDefinition                    "CrossSectionPortionDefinition"
+#define BRRP_CLASS_CrossSectionPortionDefinitionElement             "CrossSectionPortionDefinitionElement"
+#define BRRP_CLASS_EndConditionDefinition                           "EndConditionDefinition"
+#define BRRP_CLASS_PathwayElement                                   "PathwayElement"
+#define BRRP_CLASS_Railway                                          "Railway"
+#define BRRP_CLASS_RegularTravelwaySegment                          "RegularTravelwaySegment"
 #define BRRP_CLASS_RoadCrossSection                                 "RoadCrossSection"
 #define BRRP_CLASS_RoadClass                                        "RoadClass"
 #define BRRP_CLASS_RoadClassDefinition                              "RoadClassDefinition"
@@ -94,14 +95,15 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_RoadDesignSpeedDefinition                        "RoadDesignSpeedDefinition"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionTable                   "RoadDesignSpeedDefinitionTable"
 #define BRRP_CLASS_RoadDesignSpeedStandards                         "RoadDesignSpeedStandards"
-#define BRRP_CLASS_RoadIntersection                                 "RoadIntersection"
-#define BRRP_CLASS_RoadIntersectionSegment                          "RoadIntersectionSegment"
-#define BRRP_CLASS_RoadRange                                        "RoadRange"
+#define BRRP_CLASS_RoadIntersectionElement                          "RoadIntersectionElement"
+#define BRRP_CLASS_RoadIntersectionLegElement                       "RoadIntersectionLegElement"
 #define BRRP_CLASS_RoadSegment                                      "RoadSegment"
-#define BRRP_CLASS_RoadTransitionSegment                            "RoadTransitionSegment"
-#define BRRP_CLASS_SegmentElement                                   "SegmentElement"
-#define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
-#define BRRP_CLASS_TransitionSegmentElement                         "TransitionSegmentElement"
+#define BRRP_CLASS_Roadway                                          "Roadway"
+#define BRRP_CLASS_RoadTravelwayDefinition                          "RoadTravelwayDefinition"
+#define BRRP_CLASS_TravelwayDefinitionElement                       "TravelwayDefinitionElement"
+#define BRRP_CLASS_TravelwayIntersectionSegmentElement              "TravelwayIntersectionSegmentElement"
+#define BRRP_CLASS_TravelwaySegmentElement                          "TravelwaySegmentElement"
+#define BRRP_CLASS_TravelwayTransition                              "TravelwayTransition"
 
 
 // Aspects
@@ -109,14 +111,14 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Relationships
-#define BRRP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
-#define BRRP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
+#define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
+#define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
+#define BRRP_REL_RegularSegmentRefersToTravelwayDefinition          "RegularSegmentRefersToTravelwayDefinition"
 #define BRRP_REL_RoadClassRefersToDefinition                        "RoadClassRefersToDefinition"
 #define BRRP_REL_RoadDesignSpeedRefersToDefinition                  "RoadDesignSpeedRefersToDefinition"
 #define BRRP_REL_RoadSegmentRefersToCrossSection                    "RoadSegmentRefersToCrossSection"
-#define BRRP_REL_RoadRangeHasDesignSpeeds                           "RoadRangeHasDesignSpeeds"
-#define BRRP_REL_RoadRangeHasRoadClasses                            "RoadRangeHasRoadClasses"
-#define BRRP_REL_SegmentRangeAssemblesSegments                      "SegmentRangeAssemblesSegments"
+#define BRRP_REL_RoadwayHasDesignSpeeds                             "RoadwayHasDesignSpeeds"
+#define BRRP_REL_RoadwayHasRoadClasses                              "RoadwayHasRoadClasses"
 
 
 // Properties
@@ -133,11 +135,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
-#define BRRP_CODESPEC_RoadCrossSection                             "RoadCrossSection"
 #define BRRP_CODESPEC_RoadClassDefinition                          "RoadClassDefinition"
 #define BRRP_CODESPEC_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
 #define BRRP_CODESPEC_RoadDesignSpeedDefinition                    "RoadDesignSpeedDefinition"
 #define BRRP_CODESPEC_RoadDesignSpeedDefinitionTable               "RoadDesignSpeedDefinitionTable"
+#define BRRP_CODESPEC_RoadTravelway                                "RoadTravelway"
+
+#define BRRP_CODESPEC_RoadCrossSection                             "RoadCrossSection"
 
 
 //-----------------------------------------------------------------------------------------
@@ -191,21 +195,24 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Road & Rail shared
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionBreakDownModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AlignmentIntersectionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionPortionBreakDownModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(IntersectionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(IntersectionSegmentElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularSegmentElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SegmentElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SegmentRangeElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionPortionDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionPortionDefinitionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularTravelwaySegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayDefinitionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayIntersectionSegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayTransition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(StatusAspect)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TransitionSegmentElement)
 
 // Road-specific
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersection)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersectionSegment)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadCrossSection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinitionModel)
@@ -217,15 +224,16 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionTable)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionTableModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedStandards)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersection)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionSegment)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RailRange)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionLegElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClass)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeed)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRange)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadSegment)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadTransitionSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadTravelwayDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Roadway)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
+
+// Rail-specific
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Railway)
 
 
 //-----------------------------------------------------------------------------------------
@@ -238,7 +246,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
 #include "LinearReferencing.h"
 #include "RoadDesignSpeed.h"
 #include "RoadClass.h"
-#include "SegmentRange.h"
+#include "Pathway.h"
 #include "CrossSection.h"
-#include "Segment.h"
+#include "TravelwaySegment.h"
 #include "RoadSegment.h"

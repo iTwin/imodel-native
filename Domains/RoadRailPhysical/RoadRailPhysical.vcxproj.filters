@@ -43,16 +43,10 @@
     <ClInclude Include="RoadRailPhysicalInternal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\SegmentRange.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\Segment.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h">
@@ -73,6 +67,12 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Pathway.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -81,13 +81,7 @@
     <ClCompile Include="RoadRailPhysicalInternal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SegmentRange.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ElementAspects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Segment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadDesignSpeed.cpp">
@@ -106,6 +100,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadRailCategory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pathway.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TravelwaySegment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

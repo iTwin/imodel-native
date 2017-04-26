@@ -3,10 +3,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
+TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     {
 #pragma region SetUp
-    DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeTest.bim");
+    DgnDbPtr projectPtr = CreateProject(L"BasicRoadwayTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
     DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
@@ -20,54 +20,58 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
-    auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
+    auto horizAlignmPtr = HorizontalAlignment::Create(*alignmentPtr, *horizAlignVecPtr);
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
 
     // Create Vertical
+    auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
+        alignmentPtr->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, verticalModelPtr->Insert());
+
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-    auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
+    auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
 #pragma endregion
 
 #pragma region Create Road Elements
-    DgnModelId crossSectionDefModelId = QueryFirstModelIdOfType(*projectPtr, CrossSectionDefinitionModel::QueryClassId(*projectPtr));
-    auto crossSectionDefModelPtr = projectPtr->Models().Get<CrossSectionDefinitionModel>(crossSectionDefModelId);
-    auto roadCrossSectionPtr = RoadCrossSection::Create(*static_cast<CrossSectionDefinitionModelCP>(crossSectionDefModelPtr.get()), "2 lane");
+    DgnModelId travelwayDefModelId = QueryFirstModelIdOfType(*projectPtr, TravelwayDefinitionModel::QueryClassId(*projectPtr));
+    auto travelwayDefModelPtr = projectPtr->Models().Get<TravelwayDefinitionModel>(travelwayDefModelId);
+    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*travelwayDefModelPtr, "2 lane");
 
-    CrossSectionBreakDownModelPtr breakDownModelPtr;
-    ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
+    CrossSectionPortionBreakDownModelPtr breakDownModelPtr;
+    ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
         DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
-    // Create RoadRange
-    auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
-    StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-    auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
-    ASSERT_TRUE(roadRangeCPtr.IsValid());    
-    ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
+    // Create Roadway
+    auto roadwayPtr = Roadway::Create(*physicalModelPtr);
+    StatusAspect::Set(*roadwayPtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
+    auto roadwayCPtr = roadwayPtr->InsertWithAlignment(*alignmentPtr);
+    ASSERT_TRUE(roadwayCPtr.IsValid());    
+    ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadwayCPtr)->GetStatus());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->QueryAlignmentId());
 
     auto designSpeedDefPtr = InsertRoadDesignSpeedDefinition(*projectPtr);
-    auto designSpeedPtr = RoadDesignSpeed::Create(*roadRangeCPtr, *designSpeedDefPtr, 0, 150);
+    auto designSpeedPtr = RoadDesignSpeed::Create(*roadwayCPtr, *designSpeedDefPtr, 0, 150);
     ASSERT_TRUE(designSpeedPtr->Insert().IsValid());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50, *roadCrossSectionPtr);
+    auto roadSegment1Ptr = RegularTravelwaySegment::Create(*roadwayCPtr, 0, 50, *roadTravelwayDefPtr);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment
-    auto transitionPtr = RoadTransitionSegment::Create(*roadRangeCPtr, 50, 100);
+    auto transitionPtr = TravelwayTransition::Create(*roadwayCPtr, 50, 100);
     auto transitionCPtr = transitionPtr->Insert();
     ASSERT_TRUE(transitionCPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150, *roadCrossSectionPtr);
+    auto roadSegment2Ptr = RegularTravelwaySegment::Create(*roadwayCPtr, 100, 150, *roadTravelwayDefPtr);
     auto roadSegment2CPtr = roadSegment2Ptr->Insert();
     ASSERT_TRUE(roadSegment2CPtr.IsValid());
     ASSERT_TRUE(roadSegment2CPtr.IsValid());
@@ -78,34 +82,34 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     roadSegment1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
 
-    transitionCPtr = RoadTransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    transitionCPtr = TravelwayTransition::Get(*projectPtr, transitionPtr->GetElementId());
     ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
 
 #pragma region Station-change Cascading - Middle segment
-    transitionPtr = dynamic_cast<RoadTransitionSegmentP>(transitionCPtr->CopyForEdit().get());
+    transitionPtr = dynamic_cast<TravelwayTransitionP>(transitionCPtr->CopyForEdit().get());
     transitionPtr->SetFromDistanceAlong(45);
     transitionPtr->SetToDistanceAlong(120);
     transitionPtr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(transitionPtr->Update().IsValid());
 
-    roadSegment1CPtr = RoadSegment::Get(*projectPtr, roadSegment1Ptr->GetElementId());
+    roadSegment1CPtr = RegularTravelwaySegment::Get(*projectPtr, roadSegment1Ptr->GetElementId());
     ASSERT_DOUBLE_EQ(0, roadSegment1CPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(45, roadSegment1CPtr->GetToDistanceAlong());
 
-    roadSegment2CPtr = RoadSegment::Get(*projectPtr, roadSegment2Ptr->GetElementId());
+    roadSegment2CPtr = RegularTravelwaySegment::Get(*projectPtr, roadSegment2Ptr->GetElementId());
     ASSERT_DOUBLE_EQ(120, roadSegment2CPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(150, roadSegment2CPtr->GetToDistanceAlong());
 #pragma endregion
 
 #pragma region Station-change Cascading - Third segment
-    roadSegment2Ptr = dynamic_cast<RoadSegmentP>(roadSegment2CPtr->CopyForEdit().get());
+    roadSegment2Ptr = dynamic_cast<RegularTravelwaySegmentP>(roadSegment2CPtr->CopyForEdit().get());
     roadSegment2Ptr->SetFromDistanceAlong(90);
     roadSegment2Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(roadSegment2Ptr->Update().IsValid());
 
-    transitionCPtr = RoadTransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    transitionCPtr = TravelwayTransition::Get(*projectPtr, transitionPtr->GetElementId());
     ASSERT_DOUBLE_EQ(45, transitionCPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(90, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
@@ -114,10 +118,10 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
+/*TEST_F(RoadRailPhysicalTests, BasicRoadwayWithBridgeTest)
     {
 #pragma region SetUp
-    DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeWithBridgeTest.bim");
+    DgnDbPtr projectPtr = CreateProject(L"BasicRoadwayWithBridgeTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
     DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
@@ -131,13 +135,17 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
-    auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
+    auto horizAlignmPtr = HorizontalAlignment::Create(*alignmentPtr, *horizAlignVecPtr);
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
 
     // Create Vertical
+    auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
+        alignmentPtr->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, verticalModelPtr->Insert());
+
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-    auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
+    auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
 #pragma endregion
 
@@ -153,28 +161,28 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
         DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
-    // Create RoadRange
-    auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
-    StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-    auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
-    ASSERT_TRUE(roadRangeCPtr.IsValid());    
-    ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
+    // Create Roadway
+    auto RoadwayPtr = Roadway::Create(*physicalModelPtr);
+    StatusAspect::Set(*RoadwayPtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
+    auto RoadwayCPtr = RoadwayPtr->InsertWithAlignment(*alignmentPtr);
+    ASSERT_TRUE(RoadwayCPtr.IsValid());    
+    ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*RoadwayCPtr)->GetStatus());
+    ASSERT_EQ(alignmentPtr->GetElementId(), RoadwayCPtr->QueryAlignmentId());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 10, *roadCrossSectionPtr);
+    auto roadSegment1Ptr = RoadSegment::Create(*RoadwayCPtr, 0, 10, *roadCrossSectionPtr);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment #1
-    auto transition1Ptr = RoadTransitionSegment::Create(*roadRangeCPtr, 10, 20);
+    auto transition1Ptr = RoadTransitionSegment::Create(*RoadwayCPtr, 10, 20);
     auto transition1CPtr = transition1Ptr->Insert();
     ASSERT_TRUE(transition1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition1CPtr->GetLinearElementId());
 
     // Create ElevatedRoadSegment
-    auto elevatedRoadPtr = ElevatedRoadSegment::Create(*roadRangeCPtr, 20, 120);
+    auto elevatedRoadPtr = ElevatedRoadSegment::Create(*RoadwayCPtr, 20, 120);
     auto elevatedRoadCPtr = elevatedRoadPtr->Insert();
     ASSERT_TRUE(elevatedRoadCPtr.IsValid());
 
@@ -219,13 +227,13 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(abutment2Ptr->GetElementId(), superPtr->GetToBridgeSupportId());
 
     // Create TransitionSegment #2
-    auto transition2Ptr = RoadTransitionSegment::Create(*roadRangeCPtr, 120, 140);
+    auto transition2Ptr = RoadTransitionSegment::Create(*RoadwayCPtr, 120, 140);
     auto transition2CPtr = transition2Ptr->Insert();
     ASSERT_TRUE(transition2CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 140, 150, *roadCrossSectionPtr);
+    auto roadSegment2Ptr = RoadSegment::Create(*RoadwayCPtr, 140, 150, *roadCrossSectionPtr);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
 #pragma endregion
 
@@ -262,4 +270,4 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     abutment2CPtr = BridgeSupport::Get(*projectPtr, abutment2Ptr->GetElementId());
     ASSERT_DOUBLE_EQ(95, abutment2CPtr->GetDistanceAlongBridge());
 #pragma endregion
-    }
+    }*/

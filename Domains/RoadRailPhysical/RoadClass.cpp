@@ -153,21 +153,21 @@ RoadClass::RoadClass(CreateParams const& params, RoadClassDefinitionCR ClassDef,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadClassPtr RoadClass::Create(RoadRangeCR roadRange, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong)
+RoadClassPtr RoadClass::Create(RoadwayCR roadway, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong)
     {
-    if (!roadRange.GetElementId().IsValid())
+    if (!roadway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = roadRange.QueryAlignmentId();
+    auto alignmentId = roadway.QueryAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 
-    CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()));
-    params.SetParentId(roadRange.GetElementId(),
-        DgnClassId(roadRange.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasRoadClasses)));
+    CreateParams params(roadway.GetDgnDb(), roadway.GetModelId(), QueryClassId(roadway.GetDgnDb()));
+    params.SetParentId(roadway.GetElementId(),
+        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayHasRoadClasses)));
 
     auto retVal = new RoadClass(params, ClassDef, fromDistanceAlong, toDistanceAlong);
-    retVal->_SetLinearElement(alignmentId, Alignment::QueryClassId(roadRange.GetDgnDb()));
+    retVal->_SetLinearElement(alignmentId);
     return retVal;
     }
 

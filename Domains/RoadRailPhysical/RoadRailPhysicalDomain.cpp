@@ -13,17 +13,27 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
-    {
-    RegisterHandler(CrossSectionBreakDownModelHandler::GetHandler());
+    {    
     RegisterHandler(CrossSectionDefinitionModelHandler::GetHandler());
-    RegisterHandler(CrossSectionElementHandler::GetHandler());
-    RegisterHandler(RoadCrossSectionHandler::GetHandler());
+    RegisterHandler(CrossSectionPortionBreakDownModelHandler::GetHandler());
+    /*RegisterHandler(CrossSectionElementHandler::GetHandler());
+    RegisterHandler(RoadCrossSectionHandler::GetHandler());*/
 
-    RegisterHandler(SegmentRangeElementHandler::GetHandler());
-    RegisterHandler(SegmentElementHandler::GetHandler());
-    RegisterHandler(RegularSegmentElementHandler::GetHandler());
-    RegisterHandler(IntersectionSegmentElementHandler::GetHandler());
-    RegisterHandler(TransitionSegmentElementHandler::GetHandler());
+    RegisterHandler(CrossSectionPortionDefinitionElementHandler::GetHandler());
+    RegisterHandler(CrossSectionPortionDefinitionHandler::GetHandler());
+
+    RegisterHandler(TravelwayDefinitionModelHandler::GetHandler());
+    RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
+    RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
+
+    RegisterHandler(EndConditionDefinitionModelHandler::GetHandler());
+    RegisterHandler(EndConditionDefinitionHandler::GetHandler());
+
+    RegisterHandler(PathwayElementHandler::GetHandler());
+    RegisterHandler(TravelwaySegmentElementHandler::GetHandler());
+    RegisterHandler(RegularTravelwaySegmentHandler::GetHandler());
+    RegisterHandler(TravelwayTransitionHandler::GetHandler());
+    RegisterHandler(TravelwayIntersectionSegmentElementHandler::GetHandler());
     
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 
@@ -41,13 +51,9 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(RoadDesignSpeedDefinitionHandler::GetHandler());
     RegisterHandler(RoadDesignSpeedHandler::GetHandler());
     
-    RegisterHandler(RailRangeHandler::GetHandler());
-    RegisterHandler(RoadRangeHandler::GetHandler());
-    RegisterHandler(RoadSegmentHandler::GetHandler());
-    RegisterHandler(ElevatedRoadSegmentHandler::GetHandler());
-    RegisterHandler(RoadIntersectionSegmentHandler::GetHandler());
-    RegisterHandler(ElevatedRoadIntersectionSegmentHandler::GetHandler());
-    RegisterHandler(RoadTransitionSegmentHandler::GetHandler());
+    RegisterHandler(RailwayHandler::GetHandler());
+    RegisterHandler(RoadwayHandler::GetHandler());    
+    RegisterHandler(RoadIntersectionLegElementHandler::GetHandler());    
 
     RegisterHandler(StatusAspectHandler::GetHandler());
     }
@@ -84,11 +90,24 @@ DgnDbStatus createCrossSectionsPartition(DgnDbR db)
     if (crossSectionsPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    auto& crossSectionDefModelHandlerR = CrossSectionDefinitionModelHandler::GetHandler();
-    auto crossSectionDefModelPtr = crossSectionDefModelHandlerR.Create(DgnModel::CreateParams(db, CrossSectionDefinitionModel::QueryClassId(db),
-        crossSectionsPartitionPtr->GetElementId()));
-
+    auto crossSectionDefModelPtr = CrossSectionDefinitionModel::Create(CrossSectionDefinitionModel::CreateParams(db, crossSectionsPartitionPtr->GetElementId()));
     if (DgnDbStatus::Success != (status = crossSectionDefModelPtr->Insert()))
+        return status;
+
+    auto travelwayDefPortionPtr = CrossSectionPortionDefinition::Create(*crossSectionDefModelPtr, "Travelway Definitions");
+    if (travelwayDefPortionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto travelwayDefModelPtr = TravelwayDefinitionModel::Create(TravelwayDefinitionModel::CreateParams(db, travelwayDefPortionPtr->GetElementId()));
+    if (DgnDbStatus::Success != (status = travelwayDefModelPtr->Insert()))
+        return status;
+
+    auto endCondDefPortionPtr = CrossSectionPortionDefinition::Create(*crossSectionDefModelPtr, "End-Condition Definitions");
+    if (endCondDefPortionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto endCondDefModelPtr = EndConditionDefinitionModel::Create(EndConditionDefinitionModel::CreateParams(db, endCondDefPortionPtr->GetElementId()));
+    if (DgnDbStatus::Success != (status = endCondDefModelPtr->Insert()))
         return status;
 
     return status;
@@ -181,7 +200,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     RoadRailCategory::InsertDomainCategories(dgndb);
 
-    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadCrossSection);
+    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway);
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
