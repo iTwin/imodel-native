@@ -900,10 +900,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         }
 
-
-    std::map<DbTable const*, std::vector<AssignmentExp const*>> expsByMappedTable;
-    //Holds all tables per parameter index (index into the vector + 1) which are affected by the parameter
-    std::vector<std::set<DbTable const*>> parameterIndexInTables;
+    PrepareInfo prepareInfo(updateExp.GetOptionsClauseExp());
 
     for (Exp const* childExp : assignmentListExp->GetChildren())
         {
@@ -917,7 +914,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
 
         DbTable const& table = lhsPropMap.GetAs<DataPropertyMap>().GetTable();
-        expsByMappedTable[&table].push_back(&assignmentExp);
+        prepareInfo.AddAssignmentExp(assignmentExp, table);
 
         ValueExp const* rhsExp = assignmentExp.GetValueExp();
 
@@ -946,176 +943,51 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         for (Exp const* exp : rhsExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
-            if (zeroBasedParameterIndex == parameterIndexInTables.size())
-                {
-                parameterIndexInTables.push_back(std::set<DbTable const*> {&table});
+            const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
+            if (!prepareInfo.ParameterIndexExists(paramIndex))
                 m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
-                }
-            else if (zeroBasedParameterIndex < parameterIndexInTables.size())
-                parameterIndexInTables[zeroBasedParameterIndex].insert(&table);
-            else
-                {
-                BeAssert(false);
-                }
+            
+            prepareInfo.AddParameterIndex(paramIndex, table);
             }
         }
-
-    DbTable const* singleTableInvolved = expsByMappedTable.begin()->first;
 
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
     WhereExp const* whereClause = updateExp.GetWhereClauseExp();
-    bool isWhereClauseSelectorNeeded = false;
     if (whereClause != nullptr)
         {
-        if (expsByMappedTable.size() > 1)
-            isWhereClauseSelectorNeeded = true;
-        else
-            {
-            for (Exp const* exp : whereClause->Find(Exp::Type::PropertyName, true /* recursive*/))
-                {
-                PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
-                if (propNameExp.IsPropertyRef())
-                    continue;
-
-                GetTablesPropertyMapVisitor getTablesVisitor;
-                if (SUCCESS != propNameExp.GetPropertyMap().AcceptVisitor(getTablesVisitor))
-                    {
-                    BeAssert(false);
-                    return ECSqlStatus::Error;
-                    }
-
-                std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
-                if (mappedTables.find(singleTableInvolved) == mappedTables.end())
-                    {
-                    isWhereClauseSelectorNeeded = true;
-                    break;
-                    }
-                }
-            }
-
-
-        for (Exp const* exp : whereClause->Find(Exp::Type::Parameter, true /* recursive*/))
-            {
-            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
-            if (zeroBasedParameterIndex == parameterIndexInTables.size())
-                {
-                if (isWhereClauseSelectorNeeded)
-                    parameterIndexInTables.push_back({});
-                else
-                    parameterIndexInTables.push_back({singleTableInvolved});
-
-                m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
-                }
-            }
-        }
-
-    Utf8String optionsECSql;
-    OptionsExp const* optionsClause = updateExp.GetOptionsClauseExp();
-    if (optionsClause != nullptr)
-        optionsECSql.assign(optionsClause->ToECSql());
-
-
-    if (isWhereClauseSelectorNeeded)
-        {
-        Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
-        if (!classNameExp->IsPolymorphic())
-            whereClauseSelectorECSql.append(" ONLY ");
-
-        whereClauseSelectorECSql.append(classMap.GetClass().GetECSqlName()).append(" ");
-        whereClause->ToECSql(ecsqlRenderCtx);
-        whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
-        ecsqlRenderCtx.ResetECSqlBuilder();
-
-        if (!optionsECSql.empty())
-            whereClauseSelectorECSql.append(" ").append(optionsECSql);
-
-        ECSqlParser parser;
-        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
-        if (parseTree == nullptr)
-            return ECSqlStatus::InvalidECSql;
-
-        m_whereClauseSelector = std::make_unique<ECSqlSelectPreparedStatement>(m_ecdb);
-        ctx.Reset(*m_whereClauseSelector);
-        const ECSqlStatus stat = m_whereClauseSelector->Prepare(ctx, *parseTree, whereClauseSelectorECSql.c_str());
+        const ECSqlStatus stat = PreprocessWhereClause(ctx, ecsqlRenderCtx, classMap, isPolymorphicUpdate, *whereClause, prepareInfo);
         if (!stat.IsSuccess())
             return stat;
         }
-
-    bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
-
-    for (std::pair<DbTable const*, std::vector<AssignmentExp const*>> const& kvPair : expsByMappedTable)
+    
+    //Prepare leaf UPDATE statements
+    for (bpair<DbTable const*, bvector<AssignmentExp const*>> const& kvPair : prepareInfo.GetAssignmentExpsByTable())
         {
-        DbTable const* table = kvPair.first;
-        Utf8String ecsql("UPDATE ");
-        if (!isPolymorphicUpdate)
-            ecsql.append("ONLY ");
-
-        ecsql.append(classMap.GetClass().GetECSqlName()).append(" SET ");
-
-        bool isFirstAssignment = true;
-        for (AssignmentExp const* assignmentExp : kvPair.second)
-            {
-            if (!isFirstAssignment)
-                ecsql.append(",");
-
-            assignmentExp->ToECSql(ecsqlRenderCtx);
-            ecsql.append(ecsqlRenderCtx.GetECSql());
-            isFirstAssignment = false;
-            ecsqlRenderCtx.ResetECSqlBuilder();
-            }
-
-        if (whereClause != nullptr)
-            {
-            if (m_whereClauseSelector != nullptr)
-                ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
-            else
-                {
-                whereClause->ToECSql(ecsqlRenderCtx);
-                ecsql.append(" ").append(ecsqlRenderCtx.GetECSql());
-                ecsqlRenderCtx.ResetECSqlBuilder();
-                }
-            }
-
-        if (optionsClause != nullptr)
-            ecsql.append(" ").append(optionsECSql);
-
-        ECSqlParser parser;
-        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
-        if (parseTree == nullptr)
-            return ECSqlStatus::InvalidECSql;
-
-        m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Update, *table));
-
-        SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
-        ctx.Reset(preparedStmt);
-        const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
+        DbTable const& table = *kvPair.first;
+        SingleContextTableECSqlPreparedStatement* stmt = nullptr;
+        ECSqlStatus stat = PrepareLeafStatement(ctx, ecsqlRenderCtx, stmt, classMap, isPolymorphicUpdate, table, kvPair.second, whereClause, prepareInfo);
         if (!stat.IsSuccess())
             return stat;
 
-        //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
-        if (preparedStmt.IsNoopInSqlite())
-            m_isNoopInSqlite = true;
-
-        perTableStatements[table] = &preparedStmt;
+        prepareInfo.AddLeafStatement(*stmt, table);
         }
    
     for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : ecsqlRenderCtx.GetParameterIndexNameMap())
         {
-        int paramIndex = parameterNameMapping.first;
-        BeAssert(paramIndex >= 0 && paramIndex <= (int) m_proxyBinders.size());
+        const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
+        BeAssert(paramIndex >= 0 && paramIndex <= (uint32_t) m_proxyBinders.size());
         Utf8StringCR paramName = parameterNameMapping.second.m_name;
         if (!parameterNameMapping.second.m_isSystemGeneratedName)
             m_parameterNameMap[paramName] = paramIndex;
 
-        const size_t zeroBasedParamIndex = (size_t) (paramIndex - 1);
-        IProxyECSqlBinder& proxyBinder = *m_proxyBinders[zeroBasedParamIndex];
-        BeAssert(zeroBasedParamIndex < parameterIndexInTables.size());
-        std::set<DbTable const*> const& affectedTables = parameterIndexInTables[zeroBasedParamIndex];
-        if (affectedTables.empty())
+        IProxyECSqlBinder& proxyBinder = *m_proxyBinders[(size_t) (paramIndex - 1)];
+
+        auto it = prepareInfo.GetTablesByParameterIndex().find(paramIndex);
+        if (it == prepareInfo.GetTablesByParameterIndex().end())
             {
+            //index is in where clause selector statement
+            BeAssert(m_whereClauseSelector != nullptr);
             ECSqlParameterMap const& parameterMap = m_whereClauseSelector->GetParameterMap();
             ECSqlBinder* binder = nullptr;
             if (!parameterMap.TryGetBinder(binder, paramName))
@@ -1128,10 +1000,11 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         else
             {
-            for (DbTable const* affectedTable : affectedTables)
+            for (DbTable const* affectedTable : it->second)
                 {
-                BeAssert(perTableStatements.find(affectedTable) != perTableStatements.end());
-                ECSqlParameterMap const& leafStatementParameterMap = perTableStatements[affectedTable]->GetParameterMap();
+                auto it = prepareInfo.GetLeafStatementsByTable().find(affectedTable);
+                BeAssert(it != prepareInfo.GetLeafStatementsByTable().end());
+                ECSqlParameterMap const& leafStatementParameterMap = it->second->GetParameterMap();
                 ECSqlBinder* binder = nullptr;
                 if (!leafStatementParameterMap.TryGetBinder(binder, paramName))
                     {
@@ -1144,6 +1017,161 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
         }
 
+    return ECSqlStatus::Success;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlUpdatePreparedStatement::PreprocessWhereClause(ECSqlPrepareContext& ctx, Exp::ECSqlRenderContext& ecsqlRenderCtx, ClassMap const& classMap, bool isPolymorphicUpdate, WhereExp const& whereClause, PrepareInfo& prepareInfo)
+    {
+    const bool isWhereClauseSelectorNeeded = IsWhereClauseSelectorStatementNeeded(whereClause, prepareInfo);
+    
+    for (Exp const* exp : whereClause.Find(Exp::Type::Parameter, true /* recursive*/))
+        {
+        ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+        const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
+        const bool alreadyExisted = prepareInfo.ParameterIndexExists(paramIndex);
+        if (!alreadyExisted)
+            m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+
+        if (!isWhereClauseSelectorNeeded)
+            prepareInfo.AddWhereClauseParameterIndex(paramIndex);
+        }
+
+    if (!isWhereClauseSelectorNeeded)
+        return ECSqlStatus::Success;
+
+    //prepare where clause SELECT statement
+    Utf8String whereClauseSelectorECSql("SELECT ECInstanceId FROM ");
+    if (!isPolymorphicUpdate)
+        whereClauseSelectorECSql.append(" ONLY ");
+
+    whereClauseSelectorECSql.append(classMap.GetClass().GetECSqlName()).append(" ");
+    whereClause.ToECSql(ecsqlRenderCtx);
+    whereClauseSelectorECSql.append(ecsqlRenderCtx.GetECSql());
+    ecsqlRenderCtx.ResetECSqlBuilder();
+
+    if (prepareInfo.HasOptionsExp())
+        whereClauseSelectorECSql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
+
+    ECSqlParser parser;
+    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str());
+    if (parseTree == nullptr)
+        return ECSqlStatus::InvalidECSql;
+
+    m_whereClauseSelector = std::make_unique<ECSqlSelectPreparedStatement>(m_ecdb);
+    ctx.Reset(*m_whereClauseSelector);
+    return m_whereClauseSelector->Prepare(ctx, *parseTree, whereClauseSelectorECSql.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(WhereExp const& whereClause, PrepareInfo const& prepareInfo) const
+    {
+    DbTable const* singleTableInvolvedInAssignment = prepareInfo.IsSingleTableInvolvedInAssignmentClause() ? prepareInfo.GetSingleTableInvolvedInAssignmentClause() : nullptr;
+    for (Exp const* exp : whereClause.Find(Exp::Type::PropertyName, true /*recursive*/))
+        {
+        PropertyNameExp const& propNameExp = exp->GetAs<PropertyNameExp>();
+        if (propNameExp.IsPropertyRef())
+            continue;
+
+        PropertyMap const& propMap = propNameExp.GetPropertyMap();
+        if (propMap.GetType() == PropertyMap::Type::ECInstanceId || propMap.GetType() == PropertyMap::Type::ECClassId)
+            continue;//ECInstanceId and ECClassId exist in all tables, so they don't require a where clause selector
+
+        //if more than one table is involved and the where clause has a prop name exp other than ECInstanceId or ECClassId
+        //a separate SELECT is needed.
+        if (!prepareInfo.IsSingleTableInvolvedInAssignmentClause())
+            return true;
+
+        //A single table is involved in assignment. We can skip the extra SELECT if the where clause does not involve
+        //other tables
+        GetTablesPropertyMapVisitor getTablesVisitor;
+        if (SUCCESS != propMap.AcceptVisitor(getTablesVisitor))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
+        if (mappedTables.find(singleTableInvolvedInAssignment) == mappedTables.end())
+            return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatement(ECSqlPrepareContext& ctx, Exp::ECSqlRenderContext& ecsqlRenderCtx, SingleContextTableECSqlPreparedStatement*& stmt, ClassMap const& classMap, bool isPolymorphicUpdate, DbTable const& table, bvector<AssignmentExp const*> assignmentExps, WhereExp const* whereClause, PrepareInfo const& prepareInfo)
+    {
+    Utf8String ecsql("UPDATE ");
+    if (!isPolymorphicUpdate)
+        ecsql.append("ONLY ");
+
+    ecsql.append(classMap.GetClass().GetECSqlName()).append(" SET ");
+
+    bool isFirstAssignment = true;
+    for (AssignmentExp const* assignmentExp : assignmentExps)
+        {
+        if (!isFirstAssignment)
+            ecsql.append(",");
+
+        assignmentExp->ToECSql(ecsqlRenderCtx);
+        ecsql.append(ecsqlRenderCtx.GetECSql());
+        isFirstAssignment = false;
+        ecsqlRenderCtx.ResetECSqlBuilder();
+        }
+
+    if (whereClause != nullptr)
+        {
+        if (m_whereClauseSelector != nullptr)
+            ecsql.append(" WHERE InVirtualSet(:" ECSQLSYS_PARAM_Id ",ECInstanceId)");
+        else
+            {
+            whereClause->ToECSql(ecsqlRenderCtx);
+            ecsql.append(" ").append(ecsqlRenderCtx.GetECSql());
+            ecsqlRenderCtx.ResetECSqlBuilder();
+            }
+        }
+
+    if (prepareInfo.HasOptionsExp())
+        ecsql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
+
+    //if we have a where clause SELECT statement, we can omit the class id filter from the update statement
+    //as the selector took care of that
+    if (m_whereClauseSelector != nullptr && (!prepareInfo.HasOptionsExp() || !prepareInfo.GetOptionsExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION)))
+        {
+        if (prepareInfo.HasOptionsExp())
+            ecsql.append(" ");
+        else
+            ecsql.append(" ECSQLOPTIONS ");
+
+        ecsql.append(OptionsExp::NOECCLASSIDFILTER_OPTION);
+        }
+
+    ECSqlParser parser;
+    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
+    if (parseTree == nullptr)
+        return ECSqlStatus::InvalidECSql;
+
+    m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Update, table));
+
+    SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
+    ctx.Reset(preparedStmt);
+    const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
+    if (!stat.IsSuccess())
+        return stat;
+
+    //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
+    if (preparedStmt.IsNoopInSqlite())
+        m_isNoopInSqlite = true;
+
+    stmt = &preparedStmt;
     return ECSqlStatus::Success;
     }
 

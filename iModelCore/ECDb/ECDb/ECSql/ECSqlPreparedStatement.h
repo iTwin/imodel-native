@@ -349,9 +349,54 @@ private:
 struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     {
     private:
+        struct PrepareInfo final : NonCopyableClass
+            {
+        private:
+            bset<DbTable const*> m_tablesInvolvedInAssignmentClause;
+            bmap<DbTable const*, bvector<AssignmentExp const*>> m_assignmentExpsByTable;
+            //Holds all tables per parameter index
+            bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
+            OptionsExp const* m_optionsExp;
+
+        public:
+            explicit PrepareInfo(OptionsExp const* optionsExp) : m_optionsExp(optionsExp) {}
+
+            void AddAssignmentExp(AssignmentExp const& exp, DbTable const& table)
+                {
+                m_tablesInvolvedInAssignmentClause.insert(&table);
+                m_assignmentExpsByTable[&table].push_back(&exp);
+                }
+
+            bmap<DbTable const*, bvector<AssignmentExp const*>> const& GetAssignmentExpsByTable() const { return m_assignmentExpsByTable; }
+
+            bmap<uint32_t, bset<DbTable const*>> const& GetTablesByParameterIndex() const { return m_parameterIndexInTables; }
+            bool ParameterIndexExists(uint32_t paramIndex) const { return m_parameterIndexInTables.find(paramIndex) != m_parameterIndexInTables.end(); }
+            //!@return true if index already existed, false otherwise
+            void AddParameterIndex(uint32_t paramIndex, DbTable const& table){ m_parameterIndexInTables[paramIndex].insert(&table); }
+
+            void AddWhereClauseParameterIndex(uint32_t paramIndex)
+                {
+                m_parameterIndexInTables[paramIndex].insert(m_tablesInvolvedInAssignmentClause.begin(), m_tablesInvolvedInAssignmentClause.end());
+                }
+
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> const& GetLeafStatementsByTable() const { return m_perTableStatements; }
+            void AddLeafStatement(SingleContextTableECSqlPreparedStatement const& stmt, DbTable const& table) { m_perTableStatements[&table] = &stmt; }
+
+            bool IsSingleTableInvolvedInAssignmentClause() const { return m_assignmentExpsByTable.size() == 1; }
+            DbTable const* GetSingleTableInvolvedInAssignmentClause() const { BeAssert(IsSingleTableInvolvedInAssignmentClause()); return m_assignmentExpsByTable.begin()->first; }
+            bool HasOptionsExp() const { return m_optionsExp != nullptr; }
+            OptionsExp const* GetOptionsExp() const { return m_optionsExp; }
+            };
+
         std::unique_ptr<ECSqlSelectPreparedStatement> m_whereClauseSelector;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
+        ECSqlStatus PreprocessWhereClause(ECSqlPrepareContext&, Exp::ECSqlRenderContext&, ClassMap const&, bool isPolymorphicUpdate, WhereExp const&, PrepareInfo&);
+
+        bool IsWhereClauseSelectorStatementNeeded(WhereExp const&, PrepareInfo const&) const;
+        ECSqlStatus PrepareLeafStatement(ECSqlPrepareContext&, Exp::ECSqlRenderContext&, SingleContextTableECSqlPreparedStatement*&, ClassMap const&, bool isPolymorphicUpdate, DbTable const&, bvector<AssignmentExp const*>, WhereExp const*, PrepareInfo const&);
 
         static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext&, AssignmentListExp const&, UpdateStatementExp const&);
 
