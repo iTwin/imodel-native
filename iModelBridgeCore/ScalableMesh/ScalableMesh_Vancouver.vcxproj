@@ -569,11 +569,6 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.PartFile.xml">
-      <SubType>Designer</SubType>
-    </Xml>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp" />
     <ClCompile Include="AutomaticGroundDetection\GroundDetectionManager.cpp" />
     <ClCompile Include="AutomaticGroundDetection\PointCloudClassification.cpp" />
@@ -730,9 +725,10 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh.mke" />
-    <None Include="ScalableMesh.mki" />
     <None Include="ScalableMesh_Vancouver.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ScalableMeshCore.PartFile.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

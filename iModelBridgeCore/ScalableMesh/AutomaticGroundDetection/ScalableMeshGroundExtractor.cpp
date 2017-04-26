@@ -401,7 +401,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         bool       isDir;            
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
             {        
+#ifndef VANCOUVER_API
             if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+#else
+            WChar bufferPath[100];
+            if (0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"jpg"))
+#endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
                 terrainCreator->EditSources().Add(textureSource);                       
@@ -417,8 +422,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
-    
+
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif     
         {        
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
         terrainCreator->EditSources().Add(coverageBreaklineSource);                               
@@ -481,7 +490,11 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     coverageBreaklineFile.AppendString(L"\\");
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif
         {
         BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
 
