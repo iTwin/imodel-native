@@ -35,6 +35,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ComparisonSymbologyOverrides
 {
 private:
+    // TODO: Change to array instead of map (always 3)
     bmap<DbOpcode,Render::OvrGraphicParams> m_currentRevisionOverrides;
     bmap<DbOpcode,Render::OvrGraphicParams> m_targetRevisionOverrides;
     Render::OvrGraphicParams                m_untouchedOverride;
@@ -52,11 +53,11 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct State
+struct RevisionComparisonState
 {
     DbOpcode    m_opcode;
 
-    explicit State(DbOpcode opcode=DbOpcode::Insert) : m_opcode(opcode) { }
+    explicit RevisionComparisonState(DbOpcode opcode=DbOpcode::Insert) : m_opcode(opcode) { }
 
     bool IsInsertion() const { return DbOpcode::Insert == m_opcode; }
     bool IsDeletion() const { return DbOpcode::Delete == m_opcode; }
@@ -66,12 +67,12 @@ struct State
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct PersistentState : State
+struct PersistentState : RevisionComparisonState
 {
     DgnElementId    m_elementId;
 
     PersistentState() = default;
-    PersistentState(DgnElementId elementId, DbOpcode opcode) : State(opcode), m_elementId(elementId) { }
+    PersistentState(DgnElementId elementId, DbOpcode opcode) : RevisionComparisonState(opcode), m_elementId(elementId) { }
 
     bool IsValid() const { return m_elementId.IsValid(); }
 
@@ -81,12 +82,12 @@ struct PersistentState : State
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct TransientState : State
+struct TransientState : RevisionComparisonState
 {
     DgnElementCPtr  m_element;
 
     TransientState() = default;
-    TransientState(DgnElementCR el, DbOpcode opcode) : State(opcode), m_element(&el) { }
+    TransientState(DgnElementCR el, DbOpcode opcode) : RevisionComparisonState(opcode), m_element(&el) { }
 
     bool IsValid() const { return m_element.IsValid(); }
 
