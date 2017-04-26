@@ -15,6 +15,8 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+unsigned ConnectAuthenticationHandler::s_expiredTokenRetryCount = 0;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -96,6 +98,11 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
             });
     }
 
+void ConnectAuthenticationHandler::SetRetryOnExpiredToken(bool value)
+    {
+    s_expiredTokenRetryCount = value ? 1 : 0;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -107,7 +114,7 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
         }
 
     if (IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
-        previousAttempt.GetAttemptNumber() > 0)
+        previousAttempt.GetAttemptNumber() > s_expiredTokenRetryCount)
         {
         // Used token and it did not work
         return true;
