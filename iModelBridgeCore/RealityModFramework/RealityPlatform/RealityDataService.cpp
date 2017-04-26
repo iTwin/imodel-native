@@ -1927,19 +1927,14 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::s_realityDataServer = "dev-realitydataservices-eus.cloudapp.net";
-Utf8String RealityDataService::s_realityDataWSGProtocol = "2.4";
-Utf8String RealityDataService::s_realityDataRepoName = "S3MXECPlugin--Server";
-Utf8String RealityDataService::s_realityDataSchemaName = "S3MX";
-bool       RealityDataService::s_initializedParams = false;
+static Utf8String s_realityDataServer = "dev-realitydataservices-eus.cloudapp.net";
+static Utf8String s_realityDataWSGProtocol = "2.4";
+static Utf8String s_realityDataRepoName = "S3MXECPlugin--Server";
+static Utf8String s_realityDataSchemaName = "S3MX";
+static bool       s_initializedParams = false;
 
-bool RealityDataService::s_verifyPeer = false;
-Utf8String RealityDataService::s_realityDataCertificatePath = "";
-
-const Utf8String RealityDataService::s_ImageryKey = "Imagery";
-const Utf8String RealityDataService::s_TerrainKey = "Terrain";
-const Utf8String RealityDataService::s_ModelKey = "Model";
-const Utf8String RealityDataService::s_PinnedKey = "Pinned";
+static bool       s_verifyPeer = false;
+static Utf8String s_realityDataCertificatePath = "";
 
 Utf8StringCR RealityDataService::GetServerName()      { return s_realityDataServer; }
 Utf8StringCR RealityDataService::GetWSGProtocol()     { return s_realityDataWSGProtocol; }
@@ -1949,13 +1944,38 @@ const bool   RealityDataService::GetVerifyPeer()      { return s_verifyPeer; } /
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 const bool   RealityDataService::AreParametersSet()   { return s_initializedParams; }
 
+void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath)
+    {
+    BeAssert(server.size() != 0);
+    BeAssert(WSGProtocol.size() != 0);
+    BeAssert(repoName.size() != 0);
+    BeAssert(schemaName.size() != 0);
+
+    s_realityDataServer = server;
+    s_realityDataWSGProtocol = WSGProtocol;
+    s_realityDataRepoName = repoName;
+    s_realityDataSchemaName = schemaName;
+
+    if (certificatePath.size() == 0)
+        s_verifyPeer = false;
+    else
+        s_verifyPeer = true;
+    s_realityDataCertificatePath = certificatePath;
+    s_initializedParams = true;
+    }
+
 static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
     {
     std::cout << basicMessage << std::endl;
     std::cout << rawResponse.body << std::endl;
     }
 
-RealityDataService_ErrorCallBack RealityDataService::s_errorCallback = defaultErrorCallback;
+static RealityDataService_ErrorCallBack s_errorCallback = defaultErrorCallback;
+
+void RealityDataService::SetErrorCallback(RealityDataService_ErrorCallBack errorCallback)
+    { 
+    s_errorCallback = errorCallback; 
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017

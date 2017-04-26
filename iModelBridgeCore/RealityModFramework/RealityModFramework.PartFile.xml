@@ -190,11 +190,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityDataServiceConsole" BentleyBuildMakeFile="RealityPlatform\RealityDataService\RealityDataServiceConsole.mke">
+    <Part Name="RealityDataServiceConsole" BentleyBuildMakeFile="RealityAdmin\RealityDataService\RealityDataServiceConsole.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
+        <SubPart PartName="RealityAdmin"/>
         <Bindings>
             <Assemblies>Delivery/RealityDataServiceConsole.exe</Assemblies>
         </Bindings>
