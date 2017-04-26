@@ -381,7 +381,7 @@ void RealityDataBase::SetFootprintString(Utf8CP footprint)
 Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
     {
     Utf8String filter = "{\\\"points\\\":[";
-    for (int i = 0; i < footprint.size() - 1; i++)
+    for (size_t i = 0; i < footprint.size() - 1; i++)
         {
         filter.append(Utf8PrintfString("[%f,%f],", footprint[i].longitude, footprint[i].latitude));
         }
@@ -445,7 +445,7 @@ DRange2dCR RealityDataBase::GetFootprintExtent() const
             m_footprintExtent.high.x = m_footprint[0].longitude;
             m_footprintExtent.high.y = m_footprint[0].latitude;
 
-            for (int index = 1 ; index < m_footprint.size() ; ++index)
+            for (size_t index = 1 ; index < m_footprint.size() ; ++index)
                 {
                 m_footprintExtent.low.x  = min(m_footprint[index].longitude, m_footprintExtent.low.x );
                 m_footprintExtent.low.y  = min(m_footprint[index].latitude, m_footprintExtent.low.y );

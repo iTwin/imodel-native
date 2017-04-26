@@ -2,7 +2,7 @@
 #
 #     $Source: RealityAdmin/RealityAdmin.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -68,6 +68,8 @@ $(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDi
 $(o)ODBCSQLConnection$(oext) : $(baseDir)ODBCSQLConnection.cpp $(PublicApiDir)ODBCSQLConnection.h ${MultiCompileDepends}
 
 $(o)ContextServicesWorkbench$(oext) : $(baseDir)ContextServicesWorkbench.cpp $(PublicApiDir)ContextServicesWorkbench.h ${MultiCompileDepends}
+
+$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp $(PublicApiDir)RealityDataServiceConsole.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

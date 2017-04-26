@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/RealityDataServiceConsole.h $
+|     $Source: PublicApi/RealityAdmin/RealityDataServiceConsole.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

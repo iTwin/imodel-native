@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     
     //using a NavNode request
     bvector<NavNode> subNodes = bvector<NavNode>();
-    int nodeIndex;
+    size_t nodeIndex;
 
     for(nodeIndex = 0; (subNodes.size() < 1) && nodeIndex < nodes.size(); ++nodeIndex)
         {
@@ -105,11 +105,11 @@ int main(int argc, char *argv[])
 
     //finding an object
     bool objectFound = false;
-    int objectIndex = 0;
+    size_t objectIndex = 0;
     Utf8String navString;
     while(!objectFound && subNodes.size() > 0)
         {
-        for( int i = 0; i < subNodes.size(); i ++ )
+        for( size_t i = 0; i < subNodes.size(); i ++ )
             {
             if(subNodes[i].GetClassName().Equals("Document"))
                 {

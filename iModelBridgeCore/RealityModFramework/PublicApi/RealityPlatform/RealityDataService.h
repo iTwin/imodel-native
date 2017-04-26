@@ -877,27 +877,9 @@ public:
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of RealityData Service.
-    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "")
-        {
-        BeAssert(server.size() != 0);
-        BeAssert(WSGProtocol.size() != 0);
-        BeAssert(repoName.size() != 0);
-        BeAssert(schemaName.size() != 0);
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "");
 
-        s_realityDataServer = server;
-        s_realityDataWSGProtocol = WSGProtocol;
-        s_realityDataRepoName = repoName;
-        s_realityDataSchemaName = schemaName;
-
-        if(certificatePath.size() == 0)
-            s_verifyPeer = false;
-        else
-            s_verifyPeer = true;
-        s_realityDataCertificatePath = certificatePath;
-        s_initializedParams = true;
-        }
-
-    REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(RealityDataService_ErrorCallBack errorCallback) { s_errorCallback = errorCallback; }
+    REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(RealityDataService_ErrorCallBack errorCallback);
 
     //! Returns the current name of the server
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServerName();
@@ -993,19 +975,6 @@ private:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse);
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse);
 
-    static Utf8String s_realityDataServer;
-    static Utf8String s_realityDataWSGProtocol;
-    static Utf8String s_realityDataRepoName;
-    static Utf8String s_realityDataSchemaName;
-    static bool s_verifyPeer;
-    static Utf8String s_realityDataCertificatePath;
-    static bool s_initializedParams;
-
-    static const Utf8String s_ImageryKey;
-    static const Utf8String s_TerrainKey;
-    static const Utf8String s_ModelKey;
-    static const Utf8String s_PinnedKey;
-    static RealityDataService_ErrorCallBack s_errorCallback;
     };
 
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/RealityDataService/RealityDataServiceConsole.cpp $
+|     $Source: RealityAdmin/RealityDataService/RealityDataServiceConsole.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 
 #include <Bentley/Bentley.h>
 
-#include <RealityPlatform/RealityDataServiceConsole.h>
+#include <RealityAdmin/RealityDataServiceConsole.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
