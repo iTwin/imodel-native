@@ -21,16 +21,16 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 enum OperationType
     {
-    LIST,
-    NAVNODE,
-    STAT,
+    CREATE_REALITYDATA,
+    CREATE_RELATIONSHIP,
     DETAILS,
+    LIST_REALITYDATA,
+    NAVNODE,
+    ENTERPRISE_STAT,
     AZURE_ADDRESS,
-    CREATE,
-    CHANGE,
-    LINK,
-    UNLINK,
-    REMOVE,
+    MODIFY_REALITYDATA,
+    DELETE_RELATIONSHIP,
+    DELETE_REALITYDATA,
     DOWNLOAD,
     last
     };
@@ -59,10 +59,10 @@ struct Stat
     {
 public:
     int success, failure;
-    time_t minTime, maxTime, avgTime, startTime;
+    int64_t minTime, maxTime, avgTime, startTime;
 
     Stat() : success(0), failure(0), minTime(1000), maxTime(0), avgTime(0), startTime(std::time(nullptr)) {}
-    void Update(bool success, time_t time);
+    void Update(bool success, int64_t time);
     };
 
 struct User;
@@ -79,21 +79,22 @@ struct Stats
     size_t LogRequest(Utf8String req);
     void PrintStats();
     void WriteToFile(int userCount, Utf8String path);
+    int GetTotalRequests();
     };
 
 struct RPS
     {
-    bmap<OperationType, bmap<time_t, int>> requestLog;
+    bmap<OperationType, bmap<int64_t, int>> requestLog;
 
     RPS();
-    void AddRequest(OperationType type, time_t time);
-    double GetRPS(OperationType type, time_t time);
+    void AddRequest(OperationType type, int64_t time);
+    double GetRPS(OperationType type, int64_t time);
     };
 
 struct User
     {
 public:
-    std::time_t                 m_start;
+    int64_t                     m_start;
     OperationType               m_currentOperation;
     Utf8String                  m_id;
     bool                        m_linked;
@@ -113,26 +114,26 @@ public:
     
     void ValidatePrevious(int activeUsers);
 
-    CURL* List();
-    void ValidateList(int activeUsers);
+    CURL* ListRealityData();
+    void ValidateListRealityData(int activeUsers);
     CURL* NavNodeFunc();
     void ValidateNavNode(int activeUsers);
-    CURL* Stat();
-    void ValidateStat(int activeUsers);
+    CURL* EnterpriseStat();
+    void ValidateEnterpriseStat(int activeUsers);
     CURL* Details();
     void ValidateDetails(int activeUsers);
     CURL* AzureAddress();
     void ValidateAzureAddress(int activeUsers);
-    CURL* Create();
-    void ValidateCreate(int activeUsers);
-    CURL* Change();
-    void ValidateChange(int activeUsers);
-    CURL* Link();
-    void ValidateLink(int activeUsers);
-    CURL* Unlink();
-    void ValidateUnlink(int activeUsers);
-    CURL* Delete();
-    void ValidateDelete(int activeUsers);
+    CURL* CreateRealityData();
+    void ValidateCreateRealityData(int activeUsers);
+    CURL* ModifyRealityData();
+    void ValidateModifyRealityData(int activeUsers);
+    CURL* CreateRelationship();
+    void ValidateCreateRelationship(int activeUsers);
+    CURL* DeleteRelationship();
+    void ValidateDeleteRelationship(int activeUsers);
+    CURL* DeleteRealityData();
+    void ValidateDeleteRealityData(int activeUsers);
     CURL* Download();
     void ValidateDownload(int activeUsers);
 
