@@ -1907,9 +1907,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     //UPDATE Category.Id
     {
     ECSqlStatement stmt;
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
     stmt.Finalize();
-
+#endif
     //UPDATE via classes that is mapped to a single joined table, is expected to work
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.SpatialElement SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();

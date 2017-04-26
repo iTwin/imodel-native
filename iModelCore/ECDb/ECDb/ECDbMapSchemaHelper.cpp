@@ -44,12 +44,9 @@ struct CustomAttributeReader final
 //static
 IECInstanceCP CustomAttributeReader::Read(IECCustomAttributeContainer const& caContainer, Utf8CP customAttributeSchemaName, Utf8CP customAttributeName)
     {
-    for (IECInstancePtr const& ca : caContainer.GetCustomAttributes(false))
-        {
-        ECClassCR caClass = ca->GetClass();
-        if (caClass.GetName().Equals(customAttributeName) && caClass.GetSchema().GetName().Equals(customAttributeSchemaName))
-            return ca.get();
-        }
+    IECInstancePtr ca = caContainer.GetCustomAttributeLocal(customAttributeSchemaName, customAttributeName);
+    if (ca != nullptr)
+        return ca.get();
 
     return nullptr;
     }
