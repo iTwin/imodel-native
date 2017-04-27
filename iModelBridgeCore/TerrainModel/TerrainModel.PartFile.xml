@@ -50,7 +50,7 @@
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
       <!--<SubPart PartName="Boost_1_5_7_0_Lib_Static" PartFile="Boost_1_5_7_0_Lib" Repository="boost_1.57.0_lib" />-->
       <Bindings>
-        <Files ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Files>
+        <Files ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Files>
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
