@@ -22,6 +22,8 @@
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
+using FBox3d = RangeIndex::FBox;
+
 BEGIN_UNNAMED_NAMESPACE
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -221,13 +223,21 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 #endif
 
 constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
-constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
+constexpr size_t s_maxFeaturesPerTile = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 4.0;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double fbox3d_diagonalDistanceSquared(FBox3d const& box)
+    {
+    return bsiFPoint3d_distanceSquared(&box.m_low, &box.m_high);
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -240,7 +250,7 @@ struct RangeAccumulator : RangeIndex::Traverser
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
     bool _AbortOnWriteRequest() const override { return true; }
-    Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return Accept::Yes; }
+    Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return Accept::Yes; }
     Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         m_range.Extend(entry.m_range.ToRange3d());
@@ -441,7 +451,7 @@ protected:
 #endif
 
     virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId);
-    virtual bool _AcceptElement(DRange3dCR range, DgnElementId elemId);
+    virtual bool _AcceptElement(double rangeDiagSq, DgnElementId elemId);
 
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
@@ -469,7 +479,7 @@ public:
     TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, bool surfacesOnly, bool is2d)
         : TileGeometryProcessor(geometries, root, range, facetOptions, transformFromDgn, tolerance, surfacesOnly, is2d, tolerance) { }
 
-    void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
+    void ProcessElement(ViewContextR context, DgnElementId elementId, double diagonalRangeSquared);
     Result OutputGraphics(GeometryProcessorContext& context);
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
 
@@ -477,12 +487,17 @@ public:
     DgnDbR GetDgnDb() const { return m_root.GetDgnDb(); }
     RootR GetRoot() const { return m_root; }
 
+    double GetMinRangeDiagonal() const { return m_minRangeDiagonal; }
+    double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonal*m_minRangeDiagonal; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
         auto diag = range.DiagonalDistance();
         return diag < m_minRangeDiagonal && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
+
+    size_t GetGeometryCount() const { return m_geometries.size(); }
+    void TruncateGeometryList(size_t maxSize) { m_geometries.resize(maxSize); }
 
     IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
         {
@@ -548,7 +563,7 @@ public:
 struct ExcludedGeometryProcessor : TileGeometryProcessor
 {
 private:
-    virtual bool _AcceptElement(DRange3dCR range, DgnElementId elemId) override { return true; }
+    virtual bool _AcceptElement(double rangeDiagSq, DgnElementId elemId) override { return true; }
     virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId) override
         {
         if (!BelowMinRange(geom.GetTileRange()))
@@ -565,7 +580,7 @@ public:
 
     void ProcessElements(ViewContextR context, DgnElementIdSet const& elemIds)
         {
-        DRange3d unusedElementRange;
+        double unusedElementRange = 0.0;
         for (auto const& elemId : elemIds)
             {
             ProcessElement(context, elemId, unusedElementRange);
@@ -638,25 +653,43 @@ public:
 //=======================================================================================
 struct GeometryCollector : RangeIndex::Traverser
 {
+    typedef bmultimap<double, DgnElementId, std::greater<double>> Entries;
+
+    Entries                     m_entries;
     TileGeometryProcessor&      m_processor;
     GeometryProcessorContext&   m_context;
-    RangeIndex::FBox            m_range;
+    FBox3d                      m_range;
+    double                      m_minRangeDiagonalSquared;
+    bool                        m_aborted = false;
 
-    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context)
-        : m_range(range), m_processor(proc), m_context(context) { }
+    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context) : m_range(range), m_processor(proc), m_context(context), m_minRangeDiagonalSquared(proc.GetMinRangeDiagonalSquared()) { }
 
-    Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+
+    bool CheckStop() { return (m_aborted = m_aborted && m_context.CheckStop()); }
+    void Insert(double diagonalSq, DgnElementId elemId)
         {
-        return !m_context.CheckStop() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
+        m_entries.Insert(diagonalSq, elemId);
+        if (m_entries.size() > s_maxFeaturesPerTile)
+            m_entries.erase(--m_entries.end()); // remove the smallest element. Note element != feature - we may need to skip more elements later.
+        }
+
+    Accept _CheckRangeTreeNode(FBox3d const& box, bool is3d) const override
+        {
+        return !m_aborted && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
         }
 
     Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
-        if (m_context.CheckStop())
+        if (CheckStop())
             return Stop::Yes;
 
+        // ###TODO: We shouldn't need to test this again here, right?
         if (entry.m_range.IntersectsWith(m_range))
-            m_processor.ProcessElement(m_context, entry.m_id, entry.m_range.ToRange3d());
+            {
+            double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
+            if (sizeSq >= m_minRangeDiagonalSquared)
+                Insert(sizeSq, entry.m_id);
+            }
 
         return Stop::No;
         }
@@ -667,7 +700,22 @@ struct GeometryCollector : RangeIndex::Traverser
         if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
             return TileGeometryProcessor::Result::NoGeometry;
 
-        return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGeometryProcessor::Result::Aborted : TileGeometryProcessor::Result::Success;
+        model->GetRangeIndex()->Traverse(*this);
+
+        for (auto const& kvp : m_entries)
+            {
+            m_processor.ProcessElement(m_context, kvp.second, kvp.first);
+            if (CheckStop())
+                return TileGeometryProcessor::Result::Aborted;
+
+            if (m_processor.GetGeometryCount() >= s_maxFeaturesPerTile)
+                {
+                m_processor.TruncateGeometryList(s_maxFeaturesPerTile);
+                break;
+                }
+            }
+
+        return TileGeometryProcessor::Result::Success;
         }
 };
 
@@ -947,28 +995,29 @@ void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::WantCacheGeometry(DRange3dCR range) const
+bool Root::WantCacheGeometry(double rangeDiagSq) const
     {
     if (!m_cacheGeometry)
         return false;
 
     // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
     constexpr double rangeRatio = 0.25;
-    double diag = ComputeRange().DiagonalDistance();
+    DRange3d range = ComputeRange();
+    double diag = range.low.DistanceSquared(range.high); // ###TODO: Cache this.
     if (0.0 == diag)
         return false;
 
     BeAssert(m_is3d); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
     diag /= s_spatialRangeMultiplier;
-    return range.DiagonalDistance() / diag >= rangeRatio;
+    return rangeDiagSq / diag >= rangeRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, DRange3dCR range) const
+void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, double rangeDiagSq) const
     {
-    if (!WantCacheGeometry(range))
+    if (!WantCacheGeometry(rangeDiagSq))
         return;
 
     for (auto& geom : geometry)
@@ -981,10 +1030,10 @@ void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, DR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, DRange3dCR range) const
+bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, double rangeDiagSq) const
     {
     // NB: Check the range so that we don't acquire the mutex for geometry too small to be in cache
-    if (!WantCacheGeometry(range))
+    if (!WantCacheGeometry(rangeDiagSq))
         return false;
 
     BeMutexHolder lock(m_mutex);
@@ -1033,7 +1082,7 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
     {
     struct Traverser : RangeIndex::Traverser
         {
-        RangeIndex::FBox        m_range;
+        FBox3d                  m_range;
         uint32_t                m_threshold;
         uint32_t                m_count = 0;
         double                  m_minRangeDiagonal;
@@ -1042,7 +1091,7 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
 
         bool ThresholdReached() const { return m_count >= m_threshold; }
 
-        Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+        Accept _CheckRangeTreeNode(FBox3d const& box, bool is3d) const override
             {
             return !ThresholdReached() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
             }
@@ -1189,7 +1238,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
 
     bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
     if (!m_maxGeometryCountExceeded)
-        m_maxGeometryCountExceeded = (++m_geometryCount > s_maxGeometryIdCount);
+        m_maxGeometryCountExceeded = (++m_geometryCount > s_maxFeaturesPerTile);
 
     AddPolyfaces(geom, rangePixels, isContained);
     if (!m_options.WantSurfacesOnly())
@@ -1484,15 +1533,15 @@ GeometryList Tile::CollectGeometry(double tolerance, bool surfacesOnly, LoadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, DRange3dCR dgnRange)
+void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, double rangeDiagonalSquared)
     {
     try
         {
-        if (!_AcceptElement(dgnRange, elemId))
+        if (!_AcceptElement(rangeDiagonalSquared, elemId))
             return;
 
         m_geometryListBuilder.Clear();
-        bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, dgnRange);
+        bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, rangeDiagonalSquared);
         if (!haveCached)
             {
             m_geometryListBuilder.SetElementId(elemId);
@@ -1503,7 +1552,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             PushGeometry(*geom);
 
         if (!haveCached)
-            m_root.AddCachedGeometry(std::move(m_geometryListBuilder.GetGeometries()), elemId, dgnRange);
+            m_root.AddCachedGeometry(std::move(m_geometryListBuilder.GetGeometries()), elemId, rangeDiagonalSquared);
         }
     catch (...)
         {
@@ -1626,8 +1675,9 @@ bool TileGeometryProcessor::_AcceptGeometry(GeometryCR geom, DgnElementId elemId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::_AcceptElement(DRange3dCR range, DgnElementId elemId)
+bool TileGeometryProcessor::_AcceptElement(double rangeDiagSq, DgnElementId elemId)
     {
+#if defined(ELEMENT_TILE_TREE_TRUNCATE_PLANAR)
     if (!BelowMinRange(range))
         return true;
 
@@ -1635,6 +1685,10 @@ bool TileGeometryProcessor::_AcceptElement(DRange3dCR range, DgnElementId elemId
         m_excludedElements.insert(elemId);
 
     return false;
+#else
+    BeAssert(rangeDiagSq >= GetMinRangeDiagonalSquared());
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -134,9 +134,9 @@ public:
     void AddGeomPart(DgnGeometryPartId partId, Render::Primitives::GeomPartR geomPart) const;
     Render::Primitives::GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId) const;
 
-    bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, DRange3dCR elementRange) const;
-    void AddCachedGeometry(Render::Primitives::GeometryList&& geometry, DgnElementId elementId, DRange3dCR elementRange) const;
-    bool WantCacheGeometry(DRange3dCR elementRange) const;
+    bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
+    void AddCachedGeometry(Render::Primitives::GeometryList&& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
+    bool WantCacheGeometry(double rangeDiagonalSquared) const;
 };
 
 //=======================================================================================
