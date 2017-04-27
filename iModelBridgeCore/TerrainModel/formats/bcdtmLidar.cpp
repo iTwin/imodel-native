@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -331,6 +331,11 @@ struct LasVLR
 
     };
 
+#ifdef BUILDTMFORDGNDB
+#define GEOTIFFKEYSLISTCONST const
+#else
+#define GEOTIFFKEYSLISTCONST
+#endif
 struct GeoTiffKeysList : IGeoTiffKeysList
     {
     struct sGeoKeys
@@ -382,13 +387,13 @@ struct GeoTiffKeysList : IGeoTiffKeysList
         }
 
     bvector<IGeoTiffKeysList::GeoKeyItem> m_keys;
-    int m_index;
-    virtual bool            GetFirstKey (GeoKeyItem* po_Key)
+    mutable int m_index;
+    virtual bool            GetFirstKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         m_index = 0;
         return GetNextKey (po_Key);
         }
-    virtual bool            GetNextKey (GeoKeyItem* po_Key)
+    virtual bool            GetNextKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         if (m_index < (int)m_keys.size())
             {
@@ -397,13 +402,17 @@ struct GeoTiffKeysList : IGeoTiffKeysList
             }
         return false;
         }
-
     virtual void            AddKey (unsigned short pi_KeyID, unsigned long pi_value) {}
+    virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, double pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value) {}
+
+    // Apparently this implementation of IGeoTiffKeyList does not support addition of keys so none can be
+    // extracted from a BaseGCS using SetGeoKeys
+    virtual void            AddKey (const GeoKeyItem& key) {};
     };
 
-DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, Bentley::GeoCoordinates::BaseGCSPtr& gcs)
+DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
     {
     LasVLR* vlrs = new LasVLR[pPHB.NumberOfVariableLengthRecords];
 
@@ -451,25 +460,29 @@ DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASP
 
     if (wktMathTransformIndex != -1)
         {
-        gcs = Bentley::GeoCoordinates::BaseGCS::CreateGCS ();
+        gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
         WString msg;
         StatusInt warning;
         // Not sure what is in here.
         WString wtk(vlrs[wktMathTransformIndex].data, true);
-        if (gcs->InitFromWellKnownText (&warning, &msg, Bentley::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
+        if (gcs->InitFromWellKnownText (&warning, &msg, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
             {
             WString wtk2 (vlrs[wktCoordinateSystemIndex].data, true);
-            if (gcs->InitFromWellKnownText (&warning, &msg, Bentley::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
+            if (gcs->InitFromWellKnownText (&warning, &msg, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
                 gcs = nullptr;
             }
         }
     else if (geoKeyRecordIndex != -1)
         {
-        gcs = Bentley::GeoCoordinates::BaseGCS::CreateGCS ();
+        gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
         GeoTiffKeysList geoTiffKeys (vlrs[geoKeyRecordIndex].data, geoDoubleParamsTagIndex != -1 ? vlrs[geoDoubleParamsTagIndex].data : nullptr, geoAsciiParamsTagIndex != -1 ? vlrs[geoAsciiParamsTagIndex].data : nullptr);
         WString msg;
         StatusInt warning;
+#ifdef BUILDTMFORDGNDB
+        if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys, true) != SUCCESS)
+#else
         if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys) != SUCCESS)
+#endif
             gcs = nullptr;
         }
 
@@ -548,7 +561,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
     /*
     ** Open The Files
     */
+#ifdef BUILDTMFORDGNDB
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
     if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
         {
         bcdtmWrite_message(1,0,0,"Cannot Open LAS File %s",lasFileNameP) ;
         goto errexit ;
@@ -668,7 +685,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getLasFileFeatureTypes (W
     /*
     ** Open The Files
     */
+#ifdef BUILDTMFORDGNDB
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
     if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
         {
         bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
         goto errexit;
@@ -750,7 +771,7 @@ errexit :
     |                                                                    |
     |                                                                    |
     +-------------------------------------------------------------------*/
-    BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, Bentley::GeoCoordinates::BaseGCSPtr& gcs)
+    BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
         {
         DTMStatusInt ret = DTM_SUCCESS;
         int dbg = 0;
@@ -768,7 +789,11 @@ errexit :
         /*
         ** Open The Files
         */
+#ifdef BUILDTMFORDGNDB
+        if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
         if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
             {
             bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
             goto errexit;

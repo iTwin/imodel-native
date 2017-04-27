@@ -181,7 +181,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -N0  re HeaderFiles Core</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -N0  re TerrainModel:HeaderFiles TerrainModel:Core</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakeCleanCommandLine>bb -N0 re HeaderFiles Core -c</NMakeCleanCommandLine>

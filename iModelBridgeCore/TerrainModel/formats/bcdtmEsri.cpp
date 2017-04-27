@@ -165,7 +165,7 @@ typedef struct _DBASEHeader
        unsigned char                                            mdx;          // mdx flag
        unsigned char                                            language;     // language
        UInt16                                          reserved2;    // reserved
-} DBASEHeader;                                                       // 32 byte fixed length header
+} DBASEHeader;                                                       // 32 unsigned char fixed length header
 
 typedef struct _DBASERecordHeader
 {
@@ -187,15 +187,15 @@ typedef struct _DBASERecordHeader
        unsigned char                                            reserved5;    // reserved
        unsigned char                                            reserved6;    // reserved
        unsigned char                                            reserved7;    // reserved
-       unsigned char                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX
-} DBASERecordHeader;                                                 // 32 byte fixed length header
+       unsigned char                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX 
+} DBASERecordHeader;                                                 // 32 unsigned char fixed length header
 
 typedef struct _DBASEHeaderEx
 {
-       DBASEHeader                                     hdr;          // 32 byte fixed length header
+       DBASEHeader                                     hdr;          // 32 unsigned char fixed length header
        uint32_t                                          nRecords;     // number of records in pRecords
-       DBASERecordHeader                               *pRecords;    // array of 32 byte fixed length record headers
-} DBASEHeaderEx;                                                     // 32 byte fixed length header + array of nRecord * 32 byte fixed length record headers
+       DBASERecordHeader                               *pRecords;    // array of 32 unsigned char fixed length record headers
+} DBASEHeaderEx;                                                     // 32 unsigned char fixed length header + array of nRecord * 32 unsigned char fixed length record headers
 
 typedef struct _ESRIHeader
 {
@@ -216,19 +216,19 @@ typedef struct _ESRIHeader
        double                                          Zmax;         // bounding box Zmax
        double                                          Mmin;         // bounding box Mmin
        double                                          Mmax;         // bounding box Mmax
-} ESRIHeader;                                                        // 100 byte fixed length header
+} ESRIHeader;                                                        // 100 unsigned char fixed length header
 
 typedef struct _ESRIIndexRecord
 {
        uint32_t                                          offset;       // big endian offset to start of record in 16 bit words
        uint32_t                                          length;       // big endian length of record in 16 bit words
-} ESRIIndexRecord;                                                   // 8 byte fixed length record
+} ESRIIndexRecord;                                                   // 8 unsigned char fixed length record
 
 typedef struct _ESRIRecordHeader
 {
        uint32_t                                          id;           // big endian record number
        uint32_t                                          length;       // big endian content length in 16 bit words
-} ESRIRecordHeader;                                                  // 8 byte fixed length record header
+} ESRIRecordHeader;                                                  // 8 unsigned char fixed length record header
 
 typedef struct _ESRIPoint
 {
@@ -322,12 +322,12 @@ BENTLEYDTM_Private int bcdtmFormatEsri_writeFileHeader( int fh, uint32_t shapeTy
 BENTLEYDTM_Private int bcdtmFormatEsri_writeDBaseHeader( int fh ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_appendDBaseRecord(int dbf, char *pRecord ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_appendIndex(int shx, uint32_t offset, uint32_t length ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPoint( int shp, int shx, int dbf, UInt32 record, DPoint3d *pPoint, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPointZ( int shp, int shx, int dbf, UInt32 record, DPoint3d *pPoint, char *pRecord) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLine( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32 nParts, UInt32 nPoints, UInt32 *pParts, DPoint3d *pPoints, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPoint( int shp, int shx, int dbf, uint32_t record, DPoint3d *pPoint, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPointZ( int shp, int shx, int dbf, uint32_t record, DPoint3d *pPoint, char *pRecord) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLine( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLineZ( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygon( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32 nParts, UInt32 nPoints, UInt32 *pParts, DPoint3d *pPoints, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygonZ( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32  nParts, UInt32  nPoints, UInt32  *pParts, DPoint3d *pPoints, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygon( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygonZ( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t  nParts, uint32_t  nPoints, uint32_t  *pParts, DPoint3d *pPoints, char *pRecord ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_appendMultiPointZ( int shp,int shx,int dbf, uint32_t record, DVector3d *pRange, uint32_t nPoints, DPoint3d *pPoints, char *pRecord ) ;
 
 /*-------------------------------------------------------------------+
@@ -338,7 +338,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_appendMultiPointZ( int shp,int shx,int db
 BENTLEYDTM_Private void dtmCnv_swapByteArray
 (
 char *bytes, /* <> Byte array to swap */
-int   nWrds  /* => number of words (shorts) in byte array */
+int   nWrds  /* => number of words (shorts) in unsigned char array */
 )
 {
 /*Description:
@@ -871,7 +871,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_closeEsriShapeFiles(EsriFileInfo *esriFil
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,uint32_t shapeType)
+BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,uint32_t shapeType) 
 {
  int ret=DTM_SUCCESS,dbg=0 ;
  wchar_t fileName[256] ;
@@ -1674,8 +1674,8 @@ contents :                        Miscellaneous Functions
 description :              Appends an index record to an open shx file
 return :                          int;number of bytes written to the file or -1 if an error is encountered
 param :                                  int;shx;IN;file descriptor for open file
-param :                                  UInt32;offset;IN;the number of 16-bit words to the record in the main file
-param :                                  UInt32;length;IN;the length of the record in the main file in 16-bit words
+param :                                  uint32_t;offset;IN;the number of 16-bit words to the record in the main file
+param :                                  uint32_t;length;IN;the length of the record in the main file in 16-bit words
 
 -----------------------------------------------------------------------------*/
 BENTLEYDTM_Private int        bcdtmFormatEsri_appendIndex
@@ -1713,7 +1713,7 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DPoint3d*;pPoint;IN;pointer to the point to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1771,7 +1771,7 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DPoint3d*;pPoint;IN;pointer to the point to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1833,9 +1833,9 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nPoints;IN;number of points in record
+param :                                  uint32_t;nPoints;IN;number of points in record
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1928,9 +1928,9 @@ return :                          int;number of bytes written to the file or -1 
 param :                           int;shp;IN;file descriptor for open shp file
 param :                           int;shx;IN;file descriptor for open shx file
 param :                           int;dbf;IN;file descriptor for open dbf file
-param :                           UInt32;record;IN;pointer to the record to be written
+param :                           uint32_t;record;IN;pointer to the record to be written
 param :                           DVector3d*;pRange;IN;pointer to the element range
-param :                           UInt32;nPoints;IN;number of points in record
+param :                           uint32_t;nPoints;IN;number of points in record
 param :                           DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                           char*;pRecord;IN;pointer to the record to be written
 
@@ -2037,11 +2037,11 @@ return :                           int;number of bytes written to the file or -1
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                   UInt32;record;IN;pointer to the record to be written
+param :                                   uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2133,11 +2133,11 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2244,11 +2244,11 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2477,7 +2477,7 @@ contents :                        Miscellaneous Functions
 description :                     Writes the file header information for a newly created shp file
 return :                          int;number of bytes written to the file or -1 if an error is encountered
 param :                                  int;fh;IN;file descriptor for open file
-param :                                  UInt32;shapeType;IN;shape file type
+param :                                  uint32_t;shapeType;IN;shape file type
 param :                                  DVector3d*;pRange;IN;range of elements in file
 param :                                  UInt16;mask;IN;bitmask used to selectively write portions of the header
 

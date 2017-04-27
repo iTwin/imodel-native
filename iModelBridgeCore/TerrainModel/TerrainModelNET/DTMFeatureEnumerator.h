@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,10 +34,10 @@ public value class DTMUserTagRange
 
 struct DTMFeatureEnumeratorImpl
     {
-    Bentley::TerrainModel::DTMFeatureEnumerator&          m_collection;
-    Bentley::TerrainModel::DTMFeatureEnumerator::iterator m_current;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator&          m_collection;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::iterator m_current;
 
-    DTMFeatureEnumeratorImpl (Bentley::TerrainModel::DTMFeatureEnumerator& collection) : m_collection (collection), m_current (m_collection.begin ()) {}
+    DTMFeatureEnumeratorImpl (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& collection) : m_collection (collection), m_current (m_collection.begin ()) {}
     };
 public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerable <DTMFeatureInfo^>
     {
@@ -45,7 +45,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
         {
         DTMFeatureEnumeratorImpl* m_impl;
         ReleaseMarshaller* m_marshaller;
-        Bentley::TerrainModel::DTMFeatureEnumerator& m_native;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& m_native;
         internal:
             Enumerator(Bentley::TerrainModel::DTMFeatureEnumerator& native, ReleaseMarshaller* marshaller) : m_native(native), m_marshaller(marshaller)
                 {
@@ -78,7 +78,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
                     m_impl = new DTMFeatureEnumeratorImpl (m_native);
                     return m_impl->m_current != m_impl->m_collection.end ();
                     }
-                Bentley::TerrainModel::DTMFeatureEnumerator::iterator endIterator = m_impl->m_collection.end ();
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::iterator endIterator = m_impl->m_collection.end ();
                 if (!(m_impl->m_current != endIterator))
                     return false;
 
@@ -108,7 +108,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
     private:
         DTM^ m_dtm;
         ReleaseMarshaller* m_marshaller;
-        Bentley::TerrainModel::DTMFeatureEnumerator* m_native;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator* m_native;
 
     public:
         DTMFeatureEnumerator (DTM^ dtm);
@@ -132,7 +132,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
             bool get ();
             void set (bool value);
             }
-            
+
         property DTMUserTagRange UserTagRange
             {
             DTMUserTagRange get ();
@@ -182,7 +182,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Initializes a new instance of the DTMFeatureScanCriteria class.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     DTMFeatureScanCriteria();
@@ -190,7 +190,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Includes a given feature type.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void IncludeFeatureType (DTMFeatureType featureType);
@@ -198,7 +198,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Excludes all feature types.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void ExcludeAllFeatureTypes ();
@@ -206,7 +206,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Sets the range of the scan.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void SetRange(BGEO::DRange3d range);
@@ -214,7 +214,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Gets the range of the scan.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     property BGEO::DRange3d Range
@@ -225,7 +225,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Gets whether the range is defined.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     property bool IsRangeDefined

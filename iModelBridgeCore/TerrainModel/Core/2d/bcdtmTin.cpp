@@ -14,6 +14,9 @@
 #include <list>
 #include <mutex>
 
+
+
+
 #include <thread>
 
 const int MINIMUM_POINTS_PER_TIN_THREAD = 2000;
@@ -50,7 +53,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 ** Author : Rob Cormack  January 2007  Rob.Cormack@Bentley.com
 **
 */
-int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
+ int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long colinear=0,startTime;
 /*
 ** Write Entry Message
@@ -412,8 +415,6 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Triangulation Completed") ;
  dtmP->dtmState = DTMState::TinError ;
  goto cleanup ;
 }
-
-
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -6178,7 +6179,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
 {
  int            ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long           sp, np, fsp, spnt, tptr, process;
- bool  voidLine;
+ bool voidLine;
  DTMFeatureType dtmFeatureType;
  DPoint3d            *featurePtsP=NULL ;
  DTMUserTag   userTag ;

@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
@@ -171,6 +172,7 @@ public:
 
 
 private:
+    
     bool                                m_useViewFilters;
     bool                                m_isMultiThread;    
     float                               m_density;
@@ -186,6 +188,7 @@ private:
 struct IPointsProviderCreator : public RefCountedBase
     {
     protected : 
+
 
         virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) = 0;
 

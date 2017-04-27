@@ -15,7 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2444C46D-5427-45FC-8B2F-2EC4D30C83DD}</ProjectGuid>
+    <ProjectGuid>{36229A25-098F-4AA8-834E-D0BA03D9D0F0}</ProjectGuid>
     <RootNamespace>
     </RootNamespace>
   </PropertyGroup>
@@ -89,13 +89,14 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   </NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py-p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection  -c
+BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
@@ -142,6 +143,8 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <ClInclude Include="src\GroundDetectionTypes.h" />
     <ClInclude Include="src\IDtmProvider.h" />
     <ClInclude Include="src\PCGroundTIN.h" />
+    <ClInclude Include="src\PCThreadUtilities.h" />
+    <ClInclude Include="src\TriangleSearcher.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AutomaticGroundDetectionPCH.cpp" />
@@ -155,6 +158,8 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <ClCompile Include="src\IPointsAccumulator.cpp" />
     <ClCompile Include="src\IPointsProvider.cpp" />
     <ClCompile Include="src\PCGroundTIN.cpp" />
+    <ClCompile Include="src\PCThreadUtilities.cpp" />
+    <ClCompile Include="src\TriangleSearcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AutomaticGroundDetection.mke" />

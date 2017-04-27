@@ -428,7 +428,7 @@ struct TXxyz      /*   XYZ record  */
 {
 #ifndef BITFIELDS_REVERSED
   unsigned char pd :1;
-  unsigned char rsrv :1;
+  unsigned char rsrv :1; 
   unsigned char type :6;  /* file type */
   unsigned char weight;
   unsigned char weight_flag :1;
@@ -444,7 +444,7 @@ struct TXxyz      /*   XYZ record  */
   unsigned char weight_flag :1;
   unsigned char weight;
   unsigned char type :6;  /* file type */
-  unsigned char rsrv :1;
+  unsigned char rsrv :1; 
   unsigned char pd :1;
 #endif
   long  x;             /*   X  coordinate   */
@@ -471,11 +471,11 @@ struct TXtin   /*  TIN record  */
   unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
   unsigned char planar :1;     /*  the terrain is planer in this area */
-                               /*  no byte alignment needed here because
+                               /*  no unsigned char alignment needed here because
                                    of how data was written  (wbw 2/93) */
 #else
   unsigned char planar :1;     /*  the terrain is planer in this area */
-                               /*  no byte alignment needed here because
+                               /*  no unsigned char alignment needed here because
                                    of how data was written  (wbw 2/93) */
   unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
@@ -521,7 +521,7 @@ struct TXfeature
   struct TXfeature *next;
   TXFP file;
   struct TXsymbology symb;
-  wchar_t pad1[2];/* for byte alignment (wbw 2/93) */
+  wchar_t pad1[2];/* for unsigned char alignment (wbw 2/93) */
   void *app_ptr;  /* a pointer to whatever software developer wants */
 #ifndef BITFIELDS_REVERSED
   unsigned long exclude :1;  /*  if set, exclude this feature
@@ -530,9 +530,9 @@ struct TXfeature
                               /*  even if the feature is linear/areal */
   unsigned long exercised :1;  /*  if set, the feature has not been modified */
                   /*  since last exercise */
-  unsigned long pad2:29;        /* for byte alignment (wbw 2/93) */
+  unsigned long pad2:29;        /* for unsigned char alignment (wbw 2/93) */
 #else
-  unsigned long pad2:29;        /* for byte alignment (wbw 2/93) */
+  unsigned long pad2:29;        /* for unsigned char alignment (wbw 2/93) */
 
   unsigned long exercised :1;  /*  if set, the feature has not been modified */
                   /*  since last exercise */
@@ -558,9 +558,9 @@ struct TXfile     /*  output file descriptor  */
   unsigned long exercised :1;    /*  TRUE if the file has been exercised     */
   unsigned long exclude :1;      /*  if set, exclude this file from triangulation */
   unsigned long triangulate :1;  /* TRUE for immediate triangulation */
-  unsigned long pad:29;          /* for byte alignment (wbw 2/93) */
+  unsigned long pad:29;          /* for unsigned char alignment (wbw 2/93) */
 #else
-  unsigned long pad:29;          /* for byte alignment (wbw 2/93) */
+  unsigned long pad:29;          /* for unsigned char alignment (wbw 2/93) */
   unsigned long triangulate :1;  /* TRUE for immediate triangulation */
   unsigned long exclude :1;      /*  if set, exclude this file from triangulation */
   unsigned long exercised :1;    /*  TRUE if the file has been exercised     */
@@ -652,10 +652,10 @@ typedef struct ttn_file_header_struct    /* structure name  (wbw 2/93) */
 {
   hdr_magic         magic;
   wchar_t           date[26];
-  wchar_t           pad1[2];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad1[2];    /* for unsigned char alignment  (wbw 2/93) */
   struct TXrange    range;
   hdr_flags         flags;
-  wchar_t           pad2[4];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad2[4];    /* for unsigned char alignment  (wbw 2/93) */
   TXmatrix          matrix;
   long              no_points;
   long              no_records;
@@ -667,7 +667,7 @@ typedef struct ttn_file_header_struct    /* structure name  (wbw 2/93) */
   wchar_t           unit[UNIT_SIZE_TriM+1];
   hdr_projection    proj;
   wchar_t           attribute_name[ATTR_NAME_SIZE_TriM+1];
-  wchar_t           pad3[2];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad3[2];    /* for unsigned char alignment  (wbw 2/93) */
   double            rmse;
 } ttn_file_header;
 
@@ -883,7 +883,7 @@ struct elev_tbl_rec
 
 struct elev_tbl_hdr
 {
-  unsigned tbl_size;        /* bytes allocated for elev. table */
+  unsigned tbl_size;        /* unsigned chars allocated for elev. table */
   long nor;            /* no of record in elevation table */
   long minz,maxz;            /* range of z values in table      */
   long interval;            /* contour interval after mult.    */

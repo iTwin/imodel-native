@@ -1569,7 +1569,7 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,
       {
        if( *TagList % 10 == 2 )
          { 
-          tag = *TagList ;
+          tag = (long)*TagList ;
           bcdtmPolygon_getTagListFromTagObject(IntTag,pl->s1,&TagList,&NumTags,&Utag1,&Utag2,&Utag3,&Utag4) ;
           if( NumTags == 1 && *TagList % 10 == 1 && tag / 10 == *TagList / 10 ) pl->userTag = 2 ;
          }

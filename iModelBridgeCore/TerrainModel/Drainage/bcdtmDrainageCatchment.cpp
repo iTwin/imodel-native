@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageCatchment.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -600,7 +600,7 @@ int bcdtmDrainage_traceCatchmentFromPointOnInternalSumpLineDtmObject
     {
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
     long   n,process,numPntList ;
-    long   antPoint,clkPoint,startPoint,scanPoint,nextPoint,listPoint ;
+    long   antPoint,clkPoint,startPoint = 0,scanPoint,nextPoint,listPoint ;
     double x,y,z ;
     DPoint3d    tracePoints[4],*tempPtsP=nullptr ;
     enum class SumpType
@@ -1025,7 +1025,7 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObjectOld
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   point,lowPoint,antPoint,clkPoint,scanPoint,nextPoint,intPoint,nxtPoint,sumpAnt,sumpClk ;
  long   onTptrPolygon,scan,traceToSump,p1,p2,p3,findType,process,canBeDeleted ;
- long   ascentTraced=0,highPoint1,highPoint2,numTracePts=0,numCatchPts,priorPoint ;
+ long   ascentTraced=0,highPoint1 = 0,highPoint2 = 0,numTracePts=0,numCatchPts,priorPoint ;
  long   clPtr,trgp1,trgp2,trgp3,fptr,danglingPoint,dtmFeature ;
  DPoint3d    *p3dP=NULL,*p3d1P,*catchPtsP=NULL,*tracePtsP=NULL,trgPts[4];
  double x,y,z,xn,yn,angP2,angP3,ascentAngle,descentAngle,ascentSlope ;
@@ -4967,8 +4967,8 @@ int bcdtmDrainage_scanBetweenPointsForMaximumAscentTriangleDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   scanPnt,nextPnt,trgNum=0 ;
- bool voidTrg;
- double a1,a2,a3,angScanPnt,angNextPnt,slope,descentAngle,ascentAngle  ;
+ bool voidTrg = false;
+ double a1,a2,a3,angScanPnt,angNextPnt,slope = 0,descentAngle,ascentAngle = 0 ;
 /*
 ** Write Entry Message
 */

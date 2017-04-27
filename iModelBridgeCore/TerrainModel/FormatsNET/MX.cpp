@@ -14,7 +14,7 @@ BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 MXFilImporter^ MXFilImporter::Create (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
-    MXFilImporterPtr importer = Bentley::TerrainModel::MXFilImporter::Create (p);
+    MXFilImporterPtr importer = BENTLEY_NAMESPACE_NAME::TerrainModel::MXFilImporter::Create (p);
     if (importer.IsValid ())
         return gcnew MXFilImporter (importer.get ());
     return nullptr;

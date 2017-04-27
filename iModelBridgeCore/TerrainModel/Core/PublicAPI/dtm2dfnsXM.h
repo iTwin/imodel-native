@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/dtm2dfnsXM.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -113,16 +113,16 @@ BENTLEYDTM_Public                      int bcdtmRead_dataFileBinaryToDataObject 
 BENTLEYDTM_EXPORT                      int bcdtmRead_dataFileToDataObject (DTM_DAT_OBJ *Data, WCharCP DataFileName); 
 
 ///////// bcdtmReadStream/////////
-BENTLEYDTM_EXPORT                       int bcdtmReadStream_atFilePositionDataObject (DTM_DAT_OBJ **dataPP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
-BENTLEYDTM_EXPORT                       int bcdtmReadStream_atFilePositionTinObject (DTM_TIN_OBJ **tinPP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer3TinObject (DTM_TIN_OBJ *tinP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer400DataObject (DTM_DAT_OBJ *dataP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer400TinObject (DTM_TIN_OBJ *Tin, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer500DataObject (DTM_DAT_OBJ *dataP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer500TinObject (DTM_TIN_OBJ *tinP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer501DataObject (DTM_DAT_OBJ *dataP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer501TinObject (DTM_TIN_OBJ *tinP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
-BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer502DataObject (DTM_DAT_OBJ *dataP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_EXPORT                       int bcdtmReadStream_atFilePositionDataObject (DTM_DAT_OBJ **dataPP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_EXPORT                       int bcdtmReadStream_atFilePositionTinObject (DTM_TIN_OBJ **tinPP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer3TinObject (DTM_TIN_OBJ *tinP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer400DataObject (DTM_DAT_OBJ *dataP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer400TinObject (DTM_TIN_OBJ *Tin, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer500DataObject (DTM_DAT_OBJ *dataP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer500TinObject (DTM_TIN_OBJ *tinP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer501DataObject (DTM_DAT_OBJ *dataP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long FilePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer501TinObject (DTM_TIN_OBJ *tinP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_Public                       int bcdtmReadStream_atFilePositionVer502DataObject (DTM_DAT_OBJ *dataP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
 
 ///////// bcdtmString/////////
 BENTLEYDTM_Public                       int bcdtmString_extractDtmFeatureTypeStringsFromDataObject (DTM_DAT_OBJ *dataP, DTMFeatureType dtmFeatureType, DTM_POINT_ARRAY ***featureArrayPPP, long *numFeatureArrayP); 

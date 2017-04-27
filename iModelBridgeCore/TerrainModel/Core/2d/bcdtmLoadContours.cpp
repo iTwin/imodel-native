@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadContours.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -993,7 +993,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          void    *userP                  /* ==> User Pointer Passed Back To User                    */
          )
          {
-         Bentley::TerrainModel::DTMContourParams contourParams;
+         BENTLEY_NAMESPACE_NAME::TerrainModel::DTMContourParams contourParams;
          /*
          ** Create Contour Params
          */
@@ -1012,7 +1012,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          contourParams.depressionOption = depressionOption != 0;
          contourParams.maxSlopeOption = maxSlopeOption;
          contourParams.maxSlopeValue = maxSlopeValue;
-         return bcdtmLoad_contoursFromDtmObject (dtmP, contourParams, Bentley::TerrainModel::DTMFenceParams (useFence ? DTMFenceType::None : fenceType, fenceOption, fencePtsP, numFencePts), loadFunctionP, userP);
+         return bcdtmLoad_contoursFromDtmObject (dtmP, contourParams, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (useFence ? DTMFenceType::None : fenceType, fenceOption, fencePtsP, numFencePts), loadFunctionP, userP);
          }
 
      //=======================================================================================
@@ -1027,7 +1027,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              bvector<bvector<DTMContourCacheEntry>> m_results;
              std::mutex m_mutex;
              std::condition_variable cv;
-             DTMContourParamsCR contourParams;
+             BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams;
              long endCount;
              double firstContour;
              unsigned char* tinLine2P;
@@ -1035,7 +1035,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              BC_DTM_OBJ* clipDtmP;
              bool voidsInDtm;
              DTMContourIndexArray& contourIndex;
-             DTMFenceParamsCP fenceParamsP;
+             BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCP fenceParamsP;
              DTMPondAppData* pondAppData;
              DTMFeatureCallback loadFunctionP;
              void* userP;
@@ -1046,7 +1046,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              // @bsimethod                                            Daryl.Holmwood      10/2016
              //=======================================================================================
              ContourProcessing(
-                 DTMContourParamsCR contourParams,
+                 BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,
                  long endCount,
                  double firstContour,
                  unsigned char* tinLine2P,
@@ -1054,7 +1054,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
                  BC_DTM_OBJ* clipDtmP,
                  bool voidsInDtm,
                  DTMContourIndexArray& contourIndex,
-                 DTMFenceParamsCP fenceParamsP,
+                 BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCP fenceParamsP,
                  DTMPondAppData* pondAppData,
                  DTMFeatureCallback loadFunctionP,
                  void* userP) :
@@ -1232,8 +1232,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
      BENTLEYDTM_EXPORT int bcdtmLoad_contoursFromDtmObject
      (
          BC_DTM_OBJ *dtmP,                  /* ==> Pointer to Dtm object                 */
-         DTMContourParamsCR contourParamsC,
-         DTMFenceParamsCR fenceParams,
+         BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParamsC,
+         BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
          DTMFeatureCallback loadFunctionP,  /*==> Pointer To Load Function                             */
          void    *userP                  /* ==> User Pointer Passed Back To User                    */
      )
@@ -1255,7 +1255,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          DTM_CIR_LIST  *clistP;
          BC_DTM_OBJ  *clipDtmP = nullptr;
          DTMContourIndexArray  contourIndex;
-         Bentley::TerrainModel::DTMContourParams contourParams(contourParamsC);
+         BENTLEY_NAMESPACE_NAME::TerrainModel::DTMContourParams contourParams (contourParamsC);
          /*
          ** Write Entry Message
          */
@@ -1592,8 +1592,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              }
 
          {
-         Bentley::TerrainModel::DTMFenceParams noFence;
-         DTMFenceParamsCP fenceParamsP = useFence ? &fenceParams : &noFence;
+     TerrainModel::DTMFenceParams noFence;
+     BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCP fenceParamsP = useFence ? &fenceParams : &noFence;
          /*
          ** Load Contour Range
          */
@@ -1684,8 +1684,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
 BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 (
  BC_DTM_OBJ *dtmP,                /* ==> Pointer to Dtm object              */
- DTMContourParamsCR contourParams,  /* ==> Contour Params */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,  /* ==> Contour Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDtmP,
  double contourValue,             /* ==> Contour Value To Be Plotted        */
@@ -1706,7 +1706,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  long   startTime=0 ;
  double zMin,zMax ;
  const BC_DTM_FEATURE  *fP ;
- long zsp1 = DTM_NULL_PNT, zsp2;
+ long zsp1 = DTM_NULL_PNT, zsp2 = DTM_NULL_PNT;
 /*
 ** Initialise
 */
@@ -1942,8 +1942,8 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
 (
  BC_DTM_OBJ *dtmP,                 /* ==> Pointer to Dtm object              */
- DTMContourParamsCR contourParams,   /* ==> Contour Params */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,   /* ==> Contour Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData, /* ==> pond Data */
  BC_DTM_OBJ* clipDTMP,
  double contourValue,              /* ==> Contour Value To Be Plotted        */
@@ -1973,7 +1973,7 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
  long   test = 1, scan, contourScanned = FALSE, zeroSlopeLine, zeroSlopeTriangle;
  long contourDirection = 0;
  long   weight=0,p3,sp1,sp2,lp2,lp1,llp1 ;
- double ra,zp1,zp2,lzp1,xc,yc,xlc=0.0,ylc=0.0 ;
+ double ra,zp1=0.0,zp2=0.0,lzp1,xc,yc,xlc=0.0,ylc=0.0 ;
  thread_local static long conSeq=0 ;
 /*
 ** Write Entry Message
@@ -2247,8 +2247,8 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
 BENTLEYDTM_Private int bcdtmLoad_traceZeroSlopeContourDtmObject
 (
  BC_DTM_OBJ *dtmP,                /* ==> Pointer To Dtm Object              */
- DTMContourParamsCR contourParams,   /* ==> Contour Params */
- DTMFenceParamsCR fenceParams,   /* ==> Fence Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,   /* ==> Contour Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,   /* ==> Fence Params */
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDtmP,
  long   p1,                        /* ==> First Point Of Dtm Line            */
@@ -2433,8 +2433,8 @@ BENTLEYDTM_Public int bcdtmLoad_storeContourPoint
 BENTLEYDTM_Public int bcdtmLoad_contourFeature
 (
  BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object                                          */
- DTMContourParamsCR contourParams,   /* ==> Contour Params                                                 */
- DTMFenceParamsCR fenceParams,   /* ==> Fence Params                                                 */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,   /* ==> Contour Params                                                 */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,   /* ==> Fence Params                                                 */
  DTMPondAppData* pondExtendedAppData, /* ==> PondData                                              */
  BC_DTM_OBJ *clipDtmP, /* ==> ClipDTM*/
  long   contourDirection,          /* ==> Contour Direction                                              */
@@ -4668,7 +4668,7 @@ void    *userP               /* ==> User Pointer Passed Back To User      */
     double  x, y, *dblP, firstContour, lastContour, contourValue, zClipMin, zClipMax;
     unsigned char    *cP, *maskLat1P = nullptr, *maskLat2P = nullptr;
     BC_DTM_OBJ  *clipDtmP = nullptr;
-    Bentley::TerrainModel::DTMContourParams contourParams;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMContourParams contourParams;
     /*
     ** Write Entry Message
     */
@@ -4834,7 +4834,7 @@ void    *userP               /* ==> User Pointer Passed Back To User      */
     contourParams.smoothFactor = smoothFactor;
     contourParams.smoothDensity = smoothDensity;
         {
-        Bentley::TerrainModel::DTMFenceParams fenceParams (useFence ? DTMFenceType::Block : DTMFenceType::None, fenceOption, fencePtsP, numFencePts);
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams fenceParams (useFence ? DTMFenceType::Block : DTMFenceType::None, fenceOption, fencePtsP, numFencePts);
         /*
        ** Load Contour Range
        */
@@ -4904,8 +4904,8 @@ errexit:
 BENTLEYDTM_Private int bcdtmLoad_plotContourLatticeObject
 (
  DTM_LAT_OBJ *latticeP,     /* ==> Pointer to Lattice object                              */
- DTMContourParamsCR contourParams, /* ==> contour Params                                    */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams, /* ==> contour Params                                    */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDtmP,
  unsigned char   *markLatP,          /* ==> Pointer To Marked Lattice Points                       */
@@ -5013,8 +5013,8 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourLatticeObject
 BENTLEYDTM_Private int bcdtmLoad_traceContourLatticeObject
 (
  DTM_LAT_OBJ *latticeP,     /* ==> Pointer To Lattice Object        */
- DTMContourParamsCR contourParams, /* ==> Contour Params */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams, /* ==> Contour Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDtmP,
  unsigned char *markLatP,            /* ==> Pointer To Marked Lattice Points */
@@ -5218,7 +5218,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contourForPointDtmObject
  bool voidFlag, pointInVoid;
  DPoint3dP p3dP ;
  double    z ;
- Bentley::TerrainModel::DTMContourParams contourParams;
+ BENTLEY_NAMESPACE_NAME::TerrainModel::DTMContourParams contourParams;
 /*
 ** Write Entry Message
 */
@@ -5324,7 +5324,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contourForPointDtmObject
 */
  if( findType && pointInVoid == FALSE )
    {
-   Bentley::TerrainModel::DTMFenceParams fenceParams (useFence ? fenceType : DTMFenceType::None, fenceOption, fencePtsP, numFencePts);
+   BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams fenceParams (useFence ? fenceType : DTMFenceType::None, fenceOption, fencePtsP, numFencePts);
    if (bcdtmLoad_plotContourAtPointDtmObject (dtmP, contourParams, fenceParams, nullptr, nullptr, x, y, z, findType, pnt1, pnt2, pnt3, loadFunctionP, userP)) goto errexit;
    }
 /*
@@ -5356,8 +5356,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contourForPointDtmObject
 BENTLEYDTM_Private int bcdtmLoad_plotContourAtPointDtmObject
 (
  BC_DTM_OBJ *dtmP,                 /* ==> Pointer to Dtm object                 */
- DTMContourParamsCR contourParams,   /* ==> Contour Params                        */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams,   /* ==> Contour Params                        */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDtmP,
  double  x,                        /* ==> x Coordinate Of Point                 */
@@ -5503,8 +5503,8 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourAtPointDtmObject
 BENTLEYDTM_Private int bcdtmLoad_traceContourFromTriangleEdgeDtmObject
 (
  BC_DTM_OBJ *dtmP,            /* ==> Pointer to Dtm object                 */
- DTMContourParamsCR contourParams, /* ==> Contour Params */
- DTMFenceParamsCR fenceParams,
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMContourParamsCR contourParams, /* ==> Contour Params */
+ BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR fenceParams,
  DTMPondAppData* pondExtendedAppData,
  BC_DTM_OBJ* clipDTMP,
  double  contourValue,        /* ==> Contour Value To Be Plotted           */
@@ -6265,7 +6265,7 @@ BENTLEYDTM_Private int bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   ap,cp,p1,p2,p3,np1,np2,np3,fndType,drapeType ;
+ long   ap,cp,p1,p2,p3,np1,np2,np3,fndType,drapeType(0) ;
  long   onLine,processDrape,hullPnt1,hullPnt2 ;
  double nd,xi,yi,zi,xls,yls,zls,xle,yle ;
  DPoint3d *pnt1P,*pnt2P ;

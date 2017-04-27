@@ -100,7 +100,7 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
     }
 
 
-void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const
+void MXFilImporter::DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const
     {
     MXModelFile modelFile;
 
@@ -157,7 +157,7 @@ void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& n
 
 ImportedTerrain MXFilImporter::_ImportTerrain (WCharCP name) const
     {
-    bmap <WString, Bentley::TerrainModel::BcDTMPtr> nameDtms;
+    bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr> nameDtms;
     nameDtms[name] = nullptr;
     DoImport (nameDtms, false);
 
@@ -166,10 +166,10 @@ ImportedTerrain MXFilImporter::_ImportTerrain (WCharCP name) const
 
 ImportedTerrainList MXFilImporter::_ImportTerrains () const
     {
-    bmap <WString, Bentley::TerrainModel::BcDTMPtr> nameDtms;
+    bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr> nameDtms;
     DoImport (nameDtms, true);
     ImportedTerrainList list;
-    for (bmap <WString, Bentley::TerrainModel::BcDTMPtr>::const_iterator iter = nameDtms.begin(); iter != nameDtms.end(); iter++)
+    for (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr>::const_iterator iter = nameDtms.begin(); iter != nameDtms.end(); iter++)
         list.push_back (ImportedTerrain (iter->second.get(), iter->first.GetWCharCP(), nullptr, false));    // ToDo set if it was from a string model or a triangulated string
 
     return list;
@@ -177,7 +177,7 @@ ImportedTerrainList MXFilImporter::_ImportTerrains () const
 
 ImportedTerrainList MXFilImporter::_ImportTerrains (bvector<WString>& names) const
     {
-    bmap <WString, Bentley::TerrainModel::BcDTMPtr> nameDtms;
+    bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr> nameDtms;
 
     for (bvector<WString>::const_iterator iter = names.begin(); iter != names.end(); iter++)
         nameDtms[*iter] = nullptr;
@@ -503,6 +503,7 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
     if (eOk != modelTable->getModel(modelName.c_str(), modelTableRecord.GetR(), ModelObject::Write, false))
         {
         std::unique_ptr<ModelTableRecord> newModelTableRecord = std::make_unique<ModelTableRecord>();
+
         if (eOk != modelTable->addModel(modelName.c_str(), newModelTableRecord.get(), "TRIA"))
             return MXExportError::Error;
 

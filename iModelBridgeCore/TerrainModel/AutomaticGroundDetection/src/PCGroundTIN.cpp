@@ -63,19 +63,19 @@ class  ProgressMonitor
         //return true if process should continue (was not canceled)
         static bool UpdateProgressInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             bool shouldContinue = UpdateProgress();
             return shouldContinue;
             }
         static bool CheckContinueInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             return !s_process_canceled;
             }
 
         static void SignalErrorInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             SignalError();
             }
 
@@ -95,7 +95,7 @@ class  ProgressMonitor
 
         static size_t GetWorkDoneMT()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             return s_workDone;
             }
 
@@ -362,6 +362,8 @@ TINPointContainer::~TINPointContainer()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TINPointContainer::AddPoint(DPoint3d& ptIndex, PCGroundTriangle& pcGroundTriangle)
     {
+    BeMutexHolder lock(m_pointContainerMutex);
+
     if (PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD > 1)
         {
         push_back(ptIndex);
@@ -437,7 +439,7 @@ m_pAcceptedPointCollection(TINPointContainer::Create())
     IPointsProviderCreatorPtr ptsProviderCreator(pcGroundTIN.GetParam().GetPointsProviderCreator());
     m_pPointsProvider = IPointsProvider::CreateFrom(ptsProviderCreator, &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(pcGroundTIN.GetParam().GetUseMultiThread());
-    m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...        
+    m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...           
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,7 +817,9 @@ void PCGroundTriangle::PrefetchPoints()
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PCGroundTriangle::QueryPointToAddToTin()
-    {    
+    {          
+    m_queryPointMutex.lock();
+
     for (auto itr = m_pPointsProvider->begin(); itr != m_pPointsProvider->end(); ++itr)
         {
         DPoint3d ptIndex(*itr);
@@ -826,6 +830,8 @@ bool PCGroundTriangle::QueryPointToAddToTin()
         }
     //Free our memory, we don't need it anymore for now
     m_pPointsProvider->ClearPrefetchedPoints();
+
+    m_queryPointMutex.unlock();
                           
     //if no point, nothing to Add
     if (m_pAcceptedPointCollection->size() == 0)
@@ -1235,6 +1241,12 @@ void PCGroundTIN::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
     if (s_outputPreview && 
         (((clock() - m_lastOutputPreviewTime) > outputDelay) || noDelay))
         {
+        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+        assert(ptsAccumPtr.IsValid());
+
+        Transform transform;
+        ptsAccumPtr->GetPreviewTransform(transform);
+
         BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcDtmPtr(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
 
         size_t newPointToAddSize;
@@ -1267,18 +1279,29 @@ void PCGroundTIN::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
             if (newPointToAddMutex != nullptr)
                 {
                 newPointToAddMutex->unlock();
-                }
+                }            
 
+            if (!transform.IsIdentity())
+                {
+                DTMStatusInt status = bcDtmPtr->Transform(transform);
+                assert(status == SUCCESS);
+                }
+            
             DTMStatusInt status = bcDtmPtr->Triangulate();
             assert(status == SUCCESS);
             }
-
+        else
+        if (!transform.IsIdentity())
+            {
+            bcDtmPtr = bcDtmPtr->Clone();
+            DTMStatusInt status = bcDtmPtr->Transform(transform);
+            assert(status == SUCCESS);
+            }
+        
         DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDtmPtr);
     
         en->SetExcludeAllRegions();
-        en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
-
-        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+        en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);        
 
         for (PolyfaceQueryP pf : *en)
             {

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/TerrainImporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ class TerrainInfo
 
 class ImportedTerrain : public TerrainInfo
     {
-    private: Bentley::TerrainModel::BcDTMPtr m_dtm;
+    private: BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr m_dtm;
 
     public: ImportedTerrain (BcDTMP dtm, WCharCP name, WCharCP description, bool hasDefinition);
     public: BcDTMP GetTerrain() const
@@ -78,7 +78,7 @@ struct TerrainImporter : RefCountedBase
     protected: virtual ImportedTerrain _ImportTerrain (WCharCP name) const = 0;
     protected: virtual ImportedTerrainList _ImportTerrains () const = 0;
     protected: virtual ImportedTerrainList _ImportTerrains (bvector<WString>& names) const = 0;
-    protected: virtual Bentley::GeoCoordinates::BaseGCSPtr _GetGCS () const { return nullptr; }
+    protected: virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr _GetGCS () const { return nullptr; }
     public: BENTLEYDTMFORMATS_EXPORT WCharCP GetFileUnitString () const;
     public: BENTLEYDTMFORMATS_EXPORT FileUnit GetFileUnit () const;
 
@@ -87,7 +87,7 @@ struct TerrainImporter : RefCountedBase
     public: BENTLEYDTMFORMATS_EXPORT ImportedTerrain ImportTerrain (WCharCP name) const;
     public: BENTLEYDTMFORMATS_EXPORT ImportedTerrainList ImportTerrains () const;
     public: BENTLEYDTMFORMATS_EXPORT ImportedTerrainList ImportTerrains (bvector<WString>& names) const;
-    public: BENTLEYDTMFORMATS_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetGCS () const;
+    public: BENTLEYDTMFORMATS_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr GetGCS () const;
 
     public: BENTLEYDTMFORMATS_EXPORT static TerrainImporterPtr CreateImporter (WCharCP filename);
                //    public: BENTLEYDTMFORMATS_EXPORT static GetSupportedFiles

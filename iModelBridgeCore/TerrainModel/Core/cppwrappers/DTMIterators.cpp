@@ -365,9 +365,7 @@ DTMFeatureEnumerator::iterator DTMFeatureEnumerator::end() const
 //---------------------------------------------------------------------------------------
 const DTMMeshEnumerator::iterator& DTMMeshEnumerator::iterator::operator++ ()
     {
-    if (m_p_vec->m_polyface->GetRefCount() != 1)
-        m_p_vec->m_polyface = PolyfaceHeader::CreateFixedBlockIndexed(3);
-
+    m_polyface = nullptr;
     if (!m_p_vec->MoveNext(m_pos, m_pos2))
         m_pos = -2;
     return *this;
@@ -384,7 +382,7 @@ DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm)
     maxTriangles = 50000;
     m_tilingMode = false;
     zAxisFactor = 1;
-    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
+//D    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
     }
 
 //---------------------------------------------------------------------------------------
@@ -597,7 +595,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
     /*
     ** Allocate Memory For Mesh Faces
     */
-    m_polyface->PointIndex().resize(maxTriangles * 3);
+    meshFaces.resize (maxTriangles * 3);
     m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
@@ -967,8 +965,8 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
                 if (featureNum == flistAddrP(dtmP, clPtr)->dtmFeature)
                     return 1;
                 }
-            }
-        clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
+                }
+                clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
         }
     /*
     ** Job Completed
@@ -1058,6 +1056,7 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
             return true;
         if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P4))
             return false;
+
         P2 = P4;
         }
 
@@ -1087,8 +1086,8 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         if (pnt1 == -1)
             pnt1 = leftMostPnt;
         // Reset the pointers/counters.
-        m_polyface->PointIndex().resize(maxTriangles * 3);
-        faceP = m_polyface->PointIndex().data();
+        meshFaces.resize(maxTriangles * 3);
+        faceP = &meshFaces[0];
         numTriangles = 0;
         /*
         ** Scan DTM And Accumulate Triangle Mesh
@@ -1183,7 +1182,7 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
                     }
                 }
             }
-        m_polyface->PointIndex().resize(numTriangles * 3);
+        meshFaces.resize (numTriangles * 3);
         /*
         ** Check For Unloaded Triangles
         */
@@ -1231,20 +1230,15 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     /*
     ** Mark Mesh Points
     */
-    //if (m_p_vec->m_polyface.IsNull())
-    //    m_p_vec->m_polyface = PolyfaceHeader::CreateFixedBlockIndexed(3); // PolyfaceQueryCarrier(3, false, (size_t)m_p_vec->meshFaces.size(), (size_t)points.size(), points.GetCP(), m_p_vec->meshFaces.GetCP(), normals.size(), normals.GetCP(), m_p_vec->meshFaces.GetCP());
-    ////else
-    ////    *m_p_vec->m_polyface = PolyfaceQueryCarrier(3, false, (size_t)m_p_vec->meshFaces.size(), (size_t)points.size(), points.GetCP(), m_p_vec->meshFaces.GetCP(), normals.size(), normals.GetCP(), m_p_vec->meshFaces.GetCP());
-
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
-    BlockedVectorDPoint3dR points = m_p_vec->m_polyface->Point();
-    BlockedVectorDVec3dR normals = m_p_vec->m_polyface->Normal();
+    BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
+    BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
 
     if (!m_p_vec->m_useRealPointIndexes)
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->m_polyface->PointIndex())
+        for (long face : m_p_vec->meshFaces)
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1294,13 +1288,13 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
         /*
         **                       Reset Point Indexes In Mesh Faces
         */
-        for (int& ptIndex : m_p_vec->m_polyface->PointIndex())
+        for (int& ptIndex : m_p_vec->meshFaces)
             ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
     else
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->m_polyface->PointIndex())
+        for (long face : m_p_vec->meshFaces)
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1318,8 +1312,11 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     for (node = minTptrPnt; node <= maxTptrPnt; ++node)
         nodeAddrP (m_dtmP, node)->tPtr = nullPnt;
-
-    return m_p_vec->m_polyface.get();
+    if (!m_polyface)
+        m_polyface = new PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
+    else
+        *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
+    return m_polyface;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1330,14 +1327,14 @@ DRange3d DTMMeshEnumerator::iterator::GetRange () const
     DRange3d range;
     range.Init ();
 
-    if (!m_p_vec->m_polyface->PointIndex().empty ())
+    if (!m_p_vec->meshFaces.empty ())
         {
         BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
         long nullPnt = m_dtmP->nullPnt;
         /*
         ** Mark Mesh Points
         */
-        for (long face : m_p_vec->m_polyface->PointIndex())
+        for (long face : m_p_vec->meshFaces)
             {
             range.Extend (*pointAddrP (m_dtmP, face));
             }
