@@ -236,6 +236,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
+		SCALABLEMESH_SCHEMA_EXPORT void ClearExtraFiles();
+
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
@@ -283,7 +285,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void SetRegionVisibility(uint64_t id, bool isVisible);
 
-        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id);
+        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id, const WString& basePath);
 
         SCALABLEMESH_SCHEMA_EXPORT bool HasQueuedTerrainRegions();
 

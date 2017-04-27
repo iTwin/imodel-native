@@ -814,13 +814,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
         {
-        //BeFileName smFileName(((this)->m_properties).m_fileId);
-        BeFileName smFileName;
-        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+        //BeFileName smFileName(((this)->m_properties).m_fileId);        
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()))
             {
-            OpenFile(smFileName, GetDgnDb()); 
+            OpenFile(m_path, GetDgnDb());
             }
 
         m_tryOpen = true;
@@ -861,15 +860,25 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             return;                        
             }   
         }        
+
+    bool restartQuery = true;
+
+    if ((m_currentDrawingInfoPtr != nullptr) && m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)
+        { 
+        restartQuery = false;
+        }
+        
     BentleyStatus status;
 
-    status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
-
-
-    assert(status == SUCCESS);
+    if (restartQuery)
+        {
+        status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
+        assert(status == SUCCESS);
+        }
 
     m_forceRedraw = false;                                   
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
+    int queryId = nextDrawingInfoPtr->m_currentQuery;
 
     // Need to get the fence info.
     /*
@@ -882,69 +891,71 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
         */    
     
-    DMatrix4d localToView(context.GetLocalToView());
-                                   
-    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
-
-    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
-
-    //DPoint3d viewBox[8];
-
-    //NEEDS_WORK_SM : Remove from query
-    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
-    DMatrix4d rootToStorage;
-
-    //Convert the view box in storage.
-    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
-
-    BeAssert(inverted != 0);
-    
-    status = SUCCESS;
-            
-    IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
-
-    viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-            
-    ClipVectorCP clip;
-    clip = context.GetTransformClipStack().GetClip();
-    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
-    //viewDependentQueryParams->SetViewBox(viewBox);
-    viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
-
-    //NEEDS_WORK_SM : Needed?
-    /*
-    if (s_progressiveDraw)
+    if (restartQuery)
         {
-        viewDependentQueryParams->SetProgressiveDisplay(true);
-        viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
-        }            
-        */
+        DMatrix4d localToView(context.GetLocalToView());
+                                   
+        DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
 
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));    
-    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
+        bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
+
+        //DPoint3d viewBox[8];
+
+        //NEEDS_WORK_SM : Remove from query
+        //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
+        DMatrix4d rootToStorage;
+
+        //Convert the view box in storage.
+        bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
+
+        BeAssert(inverted != 0);
+    
+        status = SUCCESS;
+            
+        IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
+
+        viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+            
+        ClipVectorCP clip;
+        clip = context.GetTransformClipStack().GetClip();
+        //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
+        //viewDependentQueryParams->SetViewBox(viewBox);
+        viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
+
+        //NEEDS_WORK_SM : Needed?
+        /*
+        if (s_progressiveDraw)
+            {
+            viewDependentQueryParams->SetProgressiveDisplay(true);
+            viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
+            }            
+            */
+
+        ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));    
+        clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
     
 
         
-    viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
+        viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
                           
-    m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
-    m_currentDrawingInfoPtr->m_currentQuery = queryId;
-    bvector<bool> clips;
-    /*NEEDS_WORK_SM : Get clips
-    m_DTMDataRef->GetVisibleClips(clips);
-    */
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+        m_currentDrawingInfoPtr->m_currentQuery = queryId;
+        bvector<bool> clips;
+        /*NEEDS_WORK_SM : Get clips
+        m_DTMDataRef->GetVisibleClips(clips);
+        */
 
-    status = GetProgressiveQueryEngine()->StartQuery(queryId,
-                                                      viewDependentQueryParams, 
-                                                      m_currentDrawingInfoPtr->m_meshNodes, 
-                                                      true, //No wireframe mode, so always load the texture.
-                                                      clips,
-                                                      m_smPtr); 
+        status = GetProgressiveQueryEngine()->StartQuery(queryId,
+                                                          viewDependentQueryParams, 
+                                                          m_currentDrawingInfoPtr->m_meshNodes, 
+                                                          true, //No wireframe mode, so always load the texture.
+                                                          clips,
+                                                          m_smPtr); 
 
 
-    assert(status == SUCCESS);
-
+        assert(status == SUCCESS);
+        }
 
     if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
@@ -1204,9 +1215,9 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
 
         m_smPtr->GetExtraFileNames(extraFileNames);
         //Close the 3SM file, to close extra clip files.
+		m_currentDrawingInfoPtr = nullptr;
+		m_progressiveQueryEngine = nullptr;
         m_smPtr = nullptr;
-        m_currentDrawingInfoPtr = nullptr;
-        m_progressiveQueryEngine = nullptr;
 
         for (auto& extraFileName : extraFileNames)
             {
@@ -1235,6 +1246,29 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
     clipFileBase.AppendToPath(modelIdStr);
     return clipFileBase;
     }
+
+
+void ScalableMeshModel::ClearExtraFiles()
+{
+	BeFileName clipFileBase = GenerateClipFileName(m_path, GetDgnDb());
+
+	bvector<BeFileName> names;
+	BeFileName clipFileName = clipFileBase;
+	clipFileName.append(L"_clips");
+
+	BeFileName clipDefFileName = clipFileBase;
+	clipDefFileName.append(L"_clipDefinitions");
+
+	names.push_back(clipFileName);
+	names.push_back(clipDefFileName);
+	for (auto& fileName : names)
+	{
+		if (BeFileName::DoesPathExist(fileName.c_str()))
+		{
+			BeFileName::BeDeleteFile(fileName.c_str());
+		}
+	}
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -1391,12 +1425,16 @@ void ScalableMeshModel::CloseFile()
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        m_currentDrawingInfoPtr->m_smPtr = nullptr;
         }
-    //ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
-    m_progressiveQueryEngine = nullptr;
+
+    m_progressiveQueryEngine = nullptr;    
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
     m_tryOpen = false;
+
+    //Ensure the file has really been closed.
+    assert(ScalableMeshLib::GetHost().GetRegisteredScalableMesh(m_path) == nullptr);
     }
 
 
@@ -1439,28 +1477,23 @@ BentleyStatus ScalableMeshModel::UpdateExtractedTerrainLocation(BeFileNameCR old
     m_smPtr->GetCoverageIds(coverageIds);
 
     for (auto& pMeshModel : allScalableMeshes)
-        {        
-        BeFileName coveragePath = oldLocation;
-        coveragePath.AppendString(m_basePath.GetFileNameAndExtension().c_str());
-
-         //m_basePath;
-        //coveragePath.AppendString(L"_terrain");
+        {                                 
         ScalableMeshModelP pScalableMesh = ((ScalableMeshModelP)pMeshModel);
         if (this == pScalableMesh)
-            continue;
+            continue;        
+                            
+        for (uint64_t coverageId : coverageIds)
+            {
+            BeFileName terrainPath;
+            GetPathForTerrainRegion(terrainPath, coverageId, oldLocation);
 
-        if (true == pScalableMesh->GetPath().ContainsI(coveragePath))
-            {            
-            for (uint64_t coverageId : coverageIds)
-                {
-                if (pScalableMesh->GetPath().ContainsI(std::to_wstring(coverageId).c_str()))
-                    {                    
-                    BeFileName newFileName(newLocation); 
-                    newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
-                    pScalableMesh->CloseFile();
-                    pScalableMesh->UpdateFilename(newFileName);                                                            
-                    }
-                }
+            if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
+                {                    
+                BeFileName newFileName(newLocation); 
+                newFileName.AppendString(pScalableMesh->GetPath().GetFileNameAndExtension().c_str());
+                pScalableMesh->CloseFile();
+                pScalableMesh->UpdateFilename(newFileName);                                                            
+                }                
             }
         }
 
@@ -1687,7 +1720,7 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
             {
             BeFileName terrainPath;
 
-            GetPathForTerrainRegion(terrainPath, coverageId);
+            GetPathForTerrainRegion(terrainPath, coverageId, m_basePath);
 
             if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
                 {                                            
@@ -1788,13 +1821,13 @@ void ScalableMeshModel::RemoveRegion(uint64_t id)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2017
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id)
+void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id, const WString& basePath)
     {
     assert(m_smPtr.IsValid());
 
     Utf8String coverageName;
     GetScalableMesh(false)->GetCoverageName(coverageName, id);
-    GetCoverageTerrainAbsFileName(terrainName, m_basePath, coverageName);
+    GetCoverageTerrainAbsFileName(terrainName, basePath, coverageName);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1844,7 +1877,7 @@ void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
                 {                        
                 if (sm == this || dynamic_cast<ScalableMeshModel*>(sm)->GetScalableMesh(false) == nullptr) continue;
                 
-                GetPathForTerrainRegion(terrainPath, reg.id);
+                GetPathForTerrainRegion(terrainPath, reg.id, m_basePath);
 
                 if (dynamic_cast<ScalableMeshModel*>(sm)->GetPath().CompareToI(terrainPath) == 0)
                     {                    
@@ -2116,13 +2149,12 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
 
     if (m_smPtr == 0 && !m_tryOpen)
     {
-        //BeFileName smFileName(((this)->m_properties).m_fileId);
-        BeFileName smFileName;
-        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+        //BeFileName smFileName(((this)->m_properties).m_fileId);        
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()))
         {
-            OpenFile(smFileName, GetDgnDb());
+            OpenFile(m_path, GetDgnDb());
         }
 
         m_tryOpen = true;
