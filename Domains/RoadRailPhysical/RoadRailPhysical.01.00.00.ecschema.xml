@@ -455,6 +455,9 @@
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
@@ -508,6 +511,9 @@
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadClassDefinition" relationshipName="RoadClassRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
