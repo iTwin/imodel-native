@@ -45,7 +45,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 std::set<ClassMap const*> m_deepestClassMapped;//Set of deepest classmap in traversed hierarchy.
                 std::set<ECN::ECEntityClassCP> m_mixins; //Set of identitifed mixin during traversing class hierarchy
                 std::set<ECN::ECClassCP> m_primaryHierarchy; //Set of classes that is part of pirmary hierarchy that is already traversed.
-                std::set<RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
+                std::map<ECN::ECClassId,RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
                 std::map<ECN::ECEntityClassCP, ClassMap const*> m_mixinImpls; // Final list of mixIn classes implementation
                 std::set<DbTable const*> m_contextMapTableSet; //fast cache for context class tables
                 ClassMap const& m_classMap; //Context Class for which to find used columns
@@ -58,7 +58,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 ClassMap const* ResolveMixin(ECN::ECClassCR);
                 void ResolveBaseMixin(ECN::ECClassCR currentClass);
                 BentleyStatus TraverseClassHierarchy(ECN::ECClassCR, ClassMap const*);
-                BentleyStatus FindRelationshipEndTableMaps();
+                BentleyStatus FindRelationshipEndTableMaps(ECN::ECClassId classId);
                 BentleyStatus Execute(ColumnMap&);
                 BentleyStatus QueryRelevantMixIns();
             public:
@@ -98,6 +98,8 @@ struct ClassMapColumnFactory final : NonCopyableClass
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         void Debug() const;
+        //! Estimate Maximum number of columns required.
+        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
     };
 
 

@@ -113,10 +113,14 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
-                                                                 "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True " AND CH.ClassId=? "
-                                                                 "WHERE RCC.ClassId=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT [RC].[RelationshipClassId], " 
+        "       [RC].[RelationshipEnd] "
+        "FROM   [ec_RelationshipConstraint] [RC] "
+        "       INNER JOIN [ec_RelationshipConstraintClass] [RCC] ON [RCC].[ConstraintId] = [RC].[Id] "
+        "       LEFT JOIN [" TABLE_ClassHierarchyCache "] [CBC] ON [CBC].[BaseClassId] = [RCC].[ClassId] "
+        "       AND [RC].[IsPolymorphic] = " SQLVAL_True " "
+        "WHERE  COALESCE ([CBC].[ClassId], [RCC].[ClassId]) = ?; ");
 
     if (stmt == nullptr)
         {
@@ -124,8 +128,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return relClassIds;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(1, constraintClassId) || //!This speed up query from 98ms to 28 ms by remove OR results that are not required in LEFT JOIN
-        BE_SQLITE_OK != stmt->BindId(2, constraintClassId))
+    if (BE_SQLITE_OK != stmt->BindId(1, constraintClassId))
         {
         BeAssert(false);
         return relClassIds;
