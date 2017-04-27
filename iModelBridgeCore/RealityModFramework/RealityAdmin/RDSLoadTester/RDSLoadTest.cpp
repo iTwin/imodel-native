@@ -787,6 +787,7 @@ void User::ValidateCreateRealityData(int activeUsers)
         m_id = instances["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
 
     m_linked = false;
+    m_node = nullptr;
     }
 
 CURL*  User::ModifyRealityData()
