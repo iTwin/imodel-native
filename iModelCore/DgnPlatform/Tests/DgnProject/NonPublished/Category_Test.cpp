@@ -490,7 +490,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // require valid parent category
     DgnSubCategory noParent(DgnSubCategory::CreateParams(db, DgnCategoryId(), "NoParent", app, "Sub-category requires valid parent category"));
     EXPECT_TRUE(noParent.Insert(&status).IsNull());
-    EXPECT_EQ(status, DgnDbStatus::InvalidName); // InvalidName because parent ID used to generate code.
+    EXPECT_NE(status, DgnDbStatus::Success);
 
     DgnSubCategory subcat2A(DgnSubCategory::CreateParams(db, cat2Id, "2A", app));
     DgnSubCategoryCPtr cpSubcat2A = subcat2A.Insert();
