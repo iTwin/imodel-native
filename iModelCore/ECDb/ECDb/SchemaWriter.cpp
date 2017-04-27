@@ -1941,8 +1941,6 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
             Issues().Report("ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null", ecClass.GetFullName(), deletedProperty.GetName().c_str());
             return ERROR;
             }
-
-        return SUCCESS;
         }
 
     //Delete ECProperty entry make sure ec_Column is already deleted or set to null
