@@ -895,7 +895,7 @@ CURL*  User::DeleteRealityData()
     m_correspondance.req.headers = realityDataReq.GetRequestHeaders();
     m_correspondance.req.payload = realityDataReq.GetRequestPayload();
 
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("Delete for user %d", m_userId));
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("Delete for user %d - ID:%s", m_userId, m_id));
 
     return WSGRequest::GetInstance().PrepareRequest(realityDataReq, m_correspondance.response, false, nullptr);
     }
