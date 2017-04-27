@@ -2137,7 +2137,7 @@ TEST(CurveVector, ReverseLeafCurves)
         curve->push_back(ICurvePrimitive::CreateArc(ellip));
         DSegment3d seg = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
         curve->push_back(ICurvePrimitive::CreateLine(seg));
-        DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+        // unused - DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
 
         bvector<DPoint3d> pointsLineString = { DPoint3d::From(0,0,0),DPoint3d::From(4,5,2),DPoint3d::From(9,8,10) };
         curve->push_back(ICurvePrimitive::CreateLineString(pointsLineString));
@@ -2164,7 +2164,7 @@ TEST(CurveVector, ReverseLeafCurves)
         curveN->push_back(ICurvePrimitive::CreateArc(ellipN));
         DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
         curveN->push_back(ICurvePrimitive::CreateLine(segN));
-        DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+        // unused - DPoint3dDVec3dDVec3dCR identity = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
 
         bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0),DPoint3d::From(4,5,2),DPoint3d::From(9,8,10) };
         curveN->push_back(ICurvePrimitive::CreateLineString(pointsLineStringN));
