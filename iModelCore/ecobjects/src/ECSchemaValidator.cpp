@@ -208,7 +208,7 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
     if (!constraint.AreConstraintClassesDefinedLocally())
         {
         LOG.errorv("Relationship class '%s' constraint does not define any constraint classes defined locally in %s. Each constraint must locally define at least one constraint class.",
-            className, constraintType);
+            className.c_str(), constraintType.c_str());
 
         status = ECObjectsStatus::Error;
         }
@@ -217,9 +217,9 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
         {
         if (constraint.IsAbstractConstraintDefined())
             LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s. Each constraint must locally define the abstract constraint, not just deriving this from a base class.",
-                className, constraint.GetAbstractConstraint()->GetFullName(), constraintType);
+                className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
         else
-            LOG.errorv("Abstract constraint is not defined in '%s' but one must be because there is more than one constraint class", constraintType);
+            LOG.errorv("Abstract constraint is not defined in '%s' but one must be because there is more than one constraint class", constraintType.c_str());
 
         status = ECObjectsStatus::Error;
         }
@@ -227,7 +227,7 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
     if (!constraint.IsRoleLabelDefinedLocally())
         {
         LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s. Each constraint must define a role label locally, not just deriving this from a base class.",
-            className, constraint.GetRoleLabel(), constraintType);
+            className.c_str(), constraint.GetRoleLabel().c_str(), constraintType.c_str());
 
         status = ECObjectsStatus::Error;
         }
