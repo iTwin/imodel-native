@@ -1402,12 +1402,16 @@ void ScalableMeshModel::CloseFile()
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        m_currentDrawingInfoPtr->m_smPtr = nullptr;
         }
-    //ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
-    m_progressiveQueryEngine = nullptr;
+
+    m_progressiveQueryEngine = nullptr;    
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
     m_tryOpen = false;
+
+    //Ensure the file has really been closed.
+    assert(ScalableMeshLib::GetHost().GetRegisteredScalableMesh(m_path) == nullptr);
     }
 
 
