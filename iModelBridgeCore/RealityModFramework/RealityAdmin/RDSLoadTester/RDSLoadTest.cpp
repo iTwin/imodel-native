@@ -253,11 +253,11 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
         std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
         std::this_thread::sleep_for(ms);
 
-        if (deviationFactor < 1.10 && deviationFactor > 0.9)
+        if (deviationFactor < 0.1)
             m_targetAttained = true;
         }
 
-    if (m_totalRequests > 100 || (s_targetRequestsPerHour > 0 && m_targetAttained))
+    if (m_totalRequests > 100 && (s_targetRequestsPerHour == 0 || m_targetAttained))
         {
 
         // On first log reset start time
