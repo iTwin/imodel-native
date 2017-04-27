@@ -7786,6 +7786,9 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
     BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
     BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
+    if (dtmFeatureP->numDtmFeaturePts != 4) // This feature doesn't have 4 points may be one or more are duplicated, so we ignore this feature.
+        return DTM_SUCCESS;
+
     long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
 
     long firstPnt = offsetP[0];
