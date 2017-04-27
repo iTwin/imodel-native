@@ -756,7 +756,7 @@ CURL* User::AzureAddress()
     m_correspondance.req.headers = m_handshake.GetRequestHeaders();
     m_correspondance.req.payload = m_handshake.GetRequestPayload();
 
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("azure address for %s", m_node->GetInstanceId()));
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("azure address for %s -  user %d", m_node->GetInstanceId(), m_userId));
 
     return WSGRequest::GetInstance().PrepareRequest(m_handshake, m_correspondance.response, false, nullptr);
     }
@@ -803,6 +803,8 @@ void User::ValidateCreateRealityData(int activeUsers)
 
     if(m_correspondance.response.status == RequestStatus::OK)
         m_id = instances["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
+
+    m_linked = false;
     }
 
 CURL*  User::ModifyRealityData()
@@ -840,7 +842,7 @@ CURL*  User::CreateRelationship()
     m_correspondance.req.headers = relReq.GetRequestHeaders();
     m_correspondance.req.payload = relReq.GetRequestPayload();
 
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("Create Relationship for user %d", m_userId));
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("Create Relationship for user %d - ID:%s", m_userId, m_id));
 
     return WSGRequest::GetInstance().PrepareRequest(relReq, m_correspondance.response, false, nullptr);
     }
@@ -866,7 +868,7 @@ CURL*  User::DeleteRelationship()
     m_correspondance.req.headers = relReq.GetRequestHeaders();
     m_correspondance.req.payload = relReq.GetRequestPayload();
 
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("DeleteRelationship for user %d", m_userId));
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("DeleteRelationship for user %d- ID:%s", m_userId, m_id));
 
     return WSGRequest::GetInstance().PrepareRequest(relReq, m_correspondance.response, false, nullptr);
     }
@@ -1232,10 +1234,9 @@ void UserManager::Repopulate()
 
     for (size_t i = 0; i < innactiveUserCount; i++)
         {
-        User* user = s_innactiveUsers.back();
-        s_innactiveUsers.pop_back();
-        user->DoNext(this);
+        s_innactiveUsers[i]->DoNext(this);
         }
+    s_innactiveUsers.clear();
     }
 
 void UserManager::SetupCurl(CURL* curl, User* user)
