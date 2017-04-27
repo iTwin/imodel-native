@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmMemory.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "malloc.h"
@@ -265,7 +265,7 @@ BENTLEYDTM_EXPORT void* bcdtmMemory_getPointer(
         }
     IDTMElementMemoryAllocator* mem = (IDTMElementMemoryAllocator*)dtmP->DTMAllocationClass;
 
-    return (void*)mem->GetMemoryPointer((int)partitionNumber);
+    return (void*)mem->GetMemoryPointer((int)(partitionNumber & 0xffffff));
     }
 
 
@@ -390,7 +390,7 @@ BENTLEYDTM_EXPORT DTMMemPnt bcdtmMemory_reallocate (
     {
     if (!dtmP->DTMAllocationClass)
         return (DTMMemPnt)realloc((void*)partitionNumber, size);
-    return (DTMMemPnt)dtmP->DTMAllocationClass->ReallocateMemory((int)partitionNumber, size);
+    return (DTMMemPnt)dtmP->DTMAllocationClass->ReallocateMemory((int)(partitionNumber & 0xffffff), size);
     }
 
 /*-------------------------------------------------------------------+
@@ -407,7 +407,7 @@ BENTLEYDTM_EXPORT void bcdtmMemory_free (
     if (!dtmP->DTMAllocationClass)
         free((void*)partitionNumber);
     else
-        dtmP->DTMAllocationClass->FreeMemory((int)partitionNumber);
+        dtmP->DTMAllocationClass->FreeMemory((int)(partitionNumber & 0xffffff));
     }
 #endif
 
