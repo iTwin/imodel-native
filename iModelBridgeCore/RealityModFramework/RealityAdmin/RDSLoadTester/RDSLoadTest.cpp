@@ -218,10 +218,37 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
         int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
         double deviationFactor = fabs(s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour;
+        int stepSeed = (s_sleepBiasMilliseconds < 50 ? 50 : s_sleepBiasMilliseconds);
         if (s_targetRequestsPerHour < requestsPerHour)
-            s_sleepBiasMilliseconds += (int)(100 * deviationFactor);  // Too fast ... increase sleep bias
-        else if (s_sleepBiasMilliseconds > 100)
-            s_sleepBiasMilliseconds -= (int)(100 * deviationFactor);  // Too slow ... decrease sleep bias
+            {
+            if (m_currentlyDecreasing)
+                {
+                // Trend just changed ... for the next 10 decrease we will be more agressive
+                m_increasingCount = 0;
+                m_currentlyDecreasing = false;
+                }
+
+            m_increasingCount++;
+            if (m_increasingCount <= 10)
+                s_sleepBiasMilliseconds += (int)(stepSeed * 4 * deviationFactor);  // Too fast ... increase sleep bias
+            else
+                s_sleepBiasMilliseconds += (int)(stepSeed * deviationFactor);  // Too fast ... increase sleep bias
+            }
+        else if (s_sleepBiasMilliseconds > (stepSeed * deviationFactor))
+            {
+            if (!m_currentlyDecreasing)
+                {
+                // Trend just changed ... for the next 10 decrease we will be more agressive
+                m_decreasingCount = 0;
+                m_currentlyDecreasing = true;
+                }
+
+            m_decreasingCount++;
+            if (m_decreasingCount <= 10 && s_sleepBiasMilliseconds > (stepSeed * 4 * deviationFactor))
+                s_sleepBiasMilliseconds -= (int)(stepSeed * 4 * deviationFactor);  // Too slow ... decrease sleep bias
+            else
+                s_sleepBiasMilliseconds -= (int)(stepSeed * deviationFactor);  // Too slow ... decrease sleep bias
+            }
 
         std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
         std::this_thread::sleep_for(ms);
@@ -305,7 +332,7 @@ void Stats::PrintStats()
 
     std::cout << Utf8PrintfString("Total Time (seconds): %6d", (currentTime - s_statStartTime)/1000) << std::endl;
     std::cout << Utf8PrintfString("Stat Total request/s:      %lf", (double)(totalSuccess + totalFailure) / ((currentTime - s_statStartTime)/1000.0)) << std::endl;
-    if (m_totalRequests < 100 && (s_targetRequestsPerHour > 0 && !m_targetAttained))
+    if (m_firstLog)
         {
         int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
         std::cout << Utf8PrintfString("Current request/hour:   %6d       TARGET:   %6d", requestsPerHour, s_targetRequestsPerHour) << std::endl;
@@ -313,6 +340,8 @@ void Stats::PrintStats()
         }
     else
         std::cout << Utf8PrintfString("Total request/hour:   %lf", 3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) << std::endl;
+
+    std::cout << Utf8PrintfString("Sleep bias (ms): %6d", s_sleepBiasMilliseconds) << std::endl;
     std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;

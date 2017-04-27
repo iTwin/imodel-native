@@ -61,7 +61,7 @@ public:
     int success, failure;
     int64_t minTime, maxTime, avgTime, startTime;
 
-    Stat() : success(0), failure(0), minTime(1000), maxTime(0), avgTime(0), startTime(std::time(nullptr)) {}
+    Stat() : success(0), failure(0), minTime(10000), maxTime(0), avgTime(0), startTime(std::time(nullptr)) {}
     void Update(bool success, int64_t time);
     };
 
@@ -76,6 +76,9 @@ struct Stats
     bool m_targetAttained = false;
     int m_totalRequests = 0;
     bool m_firstLog = true;
+    bool m_currentlyDecreasing = false;
+    int m_increasingCount = 10;
+    int m_decreasingCount = 10;
 
     Stats();
     void InsertStats(const User* user, bool success, int activeUsers);
