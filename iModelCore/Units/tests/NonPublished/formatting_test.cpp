@@ -29,10 +29,61 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 //#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 
+struct FormattingTestFixture
+    {
+private:
+        Utf8CP m_text;
+
+public: 
+    static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
+    {
+    FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
+    Utf8String cols = curs1.CollapseSpaces();
+    Utf8CP sig = curs1.GetSignature(false);
+    Utf8CP pat = curs1.GetPattern(false);
+    LOG.infov("Signature Test%02d  >%s<", tstN, txt);
+    if (hexDump)
+        {
+        Utf8String hd = Utils::HexDump(cols.c_str(), 30);
+        LOG.infov(u8"CollapsedHEX: %s", hd.c_str());
+        }
+    LOG.infov("   Collapsed%02d >%s< (len %d)", tstN, cols.c_str(), cols.length());
+    LOG.infov("   Signature%02d >%s< (src %d  sig %d) pattern: [%s]", tstN, sig, strlen(txt), strlen(sig), pat);
+    LOG.info("=========");
+    }
+
+    static void ShowHexDump(Utf8String str, int len)
+    {
+    Utf8String hd = Utils::HexDump(str.c_str(), 30);
+    LOG.infov(u8"COL: %s", hd.c_str());
+    }
+
+    static void ShowHexDump(Utf8CP str, int len)
+        {
+        Utf8String hd = Utils::HexDump(str, 30);
+        LOG.infov(u8"COL: %s", hd.c_str());
+        }
+
+    static void ShowKindOfQuantity(Utf8CP koq)
+        {
+        FormatUnitSet fus = FormatUnitSet(koq);
+        if (fus.HasProblem())
+            LOG.infov("Invalid KOQ: >%s<", koq);
+        else
+            LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
+        }
+    static void TestKindOfQuantity(Utf8CP koq, Utf8CP norm, Utf8CP aliased)
+        {
+        FormatUnitSet fus = FormatUnitSet(koq);
+        EXPECT_STREQ (norm, fus.ToText(false).c_str());
+        EXPECT_STREQ (aliased, fus.ToText(true).c_str());
+        }
+    };
+
 TEST(FormattingTest, Preliminary)
     {
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
-    const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
+    //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
     NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
     //LOG.infov("UNI: |%s|", uni);
@@ -45,27 +96,17 @@ TEST(FormattingTest, Preliminary)
         n++;
         }*/
 
-    /*Utf8P hexBuf = (Utf8P)alloca(6);
-    Utf8CP hexC =  Utils::HexByte('A', hexBuf, 5);
-    LOG.infov("HEX-A: %s", hexC);*/
+    FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 11, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 3/4\" S ", 12, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  -135     °     11     ' 30 3/4\" S ", 13, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("   22' 3 1/2\"", 14, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 15, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 16, false);
 
-    //Utf8CP degS1 = u8"135°11'30¼\" S";
-    Utf8CP degS = u8"135°11'30-1/4\" S";
-    Utf8String hd = Utils::HexDump(degS, 30);
-    LOG.infov("HEX: %s", hd.c_str());
 
-    FormattingScannerCursor curs = FormattingScannerCursor(degS, -1);
-    Utf8CP sig = curs.GetSignature(true);
-    Utf8CP pat = curs.GetPattern(false);
-    Utf8String cols = curs.CollapseSpaces();
-    hd = Utils::HexDump(cols.c_str(), 30);
-    LOG.infov(u8"COL: %s", hd.c_str());
-    LOG.infov("Signature  %s (src %d  sig %d) pattern: [%s]", sig, strlen(uni), strlen(sig), pat);
-    LOG.infov("Collapsed  %s (len %d)", cols.c_str(), cols.length());
-    //FormatUnitSet fus2 = FormatUnitSet("TONNE/HR(real)");
-    //FormatUnitSet fus3 = FormatUnitSet("TONNE/HR(DefaultReal)");
-    //LOG.infov("TONNE_PER_HR2  %s", fus2.ToText(false).c_str());
-    //LOG.infov("TONNE_PER_HR3  %s", fus3.ToText(false).c_str());
     //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
     //LOG.infov("TONNE_PER_HR-System  %s", sysN);
@@ -103,19 +144,28 @@ TEST(FormattingTest, PhysValues)
     word1 = curs4.ExtractBeforeEnclosure();
     LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());*/
 
-    FormatUnitSet fusInv = FormatUnitSet("MM");
+    /*FormatUnitSet fusInv = FormatUnitSet("MM");
     FormatDividerInstance fdi = FormatDividerInstance("W/(M*C)(DefaultReal)", '(');
     LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
     fdi = FormatDividerInstance("W/(M*C)|DefaultReal", '|');
     LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
     fdi = FormatDividerInstance("W/(M*C)|DefaultReal|", '|');
-    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
+    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));*/
 
-    LOG.infov("MM: %s", FormatUnitSet("MM").ToText(true).c_str());
-    LOG.infov("MM: %s", FormatUnitSet("MM|fract8").ToText(true).c_str());
-    LOG.infov("W/(M*C)R: %s", FormatUnitSet("W/(M*C)(DefaultReal)").ToText(true).c_str());
-    LOG.infov("W/(M*C): %s", FormatUnitSet("W/(M*C)").ToText(true).c_str());
+    /*LOG.infov("MM: %s", FormatUnitSet("MM").ToText(true).c_str());
+    LOG.infov("MM: %s", FormatUnitSet("MM|fract8").ToText(true).c_str());*/
+   // LOG.infov("W/(M*C)R: %s", FormatUnitSet("W/(M*C)(DefaultReal)").ToText(true).c_str());
+   // LOG.infov("W/(M*C): %s", FormatUnitSet("W/(M*C)").ToText(true).c_str());
 
+    FormattingTestFixture::ShowKindOfQuantity("MM");
+    FormattingTestFixture::ShowKindOfQuantity("MM|fract8");
+    FormattingTestFixture::ShowKindOfQuantity("MM|fract8|");
+    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)|DefaultReal");
+    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)|DefaultReal|");
+    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)(DefaultReal)");
+    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)");
+    FormattingTestFixture::ShowKindOfQuantity("TONNE/HR(real4");
+    FormattingTestFixture::ShowKindOfQuantity("TONNE/HR(DefaultReal)");
 
     FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
     EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());

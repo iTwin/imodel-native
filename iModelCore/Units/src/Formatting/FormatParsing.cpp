@@ -286,6 +286,7 @@ FormattingWord FormattingScannerCursor::ExtractWord()
 //  This method attempts to extract the content of the last "enclosure" - that is a group of
 //    characters enclosed into one of brackets: parenthesis, curvy bracket or square brackets
 //     if brackets are not detected - the returned word wil be empty
+//  "vertical line" divider is marked by single boolean argument because the divider and its mate are same
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
 FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
@@ -298,7 +299,8 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     m_breakIndex = m_totalScanLength; // points to the terminating zero
     Utf8CP txt = m_text.c_str();
     
-    while (isspace(txt[--m_breakIndex]) && 0 < m_breakIndex);
+    while (isspace(txt[--m_breakIndex]) && 0 < m_breakIndex);  // skip blanks from the end
+
     if (!m_dividers.IsDivider(txt[m_breakIndex]))
         {
         m_status = ScannerCursorStatus::NoEnclosure;
@@ -312,6 +314,8 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
         return FormattingWord(this, emptyBuf, emptyBuf, true);
         }
     size_t endDivPosition = m_breakIndex;
+    if (div)
+        --m_breakIndex;
     while (0 < m_breakIndex && txt[m_breakIndex] != m) --m_breakIndex;
 
     if(txt[m_breakIndex] != m || endDivPosition <= m_breakIndex)
@@ -667,6 +671,16 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
         }
     }
 
+bool FormatDividerInstance::IsDivLast() 
+    {
+    if (0 < m_divCount)
+        {
+        int last = m_positions.back();
+        bool check = (m_div == m_mate) ? m_totLen == last : m_totLen == -last;
+        return check;
+        }
+    return false;
+    }
 
 Utf8String FormatDividerInstance::ToText()
     {

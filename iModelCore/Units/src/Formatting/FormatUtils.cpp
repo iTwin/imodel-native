@@ -1004,7 +1004,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     FormattingWord fnam;
     FormattingWord unit;
     FormatDividerInstance fdt;
-    FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // chek if thisis a new format
+    FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
     int n = fdi.GetDivCount();
     if (n == 2 && fdi.IsDivLast())
         {

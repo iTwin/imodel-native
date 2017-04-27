@@ -138,7 +138,7 @@ public:
     int GetDivCount() { return m_divCount; }
     int GetMateCount() { return m_mateCount; }
     bool BracketsMatched() { return (0 < m_divCount && m_divCount == m_mateCount); }
-    bool IsDivLast() { return (0 < m_divCount && m_totLen == -(m_positions.back())); }
+    UNITS_EXPORT bool IsDivLast();
     int  GetFirstLocation() { return (m_positions.size() > 0) ? m_positions.front()-1 : -1; }
     UNITS_EXPORT Utf8String ToText();
     };
