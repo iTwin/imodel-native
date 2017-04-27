@@ -3099,8 +3099,6 @@ private:
     ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
-    bool Validate(bool resolveIssues);
-
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
@@ -3186,7 +3184,12 @@ public:
     //! @return true, if this schema is a system schema. false, otherwise
     bool IsSystemSchema() const {return IsDefined("Bentley_Standard_Custom_Attributes", "SystemSchema");}
 
-    ECOBJECTS_EXPORT bool Validate(); //!< Validates the schema against the latest version of EC
+    //!< Validates the schema against the latest version of EC.  
+    //! @remarks This method will not attempt to resolve issues found during validation.  Use the overload ::Validate(bool) to use automatic issue resolution.
+    ECOBJECTS_EXPORT bool Validate();
+    //! Validates the schema against the latest version of the EC specification.
+    //! @param[in] resolveIssues If true this method will attempt to resolve any issues found.  If false any issues found will fail validation.
+    ECOBJECTS_EXPORT bool Validate(bool resolveIssues);
 
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
