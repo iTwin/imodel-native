@@ -87,6 +87,16 @@
         </Bindings>
     </Part>
     
+    <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\3CSLoadTester\3CSLoadTest.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <Bindings>
+            <Assemblies>Delivery/3CSLoadTest.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
         <SubPart PartName="WMSCapabilitiesNET"/>
@@ -266,6 +276,7 @@
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="RealityContextTest"/>
         <SubPart PartName="RDSLoadTest"/>
+        <SubPart PartName="3CSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
     </Part>
 
