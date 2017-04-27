@@ -359,20 +359,20 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     }
 
 
-#ifdef WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (TransformR transform, ClipVectorPtr& clip, double leafTolerance) const
+Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const
     { 
-    transform = Transform::FromProduct(depthTransform, m_root->GetLocation());
-    clip = GetClip().GetClipVexctor();
+    if (nullptr != GetClip().GetClipVector())
+        clip  = ClipVector::CreateCopy(*GetClip().GetClipVector());
 
-    _Load(&context.GetTargetR().GetSystem());
+    _Load(renderSys);
 
     return m_root;
-    }
-#endif
+    }
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
@@ -555,4 +555,4 @@ void RasterModel::_OnLoadedJsonProperties()
 bool RasterModel::IsParallelToGround() const {return _IsParallelToGround();}
 
 
-
+

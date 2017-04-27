@@ -70,7 +70,7 @@ Utf8String RasterTile::_GetTileCacheKey() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-bool RasterTile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
+bool RasterTile::TryLowerRes(TileTree::DrawGraphicsR args, int depth) const
     {
     RasterTile* parent = (RasterTile*) m_parent;
     if (depth <= 0 || nullptr == parent)
@@ -92,7 +92,7 @@ bool RasterTile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
+void RasterTile::TryHigherRes(TileTree::DrawGraphicsR args) const
     {
     for (auto const& child : m_children)
         {
@@ -109,16 +109,24 @@ void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
+void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const 
+    {
+     _GetGraphics(args.m_graphics, depth);
+
+    if (!IsReady() && !IsNotFound())
+        args.m_missing.Insert(depth, this);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterTile::_GetGraphics(TileTree::DrawGraphicsR args, int depth) const
     {
     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
         return;
 
     if (!IsReady())
         {
-        if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
-
         TryLowerRes(args, DRAW_COARSER_DELTA);
         TryHigherRes(args);
 

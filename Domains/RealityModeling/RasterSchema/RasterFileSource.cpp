@@ -93,11 +93,11 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
 
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
-    auto graphic = rasterTile.GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    auto graphic = GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
 
     Render::Texture::CreateParams params;
     params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
-    auto texture = rasterTile.GetRoot().GetRenderSystem()->_CreateTexture(m_image, params);
+    auto texture = GetRenderSystem()->_CreateTexture(m_image, params);
 
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     graphic->AddTile(*texture, rasterTile.GetCorners());

@@ -470,9 +470,8 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 
     Render::Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
-
-    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    auto texture = GetRenderSystem()->_CreateTexture(image, textureParams);
+    auto graphic = GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
     graphic->AddTile(*texture, rasterTile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
@@ -489,15 +488,15 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
     auto status = GetSource().GetLastHttpError();
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
         return nullptr; // Need to authenticate before we try again.
 
-    RefCountedPtr<WmsTileLoader> TileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads);
-    TileLoader->m_credentials = GetSource().GetCredentials();
-    TileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
+    RefCountedPtr<WmsTileLoader> tileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
+    tileLoader->m_credentials = GetSource().GetCredentials();
+    tileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
 
-    return TileLoader;
+    return tileLoader;
     }

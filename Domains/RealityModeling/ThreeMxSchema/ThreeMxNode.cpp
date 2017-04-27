@@ -38,14 +38,19 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
         Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
         graphic->ActivateGraphicParams(params);
         graphic->AddRangeBox(m_range);
-        args.m_graphics.Add(*graphic);
+        args.m_graphics.m_graphics.Add(*graphic);
         }
+    _GetGraphics (args.m_graphics, depth);
+    }
 
-    if (!m_geometry.empty()) // if we have geometry, draw it now
-        {
-        for (auto geom : m_geometry)
-            geom->Draw(args);
-        }
+/*---------------------------------------------------------------------------------**//**
+* Draw this node. 
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Node::_GetGraphics(DrawGraphicsR args, int depth) const
+    {
+    for (auto geom : m_geometry)
+        geom->GetGraphics(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,9 +68,9 @@ void Node::_PickGraphics(PickArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
+TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
-    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);
+    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,7 +128,7 @@ Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Geometry::Draw(DrawArgsR args)
+void Geometry::GetGraphics(DrawGraphicsR args)
     {
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
