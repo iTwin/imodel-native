@@ -9873,10 +9873,10 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <ECProperty propertyName="P74" typeName="point3d" />
             </ECEntityClass>
         </ECSchema>)xml", true);
-        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb");
-        bool asserted = false;
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb",testItem,3);
+        /*bool asserted = false;
         AssertSchemaImport(asserted, ecdb, testItem);
-        
+        */
         ECSqlStatement b1,b2,b3;
         b3.Prepare(ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
         b1.Prepare(ecdb, "SELECT * FROM diego.B1"); //Acess B1

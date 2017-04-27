@@ -131,7 +131,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 
                 PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
                 if (propertyMap->IsSystem())
-                    tablesReferencedByWhereClause.insert(&propertyMap->GetClassMap().GetJoinedTable());
+                    tablesReferencedByWhereClause.insert(&propertyMap->GetClassMap().GetJoinedOrPrimaryTable());
                 else
                     tablesReferencedByWhereClause.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
                 }

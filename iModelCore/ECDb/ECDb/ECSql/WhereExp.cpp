@@ -14,5 +14,4 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 WhereExp::WhereExp(std::unique_ptr<BooleanExp> expression) : Exp(Type::Where) { AddChild(std::move(expression)); }
 
-            tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
 END_BENTLEY_SQLITE_EC_NAMESPACE
