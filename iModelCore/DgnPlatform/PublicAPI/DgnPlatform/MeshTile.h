@@ -40,6 +40,8 @@ BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributes);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
 BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
+BENTLEY_RENDER_TYPEDEFS(IGetTileTreeForPublishing);
+BENTLEY_RENDER_TYPEDEFS(TileTreePublishRenderSystem);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -449,6 +451,7 @@ public:
 
     void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
+    void AddRenderTile(Render::IGraphicBuilder::TileCorners const&, TransformCR transform);
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
     DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color);
@@ -989,37 +992,42 @@ private:
         TileNodePtr GenerateDecorationTile() const;
     };
 
-    struct ElementTileResult
+    struct GenerateTileResult
         {
-        ElementTileNodePtr      m_tile;
+        TileNodePtr             m_tile;
         TileGeneratorStatus     m_status;
 
-        explicit ElementTileResult(TileGeneratorStatus status, ElementTileNodeP tile=nullptr) : m_tile(tile), m_status(status)
+        explicit GenerateTileResult(TileGeneratorStatus status, TileNodeP tile=nullptr) : m_tile(tile), m_status(status)
             { BeAssert(TileGeneratorStatus::Success != m_status || m_tile.IsValid()); }
         };
 
     typedef folly::Future<TileGeneratorStatus> FutureStatus;
-    typedef folly::Future<ElementTileResult> FutureElementTileResult;
+    typedef folly::Future<GenerateTileResult> FutureGenerateTileResult;
 
-    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
+    FutureGenerateTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus PopulateCache(ElementTileContext context);
-    FutureElementTileResult GenerateTileset(TileGeneratorStatus status, ElementTileContext context);
-    FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
-    FutureElementTileResult ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context);
+    FutureGenerateTileResult GenerateTileset(TileGeneratorStatus status, ElementTileContext context);
+    FutureGenerateTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
+    FutureGenerateTileResult ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context);
                                                                                 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
-    FutureStatus GenerateTilesFromTileTree(TileTree::RootR root, double leafTolerance, TransformCR transform, ClipVectorCP clip);
+    FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
+    FutureGenerateTileResult GenerateTilesFromTileTree(TileTree::TileP parentTile, TransformCR location, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* pCollector);
+
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetSpatialTransformFromDgn() const { return m_spatialTransformFromDgn; }
+    Transform GetTransformFromDgn(DgnModelCR model) const;
+
     Statistics const& GetStatistics() const { return m_statistics; }
     ITileGenerationProgressMonitorR GetProgressMeter() { return m_progressMeter; }
 
     DGNPLATFORM_EXPORT TileGeneratorStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT static IFacetOptionsPtr CreateTileFacetOptions(double chordTolerance);
 };
 
 //=======================================================================================
@@ -1039,7 +1047,7 @@ struct IGenerateMeshTiles
 //=======================================================================================
 struct IGetTileTreeForPublishing
 {
-    virtual TileTree::RootCPtr _GetPublishingTileTree(TransformR transform, ClipVectorPtr& clip) const = 0;
+    virtual TileTree::RootCPtr _GetPublishingTileTree(ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const = 0;
 
 };  // IGetTileTreeForPublishing
 

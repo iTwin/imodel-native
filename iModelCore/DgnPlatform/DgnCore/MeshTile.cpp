@@ -547,6 +547,25 @@ bool TileMesh::HasNonPlanarNormals() const
     return false;
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tileCorners, TransformCR transform)
+    {
+    for (size_t i=0; i<4; i++)
+        m_points.push_back(tileCorners.m_pts[i]);
+
+    transform.Multiply (m_points, m_points);
+
+    m_uvParams.push_back(DPoint2d::From(0.0, 0.0));
+    m_uvParams.push_back(DPoint2d::From(1.0, 0.0));
+    m_uvParams.push_back(DPoint2d::From(0.0, 1.0));
+    m_uvParams.push_back(DPoint2d::From(1.0, 1.0));
+
+    AddTriangle(TileTriangle(0, 1, 2, false));
+    AddTriangle(TileTriangle(1, 3, 2, false));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -988,7 +1007,7 @@ WString TileNode::GetFileName (WCharCP rootName, WCharCP extension) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
+IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
     {
     static double       s_defaultAngleTolerance = msGeomConst_piOver2;
     IFacetOptionsPtr    opts = IFacetOptions::Create();
@@ -1588,7 +1607,7 @@ TileGeometry::T_TilePolyfaces TileGeometry::GetPolyfaces(double chordTolerance, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
     {
-    auto facetOptions = createTileFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
+    auto facetOptions = TileGenerator::CreateTileFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
     bool normalsRequired = false;
 
     switch (normalMode)
@@ -1759,33 +1778,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
             });
         }
-#ifdef WIP_TILETREE_PUBLISH
     else if (nullptr != getTileTree)
         {
-        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
-            {
-            return pCollector->_BeginProcessModel(*modelPtr);
-            })
-        .then([=](TileGeneratorStatus status)
-            {
-            if (TileGeneratorStatus::Success == status)
-                {
-                Transform           transform;
-                ClipVectorPtr       clip;
-                TileTree::RootCPtr  tileRoot = getTileTree->_GetPublishingTileTree(transform, clip)
-
-                status = tileRoot.IsValid() ? GenerateTilesFromTileTree(*tileRoot, leafTolerance, transform, clip.get()) : folly::makeFuture(TileGeneratorStatus::NoGeometry); 
-                }
-
-            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
-            return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
-            });
-        .then([=](TileGeneratorStatus status)
-            {
-            return status;
-            });
+        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }
-#endif
     else
         {
         BeFileName          dataDirectory;
@@ -1799,9 +1795,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             if (TileGeneratorStatus::Success == status)
                 return GenerateElementTiles(*pCollector, leafTolerance, surfacesOnly, maxPointsPerTile, *modelPtr);
 
-            return folly::makeFuture(ElementTileResult(status, nullptr));
+            return folly::makeFuture(GenerateTileResult(status, nullptr));
             })
-        .then([=](ElementTileResult result)
+        .then([=](GenerateTileResult result)
             {
             if (result.m_tile.IsValid())
                 m_totalTiles += result.m_tile->GetNodeCount();
@@ -1817,24 +1813,12 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017 
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(TileTree::RootR root, double leafTolerance, TransformCR transformFromRaster, ClipVectorCP clip)
-    {
-    ElementTileNodePtr publishParent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
-
-
-    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
-
-    return folly::makeFuture(TileGeneratorStatus::Success);
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
+TileGenerator::FutureGenerateTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
     ElementTileContext  context(*cache, model, collector, leafTolerance, model.Is3dModel() && surfacesOnly, maxPointsPerTile);
@@ -1858,9 +1842,17 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform   TileGenerator::GetTransformFromDgn(DgnModelCR model) const
+    {
+    return model.IsSpatialModel() ?  GetSpatialTransformFromDgn() : Transform::FromIdentity(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGeneratorStatus status, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGeneratorStatus status, ElementTileContext context)
     {
     auto& cache = *context.m_cache;
     auto sheet = context.m_model->ToSheetModel();
@@ -1869,26 +1861,20 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
     if (nullptr != sheet)
         range.Extend(sheet->GetSheetExtents());
 
-    Transform transformFromDgn;
-    if (context.m_model->IsSpatialModel())
-        transformFromDgn = GetSpatialTransformFromDgn();
-    else
-        transformFromDgn.InitIdentity();
-
     if (TileGeneratorStatus::Success != status && nullptr == sheet)
         {
-        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr).get());
+        GenerateTileResult result(status, ElementTileNode::Create(*context.m_model, range, GetTransformFromDgn(*context.m_model), 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
     
-    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, transformFromDgn, 0, 0, nullptr);
-    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, range, GetTransformFromDgn(*context.m_model), 0, 0, nullptr);
+    return ProcessParentTile(parent, context).then([=](GenerateTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
@@ -1916,7 +1902,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
-        ElementTileResult result(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
+        GenerateTileResult result(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, tile.GetRoot());
         if (tile.GetGeometries().empty())
             return result;
 
@@ -1952,6 +1938,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         });
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1973,7 +1960,7 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
@@ -1982,20 +1969,20 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(TileGene
 
     auto root = static_cast<ElementTileNodeP>(parent->GetRoot());
     if (parent->GetChildren().empty() || TileGeneratorStatus::Success != status)
-        return folly::makeFuture(ElementTileResult(status, root));
+        return folly::makeFuture(GenerateTileResult(status, root));
 
-    std::vector<FutureElementTileResult> childFutures;
+    std::vector<FutureGenerateTileResult> childFutures;
     for (auto& child : parent->GetChildren())
         {
         auto elemChild = static_cast<ElementTileNodeP>(child.get());
-        auto childFuture = ProcessParentTile(elemChild, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, elemChild, context); });
+        auto childFuture = ProcessParentTile(elemChild, context).then([=](GenerateTileResult result) { return ProcessChildTiles(result.m_status, elemChild, context); });
         childFutures.push_back(std::move(childFuture));
         }
 
-    auto result = ElementTileResult(status, root);
-    return folly::unorderedReduce(childFutures, result, [=](ElementTileResult, ElementTileResult)
+    auto result = GenerateTileResult(status, root);
+    return folly::unorderedReduce(childFutures, result, [=](GenerateTileResult, GenerateTileResult)
         {
-        return ElementTileResult(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, root);
+        return GenerateTileResult(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, root);
         });
     }
 
@@ -2416,7 +2403,7 @@ bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
     if (GetInstanceCount() < s_minInstanceCount)
         return false;
 
-    auto            facetOptions = createTileFacetOptions(chordTolerance);
+    auto            facetOptions = TileGenerator::CreateTileFacetOptions(chordTolerance);
     FacetCounter    counter(*facetOptions);
     size_t          facetCount = GetFacetCount(counter);
 
@@ -2930,7 +2917,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
     {
     // Collect geometry from elements in this node, sorted by size
     auto is2d = cache.GetModel().Is2dModel();
-    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
+    IFacetOptionsPtr                facetOptions = TileGenerator::CreateTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
 
