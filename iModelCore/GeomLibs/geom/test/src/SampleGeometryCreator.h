@@ -132,8 +132,8 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
     signs.push_back (1.0);
     signs.push_back (-1.0);
 
-    double aX = 3.0;
-    double aY  = 5.0;
+    //double aX = 3.0;
+    //double aY  = 5.0;
 
     // ====================
     for (double sZ : signs)
@@ -287,8 +287,8 @@ static void AddCone (bvector<IGeometryPtr> &data)
     }
 static void AddAllCones (bvector<IGeometryPtr> &data, bool capped)
     {
-    double rA = 1.0;
-    double rB = 0.5;
+    //double rA = 1.0;
+    //double rB = 0.5;
     double zA = 0.0;
     double zB = 1.0;
     for (double rA : bvector<double>{1.0, 2.0, 0.0})
