@@ -71,7 +71,7 @@
     <!-- END PathwayElement Class Hierarchy -->
     
     <!-- BEGIN TravelwaySegment Element Class Hierarchy -->
-    <ECEntityClass typeName="TravelwaySegmentElement" modifier="Abstract" description="Base class for segments from Road/Rail Linear-Element-Sources." >
+    <ECEntityClass typeName="TravelwaySegmentElement" modifier="Abstract" description="Base class for segments of a Travelway, which is the section of the Pathway in direct contact with the moving objects (e.g. motor vehicles, trains, etc)." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
@@ -126,7 +126,7 @@
     <!-- END TravelwaySegmentElement Class Hierarchy -->
 
     <!-- BEGIN RoadIntersectionLeg Element Class Hierarchy -->
-    <ECEntityClass typeName="TravelwayIntersectionSegmentElement" modifier="Abstract" description="Physical segment of a road connected to an intersection." >
+    <ECEntityClass typeName="TravelwayIntersectionSegmentElement" modifier="Abstract" description="Physical segment of a Travelway connected to an intersection between alignments." >
         <BaseClass>TravelwaySegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -141,7 +141,7 @@
             <Class class="AlignmentIntersectionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="RoadIntersectionLegElement" modifier="Abstract" description="Physical segment of a road connected to an intersection." >
+    <ECEntityClass typeName="RoadIntersectionLegElement" modifier="Abstract" description="Physical segment of the Travelway of a road connected to an intersection." >
         <BaseClass>TravelwayIntersectionSegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -163,7 +163,7 @@
         <ECEnumerator value="0" displayLabel="Left"/>
         <ECEnumerator value="1" displayLabel="Right"/>
     </ECEnumeration>
-    <ECEntityClass typeName="PathFoundationSegment" modifier="None" description="Generic class for Road/Rail foundation elements." >
+    <ECEntityClass typeName="PathFoundationSegment" modifier="None" description="Generic class for Road/Rail foundation segment elements." >
         <BaseClass>PathFoundationElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PathFoundationIntersectionSegment" modifier="None" description="Generic class for Road/Rail foundation intersection elements." >

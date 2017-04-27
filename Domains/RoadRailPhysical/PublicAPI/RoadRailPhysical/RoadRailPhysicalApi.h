@@ -242,7 +242,6 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Railway)
 #include "RoadRailCategory.h"
 #include "RoadRailPhysicalDomain.h"
 #include "ElementAspects.h"
-#include "LinearReferencing.h"
 #include "RoadDesignSpeed.h"
 #include "RoadClass.h"
 #include "Pathway.h"
