@@ -156,6 +156,40 @@ protected:
 }; // ILinearlyLocatedElement
 
 //=======================================================================================
+//! Helper interface to be implemented by linearly located attribution and elements
+//! only accepting and exposing one from-to linearly referenced location.
+//! Concrete subclasses are expected to explicitely add the single aspect on their
+//! constructor as follows:
+//! _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct ILinearlyLocatedSingleFromTo
+{
+private:
+    mutable LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
+    LinearReferencing::LinearlyReferencedFromToLocationPtr m_unpersistedFromToLocationPtr;
+
+    virtual Dgn::DgnElementCR ToElement() const { return *dynamic_cast<Dgn::DgnElementCP>(this); }
+    virtual Dgn::DgnElementR ToElementR() { return *dynamic_cast<Dgn::DgnElementP>(this); }
+    virtual LinearReferencing::ILinearlyLocatedCR ToLinearlyLocated() const { return *dynamic_cast<LinearReferencing::ILinearlyLocatedCP>(this); }
+    virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
+
+protected:
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo() {}
+
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo(double fromDistanceAlong, double toDistanceAlong);
+
+    LinearReferencing::LinearlyReferencedFromToLocationPtr _GetUnpersistedFromToLocation() const { return m_unpersistedFromToLocationPtr; }
+
+public:
+    LINEARREFERENCING_EXPORT double GetFromDistanceAlong() const;
+    LINEARREFERENCING_EXPORT void SetFromDistanceAlong(double newFrom);
+
+    LINEARREFERENCING_EXPORT double GetToDistanceAlong() const;
+    LINEARREFERENCING_EXPORT void SetToDistanceAlong(double newFrom);
+}; // ILinearlyLocatedSingleFromTo
+
+//=======================================================================================
 //! Interface implemented by elements representing known locations along 
 //! an ILinearElement.
 //! @see ILinearElement
