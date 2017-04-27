@@ -35,14 +35,5 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
     #       Which is: 2
     # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)
 
-BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
-    # bim0200dev, x64 & x86, DEBUG, after merge
-    # [ RUN      ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
-    # F:\Bim0200Dev\src-staging\Bentley\Tests\Published\BeTimeUtilities_test.cpp(140): error:       Expected: expectedMillis
-    #       Which is: 1095361199000
-    # To be equal to: actualMillis
-    #       Which is: 1095364799000
-    # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
-
 AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
     # bim0200, x64, NDEBUG, PRG, Hang
