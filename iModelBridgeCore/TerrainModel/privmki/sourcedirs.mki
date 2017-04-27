@@ -22,6 +22,7 @@ TerrainModelFormatsDir        =       $(SrcTerrainModel)formats/
 TerrainModelDrainageDir       =       $(SrcTerrainModel)drainage/
 TerrainModelSTMDir            =       $(SrcTerrainModel)stm/
 TerrainModelElementHandlerDir =       $(SrcTerrainModel)elementHandler/
+TerrainModelGroundDetectDir   =       $(SrcTerrainModel)AutomaticGroundDetection/
 #PlatformToolsDir             =       $(SrcDgnPlatform)PlatformTools/
 #PrivateApiSrc                =       $(SrcDgnPlatform)PrivateApi/
 privmki                       =       $(SrcDgnPlatform)privmki/
