@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.List;
 import java.util.ArrayList;
@@ -80,14 +81,14 @@ public final class ConnectInterface {
         return ConnectJNI.GetConnectUser();
     }
 
-    public static List<String> GetProjects() {
-        ArrayList<String> list = new ArrayList<String>();
-        String[] projects = ConnectJNI.GetProjects();
-        for (int i = 0; i < projects.length; i++) {
-            list.add(projects[i]);
-        }
-        return list;
+    public static HashMap<String, String> GetProjects() {
+        return ConnectJNI.GetProjects();
     }
+
+    public static HashMap<Integer, String> GetProjectProperties(String projectId) {
+        return ConnectJNI.GetProjectProperties(projectId);
+    }
+
 
     public static void Initialize (Context context) {
         if (!s_initialized) {

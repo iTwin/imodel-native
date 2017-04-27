@@ -3,6 +3,7 @@
 //
 #include <string>
 #include <list>
+#include <map>
 #include <Bentley/Bentley.h>
 #include <Logging/bentleylogging.h>
 #include <WebServices/ConnectC/CWSCCPublic.h>
@@ -23,10 +24,14 @@ private:
     bool m_isInitialized = false;
     CWSCCHANDLE m_apiHandle = 0;
     void GetAPIHandle();
+    int InsertPropertyIntoMap(CWSCCDATABUFHANDLE project, int propertyId, std::map<int, wstring>* map);
+    int InsertPropertyIntoMap(CWSCCDATABUFHANDLE project, int propertyId, int mapIndex, std::map<int, wstring>* map);
+
 public:
     static void Initialize( std::wstring appDir, std::wstring tempDir, std::wstring externalStorageDir, std::wstring deviceId, void* secStore);
     std::string GetConnectUserName();
-    int GetProjects(std::list<wstring>* list);
+    int GetProjects(std::map<wstring, wstring>* idToNameMap);
+    int GetProjectPropertyMapV4(wstring projectId, std::map<int, wstring>* map);
     ConnectInterfaceNative();
     ~ConnectInterfaceNative();
 };
