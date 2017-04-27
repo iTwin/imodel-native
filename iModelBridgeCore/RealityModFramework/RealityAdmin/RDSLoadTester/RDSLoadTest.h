@@ -25,14 +25,14 @@ enum OperationType
     CREATE_RELATIONSHIP,
     DETAILS,
     LIST_REALITYDATA,
-    NAVNODE,
     ENTERPRISE_STAT,
     AZURE_ADDRESS,
     MODIFY_REALITYDATA,
     DELETE_RELATIONSHIP,
     DELETE_REALITYDATA,
     DOWNLOAD,
-    last
+    last,
+    NAVNODE, // Not used
     };
 
 struct RawRequest
@@ -101,6 +101,7 @@ struct User
     {
 public:
     int64_t                     m_start;
+    int64_t                     m_lastRequestTimeMilliseconds;
     OperationType               m_currentOperation;
     Utf8String                  m_id;
     bool                        m_linked;
