@@ -2180,23 +2180,6 @@ TEST(CurveVector, ReverseLeafCurves)
     
     }
 
-/*TEST(CurveVector, ParentofParameter) 
-    {
-    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
-    bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
-    ICurvePrimitivePtr linePrim = ICurvePrimitive::CreateLineString(pointsLineStringN);
-    curve->push_back(linePrim);
-    DSegment3d segN = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
-    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(segN);
-    curve->push_back(segPrim);
-    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(1, 0, 0),
-                                                    DPoint3d::From(2, 1, 0),
-                                                    DPoint3d::From(1, 2, 0));
-    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
-    curve->push_back(ellipsePrim);
-    curve->FindParentOfPrimitive(ellipsePrim);
-    
-    }*/
 TEST(CurveVector, LengthOfPrimitives) 
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
@@ -2220,7 +2203,11 @@ TEST(CurveVector, LengthOfPrimitives)
     // length post rotation
     double prior = curve->Length();
     
-    double posterior = curve->Length();
+    //double posterior;
+    //linePrim->Length(posterior);
+    RotMatrix rot[] = { RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(45).Cos()) };
+    double postRot = curve->Length(rot);
+    Check::Near(prior, postRot);
     }
 TEST(CurveVector, CloneBetweenFractions) 
     {
@@ -2274,7 +2261,7 @@ TEST(CurveVector, ChangeAreaByOffset)
 
     Check::ClearGeometry("CurveVector.ChangeAreaByOffset");
     }
-//to be done yet
+
 TEST(CurveVector, CloneOffsetCurvesXY)
     {
 
@@ -2294,11 +2281,10 @@ TEST(CurveVector, CloneOffsetCurvesXY)
     Check::SaveTransformed(*curve);
     Check::Shift(20, 0, 0);
     CurveOffsetOptions offset(5);
-   // offset.SetTolerance(6);
     auto offsetCurve = curve->CloneOffsetCurvesXY(offset);
     Check::SaveTransformed(*offsetCurve);
+    Check::Shift(20, 0, 0);
+    auto offsetCurve2 = curve->CloneOffsetCurvesXY(offset);//offset only curves
+    Check::SaveTransformed(*offsetCurve2);
     Check::ClearGeometry("CurveVector.CloneOffsetCurvesXY");
-
-    }//still in doubt as to why it is removing linestring primitive
-
-
+    }
