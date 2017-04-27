@@ -122,7 +122,20 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             DbTable& joinedTable = currentClassMap.GetJoinedTable();
 
             // * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
-            std::set<DbTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
+            std::set<DbTable const*> tablesReferencedByWhereClause;
+            for (Exp const* exp : whereExp->Find(Exp::Type::PropertyName, true))
+                {
+                PropertyNameExp const& propertyNameExp = exp->GetAs<PropertyNameExp>();
+                if (propertyNameExp.IsPropertyRef())
+                    continue;
+
+                PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
+                if (propertyMap->IsSystem())
+                    tablesReferencedByWhereClause.insert(&propertyMap->GetClassMap().GetJoinedTable());
+                else
+                    tablesReferencedByWhereClause.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
+                }
+
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
 

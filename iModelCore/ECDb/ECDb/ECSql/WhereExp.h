@@ -25,7 +25,6 @@ public:
     explicit WhereExp(std::unique_ptr<BooleanExp> expression);
 
     BooleanExp const* GetSearchConditionExp() const { return GetChild<BooleanExp>(0); }
-    std::set<DbTable const*> GetReferencedTables() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
