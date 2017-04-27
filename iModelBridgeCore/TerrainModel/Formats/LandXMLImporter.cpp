@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -1057,6 +1057,9 @@ void LandXMLImporter::ReadContour ()
 
         if (ret != SUCCESS && !ogcWktCode.empty())// Try a different method
             ret = m_gcs->InitFromWellKnownText (nullptr, nullptr, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, ogcWktCode.GetWCharCP ());
+
+        if (ret != SUCCESS && !name.empty())// Try a different method
+            ret = m_gcs->SetFromCSName(name.c_str());
 
         if (ret != SUCCESS)
             m_gcs = nullptr;
