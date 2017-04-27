@@ -523,7 +523,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
         table = &preparedStmt.GetContextTable();
 #else
-        table = &classMap.GetJoinedTable();
+        table = &classMap.GetJoinedOrPrimaryTable();
 #endif
         }
     else
@@ -536,7 +536,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
                 table = &preparedStmt.GetContextTable();
 #else
-                table = &classMap.GetJoinedTable();
+                table = &classMap.GetJoinedOrPrimaryTable();
 #endif
                 }
             else if (currentScopeECSqlType == ECSqlType::Delete)

@@ -118,7 +118,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!currentClassMap.IsMappedToSingleTable())
             {
             auto& primaryTable = currentClassMap.GetPrimaryTable();
-            auto& secondaryTable = currentClassMap.GetJoinedTable();
+            auto& secondaryTable = currentClassMap.GetJoinedOrPrimaryTable();
 
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
             bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());

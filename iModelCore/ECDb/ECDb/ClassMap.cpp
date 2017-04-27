@@ -74,7 +74,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                 }
             else
                 {
-                AddTable(tphBaseClassMap->GetJoinedTable());
+                AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
                                 }
             }
 
@@ -175,16 +175,16 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
-    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
-    if (&baseClassMapJoinedTable == &GetJoinedTable())
+    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedOrPrimaryTable();
+    if (&baseClassMapJoinedTable == &GetJoinedOrPrimaryTable())
         return ClassMappingStatus::Success;
 
     DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* foreignKeyColumn = GetJoinedTable().FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* foreignKeyColumn = GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
     PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
-    for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
+    for (DbConstraint const* constraint : GetJoinedOrPrimaryTable().GetConstraints())
         {
         if (constraint->GetType() != DbConstraint::Type::ForeignKey)
             continue;
@@ -200,7 +200,7 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
 
     if (createFKConstraint)
         {
-        if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
+        if (GetJoinedOrPrimaryTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
             return ClassMappingStatus::Error;
         }
 
@@ -376,7 +376,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            DbTable const& table = GetJoinedTable();
+            DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
@@ -411,7 +411,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedOrPrimaryTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
@@ -899,7 +899,7 @@ DbTable const* ClassMap::ExpectingSingleTable() const
     if (GetTables().size() != 1)
         return nullptr;
 
-    return &GetJoinedTable();
+    return &GetJoinedOrPrimaryTable();
     }
 
 //---------------------------------------------------------------------------------------

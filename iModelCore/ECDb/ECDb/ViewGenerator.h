@@ -163,7 +163,7 @@ struct ViewGenerator final
 
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
 
-        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
+        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
         static BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassEndTableMap const& relationMap);
         static BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassLinkTableMap const& relationMap);
         static BentleyStatus DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr);

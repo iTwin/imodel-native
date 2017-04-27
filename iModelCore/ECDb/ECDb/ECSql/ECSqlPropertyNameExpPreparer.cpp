@@ -162,9 +162,9 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     if (ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
         contextTable = &ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
     else
-        contextTable = &propMap.GetClassMap().GetJoinedTable();
+        contextTable = &propMap.GetClassMap().GetJoinedOrPrimaryTable();
 #else
-    DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
+    DbTable const* contextTable = &propMap.GetClassMap().GetJoinedOrPrimaryTable();
 #endif
 
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, scope, classIdentifier, exp.HasParentheses());
@@ -284,7 +284,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 if (!propertyRef->WasToNativeSqlCalled())
                     {
                     PropertyMap const& propertyMap = referencedPropertyNameExp.GetPropertyMap();
-                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select, nullptr);
+                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select, nullptr);
                     propertyMap.AcceptVisitor(sqlVisitor);
                     NativeSqlBuilder::List snippets;
                     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())

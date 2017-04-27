@@ -35,7 +35,7 @@ std::set<DbTable const*> WhereExp::GetReferencedTables() const
 
         PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
         if (propertyMap->IsSystem())
-            tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
+            tmp.insert(&propertyMap->GetClassMap().GetJoinedOrPrimaryTable());
         else
             tmp.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
         }

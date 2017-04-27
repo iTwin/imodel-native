@@ -1815,7 +1815,7 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
         if (classMap != nullptr)
             {
-            m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
+            m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()] = classMap;
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
             }

@@ -300,7 +300,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
                 return;
                 }
 
-            ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
+            ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
             ecInstanceIdPropMap->AcceptVisitor(sqlVisitor);
 
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlVisitor.GetResultSet().front().GetSqlBuilder()});

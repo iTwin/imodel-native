@@ -102,7 +102,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     NativeSqlBuilder joinedTableECSQL;
 
     DbTable const& primaryTable = classMap.GetPrimaryTable();
-    DbTable const& joinedTable = classMap.GetJoinedTable();
+    DbTable const& joinedTable = classMap.GetJoinedOrPrimaryTable();
 
     NativeSqlBuilder::List joinedTableProperties;
     NativeSqlBuilder::List joinedTableValues;
@@ -234,7 +234,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     NativeSqlBuilder joinedTableECSQL;
 
     DbTable const& primaryTable = classMap.GetPrimaryTable();
-    DbTable const& joinedTable = classMap.GetJoinedTable();
+    DbTable const& joinedTable = classMap.GetJoinedOrPrimaryTable();
 
     NativeSqlBuilder::List joinedTableProperties;
     NativeSqlBuilder::List joinedTableValues;

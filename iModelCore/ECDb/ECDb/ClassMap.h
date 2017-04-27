@@ -175,7 +175,7 @@ struct ClassMap : RefCountedBase
             return *((DbTable*)nullptr);
             }
 
-        DbTable& GetJoinedTable() const 
+        DbTable& GetJoinedOrPrimaryTable() const 
             {
             for (DbTable* table : GetTables())
                 {
@@ -188,18 +188,17 @@ struct ClassMap : RefCountedBase
             return GetPrimaryTable();
             }
 
-        DbTable& GetOverflowTable() const
+        DbTable* GetOverflowTable() const
             {
             for (DbTable* table : GetTables())
                 {
                 if (table->GetType() == DbTable::Type::Overflow)
                     {
-                    return *table;
+                    return table;
                     }
                 }
 
-            BeAssert(false);
-            return *((DbTable*)nullptr);
+            return nullptr;
             }
 
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }

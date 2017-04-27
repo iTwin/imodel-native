@@ -119,7 +119,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             {
             std::vector<Exp const*> propertyExpsInWhereClause = whereExp->Find(Exp::Type::PropertyName, true);
             DbTable& primaryTable = currentClassMap.GetPrimaryTable();
-            DbTable& joinedTable = currentClassMap.GetJoinedTable();
+            DbTable& joinedTable = currentClassMap.GetJoinedOrPrimaryTable();
 
             // * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
             std::set<DbTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();

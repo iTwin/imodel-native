@@ -53,8 +53,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        //if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
-        //    return ERROR;
+        if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
+            return ERROR;
         }
 
     return SUCCESS;
@@ -551,19 +551,19 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs)
     {
     viewSql.Append("SELECT ");
-    DbTable const* requireJoinTo = nullptr;
+    bset<DbTable const*> requireJoinTo;
     if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Data | PropertyMap::Type::ECInstanceId | PropertyMap::Type::ECClassId) != SUCCESS)
         return ERROR;
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName().c_str());
     //Join necessary table for table 
-    if (requireJoinTo != nullptr)
+    for(DbTable const* to : requireJoinTo)
         {
         DbColumn const* primaryKey = contextTable.FindFirst(DbColumn::Kind::ECInstanceId);
-        DbColumn const* fkKey = requireJoinTo->FindFirst(DbColumn::Kind::ECInstanceId);
-        viewSql.Append(" INNER JOIN ").AppendEscaped(requireJoinTo->GetName().c_str());
+        DbColumn const* fkKey = to->FindFirst(DbColumn::Kind::ECInstanceId);
+        viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetName().c_str());
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
-        viewSql.Append(BooleanSqlOperator::EqualTo).AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+        viewSql.Append(BooleanSqlOperator::EqualTo).AppendEscaped(to->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
         }
 
     return SUCCESS;
@@ -849,12 +849,12 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
             }
         }
 
-    DbTable const* requireJoinTo;
     NativeSqlBuilder dataPropertySql;
+    bset<DbTable const*> requireJoinTo;
     if (RenderPropertyMaps(dataPropertySql, ctx, requireJoinTo, relationMap, contextTable, nullptr, PropertyMap::Type::Data, requiresJoin) != SUCCESS)
         return ERROR;
 
-    if (requireJoinTo != nullptr)
+    if (!requireJoinTo.empty())
         {
         BeAssert(false && "Relationship does not support joined table so this is a error");
         return ERROR;
@@ -874,9 +874,9 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Context& ctx, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin)
+BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Context& ctx, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin)
     {
-    requireJoinTo = nullptr;
+    requireJoinTo.clear();
     if (Enum::Contains(filter, PropertyMap::Type::ConstraintECClassId) || Enum::Contains(filter, PropertyMap::Type::ConstraintECInstanceId))
         {
         BeAssert(false && "This function cannot render ConstraintECClassId and ConstraintECInstanceId property maps");
@@ -890,7 +890,6 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         return ERROR;
         }
 
-    DbTable const* requireJoinToTableForDataProperties = nullptr;
     if (baseClass != nullptr)
         {
         SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
@@ -910,16 +909,11 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 return ERROR;
                 }
 
-            //!We assume that in case of joinedTable we can only have exactly one table to join to.
-            //!Therefore not using a set/vector to store joinTable list
-            if (requireJoinToTableForDataProperties == nullptr)
+            if (propertyMap->IsData())
                 {
-                if (propertyMap->IsData())
-                    {
-                    DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
-                    if (&dataPropertyMap.GetTable() != &contextTable)
-                        requireJoinToTableForDataProperties = &dataPropertyMap.GetTable();
-                    }
+                DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
+                if (&dataPropertyMap.GetTable() != &contextTable)
+                    requireJoinTo.insert(&dataPropertyMap.GetTable());
                 }
 
             propertyMaps.push_back(std::make_pair(propertyMap, basePropertyMap));
@@ -938,15 +932,13 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
                 //!We assume that in case of joinedTable we can only have exactly one table to joint to.
                 //!Therefore not using a set/vector to store joinTable list
-                if (requireJoinToTableForDataProperties == nullptr)
+                if (propertyMap->IsData())
                     {
-                    if (propertyMap->IsData())
-                        {
-                        DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
-                        if (&dataPropertyMap.GetTable() != &contextTable)
-                            requireJoinToTableForDataProperties = &dataPropertyMap.GetTable();
-                        }
+                    DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
+                    if (&dataPropertyMap.GetTable() != &contextTable)
+                        requireJoinTo.insert (&dataPropertyMap.GetTable());
                     }
+
                 propertyMaps.push_back(std::make_pair(propertyMap, nullptr));
                 }
             }
@@ -955,7 +947,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     if (propertyMaps.empty())
         return SUCCESS;
 
-    Utf8CP systemContextTableAlias = requireJoinToTableForDataProperties || requireJoin ? contextTable.GetName().c_str() : nullptr;
+    Utf8CP systemContextTableAlias = !requireJoinTo.empty() ? contextTable.GetName().c_str() : nullptr;
     NativeSqlBuilder::List propertySqlList;
     for (auto const& kvp : propertyMaps)
         {
@@ -1037,9 +1029,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         BeAssert(propertyMap->IsData());
         SingleColumnDataPropertyMap const& dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
         //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
-        if (&dataProperty.GetTable() == requireJoinToTableForDataProperties)
+        if (requireJoinTo.end() != requireJoinTo.find(&dataProperty.GetTable()))
             {
-            ToSqlVisitor toSqlVisitor(ctx, *requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
+            ToSqlVisitor toSqlVisitor(ctx, dataProperty.GetTable(), dataProperty.GetTable().GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
@@ -1130,7 +1122,6 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         propertySqlList.push_back(propertySql);
         }
 
-    requireJoinTo = requireJoinToTableForDataProperties;
     sqlView.Append(propertySqlList);
     return SUCCESS;
     }

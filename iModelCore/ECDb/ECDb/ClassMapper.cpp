@@ -85,7 +85,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecInstanceIdColumns;
-    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     if (ecInstanceIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -110,7 +110,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
 BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecClassIdColumns;
-    DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().FindFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* ecClassIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECClassId);
     if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -593,8 +593,8 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
         {
-        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable());
+        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedOrPrimaryTable());
+        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedOrPrimaryTable());
         }
 
     if (idProp == nullptr || relECClassIdProp == nullptr)

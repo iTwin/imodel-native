@@ -176,7 +176,7 @@ void ClassMapColumnFactory::SetupCompoundFilter(bset<const ClassMap*> const* add
         if (additionalClassMap == &m_classMap)
             continue;
 
-        if (additionalClassMap->GetJoinedTable().GetId() != GetTable().GetId())
+        if (additionalClassMap->GetJoinedOrPrimaryTable().GetId() != GetTable().GetId())
             {
             BeAssert(false);
             continue;
@@ -556,7 +556,7 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbTable& ClassMapColumnFactory::GetTable() const  { return m_classMap.GetJoinedTable();  }
+DbTable& ClassMapColumnFactory::GetTable() const  { return m_classMap.GetJoinedOrPrimaryTable();  }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
@@ -758,7 +758,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
     {
     for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(m_classMap.GetClass().GetId()))
         {
-        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()
+        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedOrPrimaryTable()
         ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetClass(relKey.first);
         BeAssert(relClass != nullptr);
         ClassMap const* relMap = m_classMap.GetDbMap().GetClassMap(*relClass);
