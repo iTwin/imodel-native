@@ -35,6 +35,7 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
     #       Which is: 2
     # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)
 
+#TFS 693552: failing on PRG, but passing in PST
 BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
     # bim0200dev, x64 & x86, DEBUG, after merge
     # [ RUN      ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
