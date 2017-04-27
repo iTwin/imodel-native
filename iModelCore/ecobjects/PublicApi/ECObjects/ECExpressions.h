@@ -14,6 +14,18 @@
 #include <ECUnits/Units.h>
 #include <Bentley/BeThread.h>
 
+#define LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS               "ECObjects.ECExpressions"
+#define LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_PARSE         LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS ".Parse"
+#define LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_EVALUATE      LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS ".Evaluate"
+
+#define ECEXPRESSIONS_PARSE_LOG(sev, msg) \
+    if (NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_PARSE)->isSeverityEnabled(sev)) \
+        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_PARSE)->message(sev, msg); \
+
+#define ECEXPRESSIONS_EVALUATE_LOG(sev, msg) \
+    if (NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_EVALUATE)->isSeverityEnabled(sev)) \
+        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECOBJECTS_ECEXPRESSIONS_EVALUATE)->message(sev, msg); \
+
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
@@ -715,7 +727,7 @@ protected:
 public:
     ECOBJECTS_EXPORT uint32_t                   GetCount() const;
     ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, uint32_t index) const;
-
+    ECOBJECTS_EXPORT Utf8String                 ToString() const;
     ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, uint32_t arrayPropertyIndex);
     ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
@@ -777,6 +789,7 @@ public:
 
     ECOBJECTS_EXPORT LambdaValueCP          GetLambda() const;
     ECOBJECTS_EXPORT void                   SetLambda (LambdaValueR value);
+    ECOBJECTS_EXPORT Utf8String             ToString() const;
     };
 
 /*=================================================================================**//**

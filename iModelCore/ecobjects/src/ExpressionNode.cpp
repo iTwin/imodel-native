@@ -31,35 +31,47 @@ static void performConcatenation(ECValueR evalResult, ECValueCR left, ECValueCR 
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
     if (!evalResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt32: WrongType. (parameter is not ECValue)");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt32: WrongType. (parameter is not primitive or is NULL)");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
             ecValue.SetInteger(ecValue.GetBoolean() ? 1 : 0);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt32: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Integer:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt32: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Long:
             ecValue.SetInteger((int)ecValue.GetLong());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt32: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Double:
             ecValue.SetInteger((int)ecValue.GetDouble());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt32: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_String:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt32: Integer conversion to string is not implemented");
             return ExpressionStatus::NotImpl;
         }
 
-    return ExpressionStatus::WrongType; 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::ConvertToInt32: WrongType. EvaluationResult value is not primitive(%s)", ecValue.ToString().c_str()).c_str());
+    return ExpressionStatus::WrongType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,10 +80,16 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue) 
     {
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToString: WrongType. EvaluationResult value is not primitive or is null");
         return ExpressionStatus::WrongType;
+        }
 
     if (ecValue.IsString())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToString: %s", ecValue.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
+        }
 
     // --  TODO -- should this involve extended types
     Utf8Char     buffer [80];
@@ -92,10 +110,12 @@ ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue)
             BeStringUtilities::Snprintf(buffer, "%f", ecValue.GetDouble());
             break;
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToString: NotImplemented string conversion");
             return ExpressionStatus::NotImpl;
         }
 
     ecValue.SetUtf8CP(buffer);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToString: %s", ecValue.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -113,34 +133,46 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
     if (!evalResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt64: WrongType. EvaluationResult is not ECValue");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt64: WrongType. EvaluationResult value is not primitive or is null");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
             ecValue.SetLong(ecValue.GetBoolean() ? 1 : 0);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt64: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Integer:
             ecValue.SetLong(ecValue.GetInteger());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt64: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Long:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt64: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Double:
             ecValue.SetLong((int64_t)ecValue.GetDouble());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToInt64: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_String:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToInt64: Can not convert int64 to string");
             return ExpressionStatus::NotImpl;
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::ConvertToInt64: WrongType. Evaluation result is not primitive %s", ecValue.ToString().c_str()).c_str());
     return ExpressionStatus::WrongType; 
     }
 
@@ -150,34 +182,46 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
     if (!evalResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToDouble: WrongType. Evaluation result is not ECValue");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToDouble: WrongType. Evaluation result value is not primitive or is null");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
             ecValue.SetDouble(ecValue.GetBoolean() ? 1 : 0);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToDouble: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Integer:
             ecValue.SetDouble(ecValue.GetInteger());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToDouble: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Long:
-            return ExpressionStatus::WrongType; 
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToDouble: Can not convert long to double");
+            return ExpressionStatus::WrongType;
 
         case PRIMITIVETYPE_Double:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToDouble: %s", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_String:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToDouble: Can not convert string to double");
             return ExpressionStatus::NotImpl;
         }
 
-    return ExpressionStatus::WrongType; 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::ConvertToDouble: WrongType. Evaluation result value is not primitive: %s", ecValue.ToString().c_str()).c_str());
+    return ExpressionStatus::WrongType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,14 +302,22 @@ ref EvaluationResultCR     ecValue
 ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResult)
     {
     if (!evalResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToBooleanOperand: WrongType. Evaluation result is not ECValue");
         return ExpressionStatus::WrongType;
-
+        }
     ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::ConvertToBooleanOperand: WrongType. Evaluation result value is not primitive or is null");
         return ExpressionStatus::WrongType;
+        }
 
     if (ecValue.IsBoolean())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToBooleanOperand: %s", ecValue.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
+        }
 
     ECN::PrimitiveType   primType = ecValue.GetPrimitiveType();
     bool    boolValue = false;
@@ -291,15 +343,20 @@ ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResu
             else if (!strcmp("1", strValue) || !strcmp("true", strValue))
                 boolValue = true;
             else
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::ConvertToBooleanOperand: WrongType.(%s)", ecValue.ToString().c_str()).c_str());
                 return ExpressionStatus::WrongType;
+                }
             }
 
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::ConvertToBooleanOperand: WrongType. (%s)", ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::WrongType;
         }
 
     ecValue.SetBoolean(boolValue);
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::ConvertToBooleanOperand: %s", ecValue.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -439,13 +496,19 @@ ref ECEvaluationResult     ecValue
 ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult)
     {
     if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformArithmeticPromotion: Primitive required (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECN::ECValueR    left    = *leftResult.GetECValue();
     ECN::ECValueR    right   = *rightResult.GetECValue();
 
     if (!left.IsPrimitive() || !right.IsPrimitive() || left.IsNull() || right.IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformArithmeticPromotion: Primitive required (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
     ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
@@ -460,22 +523,28 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
     if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
         {
         if (leftCode == rightCode)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
+            }
 
         ECValueR            target = PRIMITIVETYPE_Long == leftCode ? right : left;
         ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
         if (PRIMITIVETYPE_Double == targetCode)
             {
             target.SetLong((int64_t)target.GetDouble());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: %s", target.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
 
         if (PRIMITIVETYPE_Integer == targetCode)
             {
             target.SetLong(target.GetInteger());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: %s", target.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformArithmeticPromotion: IncompatibleTypes. (Unavailable long conversion)");
         return ExpressionStatus::IncompatibleTypes;
         }
 
@@ -483,7 +552,10 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
         {
         //  Both must be doubles
         if (leftCode == rightCode)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
+            }
 
         ECValueR            target = PRIMITIVETYPE_Double == leftCode ? right : left;
         ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Double == leftCode ? rightCode : leftCode;
@@ -491,16 +563,22 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
         if (PRIMITIVETYPE_Integer == targetCode)
             {
             target.SetDouble(target.GetInteger());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: %s", target.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformArithmeticPromotion: IncompatibleTypes. (Unavailable double conversion)");
         return ExpressionStatus::IncompatibleTypes;
         }
 
     //  Both must be int
     if (PRIMITIVETYPE_Integer == leftCode && PRIMITIVETYPE_Integer == rightCode)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformArithmeticPromotion: (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
+        }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformArithmeticPromotion: WrongType.");
     return ExpressionStatus::WrongType;
     }
 
@@ -514,11 +592,17 @@ EvaluationResultR     right
 )
     {
     if (!left.IsECValue() || !right.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformJunctionPromotion: WrongType. Invalid operands (not ECValues)");
         return ExpressionStatus::WrongType;
+        }
 
     ECValueR lv = *left.GetECValue(), rv = *right.GetECValue();
     if (!lv.IsPrimitive() || !rv.IsPrimitive() || lv.IsNull() || rv.IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformArithmeticPromotion: WrongType. NotPrimitive (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::WrongType;
+        }
 
     ExpressionStatus     status = ExpressionStatus::Success;
 
@@ -557,12 +641,18 @@ EvaluationResultR           left
 )
     {
     if (!left.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformUnaryMinus: Primitive required. (left is not ECValue");
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECN::ECValueR        ecLeft = *left.GetECValue();
 
     if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformUnaryMinus: IncompatibleTypes. Left is not primitive (%s)", ecLeft.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
 
@@ -596,11 +686,13 @@ EvaluationResultR           left
             break;
             }
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformUnaryMinus: WrongType. Is not primitive(%s)", v.ToString().c_str()).c_str());
             return ExpressionStatus::WrongType;
         }
 
     resultOut = v;
     resultOut.SetUnits (left.GetUnits());
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformUnaryMinus: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -614,12 +706,18 @@ EvaluationResultR           left
 )
     {
     if (!left.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformUnaryNot: Primitive required (left is not ECValue)");
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECN::ECValueR        ecLeft = *left.GetECValue();
 
     if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformUnaryNot: IncompatibleTypes. Left is not primitive(%s)", ecLeft.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
 
@@ -654,10 +752,12 @@ EvaluationResultR           left
             }
 
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformUnaryNot: WrongType. Is not primitive(%s)", v.ToString().c_str()).c_str());
             return ExpressionStatus::WrongType;
         }
 
     resultOut = v;
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformUnaryNot: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -680,7 +780,10 @@ EvaluationResultR         right
         return status;
 
     if (!left.IsECValue() || !left.GetECValue()->IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformShift: WrongType. Left is not primitive");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::PrimitiveType   primType = left.GetECValue()->GetPrimitiveType();
     int                 count = right.GetECValue()->GetInteger();
@@ -737,10 +840,14 @@ EvaluationResultR         right
     if (!v.IsNull())
         {
         resultOut = v;
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformShift: Result: %s", resultOut.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
     else
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformShift: WrongType. Not primitive (%s)", v.ToString().c_str()).c_str());
         return ExpressionStatus::WrongType;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -757,8 +864,12 @@ ExpressionStatus Operations::EnforceMultiplicativeUnits (UnitSpecR units, Evalua
     else if (rUnit.IsUnspecified())
         units = lUnit;
     else
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::EnforceMultiplicativeUnits: IncompatibleUnits");
         return ExpressionStatus::IncompatibleUnits;
+        }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::EnforceMultiplicativeUnits: (%s)", units.ToECExpressionString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -776,26 +887,42 @@ ExpressionStatus Operations::EnforceLikeUnits (EvaluationResultR left, Evaluatio
         else
             right.SetUnits (lUnit);
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::EnforceLikeUnits: (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
     else if (lUnit.IsUnspecified())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::EnforceLikeUnits: (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::Success;  // neither has units
-    else if (!lUnit.IsCompatible (rUnit))
+        }
+    else if (!lUnit.IsCompatible(rUnit))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::EnforceLikeUnits: IncompatibleUnits (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleUnits;
-    else if (lUnit.IsEquivalent (rUnit))
+        }
+    else if (lUnit.IsEquivalent(rUnit))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::EnforceLikeUnits: (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::Success;  // units compatible and no conversion required
-
+        }
     // Convert rhs to units of lhs
     ECValueR rv = *right.GetECValue();
-    if (!rv.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
-        return ExpressionStatus::UnknownError;
+    if (!rv.ConvertToPrimitiveType(PRIMITIVETYPE_Double))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::EnforceLikeUnits: UnknownError (Could not convert right units to units of left)");
+         return ExpressionStatus::UnknownError;
+       }
 
     double rd = rv.GetDouble();
-    if (!rUnit.ConvertTo (rd, lUnit))
+    if (!rUnit.ConvertTo(rd, lUnit))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::EnforceLikeUnits: IncompatibleUnits. Could not convert right unit to left unit (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleUnits;
+        }
 
     rv.SetDouble (rd);
     right.SetUnits (lUnit);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::EnforceLikeUnits: (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -842,11 +969,13 @@ bool                        enforceUnits
             }
 
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformMultiplication: WrongType. Is not primitive (%s)", v.ToString().c_str()).c_str());
             return ExpressionStatus::WrongType;
         }
 
     resultOut = v;
     resultOut.SetUnits (units);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformMultiplication: Result: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -860,6 +989,7 @@ EvaluationResultR           left,
 EvaluationResultR           right
 )
     {
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformExponentiation: NotImplemented (PerformExponentiation is not implemented)");
     return ExpressionStatus::NotImpl;
     }
 
@@ -890,7 +1020,10 @@ bool                        enforceUnits
             {
             int     divisor = right.GetECValue()->GetInteger();
             if (0 == divisor)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformIntegerDivision: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::DivideByZero;
+                }
 
             v.SetInteger(left.GetECValue()->GetInteger() / divisor);
 
@@ -901,7 +1034,10 @@ bool                        enforceUnits
             {
             int64_t   divisor = right.GetECValue()->GetLong();
             if (0 == divisor)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformIntegerDivision: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::DivideByZero;
+                }
 
             v.SetLong(left.GetECValue()->GetLong() / divisor);
 
@@ -912,7 +1048,10 @@ bool                        enforceUnits
             {
             double     divisor = right.GetECValue()->GetDouble();
             if (0 == divisor)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformIntegerDivision: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::DivideByZero;
+                }
 
             v.SetDouble(floor(left.GetECValue()->GetDouble() / divisor));
 
@@ -920,11 +1059,13 @@ bool                        enforceUnits
             }
 
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformIntegerDivision: InvalidTypesForDivision (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
             return ExpressionStatus::InvalidTypesForDivision;
         }
 
     resultOut = v;
     resultOut.SetUnits (units);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformIntegerDivision: Result: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -949,7 +1090,10 @@ bool                        enforceUnits
 
     double  divisor = right.GetECValue()->GetDouble();
     if (0 == divisor)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformDivision: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::DivideByZero;
+        }
 
     UnitSpec units;
     if (enforceUnits)
@@ -961,6 +1105,7 @@ bool                        enforceUnits
 
     resultOut = ECValue (left.GetECValue()->GetDouble() / divisor);
     resultOut.SetUnits (units);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformDivision: Result: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -985,9 +1130,13 @@ EvaluationResultR            right
             {
             int     divisor = right.GetECValue()->GetInteger();
             if (0 == divisor)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformMod: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::DivideByZero;
+                }
 
             resultOut = ECValue (left.GetECValue()->GetInteger() % divisor);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformMod: Result: %s", resultOut.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
 
@@ -995,13 +1144,18 @@ EvaluationResultR            right
             {
             int64_t   divisor = right.GetECValue()->GetLong();
             if (0 == divisor)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformMod: DivideByZero (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::DivideByZero;
+                }
 
             resultOut = ECValue (left.GetECValue()->GetLong() % divisor);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformMod: Result: %s", resultOut.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Operations::PerformMod: InvalidTypesForDivision (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
     return ExpressionStatus::InvalidTypesForDivision;
     }
 
@@ -1040,14 +1194,17 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() | right.GetECValue()->GetBoolean());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() & right.GetECValue()->GetBoolean());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() ^ right.GetECValue()->GetBoolean());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
@@ -1059,14 +1216,17 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() | right.GetECValue()->GetInteger());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() & right.GetECValue()->GetInteger());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() ^ right.GetECValue()->GetInteger());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
@@ -1077,20 +1237,24 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() | right.GetECValue()->GetLong());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() & right.GetECValue()->GetLong());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() ^ right.GetECValue()->GetLong());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
 
 
     //  It should be impossible to get here. All errors should be caught in the promotion functions.
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "Operations::PerformJunctionOperator: WrongType");
     return ExpressionStatus::WrongType;
     }
 
@@ -1114,6 +1278,7 @@ EvaluationResultR            rightValue
     if (boolValue)
         {
         resultOut = *leftValue.GetECValue();
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformLogicalOr: Result: %s", resultOut.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -1122,6 +1287,7 @@ EvaluationResultR            rightValue
         return status;
 
     resultOut = *rightValue.GetECValue();
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformLogicalOr: Result: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -1145,6 +1311,7 @@ EvaluationResultR            rightValue
     if (!boolValue)
         {
         resultOut = *leftValue.GetECValue();
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformLogicalAnd: Result: %s", resultOut.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -1153,6 +1320,7 @@ EvaluationResultR            rightValue
         return status;
 
     resultOut = *rightValue.GetECValue();
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformLogicalAnd: Result: %s", resultOut.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -1179,9 +1347,13 @@ EvaluationResult::~EvaluationResult()
 ExpressionStatus EvaluationResult::GetInteger(int32_t& result)
     {
     if (ValType_ECValue != m_valueType || !m_ecValue.IsInteger() || m_ecValue.IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("EvaluationResult::GetInteger: WrongType. Is not an integer (%s)", m_ecValue.ToString().c_str()).c_str());
         return ExpressionStatus::WrongType;
+        }
 
     result = m_ecValue.GetInteger();
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluationResult::GetInteger: Result: %s", m_ecValue.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -1201,7 +1373,10 @@ ECValueR EvaluationResult::InitECValue()
 ExpressionStatus EvaluationResult::GetECValue(ECN::ECValueR result)
     {
     if (ValType_ECValue != m_valueType)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("EvaluationResult::GetECValue: WrongType. Result: %s", result.ToString().c_str()).c_str());
         return ExpressionStatus::WrongType;
+        }
 
     result.Clear();
     result = m_ecValue;
@@ -1315,33 +1490,52 @@ void            EvaluationResult::Clear()
 ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
     {
     if (ValType_ECValue != m_valueType)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "EvaluationResult::GetBoolean: WrongType");
         return ExpressionStatus::WrongType;
+        }
 
     if (m_ecValue.IsNull())
         {
         result = false;
-        return requireBoolean ? ExpressionStatus::WrongType : ExpressionStatus::Success;
+        if (requireBoolean)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "EvaluationResult::GetBoolean: WrongType (EC Value is Null)");
+            return ExpressionStatus::WrongType;
+            }
+        else
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "EvaluationResult::GetBoolean: Result: false");
+            return ExpressionStatus::Success;
+            }
         }
 
     if (!m_ecValue.IsPrimitive())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "EvaluationResult::GetBoolean: WrongType (EC Value is not primitive)");
         return ExpressionStatus::WrongType;
+        }
 
     switch(m_ecValue.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Boolean:
             result = m_ecValue.GetBoolean();
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluationResult::GetBoolean: Result: %s", m_ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Integer:
             result = m_ecValue.GetInteger() != 0;
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluationResult::GetBoolean: Result: %s", m_ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Long:
             result = m_ecValue.GetLong() != 0;
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluationResult::GetBoolean: Result: %s", m_ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_Double:
             result = m_ecValue.GetDouble() != 0.0;
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluationResult::GetBoolean: Result: %s", m_ecValue.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
 
         case PRIMITIVETYPE_String:
@@ -1350,19 +1544,23 @@ ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
             if (!strcmp("1", value) || !BeStringUtilities::StricmpAscii("true", value))
                 {
                 result = true;
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "EvaluationResult::GetBoolean: Result: true");
                 return ExpressionStatus::Success;
                 }
 
             if (!strcmp("0", value) || !BeStringUtilities::StricmpAscii("false", value))
                 {
                 result = false;
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "EvaluationResult::GetBoolean: Result: false");
                 return ExpressionStatus::Success;
                 }
 
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "EvaluationResult::GetBoolean: WrongType (EC Value primitive type not convertible to bool)");
             return ExpressionStatus::WrongType;
             }
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "EvaluationResult::GetBoolean: WrongType");
     return ExpressionStatus::WrongType;
     }
 
@@ -1446,6 +1644,33 @@ void EvaluationResult::SetLambda (LambdaValueR value)
     m_valueType = ValType_Lambda;
     m_lambda = &value;
     m_lambda->AddRef();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Aidas.Vaiksnoras  04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String EvaluationResult::ToString() const
+    {
+    if (IsECValue())
+        return GetECValue()->ToString();
+    if (IsInstanceList())
+        {
+        Utf8String msg = "";
+        for (IECInstancePtr instance : *(GetInstanceList()))
+            {
+            if (!msg.empty())
+                msg.append(", ");
+            msg.append(instance->GetClass().GetFullName());
+            msg.append(":");
+            msg.append(instance->GetInstanceId());
+            }
+        return msg;
+        }
+    if (IsLambda())
+        return GetLambda()->GetNode().ToExpressionString();
+    if (IsValueList())
+        return GetValueList()->ToString();
+    BeAssert(false);
+    return "Could not convert to string";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1827,6 +2052,7 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
     if (_GetOperation() == TOKEN_Plus)
         {
         evalResult = inputValue;
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("UnaryArithmeticNode::_GetValue: %s", evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -1842,8 +2068,12 @@ static ExpressionStatus ResolveMethod(MethodReferencePtr& methodReference, Utf8C
     for (auto iter = contexts.rbegin(); iter != contexts.rend(); ++iter)
         {
         if (ExpressionStatus::Success == (*iter)->ResolveMethod(methodReference, name, useOuter))
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ResolveMethod: %s", name).c_str());
             return ExpressionStatus::Success;
+            }
         }
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ResolveMethod: MethodRequired (%s)", name).c_str());
     return ExpressionStatus::MethodRequired;
     }
 
@@ -1926,6 +2156,7 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, bvec
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus AssignmentNode::PerformModifier (ExpressionToken  modifier, EvaluationResultR left, EvaluationResultR right)
     {
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "AssignmentNode::PerformModifier: Not implemented");
     return ExpressionStatus::NotImpl;
     }
 
@@ -1967,7 +2198,10 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 
     NodeP   leftNode = _GetLeftP();
     if (leftNode->GetOperation() != TOKEN_PrimaryList)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("AssignmentNode::_GetValue: UnknownError. Invalid left node operation (%s)", Lexer::GetString(leftNode->GetOperation()).c_str()).c_str());
         return ExpressionStatus::UnknownError;
+        }
 
     PrimaryListNodeP    primaryList = static_cast<PrimaryListNodeP>(leftNode);
     EvaluationResult    instanceResult;
@@ -1991,6 +2225,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
         if (enabler.GetPropertyIndex(propertyIndex, refResult.m_accessString.c_str()) != ECN::ECObjectsStatus::Success)
             {
             evalResult.Clear();
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "AssignmentNode::_GetValue: UknownError. Could not get property index");
             return ExpressionStatus::UnknownError;
             }
 
@@ -2007,6 +2242,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
         if (ECN::ECObjectsStatus::Success != ecStatus)
             {
             evalResult.Clear();
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "AssignmentNode::_GetValue: UknownError. Could not set value to instance ");
             return ExpressionStatus::UnknownError;
             }
 
@@ -2015,6 +2251,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 
 
     //  For now only support setting primitive properties; should add support for arrays here
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "AssignmentNode::_GetValue: PrimitiveRequired");
     return ExpressionStatus::PrimitiveRequired;
     }
 
@@ -2026,6 +2263,7 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
     ExpressionStatus    status = ExpressionStatus::Success;
     BeAssert (results.size() == 0);
     results.reserve(m_arguments.size());
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "EvaluateArguments: Started Evaluating arguments");
 
     for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
         {
@@ -2033,9 +2271,13 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
         EvaluationResultR currValue = results.back();
         status = (*curr)->GetValue(currValue, context);
         if (ExpressionStatus::Success != status)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("EvaluateArguments: Evaluated argument unsuccessfully: %s", currValue.ToString().c_str()).c_str());
             return status;
+            }
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("EvaluateArguments: Evaluated argument: %s", currValue.ToString().c_str()).c_str());
         }
-
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "EvaluateArguments: Finished Evaluating arguments");
     return ExpressionStatus::Success;
     }
 
@@ -2097,6 +2339,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
 
     performConcatenation (evalResult.InitECValue(), *leftResult.GetECValue(), *rightResult.GetECValue());
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ConcatenateNode::_GetValue: Result: ", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -2183,7 +2426,10 @@ ExpressionStatus BinaryNode::GetOperandValues(EvaluationResult& leftResult, Eval
 ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings)
     {
     if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: PrimitiveRequired (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECN::ECValueR    left    = *leftResult.GetECValue();
     ECN::ECValueR    right   = *rightResult.GetECValue();
@@ -2200,6 +2446,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
         }
     else if (!left.IsPrimitive() || !right.IsPrimitive())
         {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: PrimitiveRequired (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::PrimitiveRequired;
         }
 
@@ -2224,21 +2471,29 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
                 return allowStrings ? ExpressionStatus::Success : ExpressionStatus::WrongType;
             }
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "BinaryNode::PromoteCommon: WrongType");
         return ExpressionStatus::WrongType;
         }
 
     if (PRIMITIVETYPE_String == leftCode || PRIMITIVETYPE_String == rightCode)
         {
         if (!allowStrings)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: IncompatibleTypes. Strings are not allowed (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
             return ExpressionStatus::IncompatibleTypes;
+            }
 
         if (TOKEN_Plus != m_operatorCode)
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: IncompatibleTypes. Expected '+' operator ('%s')", Lexer::GetString(m_operatorCode).c_str()).c_str());
             return ExpressionStatus::IncompatibleTypes;
+            }
 
         if (leftCode == rightCode)
             return ExpressionStatus::Success;
 
         //  Convert to strings; may want to involve the extended type in that
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "BinaryNode::PromoteCommon: IncompatibleTypes");
         return ExpressionStatus::IncompatibleTypes;
         }
 
@@ -2261,6 +2516,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             return ExpressionStatus::Success;
             }
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: IncompatibleTypes. (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
         }
 
@@ -2279,6 +2535,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             return ExpressionStatus::Success;
             }
 
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("BinaryNode::PromoteCommon: IncompatibleTypes. (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
         }
 
@@ -2295,10 +2552,9 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
         }
 
     if (PRIMITIVETYPE_Integer == leftCode && PRIMITIVETYPE_Integer == rightCode)
-        {
         return ExpressionStatus::Success;
-        }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "BinaryNode::PromoteCommon: WrongType");
     return ExpressionStatus::WrongType;
     }
 
@@ -2355,6 +2611,7 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
         }
 
     BeAssert (false && L"bad divide operator");
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("DivideNode::_GetValue: UnknownError. Bad divide operator (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
     return ExpressionStatus::UnknownError;
     }
 
@@ -2367,7 +2624,10 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
     if (ExpressionStatus::Success != status)
         return status;
     else if (leftResult.GetECValue()->IsNull() || rightResult.GetECValue()->IsNull())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("PlusMinusNode::_Promote: PrimitiveRequired (left: %s, right: %s)", leftResult.ToString().c_str(), rightResult.ToString().c_str()).c_str());
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     if (context.EnforcesUnits())
         {
@@ -2388,7 +2648,10 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
 ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, EvaluationResultCR leftResult, EvaluationResultCR rightResult, ExpressionContextR context)
     {
     if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "PlusMinusNode::_PerformOperation: WrongType (left result or right result is not ECValue)");
         return ExpressionStatus::WrongType;
+        }
 
     ECN::ECValueCR   left    = *leftResult.GetECValue();
     ECN::ECValueCR   right   = *rightResult.GetECValue();
@@ -2415,6 +2678,7 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
                 break;
             default:
                 BeAssert (false && L"unexpected types for addition");
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("PlusMinusNode::_PerformOperation: UnknownError. Unexpected types for audition (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::UnknownError;
             }
         }
@@ -2435,11 +2699,13 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
                 break;
             default:
                 BeAssert (false && L"unexpected types for subtraction");
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("PlusMinusNode::_PerformOperation: UnknownError. Unexpected types for substraction (left: %s, right: %s)", left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::UnknownError;
             }
         }
 
     evalResult.SetUnits (leftResult.GetUnits());
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("PlusMinusNode::_PerformOperation: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -2501,7 +2767,10 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
         return status;
 
     if (TOKEN_Like == m_operatorCode)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ComparisonNode::_GetValue: NotImplemented (operator: %s)", Lexer::GetString(m_operatorCode).c_str()).c_str());
         return ExpressionStatus::NotImpl;
+        }
 
     ECValueCR   ecLeft      = *leftResult.GetECValue();
     ECValueCR   ecRight     = *rightResult.GetECValue();
@@ -2518,6 +2787,7 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
 
         //  Maybe the not's should be true for this
         evalResult.InitECValue().SetBoolean(boolResult);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -2540,6 +2810,7 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             }
 
         evalResult.InitECValue().SetBoolean(boolResult);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -2570,21 +2841,27 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
         {
         case PRIMITIVETYPE_Boolean:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetBoolean(), m_operatorCode, ecRight.GetBoolean()));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
         case PRIMITIVETYPE_Double:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetDouble(), m_operatorCode, ecRight.GetDouble()));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
         case PRIMITIVETYPE_Integer:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetInteger(), m_operatorCode, ecRight.GetInteger()));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
         case PRIMITIVETYPE_Long:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetLong(), m_operatorCode, ecRight.GetLong()));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
         case PRIMITIVETYPE_DateTime:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetDateTimeTicks(), m_operatorCode, ecRight.GetDateTimeTicks()));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ComparisonNode::_GetValue: (%s %s %s) = %s", ecLeft.ToString().c_str(), Lexer::GetString(m_operatorCode).c_str(), ecRight.ToString().c_str(), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
         }
     
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ComparisonNode::_GetValue: WrongType");
     return ExpressionStatus::WrongType;
     }
 
@@ -3005,6 +3282,27 @@ bool Node::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR schemaRem
     return ExpressionRemapper::Remap (*this, pre, post, schemaRemapper);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Aidas.Vaiksnoras   04/25
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ErrorNode::_ToString() const
+    {
+    Utf8String msg = "ERROR (";
+    msg.append(m_summary);
+    if (!m_detail1.empty())
+        {
+        msg.append(", ");
+        msg.append(m_detail1);
+        if (!m_detail2.empty())
+            {
+            msg.append(", ");
+            msg.append(m_detail2);
+            }
+        }
+    msg.append(")");
+    return msg;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
@@ -3018,6 +3316,7 @@ ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, Expre
             return status;
         case PRIMITIVETYPE_DateTime:
             //  evalResult.InitECValue().SetDateTime(_GetDateTimeValue(status, context));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedTypeNode::_GetValue: Method SetDateTime() is not implemented");
             return ExpressionStatus::NotImpl;
         case PRIMITIVETYPE_Double:
             evalResult.InitECValue().SetDouble(_GetDoubleValue(status, context));
@@ -3040,6 +3339,7 @@ ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, Expre
             return status;
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedTypeNode::_GetValue: IncompatibleTypes");
     return ExpressionStatus::IncompatibleTypes;
     }
 
@@ -3228,7 +3528,10 @@ ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, EC
                 return ExpressionStatus::Success;
 
             if (PRIMITIVETYPE_Integer != sourceType && PRIMITIVETYPE_Long != sourceType && PRIMITIVETYPE_Double != sourceType)
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ExpressionResolver::PromoteToType: IncompatibleTypes (can only convert integer, long or double to bool): %s", node->ToExpressionString().c_str()).c_str());
                 return ExpressionStatus::IncompatibleTypes;
+                }
 
             if (sourceType == PRIMITIVETYPE_Integer)
                 {
@@ -3276,6 +3579,7 @@ ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, EC
         }
 
     BeAssert (targetType == PRIMITIVETYPE_Long);  //  or PRIMITIVETYPE_Double
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ExpressionResolver::PromoteToType: IncompatibleTypes (target type not supported)");
     return ExpressionStatus::IncompatibleTypes;
     }
 
@@ -3304,6 +3608,7 @@ ExpressionStatus ExpressionResolver::PromoteToString(ResolvedTypeNodePtr& node)
             return ExpressionStatus::Success;
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ExpressionResolver::PromoteToString: Expression %s not convertible to string", node->ToExpressionString().c_str()).c_str());
     return ExpressionStatus::IncompatibleTypes;
     }
 
@@ -3316,6 +3621,7 @@ ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ECN::PrimitiveTy
     if (!left.IsValid() || !right.IsValid())
         {
         targetType = PRIMITIVETYPE_Binary;
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ExpressionResolver::PerformArithmeticPromotion: WrongTypes (left node or right node is invalid)");
         return ExpressionStatus::WrongType;
         }
 
@@ -3331,13 +3637,19 @@ ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ECN::PrimitiveTy
     else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
         targetType = PRIMITIVETYPE_Long;
     else if (PRIMITIVETYPE_Integer != leftCode && PRIMITIVETYPE_Integer != rightCode)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ExpressionResolver::PerformArithmeticPromotion: IncompatibleTypes (left: %s, right: %s)", left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     //  This calls one of the methods like _SupportsGetDoubleValue.  If the node returns true, then PromoteToType does
     //  not create a new node. This results in a node that is used to get a value of a type that is different than the
     //  nodes primary primitive type.
     if (ExpressionStatus::Success != PromoteToType(left, targetType) || ExpressionStatus::Success != PromoteToType(right, targetType))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ExpressionResolver::PerformArithmeticPromotion: IncompatibleTypes (left: %s, right: %s)", left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     return ExpressionStatus::Success;
     }
@@ -3350,6 +3662,7 @@ ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ECN::PrimitiveType
     if (!left.IsValid() || !right.IsValid())
         {
         targetType = PRIMITIVETYPE_Binary;
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ExpressionResolver::PerformJunctionPromotion: WrongTypes (left node or right node is invalid)");
         return ExpressionStatus::WrongType;
         }
 
@@ -3365,10 +3678,16 @@ ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ECN::PrimitiveType
     else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
         targetType = PRIMITIVETYPE_Long;
     else if (PRIMITIVETYPE_Integer != leftCode && PRIMITIVETYPE_Integer != rightCode)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ExpressionResolver::PerformJunctionPromotion: IncompatibleTypes (left: %s, right: %s)", left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     if (ExpressionStatus::Success != PromoteToType(left, targetType) || ExpressionStatus::Success != PromoteToType(left, targetType))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ExpressionResolver::PerformJunctionPromotion: IncompatibleTypes (left: %s, right: %s)", left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     return ExpressionStatus::Success;
     }
@@ -3922,6 +4241,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
             return (int32_t)((uint32_t)left >> right);
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedShiftInteger::_GetIntegerValue: bad shift operator");
     BeAssert(false && L"bad shift operator");
     return 0;
     }
@@ -3946,6 +4266,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
             return (int64_t)((uint64_t)left >> right);
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedShiftLong::_GetLongValue: bad shift operator");
     BeAssert(false && L"bad shift operator");
     return 0;
     }
@@ -3975,6 +4296,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         }
 
     status = ExpressionStatus::NotImpl;
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedLogicalBitNode::_GetIntegerValue: NotImplemented");
     BeAssert (status != ExpressionStatus::NotImpl);
     return 0;
     }
@@ -4004,6 +4326,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         }
 
     status = ExpressionStatus::NotImpl;
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedLogicalBitNode::_GetLongValue: NotImplemented");
     BeAssert (status != ExpressionStatus::NotImpl);
     return 0;
     }
@@ -4047,6 +4370,7 @@ bool ResolvedLogicalBitNode::_GetBooleanValue(ExpressionStatus& status, Expressi
         }
 
     status = ExpressionStatus::NotImpl;
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedLogicalBitNode::_GetBooleanValue: NotImplemented");
     BeAssert (status != ExpressionStatus::NotImpl);
     return false;
     }
@@ -4097,6 +4421,7 @@ ExpressionStatus ResolvedIIfNode::_GetStringValue(ECValueR result, ExpressionCon
             m_right.m_d = right.GetDouble();
             break;
         default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedAddConstantNode::ResolvedAddConstantNode: adding unknown constant type");
             BeAssert(false && L"adding unknown constant type");
             m_right.m_i64 = 0;
         }
@@ -4140,6 +4465,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
         }
 
     result.SetUtf8CP("");
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ResolvedConvertToString::_GetStringValue: IncompatibleTypes");
     return ExpressionStatus::IncompatibleTypes;
     }
 
@@ -4194,7 +4520,10 @@ private:
             return ExpressionStatus::Success;
             }
         else
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ArrayValueResult::_GetValueAt: UnknownError");
             return ExpressionStatus::UnknownError;
+            }
         }
 public:
     static IValueListResultPtr Create (IECInstanceR instance, uint32_t propIdx) { return new ArrayValueResult (instance, propIdx); }
@@ -4231,7 +4560,10 @@ private:
             return ExpressionStatus::Success;
             }
         else
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ValueListResult::_GetValueAt(%" PRIu32 "): IndexOutOfRange", index).c_str());
             return ExpressionStatus::IndexOutOfRange;
+            }
         }
 public:
     static IValueListResultPtr Create (EvaluationResultVector const& values)
@@ -4249,16 +4581,36 @@ IValueListResultPtr IValueListResult::Create (EvaluationResultVector const& valu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Aidas.Vaiksnoras 04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IValueListResult::ToString() const
+    {
+    Utf8String msg;
+    uint32_t count = GetCount();
+    for (uint32_t i = 0; i < count; i++)
+        {
+        EvaluationResult member;
+        GetValueAt(member, i);
+        if (0 != i)
+            msg.append(",");
+        msg.append(member.ToString());
+        }    
+    return msg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ArrayMemberSymbol : Symbol
     {
 private:
+    uint32_t m_arrayIndex;
     EvaluationResult                m_primitive;
     InstanceExpressionContextPtr    m_struct;
 
     ArrayMemberSymbol (Utf8CP name) : Symbol (name)
         {
+        m_arrayIndex = 0;
         m_primitive = ECValue (/*null*/);
         }
 
@@ -4269,14 +4621,19 @@ private:
         else if (primaryList.GetNumberOfOperators() <= index)
             {
             result = m_primitive;
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ArrayMemberSymbol::_GetValue(%" PRIu32 ") Result: %s", m_arrayIndex, result.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         else
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ArrayMemberSymbol::_GetValue: UnknownError");
             return ExpressionStatus::UnknownError;
+            }
         }
     virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override
         {
         // not applicable
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ArrayMemberSymbol::_GetValue: UnknownError");
         return ExpressionStatus::UnknownError;
         }
 
@@ -4302,8 +4659,9 @@ private:
 public:
     static RefCountedPtr<ArrayMemberSymbol> Create (Utf8CP name) { return new ArrayMemberSymbol (name); }
 
-    void        Set (EvaluationResultR ev)
+    void        Set (uint32_t arrayIndex, EvaluationResultR ev)
         {
+        m_arrayIndex = arrayIndex;
         if (ConvertToStruct (ev) && m_struct.IsNull())
             m_struct = InstanceExpressionContext::Create();
 
@@ -4324,7 +4682,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaValue::IProcessor& processor) const
     {
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LambdaValue::Evaluate: Started lambda evaluation. Input: %s", valueList.ToString().c_str()).c_str());
     uint32_t count = valueList.GetCount();
+    EvaluationResult lambdaResult;
     if (0 < count)
         {
         // Set up a symbol context to map symbol name to member of list being processed
@@ -4338,16 +4698,14 @@ ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaV
             ExpressionStatus status = valueList.GetValueAt (member, i);
             if (ExpressionStatus::Success != status)
                 return status;
-
-            symbol->Set (member);
-
-            EvaluationResult lambdaResult;
+            symbol->Set (i, member);
             status = m_node->GetExpression().GetValue (lambdaResult, *innerContext);
             if (!processor.ProcessResult (status, member, lambdaResult))
                 break;
             }
         }
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LambdaValue::Evaluate: Finished lambda evaluation. Result: %s", lambdaResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -4392,22 +4750,35 @@ ExpressionStatus UnitSpecNode::_GetValue (EvaluationResultR result, ExpressionCo
         return ExpressionStatus::Success;
         }
     else if (!operandUnits.IsCompatible (m_units))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UnitSpecNode::_GetValue: IncompatibleUnits");
         return ExpressionStatus::IncompatibleUnits;
+        }
 
     if (!result.IsECValue())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UnitSpecNode::_GetValue: PrimitiveRequired");
         return ExpressionStatus::PrimitiveRequired;
+        }
 
     ECValueR v = *result.GetECValue();
     if (!v.IsPrimitive() || v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UnitSpecNode::_GetValue: IncompatibleTypes");
         return ExpressionStatus::IncompatibleTypes;
+        }
 
     // convert units
     double rd = v.GetDouble();
     if (!operandUnits.ConvertTo (rd, m_units))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UnitSpecNode::_GetValue: IncompatibleUnits");
         return ExpressionStatus::IncompatibleUnits;
+        }
 
     v.SetDouble (rd);
     result.SetUnits (m_units);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("UnitSpecNode::_GetValue: Result: %s", result.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
