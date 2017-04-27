@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAddSolidPrimitive.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |GEOMDLLIMPEXP void AddSolidPrimitive (ISolidPrimitiveR primitive);
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -304,7 +304,7 @@ bool IPolyfaceConstruction::Add (DgnTorusPipeDetailCR detail)
         tangent = pipeTangents[0];
         pipeTangents.push_back (tangent);
         bvector<DPoint3d> startPoints, endPoints;
-        bool reverse = majorSweepRadians < 0.0;   // ellipse orientation is controlled.
+        bool reverse = majorSweepRadians * DgnTorusPipeDetail::GetVector90Sign () < 0.0;   // ellipse orientation is controlled.
         AddRotationalSweepLoop (points, pipeTangents, axis.origin, axis.direction, majorSweepRadians, reverse, arcLength, &startPoints, &endPoints);
         if (detail.HasRealCaps ())
             AddTriangulationPair (startPoints, reverse, endPoints, !reverse);

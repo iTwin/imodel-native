@@ -229,6 +229,7 @@ static GEOMDLLIMPEXP void SplitByDeltaZ (bvector<CurveLocationDetailPair> const 
 //! </ul>
 struct SolidLocationDetail
 {
+friend struct ISolidPrimitive;
 public:
 //! FaceIndices is a triple of integers identifying a face within a solid primitive.
 //! <ul>

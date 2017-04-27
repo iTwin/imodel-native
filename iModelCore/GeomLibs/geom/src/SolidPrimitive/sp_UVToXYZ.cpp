@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_UVToXYZ.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -101,7 +101,9 @@ GEOMDLLIMPEXP bool DgnTorusPipeDetail::TryUVFractionToXYZ
     if (selector.IsCap0 ())
         {
         minorEllipse = VFractionToUSectionDEllipse3d (0.0);
+        ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
         UVFractionToXYZ (uFraction, vFraction, minorEllipse, xyz, dXdu, dXdv);        
+        ISolidPrimitive::ReverseFractionOrientation (dXdu, dXdv);
         }
     else if (selector.IsCap1 ())
         {
@@ -199,9 +201,14 @@ GEOMDLLIMPEXP bool DgnExtrusionDetail::TryUVFractionToXYZ
     bool stat = false;
     if (   selector.IsCap0 () || selector.IsCap1 ())
         {
+        if (selector.IsCap0 ())
+            ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
         stat = m_baseCurve->TryUVFractionToXYZ (uFraction, vFraction, xyz, dXdu, dXdv);
         if (selector.IsCap1 ())
             xyz = DPoint3d::FromSumOf (xyz, m_extrusionVector, 1.0);
+        else
+            ISolidPrimitive::ReverseFractionOrientation (dXdu, dXdv);
+
         stat = true;
         }
     else if (selector.Index0 () == 0)
@@ -233,6 +240,9 @@ GEOMDLLIMPEXP bool DgnRotationalSweepDetail::TryUVFractionToXYZ
     Transform curvePointToSurfacePoint, curvePointToSurfacePointVDerivative;
     if (   selector.IsCap1 () || selector.IsCap0 ())
         {
+        if (selector.IsCap0 ())
+            ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
+
         stat = m_baseCurve->TryUVFractionToXYZ (uFraction, vFraction, xyz, dXdu, dXdv);
         if (selector.IsCap1 () )
             {
@@ -241,6 +251,8 @@ GEOMDLLIMPEXP bool DgnRotationalSweepDetail::TryUVFractionToXYZ
             curvePointToSurfacePoint.MultiplyMatrixOnly (dXdu);
             curvePointToSurfacePoint.MultiplyMatrixOnly (dXdv);
             }
+        else
+            ISolidPrimitive::ReverseFractionOrientation (dXdu, dXdv);
         stat = true;
         }
     else if (selector.Index0 () == 0)
@@ -274,11 +286,13 @@ GEOMDLLIMPEXP bool DgnRuledSweepDetail::TryUVFractionToXYZ
     bool stat = false;
     if ( selector.IsCap0 ())
         {
+        ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
         stat = m_sectionCurves[0]->TryUVFractionToXYZ (uFraction, vFraction, xyz, dXdu, dXdv);
+        ISolidPrimitive::ReverseFractionOrientation (dXdu, dXdv);
         }
     else if (selector.IsCap1 ())
         {
-        stat = m_sectionCurves[1]->TryUVFractionToXYZ (uFraction, vFraction, xyz, dXdu, dXdv);
+        stat = m_sectionCurves.back ()->TryUVFractionToXYZ (uFraction, vFraction, xyz, dXdu, dXdv);
         }
     else
         {
