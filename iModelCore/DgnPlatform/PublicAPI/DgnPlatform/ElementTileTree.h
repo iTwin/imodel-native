@@ -158,7 +158,6 @@ private:
     Render::Primitives::GeometryList CollectGeometry(double tolerance, bool surfacesOnly, LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, Render::Primitives::GeometryOptionsCR, LoadContextCR context) const;
 
-    bool IsElementCountLessThan(uint32_t threshold, double tolerance) const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }

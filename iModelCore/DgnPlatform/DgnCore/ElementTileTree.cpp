@@ -436,10 +436,9 @@ private:
     DRange3d                    m_range;
     DRange3d                    m_tileRange;
     GeometryListBuilder         m_geometryListBuilder;
-    double                      m_minRangeDiagonal;
+    double                      m_minRangeDiagonalSquared;
     double                      m_minTextBoxSize;
     double                      m_tolerance;
-    DgnElementIdSet             m_excludedElements;
     bool                        m_is2d;
     bool                        m_wantCacheSolidPrimitives = false;
 protected:
@@ -451,7 +450,6 @@ protected:
 #endif
 
     virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId);
-    virtual bool _AcceptElement(double rangeDiagSq, DgnElementId elemId);
 
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
@@ -487,13 +485,12 @@ public:
     DgnDbR GetDgnDb() const { return m_root.GetDgnDb(); }
     RootR GetRoot() const { return m_root; }
 
-    double GetMinRangeDiagonal() const { return m_minRangeDiagonal; }
-    double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonal*m_minRangeDiagonal; }
+    double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        auto diag = range.DiagonalDistance();
-        return diag < m_minRangeDiagonal && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
+        auto diag = range.low.DistanceSquared(range.high);
+        return diag < m_minRangeDiagonalSquared && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
 
     size_t GetGeometryCount() const { return m_geometries.size(); }
@@ -548,46 +545,6 @@ public:
     DisplayParamsCR CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
 
     bool ContainsCurvedGeometry() const { return m_anyCurvedGeometry; }
-    bool AnyElementsExcluded() const { return !m_excludedElements.empty(); }
-    DgnElementIdSet const& GetExcludedElements() const { return m_excludedElements; }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* After TileGeometryProcessor processes elements within tile range and large enough
-* to contribute to tile mesh, we may determine that the mesh consists entirely of uncurved
-* geometry. We want to treat it as a leaf node as there is no point in subdividing
-* a tile containing only uncurved stuff. But we need to add in any geometry which was
-* excluded previously for being too small.
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ExcludedGeometryProcessor : TileGeometryProcessor
-{
-private:
-    virtual bool _AcceptElement(double rangeDiagSq, DgnElementId elemId) override { return true; }
-    virtual bool _AcceptGeometry(GeometryCR geom, DgnElementId elemId) override
-        {
-        if (!BelowMinRange(geom.GetTileRange()))
-            return false;
-
-        m_anyCurvedGeometry = geom.IsCurved();
-        return true;
-        }
-public:
-    ExcludedGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double leafTolerance, bool surfacesOnly, bool is2d, double rangeTolerance) : TileGeometryProcessor(geometries, root, range, facetOptions, transformFromDgn, leafTolerance, surfacesOnly, is2d, rangeTolerance)
-    {
-    //
-    }
-
-    void ProcessElements(ViewContextR context, DgnElementIdSet const& elemIds)
-        {
-        double unusedElementRange = 0.0;
-        for (auto const& elemId : elemIds)
-            {
-            ProcessElement(context, elemId, unusedElementRange);
-            if (ContainsCurvedGeometry())
-                break; // turns out we do have curved geometry - don't make a leaf tile
-            }
-        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,7 +557,8 @@ TileGeometryProcessor::TileGeometryProcessor(GeometryList& geometries, RootR roo
     static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
     m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
-    m_minRangeDiagonal = s_minRangeBoxSize * rangeTolerance;
+    m_minRangeDiagonalSquared = s_minRangeBoxSize * rangeTolerance;
+    m_minRangeDiagonalSquared *= m_minRangeDiagonalSquared;
     m_minTextBoxSize  = s_minTextBoxSize * rangeTolerance;
     GetTransformFromDgn().Multiply (m_tileRange, m_range);
     }
@@ -659,10 +617,9 @@ struct GeometryCollector : RangeIndex::Traverser
     TileGeometryProcessor&      m_processor;
     GeometryProcessorContext&   m_context;
     FBox3d                      m_range;
-    double                      m_minRangeDiagonalSquared;
     bool                        m_aborted = false;
 
-    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context) : m_range(range), m_processor(proc), m_context(context), m_minRangeDiagonalSquared(proc.GetMinRangeDiagonalSquared()) { }
+    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context) : m_range(range), m_processor(proc), m_context(context) { }
 
 
     bool CheckStop() { return (m_aborted = m_aborted && m_context.CheckStop()); }
@@ -687,7 +644,7 @@ struct GeometryCollector : RangeIndex::Traverser
         if (entry.m_range.IntersectsWith(m_range))
             {
             double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
-            if (sizeSq >= m_minRangeDiagonalSquared)
+            if (sizeSq >= m_processor.GetMinRangeDiagonalSquared())
                 Insert(sizeSq, entry.m_id);
             }
 
@@ -1078,50 +1035,6 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
-    {
-    struct Traverser : RangeIndex::Traverser
-        {
-        FBox3d                  m_range;
-        uint32_t                m_threshold;
-        uint32_t                m_count = 0;
-        double                  m_minRangeDiagonal;
-
-        Traverser(DRange3dCR range, uint32_t threshold, double tolerance) : m_range(range), m_threshold(threshold), m_minRangeDiagonal(s_minRangeBoxSize * tolerance) { }
-
-        bool ThresholdReached() const { return m_count >= m_threshold; }
-
-        Accept _CheckRangeTreeNode(FBox3d const& box, bool is3d) const override
-            {
-            return !ThresholdReached() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
-            }
-
-        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
-            {
-            if (!entry.m_range.IntersectsWith(m_range))
-                return Stop::No;
-
-            auto entryRange = entry.m_range.ToRange3d();
-            if (entryRange.DiagonalDistance() >= m_minRangeDiagonal)
-                ++m_count;
-
-            return ThresholdReached() ? Stop::Yes : Stop::No;
-            }
-        };
-
-    auto model = GetElementRoot().GetModel();
-    auto index = model.IsValid() && DgnDbStatus::Success == model->FillRangeIndex() ? model->GetRangeIndex() : nullptr;
-    if (nullptr == index)
-        return true;    // no model => no elements...
-
-    Traverser traverser(GetDgnRange(), threshold, tolerance);
-    index->Traverse(traverser);
-    return !traverser.ThresholdReached();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
     {
     return Loader::Create(*this, loads);
@@ -1503,6 +1416,10 @@ GeometryList Tile::CollectGeometry(double tolerance, bool surfacesOnly, LoadCont
     TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, tolerance, surfacesOnly, is2d);
 
     GeometryProcessorContext context(processor, root, loadContext);
+
+#if !defined(ELEMENT_TILE_TRUNCATE_PLANAR)
+    processor.OutputGraphics(context);
+#else
     if (TileGeometryProcessor::Result::Success != processor.OutputGraphics(context) || processor.ContainsCurvedGeometry() || m_isLeaf)
         return geometries;
 
@@ -1526,6 +1443,7 @@ GeometryList Tile::CollectGeometry(double tolerance, bool surfacesOnly, LoadCont
         m_tolerance = root.GetLeafTolerance();
         SetIsLeaf();
         }
+#endif
 
     return geometries;
     }
@@ -1537,9 +1455,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     try
         {
-        if (!_AcceptElement(rangeDiagonalSquared, elemId))
-            return;
-
         m_geometryListBuilder.Clear();
         bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, rangeDiagonalSquared);
         if (!haveCached)
@@ -1657,6 +1572,8 @@ void TileGeometryProcessor::PushGeometry(GeometryR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_AcceptGeometry(GeometryCR geom, DgnElementId elemId)
     {
+#if defined(ELEMENT_TILE_TRUNCATE_PLANAR)
+    // ###TODO: This makes converting an internal node into a leaf node more complicated, as only portions of an element's geometry may have been excluded...
     if (BelowMinRange(geom.GetTileRange()))
         {
         // It's possible only some portions of an element's geometry are excluded by range.
@@ -1665,30 +1582,11 @@ bool TileGeometryProcessor::_AcceptGeometry(GeometryCR geom, DgnElementId elemId
 
         return false;
         }
-
+#endif
     if (!m_anyCurvedGeometry)
         m_anyCurvedGeometry = geom.IsCurved();
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::_AcceptElement(double rangeDiagSq, DgnElementId elemId)
-    {
-#if defined(ELEMENT_TILE_TREE_TRUNCATE_PLANAR)
-    if (!BelowMinRange(range))
-        return true;
-
-    if (!m_anyCurvedGeometry)
-        m_excludedElements.insert(elemId);
-
-    return false;
-#else
-    BeAssert(rangeDiagSq >= GetMinRangeDiagonalSquared());
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
