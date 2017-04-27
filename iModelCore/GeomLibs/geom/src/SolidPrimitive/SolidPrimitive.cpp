@@ -383,7 +383,7 @@ double &rMinor,             //!< [in] minor radius
 double &sweepRadians        //!< [in]
 )
     {
-    Polynomial::Implicit::Torus torus (rMajor, rMinor);
+    Polynomial::Implicit::Torus torus (rMajor, rMinor, GetReverseVector90 ());
     double theta, phi, r, xyDist;
     torus.XYZToThetaPhiDistance (localuvw, theta, phi, r, xyDist);
     double u = Angle::NormalizeToSweep (phi, 0.0, Angle::TwoPi ());
@@ -2571,5 +2571,26 @@ PolyfaceHeaderPtr ISolidPrimitive::Facet (IFacetOptionsPtr const &options)
     return builder->GetClientMeshPtr ();
     }
 
-    END_BENTLEY_GEOMETRY_NAMESPACE
+ISolidPrimitive::ISolidPrimitive ()
+    : m_invertedOrientation (false)
+    {
+    }
+void ISolidPrimitive::SetInvertedOrientation (bool invert) {m_invertedOrientation = invert;}
+void ISolidPrimitive::ToggleInvertedOrientation () {m_invertedOrientation = !m_invertedOrientation;}
+bool ISolidPrimitive::IsInvertedOrientation () const {return m_invertedOrientation;}
+
+void ISolidPrimitive::InternalToExternalFractions (DPoint2dR uv) const {if (m_invertedOrientation) uv.x = - uv.x;}
+void ISolidPrimitive::ExternaltoInternalFractions (DPoint2dR uv) const {if (m_invertedOrientation) uv.x = - uv.x;}
+void ISolidPrimitive::InternalToExternalTangentPlane (DPoint3dDVec3dDVec3dR plane) const
+    {
+    if (m_invertedOrientation)
+        plane.vectorU.Negate ();
+    }
+void ISolidPrimitive::ExternaltoInternalTangentPlane (DPoint3dDVec3dDVec3dR plane) const
+    {
+    if (m_invertedOrientation)
+        plane.vectorU.Negate ();
+    }
+
+END_BENTLEY_GEOMETRY_NAMESPACE
 

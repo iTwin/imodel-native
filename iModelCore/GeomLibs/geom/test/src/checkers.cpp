@@ -1379,6 +1379,12 @@ void Check::SaveTransformed(IGeometryPtr const &data)
     s_cache.push_back (data->Clone ());
     s_cache.back ()->TryTransformInPlace (s_transform);
     }
+
+void Check::SaveTransformed(bvector<IGeometryPtr> const &data)
+    {
+    for (auto &g : data)
+        SaveTransformed (g);
+    }
     // Save (clone of) geometry in a cache
 void Check::SaveTransformed(CurveVectorCR data)
     {

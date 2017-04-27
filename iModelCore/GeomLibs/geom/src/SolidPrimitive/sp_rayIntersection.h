@@ -127,7 +127,7 @@ double minParameter
         {
         localToWorld = Transform::From (axes, center);
         worldToLocal.InverseOf (localToWorld);
-        Polynomial::Implicit::Torus torus (radiusA, radiusB);
+        Polynomial::Implicit::Torus torus (radiusA, radiusB, GetReverseVector90 ());
         DRay3d localRay;
         worldToLocal.Multiply (localRay, ray);
         double rayFraction[5];
@@ -175,6 +175,9 @@ double minParameter
                 FractionalizeInCircle (uv0.x, uv0.y, 1.0, uFraction, vFraction);
                 uDirection.Scale (ellipse0.vector0, 2.0);
                 vDirection.Scale (ellipse0.vector90, 2.0);
+                // Those calculations are on ellipse facing inwards ... map u==>1-u
+                ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
+                ISolidPrimitive::ReverseFractionOrientation (uDirection, vDirection);
                 pickData.back ().SetUV (uFraction, vFraction, uDirection, vDirection);
                 pickData.back ().SetCapSelector (0);
                 }
@@ -498,6 +501,11 @@ double minParameter
         AddAreaHits (m_baseCurve,
                 pickData, ray, parentId, minParameter,
                 extrusionTransform, true, true);
+        for (auto &pd : pickData)
+            {
+            if (pd.GetFaceIndices ().IsCap0 ())
+                ISolidPrimitive::ReverseFractionOrientation (pd);
+            }
         }
     FilterMinParameter (pickData, baseSize, minParameter);
     SortTail (pickData, baseSize);
@@ -1207,6 +1215,11 @@ double minParameter
         AddAreaHits (m_baseCurve,
                 pickData, ray, parentId, minParameter,
                 sweepTransform, true, true);
+        for (auto &pd : pickData)
+            {
+            if (pd.GetFaceIndices ().IsCap0 ())
+                ISolidPrimitive::ReverseFractionOrientation (pd);
+            }
         }
     }
 

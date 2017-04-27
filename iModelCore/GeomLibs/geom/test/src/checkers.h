@@ -379,6 +379,7 @@ static void PushTolerance (ToleranceSelect select);
 static void PopTolerance ();
 
 // Save (clone of) geometry in a cache
+static void SaveTransformed(bvector<IGeometryPtr> const &data);
 static void SaveTransformed(IGeometryPtr const &data);
 static void SaveTransformed(CurveVectorCR data);
 static void SaveTransformed(ICurvePrimitiveCR data);
