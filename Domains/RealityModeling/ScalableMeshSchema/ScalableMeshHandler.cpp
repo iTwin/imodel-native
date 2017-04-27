@@ -1247,6 +1247,29 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
     return clipFileBase;
     }
 
+
+void ScalableMeshModel::ClearExtraFiles()
+{
+	BeFileName clipFileBase = GenerateClipFileName(m_path, GetDgnDb());
+
+	bvector<BeFileName> names;
+	BeFileName clipFileName = clipFileBase;
+	clipFileName.append(L"_clips");
+
+	BeFileName clipDefFileName = clipFileBase;
+	clipDefFileName.append(L"_clipDefinitions");
+
+	names.push_back(clipFileName);
+	names.push_back(clipDefFileName);
+	for (auto& fileName : names)
+	{
+		if (BeFileName::DoesPathExist(fileName.c_str()))
+		{
+			BeFileName::BeDeleteFile(fileName.c_str());
+		}
+	}
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
