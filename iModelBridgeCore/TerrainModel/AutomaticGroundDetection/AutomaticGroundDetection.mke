@@ -6,15 +6,13 @@
 #
 #----------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)AutomaticGroundDetection.mki
 
 %include  mdl.mki
 %include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
 %include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
 %include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
-
-##  Symlink all src PublicAPI folders into build output PublicAPI folder
-always:
-    ~linkdir "$(BuildPublicApi)TerrainModel/AutomaticGroundDetection=$(TerrainModelGroundDetectDir)PublicAPI"
 
 #----------------------------------------------------------------------
 #       Create output directories
