@@ -128,9 +128,9 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelHubServices(
     "iModelHubServices",
-    "https://dev-dgndbserver.bentley.com",
-    "https://qa-dgndbserver.bentley.com",
-    "https://dgndbserver.bentley.com",
+    "https://dev-imodelhubapi.bentley.com",
+    "https://qa-imodelhubapi.bentley.com",
+    "https://imodelhubapi.bentley.com",
     &s_urlRegistry
     );
 
