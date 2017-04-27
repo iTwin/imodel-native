@@ -445,7 +445,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                   //  }
 #endif
                 isMeshingDone = true;
-                if (node->GetPointsPtr()->size() > 10 && node->GetPtsIndicePtr()->size() == 0)
+                if (pointsPtr->size() > 10 && node->GetPtsIndicePtr()->size() == 0)
                     {
                     std::cout << "NODE " << node->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
                     }
