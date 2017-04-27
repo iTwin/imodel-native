@@ -24,7 +24,8 @@ static RPS s_rps = RPS();
 static bool s_keepRunning = true;
 static Stats s_stats = Stats();
 
-static int64_t s_startTime;
+static int64_t s_statStartTime;
+static int64_t s_ultimateStartTime;
 
 static int s_targetRequestsPerHour;
 
@@ -98,6 +99,7 @@ void restartUser(UserManager* manager)
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
     User* user = s_innactiveUsers.back();
     s_innactiveUsers.pop_back();
+
     user->DoNext(manager);
     }
 
@@ -132,23 +134,6 @@ void Dispatch(UserManager* manager)
             }
         else 
             sleep %= 600;
-
-#if (0)
-        // If a target requests per hour is set ...
-        if (s_targetRequestsPerHour > 0)
-            {
-            int64_t currentTime;
-            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-            int totalRequests = s_stats.GetTotalRequests();
-            int requestsPerHour = (int)(3600.0 * (double)(totalRequests) / ((currentTime - s_startTime)/1000.0));
-            if (s_targetRequestsPerHour < requestsPerHour)
-                s_sleepBiasMilliseconds += 100;  // Too fast ... increase sleep bias
-            else if (s_sleepBiasMilliseconds > 100)
-                s_sleepBiasMilliseconds -= 100;  // Too slow ... decrease sleep bias
-
-            sleep += s_sleepBiasMilliseconds;
-            }
-#endif
             
         Sleep(sleep);
         }
@@ -222,28 +207,44 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
     m_activeUsers = activeUsers;
     int64_t endTime;
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
-    opStats[user->m_currentOperation]->Update(success, endTime - user->m_start);
-    if(!success)
-        errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
 
-#if (0)
+    m_totalRequests += 1;
+
     // We use the insert stat as delay
     // If a target requests per hour is set ...
     if (s_targetRequestsPerHour > 0)
         {
         int64_t currentTime;
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-        int totalRequests = s_stats.GetTotalRequests();
-        int requestsPerHour = (int)(3600.0 * (double)(totalRequests) / ((currentTime - s_startTime)/1000.0)) + 1; // +1 is to make sure value is not 0
-        double deviationFactor = fabs((s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour);
+        int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
+        double deviationFactor = fabs(s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour;
         if (s_targetRequestsPerHour < requestsPerHour)
             s_sleepBiasMilliseconds += (int)(100 * deviationFactor);  // Too fast ... increase sleep bias
         else if (s_sleepBiasMilliseconds > 100)
             s_sleepBiasMilliseconds -= (int)(100 * deviationFactor);  // Too slow ... decrease sleep bias
 
-        Sleep(s_sleepBiasMilliseconds);
+        std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
+        std::this_thread::sleep_for(ms);
+
+        if (deviationFactor < 1.10 && deviationFactor > 0.9)
+            m_targetAttained = true;
         }
-#endif
+
+    if (m_totalRequests > 100 || (s_targetRequestsPerHour > 0 && m_targetAttained))
+        {
+
+        // On first log reset start time
+        if (m_firstLog)
+            {
+            m_firstLog = false;
+            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);
+            }
+
+        opStats[user->m_currentOperation]->Update(success, endTime - user->m_start);
+        if(!success)
+            errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
+
+        }
 
     }
 
@@ -302,9 +303,16 @@ void Stats::PrintStats()
 
     std::cout << std::endl;
 
-    std::cout << Utf8PrintfString("Total Time (seconds): %6d", (currentTime - s_startTime)/1000) << std::endl;
-    std::cout << Utf8PrintfString("Total request/s:      %lf", (double)(totalSuccess + totalFailure) / ((currentTime - s_startTime)/1000.0)) << std::endl;
-    std::cout << Utf8PrintfString("Total request/hour:   %lf", 3600.0 * (double)(totalSuccess + totalFailure) / ((currentTime - s_startTime)/1000.0)) << std::endl;
+    std::cout << Utf8PrintfString("Total Time (seconds): %6d", (currentTime - s_statStartTime)/1000) << std::endl;
+    std::cout << Utf8PrintfString("Stat Total request/s:      %lf", (double)(totalSuccess + totalFailure) / ((currentTime - s_statStartTime)/1000.0)) << std::endl;
+    if (m_totalRequests < 100 && (s_targetRequestsPerHour > 0 && !m_targetAttained))
+        {
+        int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
+        std::cout << Utf8PrintfString("Current request/hour:   %6d       TARGET:   %6d", requestsPerHour, s_targetRequestsPerHour) << std::endl;
+        std::cout << "WARMING UP: STATS PENDING" << std::endl;
+        }
+    else
+        std::cout << Utf8PrintfString("Total request/hour:   %lf", 3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) << std::endl;
     std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;
@@ -524,25 +532,6 @@ void User::DoNext(UserManager* owner)
                 curl = DeleteRealityData();
                 }
             }
-
-#if (0)
-    // We use the insert stat as delay
-    // If a target requests per hour is set ...
-    if (s_targetRequestsPerHour > 0)
-        {
-        int64_t currentTime;
-        DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-        int totalRequests = s_stats.GetTotalRequests();
-        int requestsPerHour = (int)(3600.0 * (double)(totalRequests) / ((currentTime - s_startTime)/1000.0)) + 1; // +1 is to make sure value is not 0
-        double deviationFactor = fabs((s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour);
-        if (s_targetRequestsPerHour < requestsPerHour)
-            s_sleepBiasMilliseconds += (int)(100 * deviationFactor);  // Too fast ... increase sleep bias
-        else if (s_sleepBiasMilliseconds > 100)
-            s_sleepBiasMilliseconds -= (int)(100 * deviationFactor);  // Too slow ... decrease sleep bias
-
-        Sleep(s_sleepBiasMilliseconds);
-        }
-#endif
 
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
     if(curl != nullptr)
@@ -1082,7 +1071,8 @@ int main(int argc, char* argv[])
             }
         }
     
-    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_startTime);
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_ultimateStartTime);
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);
 
     UserManager wo = UserManager();
     wo.m_userCount = userCount;

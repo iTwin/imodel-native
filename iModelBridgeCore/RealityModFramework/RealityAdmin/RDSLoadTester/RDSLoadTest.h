@@ -73,6 +73,9 @@ struct Stats
     bvector<Utf8String>           opLog;
     bmap<OperationType, bvector<Utf8String>>        errors;
     int                        m_activeUsers = 1;
+    bool m_targetAttained = false;
+    int m_totalRequests = 0;
+    bool m_firstLog = true;
 
     Stats();
     void InsertStats(const User* user, bool success, int activeUsers);
