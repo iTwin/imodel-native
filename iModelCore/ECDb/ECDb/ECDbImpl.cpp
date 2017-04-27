@@ -230,7 +230,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         }
 
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str(), GetSettings().GetCrudWriteToken()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt.Step())
@@ -239,7 +239,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)"))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)", GetSettings().GetCrudWriteToken()))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
