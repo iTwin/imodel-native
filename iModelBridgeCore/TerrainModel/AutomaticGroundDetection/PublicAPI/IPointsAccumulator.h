@@ -10,7 +10,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 
 GROUND_DETECTION_TYPEDEF(IGroundPointsAccumulator)
 

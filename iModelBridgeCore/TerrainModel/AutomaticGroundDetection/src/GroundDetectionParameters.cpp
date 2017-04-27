@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
-#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\IPointsProvider.h>
+#include <AutomaticGroundDetection\IGroundDetectionServices.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING

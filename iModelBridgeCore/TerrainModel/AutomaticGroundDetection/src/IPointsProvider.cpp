@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/IPointsProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\IPointsProvider.h>
 
 /*
 #include "PCPointsProvider.h"

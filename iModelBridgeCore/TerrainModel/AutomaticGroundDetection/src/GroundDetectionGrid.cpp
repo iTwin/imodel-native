@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\IPointsProvider.h>
 #include "PCGroundTIN.h"
 
 #pragma warning( disable : 4456 )  

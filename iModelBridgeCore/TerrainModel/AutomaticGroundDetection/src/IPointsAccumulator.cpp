@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\IPointsAccumulator.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL 

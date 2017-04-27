@@ -10,8 +10,8 @@
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <AutomaticGroundDetection\IPointsAccumulator.h>
+#include <AutomaticGroundDetection\IPointsProvider.h>
 
 
 GROUND_DETECTION_TYPEDEF(ProgressReport)

@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\GroundDetectionManager.h>
 #include "GroundDetectionManagerDc.h"
 
 BEGIN_GROUND_DETECTION_NAMESPACE

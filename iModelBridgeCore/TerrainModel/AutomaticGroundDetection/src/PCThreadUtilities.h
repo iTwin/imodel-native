@@ -14,7 +14,7 @@
 #include <Bentley/DateTime.h>
 
 #include "PCThreadUtilities.h"
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 
 //__PUBLISH_SECTION_END__
 GROUND_DETECTION_TYPEDEF(PointCloudThread)

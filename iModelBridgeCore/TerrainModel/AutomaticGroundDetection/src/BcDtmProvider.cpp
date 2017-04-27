@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "BcDtmProvider.h"
 #include <TerrainModel/Formats/TerrainImporter.h>
 
