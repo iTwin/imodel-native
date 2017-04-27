@@ -108,14 +108,14 @@ void DgnDb::_OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_OnDbOpened()
+DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     {
     DbResult rc;
 
-    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
+    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened(params)))
         return rc;
 
-    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
+    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened(((DgnDb::OpenParams const&) params).IsSchemaUpgradeEnabled())))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
@@ -545,7 +545,7 @@ DgnClassId DgnImportContext::_RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnImportContext::ComputeGcsAndGOadjustment()
+void DgnImportContext::ComputeGcsAdjustment()
     {
     //  We may need to transform between source and destination GCS.
     m_xyzOffset = DPoint3d::FromZero();
@@ -589,7 +589,7 @@ DgnCloneContext::DgnCloneContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
-    ComputeGcsAndGOadjustment();
+    ComputeGcsAdjustment();
     }
 
 /*---------------------------------------------------------------------------------**//**

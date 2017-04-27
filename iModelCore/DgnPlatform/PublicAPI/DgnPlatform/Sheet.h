@@ -19,7 +19,7 @@ BEGIN_SHEET_NAMESPACE
 
 //=======================================================================================
 //! A Sheet::Model is a GraphicalModel2d that has the following characteristics:
-//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Has finite  extents, specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
@@ -47,6 +47,22 @@ public:
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
+    //! Draw border graphics (static, called during update)
+    DGNPLATFORM_EXPORT static void DrawBorder(ViewContextR viewContext, DPoint2dCR size);
+
+    //! Get the sheet size.
+    DPoint2d GetSheetSize() const;
+
+    //! Get the sheet extents.
+    AxisAlignedBox3d GetSheetExtents() const;
+
+    //! Get the sheet attachment IDs.
+    DGNPLATFORM_EXPORT bvector<DgnElementId> GetSheetAttachmentIds() const;
+
+    //! Get the sheet attachment views.
+    DGNPLATFORM_EXPORT bvector<ViewDefinitionCPtr> GetSheetAttachmentViews(DgnDbR db) const;
+
+
     //! @private
     DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
 };
@@ -70,11 +86,12 @@ public:
     explicit Element(CreateParams const& params) : T_Super(params) {}
 
     //! Create a DgnCode for a Sheet in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8StringCR name);
 
     //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    //! @private
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
 
     //! Creates a new Sheet in the specified InformationModel
@@ -83,7 +100,7 @@ public:
     //! @param[in] size The sheet size (meters)
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name);
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8StringCR name);
 
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
@@ -91,7 +108,7 @@ public:
     //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8StringCR name);
 
     //! Get the drawing scale of the sheet
     double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
@@ -155,6 +172,7 @@ public:
     BE_PROP_NAME(View)
     BE_PROP_NAME(DisplayPriority)
     BE_PROP_NAME(Scale)
+    BE_PROP_NAME(Clip)
 
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
 
@@ -178,9 +196,9 @@ public:
     DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(prop_View());} //!< Get the Id of the view definition to be drawn by this attachment
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(prop_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
     int32_t GetDisplayPriority() const {return GetPropertyValueInt32(prop_DisplayPriority());}
-    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(prop_DisplayPriority(), v);}
+    DgnDbStatus SetDisplayPriority(int32_t priority) {return SetPropertyValue(prop_DisplayPriority(), priority);}
     double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
-    DgnDbStatus SetScale(double v) {return SetPropertyValue(prop_Scale(), v);}
+    DgnDbStatus SetScale(double scale) {return SetPropertyValue(prop_Scale(), scale);}
 
     //! Get the clip to be applied to this attachment, if any. 
     //! @return a clip vector or an invalid ptr if the attachment is not clipped.
@@ -192,9 +210,9 @@ public:
     //! @see ClearClip
     DGNPLATFORM_EXPORT DgnDbStatus SetClip(ClipVectorCR);
 
-    //! Set this attachment to be unclipped.
+    //! Clear the clip for this attachment.
     //! @see SetClip
-    DGNPLATFORM_EXPORT void ClearClip();
+    void ClearClip() {SetPropertyValue(prop_Clip(), ECN::ECValue());}
 };
 
 //=======================================================================================
@@ -307,7 +325,6 @@ protected:
 
     void DrawBorder(ViewContextR context) const;
     Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
-    AxisAlignedBox3d GetSheetExtents() const {return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0));}
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
 };
 
@@ -333,7 +350,6 @@ namespace Handlers
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
     };
-
 };
 
 END_SHEET_NAMESPACE

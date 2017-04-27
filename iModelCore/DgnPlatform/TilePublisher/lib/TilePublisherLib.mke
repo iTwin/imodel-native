@@ -41,8 +41,10 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BaseGeoCoord.lib      \
                       $(SubpartLibs)ThreeMx.lib           \
                       $(SubpartLibs)PointCloud.lib        \
-                      $(SubpartLibs)BeFolly.lib           \
+                      $(SubpartLibs)BeFolly.lib           
+%if TEXTURE_COMPRESSION_SUPPORT
                       $(SubpartLibs)Crunch.lib            
+%endif
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

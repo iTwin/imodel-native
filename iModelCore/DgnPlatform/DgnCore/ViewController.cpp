@@ -16,7 +16,6 @@ void ViewFlags::FromJson(JsonValueCR val)
     {
     memset(this, 0, sizeof(*this));
     m_constructions = !val[json_noConstruct()].asBool();
-    m_text = !val[json_noText()].asBool();
     m_dimensions = !val[json_noDim()].asBool();
     m_patterns = !val[json_noPattern()].asBool();
     m_weights = !val[json_noWeight()].asBool();
@@ -56,7 +55,6 @@ Json::Value ViewFlags::ToJson() const
     {
     Json::Value val;
     if (!m_constructions) val[json_noConstruct()] = true;
-    if (!m_text) val[json_noText()] = true;
     if (!m_dimensions) val[json_noDim()] = true;
     if (!m_patterns) val[json_noPattern()] = true;
     if (!m_weights) val[json_noWeight()] = true;
@@ -572,6 +570,7 @@ bool SpatialViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDetailCR hit)
     {
+    // NEEDSWORK: Need to decide the fate of this...when/if to show it, etc.
     DgnViewportR vp = *context.GetViewport();
     if (!vp.Is3dView())
         return; // Not valuable in 2d...
@@ -582,8 +581,8 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-    if (!(static_cast<SnapDetailCR>(hit)).IsHot())
-        return; // Only display if snap is hot...otherwise it's confusing as it shows the surface information for a location that won't be used...
+    if (!(static_cast<SnapDetailCR>(hit)).IsHot() || SnapMode::Nearest != static_cast<SnapDetailCR>(hit).GetSnapMode())
+        return; // Only display if snap is nearest/hot...otherwise it's confusing as it shows the surface information for a location that won't be used...
 
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
     ColorDef    colorFill = color;

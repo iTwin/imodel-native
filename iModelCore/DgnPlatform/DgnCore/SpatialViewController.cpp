@@ -328,8 +328,8 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
         if (nullptr != spatialModel)
             spatialModel->_AddTerrainGraphics(context);
 
-        Utf8CP message = model->GetCopyrightMessage();
-        if (!Utf8String::IsNullOrEmpty(message)) // skip empty strings.
+        Utf8String message = model->GetCopyrightMessage();
+        if (!message.empty()) // skip empty strings.
             m_copyrightMsgs.insert(message);
         }
     }

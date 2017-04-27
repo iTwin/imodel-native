@@ -6,13 +6,8 @@
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
-ASSEMBLY_FILE_VERSION = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-NUGET_BASE_PATH = $(OutputRootDir)Product/TilePublisher/
-NuGetBaseName=Bentley.TilePublisher
-NuSpecPath=$(SrcRoot)/DgnPlatform/TilePublisher/lib/TilePublisher.nuspec
-NUGET_BUILD_DIR = $(OutputRootDir)Build/TilePublisher/
-%include $(SrcRoot)bsicommon/sharedMki/nuspecCreate.mki
-
-always:
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_BUILD_DIR)NuGetPackages/$(NuGetBaseName).$(ASSEMBLY_FILE_VERSION).nupkg $(OutputRootDir)Product/TilePublisher/Assets/NuGetPackages/$(NuGetBaseName).$(ASSEMBLY_FILE_VERSION).nupkg
+NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
+NUGET_BASE_PATH=$(OutputRootDir)Product/TilePublisher/
+NuGetBaseName=TilePublisher
+NuGetDependencies=\#DgnClientSdk_version\#=$(BuildContext)SubParts\Assemblies\ecobjects.dll
+%include $(sharedMki)nuspecCreate.mki

@@ -23,6 +23,11 @@ void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
 void Render::Target::Debug::SaveGPS(int gps, double fr) {s_gps=gps; s_frameRateGoal=fr; Show();}
 void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
+void Render::Target::Debug::RecordGraphicsStats()
+    {
+    if (IDisplayMetricsHandler::IsRecorderActive())
+        DisplayMetricsHandler::RecordGraphicsStats(s_gps, s_sceneTarget, s_progressiveTarget, s_frameRateGoal);
+    }
 void Render::Target::Debug::Show()
     {
 #if defined (DEBUG_LOGGING) 
@@ -43,6 +48,8 @@ void Render::Target::_RecordFrameTime(uint32_t count, double seconds, bool isFro
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     Render::Target::Debug::SaveGPS(gps, m_frameRateGoal);
+    if (!isFromProgressiveDisplay)
+        Render::Target::Debug::RecordGraphicsStats();
 
     // Typically GPS increases as progressive display continues. We cannot let CreateScene graphics
     // be affected by the progressive display rate.  
@@ -197,6 +204,9 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
+
+    if (m_elapsedTime>.125 && IDisplayMetricsHandler::IsRecorderActive())
+        DisplayMetricsHandler::RecordError(Utf8PrintfString("[%d] task=%s, elapsed=%d", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), (int)(m_elapsedTime*1000)).c_str());
 
     if (m_elapsedTime>.5)
         ERROR_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
