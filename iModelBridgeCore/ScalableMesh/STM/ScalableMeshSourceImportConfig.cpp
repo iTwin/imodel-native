@@ -248,7 +248,8 @@ ImportConfig* SourceImportConfig::GetConfig () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const ImportSequence& SourceImportConfig::GetSequence () const
     {
-  //  assert(!m_implP->m_sequence.IsEmpty());
+    //NEEDS_WORK_SM For raster source the sequence can be empty??
+    //assert(!m_implP->m_sequence.IsEmpty());
     return m_implP->m_sequence;
     }
 

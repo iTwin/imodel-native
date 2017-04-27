@@ -192,6 +192,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
     {        
+    if (m_raster == nullptr)
+        return; 
+
     DRange3d total3dRange(DRange3d::NullRange());
     
     for (auto& range : tileRanges)
