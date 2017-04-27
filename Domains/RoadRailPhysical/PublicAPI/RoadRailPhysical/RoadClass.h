@@ -114,7 +114,7 @@ public:
 //! Linearly-located attribution on a Roadway whose value is its Road-Class.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClass : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE RoadClass : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadClass, Dgn::InformationContentElement);
     friend struct RoadClassHandler;

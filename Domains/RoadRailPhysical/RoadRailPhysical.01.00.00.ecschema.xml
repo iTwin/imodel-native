@@ -4,8 +4,7 @@
     <ECSchemaReference name="Costing" version="01.00.00" alias="cost"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
-    <!--ECSchemaReference name="BridgePhysical" version="01.00.00" alias="bphys"/-->
-
+    
     <KindOfQuantity typeName="CURRENCY" displayLabel="CURRENCY" persistenceUnit="ONE" relativeError="1e-2" />
     <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="M" relativeError="1e-2" />    
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />    
@@ -81,6 +80,7 @@
                 <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
+        <ECProperty propertyName="TravelwayIndex" typeName="int" />
     </ECEntityClass>
     <ECEntityClass typeName="RegularTravelwaySegment" modifier="Sealed" description="Physical segment of a Travelway, with a constant definition." >
         <BaseClass>TravelwaySegmentElement</BaseClass>
@@ -159,15 +159,21 @@
     <!-- END RoadSegmentElement Class Hierarchy -->
 
     <!-- BEGIN PathFoundationSegment Class Hierarchy -->
+    <ECEnumeration typeName="TravelwaySide" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Left"/>
+        <ECEnumerator value="1" displayLabel="Right"/>
+    </ECEnumeration>
     <ECEntityClass typeName="PathFoundationSegment" modifier="None" description="Generic class for Road/Rail foundation elements." >
         <BaseClass>PathFoundationElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PathFoundationIntersectionSegment" modifier="None" description="Generic class for Road/Rail foundation intersection elements." >
         <BaseClass>PathFoundationElement</BaseClass>
-    </ECEntityClass>
+    </ECEntityClass>    
     <ECEntityClass typeName="EndConditionSegment" modifier="None" description="Generic class for Road/Rail end-condition elements." >
         <BaseClass>PathFoundationElement</BaseClass>
         <ECNavigationProperty propertyName="EndConditionDefinition" relationshipName="EndConditionSegmentRefersToDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EndConditionSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
@@ -180,6 +186,8 @@
     <ECEntityClass typeName="BufferSegment" modifier="None" description="Generic class for Road/Rail buffer elements." >
         <BaseClass>PathFoundationElement</BaseClass>
         <ECNavigationProperty propertyName="BufferDefinition" relationshipName="BufferSegmentRefersToDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="BufferSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">

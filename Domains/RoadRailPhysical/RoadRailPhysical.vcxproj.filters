@@ -52,9 +52,6 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\LinearReferencing.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
@@ -85,9 +82,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadDesignSpeed.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LinearReferencing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadSegment.cpp">

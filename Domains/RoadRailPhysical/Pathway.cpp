@@ -62,9 +62,9 @@ DgnDbStatus PathwayElement::SetAlignment(PathwayElementCR roadway, AlignmentCP a
 //=======================================================================================
 //! Concrete implementation of a cascade algorithm targeting SegmentRanges.
 //=======================================================================================
-struct SegmentRangeCascadeAlgorithm : BridgeCascadeAlgorithm
+struct SegmentRangeCascadeAlgorithm : CascadeFromToLocationChangesAlgorithm
 {
-DEFINE_T_SUPER(BridgeCascadeAlgorithm)
+DEFINE_T_SUPER(CascadeFromToLocationChangesAlgorithm)
 
 protected:
     SegmentRangeCascadeAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action): 

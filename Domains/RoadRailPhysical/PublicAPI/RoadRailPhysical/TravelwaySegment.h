@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class for physical Road and Rail segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement, ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySegmentElement, Dgn::PhysicalElement);
     friend struct TravelwaySegmentElementHandler;

@@ -155,7 +155,7 @@ public:
 //! Linearly-located attribution on a Roadway whose value is its design-speed.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeed : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeed : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeed, Dgn::InformationContentElement);
     friend struct RoadDesignSpeedHandler;

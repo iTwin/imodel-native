@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadRailCategory.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,8 +12,8 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! Helper class to query/manage Bridge-related categories.
-//! @ingroup GROUP_BridgePhysical
+//! Helper class to query/manage RoadRail-related categories.
+//! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct RoadRailCategory : NonCopyableClass
 {
@@ -30,6 +30,6 @@ public:
     //! Return the DgnCategoryId for road-rail elements
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRoad(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTrack(Dgn::DgnDbR);
-}; // BridgePhysicalDomain
+}; // RoadRailCategory
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
