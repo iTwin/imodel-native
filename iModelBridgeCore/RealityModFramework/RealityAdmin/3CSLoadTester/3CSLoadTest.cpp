@@ -10,6 +10,7 @@
 
 #include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityConversionTools.h>
+#include <CCApi/CCPublic.h>
 
 #include "3CSLoadTest.h"
 
@@ -40,7 +41,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FullInfo::LogError() const
     {
-    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
+    return Utf8PrintfString("Request:\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s", req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
     }
 
 void FullInfo::Clear()
@@ -223,7 +224,7 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
     std::lock_guard<std::mutex> lock(statMutex);
     m_activeUsers = activeUsers;
     opStats[user->m_currentOperation]->Update(success, std::time(nullptr) - user->m_start);
-    if(!success)
+    //if(!success)
         errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
     }
 
@@ -364,13 +365,9 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-User::User():
-    m_currentOperation(OperationType::LIST_PROJECT), m_handshake(AzureHandshake())
-    {}
-
-User::User(int id) :
+User::User(int id, Utf8String token) :
     m_currentOperation(OperationType::LIST_PROJECT), m_handshake(AzureHandshake()),
-    m_userId(id), m_fileName(BeFileName(Utf8PrintfString("%d", m_userId)))
+    m_userId(id), m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_token(token)
 {}
 
 ///*---------------------------------------------------------------------------------**//**
@@ -446,11 +443,18 @@ void User::DoNext(UserManager* owner)
     else if (m_currentOperation == OperationType::LIST_CLUSTERS)
         {
         if (m_id.empty())
-            m_currentOperation = OperationType::CREATE_JOB;
+            m_currentOperation = OperationType::ADD_PROJECT;
         else
             curl = ListClusters();
         }
-
+    
+    if (m_currentOperation == OperationType::CREATE_JOB)
+        {
+        if (m_id.empty())
+            m_currentOperation = OperationType::ADD_PROJECT;
+        else
+            curl = CreateJob();
+        }
 
     if(m_currentOperation == OperationType::LIST_PROJECT)
         {
@@ -459,10 +463,6 @@ void User::DoNext(UserManager* owner)
     else if (m_currentOperation == OperationType::ADD_PROJECT)
         {
         curl = AddProject();
-        }
-    else if (m_currentOperation == OperationType::CREATE_JOB)
-        {
-        curl = CreateJob();
         }
     else if (m_currentOperation == OperationType::GET_JOBS)
         {
@@ -496,7 +496,7 @@ CURL* User::ListProject()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append("/api/v1/projects");
+    m_correspondance.req.url.append("api/v1/projects");
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -506,7 +506,7 @@ CURL* User::AddProject()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append("/api/v1/projects");
+    m_correspondance.req.url.append("api/v1/projects");
     m_correspondance.req.type = POST;
     m_correspondance.req.payload = "{\"region\": \"eus\", \"name\":\"something\"}";
 
@@ -519,7 +519,7 @@ CURL* User::DeleteProject()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
     m_correspondance.req.type = DEL;
 
     return PrepareRequest();
@@ -529,7 +529,7 @@ CURL* User::GetProject()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -539,7 +539,7 @@ CURL* User::SASUri()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s/sas-uri", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/sas-uri", m_id));
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -549,7 +549,7 @@ CURL* User::ListClusters()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s/clusters", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/clusters", m_id));
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -559,7 +559,7 @@ CURL* User::CreateJob()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s/jobs", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/jobs", m_id));
     m_correspondance.req.type = POST;
     Utf8String body =   "{"
                             "\"id\": \"%s\","
@@ -621,7 +621,7 @@ CURL* User::AddJobForId()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/projects/%s/jobs/%s", m_id, m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/jobs/%s", m_id, m_jobId));
     m_correspondance.req.type = POST;
 
     return PrepareRequest();
@@ -631,7 +631,7 @@ CURL* User::DeleteJob()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/jobs/%s", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_jobId));
     m_correspondance.req.type = DEL;
 
     return PrepareRequest();
@@ -641,7 +641,7 @@ CURL* User::GetJobs()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/jobs/%s", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_id));
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -651,7 +651,7 @@ CURL* User::GetJobById()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/ws/jobs/%s", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/ws/jobs/%s", m_jobId));
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -661,7 +661,7 @@ CURL* User::GetJobResult()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append("/api/v1/jobs-result");
+    m_correspondance.req.url.append("api/v1/job-result");
     m_correspondance.req.type = POST;
 
     return PrepareRequest();
@@ -671,7 +671,7 @@ CURL* User::CancelJob()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("/api/v1/jobs/%s/cancel", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/cancel", m_jobId));
     m_correspondance.req.type = POST;
 
     return PrepareRequest();
@@ -761,12 +761,6 @@ UserManager::~UserManager()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-User::~User()
-    {}
-
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Spencer Mason                   4/2017
-//+---------------+---------------+---------------+---------------+---------------+------*/
 int main(int argc, char* argv[])
     {
     SetConsoleTitle("3CS Load Test");
@@ -814,19 +808,75 @@ int main(int argc, char* argv[])
     UserManager wo = UserManager();
     wo.m_userCount = userCount;
 
+    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+    CallStatus status = APIERR_SUCCESS;
+
+    bool installed;
+    status = CCApi_IsInstalled(api, &installed);
+    if (!installed)
+        {
+        std::cout << "Connection client does not seem to be installed" << std::endl;
+        return -1;
+        }
+    bool running = false;
+    status = CCApi_IsRunning(api, &running);
+    if (status != APIERR_SUCCESS || !running)
+        {
+        std::cout << "Connection client does not seem to be running" << std::endl;
+        return -1; 
+        }
+    bool loggedIn = false;
+    status = CCApi_IsLoggedIn(api, &loggedIn);
+    if (status != APIERR_SUCCESS || !loggedIn)
+        {
+        std::cout << "Connection client does not seem to be logged in" << std::endl;
+        return -1;
+        }
+    bool acceptedEula = false;
+    status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+    if (status != APIERR_SUCCESS || !acceptedEula)
+        {
+        std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
+        return -1;
+        }
+    bool sessionActive = false;
+    status = CCApi_IsUserSessionActive(api, &sessionActive);
+    if (status != APIERR_SUCCESS || !sessionActive)
+        {
+        std::cout << "Connection client does not seem to have an active session" << std::endl;
+        return -1;
+        }
+
+    LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
+    UINT32 maxTokenLength = 16384;
+    LPWSTR lpwstrToken = new WCHAR[maxTokenLength];
+
+    status = CCApi_GetSerializedDelegateSecurityToken(api, relyingParty, lpwstrToken, maxTokenLength);
+    if (status != APIERR_SUCCESS)
+        return -1;
+
+    char* charToken = new char[maxTokenLength];
+    wcstombs(charToken, lpwstrToken, maxTokenLength);
+
+    Utf8String token = "Authorization: Token ";
+    token.append(charToken);
+
+    delete lpwstrToken;
+    delete charToken;
+
     if(!trickle)
         {
         for(int i = 0; i < userCount; i++)
             {
-            wo.users.push_back(new User(i));
+            wo.users.push_back(new User(i, token));
             }
         }
     else
         {
-        wo.users.push_back(new User(0)); //start with one
+        wo.users.push_back(new User(0, token)); //start with one
             for (int i = 1; i < userCount; i++)
             {
-            s_innactiveUsers.push_back(new User(i)); //feed the rest to the Dispatcher
+            s_innactiveUsers.push_back(new User(i, token)); //feed the rest to the Dispatcher
             }
         }
 
@@ -977,6 +1027,7 @@ CURL* User::PrepareRequest()
     bvector<Utf8String> wsgHeaders = m_correspondance.req.headers;
     for (Utf8String header : wsgHeaders)
         headers = curl_slist_append(headers, header.c_str());
+    headers = curl_slist_append(headers, m_token.c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, m_correspondance.req.url);
 

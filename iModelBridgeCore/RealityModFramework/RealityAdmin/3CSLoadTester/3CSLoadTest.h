@@ -113,12 +113,11 @@ public:
     AzureHandshake              m_handshake;
     BeFile                      m_file;
     BeFileName                  m_fileName;
+    Utf8String                  m_token;
 
     int                         m_userId;
 
-    User();
-    User(int id);
-    ~User();
+    User(int id, Utf8String token);
     
     void DoNext(UserManager* owner);
     
@@ -151,6 +150,7 @@ public:
     WString                     m_certPath;
     Stats                       m_stats;
     int                         m_userCount;
+    Utf8String                  m_token;
 
     UserManager();
     ~UserManager();
