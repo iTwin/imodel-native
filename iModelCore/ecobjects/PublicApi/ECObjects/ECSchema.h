@@ -3184,9 +3184,10 @@ public:
     //! @return true, if this schema is a system schema. false, otherwise
     bool IsSystemSchema() const {return IsDefined("Bentley_Standard_Custom_Attributes", "SystemSchema");}
 
-    //!< Validates the schema against the latest version of EC.  
-    //! @remarks This method will not attempt to resolve issues found during validation.  Use the overload ::Validate(bool) to use automatic issue resolution.
+    //! Validates the schema against the latest version of EC.  
+    //! @remarks This method will not attempt to resolve issues found during validation.  Use the overload ECSchema::Validate(bool) to use automatic issue resolution.
     ECOBJECTS_EXPORT bool Validate();
+
     //! Validates the schema against the latest version of the EC specification.
     //! @param[in] resolveIssues If true this method will attempt to resolve any issues found.  If false any issues found will fail validation.
     ECOBJECTS_EXPORT bool Validate(bool resolveIssues);
