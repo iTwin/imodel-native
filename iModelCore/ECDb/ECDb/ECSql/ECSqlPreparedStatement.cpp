@@ -454,9 +454,9 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
-    InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
-    ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
+    PrepareInfo prepareInfo(ctx, exp.GetAs<InsertStatementExp>());
 
+    ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
     if (!policy.IsSupported())
         {
@@ -465,12 +465,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         }
 
     BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
-    PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
-    ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
-
     if (classMap.IsRelationshipClassMap())
         {
-        if (!propNameListExp->GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !propNameListExp->GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
+        if (!prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
             return ECSqlStatus::InvalidECSql;
@@ -478,26 +475,12 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         }
 
     int idPropNameExpIx = -1;
-    m_ecInstanceKeyHelper.Initialize(idPropNameExpIx, classMap, *propNameListExp, *valuesListExp);
+    m_ecInstanceKeyHelper.Initialize(idPropNameExpIx, prepareInfo);
 
-    struct PropNameValueInfo
-        {
-    public:
-        PropertyNameExp const* m_propNameExp = nullptr;
-        ValueExp const* m_valueExp = nullptr;
-        bool m_isIdPropNameExp = false;
-
-        PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp, bool isIdPropNameExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp), m_isIdPropNameExp(isIdPropNameExp) {}
-        };
-
-    std::map<DbTable const*, std::vector<PropNameValueInfo>> expsByMappedTable;
-    //Holds all tables per parameter index (index into the vector + 1) which are affected by the parameter
-    std::vector<std::set<DbTable const*>> parameterIndexInTables;
-
-    const size_t propNameCount = propNameListExp->GetChildrenCount();
+    const size_t propNameCount = prepareInfo.GetPropertyNameListExp().GetChildrenCount();
     for (size_t i = 0; i < propNameCount; i++)
         {
-        PropertyNameExp const* propNameExp = propNameListExp->GetPropertyNameExp(i);
+        PropertyNameExp const* propNameExp = prepareInfo.GetPropertyNameListExp().GetPropertyNameExp(i);
         if (propNameExp->IsPropertyRef())
             continue;
 
@@ -513,19 +496,17 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             table = &propertyMap->GetClassMap().GetPrimaryTable();
             }
 
-        ValueExp const* valueExp = valuesListExp->GetValueExp(i);
+        ValueExp const* valueExp = prepareInfo.GetValuesExp().GetValueExp(i);
 
         const bool isIdExp = idPropNameExpIx >= 0 && idPropNameExpIx == (int) i;
-        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, isIdExp);
+        PrepareInfo::PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, isIdExp);
 
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
-            if (zeroBasedParameterIndex == parameterIndexInTables.size())
+            const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
+            if (!prepareInfo.ParameterIndexExists(paramIndex))
                 {
-                parameterIndexInTables.push_back(std::set<DbTable const*> {table});
-
                 if (isIdExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedParameterExp)
                     {
                     std::unique_ptr<ProxyECInstanceIdECSqlBinder> proxyBinder = std::make_unique<ProxyECInstanceIdECSqlBinder>();
@@ -534,26 +515,39 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                     }
                 else
                     m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+                }
 
-                }
-            else if (zeroBasedParameterIndex < parameterIndexInTables.size())
-                parameterIndexInTables[zeroBasedParameterIndex].insert(table);
-            else
-                {
-                BeAssert(false);
-                }
+            prepareInfo.AddParameterIndex(paramIndex, *table);
             }
 
-        expsByMappedTable[table].push_back(propNameValueInfo);
+        prepareInfo.AddPropNameValueInfo(propNameValueInfo, *table);
         }
 
+    ECSqlStatus stat = PrepareLeafStatements(prepareInfo);
+    if (!stat.IsSuccess())
+        return stat;
 
-    Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
+    return PopulateProxyBinders(prepareInfo);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlInsertPreparedStatement::PrepareLeafStatements(PrepareInfo& prepareInfo)
+    {
+    ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
+    //WIP: Need to refactor so that tables are always in order: primary table/joined table/overflow table
     bool isPrimaryTable = true;
-    bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
         {
+        if (classMap.GetType() != ClassMap::Type::RelationshipEndTable &&
+            ((isPrimaryTable && table->GetType() != DbTable::Type::Primary) ||
+            (!isPrimaryTable && table->GetType() == DbTable::Type::Primary)))
+            {
+            BeAssert(false && "We rely that the first table returned from ClassMap::GetTables is the primary table");
+            return ECSqlStatus::Error;
+            }
+
         Utf8String propNameECSqlClause;
         Utf8String valuesECSqlClause;
 
@@ -568,13 +562,13 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             isFirstToken = false;
             }
 
-        auto it = expsByMappedTable.find(table);
+        auto it = prepareInfo.GetPropNameValueInfosByTable().find(table);
         //If the ECSQL INSERT doesn't have expressions targeting this table.
         //we still have to insert a row for it (which will be empty except for the id and classid
-        if (it != expsByMappedTable.end())
+        if (it != prepareInfo.GetPropNameValueInfosByTable().end())
             {
-            std::vector<PropNameValueInfo> const& propNameValueInfos = it->second;
-            for (PropNameValueInfo const& propNameValueInfo : propNameValueInfos)
+            bvector<PrepareInfo::PropNameValueInfo> const& propNameValueInfos = it->second;
+            for (PrepareInfo::PropNameValueInfo const& propNameValueInfo : propNameValueInfos)
                 {
                 if (!isFirstToken)
                     {
@@ -584,7 +578,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
                 propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
 
-                propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
+                propNameValueInfo.m_valueExp->ToECSql(prepareInfo.GetECSqlRenderContextR());
                 if (isPrimaryTable && propNameValueInfo.m_isIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNullExp)
                     {
                     //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
@@ -592,16 +586,16 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                     valuesECSqlClause.append(":" ECSQLSYS_PARAM_Id);
                     }
                 else
-                    valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
+                    valuesECSqlClause.append(prepareInfo.GetECSqlRenderContext().GetECSql());
 
-                ecsqlRenderCtx.ResetECSqlBuilder();
+                prepareInfo.GetECSqlRenderContextR().ResetECSqlBuilder();
                 isFirstToken = false;
                 }
             }
 
         Utf8String ecsql;
         ecsql.Sprintf("INSERT INTO %s(%s) VALUES(%s)", classMap.GetClass().GetECSqlName().c_str(), propNameECSqlClause.c_str(),
-                                                        valuesECSqlClause.c_str());
+                      valuesECSqlClause.c_str());
 
         ECSqlParser parser;
         std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
@@ -611,33 +605,41 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         m_statements.push_back(std::make_unique<SingleContextTableECSqlPreparedStatement>(m_ecdb, ECSqlType::Insert, *table));
 
         SingleContextTableECSqlPreparedStatement& preparedStmt = *m_statements.back();
-        ctx.Reset(preparedStmt);
-        const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
+        prepareInfo.GetContext().Reset(preparedStmt);
+        const ECSqlStatus stat = preparedStmt.Prepare(prepareInfo.GetContext(), *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
 
         BeAssert(!preparedStmt.IsNoopInSqlite() && "ECSQL INSERT statements are not expected to translate to no-ops in SQLite. Instead this should have been caught and resulted in an error.");
-        perTableStatements[table] = &preparedStmt;
+        prepareInfo.AddLeafStatement(preparedStmt, *table);
         isPrimaryTable = false;
         }
 
-    for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : ecsqlRenderCtx.GetParameterIndexNameMap())
+    return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const& prepareInfo)
+    {
+    for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
-        int paramIndex = parameterNameMapping.first;
-        BeAssert(paramIndex >= 0 && paramIndex <= (int) m_proxyBinders.size());
+        const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
+        BeAssert(paramIndex >= 0 && paramIndex <= (uint32_t) m_proxyBinders.size());
         Utf8StringCR paramName = parameterNameMapping.second.m_name;
         if (!parameterNameMapping.second.m_isSystemGeneratedName)
             m_parameterNameMap[paramName] = paramIndex;
 
-        const size_t zeroBasedParamIndex = (size_t) (paramIndex - 1);
-        IProxyECSqlBinder& proxyBinder = *m_proxyBinders[zeroBasedParamIndex];
-        BeAssert(zeroBasedParamIndex < parameterIndexInTables.size());
-        std::set<DbTable const*> const& affectedTables = parameterIndexInTables[zeroBasedParamIndex];
-        BeAssert(!affectedTables.empty());
-        for (DbTable const* affectedTable : affectedTables)
+        IProxyECSqlBinder& proxyBinder = *m_proxyBinders[(size_t) (paramIndex - 1)];
+
+        auto it = prepareInfo.GetTablesByParameterIndex().find(paramIndex);
+        BeAssert(it != prepareInfo.GetTablesByParameterIndex().end());
+        for (DbTable const* affectedTable : it->second)
             {
-            BeAssert(perTableStatements.find(affectedTable) != perTableStatements.end());
-            ECSqlParameterMap const& leafStatementParameterMap = perTableStatements[affectedTable]->GetParameterMap();
+            auto it = prepareInfo.GetLeafStatementsByTable().find(affectedTable);
+            BeAssert(it != prepareInfo.GetLeafStatementsByTable().end());
+            ECSqlParameterMap const& leafStatementParameterMap = it->second->GetParameterMap();
             ECSqlBinder* binder = nullptr;
             if (!leafStatementParameterMap.TryGetBinder(binder, paramName))
                 {
@@ -761,8 +763,9 @@ DbResult ECSqlInsertPreparedStatement::StepForEndTableRelationship(ECInstanceKey
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNameExpIx, ClassMap const& classMap, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp)
+void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNameExpIx, PrepareInfo const& prepareInfo)
     {
+    ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
     m_classId = classMap.GetClass().GetId();
 
     //If this is an end table relationship the returned instance key is the same as the ECInstanceId of the row holding the FK
@@ -772,13 +775,13 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNa
     else
         m_sysPropInfo = &ECSqlSystemPropertyInfo::ECInstanceId();
 
-    idPropNameExpIx = propNameListExp.GetSpecialTokenExpIndexMap().GetIndex(*m_sysPropInfo);
+    idPropNameExpIx = prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().GetIndex(*m_sysPropInfo);
 
     if (idPropNameExpIx < 0)
         m_mode = Mode::NotUserProvided;
     else
         {
-        ValueExp const* idValueExp = valueListExp.GetValueExp((size_t) idPropNameExpIx);
+        ValueExp const* idValueExp = prepareInfo.GetValuesExp().GetValueExp((size_t) idPropNameExpIx);
         BeAssert(idValueExp != nullptr);
 
         switch (idValueExp->GetType())
@@ -808,14 +811,14 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNa
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
 //static
-ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Mode ECSqlInsertPreparedStatement::ECInstanceKeyHelper::DetermineMode(int& expIx, ECSqlSystemPropertyInfo const& sysPropInfo, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp)
+ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Mode ECSqlInsertPreparedStatement::ECInstanceKeyHelper::DetermineMode(int& expIx, ECSqlSystemPropertyInfo const& sysPropInfo, PrepareInfo const& prepareInfo)
     {
-    expIx = propNameListExp.GetSpecialTokenExpIndexMap().GetIndex(sysPropInfo);
+    expIx = prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().GetIndex(sysPropInfo);
 
     if (expIx < 0)
         return Mode::NotUserProvided;
 
-    ValueExp const* idValueExp = valueListExp.GetValueExp((size_t) expIx);
+    ValueExp const* idValueExp = prepareInfo.GetValuesExp().GetValueExp((size_t) expIx);
     BeAssert(idValueExp != nullptr);
 
     switch (idValueExp->GetType())

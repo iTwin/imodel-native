@@ -262,6 +262,56 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
 private:
+    struct PrepareInfo final : NonCopyableClass
+        {
+        public:
+            struct PropNameValueInfo
+                {
+                public:
+                    PropertyNameExp const* m_propNameExp = nullptr;
+                    ValueExp const* m_valueExp = nullptr;
+                    bool m_isIdPropNameExp = false;
+
+                    PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp, bool isIdPropNameExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp), m_isIdPropNameExp(isIdPropNameExp) {}
+                };
+        private:
+            ECSqlPrepareContext& m_ctx;
+            InsertStatementExp const& m_exp;
+            ClassNameExp const& m_classNameExp;
+            PropertyNameListExp const& m_propNameListExp;
+            ValueExpListExp const& m_valuesListExp;
+            Exp::ECSqlRenderContext m_ecsqlRenderContext;
+            bmap<DbTable const*, bvector<PropNameValueInfo>> m_propNameValueInfosByMappedTable;
+            //Holds all tables per parameter index
+            bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
+
+        public:
+            PrepareInfo(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
+                : m_ctx(ctx), m_exp(exp), m_classNameExp(*exp.GetClassNameExp()), m_propNameListExp(*exp.GetPropertyNameListExp()), m_valuesListExp(*exp.GetValuesExp()),
+                m_ecsqlRenderContext(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter)
+                {}
+
+            ECSqlPrepareContext& GetContext() const { return m_ctx; }
+            InsertStatementExp const& GetExp() const { return m_exp; }
+            ClassNameExp const& GetClassNameExp() const { return m_classNameExp; }
+            PropertyNameListExp const& GetPropertyNameListExp() const { return m_propNameListExp; }
+            ValueExpListExp const& GetValuesExp() const { return m_valuesListExp; }
+
+            Exp::ECSqlRenderContext const& GetECSqlRenderContext() const { return m_ecsqlRenderContext; }
+            Exp::ECSqlRenderContext& GetECSqlRenderContextR() { return m_ecsqlRenderContext; }
+
+            void AddPropNameValueInfo(PropNameValueInfo const& info, DbTable const& table) { m_propNameValueInfosByMappedTable[&table].push_back(info); }
+            bmap<DbTable const*, bvector<PropNameValueInfo>> const& GetPropNameValueInfosByTable() const { return m_propNameValueInfosByMappedTable; }
+            bmap<uint32_t, bset<DbTable const*>> const& GetTablesByParameterIndex() const { return m_parameterIndexInTables; }
+            bool ParameterIndexExists(uint32_t paramIndex) const { return m_parameterIndexInTables.find(paramIndex) != m_parameterIndexInTables.end(); }
+            //!@return true if index already existed, false otherwise
+            void AddParameterIndex(uint32_t paramIndex, DbTable const& table) { m_parameterIndexInTables[paramIndex].insert(&table); }
+
+            bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> const& GetLeafStatementsByTable() const { return m_perTableStatements; }
+            void AddLeafStatement(SingleContextTableECSqlPreparedStatement const& stmt, DbTable const& table) { m_perTableStatements[&table] = &stmt; }
+        };
+
     struct ECInstanceKeyHelper final : NonCopyableClass
             {
             public:
@@ -310,12 +360,12 @@ private:
                 ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr; //in case user specified parametrized id expression
                 mutable ECInstanceId m_generatedECInstanceId;
 
-                static Mode DetermineMode(int& expIx, ECSqlSystemPropertyInfo const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
+                static Mode DetermineMode(int& expIx, ECSqlSystemPropertyInfo const&, PrepareInfo const&);
 
             public:
                 ECInstanceKeyHelper() {}
 
-                void Initialize(int &idPropNameExpIx, ClassMap const&, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
+                void Initialize(int &idPropNameExpIx, PrepareInfo const&);
 
                 void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
                     { 
@@ -332,9 +382,13 @@ private:
                 Mode GetMode() const { return m_mode; }
             };
 
+    
+
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+        ECSqlStatus PrepareLeafStatements(PrepareInfo&);
+        ECSqlStatus PopulateProxyBinders(PrepareInfo const&);
 
         DbResult StepForEndTableRelationship(ECInstanceKey&);
 
