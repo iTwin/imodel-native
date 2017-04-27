@@ -7684,7 +7684,7 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     statement.ClearBindings();
 
     {
-    BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
+    BeThreadUtilities::BeSleep(200); // make sure the time is different by more than the resolution of the timestamp
     ECSqlStatement updateStatement;
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetInstanceId()));

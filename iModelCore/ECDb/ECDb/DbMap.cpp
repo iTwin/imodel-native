@@ -69,7 +69,8 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return SUCCESS;
 
     stmt.Finalize();
-    if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
+
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
         {
         BeAssert(false && "ECDb profile changed");
         return ERROR;
@@ -188,11 +189,10 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx) const
         return ERROR;
         }
 
-    LogInvalidDbMappings();
-
+    const BentleyStatus stat = ValidateDbMappings(m_ecdb, ctx.GetOptions() != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
     ClearCache();
     m_schemaImportContext = nullptr;
-    return SUCCESS;
+    return stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ BentleyStatus DbMap::DoMapSchemas() const
             GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixIns);
             }
         }
-    
+
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Synchronizing existing table to which classes are mapped failed.");
@@ -308,8 +308,12 @@ BentleyStatus DbMap::DoMapSchemas() const
     if (SUCCESS != FinishTableDefinitions(true))
         return ERROR;
 
+
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
+        for (auto& k : m_classMapDictionary)
+            k.second->DeleteColumnFactory();
+
         if (ClassMappingStatus::Error == MapClass(*rootRelationshipClass))
             return ERROR;
         }
@@ -942,26 +946,27 @@ BentleyStatus DbMap::SaveDbSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMap::LogInvalidDbMappings() const
+//static
+BentleyStatus DbMap::ValidateDbMappings(ECDb const& ecdb, bool failOnError)
     {
     NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidDbMappings");
     const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
-    const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_ERROR;
-    if (!diagLogger->isSeverityEnabled(diagSeverity) && !LOG.isSeverityEnabled(logSeverity))
-        return SUCCESS;
 
-    Utf8CP ecdbFileName = m_ecdb.GetDbFileName();
+    Utf8CP ecdbFileName = ecdb.GetDbFileName();
 
+    PERFLOG_START("ECDb", "ValidateDbMappings");
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, SQL_ValidateDbMapping))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SQL_ValidateDbMapping))
         {
-        LOG.messagev(logSeverity, "Preparing db mapping validation SQL failed: %s", m_ecdb.GetLastError().c_str());
+        LOG.errorv("Preparing db mapping validation SQL failed: %s", ecdb.GetLastError().c_str());
         BeAssert(false);
         return ERROR;
         }
 
+    bool hasIssues = false;
     while (BE_SQLITE_ROW == stmt.Step())
         {
+        hasIssues = true;
         Utf8CP schemaName = stmt.GetValueText(0);
         Utf8CP schemaAlias = stmt.GetValueText(1);
         Utf8CP className = stmt.GetValueText(2);
@@ -973,9 +978,13 @@ BentleyStatus DbMap::LogInvalidDbMappings() const
                              ecdbFileName, schemaName, schemaAlias,
                              className, tableName, issueType, issueTypeDesc, issue);
 
-        LOG.messagev(logSeverity, "ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
+        ecdb.GetECDbImplR().GetIssueReporter().Report("ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
                      schemaName, className, issueTypeDesc, tableName, issue);
         }
+
+    PERFLOG_FINISH("ECDb", "ValidateDbMappings");
+    if (hasIssues && failOnError)
+        return ERROR;
 
     return SUCCESS;
     }
