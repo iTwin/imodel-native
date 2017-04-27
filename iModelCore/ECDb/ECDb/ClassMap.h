@@ -185,10 +185,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus Save(DbMapSaveContext&);
         BentleyStatus Update();
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
-        void DeleteColumnFactory() const 
-            { 
-            m_columnFactory = nullptr; 
-            }
+        void DeleteColumnFactory() const { m_columnFactory = nullptr; }
         //! Rules:
         //! If MapStrategy != TPH: NotInherited
         //! Else: Clone
