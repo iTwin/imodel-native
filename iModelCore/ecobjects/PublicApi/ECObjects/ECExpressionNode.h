@@ -134,7 +134,7 @@ protected:
 
                 ErrorNode (Utf8CP summary, Utf8CP detail1, Utf8CP detail12) 
                     : m_summary(summary), m_detail1(detail1), m_detail2(detail12) {}
-    virtual Utf8String     _ToString() const override { return "ERROR"; }
+    virtual Utf8String     _ToString() const override;
     ExpressionToken _GetOperation () const override { return TOKEN_Error; }
 
 public:

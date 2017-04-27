@@ -810,16 +810,19 @@ NodePtr         ECEvaluator::ParsePrimary
             {
             case TOKEN_True:
                 result = Node::CreateBooleanLiteral (true);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created boolean literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
                 break;
 
             case TOKEN_False:
                 result = Node::CreateBooleanLiteral (false);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created boolean literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
                 break;
 
             case TOKEN_Null:
                 result = Node::CreateNullLiteral();
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created null literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance();
                 break;
 
@@ -851,6 +854,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 m_lexer->Advance ();
 
                 result = Node::CreateIIf (*conditional, *trueClause, *falseClause);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created IIf. Expression Token: '%s', TrueClause: %s, FalseClause: %s", Lexer::GetString(m_lexer->GetTokenType()).c_str(), trueClause->ToExpressionString().c_str(), falseClause->ToExpressionString().c_str()).c_str());
                 }
                 break;
 
@@ -861,6 +865,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 result = primaryList.get();
 
                 IdentNodePtr             identNode   = IdentNode::Create(m_lexer->GetTokenStringCP ());
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created ident node: %s", identNode->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
 
                 while(m_lexer->GetTokenType () == TOKEN_DoubleColon)
@@ -869,7 +874,10 @@ NodePtr         ECEvaluator::ParsePrimary
                     identNode->PushQualifier(m_lexer->GetTokenStringCP ());
                     result = Must (TOKEN_Ident, *result);
                     if (result->GetOperation() == TOKEN_Error)
+                        {
+                        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Double colon error. Result: %s", result->ToExpressionString().c_str()).c_str());
                         return result;
+                        }
                     }
 
                 for (;;)
@@ -884,6 +892,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             if (NULL == args)
                                 {
                                 result = temp.get();   //  this should be returning an error
+                                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Invalid arguments. Result: %s", result->ToExpressionString().c_str()).c_str());
                                 break;  //  assume there has already been an error reported.
                                 }
 
@@ -893,6 +902,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             else
                                 {
                                 //  TODO generate error
+                                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, "ERROR: ident name invalid");
                                 name = "";
                                 }
 
@@ -916,6 +926,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             primaryList->AppendArrayNode(*lBracket);
 
                             result = Must (TOKEN_RightBracket, *result);
+                            ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created left bracket: %s", result->ToExpressionString().c_str()).c_str());
                             }
                             break;
 
@@ -929,6 +940,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             DotNodePtr  dotNode = DotNode::Create(m_lexer->GetTokenStringCP ());
                             identNode = dotNode.get();
                             result = Must (TOKEN_Ident, *result);
+                            ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created dot node: %s", dotNode->ToExpressionString().c_str()).c_str());
                             if (result->GetOperation() == TOKEN_Error)
                                 return result;
                             while(m_lexer->GetTokenType () == TOKEN_DoubleColon)
@@ -937,7 +949,10 @@ NodePtr         ECEvaluator::ParsePrimary
                                 dotNode->PushQualifier(m_lexer->GetTokenStringCP ());
                                 result = Must (TOKEN_Ident, *result);
                                 if (result->GetOperation() == TOKEN_Error)
+                                    {
+                                    ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, "Dot token - double colon error ");
                                     return result;
+                                    }
                                 }
 
                             dotted = true;
@@ -950,6 +965,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             NodePtr lambdaExpr = ParseValueExpression();
                             if (lambdaExpr.IsNull())
                                 {
+                                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, "Lamda expression is null");
                                 BeAssert (false);
                                 break;
                                 }
@@ -957,6 +973,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             Utf8CP symbolName = identNode.IsValid() ? identNode->GetName() : "";
                             LambdaNodePtr lambdaNode = LambdaNode::Create (symbolName, *lambdaExpr);
                             result = lambdaNode;
+                            ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created lamda node: %s", result->ToExpressionString().c_str()).c_str());
                             identNode = NULL;
                             }
                             break;
@@ -973,6 +990,7 @@ NodePtr         ECEvaluator::ParsePrimary
 
             case TOKEN_StringConst:
                 result = Node::CreateStringLiteral (m_lexer->GetTokenStringCP (), true);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created string literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
                 break;
 
@@ -987,9 +1005,13 @@ NodePtr         ECEvaluator::ParsePrimary
                     {
                     int  intValue = (int)value;
                     result = Node::CreateIntegerLiteral (intValue);
+                    ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created integer literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                     }
                 else
+                    {
                     result = Node::CreateInt64Literal (value);
+                    ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created int64 literal. Result: %s", result->ToExpressionString().c_str()).c_str());
+                    }
 
                 m_lexer->Advance ();
                 }
@@ -1000,6 +1022,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 double d;
                 BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%lg", &d);
                 result = Node::CreateFloatLiteral (d);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created float literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
                 }
                 break;
@@ -1028,11 +1051,13 @@ NodePtr         ECEvaluator::ParsePrimary
                     {
                     case TOKEN_RCurly:
                         result = Node::CreatePoint2dLiteral (DPoint2d::From (x, y));
+                        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("CreatedPoint2dLiteral. Result: %s", result->ToExpressionString().c_str()).c_str());
                         break;
                     case TOKEN_Comma:
                         m_lexer->Advance();
                         EXTRACT_COORDINATE(z)
                         result = Node::CreatePoint3dLiteral (DPoint3d::FromXYZ (x, y, z));
+                        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("CreatedPoint3dLiteral. Result: %s", result->ToExpressionString().c_str()).c_str());
                         break;
                     default:
                         return GetErrorNode ("PointLiteralExpected");
@@ -1050,6 +1075,7 @@ NodePtr         ECEvaluator::ParsePrimary
                     return GetErrorNode ("DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created date time litaral. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance();
                 }
                 break;
@@ -1088,9 +1114,11 @@ NodePtr         ECEvaluator::ParseExponentiation
         ExpressionToken  op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
 
+        NodePtr     left = result;
         NodePtr     right = ParsePrimary ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1114,6 +1142,7 @@ NodePtr         ECEvaluator::ParseUnaryArith
         m_lexer->Advance ();
         result = ParseExponentiation ();
         result = Node::CreateUnaryArithmetic (op, *result);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created unary arithmetic. Operator: '%s', result %s", Lexer::GetString(op).c_str(), result->ToExpressionString().c_str()).c_str());
         }
     else
         {
@@ -1135,6 +1164,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
         {
         m_lexer->Advance();
         result = UnitSpecNode::Create (*result, m_lexer->GetTokenStringCP());
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created UnitSpecificationNode: %s (Expression Token: %s)", result->ToExpressionString().c_str(), Lexer::GetString(m_lexer->GetTokenType()).c_str()).c_str());
         m_lexer->Advance();
         uint32_t nQualifiers = 0;
         double factor = 0.0;
@@ -1167,6 +1197,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
             if (!valid)
                 {
                 result = GetErrorNode ("Malformed unit specification", m_lexer->GetTokenStringCP());
+                ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, "Malformed unit specification");
                 break;
                 }
             }
@@ -1188,9 +1219,11 @@ NodePtr         ECEvaluator::ParseMultiplicative
         ExpressionToken  op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
 
+        NodePtr left = result;
         NodePtr right = ParseUnaryArith ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1209,9 +1242,11 @@ NodePtr         ECEvaluator::ParseIntegerDivision
         ExpressionToken  op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
 
+        NodePtr left = result;
         NodePtr right = ParseMultiplicative ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1230,9 +1265,11 @@ NodePtr         ECEvaluator::ParseMod
         ExpressionToken  op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
 
+        NodePtr left = result;
         NodePtr right = ParseIntegerDivision ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1251,9 +1288,11 @@ NodePtr         ECEvaluator::ParseAdditive
         {
         op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
+        NodePtr left = result;
         NodePtr     right = ParseMod ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1272,9 +1311,11 @@ NodePtr         ECEvaluator::ParseConcatenation
         {
         op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
+        NodePtr left = result;
         NodePtr  right = ParseAdditive ();
 
         result = Node::CreateArithmetic (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created arithmetic. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1296,8 +1337,10 @@ NodePtr         ECEvaluator::ParseShift
         {
         op = m_lexer->GetTokenType ();
         m_lexer->Advance ();
+        NodePtr left = result;
         NodePtr right = ParseConcatenation ();
         result = Node::CreateShift (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created shift. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1323,13 +1366,18 @@ NodePtr         ECEvaluator::ParseComparison
                 )
         {
         if (m_lexer->GetTokenModifier() != TOKEN_None)
+            {
+            ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Unexpected Expression Token Modifier: %s", Lexer::GetString(m_lexer->GetTokenModifier()).c_str()).c_str());
             break;
+            }
 
         ExpressionToken  op = m_lexer->GetTokenType ();
 
         m_lexer->Advance ();
+        NodePtr         left = result;
         NodePtr         right = ParseShift ();
         result = Node::CreateComparison (op, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created comparison. Operator: '%s', left: %s, right: %s", Lexer::GetString(op).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1348,6 +1396,7 @@ NodePtr         ECEvaluator::ParseNot
         m_lexer->Advance ();
         result = ParseNot ();
         result = Node::CreateUnaryArithmetic (TOKEN_Not, *result);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created unary arithmetic: %s (%s)", result->ToExpressionString().c_str(), Lexer::GetString(m_lexer->GetTokenType()).c_str()).c_str());
         }
     else
         result = ParseComparison ();
@@ -1367,8 +1416,10 @@ NodePtr         ECEvaluator::ParseConjunction
         {
         ExpressionToken   tt = m_lexer->GetTokenType ();
         m_lexer->Advance ();
+        NodePtr left = result;
         NodePtr right = ParseNot ();
         result = Node::CreateLogical (tt, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created Logical. Logical operator: '%s', left: %s, right: %s", Lexer::GetString(tt).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1388,8 +1439,10 @@ NodePtr         ECEvaluator::ParseValueExpression
         {
         ExpressionToken   tt = m_lexer->GetTokenType ();
         m_lexer->Advance ();
+        NodePtr left = result;
         NodePtr right = ParseConjunction ();
         result = Node::CreateLogical (tt, *result, *right);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created Logical. Logical operator: '%s', left: %s, right: %s", Lexer::GetString(tt).c_str(), left->ToExpressionString().c_str(), right->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1408,11 +1461,12 @@ NodePtr         ECEvaluator::ParseAssignment
         {
         ExpressionToken assignmentSubtype = m_lexer->GetTokenModifier();  //  Look for +=, *=, etc.
         m_lexer->Advance ();
-
+        NodePtr  left = result;
         NodePtr  rightSide = ParseValueExpression ();
 
         // Raise an error if result is not a LHS expression
         result = Node::CreateAssignment (*result, *rightSide, assignmentSubtype);
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created Assignment. Assignment subtype: '%s', left: %s, right: %s", Lexer::GetString(assignmentSubtype).c_str(), left->ToExpressionString().c_str(), rightSide->ToExpressionString().c_str()).c_str());
         }
 
     return result;
@@ -1430,10 +1484,16 @@ bool tryAssignment
     m_lexer = Lexer::Create (expression);
     m_lexer->Advance ();
 
+    ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_INFO, Utf8PrintfString("Started parsing: %s", expression).c_str());
     NodePtr theNode = tryAssignment ? ParseAssignment() : ParseValueExpression ();
 
     if (!CheckComplete ())
-        theNode = GetErrorNode("Unused input", m_lexer->GetTokenStringCP());
+        {
+        theNode = GetErrorNode("Unused input:", m_lexer->GetTokenStringCP());
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("Parse is incomplete: %s", theNode->ToExpressionString().c_str()).c_str());
+        }
+    else
+        ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_INFO, Utf8PrintfString("Parse complete: %s", theNode->ToExpressionString().c_str()).c_str());
 
     return theNode;
     }
