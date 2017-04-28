@@ -154,27 +154,27 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
 
     ecSql.append(") LinearlyLocated, "
         BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation "
-        "WHERE (LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
+        "WHERE LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
 
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
         {
-        ecSql.append("((FromToLocation.FromPosition.DistanceAlongFromStart >= ? AND FromToLocation.FromPosition.DistanceAlongFromStart <= ?) "
-            "OR (FromToLocation.ToPosition.DistanceAlongFromStart >= ? AND FromToLocation.ToPosition.DistanceAlongFromStart <= ?)) ");
+        ecSql.append("AND ((FromToLocation.FromPosition.DistanceAlongFromStart >= ? AND FromToLocation.FromPosition.DistanceAlongFromStart <= ?) "
+            "OR (FromToLocation.ToPosition.DistanceAlongFromStart >= ? AND FromToLocation.ToPosition.DistanceAlongFromStart <= ?) "
+            "OR (FromToLocation.FromPosition.DistanceAlongFromStart < ? AND FromToLocation.ToPosition.DistanceAlongFromStart > ?)) ");
+        bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         }
     else if (fromDistanceAlong.IsValid())
         {
-        ecSql.append("(FromToLocation.FromPosition.DistanceAlongFromStart >= ? OR FromToLocation.ToPosition.DistanceAlongFromStart >= ?)");
+        ecSql.append("AND (FromToLocation.FromPosition.DistanceAlongFromStart >= ? OR FromToLocation.ToPosition.DistanceAlongFromStart >= ?)");
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(fromDistanceAlong.Value());
         }
     else if (toDistanceAlong.IsValid())
         {
-        ecSql.append("(FromToLocation.FromPosition.DistanceAlongFromStart <= ? OR FromToLocation.ToPosition.DistanceAlongFromStart <= ?) ");
+        ecSql.append("AND (FromToLocation.FromPosition.DistanceAlongFromStart <= ? OR FromToLocation.ToPosition.DistanceAlongFromStart <= ?) ");
         bindVals.push_back(toDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         }
-    else
-        ecSql.append(") ");
 
     ecSql.append("ORDER BY FromToLocation.FromPosition.DistanceAlongFromStart");
     }
@@ -186,24 +186,26 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
     NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong, bvector<double>& bindVals)
     {
     ecSql.append(
-        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
-        "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
-        "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
+        "SELECT DISTINCT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
+        "   coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
         "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
-        "FROM ((SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
         "WHERE ILinearElement.Id = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
     ecSql.append(") LinearlyLocated "
-        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation ON LinearlyLocated.ECInstanceId = AtLocation.Element.Id) "
+        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation ON LinearlyLocated.ECInstanceId = AtLocation.Element.Id "
         "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation ON LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
 
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
         {
         ecSql.append("WHERE (AtLocation.AtPosition.DistanceAlongFromStart >= ? AND AtLocation.AtPosition.DistanceAlongFromStart <= ? ) ");
         ecSql.append("OR (FromToLocation.FromPosition.DistanceAlongFromStart >= ? AND FromToLocation.FromPosition.DistanceAlongFromStart <= ?) "
-            "OR (FromToLocation.ToPosition.DistanceAlongFromStart >= ? AND FromToLocation.ToPosition.DistanceAlongFromStart <= ?) ");
+            "OR (FromToLocation.ToPosition.DistanceAlongFromStart >= ? AND FromToLocation.ToPosition.DistanceAlongFromStart <= ?) "
+            "OR (FromToLocation.FromPosition.DistanceAlongFromStart < ? AND FromToLocation.ToPosition.DistanceAlongFromStart > ?) ");
+        bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
         bindVals.push_back(fromDistanceAlong.Value()); bindVals.push_back(toDistanceAlong.Value());
@@ -225,13 +227,13 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
         bindVals.push_back(toDistanceAlong.Value());
         }
 
-    ecSql.append("ORDER BY coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart);");
+    ecSql.append("ORDER BY coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart);");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(bset<DgnClassId> const& iLinearlyLocatedClassIds, NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const
+bvector<LinearLocation> ISegmentableLinearElement::_QueryLinearLocations(bset<DgnClassId> const& iLinearlyLocatedClassIds, NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const
     {
     auto& dgnDb = ToElement().GetDgnDb();
     auto locationType = GetLinearlyReferencedLocationTypesToUse(dgnDb, iLinearlyLocatedClassIds);
@@ -266,14 +268,66 @@ bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(bset<DgnClassId
         stmtPtr->BindDouble(idx++, val);
         }
 
-    bvector<LinearSegment> retVal;
+    bvector<LinearLocation> retVal;
     while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         {
-        retVal.push_back(LinearSegment(
+        retVal.push_back(LinearLocation(
             stmtPtr->GetValueId<DgnElementId>(0), 
             stmtPtr->GetValueId<DgnClassId>(1), 
             stmtPtr->GetValueDouble(2), stmtPtr->GetValueDouble(3),
             stmtPtr->GetValueId<LinearlyReferencedLocationId>(4)));
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<LinearSegment> ISegmentableLinearElement::_QueryLinearSegments(bset<DgnClassId> const& iLinearlyLocatedClassIds, NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const
+    {
+    auto linearLocations = QueryLinearLocations(iLinearlyLocatedClassIds, fromDistanceAlong, toDistanceAlong);
+
+    bvector<bpair<double, double>> currentStartStops;
+    for (auto const& linearLocation : linearLocations)
+        currentStartStops.push_back({ linearLocation.GetStartDistanceAlong(), linearLocation.GetStopDistanceAlong() });
+
+    bvector<LinearSegment> retVal;
+    
+    bvector<LinearLocation> segmentReferences;
+    while (!currentStartStops.empty())
+        {
+        double minStart = DBL_MAX;
+        for (auto const& startStop : currentStartStops)
+            minStart = std::min(minStart, startStop.first);
+
+        double minStopAfterStart = DBL_MAX;
+        for (auto const& startStop : currentStartStops)
+            {
+            if (startStop.first > minStart)
+                minStopAfterStart = std::min(minStopAfterStart, startStop.first);
+            else
+                minStopAfterStart = std::min(minStopAfterStart, startStop.second);
+            }
+
+        segmentReferences.clear();
+        for (int i = currentStartStops.size() - 1; i >= 0; --i)
+            {
+            if (fabs(currentStartStops.at(i).first - minStart) < DBL_EPSILON)
+                {
+                segmentReferences.push_back(linearLocations.at(i));
+                
+                if (fabs(currentStartStops.at(i).second - minStopAfterStart) < DBL_EPSILON)
+                    {
+                    currentStartStops.erase(&currentStartStops.at(i));
+                    linearLocations.erase(&linearLocations.at(i));
+                    }
+                else
+                    currentStartStops.at(i).first = minStopAfterStart;
+                }
+            }
+
+        retVal.push_back(LinearSegment(minStart, minStopAfterStart, segmentReferences));
         }
 
     return retVal;
@@ -336,7 +390,7 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
 
     BeAssert(ecClassMixingInILinearlyLocated != nullptr);
     classIds.insert(ecClassMixingInILinearlyLocated->GetId());
-    auto linearSegmentVector = iSegmentableLinearElemCP->QuerySegments(classIds);
+    auto linearSegmentVector = iSegmentableLinearElemCP->QueryLinearLocations(classIds);
 
     return _Prepare(source, linearSegmentVector, fromToLocationsChanged);
     }
@@ -345,7 +399,7 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSourceCR source,
-    bvector<LinearSegment> const& existingLinearSegments, bvector<LinearlyReferencedFromToLocationCP> const& fromToLocationsChanged)
+    bvector<LinearLocation> const& existingLinearSegments, bvector<LinearlyReferencedFromToLocationCP> const& fromToLocationsChanged)
     {
     auto originElementId = GetReplacement().ToElement().GetElementId();
     for (auto iter = existingLinearSegments.begin(); iter != existingLinearSegments.end(); ++iter)
@@ -375,7 +429,7 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
             {
             double newFromDistanceAlong = fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart();
 
-            LinearSegment const* prevSegmentCP = iter - 1;
+            LinearLocation const* prevSegmentCP = iter - 1;
             if (fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart() < prevSegmentCP->GetStartDistanceAlong())
                 return DgnDbStatus::BadRequest; // New start distance along can't go before previous segment's start distance along
 
@@ -393,7 +447,7 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
             {
             double newToDistanceAlong = fromToLocationCP->GetToPosition().GetDistanceAlongFromStart();
 
-            LinearSegment const* nextSegmentCP = iter + 1;
+            LinearLocation const* nextSegmentCP = iter + 1;
             if (fromToLocationCP->GetToPosition().GetDistanceAlongFromStart() > nextSegmentCP->GetStopDistanceAlong())
                 return DgnDbStatus::BadRequest; // New stop distance along can't go after next segment's stop distance along
 
