@@ -38,7 +38,9 @@
         <file src="SubParts\Libs\ECObjects.lib"                   target="lib\native\ECObjects.lib" />
         <file src="SubParts\Libs\freetype2.lib"                   target="lib\native\freetype2.lib" />
         <file src="SubParts\Libs\liblog4cxx010.lib"               target="lib\native\liblog4cxx010.lib" />
-        <file src="SubParts\Libs\libv8.lib"                       target="lib\native\libv8.lib" />
+        <file src="SubParts\Libs\v8_libbase.lib"                  target="lib\native\v8_libbase.lib"/>
+        <file src="SubParts\Libs\v8_libplatform.lib"              target="lib\native\v8_libplatform.lib"/>
+        <file src="SubParts\Libs\v8.lib"                          target="lib\native\v8.lib"/>
         <file src="SubParts\Libs\lzma.lib"                        target="lib\native\lzma.lib" />
         <file src="SubParts\Libs\PointCloud.lib"                  target="lib\native\PointCloud.lib" />
         <file src="SubParts\Libs\PointoolsVortexAPI.lib"          target="lib\native\PointoolsVortexAPI.lib" />

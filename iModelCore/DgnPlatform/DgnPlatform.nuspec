@@ -25,7 +25,9 @@
         <file src="BeHttpB02.dll"                           target="lib\native\BeHttpB02.dll" />
         <file src="BeOpenSSLB02.dll"                        target="lib\native\BeOpenSSLB02.dll" />
         <file src="freetype2B02.dll"                        target="lib\native\freetype2B02.dll" />
-        <file src="libv8.dll"                               target="lib\native\libv8.dll" />
+        <file src="v8B02.dll"                               target="lib\native\v8B02.dll" />
+        <file src="v8_libbaseB02.dll"                       target="lib\native\v8_libbaseB02.dll" />
+        <file src="v8_libplatformB02.dll"                   target="lib\native\v8_libplatformB02.dll" />
         <file src="pskernel.dll"                            target="lib\native\pskernel.dll" />
 
         <file src="Assets\**\*"                             target="Assets" />
