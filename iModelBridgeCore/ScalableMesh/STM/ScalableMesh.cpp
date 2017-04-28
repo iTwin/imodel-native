@@ -403,6 +403,11 @@ void                        IScalableMesh::GetClipType(uint64_t id, SMNonDestruc
     return _GetClipType(id, type);
     }
 
+void IScalableMesh::CompactExtraFiles()
+{
+	return _CompactExtraFiles();
+}
+
 void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
     return _GetCurrentlyViewedNodes(nodes);
@@ -2414,6 +2419,16 @@ template <class POINT>  void                    ScalableMesh<POINT>::_GetClipTyp
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->GetClipType(id, type);
     }
+
+template <class POINT>  void                    ScalableMesh<POINT>::_CompactExtraFiles()
+   {
+	assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+	if (m_scmIndexPtr->m_isInsertingClips == true)
+		return;
+
+	m_scmIndexPtr->GetDataStore()->CompactProjectFiles();
+   }
 
 template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
