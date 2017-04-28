@@ -2899,7 +2899,7 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    if (tile.GetIsEmpty())
+    if (tile.GetIsEmpty() && tile.GetChildren().empty())
         {
         range = DRange3d::NullRange();
         return;
@@ -2978,7 +2978,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
-    if (!contentRange.IsNull())
+    if (!contentRange.IsNull() && !tile.GetIsEmpty())
         {
         root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, tile.GetFileExtension().c_str()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
@@ -3035,7 +3035,7 @@ TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
     {
-    if (TileGeneratorStatus::Success == status && nullptr != rootTile && !rootTile->GetIsEmpty())
+    if (TileGeneratorStatus::Success == status && nullptr != rootTile && (!rootTile->GetIsEmpty() || !rootTile->GetChildren().empty()))
         {
             {
             BeMutexHolder lock(m_mutex);

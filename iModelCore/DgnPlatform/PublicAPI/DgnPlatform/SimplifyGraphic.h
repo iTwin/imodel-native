@@ -197,6 +197,7 @@ virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGra
 virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(Render::IGraphicBuilder::TileCorners const&, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(Render::IGraphicBuilder::TriMeshArgs const&, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
@@ -213,6 +214,7 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {r
 virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners, SimplifyGraphic&) {return false;}
+virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&) {return false; }
 
 
 //! Called by SimplifyGraphic when clipping (and clips are present).

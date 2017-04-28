@@ -452,6 +452,7 @@ public:
     void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     void AddRenderTile(Render::IGraphicBuilder::TileCorners const&, TransformCR transform);
+    void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform);
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
     DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color);

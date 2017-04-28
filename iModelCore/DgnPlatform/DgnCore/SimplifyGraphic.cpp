@@ -1636,6 +1636,13 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
+    // TBD: Does clipping make any sense with tiles???
+    if (m_processor._ProcessTriMesh(args, *this))                                                                
+        return;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore == m_processor._GetUnhandledPreference(args, *this))
+        return;
+
     PolyfaceHeaderPtr polyface = args.ToPolyface();
     _AddPolyface(*polyface, true);
     }

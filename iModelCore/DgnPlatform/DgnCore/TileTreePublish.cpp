@@ -28,7 +28,8 @@ struct Texture : Render::Texture
     CreateParams        m_createParams;
     Image               m_image;
 
-    Texture (ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(image) { }
+    Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(image) { }
+    Texture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(source, targetFormat, bottomUp) { }
 
     Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_image, ImageSource::Format::Png)); }
 };  // Texture
@@ -50,15 +51,14 @@ protected:
         {return std::move(m_geometry);}
 
 public:
-    bool    IsEmpty() const { return m_geometry.IsEmpty(); }
+    bool    GeometryExists() const { return !m_geometry.IsEmpty(); }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    double          rangeDiagonal = inputTile.GetRange().DiagonalDistance();
-    double          tileTolerance = rangeDiagonal / inputTile._GetMaximumSize();     // off by factor two??
+    double          tileTolerance = (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6: inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();     // off by factor two??
 
     return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, tileTolerance);
     }
@@ -67,8 +67,15 @@ static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddPolyface(PolyfaceQueryCR polyface, SimplifyGraphic& graphic)
+void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, SimplifyGraphic& simplifyGraphic)
     {
+    Render::TileTextureImagePtr     tileTexture = triMesh.m_texture.IsValid() ? (dynamic_cast <TextureP> (triMesh.m_texture.get()))->CreateTileTexture() : nullptr;
+    auto                            tileDisplayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), true); 
+    auto                            mesh = TileMesh::Create(*tileDisplayParams);
+
+    mesh->AddTriMesh(triMesh, Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform()));
+
+    m_geometry.Meshes().push_back(mesh);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -97,32 +104,17 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
 
     GeometryProcessor(TileR tile) : m_tile(tile) { m_facetOptions = TileGenerator::CreateTileFacetOptions(tile.GetTolerance()); }
 
-    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override      { return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override  { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override    { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override      { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override       { BeAssert(false); return UnhandledPreference::Facet;}
+    // We don't expect the higher order primitives (or anything but Tiles and TriMeshes) to ever exist within a tile..
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override         { return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override     { BeAssert(false); return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override    { BeAssert(false); return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override       { BeAssert(false); return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override         { BeAssert(false); return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override          { BeAssert(false); return UnhandledPreference::Facet;}
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& graphic) override
-    {
-    m_tile.AddPolyface(polyface, graphic);
-
-    return true;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessTile(Render::TextureCR texture, Render::IGraphicBuilder::TileCorners const& corners, SimplifyGraphic& simplifyGraphic) override
-    {
-    m_tile.AddRenderTile(dynamic_cast<TextureCR> (texture), corners, simplifyGraphic);
-    return true;
-    }
+    virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic& simplifyGraphic) override   { m_tile.AddTriMesh (args, simplifyGraphic); return true;     }
+    virtual bool _ProcessTile(Render::TextureCR texture, Render::IGraphicBuilder::TileCorners const& corners, SimplifyGraphic& simplifyGraphic) override { m_tile.AddRenderTile(dynamic_cast<TextureCR> (texture), corners, simplifyGraphic); return true; }
 
 };  // GeometryProcessor
 
@@ -147,8 +139,8 @@ struct RenderSystem : Render::System
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { BeAssert(false); return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new TileTreePublish::Texture(image, params);}
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new Texture(image, params);}
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override {return new Texture(source, targetFormat, bottomUp, params); }
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
     virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
 
@@ -187,13 +179,13 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
         {                                
         TileTree::TileLoadStatePtr          loadState;
 
-        return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem);     
+        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem) : SUCCESS;
         })
     .then([=](BentleyStatus status)
         {
         delete renderSystem;
 
-        if (SUCCESS != status || context.m_outputTile->IsEmpty())
+        if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 
         if (context.m_outputTile->GetTolerance() > context.m_leafTolerance && context.m_inputTile->_HasChildren())
@@ -204,7 +196,10 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
                 context.m_outputTile->GetChildren().push_back(Tile::Create(*context.m_model, *child, context.m_transformFromDgn, context.m_outputTile->GetDepth()+1, context.m_outputTile->GetChildren().size(), context.m_outputTile.get()));
             }
 
-        context.m_collector->_AcceptTile(*context.m_outputTile);
+        if (context.m_outputTile->GeometryExists())
+            context.m_collector->_AcceptTile(*context.m_outputTile);
+        else
+            context.m_outputTile->SetIsEmpty(true);
             
         return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::Success, context.m_outputTile->GetRoot()));
         });
@@ -235,7 +230,7 @@ static TileGenerator::FutureGenerateTileResult generateChildTiles (TileGenerator
 
     return folly::unorderedReduce(childFutures, result, [=](TileGenerator::GenerateTileResult, TileGenerator::GenerateTileResult)
         {
-        return TileGenerator::GenerateTileResult(/* m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : */TileGeneratorStatus::Success, root);
+        return TileGenerator::GenerateTileResult(TileGeneratorStatus::Success, root);
         });
     }
 

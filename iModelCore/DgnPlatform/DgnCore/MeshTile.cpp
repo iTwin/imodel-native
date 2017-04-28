@@ -566,6 +566,32 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
     AddTriangle(TileTriangle(1, 3, 2, false));
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform)
+    {
+    m_points.resize(triMesh.m_numPoints);
+
+    if (nullptr != triMesh.m_normals)
+        m_normals.resize(triMesh.m_numPoints);
+
+    if (nullptr != triMesh.m_textureUV)
+        m_uvParams.resize(triMesh.m_numPoints);
+
+    for (int32_t i=0; i<triMesh.m_numPoints; i++)
+        {
+        transform.Multiply (m_points.at(i), DPoint3d::From((double) triMesh.m_points[i].x, (double) triMesh.m_points[i].y, (double) triMesh.m_points[i].z));
+        if (nullptr != triMesh.m_normals)
+            m_normals.at(i).Init((double) triMesh.m_normals[i].x, (double) triMesh.m_normals[i].y, (double) triMesh.m_normals[i].z);
+
+        if (nullptr != triMesh.m_textureUV)
+            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) triMesh.m_textureUV[i].y);
+        }
+    for (int32_t i=0; i<triMesh.m_numIndices; )
+        AddTriangle(TileTriangle(triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], false));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1760,7 +1786,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-    if (nullptr != generateMeshTiles)
+    if (nullptr != getTileTree)
+        {
+        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
+        }
+    else if (nullptr != generateMeshTiles)
         {
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
@@ -1777,10 +1807,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
             return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
             });
-        }
-    else if (nullptr != getTileTree)
-        {
-        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }
     else
         {
