@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTin.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -2286,27 +2286,39 @@ BENTLEYDTM_Public int bcdtmTin_getSwapTriangleDtmObject(BC_DTM_OBJ *dtmP,long st
 */
  clPtr = nodeAddrP(dtmP,startPnt)->cPtr ;
  if( ( p1 = bcdtmList_nextAntDtmObject(dtmP,startPnt,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
+ sd1 = 99999; // Uninitalized
  while( clPtr != dtmP->nullPtr )
    {
     p2  = clistAddrP(dtmP,clPtr)->pntNum ;
      clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-    if( nodeAddrP(dtmP,startPnt)->hPtr != p1 )
-      {
-       sd1 = bcdtmMath_pointSideOfDtmObject(dtmP,startPnt,lastPnt,p1) ;
-       sd2 = bcdtmMath_pointSideOfDtmObject(dtmP,startPnt,lastPnt,p2) ;
-       if      ( sd1 ==  0 && sd2 <  0 ) { *P1 = p1 ; clPtr = dtmP->nullPtr ; }
-       else if ( sd1 >   0 && sd2 == 0 ) { *P1 = p2 ; clPtr = dtmP->nullPtr ; }
-       else
+     if (nodeAddrP(dtmP, startPnt)->hPtr != p1)
          {
-          if( sd1 >  0 && sd2 < 0 )
-            {
-             if(( p3 = bcdtmList_nextAntDtmObject(dtmP,p1,p2) ) < 0 ) goto errexit ;
-             *P1 = p1 ; *P2 = p2 ; *P3 = p3 ;
-             clPtr = dtmP->nullPtr ;
-            }
+         if (sd1 == 99999)
+             sd1 = bcdtmMath_pointSideOfDtmObject(dtmP, startPnt, lastPnt, p1);
+
+         sd2 = bcdtmMath_pointSideOfDtmObject(dtmP, startPnt, lastPnt, p2);
+         if (sd1 == 0 && sd2 < 0)
+             {
+             *P1 = p1; clPtr = dtmP->nullPtr;
+             }
+         else if (sd1 > 0 && sd2 == 0)
+             {
+             *P1 = p2; clPtr = dtmP->nullPtr;
+             }
+         else
+             {
+             if (sd1 > 0 && sd2 < 0)
+                 {
+                 if ((p3 = bcdtmList_nextAntDtmObject(dtmP, p1, p2)) < 0) goto errexit;
+                 *P1 = p1; *P2 = p2; *P3 = p3;
+                 clPtr = dtmP->nullPtr;
+                 }
+             }
          }
-      }
+     else
+         sd2 = 99999;
     p1 = p2 ;
+    sd1 = sd2;
    }
 /*
 ** Clean Up
