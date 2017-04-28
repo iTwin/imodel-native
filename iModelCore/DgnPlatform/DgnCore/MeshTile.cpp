@@ -1874,7 +1874,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {

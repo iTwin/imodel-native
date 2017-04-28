@@ -964,6 +964,18 @@ struct TileGenerator
         size_t      m_tileCount = 0;
         double      m_tileGenerationTime = 0.0;
         };
+    
+    struct GenerateTileResult
+        {
+        TileNodePtr             m_tile;
+        TileGeneratorStatus     m_status;
+
+        explicit GenerateTileResult(TileGeneratorStatus status, TileNodeP tile=nullptr) : m_tile(tile), m_status(status)
+            { BeAssert(TileGeneratorStatus::Success != m_status || m_tile.IsValid()); }
+        };
+
+    typedef folly::Future<TileGeneratorStatus> FutureStatus;
+    typedef folly::Future<GenerateTileResult> FutureGenerateTileResult;
             
         
 private:
@@ -990,19 +1002,8 @@ private:
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }
 
         TileNodePtr GenerateDecorationTile() const;
-    };
-
-    struct GenerateTileResult
-        {
-        TileNodePtr             m_tile;
-        TileGeneratorStatus     m_status;
-
-        explicit GenerateTileResult(TileGeneratorStatus status, TileNodeP tile=nullptr) : m_tile(tile), m_status(status)
-            { BeAssert(TileGeneratorStatus::Success != m_status || m_tile.IsValid()); }
         };
 
-    typedef folly::Future<TileGeneratorStatus> FutureStatus;
-    typedef folly::Future<GenerateTileResult> FutureGenerateTileResult;
 
     FutureGenerateTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus PopulateCache(ElementTileContext context);
@@ -1013,7 +1014,7 @@ private:
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
     FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
-    FutureGenerateTileResult GenerateTilesFromTileTree(TileTree::TileP parentTile, TransformCR location, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* pCollector);
+    //FutureGenerateTileResult GenerateTilesFromTileTree(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* collector);
 
 
 public:
@@ -1028,6 +1029,7 @@ public:
 
     DGNPLATFORM_EXPORT TileGeneratorStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT static IFacetOptionsPtr CreateTileFacetOptions(double chordTolerance);
+
 };
 
 //=======================================================================================

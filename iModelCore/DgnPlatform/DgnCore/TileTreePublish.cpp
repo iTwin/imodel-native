@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------+                                                                                           
 |
-|     $Source: DgnCore/MeshTile.cpp $
+|     $Source: DgnCore/TileTreePublish.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -50,10 +50,19 @@ protected:
         {return std::move(m_geometry);}
 
 public:
-    static  TilePtr Create(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance) 
-        { return new Tile(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance); }
-
     bool    IsEmpty() const { return m_geometry.IsEmpty(); }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
+    { 
+    double          rangeDiagonal = inputTile.GetRange().DiagonalDistance();
+    double          tileTolerance = rangeDiagonal / inputTile._GetMaximumSize();     // off by factor two??
+
+    return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, tileTolerance);
+    }
+
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
@@ -145,10 +154,90 @@ struct RenderSystem : Render::System
 
 };
 
+struct Context
+{
+    TilePtr                         m_outputTile;
+    TileTree::TilePtr               m_inputTile;
+    Transform                       m_transformFromDgn;
+    TileGenerator::ITileCollector*  m_collector;
+    double                          m_leafTolerance;
+    DgnModelP                       m_model;
+
+    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, TileGenerator::ITileCollector* collector, double leafTolerance, DgnModelP model) : 
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model) { }
+
+    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, Context const& inContext) :
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+
+};
+
 } // end TileTreePublish
 
 using namespace TileTreePublish;
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+static TileGenerator::FutureGenerateTileResult generateParentTile (Context context)
+    {
+    RenderSystem*   renderSystem = new RenderSystem(*context.m_outputTile);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
+        {                                
+        TileTree::TileLoadStatePtr          loadState;
+
+        return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem);     
+        })
+    .then([=](BentleyStatus status)
+        {
+        delete renderSystem;
+
+        if (SUCCESS != status || context.m_outputTile->IsEmpty())
+            return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
+
+        if (context.m_outputTile->GetTolerance() > context.m_leafTolerance && context.m_inputTile->_HasChildren())
+            {
+            TileTree::Tile::ChildTiles const* children = context.m_inputTile->_GetChildren(true);
+
+            for (auto& child : *children)
+                context.m_outputTile->GetChildren().push_back(Tile::Create(*context.m_model, *child, context.m_transformFromDgn, context.m_outputTile->GetDepth()+1, context.m_outputTile->GetChildren().size(), context.m_outputTile.get()));
+            }
+
+        context.m_collector->_AcceptTile(*context.m_outputTile);
+            
+        return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::Success, context.m_outputTile->GetRoot()));
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+static TileGenerator::FutureGenerateTileResult generateChildTiles (TileGeneratorStatus parentStatus, Context context)
+    {
+    auto root = static_cast<Render::TileNodeP>(context.m_outputTile->GetRoot());
+    auto result = TileGenerator::GenerateTileResult(parentStatus, root);
+
+    if (context.m_outputTile->GetChildren().empty() || TileGeneratorStatus::Success != parentStatus)
+        return folly::makeFuture(result);
+
+    std::vector<TileGenerator::FutureGenerateTileResult> childFutures;
+
+    for (size_t i=0; i<context.m_outputTile->GetChildren().size(); i++)
+        {
+        TilePtr             outputChild  = dynamic_cast<TileP> (context.m_outputTile->GetChildren().at(i).get());
+        TileTree::TilePtr   inputChild   = context.m_inputTile->_GetChildren(false)->at(i);
+        Context             childContext(outputChild, inputChild, context);
+
+        auto childFuture = generateParentTile(childContext).then([=](TileGenerator::GenerateTileResult result) { return generateChildTiles(result.m_status, childContext); });
+        childFutures.push_back(std::move(childFuture));
+        }
+
+    return folly::unorderedReduce(childFutures, result, [=](TileGenerator::GenerateTileResult, TileGenerator::GenerateTileResult)
+        {
+        return TileGenerator::GenerateTileResult(/* m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : */TileGeneratorStatus::Success, root);
+        });
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017 
@@ -170,7 +259,12 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(IGetTileTre
         if (TileGeneratorStatus::Success != status)
             return folly::makeFuture(GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 
-        return GenerateTilesFromTileTree(tileRoot->GetRootTile().get(), tileRoot->GetLocation(), leafTolerance, clip.get(), model, collector);
+        Transform           transformFromDgn = Transform::FromProduct(GetTransformFromDgn(*model), tileRoot->GetLocation());
+        TilePtr             outputTile = Tile::Create(*model, *tileRoot->GetRootTile(), transformFromDgn, 0, 0, nullptr);
+        TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
+        Context             context(outputTile, inputTile, transformFromDgn, collector, leafTolerance, model);
+
+        return generateParentTile(context).then([=](GenerateTileResult result) { return generateChildTiles(result.m_status, context); });
         })
     .then([=](GenerateTileResult result)
         {
@@ -179,30 +273,3 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(IGetTileTre
         });
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017 
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTilesFromTileTree(TileTree::TileP inputTile, TransformCR location, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* collector)
-    {
-    double          rangeDiagonal = inputTile->GetRange().DiagonalDistance();
-    double          tileTolerance = rangeDiagonal / inputTile->_GetMaximumSize();     // off by factor two??
-    TilePtr         outputTile = Tile::Create(*model, inputTile->GetRange(), Transform::FromProduct(GetTransformFromDgn(*model), location), 0, 0, nullptr, tileTolerance);
-    RenderSystem*   renderSystem = new RenderSystem(*outputTile);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
-        {                                
-        TileTree::TileLoadStatePtr          loadState;
-
-        return inputTile->GetRootR()._RequestTile(*inputTile, loadState, renderSystem);     
-        })
-    .then([=](BentleyStatus status)
-        {
-        delete renderSystem;
-
-        if (SUCCESS != status || outputTile->IsEmpty())
-            return folly::makeFuture(GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
-
-        collector->_AcceptTile(*outputTile);
-        return folly::makeFuture(GenerateTileResult(TileGeneratorStatus::Success, outputTile->GetRoot()));
-        });
-    }
