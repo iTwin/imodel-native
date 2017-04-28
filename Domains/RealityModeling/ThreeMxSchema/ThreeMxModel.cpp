@@ -516,8 +516,8 @@ struct Publish3mxScene : Scene
 {
     using Scene::Scene;
 
-    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const override {return new Publish3mxTexture(source, targetFormat, bottomUp);}
-    GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
+    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No, Dgn::Render::SystemP renderSys = nullptr) const override {return new Publish3mxTexture(source, targetFormat, bottomUp);}
+    GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args, Dgn::Render::SystemP renderSys) override {return new Publish3mxGeometry(args, *this);}
 };
 typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 
@@ -651,3 +651,14 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree (ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const
+    { 
+    // TBD - Clipping...
+
+    Load(renderSys);
+
+    return m_scene;
+    }

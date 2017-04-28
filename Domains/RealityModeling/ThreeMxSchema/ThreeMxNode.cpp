@@ -95,7 +95,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
+Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene, Dgn::Render::SystemP renderSys)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -114,10 +114,10 @@ Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
             }
         }
 
-    if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
+    if (nullptr == renderSys|| !args.m_texture.IsValid())
         return;
 
-    auto graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
+    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     graphic->AddTriMesh(args);
     graphic->Close();
