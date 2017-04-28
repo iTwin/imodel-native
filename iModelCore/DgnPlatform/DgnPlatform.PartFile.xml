@@ -111,7 +111,7 @@
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
         <SubPart PartName="DgnPlatformDLL"/>
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/DgnProject"/>
+            <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>
         </Bindings>
     </Part>
 
@@ -434,6 +434,9 @@
             <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
+			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTest.bim
+            </Files>
         </Bindings>
     </Part>
     
@@ -629,7 +632,7 @@
     
     <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubPart PartName="TilePublisherLib" />
+        <SubProduct ProductName="TilePublisher" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
         </Bindings>
@@ -694,13 +697,13 @@
     </Product>
     
     <ProductDirectoryList ListName="DgnPlatformDirList" >
-        <ProductDirectory Name="ApplicationRoot" Path=""/>
-        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
-        <ProductDirectory Name="Libs"                                       Path="libs"/>
-        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
-        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
+        <ProductDirectory Name="ApplicationRoot"            Path=""/>
+        <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="Libs"                       Path="libs"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
     </ProductDirectoryList>
 
 </BuildContext>
