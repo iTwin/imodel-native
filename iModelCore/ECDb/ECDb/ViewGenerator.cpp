@@ -1029,7 +1029,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         BeAssert(propertyMap->IsData());
         SingleColumnDataPropertyMap const& dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
         //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
-        if (requireJoinTo.end() != requireJoinTo.find(&dataProperty.GetTable()))
+        if (requireJoinTo.end() != requireJoinTo.find(&dataProperty.GetTable()) || requireJoin)
             {
             ToSqlVisitor toSqlVisitor(ctx, dataProperty.GetTable(), dataProperty.GetTable().GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())

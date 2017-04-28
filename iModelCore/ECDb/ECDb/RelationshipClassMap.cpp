@@ -1817,6 +1817,9 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         if (classMap != nullptr)
             {
             m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()] = classMap;
+            if (DbTable* overflowTable = classMap->GetOverflowTable())
+                m_constraintClassMaps[overflowTable] = classMap;
+
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
             }
