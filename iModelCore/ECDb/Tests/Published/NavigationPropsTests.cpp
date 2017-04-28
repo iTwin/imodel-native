@@ -1765,79 +1765,78 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     {
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport_joinedtable.ecdb",
-                           SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                      "<ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
-                                      "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                      "    <ECEntityClass typeName='DgnCategory'>"
-                                      "        <ECProperty propertyName='Name' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='IGeometrySource' modifier='Abstract'>"
-                                      "      <ECCustomAttributes>"
-                                      "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                      "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-                                      "          </IsMixin>"
-                                      "      </ECCustomAttributes>"
-                                      "        <ECProperty propertyName='Geometry' typeName='binary' />"
-                                      "        <ECNavigationProperty propertyName='Category' relationshipName='GeometryIsInsCategory' direction='Forward' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='IGeometrySource3d' modifier='Abstract'>"
-                                      "      <ECCustomAttributes>"
-                                      "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                      "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-                                      "          </IsMixin>"
-                                      "      </ECCustomAttributes>"
-                                      "       <BaseClass>IGeometrySource</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                      "     <ECCustomAttributes>"
-                                      "         <ClassMap xmlns='ECDbMap.02.00'>"
-                                      "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                      "         </ClassMap>"
-                                      "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                      "     </ECCustomAttributes>"
-                                      "      <ECProperty propertyName='Code' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='SpatialElement' modifier='Abstract'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "       <BaseClass>IGeometrySource3d</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='AnnotationElement'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "       <BaseClass>IGeometrySource3d</BaseClass>"
-                                      "       <ECProperty propertyName='Text' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='PhysicalElement'>"
-                                      "     <ECCustomAttributes>"
-                                      "         <ShareColumns xmlns='ECDbMap.02.00'>"
-                                      "              <SharedColumnCount>4</SharedColumnCount>"
-                                      "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                      "         </ShareColumns>"
-                                      "     </ECCustomAttributes>"
-                                      "       <BaseClass>SpatialElement</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='FooElement'>"
-                                      "       <BaseClass>PhysicalElement</BaseClass>"
-                                      "        <ECProperty propertyName='Diameter' typeName='double' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='SystemElement' modifier='Abstract'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='DictionaryElement'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "   <ECRelationshipClass typeName='GeometryIsInsCategory' strength='Referencing' modifier='Sealed'>"
-                                      "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='GeometrySource'>"
-                                      "          <Class class ='IGeometrySource' />"
-                                      "      </Source>"
-                                      "      <Target multiplicity='(1..1)' polymorphic='False' roleLabel='Category'>"
-                                      "          <Class class ='DgnCategory' />"
-                                      "      </Target>"
-                                      "   </ECRelationshipClass>"
-                                      "</ECSchema>"), 0);
-
+                           SchemaItem(
+                               R"xml(<?xml version='1.0' encoding='utf-8'?>
+                                <ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                                    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
+                                    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+                                    <ECEntityClass typeName='DgnCategory'>
+                                        <ECProperty propertyName='Name' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='IGeometrySource' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                                                <AppliesToEntityClass>Element</AppliesToEntityClass>
+                                            </IsMixin>
+                                        </ECCustomAttributes>
+                                        <ECProperty propertyName='Geometry' typeName='binary' />
+                                        <ECNavigationProperty propertyName='Category' relationshipName='GeometryIsInsCategory' direction='Forward' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='IGeometrySource3d' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                                                <AppliesToEntityClass>Element</AppliesToEntityClass>
+                                            </IsMixin>
+                                        </ECCustomAttributes>
+                                        <BaseClass>IGeometrySource</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='Element' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <ClassMap xmlns='ECDbMap.02.00'>
+                                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                                            </ClassMap>
+                                            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>
+                                        </ECCustomAttributes>
+                                        <ECProperty propertyName='Code' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='SpatialElement' modifier='Abstract'>
+                                        <BaseClass>Element</BaseClass>
+                                        <BaseClass>IGeometrySource3d</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='AnnotationElement'>
+                                        <BaseClass>Element</BaseClass>
+                                        <BaseClass>IGeometrySource3d</BaseClass>
+                                        <ECProperty propertyName='Text' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='PhysicalElement'>
+                                        <ECCustomAttributes>
+                                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                                <SharedColumnCount>4</SharedColumnCount>
+                                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                            </ShareColumns>
+                                        </ECCustomAttributes>
+                                        <BaseClass>SpatialElement</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='FooElement'>
+                                        <BaseClass>PhysicalElement</BaseClass>
+                                        <ECProperty propertyName='Diameter' typeName='double' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='SystemElement' modifier='Abstract'>
+                                        <BaseClass>Element</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='DictionaryElement'>
+                                        <BaseClass>Element</BaseClass>
+                                    </ECEntityClass>
+                                    <ECRelationshipClass typeName='GeometryIsInsCategory' strength='Referencing' modifier='Sealed'>
+                                        <Source multiplicity='(0..*)' polymorphic='True' roleLabel='GeometrySource'>
+                                            <Class class ='IGeometrySource' />
+                                        </Source>
+                                        <Target multiplicity='(1..1)' polymorphic='False' roleLabel='Category'>
+                                            <Class class ='DgnCategory' />
+                                        </Target>
+                                    </ECRelationshipClass>
+                                </ECSchema>)xml"), 0);
     ASSERT_TRUE(ecdb.IsDbOpen());
-
     ECInstanceKey catKey;
     {
     ECSqlStatement stmt;

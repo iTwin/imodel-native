@@ -471,7 +471,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
-    std::set<DbTable*> tables;
+    std::set<DbTable*> primaryTables;
     std::set<DbTable*> joinedTables;
     std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
@@ -487,17 +487,16 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
             {
             if (column->GetTable().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
-            if (column->GetTable().GetType() == DbTable::Type::Overflow)
+            else if (column->GetTable().GetType() == DbTable::Type::Overflow)
                 overflowTables.insert(&column->GetTableR());
-
             else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
                 {
-                tables.insert(&column->GetTableR());
+                primaryTables.insert(&column->GetTableR());
                 }
             }
         }
-
-    for (DbTable* table : tables)
+    //Orderly add the tables
+    for (DbTable* table : primaryTables)
         AddTable(*table);
 
     for (DbTable* table : joinedTables)

@@ -528,7 +528,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
     else
         {
-        if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
+        if (classMap.GetMapStrategy().IsTablePerHierarchy() )
             {
             if (currentScopeECSqlType == ECSqlType::Update)
                 {

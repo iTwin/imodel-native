@@ -14,7 +14,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
+#define ECSQLPREPAREDSTATEMENT_REFACTOR 1
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -5292,7 +5292,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_TRUE(key.IsValid());
     model3dKeys.push_back(key);
     }
-
+    ecdb.SaveChanges();
     {
     //Select models via mixin
     ECSqlStatement stmt;

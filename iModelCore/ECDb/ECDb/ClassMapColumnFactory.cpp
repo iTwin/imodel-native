@@ -83,7 +83,7 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
         }
     
     int columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(*property);
-    if (columnsRequired < (sharedColumnThatCanBeReused + sharedColumnThatCanBeCreated))
+    if (columnsRequired <= (sharedColumnThatCanBeReused + sharedColumnThatCanBeCreated))
         {
         m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property,columnsRequired, sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
         }
@@ -231,13 +231,7 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
 
         if (outColumn == nullptr)
             outColumn = CreateColumn(property, type, param, accessString);
-        else
-            {
-            if (m_columnReservationInfo)
-                {
-                m_columnReservationInfo->AllocateExisting();
-                }
-            }
+
         }
     else
         {

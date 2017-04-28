@@ -3766,22 +3766,23 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>");
-    m_ecdb.SaveChanges();
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
+    m_ecdb.SaveChanges();
 
-    geometricElement2dExpectedColCount++;
-    geometricElement3dExpectedColCount++;
+    int geometricElement2dOverflowExpectedColCount = 3;
+    int geometricElement3dOverflowExpectedColCount = 3;
     const int sub4ExpectedColCount = 3;
 
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
-
     AssertColumnCount(ecdb, testItems, "after second schema import");
 
     SchemaItem thirdSchema(
@@ -3800,13 +3801,14 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
     ASSERT_FALSE(asserted);
     m_ecdb.SaveChanges();
     
-    geometricElement3dExpectedColCount++;
-
+    geometricElement3dOverflowExpectedColCount+=2;
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
 
     AssertColumnCount(ecdb, testItems, "after third schema import");
@@ -7472,7 +7474,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                     "    </ECEntityClass>"
                                 "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    GetECDb().SaveChanges();
 
     bvector<Utf8String> actualColNames;
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Base"));
@@ -7504,17 +7506,26 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 
     actualColNames.clear();
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
-    ASSERT_EQ(5, actualColNames.size()) << "ts_Sub2Sub2";
+    ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("sc1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("sc2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc3", actualColNames[4].c_str()) << "ts_Sub2Sub2";
 
     Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc2] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc3] BLOB,")) << tsSub2Sub2Ddl.c_str();
+
+    actualColNames.clear();
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
+    ASSERT_EQ(3, actualColNames.size()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
+
+    Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(ecdb, "ts_Sub2Sub2_Overflow");
+    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[sc64] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
+
+
     }
 
 //---------------------------------------------------------------------------------------

@@ -43,7 +43,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
         return nullptr;
         }
 
-    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy())
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext)
         if (m_classMap.GetColumnFactory().BeignSharedColumnBlock(property.GetName().c_str()) != SUCCESS)
             return nullptr;
 
@@ -66,7 +66,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     if (propertyMap == nullptr)
         return nullptr;
 
-    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy())
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext)
         if (m_classMap.GetColumnFactory().EndSharedColumnBlock() != SUCCESS)
             return nullptr;
 

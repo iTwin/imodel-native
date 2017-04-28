@@ -47,7 +47,7 @@ struct LightweightCache final: NonCopyableClass
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
-
+        
     public:
         explicit LightweightCache(ECDb const&);
         ~LightweightCache() {}

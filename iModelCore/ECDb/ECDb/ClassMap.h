@@ -17,6 +17,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
 
+/* ----------------Required Refactor--------------------------------------
+struct ClassMap
+    {};
+struct IRelationshipClassMap
+    {};
+struct ForeignKeyRelationshipClassMap :ClassMap, IRelationshipClassMap
+    {};
+struct SingleTableClassMap :ClassMap
+    {};
+struct EntityClassMap :SingleTableClassMap
+    {};
+struct LinkTableRelationshipClassMap :SingleTableClassMap, IRelationshipClassMap
+    {};
+*/
+
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
@@ -137,7 +153,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
-        void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
+        void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
 
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
@@ -163,6 +179,10 @@ struct ClassMap : RefCountedBase
         
         DbTable& GetPrimaryTable() const 
             { 
+            DbTable* nulltable = nullptr;
+            if (GetType() == Type::RelationshipEndTable)
+                return *m_tables.front();
+
             for (DbTable* table : GetTables())
                 {
                 if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing)
@@ -172,11 +192,18 @@ struct ClassMap : RefCountedBase
                 }
 
             BeAssert(false);
-            return *((DbTable*)nullptr);
+            return *nulltable;
             }
 
         DbTable& GetJoinedOrPrimaryTable() const 
             {
+            //if (GetType() == Type::RelationshipEndTable)
+            //    {
+            //    DbTable* nulltable = nullptr;
+            //    BeAssert(false);
+            //    return *nulltable;
+            //    }
+
             for (DbTable* table : GetTables())
                 {
                 if (table->GetType() == DbTable::Type::Joined)
