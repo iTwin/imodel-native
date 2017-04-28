@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTrg.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -7714,6 +7714,9 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
             if (bcdtmTin_getSwapTriangleDtmObject(dtmP, firstPnt, lastPnt, &P2, &P3, &P4))
                 return DTM_SUCCESS;
 
+            if (P4 != lastPnt)
+                continue;
+
             long splitTrianglePt = -1;
             long onLine = 0;
             double X, Y;
@@ -7787,6 +7790,10 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
     BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
     BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
+
+    if (dtmFeatureP->numDtmFeaturePts != 4)
+        return DTM_SUCCESS;
+
     long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
 
     long firstPnt = offsetP[0];
@@ -7801,15 +7808,7 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
             }
         firstPnt = lastPnt;
         }
-    //firstPnt = offsetP[0];
-    //for (int i = 1; i < 4; i++)
-    //    {
-    //    long lastPnt = offsetP[i];
-    //    if (!bcdtmList_testLineDtmObject(dtmP, firstPnt, lastPnt))
-    //        return DTM_SUCCESS;
 
-    //    firstPnt = lastPnt;
-    //    }
     firstPnt = offsetP[0];
     for (int i = 1; i < 4; i++)
         {
@@ -7830,6 +7829,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     BC_DTM_OBJ *dtmP //  Pointer To DTM Object
 )
     {
+    BC_DTM_OBJ *tempDtmP = nullptr;
     int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
     long dtmFeature;
     DPoint3dP trgPtsP = nullptr;
@@ -7865,6 +7865,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     if (dbg) bcdtmWrite_message (0, 0, 0, "Number Of STM Triangles = %8ld", dtmP->numFeatures);
 
     long numSwapped = 0;
+    if (cdbg)
+        if (bcdtmObject_createDtmObject (&tempDtmP)) goto errexit;
+
     // Validate the features are valid triangles.
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
         {
@@ -7886,6 +7889,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
         // Get Triangle Points
         if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject (dtmP, dtmFeature, &trgPtsP, &numTrgPts)) goto errexit;
+
+        if (cdbg)
+            if (bcdtmObject_storeDtmFeatureInDtmObject (tempDtmP, DTMFeatureType::Breakline, tempDtmP->nullUserTag, 1, &tempDtmP->nullFeatureId, trgPtsP, 4)) goto errexit;
 
         // Check Triangle Closes
         if (trgPtsP->x != (trgPtsP + 3)->x || trgPtsP->y != (trgPtsP + 3)->y)
@@ -7927,6 +7933,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
                 }
             }
         }
+
+    if (cdbg)
+        bcdtmWrite_toFileDtmObject(tempDtmP, L"D:\\triangles.bcdtm");
 
     // Change all Graphic Breaks to hard breaks
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; dtmFeature++)
@@ -7985,6 +7994,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
                     break;
                 case 1: // Split triangles if there are points on the edge.
                     {
+                    // There is probably a better way to deal with these, we just need to mark the triangles
                     long otherDtmFeature;
                     if (bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(dtmP, dtmFeature, otherDtmFeature) == DTM_SUCCESS)
                         {
@@ -8060,7 +8070,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     */
     bcdtmObject_updateLastModifiedTime(dtmP);
 
-    cleanup:
+cleanup:
+    if( tempDtmP      != nullptr ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
     if (trgPtsP != nullptr) free (trgPtsP);
 
     // Return
@@ -8086,9 +8097,7 @@ BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ*
     if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, DTM_NULL_USER_TAG, 1, &dtmFeatureId, points, numPoints))
         return DTM_ERROR;
 
-    dtmP->memFeatures += numTriangles;
-
-    if (bcdtmObject_allocateFeaturesMemoryDtmObject(dtmP))
+    if (bcdtmObject_resizeFeaturesMemoryDtmObject(dtmP, dtmP->memFeatures + numTriangles))
         return DTM_ERROR;
 
     for (int i = 0; i < numTriangles; i++)
