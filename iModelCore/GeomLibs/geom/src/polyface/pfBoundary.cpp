@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pfBoundary.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -69,12 +69,17 @@ void EmitAndMark (MTGNodeId node, MTGMask visitMask)
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 CurveVectorPtr go (size_t &numOpen, size_t &numClosed)
-    {    
+    {
+    numOpen = 0;
+    numClosed = 0;
     if (!PolyfaceToMTG_FromPolyfaceConnectivity (facets, mesh))
         return NULL;
     if (!graph->TrySearchLabelTag (MTG_LABEL_TAG_POLYFACE_READINDEX, readIndexLabel))
         return NULL;
-    
+    static int s_noisy = 0;
+    if (s_noisy)
+        jmdlMTGGraph_printFaceLoops (graph);
+
     bvector<MTGNodeId> vertexLoops;
     MTGMask visitMask = graph->GrabMask ();
     graph->ClearMask (visitMask);
@@ -82,34 +87,37 @@ CurveVectorPtr go (size_t &numOpen, size_t &numClosed)
         {
         if (!graph->GetMaskAt (seedNodeId, visitMask) && IsVisibleEdge (seedNodeId))
             {
-            // nodeA walks around the superface
+            // nodeA walks around the interior of a superface.
+            // We expect each step (except the return to the seedNodeId) to be to an unvisited node.
             MTGNodeId nodeA = seedNodeId;
             points.clear ();
             EmitAndMark (nodeA, visitMask);
-            bool closed = false;
-            for (;;)
+            MTGNodeId nodeB;
+            for (;; nodeA = nodeB)
                 {
-                nodeA = GetVisibleSuccessor (nodeA);
-                if (!graph->IsValidNodeId (nodeA))
+                nodeB = GetVisibleSuccessor (nodeA);
+                if (!graph->IsValidNodeId (nodeB))
                     {
                     EmitAndMark (graph->FSucc (nodeA), visitMask);
+                    numOpen++;
                     break;
                     }
-                EmitAndMark (nodeA, visitMask);
-                if (nodeA == seedNodeId)
+                bool alreadyVisited = graph->HasMaskAt (nodeB, visitMask);
+                EmitAndMark (nodeB, visitMask);
+                if (nodeB == seedNodeId)
                     {
-                    closed = true;
+                    numClosed++;
                     break;
                     }
-                if (graph->GetMaskAt (nodeA, visitMask), visitMask)
-                    break;  // shouldn't happen if visibilities are right.
+                // test for loop that rejoins its own path other than at its seed .. call it open.  This is a badly marked boundary in the polyface?
+                if (alreadyVisited)
+                    {
+                    numOpen++;
+                    break;
+                    }
                 }
             ICurvePrimitivePtr boundary = ICurvePrimitive::CreateLineString (points);
             allBoundaries->push_back (boundary);
-            if (closed)
-                numClosed++;
-            else
-                numOpen++;
             }
         }
     MTGARRAY_END_SET_LOOP (seedNodeId, graph)

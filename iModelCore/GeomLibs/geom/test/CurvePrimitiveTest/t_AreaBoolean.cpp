@@ -980,3 +980,114 @@ for (double scale = 1.0; scale > 2.0e-7; scale *= 0.01)
     Check::Int (nClip, 6);
     }
 }
+
+
+TEST(CurveVector,AreaBooleanMultipleAreas)
+    {
+    auto oldVolume = Check::SetMaxVolume (1000);
+    auto nullShapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    auto allShapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    for (int i = 0; i < 5; i++)
+        {
+        double x0 = (double)i;
+        auto r = CurveVector::CreateRectangle (x0, 0.0, x0 + 1, 1.0, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
+        allShapes->Add (r);
+        }
+    auto result = CurveVector::AreaUnion (*allShapes, *nullShapes);
+    Check::Print (*allShapes, "Input");
+    Check::PrintStructure (result.get ());
+    if (result.IsValid ())
+        {
+        Check::Print (*result, "Union");
+        result->ConsolidateAdjacentPrimitives (true);
+        Check::Print (*result, "After ConsolidateAdjacentPrimitives");
+        }
+    Check::SetMaxVolume (oldVolume);
+    }
+
+TEST(Polyface,BoundaryFromCompressedFacets)
+    {
+    auto oldVolume = Check::SetMaxVolume (1000);
+    PolyfaceHeaderPtr facets = PolyfaceHeader::CreateVariableSizeIndexed ();
+    double y0 = 0;
+    int maxI = 14;
+    int iStep = maxI / 3;
+    int numJ = 0;
+    for (int numI = maxI; numI > 0; numI -= iStep)
+        {
+        numJ++;
+        double y1 = y0 + 1;
+        for (int i = 0; i < numI; i++)
+            {
+            double x0 = (double)i;
+            double x1 = x0 + 1;
+            bvector<DPoint3d> points
+                {
+                DPoint3d::From (x0, y0),
+                DPoint3d::From (x1, y0),
+                DPoint3d::From (x1, y1),
+                DPoint3d::From (x0, y1)
+                };
+            facets->AddPolygon (points);
+            }
+        y0 += 1;
+        }
+    facets->Compress ();
+    size_t numOpen = 0;
+    size_t numClosed = 0;
+    facets->MarkTopologicalBoundariesVisible (false);
+    auto boundaries = facets->ExtractBoundaryStrings (numOpen, numClosed);
+    Check::Size (0, numOpen, "NumOpen");
+    Check::Size (1, numClosed, "NumClosed");
+    double outerLength = 2.0 * (maxI + numJ);
+    Check::Near (outerLength, boundaries->Length (), "Boundary length");
+    {
+    SaveAndRestoreCheckTransform shifter (maxI + 2.0, 0,0);
+    Check::SaveTransformed (*facets);
+    Check::Shift (0,y0 + 2,0);
+    Check::SaveTransformed (*boundaries);
+    }
+//    PrintPolyface (*facets, "facets", stdout, 10000, true);
+//    Check::Print (*boundaries, "Boundaries from Compressed facets");
+
+    bvector<int> &pointIndex = facets->PointIndex ();
+    size_t numReadIndex = pointIndex.size ();
+    // for "various" readIndices, toggle their visibility and make sure ExtractBoundaryString returns with at most 2 paths
+    size_t skip = 7;//numReadIndex / 5;
+    for (size_t readIndex = 0; readIndex < numReadIndex; readIndex += skip)
+        {
+        int ri = pointIndex[readIndex];
+        if (ri != 0)
+            {
+            // flip its visibility
+            pointIndex[readIndex] = -ri;
+            auto b1 = facets->ExtractBoundaryStrings (numOpen, numClosed);
+            {
+            SaveAndRestoreCheckTransform shifter (maxI + 2.0, 0,0);
+            Check::SaveTransformed (*facets);
+            Check::Shift (0,y0 + 2,0);
+            Check::SaveTransformed (*b1);
+            }
+
+            if (ri > 0)
+                {
+                // an outer edge was hidden -- there is a break in the outer loop.  BUT .. the stitcher
+                //    forces it visbile. So we expect no change
+                Check::True (numClosed == 1, "Forced fill of outer boundary error");
+                Check::Size (0, numOpen, "Forced fill of outer boundary error");
+                Check::Near (outerLength, b1->Length (), "Expect reduced length of boundary");
+                }
+            else
+                {
+                // an interior edge was made visible (but only on one side?)  
+                Check::True (numOpen + numClosed <= 2, "Expected limit on boundary paths?");
+                double l1 = b1->Length ();
+                Check::True (l1 > outerLength && l1 <= outerLength + 2.0, "Expect one or two additional visible edges in interior");
+                }
+
+            pointIndex[readIndex] = ri;
+            }
+        }
+    Check::SetMaxVolume (oldVolume);
+    Check::ClearGeometry ("Polyface.BoundaryFromCompressedFacets");
+    }
