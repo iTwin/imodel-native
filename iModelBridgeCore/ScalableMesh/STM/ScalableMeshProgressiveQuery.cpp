@@ -540,7 +540,7 @@ private:
                     }
                 }           
 
-            if (processingQueryPtr == nullptr) 
+            if (processingQueryPtr == nullptr && m_run)
                 m_processingQueriesCondition.wait(lck);
             }
 
@@ -1442,9 +1442,9 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
     //PRE
-    //smP->m_scmIndexPtr->GetDataStore()->CancelPreloadData();
+    
     if (toLoadNodes.size() > 0 && s_doPreLoad)
-        { 
+        {         
         bvector<DRange3d> tileRanges;
 
         for (auto& loadNode : toLoadNodes)
@@ -1455,6 +1455,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     
         ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));    
         ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore()); 
+        dataStore->CancelPreloadData();
         dataStore->PreloadData(tileRanges);
         }
     //PRE
