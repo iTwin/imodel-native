@@ -434,6 +434,9 @@
             <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
+			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTest.bim
+            </Files>
         </Bindings>
     </Part>
     
