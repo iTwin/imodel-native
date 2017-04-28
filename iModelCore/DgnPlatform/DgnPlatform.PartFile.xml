@@ -434,6 +434,9 @@
             <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
+			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTest.bim
+            </Files>
         </Bindings>
     </Part>
     
@@ -629,7 +632,7 @@
     
     <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubPart PartName="TilePublisherLib" />
+        <SubProduct ProductName="TilePublisher" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
         </Bindings>

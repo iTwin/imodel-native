@@ -663,7 +663,7 @@ void Tile::Pick(PickArgsR args, int depth) const
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 
-    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
+    auto* children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
         for (auto const& child : *children)
