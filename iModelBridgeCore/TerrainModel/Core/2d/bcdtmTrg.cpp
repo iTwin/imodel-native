@@ -7695,14 +7695,13 @@ int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
 //=======================================================================================
 // @bsimethod                                    Daryl.Holmwood                 11/2016
 //=======================================================================================
-int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmFeature, long& otherDtmFeature)
+int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmFeature)
     {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
     BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
     BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
     long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
 
-    otherDtmFeature = -1;
     long firstPnt = offsetP[0];
 
     for (int i = 1; i < 4; i++)
@@ -7714,35 +7713,55 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
             if (bcdtmTin_getSwapTriangleDtmObject(dtmP, firstPnt, lastPnt, &P2, &P3, &P4))
                 return DTM_SUCCESS;
 
-            if (P4 != lastPnt)
-                continue;
-
+            if (P2 == dtmP->nullPnt || P3 == dtmP->nullPnt)
+                return DTM_ERROR;
             long splitTrianglePt = -1;
-            long onLine = 0;
-            double X, Y;
-            DPoint3dP firstPt = pointAddrP(dtmP, firstPnt);
-            DPoint3dP lastPt = pointAddrP(dtmP, lastPnt);
-
-            if (P2 != dtmP->nullPnt && P2 != offsetP[(i + 1) % 3])
+            if (P4 != lastPnt)
                 {
-                double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P2)->x, pointAddrP(dtmP, P2)->y, &X, &Y);
-
-                if (onLine && d1 < dtmP->plTol)
+                if (bcdtmList_testLineDtmObject(dtmP, P3, lastPnt))
                     {
+                    if (offsetP[(i + 1) % 3] == P3)
+                        return DTM_ERROR;
+                    splitTrianglePt = P3;
+
+                    }
+                else if (bcdtmList_testLineDtmObject(dtmP, P2, lastPnt))
+                    {
+                    if (offsetP[(i + 1) % 3] == P2)
+                        return DTM_ERROR;
                     splitTrianglePt = P2;
                     }
+                else
+                    return DTM_ERROR;
                 }
 
-            if (splitTrianglePt == -1 && P3 != dtmP->nullPnt && P3 != offsetP[(i + 1) % 3])
+            if (splitTrianglePt == -1)
                 {
-                double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P3)->x, pointAddrP(dtmP, P3)->y, &X, &Y);
+                long onLine = 0;
+                double X, Y;
+                DPoint3dP firstPt = pointAddrP(dtmP, firstPnt);
+                DPoint3dP lastPt = pointAddrP(dtmP, lastPnt);
 
-                if (onLine && d1 < dtmP->plTol)
+                if (P2 != dtmP->nullPnt && P2 != offsetP[(i + 1) % 3])
                     {
-                    splitTrianglePt = P3;
+                    double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P2)->x, pointAddrP(dtmP, P2)->y, &X, &Y);
+
+                    if (onLine && d1 < dtmP->plTol)
+                        {
+                        splitTrianglePt = P2;
+                        }
+                    }
+
+                if (splitTrianglePt == -1 && P3 != dtmP->nullPnt && P3 != offsetP[(i + 1) % 3])
+                    {
+                    double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P3)->x, pointAddrP(dtmP, P3)->y, &X, &Y);
+
+                    if (onLine && d1 < dtmP->plTol)
+                        {
+                        splitTrianglePt = P3;
+                        }
                     }
                 }
-
             if (splitTrianglePt != -1)
                 {
                 /*
@@ -7765,12 +7784,18 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
                 newDtmFeatureP->dtmFeaturePts.offsetPI = bcdtmMemory_allocate(dtmP, 4 * sizeof(long));
                 long* newOffsetPoints = bcdtmMemory_getPointerOffset(dtmP, newDtmFeatureP->dtmFeaturePts.offsetPI);
                 newOffsetPoints[0] = newOffsetPoints[3] = splitTrianglePt;
-                newOffsetPoints[1] = offsetP[i];
-                newOffsetPoints[2] = offsetP[(i + 1) % 3];
+                newOffsetPoints[1] = offsetP[(i + 1) % 3];
+                newOffsetPoints[2] = offsetP[i];
 
-                otherDtmFeature = dtmP->numFeatures++;
+                long otherDtmFeature = dtmP->numFeatures++;
+
+                long sP;
+                bcdtmList_copyPointListToTptrListDtmObject(dtmP, offsetP, 4, &sP);
+                int status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, newDtmFeatureP, otherDtmFeature, newDtmFeatureP->dtmFeatureType, newDtmFeatureP->dtmUserTag, newDtmFeatureP->dtmFeatureId, sP, 1);
 
                 offsetP[i] = splitTrianglePt;
+                bcdtmList_copyPointListToTptrListDtmObject(dtmP, offsetP, 4, &sP);
+                status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, dtmFeatureP, dtmFeature, dtmFeatureP->dtmFeatureType, dtmFeatureP->dtmUserTag, dtmFeatureP->dtmFeatureId, sP, 1);
 
                 return DTM_SUCCESS;
                 }
@@ -7791,7 +7816,7 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
     BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
     BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
 
-    if (dtmFeatureP->numDtmFeaturePts != 4)
+    if (dtmFeatureP->numDtmFeaturePts != 4 || dtmFeatureP->dtmFeatureState != DTMFeatureState::OffsetsArray)
         return DTM_SUCCESS;
 
     long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
@@ -7818,6 +7843,74 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
         }
     int status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, dtmFeatureP, dtmFeature, dtmFeatureP->dtmFeatureType, dtmFeatureP->dtmUserTag, dtmFeatureP->dtmFeatureId, offsetP[0], 1);
     BeAssert(status == DTM_SUCCESS);
+    return DTM_SUCCESS;
+    }
+
+struct edgeLength
+    {
+    long ptNums[2];
+    double length;
+    };
+
+bool sortEdges(const edgeLength& e1, const edgeLength& e2)
+    {
+    return e1.length > e2.length;
+    }
+
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 11/2016
+//=======================================================================================
+int bcdtmObject_tryAndAddTriangleFeatureLongestSideDtmObject(BC_DTM_OBJ *dtmP)
+    {
+    bvector<edgeLength> edges;
+    for (int dtmFeature = 0; dtmFeature < dtmP->numFeatures; dtmFeature++)
+        {
+        BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
+        BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
+        BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
+
+        if (dtmFeatureP->numDtmFeaturePts != 4)
+            continue;
+
+        long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+        bool failed = false;
+        long firstPnt = offsetP[0];
+        for (int i = 1; i < 4; i++)
+            {
+            long lastPnt = offsetP[i];
+            if (!bcdtmList_testLineDtmObject(dtmP, firstPnt, lastPnt))
+                {
+                edgeLength el;
+                el.ptNums[0] = firstPnt;
+                el.ptNums[1] = lastPnt;
+                el.length = pointAddrP(dtmP, firstPnt)->DistanceSquaredXY(*pointAddrP(dtmP, lastPnt));
+                edges.push_back(el);
+                failed = true;
+                }
+            firstPnt = lastPnt;
+            }
+
+        if (!failed)
+            {
+            firstPnt = offsetP[0];
+            for (int i = 1; i < 4; i++)
+                {
+                long lastPnt = offsetP[i];
+                nodeAddrP(dtmP, firstPnt)->tPtr = lastPnt;
+                firstPnt = lastPnt;
+                }
+            //int status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, dtmFeatureP, dtmFeature, dtmFeatureP->dtmFeatureType, dtmFeatureP->dtmUserTag, dtmFeatureP->dtmFeatureId, offsetP[0], 1);
+            //BeAssert(status == DTM_SUCCESS);
+            }
+        }
+
+    std::sort(std::begin(edges), std::end(edges), sortEdges);
+
+    for (auto&& edge : edges)
+        {
+        if (!bcdtmList_testLineDtmObject(dtmP, edge.ptNums[0], edge.ptNums[1]))
+            bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(dtmP, edge.ptNums[0], edge.ptNums[1], false);
+        }
     return DTM_SUCCESS;
     }
 
@@ -7971,6 +8064,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     dtmP->ppTol /= 100;
     dtmP->plTol /= 100;
 
+    //bcdtmObject_tryAndAddTriangleFeatureLongestSideDtmObject(dtmP);
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
         {
         if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
@@ -7982,7 +8076,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     while (!failedFeatures.empty())
         {
         bvector<long> featureList;
-        bool restartScan = false;
         std::swap(featureList, failedFeatures);
         for (auto dtmFeature : featureList)
             {
@@ -7995,14 +8088,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
                 case 1: // Split triangles if there are points on the edge.
                     {
                     // There is probably a better way to deal with these, we just need to mark the triangles
-                    long otherDtmFeature;
-                    if (bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(dtmP, dtmFeature, otherDtmFeature) == DTM_SUCCESS)
-                        {
-                        failedFeatures.push_back(dtmFeature);
-                        failedFeatures.push_back(otherDtmFeature);
-                        restartScan = true;
-                        }
-                    else
+                    if (!bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(dtmP, dtmFeature) == DTM_SUCCESS)
                         {
                         failedFeatures.push_back(dtmFeature);
                         }
@@ -8011,7 +8097,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
                 }
             }
 
-        if (!restartScan && featureList.size() == failedFeatures.size())
+        if (method == 2)
+            break;
+        if (featureList.size() == failedFeatures.size())
             {
             method++;
             if (method == 2)
