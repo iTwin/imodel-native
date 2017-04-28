@@ -1,0 +1,1740 @@
+[
+  {
+    "title": "Boundaries - National Boundary Dataset",
+    "sbDatasetTag": "National Boundary Dataset (NBD)",
+    "id": "4f70b219e4b058caae3f8e19",
+    "internalId": "nbd",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "Boundaries data or governmental units represent major civil areas including states, counties, Federal, and Native American lands, and incorporated places such as cities and towns. These data are useful for understanding the extent of jurisdictional or administrative areas for a wide range of applications, including managing resources, responding to natural disasters, or recreational activities such as hiking and backpacking.",
+    "rank": 3,
+    "refreshCycle": "Monthly",
+    "publicationDate": "",
+    "metaUrl": "https://nationalmap.gov/boundaries.html",
+    "dataGovUrl": "http://catalog.data.gov/dataset/da0f0999-7ce3-4c70-8b44-a901ec4e33ee",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70b219e4b058caae3f8e19",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/boundaries_thumbnail.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "National": [
+        "FileGDB 10.1"
+      ],
+      "State": [
+        "FileGDB 10.1",
+        "Shapefile"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 117,
+    "AvgSize": 38854700,
+    "TotalSize": 4545999960,
+    "LastCreatedDate": "Nov 11, 2016",
+    "LastPublishedDate": "Apr 24, 2017",
+    "LastUpdatedDate": "Apr 26, 2017"
+  },
+  {
+    "title": "Elevation Products (3DEP)",
+    "sbDatasetTag": "National Elevation Dataset (NED)",
+    "id": "4f70a58ce4b058caae3f8ddb",
+    "internalId": "ned",
+    "isData": true,
+    "isAvailabilityLayer": true,
+    "availabilityLayerUrl": "https://services.nationalmap.gov/arcgis/rest/services/3DEPElevationIndex/MapServer",
+    "description": "The National Elevation Dataset (NED) is the primary elevation data product produced and distributed by the USGS. The NED provides seamless raster elevation data of the conterminous United States, Alaska, Hawaii, and the island territories. The NED is derived from diverse source data sets that are processed to a specification with a consistent resolution, coordinate system, elevation units, and horizontal and vertical datums. The NED is the logical result of the maturation of the long-standing USGS elevation program, which for many years concentrated on production of topographic map quadrangle-based digital elevation models. The NED serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States.",
+    "rank": 4,
+    "refreshCycle": "Continuous",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70a58ce4b058caae3f8ddb",
+    "dataGovUrl": "",
+    "infoUrl": "https://nationalmap.gov/3DEP/3dep_prodserv.html",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/dem_product_thumb.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "ArcGrid",
+      "FileGDB 10.1",
+      "GridFloat",
+      "IMG",
+      "Shapefile"
+    ],
+    "extents": [
+      "1 x 1 degree",
+      "15 x 15 minute",
+      "Varies"
+    ],
+    "extentsFormats": {
+      "1 x 1 degree": [
+        "Shapefile",
+        "ArcGrid",
+        "FileGDB 10.1",
+        "GridFloat",
+        "IMG"
+      ],
+      "15 x 15 minute": [
+        "IMG"
+      ],
+      "Varies": [
+        "Unknown"
+      ]
+    },
+    "tags": {
+      "1 arc-second DEM": {
+        "title": "1 arc-second DEM",
+        "sbDatasetTag": "National Elevation Dataset (NED) 1 arc-second",
+        "id": "4f70aa71e4b058caae3f8de1",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70aa71e4b058caae3f8de1",
+        "dataGovUrl": "http://catalog.data.gov/dataset/4c7396d3-21c7-4cc2-8c34-e42c4cc50ec3",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70aa71e4b058caae3f8de1",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/ned_1_col_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcGrid",
+          "GridFloat",
+          "IMG"
+        ],
+        "extents": [
+          "1 x 1 degree"
+        ],
+        "extentsFormats": {
+          "1 x 1 degree": [
+            "ArcGrid",
+            "GridFloat",
+            "IMG"
+          ]
+        },
+        "NumOfProducts": 10976,
+        "AvgSize": 25671218,
+        "TotalSize": 281767289256,
+        "LastCreatedDate": "Apr 21, 2017",
+        "LastPublishedDate": "Apr 18, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "1 meter DEM": {
+        "title": "1 meter DEM",
+        "sbDatasetTag": "Digital Elevation Model (DEM) 1 meter",
+        "id": "543e6b86e4b0fd76af69cf4c",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/543e6b86e4b0fd76af69cf4c",
+        "dataGovUrl": "http://catalog.data.gov/dataset/988723e5-b093-4520-9ea3-cbfea7769bae",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/543e6b86e4b0fd76af69cf4c",
+        "thumbnailUrl": "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x32y361_MS_NRCS_Lauderdale_2013_IMG_2015_thumb.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "IMG"
+        ],
+        "extents": [
+          "10000 x 10000 meter"
+        ],
+        "extentsFormats": {
+          "10000 x 10000 meter": [
+            "IMG"
+          ]
+        },
+        "NumOfProducts": 7546,
+        "AvgSize": 139473042,
+        "TotalSize": 1052463577748,
+        "LastCreatedDate": "Apr 21, 2017",
+        "LastPublishedDate": "Apr 17, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "1/3 arc-second DEM": {
+        "title": "1/3 arc-second DEM",
+        "sbDatasetTag": "National Elevation Dataset (NED) 1/3 arc-second",
+        "id": "4f70aa9fe4b058caae3f8de5",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70aa9fe4b058caae3f8de5",
+        "dataGovUrl": "http://catalog.data.gov/dataset/29f90010-3c63-4928-a0bd-53dffb2a5bea",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70aa9fe4b058caae3f8de5",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/ned_13_col_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcGrid",
+          "GridFloat",
+          "IMG"
+        ],
+        "extents": [
+          "1 x 1 degree"
+        ],
+        "extentsFormats": {
+          "1 x 1 degree": [
+            "ArcGrid",
+            "GridFloat",
+            "IMG"
+          ]
+        },
+        "NumOfProducts": 3786,
+        "AvgSize": 300655100,
+        "TotalSize": 1138280210029,
+        "LastCreatedDate": "Apr 21, 2017",
+        "LastPublishedDate": "Apr 18, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "1/9 arc-second DEM": {
+        "title": "1/9 arc-second DEM",
+        "sbDatasetTag": "National Elevation Dataset (NED) 1/9 arc-second",
+        "id": "4f70aac4e4b058caae3f8de7",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70aac4e4b058caae3f8de7",
+        "dataGovUrl": "http://catalog.data.gov/dataset/14fa2d80-b6e6-4cda-a7f3-95d740b716e1",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70aac4e4b058caae3f8de7",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/ned_13_col_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "IMG"
+        ],
+        "extents": [
+          "15 x 15 minute"
+        ],
+        "extentsFormats": {
+          "15 x 15 minute": [
+            "IMG"
+          ]
+        },
+        "NumOfProducts": 8358,
+        "AvgSize": 80577299,
+        "TotalSize": 673465068614,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Oct 3, 2014",
+        "LastUpdatedDate": "Jan 27, 2017"
+      },
+      "2 arc-second DEM - Alaska": {
+        "title": "2 arc-second DEM - Alaska",
+        "sbDatasetTag": "National Elevation Dataset (NED) Alaska 2 arc-second",
+        "id": "4f70aaece4b058caae3f8de9",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "http://catalog.data.gov/dataset/ff73f68e-0ee5-48d5-8ec4-d5be0d7f076c",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70aaece4b058caae3f8de9",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/ned_2_col_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcGrid",
+          "GridFloat",
+          "IMG"
+        ],
+        "extents": [
+          "1 x 1 degree"
+        ],
+        "extentsFormats": {
+          "1 x 1 degree": [
+            "ArcGrid",
+            "GridFloat",
+            "IMG"
+          ]
+        },
+        "NumOfProducts": 1555,
+        "AvgSize": 7823958,
+        "TotalSize": 12166255207,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 17, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "5 meter DEM (Alaska only)": {
+        "title": "5 meter DEM (Alaska only)",
+        "sbDatasetTag": "Alaska IFSAR 5 meter DEM",
+        "id": "",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "http://catalog.data.gov/dataset/bd533dc6-1223-4f84-b0d0-9e36438a2e7b",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/5641fe98e4b0831b7d62e758",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/3dep_5m_alaska_ifsar_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcGrid"
+        ],
+        "extents": [
+          "Varies"
+        ],
+        "extentsFormats": {
+          "Varies": [
+            "ArcGrid"
+          ]
+        },
+        "NumOfProducts": 361,
+        "AvgSize": 377243401,
+        "TotalSize": 136184867943,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 17, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "Contours (1:24,000-scale)": {
+        "title": "Contours (1:24,000-scale)",
+        "sbDatasetTag": "National Elevation Dataset (NED) 1/3 arc-second - Contours",
+        "id": "4f70ab22e4b058caae3f8deb",
+        "refreshCycle": "Quarterly",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70ab22e4b058caae3f8deb",
+        "dataGovUrl": "http://catalog.data.gov/dataset/29f90010-3c63-4928-a0bd-53dffb2a5bea",
+        "infoUrl": "https://nationalmap.gov/3DEP/3dep_prodserv.html",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "1 x 1 degree"
+        ],
+        "extentsFormats": {
+          "1 x 1 degree": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 2247,
+        "AvgSize": 75063706,
+        "TotalSize": 168668149093,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 26, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      }
+    },
+    "NumOfProducts": 273716,
+    "AvgSize": 29450054,
+    "TotalSize": 8060951022520,
+    "LastCreatedDate": "Apr 26, 2017",
+    "LastPublishedDate": "Apr 26, 2017",
+    "LastUpdatedDate": "Apr 26, 2017"
+  },
+  {
+    "title": "Elevation Source Data (3DEP)",
+    "sbDatasetTag": "National Elevation Dataset (NED)",
+    "id": "4f552e93e4b018de15819c51",
+    "internalId": "nedsrc",
+    "isData": true,
+    "isAvailabilityLayer": true,
+    "availabilityLayerUrl": "https://services.nationalmap.gov/arcgis/rest/services/3DEPElevationIndex/MapServer",
+    "description": "",
+    "rank": 5,
+    "refreshCycle": "Continuous",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70a58ce4b058caae3f8ddb",
+    "dataGovUrl": "",
+    "infoUrl": "https://nationalmap.gov/3DEP/3dep_prodserv.html",
+    "thumbnailUrl": "https://viewer.nationalmap.gov/images/lpc_thumb.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "ArcGrid",
+      "LAS",
+      "TIFF"
+    ],
+    "extents": [
+      "Varies"
+    ],
+    "extentsFormats": {
+      "Varies": [
+        "LAS",
+        "ArcGrid",
+        "TIFF"
+      ]
+    },
+    "tags": {
+      "DEM Source (OPR)": {
+        "title": "DEM Source (OPR)",
+        "sbDatasetTag": "Original Product Resolution (OPR) Digital Elevation Model (DEM)",
+        "id": "4f70ab64e4b058caae3f8def",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "http://catalog.data.gov/dataset/a3be5059-5495-4f95-9a14-b03deb9eade0",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/530f4226e4b0e7e46bd2c315",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcGrid"
+        ],
+        "extents": [
+          "Varies"
+        ],
+        "extentsFormats": {
+          "Varies": [
+            "ArcGrid"
+          ]
+        },
+        "NumOfProducts": 106310,
+        "AvgSize": 15638284,
+        "TotalSize": 1662506077044,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 19, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "Ifsar Digital Surface Model (DSM)": {
+        "title": "Ifsar Digital Surface Model (DSM)",
+        "sbDatasetTag": "Ifsar Digital Surface Model (DSM)",
+        "id": "543e6a6ae4b0fd76af69cf47",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/543e6a6ae4b0fd76af69cf47",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/543e6a6ae4b0fd76af69cf47",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "TIFF"
+        ],
+        "extents": [
+          "Varies"
+        ],
+        "extentsFormats": {
+          "Varies": [
+            "TIFF"
+          ]
+        },
+        "NumOfProducts": 208,
+        "AvgSize": 673489792,
+        "TotalSize": 140085876750,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 25, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "Ifsar Orthorectified Radar Image (ORI)": {
+        "title": "Ifsar Orthorectified Radar Image (ORI)",
+        "sbDatasetTag": "Ifsar Orthorectified Radar Image (ORI)",
+        "id": "543e6acde4b0fd76af69cf4a",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/543e6acde4b0fd76af69cf4a",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/543e6acde4b0fd76af69cf4a",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "TIFF"
+        ],
+        "extents": [
+          "Varies"
+        ],
+        "extentsFormats": {
+          "Varies": [
+            "TIFF"
+          ]
+        },
+        "NumOfProducts": 207,
+        "AvgSize": 10536354433,
+        "TotalSize": 2181025367833,
+        "LastCreatedDate": "Apr 26, 2017",
+        "LastPublishedDate": "Apr 17, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "Lidar Point Cloud (LPC)": {
+        "title": "Lidar Point Cloud (LPC)",
+        "sbDatasetTag": "Lidar Point Cloud (LPC)",
+        "id": "4f70ab64e4b058caae3f8def",
+        "refreshCycle": "Continuous",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70ab64e4b058caae3f8def",
+        "dataGovUrl": "http://catalog.data.gov/dataset/55e67773-09ac-459c-8be3-3fb2750ddc9b",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70ab64e4b058caae3f8def",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "LAS"
+        ],
+        "extents": [
+          "Varies"
+        ],
+        "extentsFormats": {
+          "Varies": [
+            "LAS"
+          ]
+        },
+        "NumOfProducts": 1006836,
+        "AvgSize": 11712239,
+        "TotalSize": 11792304599811,
+        "LastCreatedDate": "Apr 22, 2017",
+        "LastPublishedDate": "Apr 19, 2017",
+        "LastUpdatedDate": "Apr 22, 2017"
+      }
+    },
+    "NumOfProducts": 273716,
+    "AvgSize": 29450054,
+    "TotalSize": 8060951022520,
+    "LastCreatedDate": "Apr 26, 2017",
+    "LastPublishedDate": "Apr 26, 2017",
+    "LastUpdatedDate": "Apr 26, 2017"
+  },
+  {
+    "title": "Historical Topographic Maps",
+    "sbDatasetTag": "Historical Topographic Maps",
+    "id": "4f554260e4b018de15819c88",
+    "internalId": "histtopo",
+    "isData": false,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "USGS Historical Quadrangle in GeoPDF. The USGS Historical Quadrangle Scanning Project (HQSP) is scanning all scales and all editions of topographic maps published by the U.S. Geological Survey (USGS) since the inception of the topographic mapping program in 1884.",
+    "rank": 2,
+    "refreshCycle": "As Needed",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/file/get/4f554236e4b018de15819c85?f\u003d__grid__5310df54e4b0b4dfebd7aef9\u0026transform\u003d1",
+    "dataGovUrl": "http://catalog.data.gov/dataset/640e11ae-cc27-49cb-b06f-bb0df1d47def",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f554260e4b018de15819c88",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/ms_tupelo_336606_1992_24000.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "GeoPDF"
+    ],
+    "extents": [
+      "1 x 1 degree",
+      "1 x 2 degree",
+      "1 x 3 degree",
+      "1 x 4 degree",
+      "15 x 15 minute",
+      "2 x 1 degree",
+      "3.75 x 3.75 minute",
+      "30 x 30 minute",
+      "30 x 60 minute",
+      "7.5 x 15 minute",
+      "7.5 x 7.5 minute",
+      "Varies"
+    ],
+    "extentsFormats": {
+      "1 x 1 degree": [
+        "GeoPDF"
+      ],
+      "1 x 2 degree": [
+        "GeoPDF"
+      ],
+      "1 x 3 degree": [
+        "GeoPDF"
+      ],
+      "1 x 4 degree": [
+        "GeoPDF"
+      ],
+      "15 x 15 minute": [
+        "GeoPDF"
+      ],
+      "2 x 1 degree": [
+        "GeoPDF"
+      ],
+      "3.75 x 3.75 minute": [
+        "GeoPDF"
+      ],
+      "30 x 30 minute": [
+        "GeoPDF"
+      ],
+      "30 x 60 minute": [
+        "GeoPDF"
+      ],
+      "7.5 x 15 minute": [
+        "GeoPDF"
+      ],
+      "7.5 x 7.5 minute": [
+        "GeoPDF"
+      ],
+      "Varies": [
+        "GeoPDF"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 178796,
+    "AvgSize": 10086743,
+    "TotalSize": 1803469396851,
+    "LastCreatedDate": "Mar 5, 2017",
+    "LastPublishedDate": "Jan 1, 2006",
+    "LastUpdatedDate": "Apr 16, 2017"
+  },
+  {
+    "title": "Hydrography (NHDPlus HR, NHD, WBD)",
+    "sbDatasetTag": "National Hydrography Dataset (NHD)",
+    "id": "51dd30ece4b0f72b44719c9b",
+    "internalId": "nhd",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "The National Hydrography Dataset (NHD) is a feature-based database that interconnects and uniquely identifies the stream segments or reaches that make up the nation\u0027s surface water drainage system. NHD data was originally developed at 1:100,000 scale and exists at that scale for the whole country.  High resolution NHD adds detail to the original 1:100,000-scale NHD.  (Data for Alaska, Puerto Rico and the Virgin Islands was developed at high-resolution, not 1:100,000 scale.) Like the 1:100,000-scale NHD, high resolution NHD contains reach codes for networked features and isolated lakes, flow direction, names, stream level, and centerline representations for areal water bodies. Reaches are also defined to represent waterbodies and the approximate shorelines of the Great Lakes, the Atlantic and Pacific Oceans and the Gulf of Mexico. The NHD also incorporates the National Spatial Data Infrastructure framework criteria set out by the Federal Geographic Data Committee.",
+    "rank": 6,
+    "refreshCycle": "HU4/8:Monthly,State:Bi-monthly",
+    "publicationDate": "",
+    "metaUrl": "http://water.usgs.gov/GIS/metadata/usgswrd/XML/nhd.xml",
+    "dataGovUrl": "",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f5545cce4b018de15819ca9",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/nhd_dillon.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "HU-2 Region",
+      "HU-4 Subregion",
+      "HU-8 Subbasin",
+      "State"
+    ],
+    "extentsFormats": {
+      "HU-2 Region": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ],
+      "HU-4 Subregion": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ],
+      "HU-8 Subbasin": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ],
+      "State": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ]
+    },
+    "tags": {
+      "NHDPlus High Resolution (NHDPlus HR) Beta": {
+        "title": "NHDPlus High Resolution (NHDPlus HR) Beta",
+        "sbDatasetTag": "National Hydrography Dataset Plus High Resolution (NHDPlus HR)",
+        "id": "57645ff2e4b07657d19ba8e8",
+        "refreshCycle": "",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/57645ff2e4b07657d19ba8e8",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/57645ff2e4b07657d19ba8e8",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB"
+        ],
+        "extents": [
+          "HU-4 Subregion"
+        ],
+        "extentsFormats": {
+          "HU-4 Subregion": [
+            "FileGDB"
+          ]
+        },
+        "NumOfProducts": 47,
+        "AvgSize": 190758854,
+        "TotalSize": 8965666173,
+        "LastCreatedDate": "Apr 27, 2017",
+        "LastPublishedDate": "Apr 26, 2017",
+        "LastUpdatedDate": "Apr 27, 2017"
+      },
+      "National Hydrography Dataset (NHD)": {
+        "title": "National Hydrography Dataset (NHD)",
+        "sbDatasetTag": "National Hydrography Dataset (NHD) Best Resolution",
+        "id": "5136012ce4b03b8ec4025bf7",
+        "refreshCycle": "HU4/8:Monthly,State:Bi-monthly",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "http://catalog.data.gov/dataset/e6482162-4491-482b-b9dd-adb0b0a1141f",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/5136012ce4b03b8ec4025bf7",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "HU-4 Subregion",
+          "HU-8 Subbasin",
+          "State"
+        ],
+        "extentsFormats": {
+          "HU-4 Subregion": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ],
+          "HU-8 Subbasin": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ],
+          "State": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 5531,
+        "AvgSize": 38369151,
+        "TotalSize": 212219774813,
+        "LastCreatedDate": "Mar 17, 2017",
+        "LastPublishedDate": "Apr 24, 2017",
+        "LastUpdatedDate": "Apr 26, 2017"
+      },
+      "Watershed Boundary Dataset (WBD)": {
+        "title": "Watershed Boundary Dataset (WBD)",
+        "sbDatasetTag": "National Watershed Boundary Dataset (WBD)",
+        "id": "51361e87e4b03b8ec4025c22",
+        "refreshCycle": "Monthly",
+        "publicationDate": "",
+        "metaUrl": "http://nhd.usgs.gov/wbd.html",
+        "dataGovUrl": "http://catalog.data.gov/dataset/4fce9f0d-3355-42c3-ab0a-a9d76f674927",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/51361e87e4b03b8ec4025c22",
+        "thumbnailUrl": "http://nhd.usgs.gov/images/WatershedBoundaryDataset.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "HU-2 Region",
+          "National"
+        ],
+        "extentsFormats": {
+          "HU-2 Region": [
+            "FileGDB 10.1",
+            "Shapefile"
+          ],
+          "National": [
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 45,
+        "AvgSize": 0,
+        "TotalSize": 0,
+        "LastCreatedDate": "Jan 26, 2017",
+        "LastPublishedDate": "Apr 4, 2017",
+        "LastUpdatedDate": "Apr 5, 2017"
+      }
+    },
+    "NumOfProducts": 5690,
+    "AvgSize": 41212128,
+    "TotalSize": 234497008864,
+    "LastCreatedDate": "Apr 27, 2017",
+    "LastPublishedDate": "Apr 26, 2017",
+    "LastUpdatedDate": "Apr 27, 2017"
+  },
+  {
+    "title": "Imagery - 1 foot (HRO)",
+    "sbDatasetTag": "High Resolution Orthoimagery",
+    "id": "4f70ada6e4b058caae3f8e05",
+    "internalId": "hro",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "",
+    "rank": 7,
+    "refreshCycle": "Undetermined",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70ada6e4b058caae3f8e05",
+    "dataGovUrl": "http://catalog.data.gov/dataset/949b7c71-6913-45f1-85b9-2a4a3dd6e2bc",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70ada6e4b058caae3f8e05",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/hro.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "JPEG2000"
+    ],
+    "extents": [
+      "1500 x 1500 meter"
+    ],
+    "extentsFormats": {
+      "1500 x 1500 meter": [
+        "JPEG2000"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 2993066,
+    "AvgSize": 1952345,
+    "TotalSize": 5843498106721,
+    "LastCreatedDate": "Apr 15, 2017",
+    "LastPublishedDate": "May 26, 2016",
+    "LastUpdatedDate": "Apr 15, 2017"
+  },
+  {
+    "title": "Imagery - 1 meter (NAIP)",
+    "sbDatasetTag": "USDA National Agriculture Imagery Program (NAIP)",
+    "id": "51355312e4b0e1603e4fed62",
+    "internalId": "naip",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "",
+    "rank": 8,
+    "refreshCycle": "Yearly",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/51355312e4b0e1603e4fed62",
+    "dataGovUrl": "",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/51355312e4b0e1603e4fed62",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/naip.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "JPEG2000"
+    ],
+    "extents": [
+      "3.75 x 3.75 minute"
+    ],
+    "extentsFormats": {
+      "3.75 x 3.75 minute": [
+        "JPEG2000"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 219093,
+    "AvgSize": 20298766,
+    "TotalSize": 4447317732883,
+    "LastCreatedDate": "Nov 13, 2016",
+    "LastPublishedDate": "Feb 29, 2016",
+    "LastUpdatedDate": "Nov 14, 2016"
+  },
+  {
+    "title": "Map Indices",
+    "sbDatasetTag": "Map Indices",
+    "id": "5825a042e4b01fad86db5ee1",
+    "internalId": "nbdmi",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "The USGS was entrusted with the responsibility for mapping the country in 1879 and has been the primary civilian mapping agency of the United States ever since. Most USGS map series divide the United States into quadrangles bounded by two lines of latitude and two lines of longitude. For example, a 7.5-minute map shows an area that spans 7.5 minutes of latitude and 7.5 minutes of longitude, and it is usually named after the most prominent feature in the quadrangle. Others show a whole area—a county, State, national park, or place of special interest. There are three Map Series quadrangle Indices that can be downloaded: 7.5-minute (1:24,000/25,000-scale), 15-minute (1:62,500/63,360-scale), and 1:100,000-scale series.",
+    "rank": 9,
+    "refreshCycle": "As needed",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/5825a042e4b01fad86db5ee1",
+    "dataGovUrl": "http://catalog.data.gov/dataset/7ea9ef78-339b-442b-a071-194c42915989",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/53d7cd8ee4b06f0f87b7427b",
+    "thumbnailUrl": "",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "National": [
+        "FileGDB 10.1"
+      ],
+      "State": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 113,
+    "AvgSize": 2217150,
+    "TotalSize": 250538042,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Apr 7, 2017",
+    "LastUpdatedDate": "Apr 8, 2017"
+  },
+  {
+    "title": "Names - Geographic Names Information System (GNIS)",
+    "sbDatasetTag": "National Geographic Names Information System (GNIS)",
+    "id": "4f70b292e4b058caae3f8e1d",
+    "internalId": "gnis",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "",
+    "rank": 10,
+    "refreshCycle": "Bi-monthly",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70b292e4b058caae3f8e1d",
+    "dataGovUrl": "http://catalog.data.gov/dataset/73b54503-4ccd-4bd8-bef2-c10094e1d16d",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70b292e4b058caae3f8e1d",
+    "thumbnailUrl": "",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "TXT (pipes)"
+    ],
+    "extents": [
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "National": [
+        "TXT (pipes)"
+      ],
+      "State": [
+        "TXT (pipes)"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 62,
+    "AvgSize": 0,
+    "TotalSize": 0,
+    "LastCreatedDate": "Mar 22, 2017",
+    "LastPublishedDate": "Jan 1, 2017",
+    "LastUpdatedDate": "Mar 22, 2017"
+  },
+  {
+    "title": "National Land Cover Database (NLCD)",
+    "sbDatasetTag": "National Land Cover Database (NLCD)",
+    "id": "4f70a43ce4b058caae3f8db3",
+    "internalId": "nlcd",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "The National Land Cover Database (NLCD) serves as the definitive Landsat-based, 30-meter resolution, land cover database for the Nation. NLCD provides spatial reference and descriptive data for characteristics of the land surface such as thematic class (for example, urban, agriculture, and forest), percent impervious surface, and percent tree canopy cover. NLCD supports a wide variety of Federal, State, local, and nongovernmental applications that seek to assess ecosystem status and health, understand the spatial patterns of biodiversity, predict effects of climate change, and develop land management policy.",
+    "rank": 11,
+    "refreshCycle": "As Needed",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70a43ce4b058caae3f8db3",
+    "dataGovUrl": "http://catalog.data.gov/dataset/ec7f7cc1-fb25-4f69-9804-fe64c411c69a",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70a43ce4b058caae3f8db3",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/nlcd.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "GeoTIFF"
+    ],
+    "extents": [
+      "3 x 3 degree",
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "3 x 3 degree": [
+        "GeoTIFF"
+      ],
+      "National": [
+        "GeoTIFF"
+      ],
+      "State": [
+        "GeoTIFF"
+      ]
+    },
+    "tags": {
+      "National Land Cover Database (NLCD) - 2001": {
+        "title": "National Land Cover Database (NLCD) - 2001",
+        "sbDatasetTag": "National Land Cover Database (NLCD) - 2001",
+        "id": "4f70a45ee4b058caae3f8db9",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70a45ee4b058caae3f8db9",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70a45ee4b058caae3f8db9",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoTIFF"
+        ],
+        "extents": [
+          "3 x 3 degree",
+          "National",
+          "State"
+        ],
+        "extentsFormats": {
+          "3 x 3 degree": [
+            "GeoTIFF"
+          ],
+          "National": [
+            "GeoTIFF"
+          ],
+          "State": [
+            "GeoTIFF"
+          ]
+        },
+        "NumOfProducts": 622,
+        "AvgSize": 24678262,
+        "TotalSize": 15349879110,
+        "LastCreatedDate": "Feb 11, 2017",
+        "LastPublishedDate": "Jan 15, 2015",
+        "LastUpdatedDate": "Feb 11, 2017"
+      },
+      "National Land Cover Database (NLCD) - 2006": {
+        "title": "National Land Cover Database (NLCD) - 2006",
+        "sbDatasetTag": "National Land Cover Database (NLCD) - 2006",
+        "id": "4f70a46ae4b058caae3f8dbb",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70a46ae4b058caae3f8dbb",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70a46ae4b058caae3f8dbb",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoTIFF"
+        ],
+        "extents": [
+          "3 x 3 degree",
+          "National",
+          "State"
+        ],
+        "extentsFormats": {
+          "3 x 3 degree": [
+            "GeoTIFF"
+          ],
+          "National": [
+            "GeoTIFF"
+          ],
+          "State": [
+            "GeoTIFF"
+          ]
+        },
+        "NumOfProducts": 361,
+        "AvgSize": 37840758,
+        "TotalSize": 13660513782,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Oct 10, 2014",
+        "LastUpdatedDate": "Nov 10, 2016"
+      },
+      "National Land Cover Database (NLCD) - 2011": {
+        "title": "National Land Cover Database (NLCD) - 2011",
+        "sbDatasetTag": "National Land Cover Database (NLCD) - 2011",
+        "id": "513624bae4b03b8ec4025c4d",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/513624bae4b03b8ec4025c4d",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/513624bae4b03b8ec4025c4d",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoTIFF"
+        ],
+        "extents": [
+          "3 x 3 degree",
+          "National",
+          "State"
+        ],
+        "extentsFormats": {
+          "3 x 3 degree": [
+            "GeoTIFF"
+          ],
+          "National": [
+            "GeoTIFF"
+          ],
+          "State": [
+            "GeoTIFF"
+          ]
+        },
+        "NumOfProducts": 623,
+        "AvgSize": 36257071,
+        "TotalSize": 22588155419,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Jan 15, 2015",
+        "LastUpdatedDate": "Nov 21, 2016"
+      }
+    },
+    "NumOfProducts": 7,
+    "AvgSize": 1567867432,
+    "TotalSize": 10975072029,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Oct 10, 2014",
+    "LastUpdatedDate": "Nov 21, 2016"
+  },
+  {
+    "title": "Small-scale Datasets",
+    "sbDatasetTag": "Small-scale Datasets",
+    "id": "532c5b23e4b0cd7393d07783",
+    "internalId": "smallscale",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "",
+    "rank": 12,
+    "refreshCycle": "As Needed",
+    "publicationDate": "",
+    "metaUrl": "https://nationalmap.gov/small_scale/",
+    "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/532c5b23e4b0cd7393d07783",
+    "thumbnailUrl": "",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "ArcExport",
+      "BIL",
+      "FileGDB 10.1",
+      "GeoTIFF",
+      "Shapefile",
+      "TIFF"
+    ],
+    "extents": [
+      "Contiguous US",
+      "National",
+      "North America",
+      "State"
+    ],
+    "extentsFormats": {
+      "Contiguous US": [
+        "GeoTIFF",
+        "FileGDB 10.1",
+        "TIFF",
+        "BIL"
+      ],
+      "National": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ],
+      "North America": [
+        "Shapefile",
+        "GeoTIFF",
+        "ArcExport"
+      ],
+      "State": [
+        "GeoTIFF",
+        "TIFF"
+      ]
+    },
+    "tags": {
+      "Boundaries (Small-scale)": {
+        "title": "Boundaries (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Boundaries",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "Quarterly",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcExport",
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "National",
+          "North America"
+        ],
+        "extentsFormats": {
+          "National": [
+            "FileGDB 10.1",
+            "Shapefile"
+          ],
+          "North America": [
+            "ArcExport",
+            "Shapefile"
+          ]
+        },
+        "NumOfProducts": 55,
+        "AvgSize": 9048726,
+        "TotalSize": 497679932,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 4, 2014",
+        "LastUpdatedDate": "Nov 23, 2016"
+      },
+      "Contours (Small-scale)": {
+        "title": "Contours (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Contours",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "National"
+        ],
+        "extentsFormats": {
+          "National": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 8,
+        "AvgSize": 167763773,
+        "TotalSize": 1342110190,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 4, 2013",
+        "LastUpdatedDate": "Nov 15, 2016"
+      },
+      "Elevation (Small-scale)": {
+        "title": "Elevation (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Elevation",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcExport",
+          "BIL",
+          "GeoTIFF",
+          "Shapefile",
+          "TIFF"
+        ],
+        "extents": [
+          "Contiguous US",
+          "North America",
+          "State"
+        ],
+        "extentsFormats": {
+          "Contiguous US": [
+            "TIFF",
+            "GeoTIFF",
+            "BIL"
+          ],
+          "North America": [
+            "ArcExport",
+            "GeoTIFF",
+            "Shapefile"
+          ],
+          "State": [
+            "TIFF",
+            "GeoTIFF"
+          ]
+        },
+        "NumOfProducts": 55,
+        "AvgSize": 258023572,
+        "TotalSize": 14191296467,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 3, 2013",
+        "LastUpdatedDate": "Nov 23, 2016"
+      },
+      "Hydrography (Small-scale)": {
+        "title": "Hydrography (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Hydrography",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "Quarterly",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcExport",
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "Contiguous US",
+          "National",
+          "North America"
+        ],
+        "extentsFormats": {
+          "Contiguous US": [
+            "FileGDB 10.1"
+          ],
+          "National": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ],
+          "North America": [
+            "Shapefile",
+            "ArcExport"
+          ]
+        },
+        "NumOfProducts": 25,
+        "AvgSize": 56355865,
+        "TotalSize": 1408896639,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 6, 2013",
+        "LastUpdatedDate": "Nov 23, 2016"
+      },
+      "Land Cover (Small-scale)": {
+        "title": "Land Cover (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Land Cover",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoTIFF",
+          "TIFF"
+        ],
+        "extents": [
+          "Contiguous US",
+          "North America",
+          "State"
+        ],
+        "extentsFormats": {
+          "Contiguous US": [
+            "GeoTIFF",
+            "TIFF"
+          ],
+          "North America": [
+            "GeoTIFF"
+          ],
+          "State": [
+            "GeoTIFF",
+            "TIFF"
+          ]
+        },
+        "NumOfProducts": 14,
+        "AvgSize": 66942595,
+        "TotalSize": 937196331,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 1, 2014",
+        "LastUpdatedDate": "Nov 23, 2016"
+      },
+      "Orthoimagery (Small-scale)": {
+        "title": "Orthoimagery (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Orthoimagery",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "As Needed",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoTIFF"
+        ],
+        "extents": [
+          "Contiguous US",
+          "State"
+        ],
+        "extentsFormats": {
+          "Contiguous US": [
+            "GeoTIFF"
+          ],
+          "State": [
+            "GeoTIFF"
+          ]
+        },
+        "NumOfProducts": 14,
+        "AvgSize": 617435907,
+        "TotalSize": 8644102700,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 4, 2012",
+        "LastUpdatedDate": "Nov 15, 2016"
+      },
+      "Structures (Small-scale)": {
+        "title": "Structures (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Structures",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "Quarterly",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcExport",
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "National",
+          "North America"
+        ],
+        "extentsFormats": {
+          "National": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ],
+          "North America": [
+            "Shapefile",
+            "ArcExport"
+          ]
+        },
+        "NumOfProducts": 22,
+        "AvgSize": 551248,
+        "TotalSize": 12127463,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 6, 2013",
+        "LastUpdatedDate": "Nov 23, 2016"
+      },
+      "Transportation (Small-scale)": {
+        "title": "Transportation (Small-scale)",
+        "sbDatasetTag": "Small-scale Datasets - Transportation",
+        "id": "532c5b23e4b0cd7393d07783",
+        "refreshCycle": "6 months",
+        "publicationDate": "",
+        "metaUrl": "https://nationalmap.gov/small_scale/",
+        "dataGovUrl": "http://catalog.data.gov/harvest/the-national-map-small-scale-downloadable-data",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "ArcExport",
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "National",
+          "North America"
+        ],
+        "extentsFormats": {
+          "National": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ],
+          "North America": [
+            "ArcExport",
+            "Shapefile"
+          ]
+        },
+        "NumOfProducts": 32,
+        "AvgSize": 5145524,
+        "TotalSize": 164656773,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Dec 6, 2014",
+        "LastUpdatedDate": "Nov 23, 2016"
+      }
+    },
+    "NumOfProducts": 198,
+    "AvgSize": 115531019,
+    "TotalSize": 22875141799,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Dec 6, 2014",
+    "LastUpdatedDate": "Nov 23, 2016"
+  },
+  {
+    "title": "Structures - National Structures Dataset",
+    "sbDatasetTag": "National Structures Dataset (NSD)",
+    "id": "4f70b240e4b058caae3f8e1b",
+    "internalId": "nsd",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "USGS data portray selected structures data, including the location and characteristics of manmade facilities. Characteristics consist of a structure\u0027s physical form (footprint), function, name, location, and other detailed information about the structure. The types of structures collected are largely determined by the needs of the disaster planning and response and homeland security organizations.",
+    "rank": 13,
+    "refreshCycle": "Monthly",
+    "publicationDate": "",
+    "metaUrl": "https://nationalmap.gov/structures.html",
+    "dataGovUrl": "http://catalog.data.gov/dataset/f0e636d3-a63f-4096-aa0f-1f15e56ef520",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70b240e4b058caae3f8e1b",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/structures_thumbnail.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "National": [
+        "FileGDB 10.1"
+      ],
+      "State": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 113,
+    "AvgSize": 21947254,
+    "TotalSize": 2480039715,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Apr 19, 2017",
+    "LastUpdatedDate": "Apr 21, 2017"
+  },
+  {
+    "title": "Topo Map Data and Topo Stylesheet",
+    "sbDatasetTag": "Combined Vector",
+    "id": "5135fc88e4b03b8ec4025bc9",
+    "internalId": "vectorcmb",
+    "isData": true,
+    "isAvailabilityLayer": true,
+    "availabilityLayerUrl": "https://www.sciencebase.gov/catalogMaps/mapping/ows/5135fc88e4b03b8ec4025bc9?SERVICE\u003dWMS\u0026request\u003dGetCapabilities",
+    "description": "",
+    "rank": 999,
+    "refreshCycle": "As needed",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/5135fc88e4b03b8ec4025bc9",
+    "dataGovUrl": "",
+    "infoUrl": "https://viewer.nationalmap.gov/tools/topotemplate/",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/tnm_stylesheet_template.jpg",
+    "auxUrl": "https://viewer.nationalmap.gov/tools/topotemplate/contents/Topo_TNM_Style_Template.zip",
+    "auxUrlLabel": "Zip Download",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "7.5 x 7.5 minute"
+    ],
+    "extentsFormats": {
+      "7.5 x 7.5 minute": [
+        "FileGDB 10.1",
+        "Shapefile"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 131505,
+    "AvgSize": 3277760,
+    "TotalSize": 431041838933,
+    "LastCreatedDate": "Apr 14, 2017",
+    "LastPublishedDate": "Apr 24, 2017",
+    "LastUpdatedDate": "Apr 26, 2017"
+  },
+  {
+    "title": "Transportation",
+    "sbDatasetTag": "National Transportation Dataset (NTD)",
+    "id": "4f70b1f4e4b058caae3f8e16",
+    "internalId": "ntd",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "The transportation data theme consists of roads, airports, railroads, and other features associated with the transport of people or commerce. The data includes the location, classification, name or route designator, and for most roads, address ranges. Transportation data support mapping and also geographic analysis for applications such as routing, traffic safety, congestion mitigation, and disaster planning and response.",
+    "rank": 14,
+    "refreshCycle": "Bi-monthly",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70b1f4e4b058caae3f8e16",
+    "dataGovUrl": "http://catalog.data.gov/dataset/d4f92d86-e9c0-4e45-a585-609722f2f398",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70b1f4e4b058caae3f8e16",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/transportation_thumbnail.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [],
+    "extents": [],
+    "extentsFormats": {},
+    "tags": {
+      "National Transportation Dataset": {
+        "title": "National Transportation Dataset",
+        "sbDatasetTag": "National Transportation Dataset (NTD)",
+        "id": "4f70b1f4e4b058caae3f8e16",
+        "refreshCycle": "6 months",
+        "publicationDate": "",
+        "metaUrl": "https://www.sciencebase.gov/catalog/item/4f70b1f4e4b058caae3f8e16",
+        "dataGovUrl": "http://catalog.data.gov/dataset/d4f92d86-e9c0-4e45-a585-609722f2f398",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f70b1f4e4b058caae3f8e16",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/transportation_thumbnail.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "National",
+          "State"
+        ],
+        "extentsFormats": {
+          "National": [
+            "FileGDB 10.1"
+          ],
+          "State": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 113,
+        "AvgSize": 221329791,
+        "TotalSize": 25010266432,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "Mar 27, 2017",
+        "LastUpdatedDate": "Mar 29, 2017"
+      },
+      "USFS Roads": {
+        "title": "USFS Roads",
+        "sbDatasetTag": "US Forest Service Roads",
+        "id": "",
+        "refreshCycle": "As needed",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/56b9fc25e4b08d617f648ecc",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "FileGDB 10.1",
+          "Shapefile"
+        ],
+        "extents": [
+          "State"
+        ],
+        "extentsFormats": {
+          "State": [
+            "Shapefile",
+            "FileGDB 10.1"
+          ]
+        },
+        "NumOfProducts": 88,
+        "AvgSize": 15372721,
+        "TotalSize": 1352799463,
+        "LastCreatedDate": "Nov 4, 2016",
+        "LastPublishedDate": "May 23, 2016",
+        "LastUpdatedDate": "Feb 20, 2017"
+      }
+    },
+    "NumOfProducts": 113,
+    "AvgSize": 221329791,
+    "TotalSize": 25010266432,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Mar 27, 2017",
+    "LastUpdatedDate": "Mar 29, 2017"
+  },
+  {
+    "title": "US Topo",
+    "sbDatasetTag": "US Topo",
+    "id": "4f554236e4b018de15819c85",
+    "internalId": "ustopo",
+    "isData": false,
+    "isAvailabilityLayer": true,
+    "availabilityLayerUrl": "https://services.nationalmap.gov/arcgis/rest/services/US_Topo_Availability/MapServer",
+    "description": "Layered GeoPDF 7.5 Minute Quadrangle Map. Layers of geospatial data include orthoimagery, roads, grids, geographic names, elevation contours, hydrography, and other selected map features. This map depicts geographic features on the surface of the earth. One intended purpose is to support emergency response at all levels of government. The geospatial data in this map are from selected National Map data holdings and other government sources.",
+    "rank": 1,
+    "refreshCycle": "Daily",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/file/get/4f554260e4b018de15819c88?f\u003d__grid__53050990e4b04382ac452c84\u0026transform\u003d1",
+    "dataGovUrl": "http://catalog.data.gov/dataset/235df488-53e1-4ebb-8a49-37134635e6ab",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/4f554236e4b018de15819c85",
+    "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/ms_tupelo_20150625.jpg",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "GeoPDF"
+    ],
+    "extents": [
+      "7.5 x 7.5 minute"
+    ],
+    "extentsFormats": {
+      "7.5 x 7.5 minute": [
+        "GeoPDF"
+      ]
+    },
+    "tags": {
+      "US Topo Current": {
+        "title": "US Topo Current",
+        "sbDatasetTag": "US Topo Current",
+        "id": "4f554236e4b018de15819c85",
+        "refreshCycle": "Undetermined",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "",
+        "infoUrl": "https://www.sciencebase.gov/catalog/item/4f554236e4b018de15819c85",
+        "thumbnailUrl": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/collections/thumbnails/ms_tupelo_20150625.jpg",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoPDF"
+        ],
+        "extents": [
+          "7.5 x 7.5 minute"
+        ],
+        "extentsFormats": {
+          "7.5 x 7.5 minute": [
+            "GeoPDF"
+          ]
+        },
+        "NumOfProducts": 58103,
+        "AvgSize": 26472267,
+        "TotalSize": 1538118168627,
+        "LastCreatedDate": "Apr 27, 2017",
+        "LastPublishedDate": "Apr 26, 2017",
+        "LastUpdatedDate": "Apr 27, 2017"
+      },
+      "US Topo Non-Current": {
+        "title": "US Topo Non-Current",
+        "sbDatasetTag": "US Topo Historical",
+        "id": "5061bc99e4b0ce47085a8d03",
+        "refreshCycle": "Undetermined",
+        "publicationDate": "",
+        "metaUrl": "",
+        "dataGovUrl": "",
+        "infoUrl": "",
+        "thumbnailUrl": "",
+        "auxUrl": "",
+        "auxUrlLabel": "",
+        "formats": [
+          "GeoPDF"
+        ],
+        "extents": [
+          "7.5 x 7.5 minute"
+        ],
+        "extentsFormats": {
+          "7.5 x 7.5 minute": [
+            "GeoPDF"
+          ]
+        },
+        "NumOfProducts": 83710,
+        "AvgSize": 22998201,
+        "TotalSize": 1925179435581,
+        "LastCreatedDate": "Nov 11, 2016",
+        "LastPublishedDate": "Jul 14, 2015",
+        "LastUpdatedDate": "Apr 27, 2017"
+      }
+    },
+    "NumOfProducts": 141813,
+    "AvgSize": 24421580,
+    "TotalSize": 3463297604208,
+    "LastCreatedDate": "Apr 27, 2017",
+    "LastPublishedDate": "Apr 26, 2017",
+    "LastUpdatedDate": "Apr 27, 2017"
+  },
+  {
+    "title": "Woodland Tint",
+    "sbDatasetTag": "Land Cover - Woodland",
+    "id": "5318a64ee4b051b1b924ea2c",
+    "internalId": "woodland",
+    "isData": true,
+    "isAvailabilityLayer": false,
+    "availabilityLayerUrl": "",
+    "description": "",
+    "rank": 15,
+    "refreshCycle": "State:Quarterly.National:TBD",
+    "publicationDate": "",
+    "metaUrl": "https://www.sciencebase.gov/catalog/item/5318a64ee4b051b1b924ea2c",
+    "dataGovUrl": "http://catalog.data.gov/dataset/34701494-16db-4478-89e7-2c40b32d6f6a",
+    "infoUrl": "https://www.sciencebase.gov/catalog/item/5318a64ee4b051b1b924ea2c",
+    "thumbnailUrl": "",
+    "auxUrl": "",
+    "auxUrlLabel": "",
+    "formats": [
+      "FileGDB 10.1",
+      "Shapefile"
+    ],
+    "extents": [
+      "National",
+      "State"
+    ],
+    "extentsFormats": {
+      "National": [
+        "FileGDB 10.1"
+      ],
+      "State": [
+        "Shapefile",
+        "FileGDB 10.1"
+      ]
+    },
+    "tags": {},
+    "NumOfProducts": 105,
+    "AvgSize": 818101799,
+    "TotalSize": 85900688966,
+    "LastCreatedDate": "Nov 4, 2016",
+    "LastPublishedDate": "Mar 28, 2017",
+    "LastUpdatedDate": "Apr 1, 2017"
+  }
+]

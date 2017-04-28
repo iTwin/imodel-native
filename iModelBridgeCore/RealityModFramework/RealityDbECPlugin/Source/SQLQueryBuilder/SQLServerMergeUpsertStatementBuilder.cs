@@ -29,7 +29,7 @@ namespace IndexECPlugin.Source
         string m_notMatchedStatement;
 
         /// <summary>
-        /// SQLServerInsertStatementBuilder class constructor
+        /// SQLServerMergeUpsertStatementBuilder class constructor
         /// </summary>
         public SQLServerMergeUpsertStatementBuilder ()
             {
