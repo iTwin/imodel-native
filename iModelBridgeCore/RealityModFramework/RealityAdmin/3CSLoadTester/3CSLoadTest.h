@@ -32,7 +32,7 @@ enum OperationType
     DELETE_JOB,
     GET_JOBS,
     GET_JOB,
-    JOB_RESULT,
+    //JOB_RESULT,
     JOB_CANCEL,
     last
     };
@@ -108,11 +108,8 @@ public:
     OperationType               m_currentOperation;
     Utf8String                  m_id;
     Utf8String                  m_jobId;
-    bool                        m_linked;
+    bool                        m_submitted;
     FullInfo                    m_correspondance;
-    AzureHandshake              m_handshake;
-    BeFile                      m_file;
-    BeFileName                  m_fileName;
     Utf8String                  m_token;
 
     int                         m_userId;
@@ -125,16 +122,18 @@ public:
 
     CURL* ListProject();
     CURL* AddProject();
+    void  ValidateAddProject(int activeUsers);
     CURL* DeleteProject();
     CURL* GetProject();
     CURL* SASUri();
     CURL* ListClusters();
     CURL* CreateJob();
+    void  ValidateCreateJob(int activeUsers);
     CURL* AddJobForId();
     CURL* DeleteJob();
     CURL* GetJobs();
     CURL* GetJobById();
-    CURL* GetJobResult();
+    //CURL* GetJobResult();
     CURL* CancelJob();
 
     CURL* PrepareRequest();
