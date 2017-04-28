@@ -480,7 +480,7 @@ RDSFilter RealityDataFilterCreator::FilterBySize(uint64_t minSize, uint64_t maxS
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToString(area, Utf8PrintfString("%lu", coordSys))));
+    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToGCSString(area, Utf8PrintfString("%lu", coordSys))));
     }
 
 //=====================================================================================
@@ -1004,10 +1004,10 @@ RealityDataRelationshipCreateRequest::RealityDataRelationshipCreateRequest(Utf8S
     m_validRequestString = false;
 
     m_requestType = HttpRequestType::POST_Request;
-    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
-    m_requestPayload.append(m_id);
-    m_requestPayload.append("\", \"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"");
+    m_requestPayload = "{\"instance\":{\"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"";
     m_requestPayload.append(projectId);
+    m_requestPayload.append("\", \"RealityDataId\": \"");
+    m_requestPayload.append(m_id);
     m_requestPayload.append("\"}}}");
     }
 
@@ -1031,11 +1031,6 @@ RealityDataRelationshipDelete::RealityDataRelationshipDelete(Utf8String realityD
     m_validRequestString = false;
 
     m_requestType = HttpRequestType::DELETE_Request;
-    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
-    m_requestPayload.append(m_id);
-    m_requestPayload.append("\", \"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"");
-    m_requestPayload.append(projectId);
-    m_requestPayload.append("\"}}}");
     }
 
 //=====================================================================================
@@ -1046,6 +1041,7 @@ void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityDataProjectRelationship/");
     m_httpRequestString.append(m_id);
+    m_httpRequestString.append("~2F1");
     m_requestHeader.push_back("Content-Type: application/json");
     }
 

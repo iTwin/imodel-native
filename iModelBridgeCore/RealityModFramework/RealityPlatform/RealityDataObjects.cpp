@@ -353,7 +353,7 @@ Utf8String RealityDataBase::GetFootprintString() const
     { 
     if (m_footprintString.length() == 0 && m_footprint.size() > 0)
         {
-        m_footprintString = FootprintToString(m_footprint, m_coordSys);
+        m_footprintString = FootprintToGCSString(m_footprint, m_coordSys);
         }
     return m_footprintString;
     }
@@ -368,7 +368,7 @@ void RealityDataBase::SetFootprintString(Utf8CP footprint)
     m_coordSys = ""; 
     m_footprintExtentComputed = false; 
 
-    m_footprint = StringToFootprint(m_footprintString, m_coordSys);
+    m_footprint = GCSStringToFootprint(m_footprintString, m_coordSys);
     // The given footprint can be empty (remove footprint). If not it must define a shape and clossing point be equal to start point 
     BeAssert((m_footprint.size() == 0) || 
              ((m_footprint.size() >= 4) && (m_footprint[0].latitude == m_footprint[m_footprint.size() - 1].latitude) && (m_footprint[0].longitude == m_footprint[m_footprint.size() - 1].longitude)));
@@ -378,7 +378,7 @@ void RealityDataBase::SetFootprintString(Utf8CP footprint)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason         	    03/2017
 //-------------------------------------------------------------------------------------
-Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
+Utf8String RealityDataBase::FootprintToGCSString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
     {
     Utf8String filter = "{\\\"points\\\":[";
     for (size_t i = 0; i < footprint.size() - 1; i++)
@@ -396,7 +396,7 @@ Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason         	    03/2017
 //-------------------------------------------------------------------------------------
-bvector<GeoPoint2d> RealityDataBase::StringToFootprint(Utf8String footprintStr, Utf8String& coordSys)
+bvector<GeoPoint2d> RealityDataBase::GCSStringToFootprint(Utf8String footprintStr, Utf8String& coordSys)
     {
     coordSys = footprintStr;
     // Extract points.
@@ -428,6 +428,39 @@ bvector<GeoPoint2d> RealityDataBase::StringToFootprint(Utf8String footprintStr, 
     else
         coordSys = "";
     
+    return footprint;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
+Utf8String RealityDataBase::FootprintToRDSString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
+    {
+    Utf8String filter = "{\"Coordinates\": [";
+    for (size_t i = 0; i < footprint.size() - 1; i++)
+        {
+        filter.append(Utf8PrintfString("{\"Long\": %f, \"Lat\": %f},", footprint[i].longitude, footprint[i].latitude));
+        }
+    filter.append(Utf8PrintfString("{\"Long\": %f, \"Lat\": %f}]}", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
+    
+    return filter;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
+bvector<GeoPoint2d> RealityDataBase::RDSJSONToFootprint(const Json::Value& footprintJson, Utf8String& coordSys)
+    {
+    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+    for (Json::Value coordinate : footprintJson["Coordinates"])
+        {
+        GeoPoint2d pt;
+        pt.longitude = coordinate["Long"].asDouble();
+        pt.latitude = coordinate["Lat"].asDouble();
+
+        footprint.push_back(pt);
+        }
+
     return footprint;
     }
 
@@ -640,6 +673,19 @@ RealityDataPtr RealityData::Create(Utf8StringCR identifier, const DateTime& crea
 
     return myRealityData;
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    04/2017
+//-------------------------------------------------------------------------------------
+Utf8String RealityData::GetFootprintString() const
+    {
+    if (m_footprintString.length() == 0 && m_footprint.size() > 0)
+        {
+        m_footprintString = FootprintToRDSString(m_footprint, m_coordSys);
+        }
+    return m_footprintString;
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017

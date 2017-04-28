@@ -147,7 +147,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
                                 "\"Classification\" : \"Terrain\","
                                 "\"Streamed\" : false,"
                                 "\"Type\" : \"3mx\","
-                                "\"Footprint\" : \"{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }\","
+                                "\"Footprint\" : { \"Coordinates\" : [{\"Long\":24.7828757, \"Lat\":59.9224887},{\"Long\":25.2544848, \"Lat\":59.9224887},{\"Long\":25.2544848, \"Lat\":60.2978389},{\"Long\":24.7828757, \"Lat\":60.2978389},{\"Long\":24.7828757, \"Lat\":59.9224887}]},"
                                 "\"ThumbnailDocument\" : \"Helsinki/thumbnail.jpg\","
                                 "\"MetadataURL\" : \"www.bigTest.com\","
                                 "\"Copyright\" : \"Copyright goes here\","
@@ -185,7 +185,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
     ASSERT_EQ(realityData->IsStreamed(), false);
     ASSERT_EQ(realityData->GetRealityDataType(), "3mx");
-    ASSERT_EQ(realityData->GetFootprintString(), "{ \"points\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \"coordinate_system\" : \"4326\" }");
+    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Long\": 24.782876, \"Lat\": 59.922489},{\"Long\": 25.254485, \"Lat\": 59.922489},{\"Long\": 25.254485, \"Lat\": 60.297839},{\"Long\": 24.782876, \"Lat\": 60.297839},{\"Long\": 24.782876, \"Lat\": 59.922489}]}");
     ASSERT_EQ(realityData->GetThumbnailDocument(), "Helsinki/thumbnail.jpg");
     ASSERT_EQ(realityData->GetMetadataURL(), "www.bigTest.com");
     ASSERT_EQ(realityData->GetCopyright(), "Copyright goes here");
@@ -201,10 +201,10 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
     DRange2dCR range = realityData->GetFootprintExtent();
-    ASSERT_EQ(range.low.x, 24.7828757);
-    ASSERT_EQ(range.low.y, 59.9224887);
-    ASSERT_EQ(range.high.x, 25.2544848);
-    ASSERT_EQ(range.high.y, 60.2978389);
+    ASSERT_TRUE(std::abs(range.low.x - 24.7828757) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.low.y - 59.9224887) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.high.x - 25.2544848) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.high.y - 60.2978389) < 0.000000001);
     }
 
 #if (0)
