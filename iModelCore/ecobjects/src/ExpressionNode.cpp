@@ -1194,17 +1194,17 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() | right.GetECValue()->GetBoolean());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() & right.GetECValue()->GetBoolean());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() ^ right.GetECValue()->GetBoolean());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
@@ -1216,17 +1216,17 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() | right.GetECValue()->GetInteger());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() & right.GetECValue()->GetInteger());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() ^ right.GetECValue()->GetInteger());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
@@ -1237,17 +1237,17 @@ EvaluationResultR            right
             {
             case TOKEN_Or:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() | right.GetECValue()->GetLong());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_And:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() & right.GetECValue()->GetLong());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
 
             case TOKEN_Xor:
                 resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() ^ right.GetECValue()->GetLong());
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator), left.ToString().c_str(), right.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Operations::PerformJunctionOperator: Operator: %s left: %s, right: %s", Lexer::GetString(junctionOperator).c_str(), left.ToString().c_str(), right.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
             }
         }
@@ -1669,8 +1669,7 @@ Utf8String EvaluationResult::ToString() const
         return GetLambda()->GetNode().ToExpressionString();
     if (IsValueList())
         return GetValueList()->ToString();
-    BeAssert(false);
-    return "Could not convert to string";
+    return "<None>";
     }
 
 /*---------------------------------------------------------------------------------**//**

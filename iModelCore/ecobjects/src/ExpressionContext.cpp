@@ -442,7 +442,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
     if (TOKEN_Dot != nextOperation && TOKEN_Ident != nextOperation && TOKEN_LeftBracket != nextOperation)
         {
         BeAssert (false);
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: UnknownError. Invalid next operation: %s", Lexer::GetString(nextOperation)).c_str());
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: UnknownError. Invalid next operation: %s", Lexer::GetString(nextOperation).c_str()).c_str());
         return ExpressionStatus::UnknownError;
         }
     
