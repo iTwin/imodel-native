@@ -8,6 +8,7 @@
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnECSymbolProvider.h>
 #include    <ECObjects/ECExpressionNode.h>
+#include    <ECObjects/ECExpressions.h>
 #include    <ECObjects/SystemSymbolProvider.h>
 
 USING_NAMESPACE_BENTLEY
@@ -301,7 +302,10 @@ void DgnECSymbolProvider::_PublishSymbols (SymbolExpressionContextR context, bve
 ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::GetInstanceId: StructRequired. No instance data");
         return ExpressionStatus::StructRequired;
+        }
 
     for (IECInstancePtr const& instance: instanceData)
         {
@@ -309,10 +313,11 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
         if (!Utf8String::IsNullOrEmpty (instanceId.c_str()))
             {
             evalResult.InitECValue().SetUtf8CP (instanceId.c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("DgnECSymbolProvider::GetInstanceId: Result: %s", evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         }
-
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::GetInstanceId: UnknownError. Could not get instance Id");
     return ExpressionStatus::UnknownError;
     }
 
@@ -322,7 +327,10 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
 ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::GetInstanceLabel: StructRequired. No instance data");
         return ExpressionStatus::StructRequired;
+        }
 
     for (IECInstancePtr const& instance: instanceData)
         {
@@ -330,10 +338,11 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalRe
         if (ECObjectsStatus::Success == instance->GetDisplayLabel (displayLabel))
             {
             evalResult.InitECValue().SetUtf8CP (displayLabel.c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("DgnECSymbolProvider::GetInstanceLabel: Result: %s", evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         }
-
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::GetInstanceLabel: UnknownError. Could not get instance label");
     return ExpressionStatus::UnknownError;
     }
 
@@ -343,7 +352,10 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalRe
 ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::GetClass: StructRequired. No instance data");
         return ExpressionStatus::StructRequired;
+        }
 
     ECInstanceList classInstances;
     StandaloneECEnablerR classEnabler = *GetProvider().GetSchema().GetClassCP ("ECClass")->GetDefaultStandaloneEnabler();
@@ -362,6 +374,7 @@ ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, vo
         }
 
     evalResult.SetInstanceList (classInstances, true);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("DgnECSymbolProvider::GetClass: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -394,12 +407,17 @@ struct ClassVisitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus extractPropertyAccessor (Utf8CP& schemaName, Utf8CP& className, Utf8CP& accessString, EvaluationResultVector& args)
     {
-    if (!ExtractArg (schemaName, args, 0, false) || !ExtractArg (className, args, 1, false) || !ExtractArg (accessString, args, 2, false))
+    if (!ExtractArg(schemaName, args, 0, false) || !ExtractArg(className, args, 1, false) || !ExtractArg(accessString, args, 2, false))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "extractPropertyAccessor: UnknownError. Could not extract property accesssor");
         return ExpressionStatus::UnknownError;
+        }
     else
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("extractPropertyAccessor: Result: %s, %s, %s",schemaName, className, accessString).c_str());
         return ExpressionStatus::Success;
+        }
     }
-
 typedef bpair<IECInstanceCP, ECPropertyCP> InstancePropertyPair;
 
 /*---------------------------------------------------------------------------------**//**
@@ -436,8 +454,11 @@ ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, v
     {
     IECInstancePtr instance;
     Utf8CP schemaname, classname;
-    if (2 != args.size() || !SystemSymbolProvider::ExtractArg (classname, args[0]) || !SystemSymbolProvider::ExtractArg (schemaname, args[1]))
+    if (2 != args.size() || !SystemSymbolProvider::ExtractArg(classname, args[0]) || !SystemSymbolProvider::ExtractArg(schemaname, args[1]))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "DgnECSymbolProvider::IsOfClass: UnknownError (Number of arguments is not 2 or could not extract arguments)");
         return ExpressionStatus::UnknownError;
+        }
 
     bool found = false;
     for (IECInstancePtr const& instance: instanceData)
@@ -448,6 +469,7 @@ ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, v
         }
 
     evalResult.InitECValue().SetBoolean (found);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("DgnECSymbolProvider::IsOfClass: Result: ", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 

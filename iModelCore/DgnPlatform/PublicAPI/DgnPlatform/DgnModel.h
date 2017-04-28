@@ -372,7 +372,7 @@ protected:
 
     //! Return the copyright message to display if this model is drawn in a viewport
     //! @return a copyright message or nullptr
-    virtual Utf8CP _GetCopyrightMessage() const {return nullptr;}
+    virtual Utf8String _GetCopyrightMessage() const {return "";}
 
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
@@ -458,7 +458,7 @@ protected:
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
 public:
-    Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
+    Utf8String GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private

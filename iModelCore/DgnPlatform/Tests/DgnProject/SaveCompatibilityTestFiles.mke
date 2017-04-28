@@ -8,6 +8,7 @@
 %include mdl.mki
 
 TestOutputDir = $(OutputRootDir)Product/DgnPlatform-Gtest/run/Output/CompatibilityTests/
+TestOutputDir2 = $(OutputRootDir)Product/DgnPlatform-Gtest/run/Output/CompatibilityTest2/
 CacheDir = $(OutBuildDir)CompatibilityTestSeed/
 ContextDir = $(BuildContext)CompatibilityTestFiles/
 
@@ -27,3 +28,16 @@ ContextDir = $(BuildContext)CompatibilityTestFiles/
 $(ContextDir)CompatibilityTestSeed.bim : $(CacheDir)CompatibilityTestSeed.bim
     $(LinkFirstDepToFirstTarget)
 
+# Saves the Bim produced by the CompatibilityTest
+	
+%if exists($(TestOutputDir2)CompatibilityTest.bim)
+    $(CacheDir)CompatibilityTest.bim : $(TestOutputDir2)CompatibilityTest.bim
+        $(CopyFirstDepToFirstTarget)
+%endif
+
+%if !exists($(CacheDir)CompatibilityTest.bim)
+    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
+%endif
+
+$(ContextDir)CompatibilityTest.bim : $(CacheDir)CompatibilityTest.bim
+    $(LinkFirstDepToFirstTarget)
