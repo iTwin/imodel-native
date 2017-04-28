@@ -389,9 +389,9 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 
 
 #   Importer from DcStmCore
-#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -515,10 +515,10 @@ LINKER_LIBRARIES            = \
 %endif
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
-    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+    $(ContextSubpartsLibs)DgnView.lib \
+    $(ContextSubpartsLibs)RasterCore.lib
 
-#    $(ContextSubpartsLibs)DgnView.lib \
-#    $(ContextSubpartsLibs)RasterCore.lib \
 #    $(ContextSubpartsLibs)BePointCloud.lib
 
     

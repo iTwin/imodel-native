@@ -728,7 +728,9 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <None Include="ScalableMesh_Vancouver.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMeshCore.PartFile.xml" />
+    <Xml Include="ScalableMeshCore.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

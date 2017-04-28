@@ -402,10 +402,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
             {        
 #ifndef VANCOUVER_API
-            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
 #else
             WChar bufferPath[100];
-            if (0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"jpg"))
+            if (0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"itiff64"))
 #endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
