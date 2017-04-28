@@ -143,6 +143,37 @@ public:
     UNITS_EXPORT Utf8String ToText();
     };
 
+struct FormattingSignature
+    {
+private:
+    static const int m_maxNumSeg = 8;
+    size_t m_size;
+    size_t m_sigIndx;
+    size_t m_patIndx;
+    Utf8P  m_signature;
+    Utf8P  m_pattern;
+    size_t m_segCount;
+    size_t m_segPos[m_maxNumSeg];
+
+    //UNITS_EXPORT void ReleaseSignature();
+public:
+    FormattingSignature():m_size(0), m_signature(nullptr), m_pattern(nullptr),m_segCount(0){ memset(m_segPos, 0, sizeof(m_segPos)); }
+    UNITS_EXPORT FormattingSignature(size_t reserve);
+        
+    UNITS_EXPORT bool Reset(size_t reserve); 
+    ~FormattingSignature() { Reset(0); }
+
+    Utf8CP GetSignature() const { return m_signature; }
+    Utf8CP GetPattern() const { return m_pattern; }
+    size_t GetNumSegCount() { return m_segCount; }
+    UNITS_EXPORT size_t AppendSignature(Utf8Char c);
+    UNITS_EXPORT size_t AppendPattern();
+    UNITS_EXPORT size_t AppendPattern(Utf8Char c);
+    Utf8Char GetSignatureChar(size_t indx) { return (indx < m_sigIndx) ? m_signature[indx] : '\0'; }
+    Utf8Char GetPatternChar(size_t indx) { return (indx < m_patIndx) ? m_pattern[indx] : '\0'; }
+
+    };
+
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
@@ -163,9 +194,8 @@ private:
     ScannerCursorStatus m_status;
     size_t m_effectiveBytes;
     char m_temp;
+    FormattingSignature m_traits;
     //CodepointBuffer m_unicodeBuff;
-    Utf8P  m_signature;
-    Utf8P  m_pattern;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
     // returns the physical index of the same array adjusted by endianness. The little endian is default 
@@ -174,14 +204,13 @@ private:
     int AddTrailingByte();
     size_t SetCurrentPosition(size_t position) { return m_detail.SetPosition(position); }
     //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
-    UNITS_EXPORT void ReleaseSignature();
 
 public:
     //! Construct a cursor attached to the given Utf8 string 
     // FormattingScannerCursor();
     UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div = nullptr);
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
-    ~FormattingScannerCursor() { ReleaseSignature(); }
+    //~FormattingScannerCursor() { ReleaseSignature(); }
 
     size_t GetTotalLength() { return m_totalScanLength; }
     //UnicodeConstant* GetConstants() { return m_unicodeConst; }
@@ -214,9 +243,8 @@ public:
     //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
     //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
     UNITS_EXPORT Utf8CP GetSignature(bool refresh);
-    Utf8CP GetPattern(bool refresh) { if (refresh) GetSignature(true); return m_pattern; }
+    Utf8CP GetPattern(bool refresh) { if (refresh) GetSignature(true); return m_traits.GetPattern(); }
     UNITS_EXPORT Utf8String CollapseSpaces();
-    UNITS_EXPORT int DetectEnclosures(Utf8Char bracket);
     };
 
 //=======================================================================================

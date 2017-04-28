@@ -174,8 +174,7 @@ void FormattingScannerCursor::Rewind(bool freeBuf)
     m_effectiveBytes = 0;
     m_dividers = FormattingDividers(nullptr);
     m_breakIndex = 0;
-   /* if (freeBuf)
-        m_unicodeBuff.Release();*/
+ 
     return;
     }
 
@@ -207,8 +206,6 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
     m_dividers = FormattingDividers(div);
-    m_signature = nullptr;
-    m_pattern = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -223,8 +220,6 @@ FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other
     m_isASCII = other.m_isASCII;
     m_status = other.m_status;
     m_dividers = FormattingDividers(other.m_dividers);
-    m_signature = nullptr;
-    m_pattern = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -466,72 +461,50 @@ size_t FormattingScannerCursor::SkipBlanks()
     return skipped;
     }
 
-void FormattingScannerCursor::ReleaseSignature()
-    { 
-    if (nullptr != m_signature) 
-        delete m_signature;
-    if (nullptr != m_pattern)
-        delete m_pattern;
-    m_signature = nullptr;
-    m_pattern = nullptr;
-    }
-
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
 Utf8CP FormattingScannerCursor::GetSignature(bool refresh)
     {
     if (!refresh)
-        return m_signature;
+        return m_traits.GetSignature();
 
-    Rewind(true);
-    Utf8CP symb = "xabcdefg";
-    ReleaseSignature();
-    m_pattern = new char[m_totalScanLength + 20];
-    m_signature = new char[m_totalScanLength + 2];
-   
-    if (nullptr == m_signature || nullptr == m_pattern)
+    if(!m_traits.Reset(m_totalScanLength))
         return FormatConstant::AllocError();
-    else
-        {
-        size_t c = GetNextSymbol();
-        int i = 0;
-        int j = -1;
-        m_pattern[0] = '\0';
+    Utf8CP symb = "xabcdefg";
 
-        while(c != 0 && i < m_totalScanLength)
+    size_t c = GetNextSymbol();
+
+    while (c != 0)
+        {
+        if (m_lastScannedCount == 1)
             {
-            if (m_lastScannedCount == 1)
-                {
-                char cc = c & 0x7F;
-                if (isspace(cc))
-                    m_signature[i] = 's';
-                else if (isdigit(cc))
-                    m_signature[i] = '0';
-                else if (cc == '+' || cc == '-')
-                    m_signature[i] = '+';
-                else if (cc == '.' || cc == ',' || cc == '/')
-                    m_signature[i] = cc;
-                else
-                    m_signature[i] = symb[1]; // symb[m_lastScannedCount & 0x7];
-                if (j < 0 || m_pattern[j] != m_signature[i])
-                    m_pattern[++j] = m_signature[i];
-                }          
+            char cc = c & 0x7F;
+            if (isspace(cc))
+                m_traits.AppendSignature('s');
+            else if (isdigit(cc))
+                m_traits.AppendSignature('0');
+            else if (cc == '+' || cc == '-')
+                m_traits.AppendSignature('+');
+            else if (cc == '.' || cc == ',' || cc == '/')
+                m_traits.AppendSignature(cc);
             else
-                {
-                m_signature[i] = symb[m_lastScannedCount & 0x7];
-                if (j < 0 || m_pattern[j] != 'a')
-                    m_pattern[++j] = 'a';
-                }
-            m_signature[++i] = 0;
-            m_pattern[j + 1] = 0;
-            c = GetNextSymbol();
+                m_traits.AppendSignature(symb[1]); // symb[m_lastScannedCount & 0x7];
+            m_traits.AppendPattern();
             }
-        }      
-    return m_signature;
+        else
+            {
+            m_traits.AppendSignature(symb[m_lastScannedCount & 0x7]);
+            m_traits.AppendPattern('a');
+            }
+        c = GetNextSymbol();
+        }
+
+    return m_traits.GetSignature();
     }
+
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
 Utf8String FormattingScannerCursor::CollapseSpaces()
     {
@@ -587,27 +560,10 @@ Utf8String FormattingScannerCursor::CollapseSpaces()
 
     return str;
     }
-//----------------------------------------------------------------------------------------
-// detects a number of groups surrounded by brackes of a special kind (), [], {}  and ||
-//   the caller provides only the opening bracket and the function will infer what is a closing bracket
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-int FormattingScannerCursor::DetectEnclosures(Utf8Char bracket)
-    {
-    int openN = 0;
-    /*int closN = 0;
-    Utf8Char closBrk = Utils::MatchingDivider(bracket);
-    if ('\0' == closBrk)
-        return -1;
 
-    for (size_t ind = 0; ind < m_totalScanLength; ++ind)
-        {
- 
-        }
-*/
-    return openN;
-    }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8Char div)
     {
     m_div = div;
@@ -641,6 +597,9 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8Char div)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
     {
     m_div = '\0';
@@ -671,6 +630,9 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 bool FormatDividerInstance::IsDivLast() 
     {
     if (0 < m_divCount)
@@ -682,6 +644,9 @@ bool FormatDividerInstance::IsDivLast()
     return false;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatDividerInstance::ToText()
     {
     if (m_problem.IsProblem())
@@ -701,6 +666,85 @@ Utf8String FormatDividerInstance::ToText()
             }
         }
     return str;
+    }
+
+
+//===================================================
+//
+// FormattingSignature Methods
+//
+//===================================================
+
+bool FormattingSignature::Reset(size_t reserve)
+    { 
+    if (0 == reserve || reserve > m_size) // special case for releasing allocated memory
+        {
+        if (nullptr != m_signature)
+            delete m_signature;
+        if (nullptr != m_pattern)
+            delete m_pattern;
+        if (reserve > 0)
+            {
+            m_pattern = new char[reserve + 2];
+            m_signature = new char[reserve + 2];
+            if (nullptr == m_signature || nullptr == m_pattern)
+                return false;
+            m_signature[0] = '\0';
+            m_pattern[0] = '\0';
+            }
+        else
+            {
+            m_signature = nullptr;
+            m_pattern = nullptr;
+            }
+        m_size = reserve;
+        }
+    m_segCount = 0;
+    m_sigIndx = 0;
+    m_patIndx = 0;
+    memset(m_segPos, 0, sizeof(m_segPos));
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod      Constructor                                  David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+FormattingSignature::FormattingSignature(size_t reserve)
+    {
+    Reset(reserve);
+    }
+
+size_t FormattingSignature::AppendSignature(Utf8Char c)
+    { 
+    if (m_sigIndx < m_size) 
+        m_signature[m_sigIndx++] = c; 
+    m_signature[m_sigIndx] = '\0';
+    return m_sigIndx; 
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+size_t FormattingSignature::AppendPattern(char c)
+    { 
+    if((m_patIndx < m_size) && (m_patIndx == 0 || m_pattern[m_patIndx-1] != c))
+        m_pattern[m_patIndx++] = c;
+    m_pattern[m_patIndx] = '\0';
+    return m_patIndx;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+size_t FormattingSignature::AppendPattern()
+    {
+    if (m_sigIndx > 0)
+        {
+        if ((m_patIndx < m_size) && (m_patIndx == 0 || m_pattern[m_patIndx - 1] != m_signature[m_sigIndx - 1]))
+            m_pattern[m_patIndx++] = m_signature[m_sigIndx - 1];
+        m_pattern[m_patIndx] = '\0';
+        }
+    return m_patIndx;
     }
 
 //===================================================

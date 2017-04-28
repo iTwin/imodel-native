@@ -52,6 +52,13 @@ public:
     LOG.info("=========");
     }
 
+    static void ShowSignature(Utf8CP txt, int tstN)
+        {
+        FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
+        Utf8CP sig = curs.GetSignature(true);
+        LOG.infov("Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
+        }
+
     static void ShowHexDump(Utf8String str, int len)
     {
     Utf8String hd = Utils::HexDump(str.c_str(), 30);
@@ -64,7 +71,7 @@ public:
         LOG.infov(u8"COL: %s", hd.c_str());
         }
 
-    static void ShowKindOfQuantity(Utf8CP koq)
+    static void ShowFUS(Utf8CP koq)
         {
         FormatUnitSet fus = FormatUnitSet(koq);
         if (fus.HasProblem())
@@ -72,12 +79,21 @@ public:
         else
             LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
         }
-    static void TestKindOfQuantity(Utf8CP koq, Utf8CP norm, Utf8CP aliased)
+
+    static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
         {
-        FormatUnitSet fus = FormatUnitSet(koq);
+        FormatUnitSet fus = FormatUnitSet(fusText);
         EXPECT_STREQ (norm, fus.ToText(false).c_str());
         EXPECT_STREQ (aliased, fus.ToText(true).c_str());
         }
+
+    static void TestFUG(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
+        {
+        FormatUnitGroup fug = FormatUnitGroup(fusText);
+        EXPECT_STREQ (norm, fug.ToText(false).c_str());
+        EXPECT_STREQ (aliased, fug.ToText(true).c_str());
+        }
+
     };
 
 TEST(FormattingTest, Preliminary)
@@ -95,6 +111,7 @@ TEST(FormattingTest, Preliminary)
         LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
         n++;
         }*/
+    FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
 
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
@@ -106,6 +123,15 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 15, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 16, false);
 
+    FormattingTestFixture::ShowFUS("MM");
+    FormattingTestFixture::ShowFUS("MM|fract8");
+    FormattingTestFixture::ShowFUS("MM|fract8|");
+    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
+    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
+    FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
+    FormattingTestFixture::ShowFUS("W/(M*C)");
+    FormattingTestFixture::ShowFUS("TONNE/HR(real4");
+    FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
 
     //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
@@ -134,56 +160,23 @@ TEST(FormattingTest, PhysValues)
     EXPECT_TRUE(fdiv.IsDivider('{'));
     EXPECT_FALSE(fdiv.IsDivider('A'));
 
-    /*FormattingScannerCursor curs4 = FormattingScannerCursor("W/(M*C)(DefaultReal)", -1, FormatConstant::FUSDividers());
-    FormattingWord word = curs4.ExtractLastEnclosure();
-    FormattingWord word1 = curs4.ExtractBeforeEnclosure();
-    LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());
+    FormattingTestFixture::TestFUS("MM", "MM(DefaultReal)","MM(real)");
+    FormattingTestFixture::TestFUS("MM|fract8", "MM(Fractional8)", "MM(fract8)");
+    FormattingTestFixture::TestFUS("MM|fract8|", "MM(Fractional8)", "MM(fract8)");
+    FormattingTestFixture::TestFUS("W/(M*C)|DefaultReal", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
+    FormattingTestFixture::TestFUS("W/(M*C)|DefaultReal|", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
+    FormattingTestFixture::TestFUS("W/(M*C)(DefaultReal)", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
+    FormattingTestFixture::TestFUS("W/(M*C)", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
 
-    curs4 = FormattingScannerCursor("CUB.M(real)", -1, FormatConstant::FUSDividers());
-    word = curs4.ExtractLastEnclosure();
-    word1 = curs4.ExtractBeforeEnclosure();
-    LOG.infov("curs4 Format: %s Unit: %s", word.GetText(), word1.GetText());*/
+    FormattingTestFixture::TestFUS("CUB.M(real)", "CUB.M(DefaultReal)", "CUB.M(real)");
+    FormattingTestFixture::TestFUS("CUB.FT(real)", "CUB.FT(DefaultReal)", "CUB.FT(real)");
+    FormattingTestFixture::TestFUS("W/(M*C)(DefaultReal)", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
 
-    /*FormatUnitSet fusInv = FormatUnitSet("MM");
-    FormatDividerInstance fdi = FormatDividerInstance("W/(M*C)(DefaultReal)", '(');
-    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
-    fdi = FormatDividerInstance("W/(M*C)|DefaultReal", '|');
-    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));
-    fdi = FormatDividerInstance("W/(M*C)|DefaultReal|", '|');
-    LOG.infov("div inst: %s Last:%s", fdi.ToText().c_str(), FormatConstant::BoolText(fdi.IsDivLast()));*/
+    FormattingTestFixture::TestFUG("FT(fract8)  IN(fract8), M(real4), MM(Real2)", 
+                                    "FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", 
+                                    "FT(fract8),IN(fract8),M(real4),MM(real2)");
 
-    /*LOG.infov("MM: %s", FormatUnitSet("MM").ToText(true).c_str());
-    LOG.infov("MM: %s", FormatUnitSet("MM|fract8").ToText(true).c_str());*/
-   // LOG.infov("W/(M*C)R: %s", FormatUnitSet("W/(M*C)(DefaultReal)").ToText(true).c_str());
-   // LOG.infov("W/(M*C): %s", FormatUnitSet("W/(M*C)").ToText(true).c_str());
 
-    FormattingTestFixture::ShowKindOfQuantity("MM");
-    FormattingTestFixture::ShowKindOfQuantity("MM|fract8");
-    FormattingTestFixture::ShowKindOfQuantity("MM|fract8|");
-    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)|DefaultReal");
-    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)|DefaultReal|");
-    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)(DefaultReal)");
-    FormattingTestFixture::ShowKindOfQuantity("W/(M*C)");
-    FormattingTestFixture::ShowKindOfQuantity("TONNE/HR(real4");
-    FormattingTestFixture::ShowKindOfQuantity("TONNE/HR(DefaultReal)");
-
-    FormatUnitSet fus1 = FormatUnitSet("CUB.M(real)");
-    EXPECT_STREQ ("CUB.M(DefaultReal)", fus1.ToText(false).c_str());
-    EXPECT_STREQ ("CUB.M(real)", fus1.ToText(true).c_str());
-    fus1 = FormatUnitSet("CUB.FT(real)");
-    EXPECT_STREQ ("CUB.FT(DefaultReal)", fus1.ToText(false).c_str());
-    EXPECT_STREQ ("CUB.FT(real)", fus1.ToText(true).c_str());
-
-    FormatUnitSet fus = FormatUnitSet("FT(fract8)");
-    FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
-
-    EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
-    EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
-
-    FormatUnitSet fus2 = FormatUnitSet("W/(M*C)(DefaultReal)");
-    //LOG.infov("FUS2 %s", fus2.ToText(false).c_str());
-    EXPECT_STREQ ("W/(M*C)(real)", fus2.ToText(true).c_str());
-    EXPECT_STREQ ("W/(M*C)(DefaultReal)", fus2.ToText(false).c_str());
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
     BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
