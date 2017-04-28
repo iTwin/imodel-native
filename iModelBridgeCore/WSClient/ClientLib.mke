@@ -65,6 +65,35 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 %if $(TARGET_PLATFORM)=="Android"
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)snappy$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)lzma$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeLibxml2$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeomSerialization$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeIcu4c$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeLibJpegTurbo$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BePng$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BaseGeoCoord$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)freetype2$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeJavaScript$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)UILayout$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCsmapStatic$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCurl$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_base.arm$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_snapshot$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)scz_compress$(stlibext)    
+
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
     %include dlmlink.mki
 %else
