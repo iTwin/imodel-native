@@ -622,6 +622,7 @@
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
 
         <Bindings>

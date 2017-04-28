@@ -113,17 +113,17 @@ struct MapTile : TileTree::QuadTree::Tile
 
     struct Loader : TileTree::TileLoader
     {
-        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
+        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
         BentleyStatus _LoadTile() override;
     };
 
     bool m_reprojected = false;  //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     StatusInt ReprojectCorners(GeoPoint*);
     MapTile(MapRootR mapRoot, TileTree::QuadTree::TileId id, MapTileCP parent);
-    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    void _GetGraphics(TileTree::DrawGraphicsR, int depth) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
 };
 
 //=======================================================================================
