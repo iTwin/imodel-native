@@ -1769,7 +1769,11 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
         data.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
-
+        if (!m_texture->GetRepeat())
+            {
+            data.m_json["samplers"]["sampler_0"]["wrapS"] = GLTF_CLAMP_TO_EDGE;
+            data.m_json["samplers"]["sampler_0"]["wrapT"] = GLTF_CLAMP_TO_EDGE;
+            }
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
         TilePublisher::AppendProgramAttribute(program, "a_texc");

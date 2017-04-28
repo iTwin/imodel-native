@@ -84,17 +84,19 @@ enum class TileGeneratorStatus
 struct TileTextureImage : RefCountedBase
     {
     private:
-        ImageSource       m_imageSource;
+        ImageSource         m_imageSource;
+        bool                m_repeat;
 
-        TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
-        TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource&& imageSource, bool repeat) : m_imageSource(std::move(imageSource)), m_repeat(repeat) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource& imageSource, bool repeat) : m_imageSource (imageSource), m_repeat(repeat) { BeAssert(m_imageSource.IsValid()); }
     public:
-        static TileTextureImagePtr Create(ImageSource&& imageSource) { return new TileTextureImage(std::move(imageSource)); }
-        static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
+        static TileTextureImagePtr Create(ImageSource&& imageSource, bool repeat=true) { return new TileTextureImage(std::move(imageSource), repeat); }
+        static TileTextureImagePtr Create(ImageSource& imageSource, bool repeat=true) { return new TileTextureImage(imageSource, repeat); }
         static TileTextureImagePtr Create(GradientSymbCR gradient);
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
 
         ImageSourceCR GetImageSource() const { return m_imageSource; }
+        bool GetRepeat() const { return m_repeat; }
     };
 
 //=======================================================================================

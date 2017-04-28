@@ -31,7 +31,7 @@ struct Texture : Render::Texture
     Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(image) { }
     Texture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(source, targetFormat, bottomUp) { }
 
-    Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_image, ImageSource::Format::Png)); }
+    Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_image, ImageSource::Format::Png), !m_createParams.m_isTileSection); }
 };  // Texture
     
 //=======================================================================================
@@ -47,8 +47,8 @@ protected:
         : Render::TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance) { m_isEmpty = false; }
 
     virtual WString _GetFileExtension() const override { return L"b3dm"; }
-    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, ITileGenerationFilterCP filter) const override
-        {return std::move(m_geometry);}
+    void _ClearGeometry() override { m_geometry = PublishableTileGeometry(); }
+    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, ITileGenerationFilterCP filter) const override {return std::move(m_geometry);}
 
 public:
     bool    GeometryExists() const { return !m_geometry.IsEmpty(); }
@@ -201,6 +201,8 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
         else
             context.m_outputTile->SetIsEmpty(true);
             
+        context.m_outputTile->ClearGeometry();
+
         return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::Success, context.m_outputTile->GetRoot()));
         });
     }

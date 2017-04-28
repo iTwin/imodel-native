@@ -74,7 +74,6 @@ static CommandParam s_paramTable[] =
         { L"ip", L"imageryProvider", L"Imagery Provider {BingMapRoads, BingMapsAerial, BingMapsAerialWithLabels, MapboxSatellite, MapboxTerrain, MapboxStreets, MapboxStreetsClassic, StamenWatercolor, StamenToner, ESRIWorldImagery, ", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
-        { L"up", L"update", L"Update existing tileset from model changes", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
         { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
     };

@@ -485,7 +485,7 @@ TileTextureImagePtr TileTextureImage::Create(GradientSymbCR gradient)
     {
     static const size_t     s_size = 256;
 
-    return TileTextureImage::Create(Render::ImageSource (gradient.GetImage(s_size, s_size), Render::ImageSource::Format::Png));
+    return TileTextureImage::Create(Render::ImageSource (gradient.GetImage(s_size, s_size), Render::ImageSource::Format::Png), false);
     }
 
 
