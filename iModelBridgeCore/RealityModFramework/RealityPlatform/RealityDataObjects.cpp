@@ -439,9 +439,9 @@ Utf8String RealityDataBase::FootprintToRDSString(bvector<GeoPoint2d> footprint, 
     Utf8String filter = "{\"Coordinates\": [";
     for (size_t i = 0; i < footprint.size() - 1; i++)
         {
-        filter.append(Utf8PrintfString("{\"Long\": %f, \"Lat\": %f},", footprint[i].longitude, footprint[i].latitude));
+        filter.append(Utf8PrintfString("{\"Long\": %3.9f, \"Lat\": %3.9f},", footprint[i].longitude, footprint[i].latitude));
         }
-    filter.append(Utf8PrintfString("{\"Long\": %f, \"Lat\": %f}]}", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
+    filter.append(Utf8PrintfString("{\"Long\": %3.9f, \"Lat\": %3.9f}]}", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
     
     return filter;
     }

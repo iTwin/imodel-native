@@ -185,7 +185,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
     ASSERT_EQ(realityData->IsStreamed(), false);
     ASSERT_EQ(realityData->GetRealityDataType(), "3mx");
-    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Long\": 24.782876, \"Lat\": 59.922489},{\"Long\": 25.254485, \"Lat\": 59.922489},{\"Long\": 25.254485, \"Lat\": 60.297839},{\"Long\": 24.782876, \"Lat\": 60.297839},{\"Long\": 24.782876, \"Lat\": 59.922489}]}");
+    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Long\": 24.782875700, \"Lat\": 59.922488700},{\"Long\": 25.254484800, \"Lat\": 59.922488700},{\"Long\": 25.254484800, \"Lat\": 60.297838900},{\"Long\": 24.782875700, \"Lat\": 60.297838900},{\"Long\": 24.782875700, \"Lat\": 59.922488700}]}");
     ASSERT_EQ(realityData->GetThumbnailDocument(), "Helsinki/thumbnail.jpg");
     ASSERT_EQ(realityData->GetMetadataURL(), "www.bigTest.com");
     ASSERT_EQ(realityData->GetCopyright(), "Copyright goes here");
