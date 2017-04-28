@@ -1730,7 +1730,7 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
 
             GetPathForTerrainRegion(terrainPath, coverageId, m_basePath);
 
-            if (pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
+            if (nullptr != pScalableMesh->GetScalableMesh(false) && pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
                 {                                            
                 pScalableMesh->GetScalableMesh()->SetInvertClip(true);
                 bvector<DPoint3d> regionData;
