@@ -61,6 +61,8 @@ extern bool   GET_HIGHEST_RES;
 #ifndef VANCOUVER_API
 #include "ScalableMeshGroup.h"
 #endif
+
+#include "ScalableMeshMesher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -1747,6 +1749,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     if (returnedNodes.size() == 0) return ERROR;
     bvector<DPoint3d> current;
     DRange3d rangeCurrent = DRange3d::From(current);
+	//PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+	//bmap<DPoint3d, DPoint3d, DPoint3dZYXTolerancedSortComparison> ptsWithTolerance(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+	bvector<bvector<DPoint3d>> bounds;
     for (auto& node : returnedNodes)
         {
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
@@ -1755,7 +1760,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
-            if (current.empty()) current = bound;
+           /* if (current.empty()) current = bound;
             else
                 {
                 VuPolygonClassifier vu(1e-8, 0);
@@ -1770,9 +1775,54 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
                         rangeCurrent = rangeXYZ;
                         }
                     }
-                }
+                }*/
+			/*for (auto& pt : bound)
+			    {
+				if (ptsWithTolerance.count(pt) == 0) ptsWithTolerance[pt] = pt;
+				pt = ptsWithTolerance[pt];
+			    }*/
+			bound.push_back(bound[0]);
+			if (bsiGeom_getXYPolygonArea(&bound[0], (int)bound.size()) > 0)
+				std::reverse(bound.begin(), bound.end());
+			bounds.push_back(bound);
+			//polyface->AddPolygon(bound);
             }
         }
+	MergePolygonSets(bounds);
+	current = bounds[0];
+	//polyface->Compress();
+	//size_t numOpen = 0, numClosed = 0;
+/*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
+	int n = 0;
+	for (visitor->Reset(); visitor->AdvanceToNextFace();)
+	{
+		{
+			WString namePoly = WString(L"C:\\work\\2017q2\\cs\\") + L"newpoly_";
+			namePoly.append(to_wstring(n).c_str());
+			namePoly.append(L".p");
+			FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+			size_t polySize = visitor->Point().size();
+			fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
+			fwrite(&visitor->Point()[0], sizeof(DPoint3d), polySize, polyCliPFile);
+			fclose(polyCliPFile);
+		}
+		++n;
+	}*/
+
+	/*CurveVectorPtr boundCurve = polyface->ExtractBoundaryStrings(numOpen, numClosed);
+	for (auto& curve : *boundCurve)
+	    {
+		if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType() && curve->GetChildCurveVectorCP()->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
+ 		    {
+			bvector<bvector<DPoint3d>> loops;
+			curve->GetChildCurveVectorCP()->CollectLinearGeometry(loops);
+			if (loops.empty())
+			    {
+				current = loops.front();
+				break;
+			    }
+		    }
+	    }*/
     if (current.size() == 0) return ERROR;
 
     boundary = current;
