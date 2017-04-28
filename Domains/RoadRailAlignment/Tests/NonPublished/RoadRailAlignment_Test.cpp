@@ -113,15 +113,15 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
     bset<DgnClassId> classIds;
     classIds.insert(AlignmentStation::QueryClassId(*projectPtr));
 
-    auto segments = alignmentPtr->QuerySegments(classIds);
-    ASSERT_EQ(2, segments.size());
+    auto locations = alignmentPtr->QueryLinearLocations(classIds);
+    ASSERT_EQ(2, locations.size());
 
-    segments = alignmentPtr->QuerySegments(classIds, 75.0, 125.0);
-    ASSERT_EQ(1, segments.size());
+    locations = alignmentPtr->QueryLinearLocations(classIds, 75.0, 125.0);
+    ASSERT_EQ(1, locations.size());
 
-    segments = alignmentPtr->QuerySegments(classIds, NullableDouble(), 75.0);
-    ASSERT_EQ(1, segments.size());
+    locations = alignmentPtr->QueryLinearLocations(classIds, NullableDouble(), 75.0);
+    ASSERT_EQ(1, locations.size());
 
-    segments = alignmentPtr->QuerySegments(classIds, 125.0);
-    ASSERT_EQ(0, segments.size());
+    locations = alignmentPtr->QueryLinearLocations(classIds, 125.0);
+    ASSERT_EQ(0, locations.size());
     }
