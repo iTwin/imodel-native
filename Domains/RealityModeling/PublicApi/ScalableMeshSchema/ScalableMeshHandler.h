@@ -238,6 +238,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
 		SCALABLEMESH_SCHEMA_EXPORT void ClearExtraFiles();
 
+		SCALABLEMESH_SCHEMA_EXPORT void CompactExtraFiles();
+
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

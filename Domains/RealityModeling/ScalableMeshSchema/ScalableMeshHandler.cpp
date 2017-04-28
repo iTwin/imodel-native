@@ -1270,6 +1270,14 @@ void ScalableMeshModel::ClearExtraFiles()
 	}
 }
 
+void ScalableMeshModel::CompactExtraFiles()
+{
+	if (!m_smPtr.IsValid())
+		return;
+
+	m_smPtr->CompactExtraFiles();
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
