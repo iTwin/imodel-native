@@ -25,14 +25,16 @@ enum OperationType
     CREATE_RELATIONSHIP,
     DETAILS,
     LIST_REALITYDATA,
+    LIST_RELATIONSHIP,
+    DOWNLOAD,
     ENTERPRISE_STAT,
     AZURE_ADDRESS,
     MODIFY_REALITYDATA,
     DELETE_RELATIONSHIP,
     DELETE_REALITYDATA,
-    DOWNLOAD,
+    NAVNODE, 
     last,
-    NAVNODE, // Not used
+
     };
 
 struct RawRequest
@@ -85,7 +87,6 @@ struct Stats
     size_t LogRequest(Utf8String req);
     void PrintStats();
     void WriteToFile(int userCount, Utf8String path);
-    int GetTotalRequests();
     };
 
 struct RPS
@@ -123,6 +124,8 @@ public:
 
     CURL* ListRealityData();
     void ValidateListRealityData(int activeUsers);
+    CURL* ListRelationship();
+    void ValidateListRelationship(int activeUsers);
     CURL* NavNodeFunc();
     void ValidateNavNode(int activeUsers);
     CURL* EnterpriseStat();

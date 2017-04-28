@@ -63,10 +63,10 @@
         <ECProperty propertyName="ResolutionInMeters" typeName="string" />
 
         <!-- [Optional] This string value can have 1 of those four states [PRIVATE, PUBLIC, PERMISSION, ENTERPRISE] -->
-        <!--PUBLIC -> Visible pour tout le monde de l’entreprise OU de l’extérieur de l’entreprise peu importe les droits d’accès -->
-        <!--ENTERPRISE -> Visible pour le monde de l’entreprise seulement peu importe les droits d’accès -->
-        <!--PERMISSION -> C’est le mode normal. Visible par le monde de l’entreprise qui ont les droits d’accès RDS_USE par un rôle IMS ou un rôle projet ou encore si la personne est propriétaire de la donnée -->
-        <!--PRIVATE -> Visible uniquement pas le propriétaire de la donnée -->
+        <!--PUBLIC -> Visible for everyone either from the enterprise or foreign to the enterprise regardless of any other access rights -->
+        <!--ENTERPRISE ->  Visible for everyone either from the enterprise regardless of any other access rights-->
+        <!--PERMISSION -> Normal mode. Data is accessible for everyone part of the enterprise that possess the access right 'RDS_USE' either through a corporate role or through project-based access definitions OR if the user is the owner of the reality data -->
+        <!--PRIVATE -> Data accessible only by the owner -->
         <ECProperty propertyName="Visibility" typeName="string" />
 
         <!-- [Optional] This is how we know if the directory is listable, since we have folder RealityData with over 800k documents flat -->
