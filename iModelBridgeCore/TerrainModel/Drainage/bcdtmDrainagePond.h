@@ -25,8 +25,8 @@ int bcdtmDrainage_determinePondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *dr
 int bcdtmDrainage_determineLowPointPondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,bool loadFlag,bool buildTable,void *userP,int& numLowPointPonds) ;
 int bcdtmDrainage_determinePondAboutLowPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,long lowPoint,bool loadFlag,bool boundaryFlag,long *exitPointP,long *priorPointP,long *nextPointP,DTM_POLYGON_OBJ **polygonPP,void *userP) ;
 int bcdtmDrainage_expandPondToExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector *zeroSlopePolygons,int *zeroSlopePointsIndexP,long startPoint,long *exitPointP,long *priorPointP,long *nextPointP);
-int bcdtmDrainage_scanPondForExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,long startPoint,double lowPointZ,long *exitPointFoundP,long *exitPointP,long *priorPointP,long *nextPointP) ;
-int bcdtmDrainage_testForPondExitPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,long *priorPointP,long *nextPointP,long *exitFromPointP) ;
+int bcdtmDrainage_scanPondForExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,long startPoint,double lowPointZ,bool& exitPointFoundP,long *exitPointP,long *priorPointP,long *nextPointP) ;
+int bcdtmDrainage_testForPondExitPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,long *priorPointP,long *nextPointP,bool& exitFromPointP) ;
 int bcdtmDrainage_expandPondAboutPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,double lastArea,long *startPointP,double *areaP,long *extStartPntP,long *extEndPntP) ;
 
 int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,bool loadFlag,bool buildTable,void* userP,int& numSumpLinePonds) ;

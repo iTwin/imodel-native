@@ -181,11 +181,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -N0  re HeaderFiles Core</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -N0  re TerrainModel:HeaderFiles Core</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>bb -N0 re HeaderFiles Core -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -N0 re HeaderFiles Core --bmakeOpt="-a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 re TerrainModel:HeaderFiles Core -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -N0 re TerrainModel:HeaderFiles Core --bmakeOpt="-a"</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
