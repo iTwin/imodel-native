@@ -32,8 +32,6 @@
         <file src="libs\BeOpenSSL.lib"                      target="lib\native\BeOpenSSL.lib" />
         <file src="freetype2B02.dll"                        target="lib\native\freetype2B02.dll" />
         <file src="libs\freetype2.lib"                      target="lib\native\freetype2.lib" />
-        <file src="libv8.dll"                               target="lib\native\libv8.dll" />
-        <file src="libs\libv8.lib"                          target="lib\native\libv8.lib" />
         <file src="v8B02.dll"                               target="lib\native\v8B02.dll" />
         <file src="libs\v8.lib"                             target="lib\native\v8.lib" />
         <file src="v8_libbaseB02.dll"                       target="lib\native\v8_libbaseB02.dll" />
