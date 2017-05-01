@@ -35,7 +35,7 @@ namespace IndexECPlugin.Tests.Common
             return instance;
             }
 
-        static public IECInstance CreateIndexSEWDV (bool complete, IECSchema schema)
+        static public IECInstance CreateIndexSEWDV (IECSchema schema)
             {
             IECClass ecClass = schema.GetClass("SpatialEntityWithDetailsView");
             IECInstance instance = ecClass.CreateInstance();
@@ -61,7 +61,7 @@ namespace IndexECPlugin.Tests.Common
             instance["Dataset"].StringValue = "DatasetVal";
             instance["Date"].NativeValue = new DateTime(2012, 01, 01);
             instance["Classification"].StringValue = "Terrain";
-            instance["FileSize"].NativeValue = 123;
+            instance["FileSize"].NativeValue = (long) 123;
             instance["Streamed"].NativeValue = false;
             instance["SpatialDataSourceId"].StringValue = "1";
             instance["Occlusion"].DoubleValue = 1.23;

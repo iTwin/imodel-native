@@ -47,6 +47,7 @@ namespace IndexECPlugin.Source.Helpers
     internal class RDSDataFetcher : IRDSDataFetcher
         {
         string m_rdsUrlBase;
+        IHttpResponseGetter m_httpResponseGetter;
 
         public string RdsUrlBase 
             {
@@ -57,15 +58,13 @@ namespace IndexECPlugin.Source.Helpers
             }
         //const string RealityDataClass = "RealityData/";
 
-        string m_base64token;
-
         /// <summary>
         /// RDSDataFetcher constructor
         /// </summary>
-        /// <param name="base64token">Then IMS token used to communicate with RDS</param>
-        public RDSDataFetcher (string base64token)
+        /// <param name="httpResponseGetter">An httpResponseGetter object for communicating with RDS</param>
+        public RDSDataFetcher (IHttpResponseGetter httpResponseGetter)
             {
-            m_base64token = base64token;
+            m_httpResponseGetter = httpResponseGetter;
 
             string buddiRegionCode = ConfigurationRoot.GetAppSetting("RECPBuddiRegionCode");
             BUDDIClient buddiClient = new BUDDIClient();
@@ -96,44 +95,6 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        private string GetHttpResponse (string url)
-            {
-            using ( var handler = new WebRequestHandler() )
-                {
-                handler.ServerCertificateValidationCallback = (sender, certificate, chain, errors) =>
-                {
-                    if ( certificate.GetCertHashString() == ConfigurationRoot.GetAppSetting("RECPRdsCertHashString") )
-                        {
-                        return true;
-                        }
-
-                    return errors == SslPolicyErrors.None;
-
-                };
-
-                using ( HttpClient client = new HttpClient(handler) )
-                    {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_base64token);
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    using ( HttpResponseMessage response = client.GetAsync(url).Result )
-                        {
-                        if ( response.IsSuccessStatusCode )
-                            {
-                            using ( HttpContent content = response.Content )
-                                {
-                                return content.ReadAsStringAsync().Result;
-                                }
-                            }
-                        else
-                            {
-                            throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
-                            }
-                        }
-                    }
-                }
-            //return null;
-            }
-
         /// <summary>
         /// Method for querying information on a single entity
         /// </summary>
@@ -144,7 +105,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID;
 
-            JObject jsonResponse = JObject.Parse(GetHttpResponse(url));
+            JObject jsonResponse = JObject.Parse(m_httpResponseGetter.GetHttpResponse(url));
             JArray array = jsonResponse["instances"] as JArray;
 
             return array.First as JObject;
@@ -168,7 +129,7 @@ namespace IndexECPlugin.Source.Helpers
                 classificationFilter = "&$filter=" + String.Join("+and+", convertedCriteria);
                 }
             string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "?polygon=" + polygon + classificationFilter;
-            JObject jsonResponse = JObject.Parse(GetHttpResponse(url));
+            JObject jsonResponse = JObject.Parse(m_httpResponseGetter.GetHttpResponse(url));
 
             return jsonResponse["instances"] as JArray;
             }
@@ -199,6 +160,65 @@ namespace IndexECPlugin.Source.Helpers
                 //    return "(" + string.Join("+or+", criteria.Value.Split(',').Select(s => propertyName + "+eq+" + s)) + ")";
                 default:
                     throw new UserFriendlyException("This type of criteria is not possible when querying " + IndexConstants.RdsSourceName + " source.");
+                }
+            }
+        }
+
+    /// <summary>
+    /// Class used for communicating with RDS, specialized in setting the IMS Token.
+    /// </summary>
+    public class RdsHttpResponseGetter : IHttpResponseGetter
+        {
+        readonly string m_base64Token;
+
+        /// <summary>
+        /// RdsHttpResponseGetter constructor
+        /// </summary>
+        /// <param name="base64Token">The IMS token</param>
+        public RdsHttpResponseGetter(string base64Token)
+            {
+            m_base64Token = base64Token;
+            }
+
+        /// <summary>
+        /// Get the http response to an url. Returns OperationFailedException if the status code is not successful
+        /// </summary>
+        /// <param name="url">The url</param>
+        /// <returns>The http response</returns>
+        public string GetHttpResponse (string url)
+            {
+            using ( var handler = new WebRequestHandler() )
+                {
+                handler.ServerCertificateValidationCallback = (sender, certificate, chain, errors) =>
+                {
+                    if ( certificate.GetCertHashString() == ConfigurationRoot.GetAppSetting("RECPRdsCertHashString") )
+                        {
+                        return true;
+                        }
+
+                    return errors == SslPolicyErrors.None;
+
+                };
+
+                using ( HttpClient client = new HttpClient(handler) )
+                    {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_base64Token);
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    using ( HttpResponseMessage response = client.GetAsync(url).Result )
+                        {
+                        if ( response.IsSuccessStatusCode )
+                            {
+                            using ( HttpContent content = response.Content )
+                                {
+                                return content.ReadAsStringAsync().Result;
+                                }
+                            }
+                        else
+                            {
+                            throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                            }
+                        }
+                    }
                 }
             }
         }

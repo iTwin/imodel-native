@@ -87,7 +87,7 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             m_query = query;
             m_querySettings = querySettings;
-            m_usgsDataFetcher = new USGSDataFetcher(query);
+            m_usgsDataFetcher = new USGSDataFetcher(query, new GenericHttpResponseGetter("USGS", new TimeSpan(0, 0, 15)));
             m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
             m_schema = schemaModule;
 

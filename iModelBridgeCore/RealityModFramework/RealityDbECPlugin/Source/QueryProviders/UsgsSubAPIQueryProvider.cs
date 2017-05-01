@@ -50,7 +50,7 @@ namespace IndexECPlugin.Source.QueryProviders
         public UsgsSubAPIQueryProvider(ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema)
             : base(query, querySettings, dbQuerier, schema, DataSource.USGS, true)
             {
-            m_usgsDataFetcher = new USGSDataFetcher(query);
+            m_usgsDataFetcher = new USGSDataFetcher(query, new GenericHttpResponseGetter("USGS", new TimeSpan(0, 0, 15)));
             }
 
         /// <summary>

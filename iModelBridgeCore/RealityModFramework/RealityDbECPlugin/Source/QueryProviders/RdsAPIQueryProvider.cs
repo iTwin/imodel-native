@@ -45,7 +45,7 @@ namespace IndexECPlugin.Source.QueryProviders
         public RdsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema, string base64token)
             : base(query, querySettings, dbQuerier, schema, DataSource.RDS, false)
             {
-            m_rdsDataFetcher = new RDSDataFetcher(base64token);
+            m_rdsDataFetcher = new RDSDataFetcher(new RdsHttpResponseGetter(base64token));
             }
 
         /// <summary>
