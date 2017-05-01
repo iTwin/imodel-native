@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/DgnMaterial.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1380,9 +1379,9 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
     auto txnPos = db.Txns().GetCurrentTxnId();
-    DgnTrueColor color(DgnTrueColor::CreateParams(db, ColorDef(1,2,3), "la", "lala"));
-    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(color));
-    EXPECT_TRUE(color.Insert().IsValid());
+    CategorySelector element(db.GetDictionaryModel(), TEST_NAME);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(element));
+    EXPECT_TRUE(element.Insert().IsValid());
 
     // Cannot relinquish locks with uncommitted changes
     EXPECT_EQ(RepositoryStatus::PendingTransactions, db.BriefcaseManager().RelinquishLocks());

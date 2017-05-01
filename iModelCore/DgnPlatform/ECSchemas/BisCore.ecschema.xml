@@ -1768,20 +1768,15 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="TrueColor" modifier="Sealed" displayLabel="True Color">
+    <ECEntityClass typeName="ColorBook" modifier="Sealed" displayLabel="Color Book">
+        <!-- Individual colors stored in JsonProperties -->
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Data" typeName="int">
-          <ECCustomAttributes>
-              <CustomHandledProperty>
-                  <StatementTypes>3</StatementTypes>
-              </CustomHandledProperty>
-          </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-
+    
     <ECEntityClass typeName="MaterialElement" modifier="Sealed" displayLabel="Material">
         <BaseClass>DefinitionElement</BaseClass>
         <BaseClass>IParentElement</BaseClass>
