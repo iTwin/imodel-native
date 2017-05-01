@@ -900,6 +900,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 struct CompatibilityTest2 : public DgnDbTestFixture
     {
     std::vector<ECClassCP> List;
+    std::vector<ECClassCP> ValidClassesForInstanceInsertion;
     DrawingModelPtr drawingModel;
 
     std::vector<ECClassCP> getDerivedClasses(ECClassCP classToTraverse);
@@ -912,6 +913,8 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     void InsertInstancesForInformationPartitionElement(ECClassCP className);
     void InsertInstancesForInformationContentElementHeirarchy(ECClassCP className);
     DgnElementPtr createElement(ECN::StandaloneECInstancePtr instance);
+    std::vector<ECClassCP> GetValidClassesForInstanceInsertion(DgnDbR db);
+    void SetUpDbFromBaselineCopy(Utf8CP, Utf8CP, DbResult);
     };
 
     /*-----------------------------------------------------------------------------**//**
@@ -924,7 +927,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 
         for (ECClassP Class : DerivedClasses)
             {
-            if (Class->GetName() != "Category" && Class->GetName() != "Texture"  && Class->GetName() != "ViewDefinition" && Class->GetName() != "SubCategory")
+            if (Class->GetName() != "Category" && Class->GetName() != "Texture"  && Class->GetName() != "ViewDefinition" && Class->GetName() != "SubCategory" && Class->GetName() != "InformationPartitionElement")
                 {
                 List.push_back(Class);
                 if (Class != nullptr)
@@ -991,7 +994,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
                 ASSERT_TRUE(ClassInstance.IsValid());
 
-                if (className == "ViewAttachment")
+                if (className == BIS_CLASS_ViewAttachment)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_sheetModelId)));
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("View", ECN::ECValue(m_viewId)));
@@ -1090,11 +1093,11 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the heirarchy
         for (ECClassCP ecClass : GeometricElementHeirarchy)
             {
-            if (ecClass->GetName() == "GeometricElement2d")
+            if (ecClass->GetName() == BIS_CLASS_GeometricElement2d)
                 {
                 InsertInstancesForGeometricElement2d(ecClass);
                 }
-            else if (ecClass->GetName() == "GeometricElement3d")
+            else if (ecClass->GetName() == BIS_CLASS_GeometricElement3d)
                 {
                 InsertInstancesForGeometricElement3d(ecClass);
                 }
@@ -1185,7 +1188,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 
                 //Setting values for Model and Code
                 DgnCode code = DgnCode::CreateEmpty();
-                if (className == "Subject")
+                if (className == BIS_CLASS_Subject)
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(rootSubject->GetModelId())));
                     }
@@ -1342,28 +1345,107 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         //Traversing through the immediate derived classes of InformationContentElementHeirarchy
         for (ECClassCP ecClass : InformationContentElementHeirarchy)
             {
-            if (ecClass->GetName() == "Document")
+            if (ecClass->GetName() == BIS_CLASS_Document)
                 {
                 InsertInstancesForDocument(ecClass);
                 }
 
-            else if (ecClass->GetName() == "InformationReferenceElement")
+            else if (ecClass->GetName() == BIS_CLASS_InformationReferenceElement)
                 {
                 InsertInstancesForInformationReferenceElement(ecClass);
                 }
 
-            else if (ecClass->GetName() == "DefinitionElement")
+            else if (ecClass->GetName() == BIS_CLASS_DefinitionElement)
                 {
                 InsertInstancesForDefinitionElement(ecClass);
                 }
 
             //Uncomment when implementation is fixed.
-            //else if (ecClass->GetName() == "InformationPartitionElement")
+            //else if (ecClass->GetName() == BIS_CLASS_InformationPartitionElement)
             //    {
             //    InsertInstancesForInformationPartitionElement(ecClass);
             //    }
 
             }
+        }
+
+    /*---------------------------------------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Maha.Nasir                          04/17
+    //Returns the list of classes in the Element heirarchy of BisCore schema for which the instance insertion is possible.
+    +---------------+---------------+---------------+---------------+---------------+------------------+------------------*/
+    std::vector<ECClassCP> CompatibilityTest2::GetValidClassesForInstanceInsertion(DgnDbR db)
+        {
+        ECSchemaCP BisSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME);
+        EXPECT_TRUE(BisSchema != nullptr);
+
+        ECClassCP ElementClass = BisSchema->GetClassCP(BIS_CLASS_Element);
+        EXPECT_TRUE(ElementClass != nullptr);
+
+        std::vector<ECClassCP> DerivedClassList = getDerivedClasses(ElementClass);
+
+        for (ECClassCP ecClass : DerivedClassList)
+            {
+            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+                {
+                ValidClassesForInstanceInsertion.push_back(ecClass);
+                }
+            }
+        return ValidClassesForInstanceInsertion;
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Maha Nasir                    04/2017
+    // Creates and opens the copy of the perserved Bim
+    //---------------------------------------------------------------------------------------
+    void CompatibilityTest2::SetUpDbFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
+        {
+        //Source File Path
+        BeFileName sourceFileName;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sourceFileName);
+        sourceFileName.AppendToPath(L"CompatibilityTestFiles");
+        sourceFileName.AppendToPath(BeFileName(versionString, BentleyCharEncoding::Utf8));
+        sourceFileName.AppendToPath(L"CompatibilityTest.bim");
+        ASSERT_TRUE(sourceFileName.DoesPathExist());
+
+        //Destination file path
+        BeFileName destFileName;
+        BeTest::GetHost().GetOutputRoot(destFileName);
+        destFileName.AppendToPath(BeFileName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8));
+        BeFileName::CreateNewDirectory(destFileName.GetName());
+        ASSERT_TRUE(destFileName.DoesPathExist());
+        destFileName.AppendToPath(BeFileName(Utf8PrintfString("%s%s", destBaseName, versionString).c_str(), BentleyCharEncoding::Utf8));
+        destFileName.AppendExtension(L"bim");
+        ASSERT_FALSE(destFileName.DoesPathExist());
+
+        //Creating copy of the source file.
+        BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceFileName, destFileName, true);
+        ASSERT_EQ(BeFileNameStatus::Success, copyStatus);
+
+        DbResult openStatus = BE_SQLITE_OK;
+
+        //Opening the copy
+        if (BE_SQLITE_OK != expectedFirstOpenStatus)
+            {
+            DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            ASSERT_EQ(expectedFirstOpenStatus, openStatus);
+            ASSERT_FALSE(db.IsValid());
+            }
+
+        if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
+            {
+            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+            openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+            DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+            ASSERT_EQ(BE_SQLITE_OK, openStatus);
+            ASSERT_TRUE(db.IsValid());
+            ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
+            ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
+            db->CloseDb();
+            }
+
+        m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        ASSERT_EQ(BE_SQLITE_OK, openStatus);
+        ASSERT_TRUE(m_db.IsValid());
         }
 
 //---------------------------------------------------------------------------------------------
@@ -1382,7 +1464,7 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
     ASSERT_TRUE(BisSchema != nullptr);
 
     //Getting the pointer of the Class
-    ECClassCP ElementClass = BisSchema->GetClassCP("Element");
+    ECClassCP ElementClass = BisSchema->GetClassCP(BIS_CLASS_Element);
     ASSERT_TRUE(ElementClass != nullptr);
 
     //Emptying the contents of the vector.
@@ -1401,14 +1483,42 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
         {
         List.push_back(ecClass);
 
-        if (ecClass->GetName() == "GeometricElement")
+        if (ecClass->GetName() == BIS_CLASS_GeometricElement)
             {
             InsertInstancesForGeometricElementHeirarchy(ecClass);
             }
 
-        else if (ecClass->GetName() == "InformationContentElement")
+        else if (ecClass->GetName() == BIS_CLASS_InformationContentElement)
             {
             InsertInstancesForInformationContentElementHeirarchy(ecClass);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------------
+// @bsimethod                                      Maha Nasir                  04/17
+// WIP: Reads the Instances from the preserved Bim and perform CRUD oerations on it.
+//+---------------+---------------+---------------+---------------+---------------+------------
+TEST_F(CompatibilityTest2, ModifyPreservedBim)
+    {
+    SetUpDbFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
+
+    DgnDbR db= GetDgnDb();
+
+    std::vector<ECClassCP> ClassList = GetValidClassesForInstanceInsertion(db);
+
+    for (ECClassCP ClassP : ClassList)
+        {
+        Utf8StringCR ClassName= ClassP->GetName();
+
+        Utf8PrintfString fullClassName("%s.%s", BIS_ECSCHEMA_NAME, ClassName.c_str());
+        ElementIterator iter= db.Elements().MakeIterator(fullClassName.c_str(), nullptr, "ORDER BY ECInstanceId");
+        ASSERT_TRUE(iter.BuildIdList<DgnElementId>().size() != 0) << "No instance found for Class:" << ClassName;
+
+        //Iterates through the instances of each class
+        for(auto element : iter)
+            {
+             ASSERT_TRUE(element.GetElementId().IsValid());
             }
         }
     }

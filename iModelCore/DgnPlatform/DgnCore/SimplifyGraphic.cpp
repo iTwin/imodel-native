@@ -1636,6 +1636,13 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
+    // TBD: Does clipping make any sense with tiles???
+    if (m_processor._ProcessTriMesh(args, *this))                                                                
+        return;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore == m_processor._GetUnhandledPreference(args, *this))
+        return;
+
     PolyfaceHeaderPtr polyface = args.ToPolyface();
     _AddPolyface(*polyface, true);
     }
@@ -1725,8 +1732,15 @@ void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoin
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners)
     {
+    // TBD: Does clipping make any sense with tiles???
+    if (m_processor._ProcessTile(tile, corners, *this))
+        return;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore == m_processor._GetUnhandledPreference(corners, *this))
+        return;
+
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = corners.m_pts[0];

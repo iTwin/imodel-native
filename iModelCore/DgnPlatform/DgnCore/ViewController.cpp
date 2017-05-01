@@ -16,7 +16,6 @@ void ViewFlags::FromJson(JsonValueCR val)
     {
     memset(this, 0, sizeof(*this));
     m_constructions = !val[json_noConstruct()].asBool();
-    m_text = !val[json_noText()].asBool();
     m_dimensions = !val[json_noDim()].asBool();
     m_patterns = !val[json_noPattern()].asBool();
     m_weights = !val[json_noWeight()].asBool();
@@ -56,7 +55,6 @@ Json::Value ViewFlags::ToJson() const
     {
     Json::Value val;
     if (!m_constructions) val[json_noConstruct()] = true;
-    if (!m_text) val[json_noText()] = true;
     if (!m_dimensions) val[json_noDim()] = true;
     if (!m_patterns) val[json_noPattern()] = true;
     if (!m_weights) val[json_noWeight()] = true;
