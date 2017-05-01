@@ -1773,7 +1773,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
-    static bool         s_doTileTree = false;
     
     if (!isModel3d)
         surfacesOnly = false;
@@ -1787,7 +1786,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-    if (s_doTileTree && nullptr != getTileTree)
+    if (nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }
