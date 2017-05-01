@@ -654,11 +654,19 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree (ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const
+Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree(Dgn::Render::SystemP renderSys) const
     { 
-    // TBD - Clipping...
-
     Load(renderSys);
 
     return m_scene;
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
+    {
+    return m_clip.IsValid() ? m_clip->Clone(nullptr) : nullptr;
+    }
+

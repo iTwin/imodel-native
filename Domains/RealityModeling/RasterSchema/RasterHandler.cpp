@@ -362,16 +362,23 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const
+Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree(Dgn::Render::SystemP renderSys) const
     { 
-    if (nullptr != GetClip().GetClipVector())
-        clip  = ClipVector::CreateCopy(*GetClip().GetClipVector());
-
     _Load(renderSys);
 
     return m_root;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ClipVectorPtr RasterModel::_GetPublishingClip () const
+    {
+    ClipVectorCP    clip = GetClip().GetClipVector();
+
+    return (nullptr == clip) ? nullptr : clip->Clone(nullptr);
+    }
 
 
 //----------------------------------------------------------------------------------------

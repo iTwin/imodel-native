@@ -226,7 +226,9 @@ public:
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
-    THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree (Dgn::ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const override;
+    THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const override;
+    THREEMX_EXPORT Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip() const override;
+
 
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
