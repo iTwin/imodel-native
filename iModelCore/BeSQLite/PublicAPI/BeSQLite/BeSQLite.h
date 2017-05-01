@@ -2152,10 +2152,26 @@ protected:
 
         BeMutex     m_mutex;
         Map         m_map;
+
+        BE_SQLITE_EXPORT void AddInternal(AppData::Key const& key, AppData* data);
+        BE_SQLITE_EXPORT AppData* FindInternal(AppData::Key const& key);
     public:
-        void Add(AppData::Key const& key, AppData* data);
+        void Add(AppData::Key const& key, AppData* data) { BeMutexHolder lock(m_mutex); return AddInternal(key, data); }
         StatusInt Drop(AppData::Key const& key);
-        AppData* Find(AppData::Key const& key);
+        AppData* Find(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        template<typename T> AppData* FindOrAdd(AppData::Key const& key, T createAppData)
+            {
+            BeMutexHolder lock(m_mutex);
+            AppData* data = FindInternal(key);
+            if (nullptr == data)
+                {
+                data = createAppData();
+                AddInternal(key, data);
+                }
+
+            return data;
+            }
+
         void Clear() { m_map.clear(); }
     };
 
@@ -2633,6 +2649,17 @@ public:
     //! @return A pointer to the AppData object with \c key. nullptr if not found.
     //! @note This function is thread-safe.
     BE_SQLITE_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+
+    //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
+    //! will be invoked to create it, and the returned AppData* will be added to the Db.
+    //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
+    //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
+    //! @return The existing or newly-added Db::AppData*
+    //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
+    template<typename T> AppData* FindOrAddAppData(AppData::Key const& key, T createAppData) const
+        {
+        return m_appData.FindOrAdd(key, createAppData);
+        }
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);

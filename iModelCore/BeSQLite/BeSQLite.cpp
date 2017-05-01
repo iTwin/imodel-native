@@ -2259,9 +2259,8 @@ StatusInt Db::DropAppData(AppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::AppDataCollection::Add(AppData::Key const& key, AppData* data)
+void Db::AppDataCollection::AddInternal(AppData::Key const& key, AppData* data)
     {
-    BeMutexHolder lock(m_mutex);
     auto entry = m_map.Insert(&key, data);
     if (!entry.second)
         {
@@ -2281,9 +2280,8 @@ void Db::AddAppData(AppData::Key const& key, AppData* appData) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::AppData* Db::AppDataCollection::Find(AppData::Key const& key)
+Db::AppData* Db::AppDataCollection::FindInternal(AppData::Key const& key)
     {
-    BeMutexHolder lock(m_mutex);
     auto entry = m_map.find(&key);
     return m_map.end() == entry ? nullptr : entry->second.get();
     }
