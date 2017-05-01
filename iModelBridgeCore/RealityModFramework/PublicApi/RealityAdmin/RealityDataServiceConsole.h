@@ -94,6 +94,7 @@ private:
     void AzureAddress();
     void ChangeProps();
     void Delete();
+    void MassDelete();
     void Filter();
     void Relationships();
     void CreateRD();

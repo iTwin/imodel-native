@@ -1028,13 +1028,66 @@ void RealityDataConsole::ChangeProps()
         Details();
     }
 
+void RealityDataConsole::MassDelete()
+    {
+    std::string str, str2;
+
+    DisplayInfo(Utf8PrintfString("Using this command like this will delete ALL %d entries, from your most recent List/Dir command.\nAre you SURE? [ y / n ]", m_serverNodes.size()), DisplayOption::Question);
+    std::getline(*s_inputSource, str);
+    if (strstr(str.c_str(), "quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (str != "y")
+        return;
+
+    str2 = Utf8PrintfString("%d", m_serverNodes.size()).c_str();
+
+    DisplayInfo("To authenticate that you REALLY want to do this, please enter the number of entries to delete, as displayed above\n", DisplayOption::Question);
+    std::getline(*s_inputSource, str);
+    if (strstr(str.c_str(), "quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (str != str2)
+        return;
+
+    DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
+
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataDelete realityDataReq = RealityDataDelete(""); //dummy
+
+    bvector<Utf8String> errors = bvector<Utf8String>();
+
+    for(int i = 0; i < m_serverNodes.size(); ++i)
+        {
+        realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
+        rawResponse = RealityDataService::BasicRequest(&realityDataReq);
+        if (rawResponse.body.Contains("errorMessage"))
+            errors.push_back(m_serverNodes[i].GetInstanceId());
+        rawResponse.clear();
+        }
+    
+    if(!errors.empty())
+        {
+        DisplayInfo("There was an error removing the following items:\n", DisplayOption::Error);
+        for(int i = 0 ; i < errors.size() ; ++ i ) 
+            DisplayInfo(Utf8PrintfString("%s\n", errors[i]), DisplayOption::Error);
+        }
+
+    DisplayInfo("Mass Delete Complete\n", DisplayOption::Tip);
+
+    List();
+
+    }
+
 void RealityDataConsole::Delete()
     {
     if (m_currentNode == nullptr)
-        {
-        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
-        return;
-        }
+        return MassDelete();
+
     Utf8String className = m_currentNode->node.GetClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
