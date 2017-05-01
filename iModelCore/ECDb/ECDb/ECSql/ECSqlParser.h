@@ -71,9 +71,9 @@ private:
         {
     private:
         ECSqlParser const& m_parser;
-
+        BeMutexHolder m_lock;
     public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb) : m_parser(parser)
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb) : m_parser(parser), m_lock(ECSqlParser::GetMutex())
             {
             m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb));
             }
@@ -86,7 +86,7 @@ private:
 
     //No need to free this as it is a static member (See http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific)
     static connectivity::OSQLParser* s_sharedParser;
-
+    static BeMutex s_mutex;
 
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
@@ -194,6 +194,7 @@ public:
     ~ECSqlParser() {}
 
     std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql) const;
+    static BeMutex& GetMutex() { return s_mutex; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
