@@ -223,7 +223,6 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 #endif
 
 constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
-constexpr size_t s_maxFeaturesPerTile = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 50;
@@ -1151,7 +1150,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
 
     bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
     if (!m_maxGeometryCountExceeded)
-        m_maxGeometryCountExceeded = (++m_geometryCount > s_maxFeaturesPerTile);
+        m_maxGeometryCountExceeded = (++m_geometryCount > FeatureTable::GetMaxIndex());
 
     AddPolyfaces(geom, rangePixels, isContained);
     if (!m_options.WantSurfacesOnly())

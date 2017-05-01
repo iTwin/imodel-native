@@ -481,7 +481,7 @@ void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
         return;
 
     // Avoid allocating + populating big buffer of feature IDs unless necessary...
-    uint16_t index = m_table->GetIndex(feat);
+    uint32_t index = m_table->GetIndex(feat);
     if (!m_initialized)
         {
         // First feature - uniform.
