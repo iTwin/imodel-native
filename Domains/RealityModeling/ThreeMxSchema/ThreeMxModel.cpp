@@ -658,7 +658,7 @@ Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree(Dgn::Render::System
     { 
     Load(renderSys);
 
-    return m_scene;
+    return m_scene.get();
     }
 
 

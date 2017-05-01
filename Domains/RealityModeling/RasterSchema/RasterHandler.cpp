@@ -366,7 +366,7 @@ Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree(Dgn::Render::SystemP
     { 
     _Load(renderSys);
 
-    return m_root;
+    return m_root.get();
     }
 
 
