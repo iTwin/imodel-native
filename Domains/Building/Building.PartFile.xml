@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="Building" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="ECDb"            PartFile="ECDb"         Repository="ECDb"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects"    Repository="ecobjects" />
+        <SubPart PartName="DgnPlatformLib"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)Buildinging$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Buildinging$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="Building.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Building"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ArchitecturalPhysical*.xml
+            </Files>
+            <Directory SourceName="Dox/Pages/Building" SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/>
+        </Bindings>
+    </Part>
+
+<!-- NOT YET
+    
+    <Part Name="BuildingPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json  +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+        <SubPart PartName="Building"/>
+        <SubPart PartName="BuildingView"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Building"/>
+        </Bindings>
+    </Part>
+-->
+
+<!-- NOT YET
+    <Part Name="BuildingView" BentleyBuildMakeFile="View/View.mke" ApiNumber="B02">
+        <SubPart PartName="BeSQLite"          PartFile="BeSQLite"    Repository="BeSQLite" />
+        <SubPart PartName="ECDb"              PartFile="ECDb"        Repository="ECDb" />
+        <SubPart PartName="DgnPlatformDll"    PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnView"           PartFile="DgnDisplay"  Repository="DgnDisplay" />
+        <SubPart PartName="Building"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingView$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingView$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+-->
+
+<!-- NOT YET
+
+    <Part Name="BuildingDocs" DeferType="BuildDocs">
+        <SubPart PartName="BuildingPublishedApi" />
+        <SubPart PartName="BuildingDocsBuildCodeSamples" />
+    </Part>
+
+    <Part Name="BuildingDocsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnDomains/Building/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=Buildingsamplecode -dPolicyFile=$(SrcRoot)DgnDomains/Building/BuildingPolicy.mki">
+        <SubPart PartName="BuildingDocsExtractCodeSamples" />
+    </Part>
+  
+    <Part Name="BuildingDocsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)DgnDomains/Building/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=Building/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/Building">
+        <SubPart PartName="BuildingPublishedApi" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/Building" SubPartDirectory="Dox/Extractions/Building"/>
+        </Bindings>
+    </Part>
+-->
+<!-- NOT YET
+    
+    <!-- ======================================================================================================== 
+      Build Unit Tests 
+     ======================================================================================================== ->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+        <Bindings>
+            <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="Building" SubPartDirectory="UnitTests/Building">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas">Delivery/UnitTests/ECSchemas/*.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="Building" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="Building/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackdoorForUnitTests" />
+        <SubPart PartName="BuildingPublishedApi"/>
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="Building/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate ->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts ->
+    
+    <Product Name="Building-Tests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke"
+    BentleyBuildMakeOptions="-dTEST_NAME=BuildingTests -dTEST_COLLECTION_PRODUCT=Building-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Building-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BuildingTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BuildingTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Building-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Building-Gtest/BuildingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Building-Gtest" />
+        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> ->
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingTests.log</Files>
+        </Bindings>
+    </Part>
+-->
+
+</BuildContext>

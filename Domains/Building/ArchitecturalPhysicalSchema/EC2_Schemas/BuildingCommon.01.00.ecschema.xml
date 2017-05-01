@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BuildingCommon" nameSpacePrefix="bldcom" version="1.0" description="This schema contains Classes the span the building schemas" displayLabel="Building Common" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>BuildingCommon.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Classification" description="Contains the definition for the Classifications that are applied to building elements" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="OmniClass" typeName="string" displayLabel="Omni Class" />
+        <ECProperty propertyName="OmniClassDescription" typeName="string" displayLabel="Omni Class Description" />
+        <ECProperty propertyName="MasterFormat" typeName="string" displayLabel="Master Format" />
+        <ECProperty propertyName="MasterFormatDescription" typeName="string" displayLabel="Master Format Description" />
+        <ECProperty propertyName="UniFormat" typeName="string" />
+        <ECProperty propertyName="UniFormatDescription" typeName="string" displayLabel="UniFormat Description" />
+    </ECClass>
+    <ECClass typeName="Manufacturer" description="This is a class to group the Manufacturer properties applied to Building Classes" isDomainClass="True">
+        <ECProperty propertyName="Manufacturer" typeName="string" />
+        <ECProperty propertyName="ModelNumber" typeName="string" displayLabel="Model Number" />
+        <ECProperty propertyName="ManufacturerURL" typeName="string" displayLabel="Manufacturer URL" />
+    </ECClass>
+</ECSchema>
