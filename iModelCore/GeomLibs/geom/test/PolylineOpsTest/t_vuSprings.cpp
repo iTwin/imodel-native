@@ -63,6 +63,11 @@ TEST(BCS,SpringModelB)
         DPoint3d::From (30,35),
         DPoint3d::From (50,35),
         DPoint3d::From (50,53),
+        DPoint3d::From (30,53),
+        DPoint3d::From (30,60),
+        DPoint3d::From (50,60),
+        DPoint3d::From (50,80),
+        DPoint3d::From (0, 70),
         DPoint3d::From (0,53),
         DPoint3d::From (0,30),
         DPoint3d::From (10,30),
@@ -113,6 +118,12 @@ TEST(BCS,SpringModelB)
         sm.AddStation (DPoint3d::From (45,15), 8.0);
         sm.AddStation (DPoint3d::From (55,15), 8.0);
         sm.AddStation (DPoint3d::From (65,15), 8.0);
+
+        sm.AddStation (DPoint3d::From (35,65), 8.0);
+        sm.AddStation (DPoint3d::From (45,65), 8.0);
+        sm.AddStation (DPoint3d::From (45,75), 8.0);
+        sm.AddStation (DPoint3d::From (25,70), 8.0);
+
 
         sm.SolveSprings (doProjection, doLaplace);
         Check::SaveTransformed (wall);
