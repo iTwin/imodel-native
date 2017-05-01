@@ -588,16 +588,16 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
-    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-
-    if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
-        {
-        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedOrPrimaryTable());
-        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedOrPrimaryTable());
-        }
+    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap);
+    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap);
 
     if (idProp == nullptr || relECClassIdProp == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (idProp->GetTable().GetId() !=relECClassIdProp->GetTable().GetId())
         {
         BeAssert(false);
         return ERROR;

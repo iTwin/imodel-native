@@ -33,7 +33,28 @@ SystemPropertyMap::PerTableIdPropertyMap const* SystemPropertyMap::FindDataPrope
 
     return nullptr;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+SystemPropertyMap::PerTableIdPropertyMap const* SystemPropertyMap::FindDataPropertyMap(ClassMap const& classMap) const
+    {
+    PerTableIdPropertyMap const* last = nullptr;
+    for (DbTable const* table : classMap.GetTables())
+        {
+        if (PerTableIdPropertyMap const* current = FindDataPropertyMap(*table))
+            {
+            if (last)
+                {
+                BeAssert(false && "DataProperty must belong to one of the table else its a programmer error");
+                return nullptr;
+                }
+            else
+                last = current;
+            }
+        }
 
+    return last;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------

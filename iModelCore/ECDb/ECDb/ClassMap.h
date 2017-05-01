@@ -89,7 +89,7 @@ struct ClassMap : RefCountedBase
         enum class PropertyMapInheritanceMode
             {
             NotInherited, //!< indicates that base property map is not inherited, but created from scratch
-            Clone //! inherited property maps are cloned from the base class property map
+            Clone //! inherited property maps areGet cloned from the base class property map
             };
 
         struct TablePerHierarchyHelper final

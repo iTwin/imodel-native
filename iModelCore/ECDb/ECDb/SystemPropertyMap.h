@@ -72,7 +72,8 @@ struct SystemPropertyMap : PropertyMap
 
         PerTableIdPropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
         PerTableIdPropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
-        std::vector<PerTableIdPropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
+        PerTableIdPropertyMap const* FindDataPropertyMap(ClassMap const&) const;
+                std::vector<PerTableIdPropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
