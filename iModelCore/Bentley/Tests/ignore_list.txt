@@ -37,3 +37,11 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
 
 AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
     # bim0200, x64, NDEBUG, PRG, Hang
+
+WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
+    # bim0200, x64, NDEBUG, PRG, Random
+    # [ RUN      ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
+    # e:\Builds\dcsdk02000138\Source\Bentley\Tests\Published\Tasks\WorkerThreadTests.cpp(38): error: Value of: tWeak.expired()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops (18 ms)
