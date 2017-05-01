@@ -8,6 +8,36 @@
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+Utf8CP oldStandardSchemaNames[] =
+    {
+    "Bentley_Standard_CustomAttributes",
+    "Bentley_Standard_Classes",
+    "Bentley_ECSchemaMap",
+    "EditorCustomAttributes",
+    "Bentley_Common_Classes",
+    "Dimension_Schema",
+    "iip_mdb_customAttributes",
+    "KindOfQuantity_Schema",
+    "rdl_customAttributes",
+    "SIUnitSystemDefaults",
+    "Unit_Attributes",
+    "Units_Schema",
+    "USCustomaryUnitSystemDefaults",
+    "ECDbMap"
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                 05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IsOldStandardSchema(Utf8String schemaName)
+    {
+    for (Utf8CP* cur = oldStandardSchemaNames, *end = cur + _countof(oldStandardSchemaNames); cur < end; ++cur)
+        if (schemaName.Equals(*cur))
+            return true;
+
+    return false;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -102,7 +132,7 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
             }
         }
     }
-
+  
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -124,13 +154,25 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
     for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = ref.second;
-        if (!refSchema->IsStandardSchema())
+        Utf8String refName = refSchema->GetName();
+
+        if (!IsOldStandardSchema(refName))
             continue;
-        if (refSchema->GetName().EqualsIAscii("ECDbMap") && refSchema->GetVersionRead() > 1) // Latest ECDbMap is valid
-            continue;
+        if (refName.EqualsIAscii("ECDbMap"))
+            {
+            if (refSchema->GetVersionRead() <= 1) // Only the latest ECDbMap is valid
+                {
+                LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
+                    schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+
+                status = ECObjectsStatus::Error;
+                }
+            }
         else
             {
-            LOG.errorv("Failed to validate '%s' since it references the standard schema '%s'", schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+            LOG.errorv("Failed to validate '%s' since it references the old standard schema '%s'. Only new standard schemas should be used.",
+                schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+
             status = ECObjectsStatus::Error;
             }
         }

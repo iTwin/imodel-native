@@ -13,6 +13,40 @@ using namespace BentleyApi::ECN;
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaValidatorTests : ECTestFixture {};
+Utf8CP oldStandardSchemaNames[] =
+{
+    "Bentley_Standard_CustomAttributes",
+    "Bentley_Standard_Classes",
+    "Bentley_ECSchemaMap",
+    "EditorCustomAttributes",
+    "Bentley_Common_Classes",
+    "Dimension_Schema",
+    "iip_mdb_customAttributes",
+    "KindOfQuantity_Schema",
+    "rdl_customAttributes",
+    "SIUnitSystemDefaults",
+    "Unit_Attributes",
+    "Units_Schema",
+    "USCustomaryUnitSystemDefaults",
+    "ECDbMap"
+};
+
+Utf8CP newStandardSchemaNames[] =
+{
+    "CoreClasses",
+    "CoreCustomAttributes",
+    "SchemaLocalizationCustomAttributes",
+};
+
+void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaReadContextPtr context, bool shouldPassValidation, Utf8CP message)
+    {
+    SchemaKey refKey = SchemaKey(schemaName, 1, 0);
+    ECSchemaPtr refSchema = context->LocateSchema(refKey, SchemaMatchType::Latest);
+    ASSERT_TRUE(refSchema.IsValid());
+    schema->AddReferencedSchema(*refSchema.get());
+    EXPECT_TRUE(shouldPassValidation == ECSchemaValidator::Validate(*schema)) << message;
+    schema->RemoveReferencedSchema(*refSchema);
+    }
 
 TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     {
@@ -101,21 +135,22 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     {
     // Test uncessful validation of reference to standard schema
     {
-    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-        <ECSchemaReference name="ECDbMap" version="01.00" alias="ref"/>
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECEntityClass typeName="TestClass"/>
     </ECSchema>)xml";
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema is not latest version";
+    for (Utf8CP* cur = oldStandardSchemaNames, *end = cur + _countof(oldStandardSchemaNames); cur < end; ++cur)
+        CheckStandardAsReference(schema, *cur, context, false, "Old standard schemas are used as a reference. Validation should fail.");
+    for (Utf8CP* cur = newStandardSchemaNames, *end = cur + _countof(newStandardSchemaNames); cur < end; ++cur)
+        CheckStandardAsReference(schema, *cur, context, true, "New standard schemas are used as a reference. Validation should succeed.");
 
-       
-    // Change reference to now be an updated ECDbMap schema
+    // Use an updated ECDbMap schema as a reference
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="ECDbMap" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECEntityClass typeName="TestClass"/>
