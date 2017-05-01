@@ -625,7 +625,7 @@ struct GeometryCollector : RangeIndex::Traverser
     void Insert(double diagonalSq, DgnElementId elemId)
         {
         m_entries.Insert(diagonalSq, elemId);
-        if (m_entries.size() > s_maxFeaturesPerTile)
+        if (m_entries.size() > FeatureTable::GetMaxIndex())
             m_entries.erase(--m_entries.end()); // remove the smallest element. Note element != feature - we may need to skip more elements later.
         }
 
@@ -664,9 +664,9 @@ struct GeometryCollector : RangeIndex::Traverser
             if (CheckStop())
                 return TileGeometryProcessor::Result::Aborted;
 
-            if (m_processor.GetGeometryCount() >= s_maxFeaturesPerTile)
+            if (m_processor.GetGeometryCount() >= FeatureTable::GetMaxIndex())
                 {
-                m_processor.TruncateGeometryList(s_maxFeaturesPerTile);
+                m_processor.TruncateGeometryList(FeatureTable::GetMaxIndex());
                 break;
                 }
             }
