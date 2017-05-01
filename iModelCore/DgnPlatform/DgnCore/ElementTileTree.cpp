@@ -616,16 +616,23 @@ struct GeometryCollector : RangeIndex::Traverser
     TileGeometryProcessor&      m_processor;
     GeometryProcessorContext&   m_context;
     FBox3d                      m_range;
+    uint32_t                    m_maxFeaturesPerTile = 2048*1024;
     bool                        m_aborted = false;
 
-    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context) : m_range(range), m_processor(proc), m_context(context) { }
+    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context)
+        : m_range(range), m_processor(proc), m_context(context)
+        {
+        auto sys = proc.GetRoot().GetRenderSystem();
+        if (nullptr != sys)
+            m_maxFeaturesPerTile = sys->_GetMaxFeaturesPerBatch();
+        }
 
 
     bool CheckStop() { return (m_aborted = m_aborted && m_context.CheckStop()); }
     void Insert(double diagonalSq, DgnElementId elemId)
         {
         m_entries.Insert(diagonalSq, elemId);
-        if (m_entries.size() > FeatureTable::GetMaxIndex())
+        if (m_entries.size() > m_maxFeaturesPerTile)
             m_entries.erase(--m_entries.end()); // remove the smallest element. Note element != feature - we may need to skip more elements later.
         }
 
@@ -664,9 +671,9 @@ struct GeometryCollector : RangeIndex::Traverser
             if (CheckStop())
                 return TileGeometryProcessor::Result::Aborted;
 
-            if (m_processor.GetGeometryCount() >= FeatureTable::GetMaxIndex())
+            if (m_processor.GetGeometryCount() >= m_maxFeaturesPerTile)
                 {
-                m_processor.TruncateGeometryList(FeatureTable::GetMaxIndex());
+                m_processor.TruncateGeometryList(m_maxFeaturesPerTile);
                 break;
                 }
             }
