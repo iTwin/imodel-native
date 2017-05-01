@@ -7,11 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define CAT_PROP_Description    "Description"
-#define CAT_PROP_Rank           "Rank"
-#define SUBCAT_PROP_Description "Description"
-#define SUBCAT_PROP_Props       "Properties"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,8 +15,8 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_rank = static_cast<Rank>(stmt.GetValueInt(params.GetSelectIndex(CAT_PROP_Rank)));
-        m_descr = stmt.GetValueText(params.GetSelectIndex(CAT_PROP_Description));
+        m_rank = static_cast<Rank>(stmt.GetValueInt(params.GetSelectIndex(prop_Rank())));
+        m_descr = stmt.GetValueText(params.GetSelectIndex(prop_Description()));
         }
 
     return status;
@@ -33,8 +28,8 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Description), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_rank));
+    stmt.BindText(stmt.GetParameterIndex(prop_Description()), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(stmt.GetParameterIndex(prop_Rank()), static_cast<int32_t>(m_rank));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,8 +178,8 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Description));
-        m_data.m_appearance.FromJson(stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Props)));
+        m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(prop_Description()));
+        m_data.m_appearance.FromJson(stmt.GetValueText(params.GetSelectIndex(prop_Properties())));
         }
 
     return status;
@@ -199,9 +194,9 @@ void DgnSubCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     // default sub-categories don't have a description
     if (!IsDefaultSubCategory())
-        stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Description), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex(prop_Description()), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
 
-    stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(stmt.GetParameterIndex(prop_Properties()), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -747,7 +742,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Description,
+    params.RegisterPropertyAccessors(layout, DgnCategory::prop_Description(),
         [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
@@ -763,7 +758,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Rank, 
+    params.RegisterPropertyAccessors(layout, DgnCategory::prop_Rank(), 
         [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
@@ -787,7 +782,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Description,
+    params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Description(),
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (DgnSubCategory&) elIn;
@@ -805,7 +800,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Props, 
+    params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Properties(), 
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (DgnSubCategory&) elIn;

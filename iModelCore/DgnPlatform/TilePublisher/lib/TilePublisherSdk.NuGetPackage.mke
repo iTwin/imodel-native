@@ -1,13 +1,12 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: TilePublisher/lib/TilePublisher.NuGetPackage.mke $
+#     $Source: TilePublisher/lib/TilePublisherSdk.NuGetPackage.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
-NUGET_BASE_PATH=$(OutputRootDir)Product/TilePublisher/
-NuGetBaseName=TilePublisher
-NuGetDependencies=\#DgnClientSdk_version\#=$(BuildContext)SubParts\Assemblies\ecobjects.dll
+NUGET_BUILD_DIR=$(OutBuildDir)TilePublisher/
+NUGET_BASE_PATH=$(BuildContext)
+NuGetBaseName=TilePublisherSdk
 %include $(sharedMki)nuspecCreate.mki
