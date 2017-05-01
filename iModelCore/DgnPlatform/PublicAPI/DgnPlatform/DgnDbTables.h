@@ -315,37 +315,6 @@ private:
     ~DgnModels() {}
 
 public:
-    //! An object that holds a row from the DgnModel table.
-    struct Model
-    {
-        friend struct DgnModels;
-
-    private:
-        DgnModelId m_id;
-        DgnClassId m_classId;
-        DgnElementId m_modeledElementId;
-        bool m_isPrivate = false;
-        bool m_isTemplate = false;
-
-    public:
-        Model() {}
-        Model(DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid) {}
-
-        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;}
-        void SetId(DgnModelId id) {m_id = id;}
-        void SetClassId(DgnClassId classId) {m_classId = classId;}
-        void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
-        void SetModelType(DgnClassId classId) {m_classId = classId;}
-        void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
-
-        bool IsPrivate() const {return m_isPrivate;}
-        DgnModelId GetId() const {return m_id;}
-        DgnClassId GetClassId() const {return m_classId;}
-        DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        bool IsTemplate() const {return m_isTemplate;}
-    }; // Model
-
-public:
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! The supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
@@ -371,9 +340,7 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-
-    //! Query for a DgnModelId by the DgnCode of the element that it is modeling
+    //! Query for a DgnModelId by the DgnCode of the element that is being modeled
     DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
     //! Make an iterator over models of the specified ECClass in this DgnDb.

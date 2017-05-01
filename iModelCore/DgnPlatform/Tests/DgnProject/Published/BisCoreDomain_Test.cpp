@@ -217,6 +217,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
         {
         DgnModelPtr model = m_db->Models().GetModel(DgnModel::RepositoryModelId());
         ASSERT_TRUE(model.IsValid());
+        ASSERT_FALSE(model->IsTemplate());
         BeTest::SetFailOnAssert(false);
         DgnDbStatus status = model->Delete();
         BeTest::SetFailOnAssert(true);
@@ -227,6 +228,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
         {
         DgnModelPtr model = m_db->Models().GetModel(DgnModel::DictionaryId());
         ASSERT_TRUE(model.IsValid());
+        ASSERT_FALSE(model->IsTemplate());
         BeTest::SetFailOnAssert(false);
         DgnDbStatus status = model->Delete();
         BeTest::SetFailOnAssert(true);

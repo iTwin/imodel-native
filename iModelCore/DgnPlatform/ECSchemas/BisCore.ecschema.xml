@@ -139,13 +139,13 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
         </ECNavigationProperty>
-       <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
-            </ECCustomAttributes>
-         </ECProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -154,6 +154,11 @@
         <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -269,6 +274,22 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="ModelOwnsSubModel" strength="embedding" modifier="Sealed">
+        <!-- @see Model.ParentModel ECNavigationProperty -->
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyConstraint>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" roleLabel="owns sub" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Model"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
         <!-- @see Element.Model ECNavigationProperty -->

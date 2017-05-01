@@ -69,8 +69,9 @@ private:
 public:
     DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+    DGNPLATFORM_EXPORT DgnModelId GetParentModelId() const;
     DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-    DGNPLATFORM_EXPORT bool GetIsTemplate() const;
+    DGNPLATFORM_EXPORT bool IsTemplate() const;
     DGNPLATFORM_EXPORT bool IsPrivate() const;
 };
 
@@ -163,6 +164,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR m_dgndb;
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
+        DgnClassId m_modeledElementRelClassId;
         bool m_isPrivate;
         bool m_isTemplate = false;
 
@@ -178,6 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
+        void SetModeledElementRelClassId(DgnClassId classId) {m_modeledElementRelClassId = classId;} //!< Set the DgnClassId of the relationship of the DgnModel to the modeled element
         void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -218,6 +221,7 @@ protected:
     DgnDbR m_dgndb;
     DgnModelId m_modelId;
     DgnClassId m_classId;
+    DgnModelId m_parentModelId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
     BeMutex m_mutex;
@@ -481,6 +485,9 @@ public:
 
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
+
+    //! Get the DgnModelId of the DgnModel above this one in the information hierarchy
+    DgnModelId GetParentModelId() const {return m_parentModelId;}
 
     //! Get the DgnElement that this DgnModel is describing/modeling
     DGNPLATFORM_EXPORT DgnElementCPtr GetModeledElement() const;

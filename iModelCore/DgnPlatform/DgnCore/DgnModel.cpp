@@ -8,33 +8,11 @@
 #include <DgnPlatformInternal.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
+#define MODEL_PROP_ParentModel "ParentModel"
 #define MODEL_PROP_ModeledElement "ModeledElement"
 #define MODEL_PROP_IsPrivate "IsPrivate"
 #define MODEL_PROP_JsonProperties "JsonProperties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
-    {
-    Statement stmt(m_dgndb, "SELECT ECClassId,IsPrivate,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
-    stmt.BindId(1, id);
-
-    if (BE_SQLITE_ROW != stmt.Step())
-        return ERROR;
-
-    if (out) // this can be null to just test for the existence of a model by id
-        {
-        out->m_id = id;
-        out->m_classId = stmt.GetValueId<DgnClassId>(0);
-        out->m_isPrivate = stmt.GetValueBoolean(1);
-        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(2);
-        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(3));
-        }
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/16
@@ -87,7 +65,7 @@ void DgnModels::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,IsPrivate FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,IsPrivate,ParentModel.Id FROM ");
     sql.append(className);
 
     if (whereClause)
@@ -110,8 +88,9 @@ ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8
 DgnModelId ModelIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(0);}
 DgnClassId ModelIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 DgnElementId ModelIteratorEntry::GetModeledElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
-bool ModelIteratorEntry::GetIsTemplate() const {return m_statement->GetValueBoolean(3);}
+bool ModelIteratorEntry::IsTemplate() const {return m_statement->GetValueBoolean(3);}
 bool ModelIteratorEntry::IsPrivate() const {return m_statement->GetValueBoolean(4);}
+DgnModelId ModelIteratorEntry::GetParentModelId() const {return m_statement->GetValueId<DgnModelId>(5);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -147,8 +126,8 @@ CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindCl
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_isPrivate(params.m_isPrivate),
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
-    // WIP: Add m_modeledElementRelClassId to CreateParams!!!
-    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    m_parentModelId = GetDgnDb().Elements().QueryModelId(GetModeledElementId());
+    m_modeledElementRelClassId = params.m_modeledElementRelClassId.IsValid() ? params.m_modeledElementRelClassId : GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -664,14 +643,17 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     if (ForInsert::Yes == forInsert)
         statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
 
-    if (!m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
+    if (!m_parentModelId.IsValid() || !m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
         {
         BeAssert(false);
-        return ;
+        return;
         }
 
     if (ForInsert::Yes == forInsert)
+        {
+        statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ParentModel), m_parentModelId);
         statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
+        }
 
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsPrivate), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
@@ -1204,23 +1186,30 @@ ModelHandlerR DgnModel::GetModelHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     {
-    DgnModels::Model model;
-    if (SUCCESS != QueryModelById(&model, modelId))
+    enum Column {ClassId=0, ModeledElementId=1, IsPrivate=2, IsTemplate=3};
+    Statement stmt(m_dgndb, "SELECT ECClassId,ModeledElementId,IsPrivate,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    stmt.BindId(1, modelId);
+
+    if (BE_SQLITE_ROW != stmt.Step())
         return nullptr;
 
+    DgnClassId modelClassId = stmt.GetValueId<DgnClassId>(Column::ClassId);
+    DgnElementId modeledElementId = stmt.GetValueId<DgnElementId>(Column::ModeledElementId);
+    bool isPrivate = stmt.GetValueBoolean(Column::IsPrivate);
+    bool isTemplate = stmt.GetValueBoolean(Column::IsTemplate);
+
     // make sure the class derives from Model (has a handler)
-    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(m_dgndb, model.GetClassId());
+    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(m_dgndb, modelClassId);
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.IsPrivate(), model.IsTemplate());
+    DgnModel::CreateParams params(m_dgndb, modelClassId, modeledElementId, isPrivate, isTemplate);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
     dgnModel->Read(modelId);
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
-
     return dgnModel;
     }
 
@@ -1329,6 +1318,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {  
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(MODEL_PROP_ParentModel, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
@@ -1410,7 +1400,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
+        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ParentModel) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
             continue;
 
         ECN::ECValue value;
@@ -1453,6 +1443,7 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
+    model->m_parentModelId = db.Elements().QueryModelId(params.m_modeledElementId);
     stat = model->_SetProperties(properties);
     return (DgnDbStatus::Success == stat)? model : nullptr;
     }
