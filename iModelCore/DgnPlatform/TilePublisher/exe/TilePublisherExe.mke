@@ -53,6 +53,7 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BaseGeoCoord.lib      \
                       $(SubpartLibs)ThreeMx.lib           \
                       $(SubpartLibs)PointCloud.lib        \
+                      $(SubPartLibs)Raster.lib            \
                       $(SubpartLibs)BeFolly.lib           \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \
