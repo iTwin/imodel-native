@@ -806,7 +806,7 @@ CURL*  User::CreateRealityData()
     
     properties.Insert(RealityDataField::Name, "Load Test (ERASE)");
 
-    properties.Insert(RealityDataField::Classification, "MODEL");
+    properties.Insert(RealityDataField::Classification, "Model");
 
     properties.Insert(RealityDataField::Type, "3DTiles");
 
