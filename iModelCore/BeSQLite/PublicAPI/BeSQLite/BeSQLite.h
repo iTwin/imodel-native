@@ -2148,7 +2148,7 @@ public:
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
                 DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr, bool createStandalone=false)
                 : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize), m_compressedDb(CompressDb_None),
-                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_createStandalone(createStandalone) {;}
+                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_createStandalone(createStandalone) {}
 
         //! Set the page size for the newly created database.
         void SetPageSize(PageSize pagesize) {m_pagesize = pagesize;}
