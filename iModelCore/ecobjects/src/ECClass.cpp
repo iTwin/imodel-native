@@ -3270,7 +3270,7 @@ ECEntityClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::IsAbstractConstraintDefined() const
     {
-    return IsAbstractConstraintDefinedLocally() || GetAbstractConstraint() != nullptr;
+    return nullptr != GetAbstractConstraint();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3280,7 +3280,7 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
     {
     if (m_verify)
         {
-        if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
+        if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);

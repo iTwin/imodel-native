@@ -108,13 +108,34 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
     {
+    ECObjectsStatus status = ECObjectsStatus::Success;
     if (!schema.Validate() || !schema.IsECVersion(ECVersion::Latest))
         {
-        LOG.errorv("Failed to validate %s as ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
-        return ECObjectsStatus::Error;
+        LOG.errorv("Failed to validate '%s' as ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
+        status = ECObjectsStatus::Error;
         }
 
-    return ECObjectsStatus::Success;
+    if (!schema.OriginalECXmlVersionAtLeast(ECVersion::Latest))
+        {
+        LOG.errorv("Failed to validate '%s' since its original ECXML version is not ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
+        status = ECObjectsStatus::Error;
+        }
+
+    for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
+        {
+        ECSchemaPtr refSchema = ref.second;
+        if (!refSchema->IsStandardSchema())
+            continue;
+        if (refSchema->GetName().EqualsIAscii("ECDbMap") && refSchema->GetVersionRead() > 1) // Latest ECDbMap is valid
+            continue;
+        else
+            {
+            LOG.errorv("Failed to validate '%s' since it references the standard schema '%s'", schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+            status = ECObjectsStatus::Error;
+            }
+        }
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -213,20 +234,21 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
         status = ECObjectsStatus::Error;
         }
 
-    if (!constraint.IsAbstractConstraintDefinedLocally())
+    if (!constraint.IsAbstractConstraintDefinedLocally() && constraint.GetConstraintClasses().size() > 1)
         {
-        if (constraint.IsAbstractConstraintDefined())
-            LOG.errorv("Relationship class '%s' has an abstract class, '%s', that is not defined locally in %s. Each constraint must locally define the abstract constraint, not just deriving this from a base class.",
+        if (constraint.AreConstraintClassesDefinedLocally())
+            LOG.errorv("Relationship class '%s' has more than one constraint class but does not have an abstract constraint in %s. An abstract constraint is required when there are more than one constraint classes defined.",
                 className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
         else
-            LOG.errorv("Abstract constraint is not defined in '%s' but one must be because there is more than one constraint class", constraintType.c_str());
+            LOG.errorv("Relationship class '%s' must define one constraint class locally in %s, or if multiple constraint classes are desired, then an abstract constraint is required.",
+               className.c_str(), constraintType.c_str());
 
         status = ECObjectsStatus::Error;
         }
 
     if (!constraint.IsRoleLabelDefinedLocally())
         {
-        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s. Each constraint must define a role label locally, not just deriving this from a base class.",
+        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s. Each constraint must define a role label locally.",
             className.c_str(), constraint.GetRoleLabel().c_str(), constraintType.c_str());
 
         status = ECObjectsStatus::Error;

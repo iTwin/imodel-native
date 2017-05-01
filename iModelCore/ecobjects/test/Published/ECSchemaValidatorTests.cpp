@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaValidatorTests : ECTestFixture {};
 
-TEST_F(SchemaValidatorTests, TestBaseECValidation)
+TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     {
     // Test failure if not latest EC Version schema
     {
@@ -33,10 +33,9 @@ TEST_F(SchemaValidatorTests, TestBaseECValidation)
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest));
-
     EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "TestSchema validated successfully even though it is not a valid EC3.1 schema";
     }
-    // Test successfully validates EC2.0 schema
+    // Test unsuccessfull validatation of previous XML version schema
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -57,8 +56,7 @@ TEST_F(SchemaValidatorTests, TestBaseECValidation)
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "TestSchema failed to validate successfully even though it a valid EC3.1 schema";
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "TestSchema failed to validate successfully even though it a valid EC3.1 schema due to its xml version not being the latest";
     }
     // Test successfully validates EC3.1 schema
     {
@@ -81,8 +79,63 @@ TEST_F(SchemaValidatorTests, TestBaseECValidation)
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "TestSchema validates successfully as it is a valid EC3.1 schema";
+    }
+    // Test uncessful validation of previous version schema
+    {
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECEntityClass typeName="TestClass"/>
+    </ECSchema>)xml";
 
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "TestSchema failed to validate successfully even though it is a valid EC3.1 schema";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the schema is not latest version";
+    }
+    }
+
+TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
+    {
+    // Test uncessful validation of reference to standard schema
+    {
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="01.00" alias="ref"/>
+        <ECEntityClass typeName="TestClass"/>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema is not latest version";
+
+       
+    // Change reference to now be an updated ECDbMap schema
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="ECDbMap" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+    </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+    ASSERT_TRUE(refSchema.IsValid());
+    EXPECT_TRUE(refSchema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(ECSchemaValidator::Validate(*refSchema)) << "Should be a valid schema to later reference";
+
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ref"/>
+        <ECEntityClass typeName="TestClass"/>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the referenced schema is the latest version of ECDbMap";
     }
     }
 
@@ -181,10 +234,10 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
 
 TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
     {
-    // Relationship source and target must be defiend locally
+    // Relationship source and target role label must be defined locally
 
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="RoleLabelTestSchemaFail1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="TestClass"/>
             <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
                 <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
@@ -213,7 +266,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship target role label is not locally defined so validation should fail";
 
     Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="RoleLabelTestSchemaFail2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="TestClass"/>
             <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
                 <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
@@ -240,7 +293,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship source role label is not locally defined so validation should fail";
 
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="RoleLabelTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="TestClass"/>
             <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
                 <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
@@ -256,7 +309,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
                 <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
                     <Class class="TestClass"/>
                 </Source>
-                <Target multiplicity="(0..*)" roleLabel = "is referenced by" polymorphic="true">
+                <Target multiplicity="(0..*)" roleLabel = "is referenced by" polymorphic="true" >
                     <Class class="TestClass"/>
                 </Target>
             </ECRelationshipClass>
@@ -268,9 +321,35 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
     }
 
 TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses)
-{
+    {
+    // Relationship source and target constraints must be defined locally
+
+    Utf8CP badSchemaXml0 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ConstraintTestSchemaFail0" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="TestClass"/>
+
+           <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+           
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+               <BaseClass>Base</BaseClass>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml0, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is no source and target so validation of the constraint classes should fail";
+
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="ConstraintTestSchemaFail1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass"/>
 
            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
@@ -284,7 +363,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses
            
            <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
                 <BaseClass>Base</BaseClass>
-                    <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true" abstractConstraint="TestClass">
+                    <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
                 </Source>
                 <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
                     <Class class = "TestClass"/>
@@ -292,14 +371,12 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses
            </ECRelationshipClass>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Constraint class is not defined locally in source so validation should fail";
 
     Utf8CP badSchemaXml2= R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="ConstraintTestSchemaFail2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass"/>
 
            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
@@ -311,13 +388,12 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses
                 </Target>
            </ECRelationshipClass>
            
-
         <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
                 <BaseClass>Base</BaseClass>
                 <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
                     <Class class = "TestClass"/>
                 </Source>
-                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true" abstractConstraint="TestClass">
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
                 </Target>
            </ECRelationshipClass>
         </ECSchema>)xml";
@@ -327,7 +403,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Constraint class is not defined locally in target so validation should fail";
 
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="ConstraintTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass"/>
 
            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
@@ -353,12 +429,14 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineConstraintClasses
     ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Constraint class are defined locally in source and target so validation should succeed";
-}
+    }
 
 TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstraints)
-{
+    {
+    // Relationship source and target abstract constraints must be defined locally
+
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="AbstractTestSchemaFail1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass">
                <BaseClass>BaseClass</BaseClass>
            </ECEntityClass>
@@ -394,9 +472,8 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Abstract constraint class is not defined locally in target so validation should fail";
 
-
     Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="AbstractTestSchemaFail2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass">
                <BaseClass>BaseClass</BaseClass>
            </ECEntityClass>
@@ -430,8 +507,77 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Abstract constraint class is not defined locally in source so validation should fail";
 
+    Utf8CP badSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="AbstractTestSchemaFail3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="TestClass">
+               <BaseClass>BaseClass</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="TestClass2">
+               <BaseClass>BaseClass</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="BaseClass"/>
+          
+           <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true" abstractConstraint="BaseClass">
+                    <Class class = "TestClass"/>
+                    <Class class = "TestClass2"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true" abstractConstraint="BaseClass">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+           
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml3, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Abstract constraint class is not defined locally in source so validation should fail";
+
+    Utf8CP badSchemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="AbstractTestSchemaFail4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="TestClass">
+               <BaseClass>BaseClass</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="TestClass2">
+               <BaseClass>BaseClass</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="BaseClass"/>
+          
+           <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true" abstractConstraint="BaseClass">
+                    <Class class = "TestClass"/>
+                    <Class class = "TestClass2"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true" abstractConstraint="BaseClass">
+                    <Class class = "TestClass"/>
+                    <Class class = "TestClass2"/>
+                </Target>
+           </ECRelationshipClass>
+           
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">    
+                </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml4, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Abstract constraint class is not defined locally in source so validation should fail";
+
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="AbstractTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
            <ECEntityClass typeName="TestClass">
                <BaseClass>BaseClass</BaseClass>
            </ECEntityClass>
@@ -451,10 +597,10 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
            
            <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
                 <BaseClass>Base</BaseClass>
-                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
+                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true" abstractConstraint="TestClass">
                     <Class class = "TestClass"/>
                 </Source>
-                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
+                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true" abstractConstraint="TestClass">
                     <Class class = "TestClass"/>
                 </Target>
            </ECRelationshipClass>
@@ -463,7 +609,6 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
     ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Abstract constraints are defined locally in source and target so validation should succeed";
-    
-}
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
