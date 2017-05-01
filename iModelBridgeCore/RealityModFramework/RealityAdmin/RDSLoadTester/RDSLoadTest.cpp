@@ -1161,9 +1161,9 @@ int main(int argc, char* argv[])
     std::thread dispatch (Dispatch, &wo);
     std::thread terminate (Terminate);
 
-    RealityDataService::SetServerComponents("qa-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
-    wo.Perform();
+    wo.Perform(); 
     std::cout << "---EXIT---" << std::endl;
     s_keepRunning = false;
     terminate.join();
