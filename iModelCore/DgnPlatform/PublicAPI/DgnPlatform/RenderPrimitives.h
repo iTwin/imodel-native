@@ -237,6 +237,8 @@ public:
 struct MeshList : bvector<MeshPtr>
 {
     FeatureTable    m_features;
+
+    explicit MeshList(uint32_t maxFeatures=2048*1024) : m_features(maxFeatures) { }
 };
 
 /*---------------------------------------------------------------------------------**//**

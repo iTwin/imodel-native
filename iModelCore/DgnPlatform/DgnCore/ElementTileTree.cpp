@@ -1105,7 +1105,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
-    m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext)
+    m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
+    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : 2048*1024)
     {
     //
     }
@@ -1150,7 +1151,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
 
     bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
     if (!m_maxGeometryCountExceeded)
-        m_maxGeometryCountExceeded = (++m_geometryCount > FeatureTable::GetMaxIndex());
+        m_maxGeometryCountExceeded = (++m_geometryCount > m_featureTable.GetMaxFeatures());
 
     AddPolyfaces(geom, rangePixels, isContained);
     if (!m_options.WantSurfacesOnly())

@@ -1890,14 +1890,14 @@ public:
 struct FeatureTable
 {
     typedef bmap<Feature, uint32_t> Map;
-    static constexpr uint32_t GetMaxIndex() { return 1024*1024; }
 private:
-    Map     m_map;
+    Map         m_map;
+    uint32_t    m_maxFeatures;
     
 public:
-    FeatureTable() { }
-    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)) { }
-    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); return *this; }
+    explicit FeatureTable(uint32_t maxFeatures) : m_maxFeatures(maxFeatures) { }
+    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_maxFeatures(src.m_maxFeatures) { }
+    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_maxFeatures = src.m_maxFeatures; return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     uint32_t GetIndex(FeatureCR feature)
@@ -1924,8 +1924,9 @@ public:
         return found;
         }
 
+    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
-    bool IsFull() const { BeAssert(size() <= GetMaxIndex()); return size() >= GetMaxIndex(); }
+    bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
     uint32_t GetNumIndices() const { return static_cast<uint32_t>(size()); }
     bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
 
@@ -2162,6 +2163,9 @@ struct System
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
+
+    //! Return the maximum number of Features allowed within a Batch.
+    virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
 
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
