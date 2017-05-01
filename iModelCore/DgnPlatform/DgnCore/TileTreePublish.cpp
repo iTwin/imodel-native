@@ -95,19 +95,6 @@ void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, SimplifyGra
     m_geometry.Meshes().push_back(mesh);
     }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AddRenderTile(Texture const& texture, Render::IGraphicBuilder::TileCorners const& corners, SimplifyGraphic& simplifyGraphic)
-    {
-    auto    tileTexture = texture.CreateTileTexture();
-    auto    tileDisplayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), true); 
-    auto    mesh = TileMesh::Create(*tileDisplayParams);
-
-    mesh->AddRenderTile(corners, Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform()));
-
-    m_geometry.Meshes().push_back(mesh);
-    }
 };  // Tile
 
 
@@ -129,9 +116,10 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override         { BeAssert(false); return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override          { BeAssert(false); return UnhandledPreference::Facet;}
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
+    virtual bool _DoClipping() const {return true;}
+
 
     virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic& simplifyGraphic) override   { m_tile.AddTriMesh (args, simplifyGraphic); return true;     }
-    virtual bool _ProcessTile(Render::TextureCR texture, Render::IGraphicBuilder::TileCorners const& corners, SimplifyGraphic& simplifyGraphic) override { m_tile.AddRenderTile(dynamic_cast<TextureCR> (texture), corners, simplifyGraphic); return true; }
 
 };  // GeometryProcessor
 
@@ -145,13 +133,19 @@ struct RenderSystem : Render::System
 {
     mutable NullContext                         m_context;
     mutable TileTreePublish::GeometryProcessor  m_processor;
+    mutable ClipVectorPtr                       m_clip;
 
-    RenderSystem(TileR outputTile) : m_processor(outputTile) { }
+    struct Graphic : SimplifyGraphic
+        {
+        Graphic(ClipVectorPtr& clip, Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR viewContext) : SimplifyGraphic(params, processor, viewContext) { m_currClip = clip; }
+        }; 
+
+    RenderSystem(TileR outputTile, ClipVectorPtr& clip) : m_processor(outputTile), m_clip(clip) {  }
     ~RenderSystem() { }
 
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
-    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override { return new SimplifyGraphic(params, m_processor, m_context); }
+    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override { return new Graphic(m_clip, params, m_processor, m_context); }
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
@@ -163,6 +157,9 @@ struct RenderSystem : Render::System
 
 };
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
 struct Context
 {
     TilePtr                         m_outputTile;
@@ -171,12 +168,13 @@ struct Context
     TileGenerator::ITileCollector*  m_collector;
     double                          m_leafTolerance;
     DgnModelP                       m_model;
+    ClipVectorPtr                   m_clip;
 
-    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, TileGenerator::ITileCollector* collector, double leafTolerance, DgnModelP model) : 
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model) { }
+    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, DgnModelP model) : 
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
 
     Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, Context const& inContext) :
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
 
 };
 
@@ -190,7 +188,7 @@ using namespace TileTreePublish;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static TileGenerator::FutureGenerateTileResult generateParentTile (Context context)
     {
-    RenderSystem*   renderSystem = new RenderSystem(*context.m_outputTile);
+    RenderSystem*   renderSystem = new RenderSystem(*context.m_outputTile, context.m_clip);
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
         {                                
@@ -258,8 +256,8 @@ static TileGenerator::FutureGenerateTileResult generateChildTiles (TileGenerator
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model)
     {
-    ClipVectorPtr               clip;
-    TileTree::RootCPtr          tileRoot = tileTreePublisher->_GetPublishingTileTree(clip, nullptr);
+    ClipVectorPtr               clip = tileTreePublisher->_GetPublishingClip();;
+    TileTree::RootCPtr          tileRoot = tileTreePublisher->_GetPublishingTileTree(nullptr);
 
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);
@@ -276,7 +274,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(IGetTileTre
         Transform           transformFromDgn = Transform::FromProduct(GetTransformFromDgn(*model), tileRoot->GetLocation());
         TilePtr             outputTile = Tile::Create(*model, *tileRoot->GetRootTile(), transformFromDgn, 0, 0, nullptr);
         TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
-        Context             context(outputTile, inputTile, transformFromDgn, collector, leafTolerance, model);
+        Context             context(outputTile, inputTile, transformFromDgn, clip.get(), collector, leafTolerance, model);
 
         return generateParentTile(context).then([=](GenerateTileResult result) { return generateChildTiles(result.m_status, context); });
         })
@@ -285,5 +283,5 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(IGetTileTre
         m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
         return collector->_EndProcessModel(*model, result.m_tile.get(), result.m_status);   
         });
-    }
+    }                               
 

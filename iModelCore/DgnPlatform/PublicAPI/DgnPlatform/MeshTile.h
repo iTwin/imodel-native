@@ -1052,7 +1052,8 @@ struct IGenerateMeshTiles
 //=======================================================================================
 struct IGetTileTreeForPublishing
 {
-    virtual TileTree::RootCPtr _GetPublishingTileTree(ClipVectorPtr& clip, Dgn::Render::SystemP renderSys) const = 0;
+    virtual ClipVectorPtr       _GetPublishingClip () const { return nullptr; }
+    virtual TileTree::RootCPtr  _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const = 0;
 
 };  // IGetTileTreeForPublishing
 

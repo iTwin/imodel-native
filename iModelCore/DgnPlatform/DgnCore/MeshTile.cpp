@@ -555,8 +555,7 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
     for (size_t i=0; i<4; i++)
         m_points.push_back(tileCorners.m_pts[i]);
 
-    transform.Multiply (m_points, m_points);
-
+    transform.Multiply (m_points, m_points);                                                                                                                                                                                                                      
     m_uvParams.push_back(DPoint2d::From(0.0, 0.0));
     m_uvParams.push_back(DPoint2d::From(1.0, 0.0));
     m_uvParams.push_back(DPoint2d::From(0.0, 1.0));
@@ -588,8 +587,8 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
         if (nullptr != triMesh.m_textureUV)
             m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
-    for (int32_t i=0; i<triMesh.m_numIndices; )
-        AddTriangle(TileTriangle(triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], false));
+    for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
+        AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
 
 /*---------------------------------------------------------------------------------**//**
