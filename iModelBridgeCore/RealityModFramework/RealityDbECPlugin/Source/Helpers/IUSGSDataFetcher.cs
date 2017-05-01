@@ -69,7 +69,10 @@ namespace IndexECPlugin.Source.Helpers
         IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults (List<SingleWhereCriteriaHolder> whereCriteriaList);
         }
 
-    internal class USGSDataFetcher : IUSGSDataFetcher
+    /// <summary>
+    /// Class for retrieving USGS information.
+    /// </summary>
+    public class USGSDataFetcher : IUSGSDataFetcher
         {
         //TODO : Add outputFormat=JSON in WebReq???
         const string WebReqCategories = "https://viewer.nationalmap.gov/tnmaccess/api/datasets?";
@@ -118,12 +121,22 @@ namespace IndexECPlugin.Source.Helpers
         };
 
         ECQuery m_query;
+        IHttpResponseGetter m_httpResponseGetter;
 
-        public USGSDataFetcher (ECQuery query)
+        /// <summary>
+        /// USGSDataFetcher constructor
+        /// </summary>
+        /// <param name="query">The ECQuery object</param>
+        /// <param name="httpResponseGetter">An HttpResponseGetter interface implementation used for calling USGS.</param>
+        public USGSDataFetcher (ECQuery query, IHttpResponseGetter httpResponseGetter)
             {
             m_query = query;
+            m_httpResponseGetter = httpResponseGetter;
             }
 
+        /// <summary>
+        /// A list of USGS API Categories that we want to fetch
+        /// </summary>
         public List<UsgsAPICategory> CategoryTable
             {
             get
@@ -132,6 +145,9 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
+        /// <summary>
+        /// A list of Ids to exclude from returned instances
+        /// </summary>
         public List<string> Blacklist
             {
             get
@@ -140,27 +156,27 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        private string GetHttpResponse (string url)
-            {
-            using ( HttpClient client = new HttpClient() )
-                {
-                using ( HttpResponseMessage response = client.GetAsync(url).Result )
-                    {
-                    if ( response.IsSuccessStatusCode )
-                        {
-                        using ( HttpContent content = response.Content )
-                            {
-                            return content.ReadAsStringAsync().Result;
-                            }
-                        }
-                    else
-                    {
-                    throw new OperationFailedException("USGS returned an error : " + response.ReasonPhrase);
-                    }
-                    }
-                }
-            //return null;
-            }
+        //private string GetHttpResponse (string url)
+        //    {
+        //    using ( HttpClient client = new HttpClient() )
+        //        {
+        //        using ( HttpResponseMessage response = client.GetAsync(url).Result )
+        //            {
+        //            if ( response.IsSuccessStatusCode )
+        //                {
+        //                using ( HttpContent content = response.Content )
+        //                    {
+        //                    return content.ReadAsStringAsync().Result;
+        //                    }
+        //                }
+        //            else
+        //            {
+        //            throw new OperationFailedException("USGS returned an error : " + response.ReasonPhrase);
+        //            }
+        //            }
+        //        }
+        //    //return null;
+        //    }
 
         /// <summary>
         /// Returns the json of the item of specified source ID in the sciencebase catalog
@@ -171,7 +187,7 @@ namespace IndexECPlugin.Source.Helpers
             {
             string url = ScienceBaseURL.Replace("_sourceID", sourceID);
 
-            string jsonString = GetHttpResponse(url);
+            string jsonString = m_httpResponseGetter.GetHttpResponse(url);
             if ( jsonString != null )
                 {
                 return JObject.Parse(jsonString) as JObject;
@@ -180,9 +196,14 @@ namespace IndexECPlugin.Source.Helpers
             return null;
             }
 
+        /// <summary>
+        /// Calls an URL and creates an XmlDocument with the response
+        /// </summary>
+        /// <param name="URL">The URL</param>
+        /// <returns>The XmlDocument</returns>
         public XmlDocument GetXmlDocFromURL (string URL)
             {
-            string xmlString = GetHttpResponse(URL);
+            string xmlString = m_httpResponseGetter.GetHttpResponse(URL);
             //using (XmlReader xmlReader = XmlReader.Create(xmlString))
             //{
 
@@ -255,84 +276,63 @@ namespace IndexECPlugin.Source.Helpers
 
             try
                 {
-                using ( HttpClient client = new HttpClient() )
+                string responseString = m_httpResponseGetter.GetHttpResponse(WebReqCategories);
+
+                JArray json = JArray.Parse(responseString);
+                foreach ( var entry in json )
                     {
-
-                    client.Timeout = new TimeSpan(0, 0, 15);
-                    //client.Timeout = new TimeSpan(15000);
-                    using ( HttpResponseMessage response = client.GetAsync(WebReqCategories).Result )
+                    if ( entry["tags"].HasValues )
                         {
-                        if ( !response.IsSuccessStatusCode )
+
+                        foreach ( JProperty subEntry in entry["tags"] )
                             {
-                            if(response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                            foreach ( var category in CategoryTable )
                                 {
-                                throw new OperationFailedException("USGS service unavailable for the moment. Please retry later.");
+                                if ( entry["title"].Value<string>() == category.Title &&
+                                   subEntry.Value["title"].Value<string>() == category.SubTitle &&
+                                   category.Priority != 0 &&
+                                   (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
+                                   (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
+                                    {
+                                    UsgsRequest req = new UsgsRequest()
+                                    {
+                                        //Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
+                                        Dataset = category.SbDatasetTag,
+                                        DatasetID = subEntry.Value["id"].Value<string>(),
+                                        Format = category.Format,
+                                        Category = category.Title,
+                                        Priority = category.Priority,
+                                        Classification = category.Classification
+                                    };
+
+                                    reqList.Add(req);
+                                    break;
+                                    }
                                 }
-                            throw new OperationFailedException("USGS did not send a successful response.");
                             }
-                        using ( HttpContent content = response.Content )
+                        }
+                    else
+                        {
+                        foreach ( var category in CategoryTable )
                             {
-                            string responseString = content.ReadAsStringAsync().Result;
-
-                            JArray json = JArray.Parse(responseString);
-
-                            foreach ( var entry in json )
+                            if ( entry["title"].Value<string>() == category.Title &&
+                               entry["title"].Value<string>() == category.SubTitle &&
+                               category.Priority != 0 &&
+                               (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
+                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
                                 {
-                                if ( entry["tags"].HasValues )
-                                    {
-
-                                    foreach ( JProperty subEntry in entry["tags"] )
-                                        {
-                                        foreach ( var category in CategoryTable )
-                                            {
-                                            if ( entry["title"].Value<string>() == category.Title &&
-                                               subEntry.Value["title"].Value<string>() == category.SubTitle &&
-                                               category.Priority != 0 &&
-                                               (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
-                                                {
-                                                UsgsRequest req = new UsgsRequest()
-                                                {
-                                                    //Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
-                                                    Dataset = category.SbDatasetTag,
-                                                    DatasetID = subEntry.Value["id"].Value<string>(),
-                                                    Format = category.Format,
-                                                    Category = category.Title,
-                                                    Priority = category.Priority,
-                                                    Classification = category.Classification
-                                                };
-
-                                                reqList.Add(req);
-                                                break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                else
-                                    {
-                                    foreach ( var category in CategoryTable )
-                                        {
-                                        if ( entry["title"].Value<string>() == category.Title &&
-                                           entry["title"].Value<string>() == category.SubTitle &&
-                                           category.Priority != 0 &&
-                                           (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                           (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
-                                            {
-                                            UsgsRequest req = new UsgsRequest()
-                                            {
-                                                //Dataset = entry["sbDatasetTag"].Value<string>(),
-                                                Dataset = category.SbDatasetTag,
-                                                DatasetID = entry["id"].Value<string>(),
-                                                Format = category.Format,
-                                                Category = category.Title,
-                                                Priority = category.Priority,
-                                                Classification = category.Classification
-                                            };
-                                            reqList.Add(req);
-                                            break;
-                                            }
-                                        }
-                                    }
+                                UsgsRequest req = new UsgsRequest()
+                                {
+                                    //Dataset = entry["sbDatasetTag"].Value<string>(),
+                                    Dataset = category.SbDatasetTag,
+                                    DatasetID = entry["id"].Value<string>(),
+                                    Format = category.Format,
+                                    Category = category.Title,
+                                    Priority = category.Priority,
+                                    Classification = category.Classification
+                                };
+                                reqList.Add(req);
+                                break;
                                 }
                             }
                         }
@@ -376,36 +376,19 @@ namespace IndexECPlugin.Source.Helpers
 
                 try
                     {
-                    using ( HttpClient client = new HttpClient() )
+                    JObject jsonResp = JObject.Parse(m_httpResponseGetter.GetHttpResponse(readyToSend));
+                    lock ( locker )
                         {
-                        client.Timeout = new TimeSpan(0, 0, 15);
-                        using ( HttpResponseMessage response = client.GetAsync(readyToSend).Result )
-                            {
-                            if ( response.IsSuccessStatusCode )
-                                {
-                                using ( HttpContent content = response.Content )
-                                    {
-                                    string responseString = content.ReadAsStringAsync().Result;
-
-                                    JObject jsonResp = JObject.Parse(responseString);
-
-                                    lock ( locker )
-                                        {
-                                        instanceList.Add(new USGSRequestBundle
-                                        {
-                                            jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification
-                                        });
-                                        //foreach (var item in jsonResp["items"] as JArray)
-                                        //{
-                                        //    instanceList.Add(item);
-
-                                        //}
-                                        }
-
-                                    }
-                                }
-                            }
+                        instanceList.Add(new USGSRequestBundle
+                        {
+                            jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification
+                        });
                         }
+                    }
+                catch ( OperationFailedException )
+                    {
+                    //This case happens when the http call returns an unsuccessful error code. 
+                    //We'll simply let the other parallel calls end without rethrowing.
                     }
                 catch ( TaskCanceledException )
                     {
@@ -453,4 +436,5 @@ namespace IndexECPlugin.Source.Helpers
 
             }
         }
+
     }

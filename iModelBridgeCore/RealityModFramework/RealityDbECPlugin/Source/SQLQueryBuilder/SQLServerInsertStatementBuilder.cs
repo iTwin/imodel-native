@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -240,31 +240,28 @@ namespace IndexECPlugin.Source
                 }
             paramNameValueMap = m_paramNameValueMap;
 
-            string deleteFrom = null;
-
-            if(m_deleteActivated)
-                {
-                deleteFrom = "DELETE FROM " + m_tableName + " WHERE ";
-                }
             string beginTry = " BEGIN TRY ";
             string endTry = " END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW END CATCH;";
             string insertIntoColumns = "INSERT INTO " + m_tableName + " (";
             insertIntoColumns += String.Join(",", m_columnNameTypePairs.Select(p => p.ColumnName)) + ") VALUES ";
             using ( StringWriter statement = new StringWriter() )
                 {
-                statement.Write(deleteFrom);
-                for ( int i = 0; i < m_rows.Count; i++ )
+                if ( m_deleteActivated )
                     {
-                    if ( m_deleteActivated && m_deleteWhereStatements[i] != null )
+                    statement.Write("DELETE FROM " + m_tableName + " WHERE ");
+                    for ( int i = 0; i < m_rows.Count; i++ )
                         {
-                        statement.Write("(" + m_deleteWhereStatements[i] + ")");
-                        if ( i != m_rows.Count - 1 )
+                        if ( m_deleteActivated && m_deleteWhereStatements[i] != null )
                             {
-                            statement.Write(" OR ");
+                            statement.Write("(" + m_deleteWhereStatements[i] + ")");
+                            if ( i != m_rows.Count - 1 )
+                                {
+                                statement.Write(" OR ");
+                                }
                             }
                         }
+                    statement.Write(";");
                     }
-                statement.Write(";");
                 for (int i = 0; i < m_rows.Count; i++)
                     {
                     statement.Write(beginTry);

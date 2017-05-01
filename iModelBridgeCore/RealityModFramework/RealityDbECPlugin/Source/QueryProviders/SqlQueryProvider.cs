@@ -31,7 +31,10 @@ using System.Data.Spatial;
 
 namespace IndexECPlugin.Source.QueryProviders
     {
-    internal class SqlQueryProvider : IECQueryProvider
+    /// <summary>
+    /// Class for transforming an ECQuery into a list of instances by querying a database.
+    /// </summary>
+    public class SqlQueryProvider : IECQueryProvider
         {
         private List<string> m_propertyLocationInSqlQuery = new List<string>();
         private Dictionary<string, object> m_paramNameToValue = new Dictionary<string, object>();
@@ -49,6 +52,13 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private IECSchema m_schema;
 
+        /// <summary>
+        /// SqlQueryProvider constructor
+        /// </summary>
+        /// <param name="query">The ECQuery</param>
+        /// <param name="querySettings">The ECQuerySettings</param>
+        /// <param name="dbQuerier">The appropriate DbQuerier object</param>
+        /// <param name="schema">The ECSchema</param>
         public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbQuerier dbQuerier, IECSchema schema)
             {
             if ( query == null )
@@ -123,6 +133,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             }
 
+        /// <summary>
+        /// This method returns the instances according to the ECQuery received in the constructor.
+        /// </summary>
+        /// <returns>The IECInstances</returns>
         public IEnumerable<IECInstance> CreateInstanceList ()
             {
             Log.Logger.info("Fetching Index results for query " + m_query.ID);
@@ -230,14 +244,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         IECInstance instance = instanceList.First(inst => inst.InstanceId == instanceId);
 
                         IECRelationshipInstance relationshipInst;
-                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                            }
-                        else
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                            }
+                        relationshipInst = (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward) ? 
+                            relationshipClass.CreateRelationship(instance, relInst) : relationshipClass.CreateRelationship(relInst, instance);
+
                         //relationshipInst.InstanceId = "test";
                         //instance.GetRelationshipInstances().Add(relationshipInst);
                         }
@@ -254,59 +263,61 @@ namespace IndexECPlugin.Source.QueryProviders
             return instanceList;
             }
 
+        //***********************************
         //This was the old way of searching for related instances. It was slow, but reliable. Left here just in case the other one is buggy.
-        private void QueryAndInsertRelatedInstancesOneByOne(IEnumerable<IECInstance> instanceList)
-            {
-            foreach ( var instance in instanceList )
-                {
-                foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
-                    {
+        //private void QueryAndInsertRelatedInstancesOneByOne(IEnumerable<IECInstance> instanceList)
+        //    {
+        //    foreach ( var instance in instanceList )
+        //        {
+        //        foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
+        //            {
 
 
-                    //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
+        //            //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
 
-                    IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
-                    RelatedInstanceDirection direction = (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward ?
-                        RelatedInstanceDirection.Forward : RelatedInstanceDirection.Backward);
+        //            IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+        //            RelatedInstanceDirection direction = (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward ?
+        //                RelatedInstanceDirection.Forward : RelatedInstanceDirection.Backward);
 
-                    ECQuery relInstQuery = new ECQuery(crit.RelatedClassSpecifier.RelatedClass);
+        //            ECQuery relInstQuery = new ECQuery(crit.RelatedClassSpecifier.RelatedClass);
 
-                    relInstQuery.SelectClause.SelectedProperties = crit.SelectedProperties;
-                    relInstQuery.SelectClause.SelectAllProperties = crit.SelectAllProperties;
-
-
-                    //We probably should not take relatedInstances of relatedInstances, since this could be highly inefficient. To test eventually.
-                    //relInstQuery.SelectClause.SelectedRelatedInstances = crit.SelectedRelatedInstances;
-                    //************************************************************************************
-
-                    //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
-                    var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, instance.ClassDefinition), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
-
-                    relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
-
-                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbQuerier, m_schema);
+        //            relInstQuery.SelectClause.SelectedProperties = crit.SelectedProperties;
+        //            relInstQuery.SelectClause.SelectAllProperties = crit.SelectAllProperties;
 
 
+        //            //We probably should not take relatedInstances of relatedInstances, since this could be highly inefficient. To test eventually.
+        //            //relInstQuery.SelectClause.SelectedRelatedInstances = crit.SelectedRelatedInstances;
+        //            //************************************************************************************
 
-                    var relInstList = queryHelper.CreateInstanceList();
-                    foreach ( var relInst in relInstList )
-                        {
+        //            //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
+        //            var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, instance.ClassDefinition), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
 
-                        IECRelationshipInstance relationshipInst;
-                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                            }
-                        else
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                            }
-                        //relationshipInst.InstanceId = "test";
-                        instance.GetRelationshipInstances().Add(relationshipInst);
-                        }
-                    }
-                }
-            }
+        //            relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
+
+        //            var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbQuerier, m_schema);
+
+
+
+        //            var relInstList = queryHelper.CreateInstanceList();
+        //            foreach ( var relInst in relInstList )
+        //                {
+
+        //                IECRelationshipInstance relationshipInst;
+        //                if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+        //                    {
+        //                    relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
+        //                    }
+        //                else
+        //                    {
+        //                    relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
+        //                    }
+        //                //relationshipInst.InstanceId = "test";
+        //                instance.GetRelationshipInstances().Add(relationshipInst);
+        //                }
+        //            }
+        //        }
+        //    }
+        //*********************************************************
 
         //WE HAVE DEACTIVATED INSTANCE COUNTING
         ////This is not to be used before having called createSqlCommandStringFromQuery

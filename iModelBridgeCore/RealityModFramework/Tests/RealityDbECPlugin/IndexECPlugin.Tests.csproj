@@ -94,7 +94,10 @@
     <Compile Include="Tests\MimicTableWriterTests.cs" />
     <Compile Include="Tests\PackagerTests.cs" />
     <Compile Include="Tests\IDbQuerierTests.cs" />
+    <Compile Include="Tests\SqlQueryProviderTests.cs" />
+    <Compile Include="Tests\SqlServerInsertStatementBuilderTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
+    <Compile Include="Tests\USGSDataFetcherTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\RealityDbECPlugin\IndexECPlugin.csproj">
@@ -141,6 +144,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Ressources\ScienceBaseJsonNAIP.txt">
       <LogicalName>ScienceBaseJsonNAIP.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TnmApiDatasets.txt">
+      <LogicalName>TnmApiDatasets.txt</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Ressources\TnmApiNED1m.txt">
       <LogicalName>TnmApiNED1m.txt</LogicalName>
