@@ -77,17 +77,24 @@ void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR cont
 ExpressionStatus ECDbExpressionSymbolProvider::GetClassId(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
     {
     if (2 != args.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetClassId: WrongNumberOfArguments. Expected 2, actually %" PRIu64, (uint64_t)args.size()).c_str());
         return ExpressionStatus::WrongNumberOfArguments;
+        }
 
     if (!args[0].IsECValue() || !args[0].GetECValue()->IsString()
         || !args[1].IsECValue() || !args[1].GetECValue()->IsString())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetClassId: WrongType. Invalid arguments");
         return ExpressionStatus::WrongType;
+        }
 
     Utf8CP className = args[0].GetECValue()->GetUtf8CP();
     Utf8CP schemaName = args[1].GetECValue()->GetUtf8CP();
     ECDbCR db = *reinterpret_cast<ECDb const*>(context);
     ECClassId classId = db.Schemas().GetClassId(schemaName, className);
     evalResult.InitECValue().SetLong(classId.GetValueUnchecked());
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetClassId: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -97,15 +104,24 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetClassId(EvaluationResult& eval
 ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(Utf8StringR query, ECEntityClassCP& relatedClass, ECDbCR db, ECInstanceListCR instanceData, EvaluationResult const& arg)
     {
     if (!arg.IsECValue() || !arg.GetECValue()->IsUtf8())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: WrongType. Argument is not ECValue or argument value is not a string");
         return ExpressionStatus::WrongType;
+        }
 
     if (instanceData.empty())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: WrongType. ECInstanceList is empty");
         return ExpressionStatus::WrongType;
+        }
     
     bvector<Utf8String> argTokens;
     BeStringUtilities::Split(arg.GetECValue()->GetUtf8CP(), ":", nullptr, argTokens);
     if (argTokens.size() != 3 || argTokens[1].length() != 1)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: UnknownError. Invalid argument format");
         return ExpressionStatus::UnknownError;
+        }
 
     Utf8CP thisInstanceIdColumnName,thisClassIdColumnName,
         relatedInstanceIdColumnName, relatedClassIdColumnName;
@@ -126,7 +142,8 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
             relatedInstanceIdColumnName = ECDBSYS_PROP_SourceECInstanceId;
             relatedClassIdColumnName = ECDBSYS_PROP_SourceECClassId;
             break;
-        default:  
+        default:
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: UnknownError. Invalid relationship direction");
             return ExpressionStatus::UnknownError;
         }
 
@@ -136,11 +153,15 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
     ECRelationshipClassCP relationshipClass = nullptr;
     relatedClass = nullptr;
     if (SUCCESS != FindRelationshipAndClassInfo(db, relationshipClass, relationshipName, relatedClass, relatedName))
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: UnknownError. Could not find relationship and class info (%s, %s)", relationshipName, relatedName).c_str());
         return ExpressionStatus::UnknownError;
+        }
 
     if (nullptr == relationshipClass || nullptr == relatedClass)
         {
         BeAssert(false);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: UnknownError. Could not find relationship or class");
         return ExpressionStatus::UnknownError;
         }
     
@@ -161,15 +182,24 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
 ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(Utf8StringR query, ECDbCR db, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (instanceData.empty())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: WrongType. ECInstanceList is empty");
         return ExpressionStatus::WrongType;
+        }
 
     if (args.size() < 3)
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: WrongNumberOfArguments. Expected less than 3, actually %" PRIu64, (uint64_t)args.size()).c_str());
         return ExpressionStatus::WrongNumberOfArguments;
+        }
 
     for (size_t i = 0; i < 3; ++i)
         {
         if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: WrongType. Invalid arguments (expecting strings)");
             return ExpressionStatus::WrongType;
+            }
         }
 
     Utf8CP direction = args[1].GetECValue()->GetUtf8CP();
@@ -192,6 +222,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
     else
         {
         BeAssert(false);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: UnknownError. Invalid direction (%s)", direction).c_str());
         return ExpressionStatus::UnknownError;
         }
 
@@ -199,6 +230,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
     if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, args[0].GetECValue()->GetUtf8CP()))
         {
         BeAssert(false);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: UnknownError. Could not parse relationship name: %s", args[0].GetECValue()->GetUtf8CP()).c_str());
         return ExpressionStatus::UnknownError;
         }
 
@@ -206,6 +238,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
     if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, args[2].GetECValue()->GetUtf8CP()))
         {
         BeAssert(false);
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew: UnknownError. Could not parse class name: %s", args[2].GetECValue()->GetUtf8CP()).c_str());
         return ExpressionStatus::UnknownError;
         }
 
@@ -225,7 +258,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
 ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (3 != args.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::HasRelatedInstance: WrongNumberOfArguments. Expected 3, actually %" PRIu64, (uint64_t)args.size()).c_str());
         return ExpressionStatus::WrongNumberOfArguments;
+        }
 
     ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
@@ -256,11 +292,13 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
         if (DbResult::BE_SQLITE_ROW == stmt.Step())
             {
             evalResult.InitECValue().SetBoolean(true);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::HasRelatedInstance: Result: %s", evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         }
     
     evalResult.InitECValue().SetBoolean(false);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::HasRelatedInstance: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
 
@@ -270,7 +308,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
 ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (1 != args.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstance: WrongNumberOfArguments. Expected 1, actually %" PRIu64, (uint64_t)args.size()).c_str());
         return ExpressionStatus::WrongNumberOfArguments;
+        }
 
     ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
@@ -313,6 +354,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     else
         evalResult.InitECValue().SetToNull();
 
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstance: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
     
@@ -351,7 +393,10 @@ static ECValue GetECValueFromSqlValue(IECSqlValue const& sqlValue)
 ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (4 != args.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedValue: WrongNumberOfArguments. Expected 4, actually %" PRIu64, (uint64_t)args.size()).c_str());
         return ExpressionStatus::WrongNumberOfArguments;
+        }
 
     ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
@@ -362,7 +407,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
 
     EvaluationResult const& propertyNameArg = args[3];
     if (!propertyNameArg.IsECValue() || !propertyNameArg.GetECValue()->IsUtf8())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECDbExpressionSymbolProvider::GetRelatedValue: WrongType. Property name is invalid");
         return ExpressionStatus::WrongType;
+        }
     
     IECInstancePtr relatedInstance;
     for (IECInstancePtr const& instance : instanceData)
@@ -387,11 +435,13 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
         if (DbResult::BE_SQLITE_ROW == stmt.Step())
             {
             evalResult.InitECValue() = GetECValueFromSqlValue(stmt.GetValue(0));
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedValue: Result: %s", evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }
         }
     
     evalResult.InitECValue().SetToNull();
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedValue: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
     }
     
