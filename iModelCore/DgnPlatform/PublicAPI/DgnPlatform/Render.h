@@ -1790,6 +1790,8 @@ struct System
     void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
     void NotPainting() {m_nowPainting = nullptr;}
 
+    virtual ~System(){}
+
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
 

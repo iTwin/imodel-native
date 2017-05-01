@@ -588,8 +588,9 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
         if (nullptr != triMesh.m_textureUV)
             m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) triMesh.m_textureUV[i].y);
         }
-    for (int32_t i=0; i<triMesh.m_numIndices; )
-        AddTriangle(TileTriangle(triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], false));
+    
+    for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
+        AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1900,7 +1901,8 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
+(ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
