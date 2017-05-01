@@ -151,21 +151,33 @@ void SaveGraphEdges (VuSetP graph, VuMask mask)
 
 // sweep from outermost (negative area loop) inwards to loop mask.
 // output faces not touched by that sweep.
-void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask)
+void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask, bool doVoronoi)
     {
+    PolyfaceHeaderPtr polyface;
     if (loopMask != 0)
         {
         _VuSet::TempMask exteriorMask (graph);
         vu_floodFromNegativeAreaFaces (graph, loopMask, exteriorMask.Mask ());
-        auto polyface = vu_toPolyface (graph, exteriorMask.Mask ());
+        polyface = vu_toPolyface (graph, exteriorMask.Mask ());
         if (polyface.IsValid ())
             Check::SaveTransformed (*polyface);
         }
     else
         {
-        auto polyface = vu_toPolyface (graph, 0);
+        polyface = vu_toPolyface (graph, 0);
         if (polyface.IsValid ())
             Check::SaveTransformed (*polyface);
+        }
+    if (doVoronoi && polyface.IsValid ())
+        {
+        PolyfaceHeaderPtr delauney, voronoi;
+        PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (polyface->Point (), delauney, voronoi);
+        if (voronoi.IsValid ())
+            {
+            DRange3d range = voronoi->PointRange ();
+            DPoint3dOps::Add (voronoi->Point (), DVec3d::From (0, range.YLength (), 0));
+            Check::SaveTransformed (*voronoi);
+            }
         }
     }
 

@@ -1474,18 +1474,22 @@ void Check::Shift (DVec3dCR shift)
     {
     s_transform = Transform::From (shift.x, shift.y, shift.z) * s_transform;
     }
-
+static size_t s_lowerRightBaseIndex = 0;
 void Check::ShiftToLowerRight (double dx)
     {
     auto range = DRange3d::NullRange ();
-    for (auto g : s_cache)
+    for (size_t i = s_lowerRightBaseIndex; i < s_cache.size (); i++)
         {
         DRange3d gRange;
-        if (g->TryGetRange (gRange))
+        if (s_cache[i]->TryGetRange (gRange))
             range.Extend (gRange);
         }
-    auto frame = Transform::From (range.LocalToGlobal (1,0,0) + DVec3d::From (dx, 0, 0));
-    SetTransform (frame);
+    if (!range.IsNull ())
+        {
+        auto frame = Transform::From (range.LocalToGlobal (1,0,0) + DVec3d::From (dx, 0, 0));
+        SetTransform (frame);
+        s_lowerRightBaseIndex = s_cache.size ();
+        }
     }
 
 Transform Check::GetTransform () {return s_transform;}
@@ -1532,6 +1536,7 @@ void Check::ClearGeometry (char const *name)
         //BentleyGeometryJson::TryJsonStringToGeometry (string, g1);
         }
     s_cache.clear ();
+    s_lowerRightBaseIndex = 0;   // first index of "lower right" range.
     s_transform = Transform::FromIdentity ();
     }
 
@@ -1545,6 +1550,7 @@ void Check::SetUp()
     s_stack.clear ();
     m_toleranceStack.clear ();
     m_tolerance = m_defaultTolerance;
+    s_lowerRightBaseIndex = 0;
     }
 
 void Check::TearDown() 
