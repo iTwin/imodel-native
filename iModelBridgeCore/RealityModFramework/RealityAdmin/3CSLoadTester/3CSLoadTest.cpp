@@ -224,7 +224,7 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
     std::lock_guard<std::mutex> lock(statMutex);
     m_activeUsers = activeUsers;
     opStats[user->m_currentOperation]->Update(success, std::time(nullptr) - user->m_start);
-    //if(!success)
+    if(!success)
         errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
     }
 
@@ -714,7 +714,7 @@ CURL* User::CancelJob()
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void User::ValidatePrevious(int activeUsers)
     {
-    if(m_correspondance.response.curlCode != CURLE_OK)
+    if(m_correspondance.response.curlCode != CURLE_OK || m_correspondance.response.responseCode > 399)
         {
         s_stats.InsertStats(this, false, activeUsers);
         return;
