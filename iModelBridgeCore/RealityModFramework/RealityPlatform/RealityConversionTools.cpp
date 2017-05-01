@@ -333,8 +333,9 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
 
     // Footprint
     bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+    Utf8String dummy = "";
     if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
-        data->SetFootprintString(properties["Footprint"].asString().c_str());
+        data->SetFootprint(RealityDataBase::RDSJSONToFootprint(properties["Footprint"], dummy));
 
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
         data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
@@ -494,7 +495,7 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append(realityData.IsStreamed() ? "true" : "false");
             break;
         case RealityDataField::Footprint:
-            propertyString.append("\"Footprint\" : \"");
+            propertyString.append("\"Footprint\" : ");
             propertyString.append(realityData.GetFootprintString());
             propertyString.append("\"");
             break;

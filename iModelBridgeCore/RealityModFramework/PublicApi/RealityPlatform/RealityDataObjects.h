@@ -286,7 +286,7 @@ public:
     //! The final clossing point is mandatory.
     REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys = "4326");
-    REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8String GetFootprintString() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprintString(Utf8CP footprint);
 
     //! Get/Set
@@ -304,8 +304,11 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
     REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
     
-    REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
-    REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> StringToFootprint(Utf8String footprint, Utf8String& coordSys);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToGCSString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
+    REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> GCSStringToFootprint(Utf8String footprint, Utf8String& coordSys);
+
+    REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToRDSString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
+    REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> RDSJSONToFootprint(const Json::Value& footprintJson, Utf8String& coordSys);
 
 protected:
     RealityDataBase();
@@ -450,6 +453,8 @@ public:
     //! The Group code. This field can be used to group many data together if another key other than the dataset is required.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGroup() const;
     REALITYDATAPLATFORM_EXPORT void SetGroup(Utf8CP group);
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const override;
 
 protected:
     RealityData();
