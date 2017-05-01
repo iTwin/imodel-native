@@ -82,7 +82,6 @@
 
     <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="ECDbLibrary" PartFile="ECDb" Repository="ECDb"/>
       <!--  Dependency was moved to DgnClientFx:DgnClientFxJar
         <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
       -->
