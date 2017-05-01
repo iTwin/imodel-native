@@ -310,8 +310,8 @@ private:
     struct Features
     {
         FeatureTableP       m_table;
-        bvector<uint16_t>   m_indices;
-        uint16_t            m_uniform;
+        bvector<uint32_t>   m_indices;
+        uint32_t            m_uniform;
         bool                m_initialized = false;
 
         explicit Features(FeatureTableP table) : m_table(table) { }

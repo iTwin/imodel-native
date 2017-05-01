@@ -1572,8 +1572,8 @@ struct FeatureIndex
     Type    m_type = Type::Empty;
     union
         {
-        uint16_t        m_featureID;        // If m_numFeatures == 1, the ID of the single Feature within this primitive
-        uint16_t const* m_featureIDs;       // If m_numFeatures > 1, per-vertex Feature IDs
+        uint32_t        m_featureID;        // If m_numFeatures == 1, the ID of the single Feature within this primitive
+        uint32_t const* m_featureIDs;       // If m_numFeatures > 1, per-vertex Feature IDs
         };
 
     FeatureIndex() { m_featureIDs = nullptr; }
@@ -1880,7 +1880,7 @@ public:
 };
 
 //=======================================================================================
-//! Defines a look-up table for Features within a batched Graphic. Consecutive 16-bit
+//! Defines a look-up table for Features within a batched Graphic. Consecutive 32-bit
 //! indices are assigned to each unique Feature. Primitives within the Graphic can
 //! use per-vertex indices to specify the distribution of Features within the primitive.
 //! A FeatureTable can be shared amongst multiple primitives within a single Graphic, and
@@ -1889,21 +1889,21 @@ public:
 //=======================================================================================
 struct FeatureTable
 {
-    typedef bmap<Feature, uint16_t> Map;
+    typedef bmap<Feature, uint32_t> Map;
+    static constexpr uint32_t GetMaxIndex() { return 1024*1024; }
 private:
     Map     m_map;
     
-    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
 public:
     FeatureTable() { }
     FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)) { }
     FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
-    uint16_t GetIndex(FeatureCR feature)
+    uint32_t GetIndex(FeatureCR feature)
         {
         BeAssert(!IsFull());
-        uint16_t index = 0;
+        uint32_t index = 0;
         if (!FindIndex(index, feature) && !IsFull())
             {
             index = GetNumIndices();
@@ -1914,7 +1914,7 @@ public:
         }
 
     //! Looks up the index of an existing Feature. Returns false if the Feature does not exist in the lookup table.
-    bool FindIndex(uint16_t& index, FeatureCR feature) const
+    bool FindIndex(uint32_t& index, FeatureCR feature) const
         {
         auto iter = m_map.find(feature);
         bool found;
@@ -1926,7 +1926,7 @@ public:
 
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxIndex()); return size() >= GetMaxIndex(); }
-    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+    uint32_t GetNumIndices() const { return static_cast<uint32_t>(size()); }
     bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
 
     typedef Map::const_iterator const_iterator;
