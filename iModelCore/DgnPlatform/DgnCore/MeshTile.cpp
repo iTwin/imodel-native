@@ -569,7 +569,7 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform)
+void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
     {
     m_points.resize(triMesh.m_numPoints);
 
@@ -586,7 +586,7 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
             m_normals.at(i).Init((double) triMesh.m_normals[i].x, (double) triMesh.m_normals[i].y, (double) triMesh.m_normals[i].z);
 
         if (nullptr != triMesh.m_textureUV)
-            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) triMesh.m_textureUV[i].y);
+            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
     for (int32_t i=0; i<triMesh.m_numIndices; )
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], false));
@@ -1773,6 +1773,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
+    static bool         s_doTileTree = false;
     
     if (!isModel3d)
         surfacesOnly = false;
@@ -1786,7 +1787,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-    if (nullptr != getTileTree)
+    if (s_doTileTree && nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }
@@ -1833,7 +1834,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](TileGeneratorStatus status)
             {
-            return status;
+            return status;                           
             });
         }
     }
@@ -1900,7 +1901,8 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
+(ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {

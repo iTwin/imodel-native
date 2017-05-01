@@ -26,12 +26,13 @@ DEFINE_REF_COUNTED_PTR(RenderSystem)
 struct Texture : Render::Texture
 {
     CreateParams        m_createParams;
-    Image               m_image;
+    ImageSource         m_imageSource;
+    Image::BottomUp     m_bottomUp;
 
-    Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(image) { }
-    Texture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_image(source, targetFormat, bottomUp) { }
+    Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(image, Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg), m_bottomUp(Image::BottomUp::No)  { }
+    Texture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
 
-    Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_image, ImageSource::Format::Png), !m_createParams.m_isTileSection); }
+    Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
 };  // Texture
     
 //=======================================================================================
@@ -40,7 +41,8 @@ struct Texture : Render::Texture
 struct Tile : Render::TileNode
 {
 private:
-    PublishableTileGeometry    m_geometry;
+    PublishableTileGeometry                         m_geometry;
+    bmap<Render::TextureP, TileDisplayParamsCPtr>   m_paramsMap;
 
 protected:
     Tile(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance)
@@ -58,7 +60,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    double          tileTolerance = (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6: inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();     // off by factor two??
+    double          tileTolerance = (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();     // off by factor two??
 
     return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, tileTolerance);
     }
@@ -69,11 +71,26 @@ static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, SimplifyGraphic& simplifyGraphic)
     {
-    Render::TileTextureImagePtr     tileTexture = triMesh.m_texture.IsValid() ? (dynamic_cast <TextureP> (triMesh.m_texture.get()))->CreateTileTexture() : nullptr;
-    auto                            tileDisplayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), true); 
-    auto                            mesh = TileMesh::Create(*tileDisplayParams);
+    TextureP                texture = dynamic_cast <TextureP> (triMesh.m_texture.get());
+    TileDisplayParamsCPtr   displayParams;
 
-    mesh->AddTriMesh(triMesh, Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform()));
+    auto const& foundParams = m_paramsMap.find(texture);
+
+    if (foundParams == m_paramsMap.end())
+        {
+        Render::TileTextureImagePtr     tileTexture = texture->CreateTileTexture();
+
+        displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), true);
+        m_paramsMap.Insert(texture, displayParams);
+        }
+    else
+        {
+        displayParams = foundParams->second;
+        }
+    
+    auto                            mesh = TileMesh::Create(*displayParams);
+
+    mesh->AddTriMesh(triMesh, Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform()), nullptr != texture && Image::BottomUp::Yes == texture->m_bottomUp);
 
     m_geometry.Meshes().push_back(mesh);
     }
