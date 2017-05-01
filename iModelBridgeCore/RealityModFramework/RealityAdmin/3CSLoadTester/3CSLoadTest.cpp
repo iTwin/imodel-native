@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <queue>
 
 #include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityConversionTools.h>
@@ -20,11 +21,11 @@ std::mutex innactiveUserMutex;
 std::mutex statMutex;
 std::mutex rpsMutex;
 
-static bvector<User*> s_innactiveUsers = bvector<User*>();
+static std::queue<User*> s_innactiveUsers = std::queue<User*>();
 static RPS s_rps = RPS();
 static bool s_keepRunning = true;
 static Stats s_stats = Stats();
-static const Utf8String s_server("https://dev-contextcapture-eus.cloudapp.net/");
+static const Utf8String s_server("https://qa-contextcapture-eus.cloudapp.net/");
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
@@ -112,8 +113,8 @@ size_t getInnactiveUserSize()
 void restartUser(UserManager* manager)
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
-    User* user = s_innactiveUsers.back();
-    s_innactiveUsers.pop_back();
+    User* user = s_innactiveUsers.front();
+    s_innactiveUsers.pop();
     user->DoNext(manager);
     }
 
@@ -300,7 +301,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     //file << Utf8PrintfString("Job Result   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_RESULT]->success, opStats[OperationType::JOB_RESULT]->failure, (int)opStats[OperationType::JOB_RESULT]->minTime, (int)opStats[OperationType::JOB_RESULT]->maxTime, (int)opStats[OperationType::JOB_RESULT]->avgTime, s_rps.GetRPS(OperationType::JOB_RESULT, currentTime)) << std::endl;
     file << Utf8PrintfString("Job Cancel   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_CANCEL]->success, opStats[OperationType::JOB_CANCEL]->failure, (int)opStats[OperationType::JOB_CANCEL]->minTime, (int)opStats[OperationType::JOB_CANCEL]->maxTime, (int)opStats[OperationType::JOB_CANCEL]->avgTime, s_rps.GetRPS(OperationType::JOB_CANCEL, currentTime)) << std::endl;
 
-    file << std::endl << std::endl << "op list:" << std::endl;
+    file << std::endl << std::endl << "operation list:" << std::endl;
 
     for (Utf8String op : opLog)
         file << op << std::endl;
@@ -367,7 +368,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User(int id, Utf8String token) :
     m_currentOperation(OperationType::LIST_PROJECT), m_userId(id), m_token(token),
-    m_submitted(false)
+    m_submitted(false), m_jobCount(0)
     {}
 
 ///*---------------------------------------------------------------------------------**//**
@@ -384,15 +385,7 @@ void User::DoNext(UserManager* owner)
 
     CURL* curl = nullptr;
     if(m_id.empty() && !m_jobId.empty())
-        {
-        if(m_submitted)
-            {
-            m_jobId.clear();
-            m_submitted = false;
-            }
-        else
-            m_currentOperation = OperationType::DELETE_JOB;
-        }
+        m_currentOperation = OperationType::DELETE_JOB;
     
     if (m_currentOperation == OperationType::DELETE_PROJECT)
         {
@@ -475,7 +468,8 @@ void User::DoNext(UserManager* owner)
         else
             curl = CreateJob();
         }
-    else if (m_currentOperation == OperationType::ADD_PROJECT)
+    
+    if (m_currentOperation == OperationType::ADD_PROJECT)
         {
         if (!m_id.empty())
             {
@@ -485,8 +479,7 @@ void User::DoNext(UserManager* owner)
         else
             curl = AddProject();
         }
-
-    if(m_currentOperation == OperationType::LIST_PROJECT)
+    else if(m_currentOperation == OperationType::LIST_PROJECT)
         {
         curl = ListProject();
         }
@@ -498,6 +491,11 @@ void User::DoNext(UserManager* owner)
     m_start = std::time(nullptr);
     if(curl != nullptr)
         owner->SetupCurl(curl, this);
+    else
+        {
+        std::lock_guard<std::mutex> lock(innactiveUserMutex);
+        s_innactiveUsers.push(this);
+        }
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -542,6 +540,8 @@ CURL* User::AddProject()
     m_correspondance.req.url.append("api/v1/projects");
     m_correspondance.req.type = POST;
     m_correspondance.req.payload = "{\"region\": \"eus\", \"name\":\"something\"}";
+
+    m_jobCount = 0;
 
     return PrepareRequest();
     }
@@ -590,12 +590,13 @@ CURL* User::ListClusters()
 
 CURL* User::CreateJob()
     {
+    m_jobCount++; //this is to avoid adding a job with the same name as one that was recently deleted
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/jobs", m_id));
     m_correspondance.req.type = POST;
     Utf8String body =   "{"
-                            "\"id\":\"%s\","
+                            "\"id\":\"%s%d\","
                             "\"projectName\" : \"load test job\","
                             "\"jobType\" : \"Photos2Mesh\","
                             "\"inputs\" : {"
@@ -634,7 +635,7 @@ CURL* User::CreateJob()
                             "}"
                         "}";
 
-    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id);
+    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, m_jobCount);
     
     return PrepareRequest();
     }
@@ -920,7 +921,7 @@ int main(int argc, char* argv[])
         wo.users.push_back(new User(0, token)); //start with one
             for (int i = 1; i < userCount; i++)
             {
-            s_innactiveUsers.push_back(new User(i, token)); //feed the rest to the Dispatcher
+            s_innactiveUsers.push(new User(i, token)); //feed the rest to the Dispatcher
             }
         }
 
@@ -993,7 +994,7 @@ void UserManager::Perform()
                 user->ValidatePrevious(still_running);
 
             std::lock_guard<std::mutex> lock(innactiveUserMutex);
-            s_innactiveUsers.push_back(user);
+            s_innactiveUsers.push(user);
                 
             curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
             curl_easy_cleanup(msg->easy_handle);
@@ -1031,8 +1032,8 @@ void UserManager::Repopulate()
 
     for (size_t i = 0; i < innactiveUserCount; i++)
         {
-        User* user = s_innactiveUsers.back();
-        s_innactiveUsers.pop_back();
+        User* user = s_innactiveUsers.front();
+        s_innactiveUsers.pop();
         user->DoNext(this);
         }
     }

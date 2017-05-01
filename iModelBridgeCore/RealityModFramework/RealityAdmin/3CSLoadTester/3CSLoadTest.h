@@ -113,6 +113,7 @@ public:
     Utf8String                  m_token;
 
     int                         m_userId;
+    int                         m_jobCount;
 
     User(int id, Utf8String token);
     
