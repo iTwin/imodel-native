@@ -1591,14 +1591,6 @@ private:    // This is determined at time of creation ..
 bool m_invertedOrientation;
 protected:
     ISolidPrimitive ();
-    void SetInvertedOrientation (bool inverted);
-    void ToggleInvertedOrientation ();
-    bool IsInvertedOrientation () const;
-    
-    void InternalToExternalFractions (DPoint2dR uv) const;
-    void ExternaltoInternalFractions (DPoint2dR uv) const;
-    void InternalToExternalTangentPlane (DPoint3dDVec3dDVec3dR internalPlane) const;
-    void ExternaltoInternalTangentPlane (DPoint3dDVec3dDVec3dR externalPlane) const;
 
 // Protected side of VPP wrappers.  Implementations in IsolidPrimitive return false. Concrete classes implement the one relevant to them.
     GEOMAPI_VIRTUAL SolidPrimitiveType _GetSolidPrimitiveType () const = 0;
