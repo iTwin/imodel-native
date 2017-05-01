@@ -251,6 +251,10 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
     if (newTarget)
         newTarget->SetMinimumFrameRate(m_minimumFrameRate);
 
+    // Feature symbology is per-Target - will need to be updated for new Target (now, or possibly later if newTarget=nullptr)
+    if (m_viewController.IsValid())
+        m_viewController->SetFeatureSymbologyDirty();
+
     m_sync.InvalidateFirstDrawComplete();
     }
 
