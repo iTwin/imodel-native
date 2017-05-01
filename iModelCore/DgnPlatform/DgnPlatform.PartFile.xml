@@ -639,11 +639,11 @@
         </Bindings>
     </Part>
     
-    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke" OnlyPlatforms="x64">
+    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherSdk.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="TilePublisherLib" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.Sdk.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisherSdk.*.nupkg</Files>
         </Bindings>
     </Part>
 
