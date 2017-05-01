@@ -189,7 +189,7 @@ DTMStatusInt BcDTMDrapedLinePoint::_GetPointCoordinates (DPoint3d& coordP) const
 };
 
 
-DTMStatusInt BcDTMDrapedLine::_GetPointByIndex(Bentley::TerrainModel::DTMDrapedLinePointPtr& ret, unsigned int index) const
+DTMStatusInt BcDTMDrapedLine::_GetPointByIndex(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePointPtr& ret, unsigned int index) const
     {
     // Create the new point
     if(index > (unsigned int)const_cast<BcDTMDrapedLine*>(this)->_GetPointCount())
@@ -848,7 +848,7 @@ int BcDTMDrapedLinePoint::GetUserTagCount () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 BcDTMDrapedLinePoint::GetUserTagAtIndex (int index) const
+int64_t BcDTMDrapedLinePoint::GetUserTagAtIndex (int index) const
     {
     return _GetUserTagAtIndex (index);
     }
@@ -958,7 +958,7 @@ bool BcDTMDrapedLine::IsPartiallyOnDTM ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::TerrainModel::IDTMDrapedLine* BcDTMDrapedLine::GetIDTMDrapedLine()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrapedLine* BcDTMDrapedLine::GetIDTMDrapedLine()
     {
     return _GetIDTMDrapedLine();
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/SelectDTMElemTool.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 

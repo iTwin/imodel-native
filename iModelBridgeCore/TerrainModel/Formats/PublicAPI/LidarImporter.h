@@ -55,12 +55,12 @@ struct LidarImporter : SingleTerrainImporter
     /*__PUBLISH_SECTION_END__*/
     private: mutable bool m_lasFeatureCountsValid;
     private: mutable bvector<ClassificationInfo> m_classificationInfo;
-    private: mutable Bentley::GeoCoordinates::BaseGCSPtr m_gcs;
+    private: mutable BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr m_gcs;
     private: mutable bool m_gcsValid;
     private: LidarImporter (WCharCP filename);
 
     protected: virtual ImportedTerrain _ImportTerrain (WCharCP name) const override;
-    protected: virtual Bentley::GeoCoordinates::BaseGCSPtr _GetGCS () const override;
+    protected: virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr _GetGCS () const override;
     protected: virtual WCharCP LidarImporter::_GetFileUnitString () const override;
     protected: virtual FileUnit _GetFileUnit () const override;
     /*__PUBLISH_SECTION_START__*/

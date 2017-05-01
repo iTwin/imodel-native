@@ -12,19 +12,19 @@
 #include <TerrainModel/Formats/ImagePP.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
+#ifdef BUILDTMFORDGNDB
+#include <ImagePP/h/ImageppAPI.h>
+#else
 #include <ImagePP/h/hstdcpp.h>
+
+#endif
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <ImagePP/all/h/HPMPool.h>
 #include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
-#include <ImagePP\all\h\HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HFCException.h>
 
-#ifdef TODO
-HGS_REGISTER_SURFACE(HRASurface, 5)
-HGS_REGISTER_GRAPHICTOOL(HRAEditor)
-HGS_REGISTER_GRAPHICTOOL(HRABlitter)
-HGS_REGISTER_GRAPHICTOOL(HRAWarper)
-#endif
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 USING_NAMESPACE_IMAGEPP
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -2386,9 +2386,12 @@ WCharCP    projectionKeyP
         if (dbg) bcdtmWrite_message (0, 0, 0, "Instantiated");
 
         //  Get  Pointer To Raster Coordinate System Instance
-
+#ifdef BUILDTMFORDGNDB
+        BaseGCSCP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP ();
+#else
         auto rasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP();
         BaseGCSP pRasterCoordSys = rasterCoordSys == nullptr ? nullptr : rasterCoordSys->GetBaseGCS();
+#endif
         if (pRasterCoordSys != NULL) geoCordSysSet = 1;
         if (dbg)
             {
@@ -2609,7 +2612,11 @@ void ImagePPConverter::GetImageProperties ()
             RasterPointExtractor.GetDimensionInPixels (&m_widthInPixels, &m_heightInPixels);
             //   Get BaseGCS Pointer To Raster Coordinate System
             if(RasterPointExtractor.GetDEMRasterCoordSysCP () != nullptr)
+#ifdef BUILDTMFORDGNDB
+                m_gcs = GeoCoordinates::BaseGCS::CreateGCS(*RasterPointExtractor.GetDEMRasterCoordSysCP ());
+#else
                 m_gcs = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS ();
+#endif
             else
                 m_gcs = nullptr;
             }
@@ -2644,15 +2651,14 @@ double     elevationScaleFactor               // Elevation Scale Factor
     int dbg = DTM_TRACE_VALUE (0), cdbg = DTM_CHECK_VALUE (0);
     DTMStatusInt ret = DTM_SUCCESS;
     double dx, dy, nullValue = -98765.4321;
-    long   nx, ny, numColPts = 0, lastColPts = 0, colNum = 0, dtmFeature, numRows, numCols, numVoids, numIslands;
+    long   nx, ny, numColPts = 0, lastColPts = 0, colNum = 0, numRows, numCols;
     long* islandsP = nullptr;
-    long   startTime, cleanInternalVoids = 0, numImagePoints;
+    long   startTime, numImagePoints;
     bool imageRegular = true;
     long   point, point1, point2;
     double xImageMin, yImageMin, zImageMin, xImageMax, yImageMax, zImageMax;
     double xDist, yDist, colSpacing, rowSpacing;
     DPoint3d *p1P, *p2P, *p3P, *pointP;
-    BC_DTM_FEATURE *dtmFeatureP;
     BC_DTM_OBJ* dtmP;
     /*
     ** Write Entry Message
@@ -2908,66 +2914,9 @@ double     elevationScaleFactor               // Elevation Scale Factor
         if (dbg) bcdtmWrite_message (0, 0, 0, "Voiding Missing Values");
         if (bcdtmObject_placeVoidsAroundNullValuesDtmObject (dtmP, nullValue)) goto errexit;
         }
-    goto apply;
-    /*
-    ** Count Number Of Voids
-    */
-    numVoids = 0;
-    numIslands = 0;
-    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-        {
-        dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-        if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Void) ++numVoids;
-        if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Island) ++numIslands;
-        }
-    if (dbg) bcdtmWrite_message (0, 0, 0, "numVoids = %8ld ** numIslands = %8ld", numVoids, numIslands);
-    /*
-    **  Clean Up Voids Resulting From Null Values
-    */
-    if (numVoids > 0)
-        {
-        /*
-        **  Remove Voids On Tin Hull
-        */
-        if (dbg) bcdtmWrite_message (0, 0, 0, "Removing Voids On Tin Hull");
-        if (bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject (dtmP, 0)) goto errexit;
-        /*
-        **  Clean Internal Voids
-        */
-        if (cleanInternalVoids)
-            {
-            if (dbg) bcdtmWrite_message (0, 0, 0, "Removing Null Values From Internal Voids");
-            for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-                {
-                dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-                if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == DTMFeatureType::Void)
-                    {
-                    if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Cleaning Void Feature %8ld", dtmFeature);
-                    /*
-                    **           Get Island Features Internal To Void
-                    */
-                    if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Getting IslandS Internal To Void");
-                    if (bcdtmEdit_getIslandsInternalToVoidDtmObject (dtmP, dtmFeature, &islandsP, &numIslands)) goto errexit;
-                    if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Number Of Islands = %8ld", numIslands);
-                    /*
-                    **           Remove Internal Void Points And Lines
-                    */
-                    if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Removing Internal Void Points And Lines");
-                    if (bcdtmEdit_removeInternalVoidPointsAndLinesDtmObject (dtmP, dtmFeature, islandsP, numIslands)) goto errexit;
-                    if (islandsP != NULL) { free (islandsP); islandsP = NULL; }
-                    }
-                }
-            }
-        /*
-        **  Clean Dtm Object
-        */
-        if (dbg) bcdtmWrite_message (0, 0, 0, "Cleaning Dtm Object");
-        if (bcdtmList_cleanDtmObject (dtmP)) goto errexit;
-        }
     /*
     ** Apply Unit Conversion Factor To Elevation Values
     */
-apply:
     if (unitConversionFactor != 1.0)
         {
         if (dbg) bcdtmWrite_message (0, 0, 0, "Applying Unit Conversions To Elevations");
@@ -3054,7 +3003,7 @@ uint64_t ImagePPConverter::GetNumberOfPixels ()
     return m_heightInPixels * m_widthInPixels;
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr ImagePPConverter::GetGCS ()
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr ImagePPConverter::GetGCS ()
     {
     GetImageProperties ();
     return m_gcs;

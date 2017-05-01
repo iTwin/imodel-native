@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/LandXML.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,13 +14,13 @@ BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 LandXMLImporter^ LandXMLImporter::Create (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
-    LandXMLImporterPtr importer = Bentley::TerrainModel::LandXMLImporter::Create (p);
+    LandXMLImporterPtr importer = BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create (p);
     if (importer.IsValid ())
         return gcnew LandXMLImporter (importer.get ());
     return nullptr;
     }
 
-LandXMLImporter::LandXMLImporter (Bentley::TerrainModel::LandXMLImporter* importer) : TerrainImporter (importer)
+LandXMLImporter::LandXMLImporter (BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter* importer) : TerrainImporter (importer)
     {
     m_importer = importer;
     }
@@ -114,14 +114,14 @@ void LandXMLExporter::ProjectDescription::set (System::String^ value)
 
 void LandXMLExporter::CreateXML (System::String^ filename, System::Collections::Generic::IEnumerable<NamedTerrain^>^ terrains)
     {
-    bvector<Bentley::TerrainModel::LandXMLExporter::NamedDTM> uTerrains;
+    bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLExporter::NamedDTM> uTerrains;
 
     for each (NamedTerrain^ terrain in terrains)
         {
         pin_ptr<const wchar_t> uName = PtrToStringChars (terrain->Name);
         pin_ptr<const wchar_t> uDescription = PtrToStringChars (terrain->Description);
         BcDTMP dtmP = (BcDTMP)terrain->Terrain->ExternalHandle.ToPointer();
-        Bentley::TerrainModel::LandXMLExporter::NamedDTM uTerrain (dtmP, uName, uDescription);
+        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLExporter::NamedDTM uTerrain (dtmP, uName, uDescription);
         uTerrains.push_back (uTerrain);
         }
     pin_ptr<const wchar_t> uFilename = PtrToStringChars (filename);

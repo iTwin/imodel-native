@@ -45,6 +45,7 @@ struct DTMFenceParams
         }
     };
 
+//__PUBLISH_SECTION_START__
 typedef bvector<DPoint3d> DTMPointArray;
 
 /*=================================================================================**//**
@@ -53,14 +54,14 @@ typedef bvector<DPoint3d> DTMPointArray;
 +===============+===============+===============+===============+===============+======*/
 struct IDTMDrapedLinePoint abstract : IRefCounted
 {
-/*__OPUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
     virtual DTMStatusInt _GetPointCoordinates (DPoint3d& coordP) const = 0;
     virtual double _GetDistanceAlong () const = 0;
     virtual DTMDrapedLineCode _GetCode () const = 0;
 
-/*__OPUBLISH_SECTION_START__*/
+/*__PUBLISH_SECTION_START__*/
 public:
     //! Gets the Point Coordinates for this Draped Point.
     //! @param[out]  coordP     The coordinate.
@@ -80,14 +81,14 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct IDTMDrapedLine abstract : IRefCounted
 {
-/*__OPUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
     virtual DTMStatusInt _GetPointByIndex (DTMDrapedLinePointPtr& ret, unsigned int index) const = 0;
     virtual DTMStatusInt _GetPointByIndex (DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const = 0;
     virtual unsigned int _GetPointCount () const = 0;
 
-/*__OPUBLISH_SECTION_START__*/
+/*__PUBLISH_SECTION_START__*/
 public:
     //! Gets the Draped Point by index.
     //! @param[out] ret         The DTMDrapedLinePoint for the index.
@@ -112,10 +113,11 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct IDTMDraping abstract
 {
-/*__OPUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
 virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedType, DPoint3dCR point) = 0;
+
 virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], int numPoints) = 0;
 
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
@@ -123,6 +125,7 @@ virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR 
 virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) = 0;
 
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
+
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -165,7 +168,8 @@ BENTLEYDTM_EXPORT bool IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DP
 //! @param[in]  slopeOfVector           Slope of vector.
 //! @return true if there is an intersection with the mesh.
 BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector);
-};
+
+    };
 
 /*=================================================================================**//**
 * Interface implemented by DTM engines.
@@ -173,7 +177,7 @@ BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *
 +===============+===============+===============+===============+===============+======*/
 struct IDTMDrainageFeature abstract : IRefCounted
 {
-/*__OPUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
 virtual int _GetNumParts() = 0;
@@ -205,14 +209,14 @@ BENTLEYDTM_EXPORT DTMStatusInt GetPoints (DTMPointArray& ret, int index);
 +===============+===============+===============+===============+===============+======*/
  struct IDTMDrainage abstract
  {
- /*__OPUBLISH_SECTION_END__*/
+ /*__PUBLISH_SECTION_END__*/
  /*__OPUBLISH_CLASS_VIRTUAL__*/
  protected:
 virtual DTMStatusInt _GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth) = 0;
 virtual DTMStatusInt _GetAscentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth) = 0;
 virtual DTMStatusInt _TraceCatchmentForPoint (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) = 0;
 
- /*__OPUBLISH_SECTION_START__*/
+ /*__PUBLISH_SECTION_START__*/
  public:
 //! Gets the DescentTrace.
 //! @param[out] ret          The Descent Trace.
@@ -240,13 +244,13 @@ BENTLEYDTM_EXPORT DTMStatusInt TraceCatchmentForPoint (DTMDrainageFeaturePtr& re
 +===============+===============+===============+===============+===============+======*/
 struct IDTMContouring abstract
 {
-/*__OPUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
 virtual DTMStatusInt _ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt,double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, const DTMFenceParams& fence) = 0;
 virtual DTMStatusInt _ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt,double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity) = 0;
 
-/*__OPUBLISH_SECTION_START__*/
+/*__PUBLISH_SECTION_START__*/
 public:
 //! Gets the Contour from a point.
 //! @param[out] ret           The Contour Points.

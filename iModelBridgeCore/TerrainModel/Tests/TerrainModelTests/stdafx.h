@@ -40,6 +40,6 @@ struct TMHelpers
         };
 
     static WString GetTestDataPath(WCharCP dataFile);
-    static Bentley::TerrainModel::BcDTMPtr LoadTerrainModel(WCharCP filename, WCharCP name = nullptr);
+    static BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr LoadTerrainModel(WCharCP filename, WCharCP name = nullptr);
     static bool ValidateTM(BcDTMR dtm, const ValidateParams& params);
     };

@@ -2302,7 +2302,7 @@ int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject
     (
     BC_DTM_OBJ     *dtmP,
     DTMFeatureId featureId,
-    const Bentley::TerrainModel::DtmVectorString& features
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::DtmVectorString& features
     )
     /*
     ** Replace DTM Feature Points
@@ -4379,7 +4379,7 @@ BENTLEYDTM_EXPORT int bcdtmData_bulkFeatureIdDeleteDtmFeaturesDtmObject
             for( featIdP = dtmFeatureIdP ; featIdP < dtmFeatureIdP + numDtmFeatureId ; ++featIdP )
                 {
                 if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Deleting Feature Index = %8I64d",*featIdP) ;
-                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*featIdP,dtmFeatureIndexP,numDtmFeatureIndex,&offset))
+                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*featIdP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
                     {
                     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"First DTM Feature Offset = %8ld",offset) ;
                     while( offset <  numDtmFeatureIndex && (dtmFeatureIndexP+offset)->index  == *featIdP )
@@ -4500,7 +4500,7 @@ BENTLEYDTM_EXPORT int bcdtmData_bulkUserTagDeleteDtmFeaturesDtmObject
             */
             for( userTagP = dtmUserTagP ; userTagP < dtmUserTagP + numDtmUserTag ; ++userTagP )
                 {
-                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*userTagP,dtmFeatureIndexP,numDtmFeatureIndex,&offset))
+                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*userTagP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
                     {
                     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"First DTM Feature = %8ld",offset) ;
                     while( offset <  numDtmFeatureIndex && (dtmFeatureIndexP+offset)->index  == *userTagP )

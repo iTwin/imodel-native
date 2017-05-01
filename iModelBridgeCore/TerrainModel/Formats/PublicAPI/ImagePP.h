@@ -25,7 +25,7 @@ struct ImagePPConverter : RefCountedBase
         bool m_hasProperties;
         uint64_t m_widthInPixels;
         uint64_t m_heightInPixels;
-        Bentley::GeoCoordinates::BaseGCSPtr m_gcs;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr m_gcs;
 
     private: ImagePPConverter (WCharCP filename);
     private: void GetImageProperties ();
@@ -35,7 +35,7 @@ struct ImagePPConverter : RefCountedBase
     public: BENTLEYDTMFORMATS_EXPORT uint64_t GetWidth ();
     public: BENTLEYDTMFORMATS_EXPORT uint64_t GetHeight ();
     public: BENTLEYDTMFORMATS_EXPORT uint64_t GetNumberOfPixels ();
-    public: BENTLEYDTMFORMATS_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetGCS ();
+    public: BENTLEYDTMFORMATS_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr GetGCS ();
     public: BENTLEYDTMFORMATS_EXPORT static ImagePPConverterPtr Create (WCharCP filename);
     };
 

@@ -3,10 +3,10 @@
 #     $Source: Formats/formats.mke $
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress

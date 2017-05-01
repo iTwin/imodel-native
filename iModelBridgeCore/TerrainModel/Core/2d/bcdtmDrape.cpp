@@ -1168,13 +1168,13 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
     if( dtmFeatureOption == TRUE )
       {
         for (const auto& feature : drapeFeatures)
-         {
+            {
             if (feature.dtmFeatureType == DTMFeatureType::Breakline)
-              {
-              breakPoint = 1;
-              break;
-              }
-         }
+                {
+                breakPoint = 1;
+                break;
+                }
+            }
       }
     if( dtmFeatureOption == FALSE )
       {
@@ -2788,7 +2788,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 */
          else if( fndType == 4 )
            {
-            zdp = pzl - pzs ;
+            zdp = pzl - pzs ;            
             zdn = endPointP->z - nzs;
             process = 0 ;
            }

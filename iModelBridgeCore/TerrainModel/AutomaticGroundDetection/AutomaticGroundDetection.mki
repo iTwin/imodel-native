@@ -18,7 +18,7 @@ groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
 groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/
 
 #this means we can use CGAL with the modules that were licensed to us
-%include $(BuildContext)SubParts/Files/LicensedComponents.mki
+#%include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
 nameToDefine=CGAL_NO_AUTOLINK
 %include cdefapnd.mki

@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/sourcedirs.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__SourceDirs_MKI__)
@@ -22,6 +22,7 @@ TerrainModelFormatsDir        =       $(SrcTerrainModel)formats/
 TerrainModelDrainageDir       =       $(SrcTerrainModel)drainage/
 TerrainModelSTMDir            =       $(SrcTerrainModel)stm/
 TerrainModelElementHandlerDir =       $(SrcTerrainModel)elementHandler/
+TerrainModelGroundDetectDir   =       $(SrcTerrainModel)AutomaticGroundDetection/
 #PlatformToolsDir             =       $(SrcDgnPlatform)PlatformTools/
 #PrivateApiSrc                =       $(SrcDgnPlatform)PrivateApi/
 privmki                       =       $(SrcDgnPlatform)privmki/

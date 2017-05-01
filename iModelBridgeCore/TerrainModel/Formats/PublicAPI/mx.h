@@ -54,7 +54,7 @@ struct MXFilImporter : TerrainImporter
 
     private: MXFilImporter (WCharCP filename);
 
-    private: void DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const;
+    private: void DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const;
     private: BcDTMPtr ImportStringModel (ModelTableRecord* modelTableRecord) const;
     private: BcDTMPtr ImportTriangulation (StringTableRecord* stringTableRecord, WCharCP name) const;
 
