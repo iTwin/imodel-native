@@ -308,7 +308,7 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
-#$(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -364,9 +364,9 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 
 #$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
+$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
 
-#$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
+$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -389,9 +389,9 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 
 
 #   Importer from DcStmCore
-#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -515,10 +515,10 @@ LINKER_LIBRARIES            = \
 %endif
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
- #  $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+    $(ContextSubpartsLibs)DgnView.lib \
+    $(ContextSubpartsLibs)RasterCore.lib
 
-#    $(ContextSubpartsLibs)DgnView.lib \
-#    $(ContextSubpartsLibs)RasterCore.lib \
 #    $(ContextSubpartsLibs)BePointCloud.lib
 
     

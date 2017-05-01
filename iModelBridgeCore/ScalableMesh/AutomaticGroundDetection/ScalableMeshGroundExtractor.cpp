@@ -402,7 +402,14 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         bool       isDir;            
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
             {        
-            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+#ifndef VANCOUVER_API
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
+#else
+            WChar bufferPath[100];
+            if (0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"itiff64"))
+#endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
                 terrainCreator->EditSources().Add(textureSource);                       
@@ -421,8 +428,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
-    
+
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif     
         {        
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
         terrainCreator->EditSources().Add(coverageBreaklineSource);                               
@@ -485,7 +496,11 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     coverageBreaklineFile.AppendString(L"\\");
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif
         {
         BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
 
