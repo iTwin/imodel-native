@@ -98,7 +98,7 @@ static int GetMaxVolume (){return s_maxVolume;}
 // bvector output goes on at 10
 // restricted output of large structure (vu, mesh) goes on at 20
 // voluminous output of large structures goes on at 100
-static void SetMaxVolume (int maxVolume){s_maxVolume = maxVolume;}
+static int SetMaxVolume (int maxVolume){auto a = s_maxVolume; s_maxVolume = maxVolume; return a;}
 static bool IsSuppressed (int volume){return volume > s_maxVolume;}
 static bool PrintPrimitives (){return s_maxVolume >= PRIMITIVE_PRINT_VOLUME;}
 static bool PrintFixedStructs (){return s_maxVolume >= STRUCTURE_PRINT_VOLUME;}
