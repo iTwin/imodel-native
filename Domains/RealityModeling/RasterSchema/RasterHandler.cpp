@@ -369,7 +369,7 @@ Dgn::TileTree::RootCPtr RasterModel::_GetPublishingTileTree (ClipVectorPtr& clip
 
     _Load(renderSys);
 
-    return m_root;
+    return m_root.get();
     }
 
 

@@ -660,5 +660,5 @@ Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree (ClipVectorPtr& cli
 
     Load(renderSys);
 
-    return m_scene;
+    return m_scene.get();
     }
