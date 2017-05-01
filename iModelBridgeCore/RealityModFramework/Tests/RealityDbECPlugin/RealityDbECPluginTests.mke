@@ -89,7 +89,10 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/ECQueryConverterTests.cs \
             $(baseDir)Tests/MimicTableWriterTests.cs \
             $(baseDir)Tests/MimicTableAccessorTests.cs \
-            $(baseDir)Tests/PackagerTests.cs
+            $(baseDir)Tests/PackagerTests.cs \
+			$(baseDir)Tests/SqlQueryProviderTests.cs \
+			$(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
+			$(baseDir)Tests/USGSDataFetcherTests.cs
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
@@ -147,6 +150,11 @@ ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
 %include assemblyResourceAppend.mki
 
 ASSEMBLY_RES_TO_ADD_FILENAME = ScienceBaseJsonParent.txt
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
+
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = TnmApiDatasets.txt
 ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
 
 %include assemblyResourceAppend.mki
