@@ -72,6 +72,7 @@ HTTP request caching:
 
 */
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawGraphics)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
@@ -172,15 +173,20 @@ public:
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
 
+    //! Get the graphics for drawing this tile.
+    //! @param[in] drawGraphics The DrawGraphics to contain the graphics.
+    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
+    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const = 0;
+
     //! Draw the Graphics of this Tile into args.
     //! @param[in] args The DrawArgs for the current display request.
     //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
-    virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
+    DGNPLATFORM_EXPORT virtual void _DrawGraphics(DrawArgsR args, int depth) const;
 
     virtual void _PickGraphics(PickArgsR args, int depth) const {}
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
 
     //! Get the tile cache key for this Tile.
     virtual Utf8String _GetTileCacheKey() const = 0;
@@ -223,7 +229,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::ViewFlags _GetDrawViewFlags(RenderContextCR) const;
 
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Dgn::Render::SystemP renderSys=nullptr);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     virtual Utf8CP _GetName() const = 0;
@@ -256,7 +262,7 @@ public:
 
     //! Get expiration time for unused Tiles.
     BeDuration GetExpirationTime() const {return m_expirationTime;}
-
+                                                                                                                                           
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param maxSize The cache maximum size in bytes.
@@ -291,6 +297,8 @@ protected:
     Utf8String m_resourceName;  // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
     TileLoadStatePtr m_loads;
+    Dgn::Render::SystemP m_renderSys;
+    
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -304,8 +312,9 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
-        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
+    //! @param[in] renderSys The rendering system for creating graphics (nullptr to use renderSys supplied in Root constructor).
+    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys = nullptr)
+        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_renderSys(renderSys) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -313,6 +322,7 @@ protected:
 
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
+    Dgn::Render::SystemP GetRenderSystem() { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystem(): m_renderSys; }
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -389,6 +399,20 @@ struct TileArgs
 };
 
 //=======================================================================================
+// Structure containing the graphics branches to receive drawn graphics.
+// @bsiclass                                                    Ray.Bentley   04/17
+//=======================================================================================
+struct DrawGraphics 
+{
+    Render::GraphicBranch m_graphics;
+    Render::GraphicBranch m_hiResSubstitutes;
+    Render::GraphicBranch m_loResSubstitutes;
+
+    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); }
+
+};
+
+//=======================================================================================
 //! Arguments for drawing a tile. As tiles are drawn, their Render::Graphics go into the GraphicBranch member of this object. After all
 //! in-view tiles are drawn, the accumulated list of Render::Graphics are placed in a GraphicBranch with the location
 //! transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)
@@ -403,9 +427,7 @@ struct DrawArgs : TileArgs
 {
     typedef bmultimap<int, TileCPtr> MissingNodes;
     RenderContextR m_context;
-    Render::GraphicBranch m_graphics;
-    Render::GraphicBranch m_hiResSubstitutes;
-    Render::GraphicBranch m_loResSubstitutes;
+    DrawGraphics m_graphics;
     MissingNodes m_missing;
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
@@ -413,7 +435,7 @@ struct DrawArgs : TileArgs
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
-    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
+    void Clear() {m_graphics.Clear();  m_missing.clear();}
     DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
 };
@@ -489,13 +511,15 @@ struct Tile : TileTree::Tile
     uint32_t    GetColumn() const     { return m_id.m_column; }
 
     virtual TilePtr _CreateChild(TileId) const = 0;
-    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawArgsR args) const;
+    bool TryLowerRes(TileTree::DrawGraphicsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawGraphicsR args) const;
     bool _HasChildren() const override {return !m_isLeaf;}
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; m_children.clear();}
     ChildTiles const* _GetChildren(bool load) const override;
-    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const override;
+    virtual void _DrawGraphics(DrawArgsR args, int depth) const override;
+
 
     Utf8String _GetTileCacheKey () const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
 

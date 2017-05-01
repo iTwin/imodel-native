@@ -622,6 +622,7 @@
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
 
         <Bindings>
@@ -638,11 +639,11 @@
         </Bindings>
     </Part>
     
-    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke" OnlyPlatforms="x64">
+    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherSdk.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="TilePublisherLib" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.Sdk.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisherSdk.*.nupkg</Files>
         </Bindings>
     </Part>
 
