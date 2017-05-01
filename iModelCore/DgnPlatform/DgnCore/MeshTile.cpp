@@ -587,6 +587,7 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
         if (nullptr != triMesh.m_textureUV)
             m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
+    
     for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
