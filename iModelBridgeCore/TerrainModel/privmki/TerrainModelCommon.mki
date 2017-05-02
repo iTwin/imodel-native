@@ -10,6 +10,7 @@
 %include $(SrcRoot)TerrainModel/privmki/outputdirsDgnDb.mki
 
 BuildContext    = $(OutBuildContexts)TerrainModelDgnDb/
+terrainModelBuildDir_ = $(OutputRootDir)build/TerrainModelDgnDb/
 o               = !Must be defined by individual mke files!
 
 always:
