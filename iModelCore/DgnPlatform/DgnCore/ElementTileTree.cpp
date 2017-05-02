@@ -1494,7 +1494,7 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
     if (curves.IsAnyRegionType() && !isCurved)
         return false;   // process as facets.
 
-    return m_geometryListBuilder.AddCurveVector(curves, filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(*curves.Clone(), filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1521,7 +1521,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
             }
         }
 
-    return m_geometryListBuilder.AddSolidPrimitive(prim, displayParams, gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(*prim.Clone(), displayParams, gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1529,7 +1529,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddSurface(surface, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(*surface.Clone(), CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1537,7 +1537,7 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddPolyface(polyface, filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(*polyface.Clone(), filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1545,7 +1545,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddBody(solid, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(const_cast<IBRepEntityR>(solid), CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1553,7 +1553,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddTextString(textString, CreateDisplayParams(gf, true /*ignore lighting*/), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.Add(*textString.Clone(), CreateDisplayParams(gf, true /*ignore lighting*/), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1237,60 +1237,54 @@ PolyfaceHeaderPtr cloneGeometry(PolyfaceQueryCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
 
     bool isCurved = curves.ContainsNonLinearPrimitive();
-    CurveVectorPtr clone = cloneGeometry(curves);
-    IGeometryPtr geom = IGeometry::Create(clone);
+    IGeometryPtr geom = IGeometry::Create(CurveVectorPtr(&curves));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform)
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
-    ISolidPrimitivePtr clone = cloneGeometry(primitive);
-    IGeometryPtr geom = IGeometry::Create(clone);
+    IGeometryPtr geom = IGeometry::Create(ISolidPrimitivePtr(&primitive));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform)
     {
-    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
-    clone->CopyFrom(surface);
-    IGeometryPtr geom = IGeometry::Create(clone);
-
-    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
+    bool isCurved = (surface.GetUOrder() > 2 || surface.GetVOrder() > 2);
+    IGeometryPtr geom = IGeometry::Create(MSBsplineSurfacePtr(&surface));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
-    PolyfaceHeaderPtr clone = cloneGeometry(polyface);
-    if (!clone->IsTriangulated() && SUCCESS != clone->Triangulate())
+    if (!polyface.IsTriangulated() && SUCCESS != polyface.Triangulate())
         {
         BeAssert(false && "Failed to triangulate...");
         return false;
         }
 
     if (m_haveTransform)
-        clone->Transform(Transform::FromProduct(m_transform, transform));
+        polyface.Transform(Transform::FromProduct(m_transform, transform));
     else if (!transform.IsIdentity())
-        clone->Transform(transform);
+        polyface.Transform(transform);
 
-    DRange3d range = clone->PointRange();
-    IGeometryPtr geom = IGeometry::Create(clone);
+    DRange3d range = polyface.PointRange();
+    IGeometryPtr geom = IGeometry::Create(PolyfaceHeaderPtr(&polyface));
     AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), range);
     return true;
     }
@@ -1298,22 +1292,20 @@ bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, Dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
-    IBRepEntityPtr clone = const_cast<IBRepEntityP>(&body);
-
-    DRange3d range = clone->GetEntityRange();
+    DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryListBuilder::Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly)
         return true;
@@ -1321,14 +1313,13 @@ bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsCR
     static BeMutex s_tempFontMutex;
     BeMutexHolder lock(s_tempFontMutex);    // Temporary - until we resolve the font threading issues.
 
-    TextStringPtr clone = textString.Clone();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
 
-    DRange2d range2d = clone->GetRange();
+    DRange2d range2d = textString.GetRange();
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
-    Transform::FromProduct(tf, clone->ComputeTransform()).Multiply(range, range);
+    Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 
@@ -1832,7 +1823,7 @@ void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
 void PrimitiveBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
-    _AddCurveVector(*curve, filled);
+    m_geomList.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1870,7 +1861,7 @@ void PrimitiveBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled
         curve->push_back(gapSegment);
         }
 
-    _AddCurveVector(*curve, filled);
+    m_geomList.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1889,7 +1880,7 @@ void PrimitiveBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, double
 void PrimitiveBuilder::_AddLineString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
-    _AddCurveVector(*curve, false);
+    m_geomList.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1908,7 +1899,7 @@ void PrimitiveBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, doubl
 void PrimitiveBuilder::_AddPointString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
-    _AddCurveVector(*curve, false);
+    m_geomList.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1916,7 +1907,7 @@ void PrimitiveBuilder::_AddPointString(int numPoints, DPoint3dCP points)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
     {
-    m_geomList.AddPolyface(meshDataIn, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_geomList.Add(*meshDataIn.Clone(), filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1924,7 +1915,7 @@ void PrimitiveBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddBody(IBRepEntityCR entity)
     {
-    m_geomList.AddBody(entity, GetDisplayParams(), GetLocalToWorldTransform());
+    m_geomList.Add(const_cast<IBRepEntityR>(entity), GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1942,7 +1933,7 @@ void PrimitiveBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool filled
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddTextString(TextStringCR text)
     {
-    m_geomList.AddTextString(text, GetDisplayParams(true), GetLocalToWorldTransform());
+    m_geomList.Add(*text.Clone(), GetDisplayParams(true), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1961,7 +1952,7 @@ void PrimitiveBuilder::_AddTextString2d(TextStringCR text, double priority)
         auto origin = ts->GetOrigin();
         origin.z = zDepth;
         ts->SetOrigin(origin);
-        _AddTextString(*ts);
+        m_geomList.Add(*ts, GetDisplayParams(true), GetLocalToWorldTransform());
         }
     }
 
@@ -2008,7 +1999,7 @@ void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThicke
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
     {
-    m_geomList.AddSolidPrimitive(primitive, GetDisplayParams(), GetLocalToWorldTransform());
+    m_geomList.Add(*primitive.Clone(), GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2016,7 +2007,7 @@ void PrimitiveBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     {
-    m_geomList.AddCurveVector(curves, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_geomList.Add(*curves.Clone(), isFilled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2033,7 +2024,7 @@ void PrimitiveBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, do
         {
         Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
         auto cv = curves.Clone(tf);
-        _AddCurveVector(*cv, isFilled);
+        m_geomList.Add(*cv, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
         }
     }
 
@@ -2043,7 +2034,7 @@ void PrimitiveBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, do
 void PrimitiveBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
-    _AddCurveVector(*cv, filled);
+    m_geomList.Add(*cv, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2074,7 +2065,7 @@ void PrimitiveBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
     {
-    m_geomList.AddSurface(surface, GetDisplayParams(), GetLocalToWorldTransform());
+    m_geomList.Add(*surface.Clone(), GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
