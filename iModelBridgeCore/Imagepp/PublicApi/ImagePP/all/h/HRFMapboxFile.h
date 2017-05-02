@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMapboxFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -18,8 +18,16 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+#include <mutex>
+
 
 BEGIN_IMAGEPP_NAMESPACE
+
+
+struct WorkerPool;
+struct MapBoxTileQuery;
+struct ThreadLocalHttp;
+struct HttpSession;
 
 class HRFMapBoxCapabilities : public HRFRasterFileCapabilities
     {
@@ -59,6 +67,10 @@ public:
     virtual void                          Save() {}
 
     virtual uint64_t                        GetFileCurrentSize() const;
+
+    //Look ahead method.
+    virtual bool                         CanPerformLookAhead(uint32_t pi_Page) const;
+
     
 protected:
 
@@ -69,8 +81,35 @@ protected:
     virtual void                        CreateDescriptors   ();
     HFCBinStream*               GetFilePtr          ();
 
+
+    //--------------------------------------
+    // LookAhead Methods
+    //--------------------------------------
+    //This method is used to determine if the file format supports look ahead
+    //by block.
+    virtual bool HasLookAheadByBlock(uint32_t pi_Page) const;
+
+    //This method is used in SetLookAhead to give the list of needed tiles
+    //to a derived class, since it knows how to obtain the tiles.
+    virtual void RequestLookAhead(uint32_t             pi_Page,
+                                 const HGFTileIDList& pi_rBlocks,
+                                 bool                pi_Async);
+
+    //This method is used in SetLookAhead to indicate to a derived class that
+    //the current LookAhead has been cancelled.
+    virtual void CancelLookAhead(uint32_t              pi_Page);
+
 private:
     
+
+    WorkerPool&         GetWorkerPool();
+    std::unique_ptr<WorkerPool> m_pWorkerPool;
+
+    HttpSession&        GetThreadLocalHttpSession();
+    std::unique_ptr<ThreadLocalHttp> m_threadLocalHttp;
+
+    std::map<uint64_t, RefCountedPtr<MapBoxTileQuery>> m_tileQueryMap;
+    std::mutex                                         m_tileQueryMapMutex;
                   
     // Methods Disabled
     HRFMapBoxFile(const HRFMapBoxFile& pi_rObj);

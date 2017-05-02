@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMapboxTileEditor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -12,12 +12,14 @@
 
 #include "HRFResolutionEditor.h"
 
+#include <ImagePPInternal/gra/Task.h>
+
 BEGIN_IMAGEPP_NAMESPACE
 
 
 
 
-struct MapBoxTileQuery 
+struct MapBoxTileQuery : public WorkerPool::Task
 {
     MapBoxTileQuery(uint64_t tileId, Utf8StringCR tileUri, HRFMapBoxFile& rasterFile) 
     :m_tileId(tileId), m_tileUri(tileUri), m_rasterFile(rasterFile) 
@@ -25,12 +27,12 @@ struct MapBoxTileQuery
 
     virtual ~MapBoxTileQuery(){};
     
-    virtual void _Run();
+    virtual void _Run() override;
 
     uint64_t                    m_tileId;
     Utf8String                  m_tileUri;
     bvector<Byte>               m_tileData;
-    HRFMapBoxFile&        m_rasterFile;  // Do not hold a HRFMapBoxEditor since it might be destroyed while query are still running. 
+    HRFMapBoxFile&              m_rasterFile;  // Do not hold a HRFMapBoxEditor since it might be destroyed while query are still running. 
 };
 
 
@@ -77,6 +79,10 @@ protected:
                         uint32_t              pi_Page,
                         unsigned short       pi_Resolution,
                         HFCAccessMode         pi_AccessMode);
+
+    //Request look ahead
+    virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);
+
 private:
 
     HGFTileIDDescriptor m_TileIDDescriptor;

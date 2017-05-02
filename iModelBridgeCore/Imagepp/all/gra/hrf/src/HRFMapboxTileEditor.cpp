@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMapboxTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMapBoxTileEditor
@@ -113,23 +113,23 @@ HRFMapBoxTileEditor::~HRFMapBoxTileEditor()
 
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  1/2016
+// @bsimethod                                                   Mathieu.St-Pierre  1/2016
 //----------------------------------------------------------------------------------------
-/*
-Utf8String BuildTileUri(uint64_t tileId)
-    {    
-    uint64_t tilePosX, tilePosY;
-    uint32_t level; 
-    m_TileIDDescriptor.GetPositionFromID(tileId, &tilePosX, &tilePosY);
-    level = m_TileIDDescriptor.GetPositionFromID(tileId);
-    
+Utf8String BuildTileUri(int resolution, uint64_t tilePosX, uint64_t tilePosY)
+    {                
     char tempBuffer[300];
+    int zoomFactor = MB_MAP_RESOLUTION - resolution;
 
-    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%ui/%uli/%uli.jpg80?access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg", level, tilePosX, tilePosY);
+    HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
+    //sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, tilePosX / 256, tilePosY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
+    //sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.jpg80?%s", zoomFactor, tilePosX / 256, tilePosY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
+    
+
     Utf8String tileUri(tempBuffer);
+
     return tileUri;
     }
-    */
+    
 //-----------------------------------------------------------------------------
 // public
 // ReadBlock
@@ -148,36 +148,61 @@ HSTATUS HRFMapBoxTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     // check if the tile is already in the pool
     uint64_t TileID = m_TileIDDescriptor.ComputeID(pi_PosBlockX, pi_PosBlockY, m_Resolution);                
 
-    // Compute URI
-    uint64_t tilePosX, tilePosY;    
-    m_TileIDDescriptor.GetPositionFromID(TileID, &tilePosX, &tilePosY);
-    
+    RefCountedPtr<MapBoxTileQuery> pTileQuery;
+
     HRFMapBoxFile& rasterFile = static_cast<HRFMapBoxFile&>(*GetRasterFile());
-    HFCPtr<HRFPageDescriptor> pageDescriptor(rasterFile.GetPageDescriptor(0));
 
-    HFCPtr<HGF2DTransfoModel> transfoModel(pageDescriptor->GetTransfoModel());
-        
-    char tempBuffer[300];
-    int zoomFactor = MB_MAP_RESOLUTION - m_Resolution;
-   
-    HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
-    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=TOKEN_FROM_APP");
-
-    Utf8String tileUri(tempBuffer);
-
-        
-    // Tile was not in lookAHead create a request.    
-
-    MapBoxTileQuery tileQuery(TileID, tileUri, rasterFile);    
-
-    tileQuery._Run();
+    rasterFile.m_tileQueryMapMutex.lock();
+    auto tileQueryItr = rasterFile.m_tileQueryMap.find(TileID);
+    bool tileFound = tileQueryItr == rasterFile.m_tileQueryMap.end();
+    rasterFile.m_tileQueryMapMutex.unlock();
     
-    //assert(!tileQuery.m_tileData.empty());           
+    if (tileFound)
+        {
+        // Compute URI
+/*
+        uint64_t tilePosX, tilePosY;    
+        m_TileIDDescriptor.GetPositionFromID(TileID, &tilePosX, &tilePosY);
+*/
+    
+        HRFMapBoxFile& rasterFile = static_cast<HRFMapBoxFile&>(*GetRasterFile());
+        HFCPtr<HRFPageDescriptor> pageDescriptor(rasterFile.GetPageDescriptor(0));
 
-    if (!tileQuery.m_tileData.empty())
-        {        
-        BeAssert(tileQuery.m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
-        memcpy(po_pData, tileQuery.m_tileData.data(), GetResolutionDescriptor()->GetBlockSizeInBytes());
+        HFCPtr<HGF2DTransfoModel> transfoModel(pageDescriptor->GetTransfoModel());
+    /*
+        char tempBuffer[300];
+        int zoomFactor = MB_MAP_RESOLUTION - m_Resolution;
+   
+        //HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
+        sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
+
+        Utf8String tileUri(tempBuffer);
+*/
+        
+        // Tile was not in lookAHead create a request.    
+
+        MapBoxTileQuery tileQuery(TileID, BuildTileUri(m_Resolution, pi_PosBlockX, pi_PosBlockY), rasterFile);
+
+        tileQuery._Run();
+    
+        //assert(!tileQuery.m_tileData.empty());           
+
+        if (!tileQuery.m_tileData.empty())
+            {        
+            BeAssert(tileQuery.m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
+            memcpy(po_pData, tileQuery.m_tileData.data(), GetResolutionDescriptor()->GetBlockSizeInBytes());
+            }
+        }
+    else
+        {
+        pTileQuery = tileQueryItr->second;
+        pTileQuery->Wait();
+
+        if (!pTileQuery->m_tileData.empty())
+            {
+            BeAssert(pTileQuery->m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
+            memcpy(po_pData, pTileQuery->m_tileData.data(), GetResolutionDescriptor()->GetBlockSizeInBytes());
+            }
         }
 
     return H_SUCCESS;    
@@ -195,5 +220,57 @@ HSTATUS HRFMapBoxTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
     HASSERT(false);
     return H_ERROR;    
     }
+
+
+//-----------------------------------------------------------------------------
+// Protected
+// Request a look ahead for this resolution editor
+//-----------------------------------------------------------------------------
+void HRFMapBoxTileEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList)
+    {
+    HPRECONDITION(!pi_rTileIDList.empty());
+
+    //std::map<uint64_t, RefCountedPtr<MapBoxTileQuery>> newTileQuery;
+
+    HRFMapBoxFile& rasterFile = static_cast<HRFMapBoxFile&>(*GetRasterFile());
+
+    WorkerPool& pool = rasterFile.GetWorkerPool();
+
+    for (auto tileId : pi_rTileIDList)
+        {
+        rasterFile.m_tileQueryMapMutex.lock();
+        auto tileQueryItr = rasterFile.m_tileQueryMap.find(tileId);
+        bool tileFound = !(tileQueryItr == rasterFile.m_tileQueryMap.end());
+        rasterFile.m_tileQueryMapMutex.unlock();
+        
+        if (tileFound)
+            {
+            // Reuse existing query.
+            //newTileQuery.insert(*tileQueryItr);            
+
+            // Not sure about that?? should we notify again? tile may or may not be ready at this point.
+            //GetRasterFile()->NotifyBlockReady(GetPage(), TileItr->first);
+            }
+        else
+            {
+            // Tile was not in lookAHead, create a new request
+            uint64_t tilePosX, tilePosY;
+            m_TileIDDescriptor.GetPositionFromID(tileId, &tilePosX, &tilePosY);
+
+            RefCountedPtr<MapBoxTileQuery> pTileQuery = new MapBoxTileQuery(tileId, BuildTileUri(m_Resolution, tilePosX, tilePosY), rasterFile);
+
+            //newTileQuery.insert({ tileId, pTileQuery });
+
+            rasterFile.m_tileQueryMapMutex.lock();
+            rasterFile.m_tileQueryMap.insert({ tileId, pTileQuery });
+            rasterFile.m_tileQueryMapMutex.unlock();
+
+            pool.Enqueue(*pTileQuery);
+            }
+        }
+
+    //rasterFile.m_tileQueryMap = std::move(newTileQuery);       // Replace with the new queries, old ones will be canceled.
+    }
+
 
 END_IMAGEPP_NAMESPACE
