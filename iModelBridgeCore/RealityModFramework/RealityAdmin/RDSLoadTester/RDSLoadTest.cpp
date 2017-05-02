@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <list>
+#include <queue>
 
 #include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityConversionTools.h>
@@ -20,16 +20,17 @@ std::mutex inactiveUserMutex;
 std::mutex statMutex;
 std::mutex rpsMutex;
 
-static bvector<User*> s_inactiveUsers = bvector<User*>();
+static std::queue<User*> s_inactiveUsers = std::queue<User*>();
 static RPS s_rps = RPS();
 static bool s_keepRunning = true;
+static bool s_startLogging = false;
 static Stats s_stats = Stats();
 
 static int64_t s_statStartTime;
 static int64_t s_ultimateStartTime;
 
 static int s_targetRequestsPerHour;
-
+static int s_totalRequests = 0;
 static int s_sleepBiasMilliseconds = 0;
 
 ///*---------------------------------------------------------------------------------**//**
@@ -49,7 +50,6 @@ RPS::RPS():requestLog(bmap<OperationType, bmap<int64_t, int>>())
     {
     requestLog.Insert(OperationType::LIST_REALITYDATA, bmap<int64_t, int>());
     requestLog.Insert(OperationType::LIST_RELATIONSHIP, bmap<int64_t, int>());
-    requestLog.Insert(OperationType::NAVNODE, bmap<int64_t, int>());
     requestLog.Insert(OperationType::ENTERPRISE_STAT, bmap<int64_t, int>());
     requestLog.Insert(OperationType::DETAILS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::AZURE_ADDRESS, bmap<int64_t, int>());
@@ -58,7 +58,6 @@ RPS::RPS():requestLog(bmap<OperationType, bmap<int64_t, int>>())
     requestLog.Insert(OperationType::CREATE_RELATIONSHIP, bmap<int64_t, int>());
     requestLog.Insert(OperationType::DELETE_RELATIONSHIP, bmap<int64_t, int>());
     requestLog.Insert(OperationType::DELETE_REALITYDATA, bmap<int64_t, int>());
-    requestLog.Insert(OperationType::DOWNLOAD, bmap<int64_t, int>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -99,8 +98,8 @@ size_t getInnactiveUserSize()
 void restartUser(UserManager* manager)
     {
     std::lock_guard<std::mutex> lock(inactiveUserMutex);
-    User* user = s_inactiveUsers.back();
-    s_inactiveUsers.pop_back();
+    User* user = s_inactiveUsers.front();
+    s_inactiveUsers.pop();
 
     user->DoNext(manager);
     }
@@ -108,10 +107,16 @@ void restartUser(UserManager* manager)
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void Dispatch(UserManager* manager)
+void Dispatch(UserManager* manager, int requestBuffer)
     {
     bool hatching = true;
-    float userCount = (float)(manager->m_userCount);
+
+    bool currentlyDecreasing = false;
+    bool targetAttained = false;
+    int increasingCount = 10;
+    int decreasingCount = 10;
+    int refreshTimer = 0;
+
     while (s_keepRunning)
         {
         float inactiveUsers = (float)getInnactiveUserSize();
@@ -124,20 +129,80 @@ void Dispatch(UserManager* manager)
 
         restartUser(manager);
 
-        int sleep = rand();
-        if(!hatching)
+    if (s_targetRequestsPerHour > 0)
+        {
+        int64_t currentTime;
+        DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+        int requestsPerHour = (int)(3600.0 * (double)(s_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
+        double deviationFactor = fabs(s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour;
+        int stepSeed = (s_sleepBiasMilliseconds < 50 ? 50 : s_sleepBiasMilliseconds);
+        if (s_targetRequestsPerHour < requestsPerHour)
             {
-            if((userCount-inactiveUsers) > 0.0000001)
-                sleep %= (int)(2100 * (1.0f - (inactiveUsers/userCount)));
+            if (currentlyDecreasing)
+                {
+                // Trend just changed ... for the next 10 decrease we will be more agressive
+                increasingCount = 0;
+                currentlyDecreasing = false;
+                }
+
+            increasingCount++;
+            if (increasingCount <= 10)
+                s_sleepBiasMilliseconds += (int)(stepSeed * 4 * deviationFactor);  // Too fast ... increase sleep bias
+            else
+                s_sleepBiasMilliseconds += (int)(stepSeed * deviationFactor);  // Too fast ... increase sleep bias
+            }
+        else if (s_sleepBiasMilliseconds > (stepSeed * deviationFactor))
+            {
+            if (!currentlyDecreasing)
+                {
+                // Trend just changed ... for the next 10 decrease we will be more agressive
+                decreasingCount = 0;
+                currentlyDecreasing = true;
+                }
+
+            decreasingCount++;
+            if (decreasingCount <= 10 && s_sleepBiasMilliseconds > (stepSeed * 4 * deviationFactor))
+                s_sleepBiasMilliseconds -= (int)(stepSeed * 4 * deviationFactor);  // Too slow ... decrease sleep bias
+            else
+                s_sleepBiasMilliseconds -= (int)(stepSeed * deviationFactor);  // Too slow ... decrease sleep bias
+            }
+
+        refreshTimer += s_sleepBiasMilliseconds;
+        std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
+        std::this_thread::sleep_for(ms);
+
+        if (deviationFactor < 0.1)
+            targetAttained = true;
+        }
+    else
+        {
+        int sleep = rand();
+        float userCount = (float)(manager->m_userCount);
+        if (!hatching)
+            {
+            if ((userCount - inactiveUsers) > 0.0000001)
+                sleep %= (int)(2100 * (1.0f - (inactiveUsers / userCount)));
             else
                 sleep = 0;
-            if(s_keepRunning)
-                s_stats.PrintStats();
             }
-        else 
+        else
             sleep %= 600;
-            
+
+        refreshTimer += sleep;
         Sleep(sleep);
+        }
+
+        if (!s_startLogging && (s_totalRequests > requestBuffer) && (s_targetRequestsPerHour == 0 || targetAttained))
+            {
+            s_startLogging = true;
+            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);
+            }
+
+        if(s_keepRunning && refreshTimer > 1000)
+            {
+            s_stats.PrintStats();
+            refreshTimer = 0;
+            }
         }
     }
 
@@ -176,7 +241,6 @@ Stats::Stats()
     opStats = bmap<OperationType, Stat*>();
     opStats.Insert(OperationType::LIST_REALITYDATA, new Stat());
     opStats.Insert(OperationType::LIST_RELATIONSHIP, new Stat());
-    opStats.Insert(OperationType::NAVNODE, new Stat());
     opStats.Insert(OperationType::ENTERPRISE_STAT, new Stat());
     opStats.Insert(OperationType::DETAILS, new Stat());
     opStats.Insert(OperationType::AZURE_ADDRESS, new Stat());
@@ -185,12 +249,10 @@ Stats::Stats()
     opStats.Insert(OperationType::CREATE_RELATIONSHIP, new Stat());
     opStats.Insert(OperationType::DELETE_RELATIONSHIP, new Stat());
     opStats.Insert(OperationType::DELETE_REALITYDATA, new Stat());
-    opStats.Insert(OperationType::DOWNLOAD, new Stat());
 
     errors = bmap<OperationType, bvector<Utf8String>>();
     errors.Insert(OperationType::LIST_REALITYDATA, bvector<Utf8String>());
     errors.Insert(OperationType::LIST_RELATIONSHIP, bvector<Utf8String>());
-    errors.Insert(OperationType::NAVNODE, bvector<Utf8String>());
     errors.Insert(OperationType::ENTERPRISE_STAT, bvector<Utf8String>());
     errors.Insert(OperationType::DETAILS, bvector<Utf8String>());
     errors.Insert(OperationType::AZURE_ADDRESS, bvector<Utf8String>());
@@ -199,7 +261,6 @@ Stats::Stats()
     errors.Insert(OperationType::CREATE_RELATIONSHIP, bvector<Utf8String>());
     errors.Insert(OperationType::DELETE_RELATIONSHIP, bvector<Utf8String>());
     errors.Insert(OperationType::DELETE_REALITYDATA, bvector<Utf8String>());
-    errors.Insert(OperationType::DOWNLOAD, bvector<Utf8String>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -209,81 +270,14 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
     {
     std::lock_guard<std::mutex> lock(statMutex);
     m_activeUsers = activeUsers;
-    int64_t endTime;
-    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
-#if (0)
-    opStats[user->m_currentOperation]->Update(success, endTime - user->m_start);
-    if(!success)
-        errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
-
-#else
-    m_totalRequests += 1;
-
-    // We use the insert stat as delay
-    // If a target requests per hour is set ...
-    if (s_targetRequestsPerHour > 0)
+    s_totalRequests += 1;
+    if (s_startLogging)
         {
-        int64_t currentTime;
-        DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-        int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
-        double deviationFactor = fabs(s_targetRequestsPerHour - requestsPerHour) / s_targetRequestsPerHour;
-        int stepSeed = (s_sleepBiasMilliseconds < 50 ? 50 : s_sleepBiasMilliseconds);
-        if (s_targetRequestsPerHour < requestsPerHour)
-            {
-            if (m_currentlyDecreasing)
-                {
-                // Trend just changed ... for the next 10 decrease we will be more agressive
-                m_increasingCount = 0;
-                m_currentlyDecreasing = false;
-                }
-
-            m_increasingCount++;
-            if (m_increasingCount <= 10)
-                s_sleepBiasMilliseconds += (int)(stepSeed * 4 * deviationFactor);  // Too fast ... increase sleep bias
-            else
-                s_sleepBiasMilliseconds += (int)(stepSeed * deviationFactor);  // Too fast ... increase sleep bias
-            }
-        else if (s_sleepBiasMilliseconds > (stepSeed * deviationFactor))
-            {
-            if (!m_currentlyDecreasing)
-                {
-                // Trend just changed ... for the next 10 decrease we will be more agressive
-                m_decreasingCount = 0;
-                m_currentlyDecreasing = true;
-                }
-
-            m_decreasingCount++;
-            if (m_decreasingCount <= 10 && s_sleepBiasMilliseconds > (stepSeed * 4 * deviationFactor))
-                s_sleepBiasMilliseconds -= (int)(stepSeed * 4 * deviationFactor);  // Too slow ... decrease sleep bias
-            else
-                s_sleepBiasMilliseconds -= (int)(stepSeed * deviationFactor);  // Too slow ... decrease sleep bias
-            }
-
-        std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
-        std::this_thread::sleep_for(ms);
-
-        if (deviationFactor < 0.1)
-            m_targetAttained = true;
-        }
-
-    if (m_totalRequests > 100 && (s_targetRequestsPerHour == 0 || m_targetAttained))
-        {
-
-        // On first log reset start time
-        if (m_firstLog)
-            {
-            m_firstLog = false;
-            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);
-            }
-
-        opStats[user->m_currentOperation]->Update(success, user->m_lastRequestTimeMilliseconds);
+        opStats[user->m_currentOperation]->Update(success,user->m_lastRequestTimeMilliseconds);
         if(!success)
-            errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
-
+            errors[user->m_currentOperation].push_back(user->m_correspondance.LogError()); 
         }
-#endif
-
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -320,24 +314,20 @@ void Stats::PrintStats()
     std::cout << Utf8PrintfString("Delete Relationship   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_RELATIONSHIP]->success, opStats[OperationType::DELETE_RELATIONSHIP]->failure, (int)opStats[OperationType::DELETE_RELATIONSHIP]->minTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->maxTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->avgTime, s_rps.GetRPS(OperationType::DELETE_RELATIONSHIP, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Delete Reality Data   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_REALITYDATA]->success, opStats[OperationType::DELETE_REALITYDATA]->failure, (int)opStats[OperationType::DELETE_REALITYDATA]->minTime, (int)opStats[OperationType::DELETE_REALITYDATA]->maxTime, (int)opStats[OperationType::DELETE_REALITYDATA]->avgTime, s_rps.GetRPS(OperationType::DELETE_REALITYDATA, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("AzureAddress          %6d %10d %9d %10d %9d        %f", opStats[OperationType::AZURE_ADDRESS]->success, opStats[OperationType::AZURE_ADDRESS]->failure, (int)opStats[OperationType::AZURE_ADDRESS]->minTime, (int)opStats[OperationType::AZURE_ADDRESS]->maxTime, (int)opStats[OperationType::AZURE_ADDRESS]->avgTime, s_rps.GetRPS(OperationType::AZURE_ADDRESS, currentTime)) << std::endl;
-    std::cout << Utf8PrintfString("Download              %6d %10d %9d %10d %9d        %f", opStats[OperationType::DOWNLOAD]->success, opStats[OperationType::DOWNLOAD]->failure, (int)opStats[OperationType::DOWNLOAD]->minTime, (int)opStats[OperationType::DOWNLOAD]->maxTime, (int)opStats[OperationType::DOWNLOAD]->avgTime, s_rps.GetRPS(OperationType::DOWNLOAD, currentTime)) << std::endl;
-    std::cout << Utf8PrintfString("NavNode               %6d %10d %9d %10d %9d        %f", opStats[OperationType::NAVNODE]->success, opStats[OperationType::NAVNODE]->failure, (int)opStats[OperationType::NAVNODE]->minTime, (int)opStats[OperationType::NAVNODE]->maxTime, (int)opStats[OperationType::NAVNODE]->avgTime, s_rps.GetRPS(OperationType::NAVNODE, currentTime)) << std::endl;
     std::cout << std::endl;
     int totalSuccess = opStats[OperationType::CREATE_REALITYDATA]->success + opStats[OperationType::CREATE_RELATIONSHIP]->success +
                        opStats[OperationType::DETAILS]->success + opStats[OperationType::LIST_REALITYDATA]->success +
                        opStats[OperationType::LIST_RELATIONSHIP]->success +
                        opStats[OperationType::ENTERPRISE_STAT]->success + opStats[OperationType::MODIFY_REALITYDATA]->success +
                        opStats[OperationType::DELETE_RELATIONSHIP]->success + opStats[OperationType::DELETE_REALITYDATA]->success +
-                       opStats[OperationType::NAVNODE]->success + opStats[OperationType::AZURE_ADDRESS]->success +
-                       opStats[OperationType::DOWNLOAD]->success;
+                       opStats[OperationType::AZURE_ADDRESS]->success;
 
     int totalFailure = opStats[OperationType::CREATE_REALITYDATA]->failure + opStats[OperationType::CREATE_RELATIONSHIP]->failure +
                        opStats[OperationType::DETAILS]->failure + opStats[OperationType::LIST_REALITYDATA]->failure +
                        opStats[OperationType::LIST_RELATIONSHIP]->failure +
                        opStats[OperationType::ENTERPRISE_STAT]->failure + opStats[OperationType::MODIFY_REALITYDATA]->failure +
                        opStats[OperationType::DELETE_RELATIONSHIP]->failure + opStats[OperationType::DELETE_REALITYDATA]->failure +
-                       opStats[OperationType::NAVNODE]->failure + opStats[OperationType::AZURE_ADDRESS]->failure +
-                       opStats[OperationType::DOWNLOAD]->failure;      
+                       opStats[OperationType::AZURE_ADDRESS]->failure;      
 
     std::cout << Utf8PrintfString("Total                 %6d %10d", totalSuccess, totalFailure) << std::endl;
     std::cout << Utf8PrintfString("Total Requests        %6d", totalSuccess + totalFailure) << std::endl;
@@ -347,14 +337,14 @@ void Stats::PrintStats()
 
     std::cout << Utf8PrintfString("Total Time (seconds): %6d", (currentTime - s_statStartTime)/1000) << std::endl;
     std::cout << Utf8PrintfString("Stat Total request/s:      %lf", (double)(totalSuccess + totalFailure) / ((currentTime - s_statStartTime)/1000.0)) << std::endl;
-    if (m_firstLog)
+    if (s_startLogging)
         {
-        int requestsPerHour = (int)(3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
+        int requestsPerHour = (int)(3600.0 * (double)(s_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) + 1; // +1 is to make sure value is not 0
         std::cout << Utf8PrintfString("Current request/hour:   %6d       TARGET:   %6d", requestsPerHour, s_targetRequestsPerHour) << std::endl;
         std::cout << "WARMING UP: STATS PENDING" << std::endl;
         }
     else
-        std::cout << Utf8PrintfString("Total request/hour:   %lf", 3600.0 * (double)(m_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) << std::endl;
+        std::cout << Utf8PrintfString("Total request/hour:   %lf", 3600.0 * (double)(s_totalRequests) / ((currentTime - s_ultimateStartTime)/1000.0)) << std::endl;
 
     std::cout << Utf8PrintfString("Sleep bias (ms): %6d", s_sleepBiasMilliseconds) << std::endl;
 
@@ -375,11 +365,14 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     path.append(name);
     std::ofstream file (path.c_str());
     file << userCount << " users" << std::endl;
+    file << "target: " << s_targetRequestsPerHour << " requests per hour" << std::endl;
+    file << s_totalRequests << " requests logged" << std::endl;
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    file << "Runtime: " << ((currentTime - s_ultimateStartTime) / 1000.0) << " seconds" << std::endl;
     file << asctime(localtime(&generatedFileName)) << std::endl;
     file << "Type        Success    Failure   minTime   maxTime   avgTime" << std::endl;
     
-    int64_t currentTime;
-    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
 
     file << Utf8PrintfString("Create Reality Data   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CREATE_REALITYDATA]->success, opStats[OperationType::CREATE_REALITYDATA]->failure, (int)opStats[OperationType::CREATE_REALITYDATA]->minTime, (int)opStats[OperationType::CREATE_REALITYDATA]->maxTime, (int)opStats[OperationType::CREATE_REALITYDATA]->avgTime, s_rps.GetRPS(OperationType::CREATE_REALITYDATA, currentTime)) << std::endl;
     file << Utf8PrintfString("Create Relationship   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CREATE_RELATIONSHIP]->success, opStats[OperationType::CREATE_RELATIONSHIP]->failure, (int)opStats[OperationType::CREATE_RELATIONSHIP]->minTime, (int)opStats[OperationType::CREATE_RELATIONSHIP]->maxTime, (int)opStats[OperationType::CREATE_RELATIONSHIP]->avgTime, s_rps.GetRPS(OperationType::CREATE_RELATIONSHIP, currentTime)) << std::endl;
@@ -391,9 +384,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << Utf8PrintfString("Delete Relationship   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_RELATIONSHIP]->success, opStats[OperationType::DELETE_RELATIONSHIP]->failure, (int)opStats[OperationType::DELETE_RELATIONSHIP]->minTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->maxTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->avgTime, s_rps.GetRPS(OperationType::DELETE_RELATIONSHIP, currentTime)) << std::endl;
     file << Utf8PrintfString("Delete Reality Data   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_REALITYDATA]->success, opStats[OperationType::DELETE_REALITYDATA]->failure, (int)opStats[OperationType::DELETE_REALITYDATA]->minTime, (int)opStats[OperationType::DELETE_REALITYDATA]->maxTime, (int)opStats[OperationType::DELETE_REALITYDATA]->avgTime, s_rps.GetRPS(OperationType::DELETE_REALITYDATA, currentTime)) << std::endl;
     file << Utf8PrintfString("AzureAddress          %6d %10d %9d %10d %9d        %f", opStats[OperationType::AZURE_ADDRESS]->success, opStats[OperationType::AZURE_ADDRESS]->failure, (int)opStats[OperationType::AZURE_ADDRESS]->minTime, (int)opStats[OperationType::AZURE_ADDRESS]->maxTime, (int)opStats[OperationType::AZURE_ADDRESS]->avgTime, s_rps.GetRPS(OperationType::AZURE_ADDRESS, currentTime)) << std::endl;
-    file << Utf8PrintfString("Download              %6d %10d %9d %10d %9d        %f", opStats[OperationType::DOWNLOAD]->success, opStats[OperationType::DOWNLOAD]->failure, (int)opStats[OperationType::DOWNLOAD]->minTime, (int)opStats[OperationType::DOWNLOAD]->maxTime, (int)opStats[OperationType::DOWNLOAD]->avgTime, s_rps.GetRPS(OperationType::DOWNLOAD, currentTime)) << std::endl;
-    file << Utf8PrintfString("NavNode               %6d %10d %9d %10d %9d        %f", opStats[OperationType::NAVNODE]->success, opStats[OperationType::NAVNODE]->failure, (int)opStats[OperationType::NAVNODE]->minTime, (int)opStats[OperationType::NAVNODE]->maxTime, (int)opStats[OperationType::NAVNODE]->avgTime, s_rps.GetRPS(OperationType::NAVNODE, currentTime)) << std::endl;
-
+    
     file << std::endl << std::endl << "op list:" << std::endl;
 
     for (Utf8String op : opLog)
@@ -407,10 +398,6 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 
     file << "List Relationship:" << std::endl;
     for (Utf8String error : errors[OperationType::LIST_REALITYDATA])
-        file << error << std::endl;
-
-    file << "NavNode:" << std::endl;
-    for (Utf8String error : errors[OperationType::NAVNODE])
         file << error << std::endl;
 
     file << "Enterprise Stat:" << std::endl;
@@ -429,7 +416,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     for (Utf8String error : errors[OperationType::CREATE_REALITYDATA])
         file << error << std::endl;
 
-    file << "Create:" << std::endl;
+    file << "Create Relationship:" << std::endl;
     for (Utf8String error : errors[OperationType::CREATE_RELATIONSHIP])
         file << error << std::endl;
 
@@ -440,11 +427,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << "Delete Reality Data:" << std::endl;
     for (Utf8String error : errors[OperationType::DELETE_REALITYDATA])
         file << error << std::endl;
-
-    file << "Download:" << std::endl;
-    for (Utf8String error : errors[OperationType::DOWNLOAD])
-        file << error << std::endl;
-
+    
     file.close();
     }
 
@@ -452,11 +435,11 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User():
-    m_currentOperation(OperationType::NAVNODE), m_handshake(AzureHandshake()), m_node(nullptr)
+    m_currentOperation(OperationType::CREATE_REALITYDATA), m_handshake(AzureHandshake())
     {}
 
 User::User(int id) :
-    m_currentOperation(OperationType::NAVNODE), m_handshake(AzureHandshake()), m_node(nullptr),
+    m_currentOperation(OperationType::CREATE_REALITYDATA), m_handshake(AzureHandshake()),
     m_userId(id), m_fileName(BeFileName(Utf8PrintfString("%d", m_userId)))
 {}
 
@@ -475,17 +458,17 @@ void User::DoNext(UserManager* owner)
     CURL* curl = nullptr;
     if(m_currentOperation == OperationType::DETAILS)
         {
-        if(m_node != nullptr)
+        if(!m_id.empty())
             curl = Details();
         else
-            m_currentOperation = OperationType::NAVNODE;
+            m_currentOperation = OperationType::CREATE_REALITYDATA;
         }
     else if (m_currentOperation == OperationType::AZURE_ADDRESS)
             {
-            if (m_node != nullptr)
+            if (!m_id.empty())
                 curl = AzureAddress();
             else
-                m_currentOperation = OperationType::NAVNODE;
+                m_currentOperation = OperationType::CREATE_REALITYDATA;
             }
     else if (m_currentOperation == OperationType::MODIFY_REALITYDATA)
             {
@@ -546,19 +529,8 @@ void User::DoNext(UserManager* owner)
             {
             curl = EnterpriseStat();
             }
-    else if (m_currentOperation == OperationType::DOWNLOAD)
-            {
-            if (m_node != nullptr && m_node->GetClassName() == "Document")
-                curl = Download();
-            else
-                m_currentOperation = OperationType::NAVNODE;
-            }
 
-    if (m_currentOperation == OperationType::NAVNODE)
-            {
-            curl = NavNodeFunc();
-            }
-    else if (m_currentOperation == OperationType::CREATE_REALITYDATA)
+    if (m_currentOperation == OperationType::CREATE_REALITYDATA)
             {
             if(m_id.empty())
                 curl = CreateRealityData();
@@ -640,67 +612,6 @@ void User::ValidateListRelationship(int activeUsers)
         activeUsers);
     }
 
-CURL* User::NavNodeFunc()
-    {
-    m_correspondance.response.clear();
-    if (m_node == nullptr || (m_node != nullptr && m_node->GetClassName() == "Document"))
-        {
-        delete m_node;
-        m_node = nullptr;
-
-        WSGNavRootRequest navRoot = WSGNavRootRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName());
-
-        m_correspondance.req.url = navRoot.GetHttpRequestString();
-        m_correspondance.req.headers = navRoot.GetRequestHeaders();
-        m_correspondance.req.payload = navRoot.GetRequestPayload();
-
-        m_correspondance.id = s_stats.LogRequest("navRoot");
-
-        return WSGRequest::GetInstance().PrepareRequest(navRoot, m_correspondance.response, false, nullptr);
-        }
-    else
-        {
-        Utf8String nodePath = m_node->GetNavString();
-        nodePath.ReplaceAll("/", "~2F");
-
-        RawServerResponse versionResponse = RawServerResponse();
-        WSGNavNodeRequest navNode = WSGNavNodeRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), nodePath);
-
-        m_correspondance.req.url = navNode.GetHttpRequestString();
-        m_correspondance.req.headers = navNode.GetRequestHeaders();
-        m_correspondance.req.payload = navNode.GetRequestPayload();
-
-        m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("navNode for %s", nodePath));
-
-        return WSGRequest::GetInstance().PrepareRequest(navNode, m_correspondance.response, false, nullptr);
-        }
-    }
-
-void User::ValidateNavNode(int activeUsers)
-    {
-    Json::Value instances(Json::objectValue);
-
-    bool success = (m_correspondance.response.ValidateJSONResponse(instances, "instances") == RequestStatus::OK);
-    if(success == false && (m_correspondance.response.body.Contains("not listable") || m_correspondance.response.body.Contains("container does not exist")))
-        success = true; //expected behaviour
-
-    s_stats.InsertStats(this,
-        success,
-        activeUsers);
-
-    if(m_correspondance.response.status == RequestStatus::OK && instances["instances"].size() > 0)
-        {
-        NavNode* newNode = new NavNode(instances["instances"][rand() % instances["instances"].size()], (m_node==nullptr) ? "" : m_node->GetRootNode(), (m_node == nullptr) ? "" : m_node->GetRootId());
-        std::swap(m_node, newNode);
-        delete newNode;
-        } 
-    else
-        {
-        delete m_node;
-        m_node = nullptr;
-        }
-    }
-
 CURL*  User::EnterpriseStat()
     {
     m_correspondance.response.clear();
@@ -727,44 +638,15 @@ CURL*  User::Details()
     {
     m_correspondance.response.clear();
     
-    Utf8String className = m_node->GetClassName();
+    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_id);
+    m_correspondance.req.url = idReq.GetHttpRequestString();
+    m_correspondance.req.headers = idReq.GetRequestHeaders();
+    m_correspondance.req.payload = idReq.GetRequestPayload();
 
-    Utf8String instanceId = m_node->GetInstanceId();
-    instanceId.ReplaceAll("/", "~2F");
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("RealityData for %s", m_id));
+
+    return WSGRequest::GetInstance().PrepareRequest(idReq, m_correspondance.response, false, nullptr);
         
-    if  (className == "Document")
-        {
-        RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(instanceId);
-        m_correspondance.req.url = documentReq.GetHttpRequestString();
-        m_correspondance.req.headers = documentReq.GetRequestHeaders();
-        m_correspondance.req.payload = documentReq.GetRequestPayload();
-
-        m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("document for %s", instanceId));
-
-        return WSGRequest::GetInstance().PrepareRequest(documentReq, m_correspondance.response, false, nullptr);
-        }   
-    else if (className == "Folder")
-        {
-        RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(instanceId);
-        m_correspondance.req.url = folderReq.GetHttpRequestString();
-        m_correspondance.req.headers = folderReq.GetRequestHeaders();
-        m_correspondance.req.payload = folderReq.GetRequestPayload();
-
-        m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("folder for %s", instanceId));
-
-        return WSGRequest::GetInstance().PrepareRequest(folderReq, m_correspondance.response, false, nullptr);
-        }
-    else if (className == "RealityData")
-        {
-        RealityDataByIdRequest idReq = RealityDataByIdRequest(instanceId);
-        m_correspondance.req.url = idReq.GetHttpRequestString();
-        m_correspondance.req.headers = idReq.GetRequestHeaders();
-        m_correspondance.req.payload = idReq.GetRequestPayload();
-
-        m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("RealityData for %s", instanceId));
-
-        return WSGRequest::GetInstance().PrepareRequest(idReq, m_correspondance.response, false, nullptr);
-        }
     return nullptr;
     }
 
@@ -779,14 +661,14 @@ void User::ValidateDetails(int activeUsers)
 
 CURL* User::AzureAddress()
     {
-    m_handshake = AzureHandshake(m_node->GetInstanceId(), false);
+    m_handshake = AzureHandshake(m_id, false);
 
     m_correspondance.response = RawServerResponse();
     m_correspondance.req.url = m_handshake.GetHttpRequestString();
     m_correspondance.req.headers = m_handshake.GetRequestHeaders();
     m_correspondance.req.payload = m_handshake.GetRequestPayload();
 
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("azure address for %s -  user %d", m_node->GetInstanceId(), m_userId));
+    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("azure address for %s -  user %d", m_id, m_userId));
 
     return WSGRequest::GetInstance().PrepareRequest(m_handshake, m_correspondance.response, false, nullptr);
     }
@@ -835,7 +717,6 @@ void User::ValidateCreateRealityData(int activeUsers)
         m_id = instances["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
 
     m_linked = false;
-    m_node = nullptr;
     }
 
 CURL*  User::ModifyRealityData()
@@ -941,36 +822,7 @@ void User::ValidateDeleteRealityData(int activeUsers)
         {
         m_id = "";
         m_linked = false;
-        m_node = nullptr;
         }
-    }
-
-CURL*  User::Download()
-    {
-    RealityDataDocumentContentByIdRequest downloadReq = RealityDataDocumentContentByIdRequest(m_node->GetNavString());
-    m_correspondance.response.clear();
-    m_correspondance.req.url = downloadReq.GetHttpRequestString();
-    m_correspondance.req.headers = downloadReq.GetRequestHeaders();
-    m_correspondance.req.payload = downloadReq.GetRequestPayload();
-
-    m_correspondance.id = s_stats.LogRequest(Utf8PrintfString("Download %s for user %d", m_node->GetNavString(), m_userId));
-
-    m_file.Create(m_fileName, true);
-
-    return WSGRequest::GetInstance().PrepareRequest(downloadReq, m_correspondance.response, false, &m_file);
-    }
-
-void User::ValidateDownload(int activeUsers)
-    {
-    uint64_t length;
-    m_file.GetSize(length);
-
-    s_stats.InsertStats(this,
-        (length > 0),
-        activeUsers);
-
-    m_file.Close();
-    m_fileName.BeDeleteFile();
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -990,8 +842,6 @@ void User::ValidatePrevious(int activeUsers)
             return ValidateDetails(activeUsers);
         case OperationType::AZURE_ADDRESS:
             return ValidateAzureAddress(activeUsers);
-        case OperationType::NAVNODE:
-            return ValidateNavNode(activeUsers);
         case OperationType::MODIFY_REALITYDATA:
             return ValidateModifyRealityData(activeUsers);
         case OperationType::CREATE_RELATIONSHIP:
@@ -1008,8 +858,6 @@ void User::ValidatePrevious(int activeUsers)
             return ValidateCreateRealityData(activeUsers);
         case OperationType::ENTERPRISE_STAT:
             return ValidateEnterpriseStat(activeUsers);
-        case OperationType::DOWNLOAD:
-            return ValidateDownload(activeUsers);
         }
     }
 
@@ -1054,15 +902,6 @@ UserManager::~UserManager()
     curl_global_cleanup();
     for(int i = 0; i < users.size(); i++)
         delete users[i];
-    }
-
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Spencer Mason                   4/2017
-//+---------------+---------------+---------------+---------------+---------------+------*/
-User::~User()
-    {
-    delete m_node;
-    m_node=nullptr;
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -1154,11 +993,11 @@ int main(int argc, char* argv[])
         wo.users.push_back(new User(0)); //start with one
             for (int i = 1; i < userCount; i++)
             {
-            s_inactiveUsers.push_back(new User(i)); //feed the rest to the Dispatcher
+            s_inactiveUsers.push(new User(i)); //feed the rest to the Dispatcher
             }
         }
 
-    std::thread dispatch (Dispatch, &wo);
+    std::thread dispatch (Dispatch, &wo, 100);
     std::thread terminate (Terminate);
 
     RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
@@ -1209,7 +1048,7 @@ void UserManager::Perform()
             {
             repeats++; /* count number of repeated zero numfds */
             if (repeats > 1)
-                Sleep(300); /* sleep 100 milliseconds */
+                Sleep(300); /* sleep 300 milliseconds */
             }
         else
             repeats = 0;
@@ -1234,33 +1073,21 @@ void UserManager::Perform()
                 user->ValidatePrevious(still_running);
                 }
 
-
             std::lock_guard<std::mutex> lock(inactiveUserMutex);
 
-            s_inactiveUsers.push_back(user);
+            s_inactiveUsers.push(user);
                 
             curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
             curl_easy_cleanup(msg->easy_handle);
             }
         
-        curl_multi_perform(m_pCurlHandle, &still_running);
-        if(still_running == 0)
+        if(wrapUp && !s_keepRunning)
             {
-            if (s_keepRunning)//no pending requests but exit has not been queued
-                {
-                s_stats.PrintStats();
-                std::cout << "user pool empty, repopulating" << std::endl;
-                Repopulate();
-                }
-            else if (wrapUp)
-                {
-                wrapUp = false;
-                std::cout << "Removing created entries..." << std::endl;
-                Repopulate();
-                }
-
-            curl_multi_perform(m_pCurlHandle, &still_running);
+            wrapUp = false;
+            Repopulate();
             }
+
+        curl_multi_perform(m_pCurlHandle, &still_running);
         } while (wrapUp || still_running > 0);
     }
 
@@ -1271,15 +1098,15 @@ void UserManager::Perform()
 void UserManager::Repopulate()
     {
     std::lock_guard<std::mutex> lock(inactiveUserMutex);
-    size_t inactiveUserCount = s_inactiveUsers.size();
+    
+    User* user;
 
-
-    for (size_t i = 0; i < inactiveUserCount; i++)
+    while (s_inactiveUsers.size() > 0)
         {
-        s_inactiveUsers[i]->DoNext(this);
+        user = s_inactiveUsers.front();
+        user->DoNext(this);
+        s_inactiveUsers.pop();
         }
-    s_inactiveUsers.clear();
-
     }
 
 void UserManager::SetupCurl(CURL* curl, User* user)
