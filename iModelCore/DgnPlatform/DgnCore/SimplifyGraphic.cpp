@@ -1636,15 +1636,80 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
-    // TBD: Does clipping make any sense with tiles???
-    if (m_processor._ProcessTriMesh(args, *this))                                                                
-        return;
+    ClipAndProcessTriMesh(args);
+    }
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore == m_processor._GetUnhandledPreference(args, *this))
-        return;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args) 
+    {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
-    PolyfaceHeaderPtr polyface = args.ToPolyface();
-    _AddPolyface(*polyface, true);
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessTriMeshClipped(args, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessTriMesh(args, *this))
+            return;
+        }
+
+    PolyfaceHeaderPtr           polyface = args.ToPolyface();
+    SimplifyPolyfaceClipper     polyfaceClipper;
+    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+    if (polyfaceClipper.IsUnclipped())
+        {
+        m_processor._ProcessTriMesh(args, *this);
+        }
+    else 
+        {
+        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
+            {
+            PolyfaceHeaderPtr       triangulated = clippedPolyface->Clone(), unified = PolyfaceHeader::CreateUnifiedIndexMesh(*triangulated);
+
+            size_t              numFacets = unified->GetNumFacet();
+            size_t              numPoints = unified->GetPointCount();
+            bvector<int32_t>    indices;
+            bvector<FPoint3d>   points(numPoints), normals(nullptr == unified->GetNormalCP() ? 0 : numPoints);
+            bvector<FPoint2d>   params(nullptr == unified->GetParamCP() ? 0 : numPoints);
+
+            for (size_t i=0; i<numPoints; i++)
+                {
+                bsiFPoint3d_initFromDPoint3d(&points[i], &unified->GetPointCP()[i]);
+                if (nullptr != unified->GetNormalCP())
+                    bsiFPoint3d_initFromDPoint3d(&normals[i], &unified->GetNormalCP()[i]);
+
+                if (nullptr != unified->GetParamCP())
+                    bsiFPoint2d_initFromDPoint2d(&params[i], &unified->GetParamCP()[i]);
+                }
+            size_t  j = 0;
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*unified, true);
+            for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                {   
+                indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                }
+
+            TriMeshArgs     triMesh;
+
+            triMesh.m_numIndices = 3 * unified->GetNumFacet();
+            triMesh.m_numPoints = numPoints;
+            triMesh.m_vertIndex = &indices.front();
+            triMesh.m_points  = &points.front();
+            triMesh.m_normals = normals.empty() ? nullptr : &normals.front();
+            triMesh.m_textureUV = params.empty() ? nullptr : &params.front();
+            triMesh.m_texture = args.m_texture;
+            triMesh.m_flags = args.m_flags;
+
+            m_processor._ProcessTriMesh(triMesh, *this);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1734,21 +1799,33 @@ void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoin
 //----------------------------------------------------------------------------------------
 void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners)
     {
-    // TBD: Does clipping make any sense with tiles???
-    if (m_processor._ProcessTile(tile, corners, *this))
-        return;
+    FPoint3d                        points[4];
+    FPoint2d                        params[4];
+    int32_t                         indices[6] = {0, 1, 2, 1, 3, 2};
+    IGraphicBuilder::TriMeshArgs    triMesh;
+    
+    triMesh.m_numIndices = 6;
+    triMesh.m_vertIndex = indices;
+    triMesh.m_numPoints = 4;
+    triMesh.m_points = points;
+    triMesh.m_normals = nullptr;
+    triMesh.m_textureUV = params;
+    triMesh.m_texture = const_cast<Render::TextureP> (&tile);
+    triMesh.m_flags = 0;
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore == m_processor._GetUnhandledPreference(corners, *this))
-        return;
+    for (size_t i=0; i<4; i++)
+        {
+        points[i].x = corners.m_pts[i].x;
+        points[i].y = corners.m_pts[i].y;
+        points[i].z = corners.m_pts[i].z;
+        }
+    
+    params[0].x = params[2].x = 0.0;
+    params[1].x = params[3].x = 1.0;
+    params[0].y = params[1].y = 0.0;
+    params[2].y = params[3].y = 1.0;
 
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
-    shapePoints[1] = corners.m_pts[1];
-    shapePoints[2] = corners.m_pts[2];
-    shapePoints[3] = corners.m_pts[3];
-
-    _AddShape(5, shapePoints, true);
+    _AddTriMesh(triMesh);
     }
  
 /*---------------------------------------------------------------------------------**//**
