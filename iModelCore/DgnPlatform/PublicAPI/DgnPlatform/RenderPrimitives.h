@@ -757,6 +757,8 @@ struct PolylineArgs : IndexedPolylineArgs
 };
 
 //=======================================================================================
+//! Implements GraphicBuilder to accumulate high-level graphics primitives into a list
+//! of Render::Primitives::Geometry objects.
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct GeometryListBuilder : GraphicBuilder
