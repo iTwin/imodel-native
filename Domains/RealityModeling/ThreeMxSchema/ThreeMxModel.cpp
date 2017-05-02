@@ -592,6 +592,7 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
 
+#if defined(WIP_TILETREE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -610,4 +611,5 @@ Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
     {
     return m_clip.IsValid() ? m_clip->Clone(nullptr) : nullptr;
     }
+#endif
 

@@ -349,6 +349,7 @@ RasterRootP RasterModel::Load(Dgn::Render::SystemP system) const
     return static_cast<RasterRootP>(root.get());
     }
 
+#if defined(WIP_TILETREE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -369,7 +370,7 @@ Dgn::ClipVectorPtr RasterModel::_GetPublishingClip () const
 
     return (nullptr == clip) ? nullptr : clip->Clone(nullptr);
     }
-
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016

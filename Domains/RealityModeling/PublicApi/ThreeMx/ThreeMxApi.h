@@ -56,6 +56,7 @@ public:
     Geometry() {}
     THREEMX_EXPORT Geometry(Dgn::Render::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
+    void Draw(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
     bvector<FPoint3d> const& GetPoints() const {return m_points;}
@@ -105,7 +106,7 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     struct Loader : Dgn::TileTree::TileLoader
         {
-        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
         BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), GetRenderSystem());};
         };
 
@@ -122,7 +123,7 @@ private:
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
@@ -196,7 +197,7 @@ private:
 //! to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles, Dgn::Render::IGetTileTreeForPublishing
+struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles // WIP_TILETREE_PUBLISH, Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -225,10 +226,10 @@ public:
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
+#if defined(WIP_TILETREE_PUBLISH)
     THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const override;
     THREEMX_EXPORT Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip() const override;
-
-
+#endif
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.
