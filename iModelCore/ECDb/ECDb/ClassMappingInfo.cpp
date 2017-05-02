@@ -992,6 +992,9 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 
         for (DbTable const* table : classPersistInTables)
             {
+            if (table->GetType() == DbTable::Type::Overflow)
+                continue;
+
             if (DbTable const* primaryTable = table->GetBaseTable())
                 {
                 joinedTables[primaryTable].insert(table);
