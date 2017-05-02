@@ -44,8 +44,8 @@ struct NullContext : ViewContext
         void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override {}
         void _AddShape(int numPoints, DPoint3dCP points, bool filled) override {}
         void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override {}
-        void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override {}
-        void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override {}
+        void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override {}
+        void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override {}
         void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override {}
         void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override {}
         void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override {}

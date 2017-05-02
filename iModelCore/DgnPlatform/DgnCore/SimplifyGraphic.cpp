@@ -1451,9 +1451,9 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 PUSH_MSVC_IGNORE(6386) // I can't figure out how to silence this static analysis warning in this function, so just ignoring.
-void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
+void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
-    if (1 == usageFlags) // represents thickened line...
+    if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int         nPt = 0;
         DPoint3dP   tmpPtsP = (DPoint3dP) _alloca((numPoints+1) * sizeof (DPoint3d));
@@ -1479,7 +1479,7 @@ POP_MSVC_IGNORE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth)
+void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 

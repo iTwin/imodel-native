@@ -1310,6 +1310,8 @@ struct GraphicBuilder : RefCountedBase
         explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
     };
 
+    enum class AsThickenedLine { No=0, Yes=1 };
+
 protected:
     friend struct GraphicBuilder;
 
@@ -1328,8 +1330,8 @@ protected:
     virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
     virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
     virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
-    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
-    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) = 0;
     virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
     virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
     virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
@@ -1460,15 +1462,15 @@ public:
     //! Draw a filled triangle strip from 3D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) {_AddTriStrip(numPoints, points, asThickenedLine);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
     //! @param[in] zDepth Z depth value.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) {_AddTriStrip2d(numPoints, points, asThickenedLine, zDepth);}
 
     //! @private
     void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}

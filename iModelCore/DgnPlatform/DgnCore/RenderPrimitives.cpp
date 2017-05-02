@@ -1968,9 +1968,9 @@ void PrimitiveBuilder::_AddTextString2d(TextStringCR text, double priority)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
+void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
-    if (1 == usageFlags) // represents thickened line...
+    if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int nPt = 0;
         auto tmpPts = reinterpret_cast<DPoint3dP>(_alloca((numPoints+1)*sizeof(DPoint3d)));
@@ -1996,7 +1996,7 @@ void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t us
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double priority)
+void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double priority)
     {
     std::valarray<DPoint3d> pts3d(numPoints);
     copy2dTo3d(pts3d, points, priority);
