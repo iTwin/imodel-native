@@ -18,11 +18,14 @@
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 //#include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
 
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
+
+static bool s_useMapBox = true;
 
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
@@ -31,9 +34,11 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {    
-        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        //pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
+        {   
+        if (s_useMapBox)
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        else
+            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
 #endif
@@ -42,6 +47,14 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
         }
 
     pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+#ifndef VANCOUVER_API
+    if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+        {
+        //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+        }
+#endif
+
     return pRasterFile;
     }
 
@@ -80,6 +93,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
 
 
 HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
+    {
+    HFCPtr<HRFRasterFile> rasterFile;
+
+    return LoadRaster(rasterFile, path, targetCS, extentInTargetCS);
+    }
+
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
     {
 
     if (s_rasterMemPool == nullptr)
@@ -193,6 +213,8 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
     
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
+
+    rasterFile = pRasterFile;
 
     return rasterSource;
 

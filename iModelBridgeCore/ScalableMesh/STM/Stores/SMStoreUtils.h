@@ -6,13 +6,14 @@
 #include <ImagePP\all\h\HCDPacket.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
 #include <ImagePP\all\h\HRARaster.h>
+#include <ImagePP\all\h\HRFRasterFile.h>
 
 #include "ISMDataStore.h"
 #include "../SMSQLiteFile.h"
 
 #ifndef HRARASTER
 #ifndef VANCOUVER_API
-
+#define HRFRASTERFILE ImagePP::HRFRasterFile
 #define HRARASTER ImagePP::HRARaster
 #else
 #define HRARASTER HRARaster
