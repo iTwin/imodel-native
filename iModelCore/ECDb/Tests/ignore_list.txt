@@ -26,5 +26,3 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
-# This is no longer true due to recent changes to CalculatedProperties
-ECDbExpressionSymbolContextTests.SymbolsAreInjectedWhenImportingSchemas

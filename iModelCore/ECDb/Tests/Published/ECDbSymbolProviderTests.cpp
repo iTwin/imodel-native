@@ -480,64 +480,6 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenImportingSchemas)
-    {
-    Utf8CP schemaXml = ""
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"DifferentSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.00\" prefix=\"bcs\" />"
-        "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" prefix=\"test\" />"
-        "    <ECEntityClass typeName=\"ClassC\" displayLabel=\"Class With Calculated Property\">"
-        "        <ECProperty propertyName=\"label\" typeName=\"string\">"
-        "            <ECCustomAttributes>"
-        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-        "                    <ECExpression>this.GetRelatedInstance(\"CHasA:0:ClassA\").label</ECExpression>"
-        "                    <FailureValue>Unknown</FailureValue>"
-        "                </CalculatedECPropertySpecification>"
-        "            </ECCustomAttributes>"
-        "        </ECProperty>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName=\"CHasA\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
-        "        <Source cardinality=\"(0,1)\" roleLabel=\"C has A\" polymorphic=\"True\">"
-        "           <Class class=\"ClassC\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(0,N)\" roleLabel=\"A belongs to C\" polymorphic=\"True\">"
-        "           <Class class=\"test:ClassA\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr differentSchema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
-    ECSchema::ReadFromXmlString(differentSchema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-
-    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
-    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    instanceA->SetValue("label", ECValue("ClassA Label"));
-    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
-
-    ECClassCP classC = differentSchema->GetClassCP("ClassC");
-    IECInstancePtr instanceC = classC->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classC, nullptr).Insert(*instanceC);
-
-    ECSqlStatement stmt;
-    stmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
-    stmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classC->GetId());
-    stmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classA->GetId());
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-
-    ECValue v;
-    instanceC->GetValue(v, "label");
-    EXPECT_STREQ("ClassA Label", v.GetUtf8CP());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsitest                                       Grigas.Petraitis              02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSchemas)
     {
     Utf8CP schemaXml = ""
