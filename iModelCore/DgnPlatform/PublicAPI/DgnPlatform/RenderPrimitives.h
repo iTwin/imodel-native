@@ -34,7 +34,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryListBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 
@@ -639,7 +639,7 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   01/17
 //=======================================================================================
-struct GeometryListBuilder
+struct GeometryAccumulator
 {
 private:
     GeometryList                m_geometries;
@@ -653,8 +653,8 @@ private:
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
 public:
-    GeometryListBuilder(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryListBuilder(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+    GeometryAccumulator(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
 
     void AddGeometry(GeometryR geom) { m_geometries.push_back(&geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
@@ -757,24 +757,20 @@ struct PolylineArgs : IndexedPolylineArgs
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
+// @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
-struct PrimitiveBuilder : GraphicBuilder
+struct GeometryListBuilder : GraphicBuilder
 {
 protected:
-    System&             m_system;
-    GeometryListBuilder m_geomList;
-    bvector<GraphicPtr> m_primitives;
+    GeometryAccumulator m_accum;
     GraphicParams       m_graphicParams;
     GeometryParams      m_geometryParams;
     bool                m_geometryParamsValid = false;
     bool                m_isOpen = true;
 
-    DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
-    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
-    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
-    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    explicit GeometryListBuilder(CreateParams const& params) : GraphicBuilder(params), m_accum(params.m_dgndb) { }
 
+    DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
     DGNPLATFORM_EXPORT void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override;
@@ -797,16 +793,29 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
     DGNPLATFORM_EXPORT bool _IsOpen() const override { return m_isOpen; }
-    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
-
-    void AddTriMesh(TriMeshArgsCR args);
 
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
-    DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PrimitiveBuilder : GeometryListBuilder
+{
+protected:
+    System&             m_system;
+    bvector<GraphicPtr> m_primitives;
+
+    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
+    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
+    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
+
+    void AddTriMesh(TriMeshArgsCR args);
 public:
-    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params)
-        : GraphicBuilder(params), m_system(system), m_geomList(params.m_dgndb) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(params), m_system(system) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

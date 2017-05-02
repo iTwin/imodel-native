@@ -434,7 +434,7 @@ private:
     GeometryList&               m_geometries;
     DRange3d                    m_range;
     DRange3d                    m_tileRange;
-    GeometryListBuilder         m_geometryListBuilder;
+    GeometryAccumulator         m_geometryListBuilder;
     double                      m_minRangeDiagonalSquared;
     double                      m_minTextBoxSize;
     double                      m_tolerance;
