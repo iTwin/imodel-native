@@ -116,11 +116,11 @@ public:
     //! Create a Redline document element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
     //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
     //! @param model    The model where the Redline is listed. @see DgnMarkupProject::GetRedlineListModel
-    //! @param code     The name of the redline.
+    //! @param name     The name of the redline.
     //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
-    DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, Utf8StringCR name);
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return CodeSpec::CreateCode(db, MARKUP_AUTHORITY_Redline, value);}
+    static DgnCode CreateCode(DocumentListModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(MARKUP_AUTHORITY_Redline, scope, name);}
     };
 
 //=======================================================================================
