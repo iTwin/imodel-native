@@ -1890,6 +1890,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::AddClipVector(
      
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() const
     {
+	if (m_node->GetNbPoints() == 0) return true;
+
     if (!m_cachedDisplayMeshData.IsValid())
         return false;
     if (m_cachedDisplayMeshData->size() == 0)
@@ -1902,12 +1904,14 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
             return false;
         }    
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
 template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
     {
+	if (m_node->GetNbPoints() == 0) return true;
+
     if (!m_cachedDisplayMeshData.IsValid()) return false;
 
     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
@@ -1922,12 +1926,14 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
             return false;
         }
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
 template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr) const
     {
+	if (m_node->GetNbPoints() == 0) return true;
+
         if (!m_cachedDisplayMeshData.IsValid()) return false;
 
         for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)

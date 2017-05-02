@@ -18,6 +18,7 @@ enum class SQLDatabaseType
 USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#ifdef VANCOUVER_API
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "schema" of a Db
 // @bsiclass                                                    Keith.Bentley   02/12
@@ -65,7 +66,7 @@ public:
     Utf8String ToJson() const;
     void FromJson(Utf8CP);
 };
-
+#endif
 
 class ScalableMeshDb : public BeSQLite::Db
     {

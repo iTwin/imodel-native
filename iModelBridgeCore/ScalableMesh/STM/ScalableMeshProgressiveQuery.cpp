@@ -358,10 +358,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
             }
 
         m_toLoadNodeMutexes[threadInd].unlock();
-        
-        if (threadInd != m_toLoadNodes.size())
-            return false;
-
+                
         return true;
         }
 
@@ -413,12 +410,12 @@ private:
     bvector<int>                  m_processingQueryIndexes;
     ProcessingQueryList           m_processingQueries;
     std::mutex                    m_processingQueriesMutex;
+    std::condition_variable       m_processingQueriesCondition;
     atomic<bool>                  m_run;
 
     int                           m_numWorkingThreads;
-    std::thread*                  m_workingThreads;    
-    atomic<bool>*                 m_areWorkingThreadRunning;    
-       
+    std::thread*                  m_workingThreads;           
+               
     struct InLoadingNode;
 
     typedef RefCountedPtr<InLoadingNode> InLoadingNodePtr;
@@ -528,9 +525,11 @@ private:
         do
             {            
             processingQueryPtr = nullptr;
+            
+            //assert(m_processingQueries.size() <= 1);            
 
-            m_processingQueriesMutex.lock();
-            //assert(m_processingQueries.size() <= 1);
+            {
+            std::unique_lock<std::mutex> lck(m_processingQueriesMutex);
 
             for (auto& processingQuery : m_processingQueries)
                 {
@@ -539,12 +538,14 @@ private:
                     processingQueryPtr = processingQuery;
                     break;
                     }
-                }            
+                }           
 
-            m_processingQueriesMutex.unlock();
+            if (processingQueryPtr == nullptr) 
+                m_processingQueriesCondition.wait(lck);
+            }
 
             //NEEDS_WORK_MST : Maybe we should prioritize the first processing query found
-            if (processingQueryPtr != 0)
+            if (processingQueryPtr != 0 && m_run)
                 {
                 HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
@@ -649,11 +650,9 @@ private:
                         processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();                    
                         }
                     }                
-                }
+                }            
 
-            } while (m_run && (processingQueryPtr != 0));
-
-        m_areWorkingThreadRunning[threadId] = false;
+            } while (m_run);        
         }
          
 public:
@@ -667,10 +666,6 @@ public:
         m_numWorkingThreads = 1;        
 #endif
         m_workingThreads = new std::thread[m_numWorkingThreads];
-        m_areWorkingThreadRunning = new std::atomic<bool>[m_numWorkingThreads];
-
-        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
-            m_areWorkingThreadRunning[ind] = false;
                 
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
@@ -678,14 +673,9 @@ public:
 
     virtual ~QueryProcessor()
         {
-        for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
-            {
-            if (m_workingThreads[threadInd].joinable())
-                m_workingThreads[threadInd].join();
-            }
-
-        delete[] m_workingThreads;
-        delete[] m_areWorkingThreadRunning;
+        Stop();
+        
+        delete[] m_workingThreads;        
         }
 
     void AddQuery(int                                                             queryId,
@@ -707,7 +697,7 @@ public:
 
         size_t currentNbProcessingQueries;
 
-        m_processingQueriesMutex.lock();
+        std::unique_lock<std::mutex> lck(m_processingQueriesMutex);        
 
 #ifndef NDEBUG
         for (auto& query : m_processingQueries)
@@ -715,17 +705,17 @@ public:
             if (query->m_queryId == queryId)
                 assert(!"Query already processing");
             }
-#endif
+#endif   
 
         currentNbProcessingQueries = m_processingQueries.size();
-        m_processingQueries.push_back(processingQueryPtr);
-        m_processingQueriesMutex.unlock();
+        m_processingQueries.push_back(processingQueryPtr);        
         
         if (currentNbProcessingQueries == 0)
-            {
-            Stop();
+            {            
             Start();
             }        
+        
+        m_processingQueriesCondition.notify_all();
         }
 
 
@@ -757,12 +747,8 @@ public:
 
         m_processingQueriesMutex.unlock();
 
-        for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
-            {
-            if (m_workingThreads[threadInd].joinable())
-                m_workingThreads[threadInd].join();
-            }
-
+        Stop();
+    
         return SUCCESS;
         }
      
@@ -856,32 +842,30 @@ public:
                         m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
                         }
                     else
-                        {
-                        if (m_areWorkingThreadRunning[threadId] == false)
-                            {
-                            if (m_workingThreads[threadId].joinable())                            
-                                m_workingThreads[threadId].join();
+                        {                                              
+                        if (m_workingThreads[threadId].joinable())                            
+                            m_workingThreads[threadId].join();
 
-                            m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
-                            m_areWorkingThreadRunning[threadId] = true;
-                            }
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);                        
                         }
                     }
                 }
             }
         
         void Stop()
-            {                        
+            {        
+            
+            {
+            std::unique_lock<std::mutex> lck(m_processingQueriesMutex);            
             m_run = false;
-
-            if (!s_delayJoinThread)
-                {                
-                for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                    {
-                    if (m_workingThreads[threadId].joinable())
-                        m_workingThreads[threadId].join();                    
-                    }         
-                }
+            m_processingQueriesCondition.notify_all();
+            }
+            
+            for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+                {
+                if (m_workingThreads[threadId].joinable())
+                    m_workingThreads[threadId].join();                    
+                }                                
             }
        
         StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId)
@@ -950,9 +934,8 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
-    if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false);
+    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || node->GetNbPoints() == 0);
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
@@ -1033,7 +1016,8 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     _SetActiveClips(activeClips, scalableMeshPtr);
 
     if (rootNodePtr == nullptr) return;
-    PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
+	if (std::find(m_smOverviews.begin(), m_smOverviews.end(), scalableMeshPtr.get()) == m_smOverviews.end())
+		PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
     if (rootNodePtr->GetMinResolution() == 0)
         {
@@ -1410,6 +1394,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
     }
 
 static bool s_loadNodeNearCamFirst = true;
+static bool s_doPreLoad = false;
     
 void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
@@ -1459,6 +1444,23 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
+    //PRE
+    //smP->m_scmIndexPtr->GetDataStore()->CancelPreloadData();
+    if (toLoadNodes.size() > 0 && s_doPreLoad)
+        { 
+        bvector<DRange3d> tileRanges;
+
+        for (auto& loadNode : toLoadNodes)
+            {
+            //tileRanges.push_back(loadNode->GetContentExtent());
+            tileRanges.push_back(loadNode->GetNodeExtent());
+            }
+    
+        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));    
+        ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore()); 
+        dataStore->PreloadData(tileRanges);
+        }
+    //PRE
 
 
     if (s_sortOverviewBySize == true)

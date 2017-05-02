@@ -182,7 +182,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceAccount::AccountKey               account_key;
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
-    std::unique_ptr<std::function<string(void)>> callback = nullptr;
+    std::unique_ptr<std::function<string()>> wsgCallback = nullptr;
+    std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
     if (settings->IsLocal() && settings->IsUsingCURL())
@@ -222,7 +223,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
         assert(!sslCertificatePath.empty());
 
-        callback.reset(new std::function<string(void)>([]() -> std::string
+        wsgCallback.reset(new std::function<string()>([]() -> std::string
             {
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
             }));
@@ -230,12 +231,19 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
+        //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
+        account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
         BeFileName url(settings->GetURL().c_str());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
         account_prefix = DataSourceURL(settings->GetGUID().c_str());
         account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
         account_identifier = settings->GetServerID().c_str();
+
+        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
+            {
+            return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
+            }));
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -301,7 +309,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-    if (callback != nullptr) account->setWSGTokenGetterCallback(*callback.get());
+    if (wsgCallback != nullptr) account->setWSGTokenGetterCallback(*wsgCallback.get());
+    if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
     account->setPrefixPath(account_prefix);
     auto* casted_account = dynamic_cast<DataSourceAccountWSG*>(account);
@@ -1128,6 +1137,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
     __super::SaveSisterFiles();
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
+    {
+    assert(!"No implemented yet");
+    }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
+    {
+    assert(!"No implemented yet");
+    }
+
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
@@ -1645,14 +1664,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     }
 
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {   
     if (!IsProjectFilesPathSet())
         return false;
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
-    assert(sqliteFilePtr.IsValid() == true);
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
 
+    if (!sqliteFilePtr.IsValid())
+        return false;
+    
     dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
 
     return true;
@@ -1666,34 +1687,43 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon)
-        {
-        SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
-        assert(sqlFilePtr.IsValid());
-        dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
-        }
-    else
-        {
-        auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-        // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
-        //assert(nodeGroup.IsValid());
+    assert(dataType != SMStoreDataType::Skirt && dataType != SMStoreDataType::ClipDefinition && dataType != SMStoreDataType::CoveragePolygon);
+    
+    auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+    // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
+    //assert(nodeGroup.IsValid());
         dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
-        }
-
+    
     return true;    
     }
 
-
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {
-    
-    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName);
-    assert(sqlFilePtr.IsValid());
+    SMSQLiteFilePtr sqlFilePtr;
+
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+
     dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
 
     return true;
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
+    {
+    assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+
+    return true;
+    }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                

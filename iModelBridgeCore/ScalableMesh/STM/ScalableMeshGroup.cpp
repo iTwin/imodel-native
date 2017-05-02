@@ -475,6 +475,13 @@ BentleyStatus                      ScalableMeshGroup::_SetReprojection(GeoCoordi
     return ERROR;
     }
 
+#ifdef VANCOUVER_API
+BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+    {
+    return ERROR;
+    }
+#endif
+
 Transform                          ScalableMeshGroup::_GetReprojectionTransform() const
     {
     return m_members.front()->GetReprojectionTransform();
@@ -514,6 +521,11 @@ void                               ScalableMeshGroup::_GetCoverageIds(bvector<ui
         {
         if (!member->IsTerrain()) return member->GetCoverageIds(ids);
         }
+    }
+
+void                               ScalableMeshGroup::_GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    assert(!"Should not be called");    
     }
 
 BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t id)

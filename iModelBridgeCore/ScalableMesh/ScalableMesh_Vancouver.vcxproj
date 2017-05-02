@@ -218,12 +218,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 -s</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh   </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh   -c
+BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
@@ -568,11 +569,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.PartFile.xml">
-      <SubType>Designer</SubType>
-    </Xml>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp" />
     <ClCompile Include="AutomaticGroundDetection\GroundDetectionManager.cpp" />
     <ClCompile Include="AutomaticGroundDetection\PointCloudClassification.cpp" />
@@ -729,9 +725,12 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh.mke" />
-    <None Include="ScalableMesh.mki" />
     <None Include="ScalableMesh_Vancouver.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ScalableMeshCore.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

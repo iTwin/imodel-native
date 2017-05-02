@@ -126,6 +126,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual bool          _IsTextured() override;
 
+        virtual bool          _IsCesium3DTiles() override{ return false; }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
@@ -194,13 +195,17 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual IScalableMeshPtr                    _GetTerrainSM() override { return nullptr; }
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
+#ifdef VANCOUVER_API
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+#endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
-        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
+        virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
+        virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
 
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
         virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;

@@ -253,6 +253,27 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDat
     return false;
     }
 
+uint64_t SMMemoryPool::RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t smId)
+    {
+    uint64_t nRemoved = 0;
+    for (size_t binIndToDelete = 0; binIndToDelete < m_nbBins; binIndToDelete++)
+        {
+        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
+            {
+            std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
+
+            if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1 && m_memPoolItems[binIndToDelete][itemIndToDelete]->IsCorrect(m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), dataType, smId))
+                {
+                m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();
+
+                    m_memPoolItems[binIndToDelete][itemIndToDelete] = 0;
+                    nRemoved++;
+                }
+            }
+        }
+    return nRemoved;
+    }
+
 void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {
     if (id == SMMemoryPool::s_UndefinedPoolItemId)

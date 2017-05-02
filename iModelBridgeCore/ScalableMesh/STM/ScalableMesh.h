@@ -331,13 +331,17 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
+#ifdef VANCOUVER_API
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+#endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
-        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
+        virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
+        virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;        
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -535,6 +539,12 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             {
             return ERROR;
             }
+#ifdef VANCOUVER_API
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override
+            {
+            return ERROR;
+            }
+#endif
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override
             {
             return ERROR;
@@ -544,6 +554,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override {};
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };        
+        virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override { assert(false); };
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual Utf8String                         _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
         virtual IScalableMeshNodePtr               _GetRootNode() override

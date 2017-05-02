@@ -49,10 +49,11 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
 
     return BE_SQLITE_OK;
     }
+#else
+static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
+Utf8String SchemaVersion::ToJson() const { return Utf8PrintfString(s_versionfmt, m_major, m_minor, m_sub1, m_sub2); }
 #endif
 
-static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
-Utf8String SchemaVersion::ToJson() const {return Utf8PrintfString (s_versionfmt, m_major, m_minor, m_sub1, m_sub2);}
 
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     {        
