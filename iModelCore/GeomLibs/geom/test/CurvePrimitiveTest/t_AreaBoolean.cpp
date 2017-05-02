@@ -178,7 +178,7 @@ TEST(AreaBoolean,RIMSBS0)
     double r = 10.0;
     RIArray myCurves (100, 1000);
 
-    int userInt0 = 100;
+//    int userInt0 = 100;
     auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     DEllipse3d arc0 =  DEllipse3d::FromVectors
                 (
