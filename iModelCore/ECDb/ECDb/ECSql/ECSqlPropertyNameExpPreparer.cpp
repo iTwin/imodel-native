@@ -79,7 +79,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 //static
 bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
-    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propertyMap.AcceptVisitor(columnVisitor);
     if (columnVisitor.GetColumns().empty())
@@ -88,6 +87,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         return false;
         }
  
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? &propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
@@ -115,7 +115,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
     {
-    //ClassMap const& classMap = propMap.GetClassMap();
     switch (scope.GetECSqlType())
         {
             case ECSqlType::Select:
@@ -124,13 +123,14 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 
             case ECSqlType::Delete:
             {
-            if (exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
+            RangeClassRefExp const* classRefExp = exp.GetClassRefExp();
+            if (classRefExp->IsPolymorphic() && exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
                 {
-                ClassMap const& classMap = static_cast<ClassNameExp const*>(exp.GetClassRefExp())->GetInfo().GetMap();
-                StorageDescription const& desc = classMap.GetStorageDescription();
-                if (exp.GetClassRefExp()->IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
+                ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
+                ClassMap::UpdatableViewInfo const& updatableViewInfo = classNameExp.GetInfo().GetMap().GetUpdatableViewInfo();
+                if (updatableViewInfo.HasView())
                     {
-                    classIdentifier.assign(classMap.GetUpdatableViewName());
+                    classIdentifier.assign(updatableViewInfo.GetViewName());
                     break;
                     }
                 }

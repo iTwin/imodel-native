@@ -18,12 +18,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_tphHelper(nullptr), m_propertyMaps(*this), m_columnFactory(nullptr)
+ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
-        m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
+        m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Ramanujam.Raman                06/2012
+//---------------------------------------------------------------------------------------
+ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_updatableViewInfo(updatableViewInfo), m_propertyMaps(*this)
+    {
+    if (m_mapStrategyExtInfo.IsTablePerHierarchy())
+        m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
     }
 
 
@@ -424,9 +433,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
+BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& ctx)
     {
-    if (!m_isDirty || ctx.IsAlreadySaved(*this))
+    if (ctx.IsAlreadySaved(*this) || !importCtx.ClassMapNeedsSaving(m_ecClass.GetId()))
         return SUCCESS;
 
     ctx.BeginSaving(*this);
@@ -441,7 +450,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
                 return ERROR;
                 }
 
-            if (SUCCESS != baseClassMap->Save(ctx))
+            if (SUCCESS != baseClassMap->Save(importCtx, ctx))
                 return ERROR;
             }
         }
@@ -461,7 +470,6 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
             return ERROR;
         }
 
-    m_isDirty = false;
     ctx.EndSaving(*this);
     return SUCCESS;
     }
@@ -864,16 +872,6 @@ BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCla
         tablePrefix = schema.GetName();
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-Utf8String ClassMap::GetUpdatableViewName() const
-    {
-    Utf8String name;
-    name.Sprintf("_%s_%s", GetClass().GetSchema().GetAlias().c_str(), GetClass().GetName().c_str());
-    return name;
     }
 
 //---------------------------------------------------------------------------------------

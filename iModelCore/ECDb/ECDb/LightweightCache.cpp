@@ -468,23 +468,6 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-Partition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
-    {
-    if (!polymorphic || !HasNonVirtualPartitions())
-        return &GetRootHorizontalPartition();
-
-    if (HierarchyMapsToMultipleTables())
-        return nullptr; //no single partition available
-
-    size_t ix = m_nonVirtualHorizontalPartitionIndices[0];
-    BeAssert(ix < m_horizontalPartitions.size());
-
-    return &m_horizontalPartitions[ix];
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    10 / 2015
-//------------------------------------------------------------------------------------------
 Partition const* StorageDescription::GetHorizontalPartition(DbTable const& table) const
     {
     for (Partition const& part : m_horizontalPartitions)

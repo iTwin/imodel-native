@@ -68,6 +68,7 @@ private:
     ClassMapLoadContext m_loadContext;
     ClassMapSaveContext m_saveContext;
     SchemaCompareContext m_compareContext;
+    bset<ECN::ECClassId> m_classMapsToSave;
 
     SchemaManager::SchemaImportOptions m_options;
 
@@ -86,6 +87,8 @@ public:
     ClassMapSaveContext& GetClassMapSaveContext() { return m_saveContext; }
     SchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
 
+    void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
+    bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
     SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
     };
 

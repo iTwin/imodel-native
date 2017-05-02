@@ -536,6 +536,7 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         }
     }
 
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                      04/17
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -619,6 +620,7 @@ TEST_F(JoinedTableTestFixture, Update)
     //values shouldn't have been modified, so must have values from previous update
     assertRow(ecdb, expectedRow, key);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/17

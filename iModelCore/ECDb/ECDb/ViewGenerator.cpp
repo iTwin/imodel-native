@@ -235,7 +235,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     DbColumn const* rootPartitionIdColumn = rootPartition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
 
     Utf8String updatableViewName;
-    updatableViewName.Sprintf("[%s]", classMap.GetUpdatableViewName().c_str());
+    updatableViewName.Sprintf("_%s_%s", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
 
     std::vector<Utf8String> triggerDdlList;
 
@@ -360,6 +360,22 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
                        ctx.GetECDb().GetLastError().c_str(), triggerDdl.c_str());
             return ERROR;
             }
+        }
+
+    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("UPDATE ec_ClassMap SET UpdatableViewInfo=? WHERE ClassId=?");
+    if (stmt == nullptr ||
+        BE_SQLITE_OK != stmt->BindText(1, updatableViewName, Statement::MakeCopy::No) ||
+        BE_SQLITE_OK != stmt->BindId(2, classMap.GetClass().GetId()) ||
+        BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false && "Failed to persist UpdatableViewInfo in ec_ClassMap");
+        return ERROR;
+        }
+
+    if (ctx.GetECDb().GetModifiedRowCount() != 1)
+        {
+        BeAssert(false && "ClassMap does not exist yet for which the updatable view was created");
+        return ERROR;
         }
 
     return SUCCESS;

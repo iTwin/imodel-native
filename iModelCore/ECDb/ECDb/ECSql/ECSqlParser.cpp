@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_EC
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 OSQLParser* ECSqlParser::s_sharedParser = nullptr;
+BeMutex ECSqlParser::s_mutex;
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
@@ -2620,7 +2621,11 @@ Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
 OSQLParser& ECSqlParser::GetSharedParser()
     {
     if (s_sharedParser == nullptr)
-        s_sharedParser = new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
+        {
+        BeMutexHolder lock(GetMutex());
+        if (nullptr == s_sharedParser)
+            s_sharedParser = new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
+        }
 
     return *s_sharedParser;
     }

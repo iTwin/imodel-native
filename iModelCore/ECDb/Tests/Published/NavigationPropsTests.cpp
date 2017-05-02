@@ -1905,49 +1905,56 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     
     //UPDATE Category.Id
     {
+    auto verifyCategoryId = [] (ECDbCR ecdb, ECInstanceId expectedCatId)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.FooElement"));
+        int rowCount = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            rowCount++;
+            ASSERT_FALSE(stmt.IsValueNull(0));
+            ASSERT_EQ(expectedCatId.GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+            }
+
+        ASSERT_GT(rowCount, 0);
+        stmt.Finalize();
+
+        //select via base class
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.IGeometrySource"));
+        rowCount = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            rowCount++;
+            ASSERT_FALSE(stmt.IsValueNull(0));
+            ASSERT_EQ(expectedCatId.GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+            }
+
+        ASSERT_GT(rowCount, 0);
+        stmt.Finalize();
+        };
+
     ECSqlStatement stmt;
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+//#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
-#endif
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
+//#endif
+
     //UPDATE via classes that is mapped to a single joined table, is expected to work
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.SpatialElement SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.AnnotationElement SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    }
-
-    //Verify via SELECT
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.FooElement"));
-    int rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        rowCount++;
-        ASSERT_FALSE(stmt.IsValueNull(0));
-        ASSERT_EQ(catKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-        }
-
-    ASSERT_GT(rowCount, 0);
     stmt.Finalize();
-
-    //select via base class
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.IGeometrySource"));
-    rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        rowCount++;
-        ASSERT_FALSE(stmt.IsValueNull(0));
-        ASSERT_EQ(catKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-        }
-
-    ASSERT_GT(rowCount, 0);
-    stmt.Finalize();
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
     }
     }
 

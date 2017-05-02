@@ -346,23 +346,22 @@ BentleyStatus DbMap::DoMapSchemas() const
         return SUCCESS;
         }
 
-    bool setIsDirty = false;
     MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-        classMapTmp = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, setIsDirty);
+        classMapTmp = ClassMapFactory::CreateForLoading<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                classMapTmp = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, setIsDirty);
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
             else
-                classMapTmp = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, setIsDirty);
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
             }
         else
-            classMapTmp = ClassMap::Create(m_ecdb, ecClass, mapStrategy, setIsDirty);
+            classMapTmp = ClassMapFactory::CreateForLoading<ClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
         }
 
     if (ClassMappingStatus::Error == AddClassMap(classMapTmp))
@@ -406,25 +405,26 @@ BentleyStatus DbMap::DoMapSchemas() const
 
          ClassMapPtr classMap = nullptr;
          if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-             classMap = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
+             classMap = ClassMapFactory::CreateForMapping<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);
          else
              {
              auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
              if (ecRelationshipClass != nullptr)
                  {
                  if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                     classMap = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
+                     classMap = ClassMapFactory::CreateForMapping<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
                  else
-                     classMap = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
+                     classMap = ClassMapFactory::CreateForMapping<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
                  }
              else
-                 classMap = ClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
+                 classMap = ClassMapFactory::CreateForMapping<ClassMap>(m_ecdb, ecClass, mapStrategy);
              }
 
          status = AddClassMap(classMap);
          if (status == ClassMappingStatus::Error)
              return status;
 
+         GetSchemaImportContext()->AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
          GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
 
@@ -926,7 +926,7 @@ BentleyStatus DbMap::SaveDbSchema() const
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMap& classMap = *kvPair.second;
-        if (SUCCESS != classMap.Save(ctx))
+        if (SUCCESS != classMap.Save(*m_schemaImportContext, ctx))
             {
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
