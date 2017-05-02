@@ -14,7 +14,7 @@ CompileOptionsMki = $(_MakeFilePath)LicensingCompileOptions.mki
 baseDir                     = $(_MakeFilePath)
 SourceDir                   = $(baseDir)Licensing/
 PublicApiDir                = $(baseDir)PublicAPI/Licensing/
-BuildContext                = $(OutputRootDir)BuildContexts/Licensing/
+BuildContext                = $(OutputRootDir)BuildContexts/LicensingCrossPlatform/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 
 o = $(OutputRootDir)build/Licensing/
@@ -28,7 +28,7 @@ always:
 objs =% $(MultiCompileObjectList)
 
 #----------------------------------------------------------------------
-#   Create the BeHttp DLL
+#   Create the Licensing DLL
 #----------------------------------------------------------------------
 DLM_NAME                    = Licensing
 DLM_OBJECT_FILES            = $(objs)
