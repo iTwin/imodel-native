@@ -1672,7 +1672,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
             {
             PolyfaceHeaderPtr       triangulated = clippedPolyface->Clone(), unified = PolyfaceHeader::CreateUnifiedIndexMesh(*triangulated);
 
-            size_t              numFacets = unified->GetNumFacet();
+            // unused - size_t              numFacets = unified->GetNumFacet();
             size_t              numPoints = unified->GetPointCount();
             bvector<int32_t>    indices;
             bvector<FPoint3d>   points(numPoints), normals(nullptr == unified->GetNormalCP() ? 0 : numPoints);
@@ -1687,7 +1687,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
                 if (nullptr != unified->GetParamCP())
                     bsiFPoint2d_initFromDPoint2d(&params[i], &unified->GetParamCP()[i]);
                 }
-            size_t  j = 0;
+            // unused - size_t  j = 0;
             PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*unified, true);
             for (visitor->Reset(); visitor->AdvanceToNextFace();)
                 {   

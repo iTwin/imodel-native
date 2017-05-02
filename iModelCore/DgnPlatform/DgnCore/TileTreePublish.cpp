@@ -116,7 +116,7 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override         { BeAssert(false); return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override          { BeAssert(false); return UnhandledPreference::Facet;}
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
-    virtual bool _DoClipping() const {return true;}
+    virtual bool _DoClipping() const override {return true;}
 
 
     virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic& simplifyGraphic) override   { m_tile.AddTriMesh (args, simplifyGraphic); return true;     }
