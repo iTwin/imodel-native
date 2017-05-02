@@ -128,7 +128,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
+BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys)
     {
     BeAssert(IsQueued());
     m_loadStatus.store(LoadStatus::Loading);
@@ -286,7 +286,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
             auto texture = renderTextures.find(texName);
             trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh));
+            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
             }
         }
 
@@ -296,11 +296,11 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
+BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys)
     {
     BeAssert(!IsReady());
 
-    if (SUCCESS != DoRead(in, scene))
+    if (SUCCESS != DoRead(in, scene, renderSys))
         {
         SetNotFound();
         BeAssert(false);

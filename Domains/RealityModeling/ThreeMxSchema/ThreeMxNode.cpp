@@ -104,9 +104,9 @@ void Node::_PickGraphics(PickArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
+TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
-    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);
+    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
     }
 
 /*---------------------------------------------------------------------------------**//**

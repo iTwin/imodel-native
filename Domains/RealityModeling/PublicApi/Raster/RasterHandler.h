@@ -70,7 +70,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel// , Dgn::Render::IGetTileTreeForPublishing
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
     BE_JSON_NAME(depthBias)
@@ -105,9 +105,8 @@ protected:
 
     virtual bool _IsParallelToGround() const {return false;}
 
-#ifdef WIP
-    virtual Dgn::TileTree::RootCPtr _GetPublishingTileTree (double leafTolerance) const override;
-#endif
+    virtual Dgn::TileTree::RootCPtr _GetPublishingTileTree (Dgn::Render::SystemP renderSys) const override;
+    virtual Dgn::ClipVectorPtr _GetPublishingClip () const override;
 
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.

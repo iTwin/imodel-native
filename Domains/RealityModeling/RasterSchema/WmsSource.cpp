@@ -484,15 +484,15 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
     auto status = GetSource().GetLastHttpError();
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
         return nullptr; // Need to authenticate before we try again.
 
-    RefCountedPtr<WmsTileLoader> TileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads);
-    TileLoader->m_credentials = GetSource().GetCredentials();
-    TileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
+    RefCountedPtr<WmsTileLoader> tileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
+    tileLoader->m_credentials = GetSource().GetCredentials();
+    tileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
 
-    return TileLoader;
+    return tileLoader;
     }
