@@ -1679,8 +1679,9 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners)
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
     {
+#if defined(WIP_TILETREE_PUBLISH)
     FPoint3d                        points[4];
     FPoint2d                        params[4];
     int32_t                         indices[6] = {0, 1, 2, 1, 3, 2};
@@ -1708,6 +1709,16 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::
     params[2].y = params[3].y = 1.0;
 
     _AddTriMesh(triMesh);
+#else
+    DPoint3d    shapePoints[5];
+
+    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
+    shapePoints[1] = corners.m_pts[1];
+    shapePoints[2] = corners.m_pts[2];
+    shapePoints[3] = corners.m_pts[3];
+
+    _AddShape(5, shapePoints, true);
+#endif
     }
  
 /*---------------------------------------------------------------------------------**//**

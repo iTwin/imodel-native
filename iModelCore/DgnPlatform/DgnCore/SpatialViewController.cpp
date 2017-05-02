@@ -199,8 +199,8 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
                 if (model.IsValid())
                     {
                     modelRoot = model->GetTileTree(&context.GetTargetR().GetSystem());
-                    Utf8CP message = model->GetCopyrightMessage();
-                    if (!Utf8String::IsNullOrEmpty(message))
+                    Utf8String message = model->GetCopyrightMessage();
+                    if (!message.empty()) // skip emptry strings.
                         m_copyrightMsgs.insert(message);
                     }
 

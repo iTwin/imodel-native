@@ -541,6 +541,7 @@ bool TileMesh::HasNonPlanarNormals() const
     return false;
     }
 
+#if defined(WIP_TILETREE_PUBLISH)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -585,6 +586,7 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
     for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1764,7 +1766,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+#if defined(WIP_TILETREE_PUBLISH)
     auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
+#endif
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1780,11 +1784,15 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
+#if defined(WIP_TILETREE_PUBLISH)
     if (nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }
     else if (nullptr != generateMeshTiles)
+#else
+    if (nullptr != generateMeshTiles)
+#endif
         {
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {

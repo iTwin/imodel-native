@@ -116,8 +116,9 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
+#if defined(WIP_TILETREE_PUBLISH)
     DGNPLATFORM_EXPORT void ClipAndProcessTriMesh(TriMeshArgs const&);
-
+#endif
 
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
@@ -206,7 +207,9 @@ virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, Simplify
 virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+#if defined(WIP_TILETREE_PUBLISH)
 virtual UnhandledPreference _GetUnhandledPreference(Render::IGraphicBuilder::TriMeshArgs const&, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+#endif
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
@@ -222,8 +225,9 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false
 virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
 virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
+#if defined(WIP_TILETREE_PUBLISH)
 virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&) {return false; }
-
+#endif
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
@@ -233,8 +237,9 @@ virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVe
 virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+#if defined(WIP_TILETREE_PUBLISH)
 virtual bool _ProcessTriMeshClipped(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&, ClipVectorCR) {return false; }
-
+#endif
 
 //! Allow processor to output graphics to it's own process methods.
 //! @param[in] context The current view context.

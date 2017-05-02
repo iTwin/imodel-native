@@ -212,7 +212,6 @@ public:
     //! Construct a ViewFlagsOverrides which overrides all flags to match the specified ViewFlags
     DGNPLATFORM_EXPORT explicit ViewFlagsOverrides(ViewFlags viewFlags);
 
-    void SetShowText(bool val) { m_values.SetShowText(val); SetPresent(kText); }
     void SetShowDimensions(bool val) { m_values.SetShowDimensions(val); SetPresent(kDimensions); }
     void SetShowPatterns(bool val) { m_values.SetShowPatterns(val); SetPresent(kPatterns); }
     void SetShowWeights(bool val) { m_values.SetShowWeights(val); SetPresent(kWeights); }

@@ -97,7 +97,6 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (!AnyOverridden())
         return;
 
-    if (IsPresent(kText)) base.SetShowText(m_values.ShowText());
     if (IsPresent(kDimensions)) base.SetShowDimensions(m_values.ShowDimensions());
     if (IsPresent(kPatterns)) base.SetShowPatterns(m_values.ShowPatterns());
     if (IsPresent(kWeights)) base.SetShowWeights(m_values.ShowWeights());

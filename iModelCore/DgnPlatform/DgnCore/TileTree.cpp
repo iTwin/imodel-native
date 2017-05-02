@@ -458,7 +458,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
