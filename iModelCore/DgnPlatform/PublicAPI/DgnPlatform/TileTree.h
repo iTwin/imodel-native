@@ -72,6 +72,7 @@ HTTP request caching:
 
 */
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawGraphics)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
@@ -178,6 +179,11 @@ public:
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
 
+    //! Get the graphics for drawing this tile.
+    //! @param[in] drawGraphics The DrawGraphics to contain the graphics.
+    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
+    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const = 0;
+
     //! Draw the Graphics of this Tile into args.
     //! @param[in] args The DrawArgs for the current display request.
     virtual void _DrawGraphics(DrawArgsR args) const = 0;
@@ -185,7 +191,7 @@ public:
     virtual void _PickGraphics(PickArgsR args, int depth) const {}
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
 
     //! Get the tile cache key for this Tile.
     virtual Utf8String _GetTileCacheKey() const = 0;
@@ -244,7 +250,7 @@ protected:
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Dgn::Render::SystemP renderSys=nullptr);
     void RequestTiles(MissingNodesCR);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
@@ -283,7 +289,7 @@ public:
 
     //! Get expiration time for unused Tiles.
     BeDuration GetExpirationTime() const {return m_expirationTime;}
-
+                                                                                                                                           
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param maxSize The cache maximum size in bytes.
@@ -320,6 +326,8 @@ protected:
     Utf8String m_resourceName;  // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
     TileLoadStatePtr m_loads;
+    Dgn::Render::SystemP m_renderSys;
+    
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -333,8 +341,9 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
-        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
+    //! @param[in] renderSys The rendering system for creating graphics (nullptr to use renderSys supplied in Root constructor).
+    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys = nullptr)
+        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_renderSys(renderSys) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -342,6 +351,7 @@ protected:
 
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
+    Dgn::Render::SystemP GetRenderSystem() { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystem(): m_renderSys; }
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -470,6 +480,20 @@ struct TileArgs
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
+};
+
+//=======================================================================================
+// Structure containing the graphics branches to receive drawn graphics.
+// @bsiclass                                                    Ray.Bentley   04/17
+//=======================================================================================
+struct DrawGraphics 
+{
+    Render::GraphicBranch m_graphics;
+    Render::GraphicBranch m_hiResSubstitutes;
+    Render::GraphicBranch m_loResSubstitutes;
+
+    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); }
+
 };
 
 //=======================================================================================

@@ -458,7 +458,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -905,7 +905,7 @@ void Tile::Pick(PickArgsR args, int depth) const
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 
-    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
+    auto* children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
         for (auto const& child : *children)

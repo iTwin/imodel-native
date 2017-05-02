@@ -1632,6 +1632,8 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     }
 
 /*---------------------------------------------------------------------------------**//**
+
+
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
@@ -1677,16 +1679,35 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners)
     {
-    DPoint3d    shapePoints[5];
+    FPoint3d                        points[4];
+    FPoint2d                        params[4];
+    int32_t                         indices[6] = {0, 1, 2, 1, 3, 2};
+    IGraphicBuilder::TriMeshArgs    triMesh;
+    
+    triMesh.m_numIndices = 6;
+    triMesh.m_vertIndex = indices;
+    triMesh.m_numPoints = 4;
+    triMesh.m_points = points;
+    triMesh.m_normals = nullptr;
+    triMesh.m_textureUV = params;
+    triMesh.m_texture = const_cast<Render::TextureP> (&tile);
+    triMesh.m_flags = 0;
 
-    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
-    shapePoints[1] = corners.m_pts[1];
-    shapePoints[2] = corners.m_pts[2];
-    shapePoints[3] = corners.m_pts[3];
+    for (size_t i=0; i<4; i++)
+        {
+        points[i].x = corners.m_pts[i].x;
+        points[i].y = corners.m_pts[i].y;
+        points[i].z = corners.m_pts[i].z;
+        }
+    
+    params[0].x = params[2].x = 0.0;
+    params[1].x = params[3].x = 1.0;
+    params[0].y = params[1].y = 0.0;
+    params[2].y = params[3].y = 1.0;
 
-    _AddShape(5, shapePoints, true);
+    _AddTriMesh(triMesh);
     }
  
 /*---------------------------------------------------------------------------------**//**

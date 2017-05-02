@@ -41,7 +41,6 @@ struct ViewFlags
 {
 private:
     RenderMode m_renderMode = RenderMode::Wireframe;
-    uint32_t m_text:1;             //!< Shows or hides text.
     uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
     uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
     uint32_t m_weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
@@ -79,7 +78,6 @@ public:
     BE_JSON_NAME(noMaterial);
     BE_JSON_NAME(noPattern);
     BE_JSON_NAME(noStyle);
-    BE_JSON_NAME(noText);
     BE_JSON_NAME(noTexture);
     BE_JSON_NAME(noTransp);
     BE_JSON_NAME(noWeight);
@@ -92,7 +90,6 @@ public:
 
     ViewFlags()
         {
-        m_text = 1;
         m_dimensions = 1;
         m_patterns = 1;
         m_weights = 1;
@@ -117,8 +114,6 @@ public:
         m_edgeMask = 0;
         }
 
-    bool ShowText() const {return m_text;}
-    void SetShowText(bool val) {m_text = val;}
     bool ShowDimensions() const {return m_dimensions;}
     void SetShowDimensions(bool val) {m_dimensions = val;}
     bool ShowPatterns() const {return m_patterns;}
@@ -2130,6 +2125,8 @@ struct System
     void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
     void NotPainting() {m_nowPainting = nullptr;}
 
+    virtual ~System() { }
+    
     //! Initialize the rendering system. Return a non-zero value in case of error.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 
