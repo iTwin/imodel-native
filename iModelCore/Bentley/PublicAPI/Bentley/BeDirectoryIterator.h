@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeDirectoryIterator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,7 +59,7 @@ public:
         bool        isDir;
         for (BeDirectoryIterator dirs (topDir); dirs.GetCurrentEntry (entryName, isDir) == SUCCESS; dirs.ToNext())
             {
-            if (FileNamePattern::MatchesGlob (entryName, glob))
+            if (FileNamePattern::MatchesGlob (entryName.GetBaseName(), glob))
                 matches.push_back (entryName);
 
             if (isDir && recursive)

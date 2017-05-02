@@ -297,6 +297,9 @@ POP_MSVC_IGNORE
     //! Returns the filename from this BeFileName, including extension, but not directory.
     WString GetFileNameAndExtension() const {return WString(BeFileName(NameAndExt, GetName()).GetName());}
 
+    //! Returns the base filename from this BeFileName, including extension, but not directory.
+    BeFileName GetBaseName() const {return BeFileName(GetFileNameAndExtension());}
+
     //! Returns the base filename from path, with no directory or extension.
     //! @deprecated Use instance version of BeFileName::GetFileNameWithoutExtension instead
     //! @private
