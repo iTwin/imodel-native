@@ -72,7 +72,6 @@ HTTP request caching:
 
 */
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawGraphics)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
@@ -178,11 +177,6 @@ public:
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
-
-    //! Get the graphics for drawing this tile.
-    //! @param[in] drawGraphics The DrawGraphics to contain the graphics.
-    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
-    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const = 0;
 
     //! Draw the Graphics of this Tile into args.
     //! @param[in] args The DrawArgs for the current display request.
@@ -480,20 +474,6 @@ struct TileArgs
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-};
-
-//=======================================================================================
-// Structure containing the graphics branches to receive drawn graphics.
-// @bsiclass                                                    Ray.Bentley   04/17
-//=======================================================================================
-struct DrawGraphics 
-{
-    Render::GraphicBranch m_graphics;
-    Render::GraphicBranch m_hiResSubstitutes;
-    Render::GraphicBranch m_loResSubstitutes;
-
-    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); }
-
 };
 
 //=======================================================================================
