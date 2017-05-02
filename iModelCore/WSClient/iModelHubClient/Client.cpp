@@ -715,7 +715,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(*db, status));
