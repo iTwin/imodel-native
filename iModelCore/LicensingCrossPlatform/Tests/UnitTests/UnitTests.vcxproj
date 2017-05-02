@@ -6,22 +6,8 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Licensing\Client.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="PublicAPI\Licensing\Client.h" />
-    <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="DeliverPublicAPI.mke" />
-    <None Include="Licensing.mke" />
-    <None Include="Licensing.mki" />
-    <None Include="Licensing.VC.db" />
-    <None Include="LicensingCompileOptions.mki" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D553727E-7978-4194-A322-4C2B946EA25C}</ProjectGuid>
+    <ProjectGuid>{CF6DF431-C978-46EC-8E32-A409994F676D}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -41,18 +27,18 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>
-    </NMakeOutput>
-    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r licensing -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb $(BB2N0) -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing UnitTests Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing UnitTests Gtest -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(OutRoot)Winx64\BuildContexts\Licensing\VendorAPI;$(OutRoot)Winx64\BuildContexts\Licensing\PublicAPI;$(IncludePath)</IncludePath>
-    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(OutDir)</IntDir>
+    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\Licensing\VendorAPI;$(OutRoot)Winx64\BuildContexts\Licensing\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
