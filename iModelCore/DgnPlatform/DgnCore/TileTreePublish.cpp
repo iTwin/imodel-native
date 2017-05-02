@@ -115,6 +115,7 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
     virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override       { BeAssert(false); return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override         { BeAssert(false); return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override          { BeAssert(false); return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(IGraphicBuilder::TriMeshArgs const&, SimplifyGraphic&) const override    { return UnhandledPreference::Auto;}
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
     virtual bool _DoClipping() const {return true;}
 
