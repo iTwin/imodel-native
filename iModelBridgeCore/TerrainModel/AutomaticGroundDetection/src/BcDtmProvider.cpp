@@ -159,7 +159,7 @@ IDtmProvider::IDtmProviderIteratorImpl::ReturnType& BcDtmProvider::BcDtmProvider
 bool BcDtmProvider::BcDtmProviderIteratorImpl::_IsAtEnd() const
     {
     BeAssert(m_pMesh.IsValid());
-    return m_currentFace >= (m_pMesh->GetFaceCount()/3);
+    return m_currentFace >= ((size_t)m_pMesh->GetFaceCount()/3);
     }
 
 /*---------------------------------------------------------------------------------**//**
