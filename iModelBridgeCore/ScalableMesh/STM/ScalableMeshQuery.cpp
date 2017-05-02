@@ -985,7 +985,11 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
     volatile double maxParam = -DBL_MAX;
     volatile bool canContinue = true;
-#pragma omp parallel for firstprivate(use2d)
+
+    // disable static analyzer warning : Code analysis ignores OpenMP constructs; analyzing single-threaded code.
+    #pragma warning (push)
+    #pragma warning (disable: 6993)
+    #pragma omp parallel for firstprivate(use2d)
     for (int i = 0; i < m_nbFaceIndexes; i += 3)
         {
         if (canContinue)
@@ -1029,6 +1033,8 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
             }
         //if (maxParam > -DBL_MAX) return true;
         }
+    #pragma warning (pop)
+
     if (maxParam > -DBL_MAX) return true;
     return false;
     }
@@ -2135,8 +2141,9 @@ void ScalableMeshMesh::RemoveDuplicates()
 	m_points = new DPoint3d[newPoints.size()];
 	m_faceIndexes = new int32_t[newIndices.size()];
 
+    m_nbFaceIndexes = newIndices.size();
 	memcpy(m_points, newPoints.data(), m_nbPoints * sizeof(DPoint3d));
-	memcpy(m_faceIndexes, newIndices.data(), m_nbFaceIndexes * sizeof(int32_t));
+	memcpy(m_faceIndexes, newIndices.data(), newIndices.size() * sizeof(int32_t));
 
 }
 

@@ -408,9 +408,17 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         m_smSQLiteFile->StoreTexture(id, texData, 0); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
         return HPMBlockID(id);
         }
+    countData -= 3 * sizeof(int);
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-    pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int)); // The data block starts with 12 bytes of metadata, followed by pixel data
-    pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
+
+    // The static analyzer found a potential mismatch between sizeof and countof because of the statement 
+    // DataTypeArray + 3 * sizeof(int) but there are other places where the same code is used and it has not complained about it...
+    // However, I think the code is correct so I disable the warning here.
+    #pragma warning( push )
+    #pragma warning ( disable: 6305 )
+    pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData); // The data block starts with 12 bytes of metadata, followed by pixel data
+    #pragma warning ( pop )
+    pi_uncompressedPacket.SetDataSize(countData);
     // Retrieve width, height and number of channels from the first 12 bytes of the data block
     int w = ((int*)DataTypeArray)[0];
     int h = ((int*)DataTypeArray)[1];

@@ -13,7 +13,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" ApiNumber="G">
+    <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">
         <SubPart PartName="AzureSDK" />
         <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>		
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
