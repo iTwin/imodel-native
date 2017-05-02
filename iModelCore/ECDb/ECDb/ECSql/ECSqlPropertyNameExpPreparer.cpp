@@ -44,7 +44,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 return ECSqlStatus::Error;
 
             ClassMap const& classMap = exp.GetClassRefExp()->GetAs<ClassNameExp>().GetInfo().GetMap();
-            if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
+            if (classMap.GetMapStrategy().IsTablePerHierarchy())
                 {
                 ECClassId rootClassId = classMap.GetTphHelper()->DetermineTphRootClassId();
                 BeAssert(rootClassId.IsValid());

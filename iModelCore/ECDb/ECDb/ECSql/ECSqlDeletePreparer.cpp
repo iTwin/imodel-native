@@ -103,9 +103,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
     WhereExp const* whereExp = exp.GetWhereClauseExp();
     if (whereExp != nullptr)
         {
-        //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         NativeSqlBuilder whereClause;
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid unnecessary
         ClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
         if (currentClassMap.IsMappedToSingleTable())
             {
@@ -117,13 +115,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             }
         else
             {
+            ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);
             std::vector<Exp const*> propertyExpsInWhereClause = whereExp->Find(Exp::Type::PropertyName, true);
-            /*
-            1. Determine which columns are referenced
-            2. If only primary table refernced do not do anything 
-            3. 
-            */
-            {
             std::set<DbTable const*> tableReferencedByDataProperties;
             //First Pass
             const std::vector<Exp const*> propertyNameExps = whereExp->Find(Exp::Type::PropertyName, true);
@@ -139,12 +132,11 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                     tableReferencedByDataProperties.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
                 }
 
-            // ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);
-            if (tableReferencedByDataProperties.empty() || 
+             
+            if (tableReferencedByDataProperties.empty() ||
                 (tableReferencedByDataProperties.size() == 1 && tableReferencedByDataProperties.find(primaryTable) != tableReferencedByDataProperties.end())
                 )
                 {
-                //! System properties are in all tables so no nested query required.
                 status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
                 if (!status.IsSuccess())
                     return status;
@@ -153,7 +145,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 }
             else
                 {
-                NativeSqlBuilder sql;                
+                NativeSqlBuilder sql;
                 DbTable const* last = nullptr;
                 auto const start = tableReferencedByDataProperties.begin();
                 auto const end = tableReferencedByDataProperties.end();
@@ -184,73 +176,6 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 sql.AppendSpace().Append(whereClause).Append(")");
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = sql;
                 }
-            }
-
-            //DbTable& primaryTable = currentClassMap.GetPrimaryTable();
-            //DbTable& joinedTable = currentClassMap.GetJoinedOrPrimaryTable();
-
-            //// * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
-            //std::set<DbTable const*> tablesReferencedByWhereClause;
-            //for (Exp const* exp : whereExp->Find(Exp::Type::PropertyName, true))
-            //    {
-            //    PropertyNameExp const& propertyNameExp = exp->GetAs<PropertyNameExp>();
-            //    if (propertyNameExp.IsPropertyRef())
-            //        continue;
-
-            //    PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
-            //    if (propertyMap->IsSystem())
-            //        tablesReferencedByWhereClause.insert(&propertyMap->GetClassMap().GetJoinedOrPrimaryTable());
-            //    else
-            //        tablesReferencedByWhereClause.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
-            //    }
-
-            //const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
-            //const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
-
-            //if (propertyExpsInWhereClause.size() == 1 && propertyExpsInWhereClause[0]->GetAs<PropertyNameExp>().GetSystemPropertyInfo() == ECSqlSystemPropertyInfo::ECInstanceId())
-            //    {
-            //    //WhereClause only consists of ECInstanceId exp
-            //    ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);
-            //    status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
-            //    if (!status.IsSuccess())
-            //        return status;
-
-            //    deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
-            //    }
-            //else if (primaryTableIsReferencedByWhereClause && !joinedTableIsReferencedByWhereClause)
-            //    {
-            //    //only primary table is involved in where clause -> do not modify where
-            //    status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
-            //    if (!status.IsSuccess())
-            //        return status;
-
-            //    deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
-            //    }
-            //else
-            //    {
-            //    status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
-            //    if (!status.IsSuccess())
-            //        return status;
-
-            //    DbColumn const* joinedTableIdCol = joinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
-            //    DbColumn const* primaryTableIdCol = primaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
-            //    NativeSqlBuilder snippet;
-            //    snippet.AppendFormatted(
-            //        "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",
-            //        primaryTableIdCol->GetName().c_str(),
-            //        primaryTable.GetName().c_str(),
-            //        primaryTableIdCol->GetName().c_str(),
-            //        primaryTable.GetName().c_str(),
-            //        joinedTable.GetName().c_str(),
-            //        joinedTable.GetName().c_str(),
-            //        joinedTableIdCol->GetName().c_str(),
-            //        primaryTable.GetName().c_str(),
-            //        primaryTableIdCol->GetName().c_str(),
-            //        whereClause.ToString()
-            //        );
-
-            //    deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
-            //    }
             }
         }
 
