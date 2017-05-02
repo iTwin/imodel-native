@@ -51,7 +51,7 @@ DbTable* ClassMapColumnFactory::GetOverflowTable() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04/2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter) const
+BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter, int columnsRequired) const
     {
     if (m_columnReservationInfo != nullptr)
         {
@@ -64,13 +64,21 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
         BeAssert(false && "Shared Column must be enabled for this allocation to work");
         return ERROR;
         }
-
-    BeAssert(propertyName != nullptr);
-    ECN::ECPropertyCP property = m_classMap.GetClass().GetPropertyP(propertyName);
-    if (property == nullptr)
+    if (propertyName == nullptr)
         {
-        BeAssert(false && "Property must exist in associated class map");
-        return ERROR;
+        BeAssert(columnsRequired > 0);
+        }
+    else
+        {
+        BeAssert(columnsRequired == 0);
+        ECN::ECPropertyCP property = m_classMap.GetClass().GetPropertyP(propertyName);
+        if (property == nullptr)
+            {
+            BeAssert(false && "Property must exist in associated class map");
+            return ERROR;
+            }
+
+        columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(*property);
         }
 
     SetupCompoundFilter(additionalFilter);
@@ -82,10 +90,9 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
         return ERROR;
         }
     
-    int columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(*property);
     if (columnsRequired <= (sharedColumnThatCanBeReused + sharedColumnThatCanBeCreated))
         {
-        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property,columnsRequired, sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(columnsRequired, sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
         }
     else
         {
@@ -96,7 +103,7 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
             return ERROR;
             }
 
-        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*property, columnsRequired, *overflowTable));
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(columnsRequired, *overflowTable));
         }
 
     RemoveCompoundFilter();
@@ -113,11 +120,6 @@ BentleyStatus ClassMapColumnFactory::EndSharedColumnBlock() const
         BeAssert(false);
         return ERROR;
         }
-    //if (!m_columnReservationInfo->IsValid())
-    //    {
-    //    BeAssert(false);
-    //    return ERROR;
-    //    }
 
     m_columnReservationInfo = nullptr;
     return SUCCESS;

@@ -1762,12 +1762,27 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
     ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
     ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(
-        *constraintECInstanceIdProp,
-        colType,
-        DbColumn::CreateParams(colName.c_str()),
-        m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()),
-        nullptr);
+    if (rootClassMap->GetColumnFactory().UsesSharedColumnStrategy())
+        {
+        auto itor = m_sharedBlock.find(rootClassMap);
+        if (itor == m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            m_sharedBlock.insert(rootClassMap);
+            itor = m_sharedBlock.end();
+            }
+
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
+        if (itor != m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().EndSharedColumnBlock();
+            m_sharedBlock.erase(itor);
+            }
+
+        return col;
+        }
+
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1798,8 +1813,27 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
     //ECDB_RULE: Note we are using ECClassId here its not a mistake.
     ECPropertyCP relECClassIdProp = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()),
-                                m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+    if (rootClassMap->GetColumnFactory().UsesSharedColumnStrategy())
+        {
+        auto itor = m_sharedBlock.find(rootClassMap);
+        if (itor == m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            m_sharedBlock.insert(rootClassMap);
+            itor = m_sharedBlock.end();
+            }
+
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+        if (itor != m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().EndSharedColumnBlock();
+            m_sharedBlock.erase(itor);
+            }
+
+        return col;
+        }
+
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
     }
 
 //---------------------------------------------------------------------------------------

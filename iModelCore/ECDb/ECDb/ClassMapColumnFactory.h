@@ -95,24 +95,22 @@ struct ClassMapColumnFactory final : NonCopyableClass
         struct ColumnReservationInfo
             {
             private:
-                ECN::ECPropertyCR m_property;
                 int m_createdColumnCount;
                 int m_reservedColumnsCount;
                 int m_reusedColumnCount;
                 DbTable* m_overflowTable;
             public:
-                ColumnReservationInfo(ECN::ECPropertyCR property, int reservedColumns, int reusedColumn, int createdColumns)
-                    :m_property(property),m_reservedColumnsCount(reservedColumns), m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn), m_overflowTable(nullptr)
+                ColumnReservationInfo(int reservedColumns, int reusedColumn, int createdColumns)
+                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn), m_overflowTable(nullptr)
                     {}
 
-                ColumnReservationInfo(ECN::ECPropertyCR property, int reservedColumns, DbTable& overflowTable)
-                    :m_property(property), m_reservedColumnsCount(reservedColumns), m_createdColumnCount(0), m_reusedColumnCount(0), m_overflowTable(&overflowTable)
+                ColumnReservationInfo(int reservedColumns, DbTable& overflowTable)
+                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(0), m_reusedColumnCount(0), m_overflowTable(&overflowTable)
                     {}
                 ~ColumnReservationInfo(){}
                 int GetReservedColumnCount() const { m_reservedColumnsCount; }
                 int GetCreatedColumnCount() const { m_createdColumnCount; }
                 int GetReusedColumnCount() const { return m_reusedColumnCount; }
-                ECN::ECPropertyCR GetProperty() const { return m_property; }
                 DbTable* GetOverflowTable () const { return m_overflowTable; }
                 void AllocateNew() { BeAssert(m_createdColumnCount > 0);  m_createdColumnCount--; }
                 void AllocateExisting() { BeAssert(m_reusedColumnCount > 0); m_reusedColumnCount--; }
@@ -127,7 +125,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         //This function either creates a column or grabs an existing column
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
-        BentleyStatus BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter =nullptr) const;
+        BentleyStatus BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter =nullptr, int requiredColumn=0) const;
         BentleyStatus EndSharedColumnBlock() const;
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
