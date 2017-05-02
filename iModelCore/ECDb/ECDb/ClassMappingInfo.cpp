@@ -983,7 +983,11 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
     std::set<DbTable const*> tables;
     for (ClassMap const* classMap : classMaps)
         {
-        std::vector<DbTable*> const& classPersistInTables = classMap->GetTables();
+        std::vector<DbTable*> classPersistInTables; ;
+        for (DbTable * table : classMap->GetTables())
+            if (table->GetType() != DbTable::Type::Overflow)
+                classPersistInTables.push_back(table);
+
         if (classPersistInTables.size() == 1)
             {
             tables.insert(classPersistInTables.front());
@@ -992,9 +996,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 
         for (DbTable const* table : classPersistInTables)
             {
-            if (table->GetType() == DbTable::Type::Overflow)
-                continue;
-
+   
             if (DbTable const* primaryTable = table->GetBaseTable())
                 {
                 joinedTables[primaryTable].insert(table);
