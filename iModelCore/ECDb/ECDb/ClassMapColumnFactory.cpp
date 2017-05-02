@@ -630,10 +630,14 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableMaps()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableMaps(ECN::ECClassId classId)
     {
-    for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(m_classMap.GetClass().GetId()))
+    for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(classId))
         {
+        if (m_endTableRelationship.find(relKey.first) != m_endTableRelationship.end())
+            continue;
+
+        m_endTableRelationship[relKey.first] = nullptr;
         //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()
         ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetClass(relKey.first);
         BeAssert(relClass != nullptr);
@@ -649,7 +653,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
         if (!IsMappedIntoContextClassMapTables(*persistedEnd.GetECInstanceIdPropMap()))
             continue;
 
-        m_endTableRelationship.insert(&endTableMap);
+        m_endTableRelationship[endTableMap.GetClass().GetId()] = &endTableMap;
         }
 
     return SUCCESS;
@@ -715,8 +719,9 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
         return ERROR;
 
     //Find relationship that is relevant to current class so to adds its column to used column list
-    if (FindRelationshipEndTableMaps() != SUCCESS)
-        return ERROR;
+    for(ECClassCP ecClass: m_primaryHierarchy)
+        if (FindRelationshipEndTableMaps(ecClass->GetId()) != SUCCESS)
+            return ERROR;
 
     //Append current map property maps
     if (!m_classMap.GetPropertyMaps().empty())
@@ -773,8 +778,12 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             }
         }
 
-    for (RelationshipClassEndTableMap const* relClassEndTableMap : m_endTableRelationship)
+    for (auto const& row : m_endTableRelationship)
         {
+        if (!row.second) 
+            continue;
+
+        RelationshipClassEndTableMap const* relClassEndTableMap = row.second;
         RelationshipConstraintMap const& persistedEnd = relClassEndTableMap->GetConstraintMap(relClassEndTableMap->GetReferencedEnd());
         SystemPropertyMap::PerTableIdPropertyMap const* relECClassIdPropMap = nullptr;
         SystemPropertyMap::PerTableIdPropertyMap const* ecInstanceIdPropMap = nullptr;

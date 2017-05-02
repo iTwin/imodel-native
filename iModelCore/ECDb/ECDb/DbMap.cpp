@@ -69,7 +69,8 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return SUCCESS;
 
     stmt.Finalize();
-    if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
+
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
         {
         BeAssert(false && "ECDb profile changed");
         return ERROR;
@@ -310,6 +311,9 @@ BentleyStatus DbMap::DoMapSchemas() const
 
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
+        for (auto& k : m_classMapDictionary)
+            k.second->DeleteColumnFactory();
+
         if (ClassMappingStatus::Error == MapClass(*rootRelationshipClass))
             return ERROR;
         }
