@@ -6,7 +6,7 @@
 |       $Date: 2006/08/02 18:07:13 $
 |     $Author: DavidAssaf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,34 +73,6 @@ Public GEOMDLLIMPEXP void     jmdlRIMSBS_releaseMem
 RIMSBS_Context *pContext
 );
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_addElement                                       |
-|                                                                       |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP int      jmdlRIMSBS_addElement
-(
-RIMSBS_Context *pContext,
-int             type,
-int             userInt,
-void            *pUserData,
-const void      *pGeometry,
-int             dataSize
-);
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_getElementHeader                                 |
-|                                                                       |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP bool             jmdlRIMSBS_getElementHeader
-(
-RIMSBS_Context          *pContext,
-RIMSBS_ElementHeader    *pElementHeader,
-int                     index
-);
 
 /*----------------------------------------------------------------------+
 |                                                                       |

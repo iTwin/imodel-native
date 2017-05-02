@@ -761,7 +761,12 @@ void Check::Print (int64_t value,  char const *name)
     {
     if (!PrintPrimitives ())
         return;
-    printf ("(%s %d)", name, (int32_t)value);
+    // ah, what is the portable printf?
+
+    printf ("(%s %#010x %#010x)\n",
+            name,
+            (int32_t)(value >> 32),
+            (int32_t) (value & 0x00000000ffffffff));
     }
 void Check::Print (uint64_t value, char const *name)
     {

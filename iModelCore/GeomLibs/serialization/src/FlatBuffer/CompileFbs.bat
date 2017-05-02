@@ -2,11 +2,11 @@ rem @ECHO OFF
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: serialization/src/FlatBuffer/CompileFbs.bat $
-rem   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=allcg
-SET SrcDir=%SrcRoot%GeomLibs\Serialization\Flatbuffer\
+SET SrcDir=%SrcRoot%GeomLibs\Serialization\src\Flatbuffer\
 SET SrcFile=%SrcDir%%BaseName%.flatbuf
 SET GeneratedDir=%SrcDir%
 SET GeneratedFileName=%BaseName%_generated.h
