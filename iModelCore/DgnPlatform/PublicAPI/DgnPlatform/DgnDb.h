@@ -23,13 +23,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 enum DgnDbProfileValues : int32_t
 {
-    DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 18,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Major = 2,
+    DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
-    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the profile supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 18,
+    DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
+    DGNDB_SUPPORTED_VERSION_Minor = 0,
 };
 
 //=======================================================================================
