@@ -131,10 +131,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\FileRetrievalControllers\DRStreamRetrievalController.cs" />
-    <Compile Include="Source\FileRetrievalControllers\PackageRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\PackageStreamRetrievalController.cs" />
-    <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
-    <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
     <Compile Include="Source\Helpers\DbConnectionCreator.cs" />
     <Compile Include="Source\Helpers\DbConnectionHelper.cs" />
@@ -167,23 +164,19 @@
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
     <Compile Include="Source\IndexECPlugin.cs" />
-    <Compile Include="Source\IndexFileRetrievalController.cs" />
     <Compile Include="Source\IndexNavigationModule.cs" />
     <Compile Include="Source\models.cs" />
     <Compile Include="Source\QueryProviders\IECQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\SubAPIQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\UsgsSubAPIQueryProvider.cs" />
-    <Compile Include="Source\SQLQueryBuilder\GenericSQLDeleteStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\IParamNameValueMap.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLDeleteStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLInsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLMergeUpsertStatementBuilder.cs" />
-    <Compile Include="Source\SQLQueryBuilder\PagedSQLQueryBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLQueryBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLServerInsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLServerMergeUpsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\StandardSQLQueryBuilder.cs" />
-    <Compile Include="Source\QueryProviders\UsgsAPIQueryProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
