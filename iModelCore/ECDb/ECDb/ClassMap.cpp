@@ -421,9 +421,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
+BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& ctx)
     {
-    if (ctx.IsAlreadySaved(*this))
+    if (ctx.IsAlreadySaved(*this) || !importCtx.ClassMapNeedsSaving(m_ecClass.GetId()))
         return SUCCESS;
 
     ctx.BeginSaving(*this);
@@ -438,7 +438,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
                 return ERROR;
                 }
 
-            if (SUCCESS != baseClassMap->Save(ctx))
+            if (SUCCESS != baseClassMap->Save(importCtx, ctx))
                 return ERROR;
             }
         }

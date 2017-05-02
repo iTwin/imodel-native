@@ -424,6 +424,7 @@ BentleyStatus DbMap::DoMapSchemas() const
          if (status == ClassMappingStatus::Error)
              return status;
 
+         GetSchemaImportContext()->AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
          GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
 
@@ -925,7 +926,7 @@ BentleyStatus DbMap::SaveDbSchema() const
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMap& classMap = *kvPair.second;
-        if (SUCCESS != classMap.Save(ctx))
+        if (SUCCESS != classMap.Save(*m_schemaImportContext, ctx))
             {
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;

@@ -79,7 +79,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 //static
 bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
-    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propertyMap.AcceptVisitor(columnVisitor);
     if (columnVisitor.GetColumns().empty())
@@ -88,6 +87,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         return false;
         }
  
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? &propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);

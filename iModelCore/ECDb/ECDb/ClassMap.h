@@ -201,7 +201,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
-        BentleyStatus Save(DbMapSaveContext&);
+        BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update();
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
         void DeleteColumnFactory() const { m_columnFactory = nullptr; }

@@ -26,3 +26,5 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
+#TFS 677145
+ECSqlNavigationPropertyTestFixture.JoinedTable
