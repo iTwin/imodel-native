@@ -59,7 +59,8 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_sourceConstraintMap;
         RelationshipConstraintMap m_targetConstraintMap;
 
-        RelationshipClassMap(ECDb const&, Type, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
+        RelationshipClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        RelationshipClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
         RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
 
     public:
@@ -88,6 +89,8 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
+    friend struct ClassMapFactory;
+
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
@@ -191,7 +194,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 PropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
 
-        RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
+        RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
 
         void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
 
@@ -220,7 +224,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         ConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
         ConstraintECClassIdPropertyMap const* GetForeignEndECClassIdPropMap() const;
-        static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
+        static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, updatableViewInfo); }
         ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
         Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
@@ -236,6 +240,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassLinkTableMap final : RelationshipClassMap
     {
+    friend struct ClassMapFactory;
+
     private:
         enum class RelationshipIndexSpec
             {
@@ -245,7 +251,8 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
             };
 
     private:
-        RelationshipClassLinkTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
+        RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
         ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);
@@ -268,7 +275,6 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
 
     public:
         ~RelationshipClassLinkTableMap() {}
-        static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR relClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(ecdb, relClass, mapStrategy, setIsDirty); }
 
         ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
     };

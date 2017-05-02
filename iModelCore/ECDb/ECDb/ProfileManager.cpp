@@ -439,7 +439,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
                            "SharedColumnCount INTEGER,"
-                           "JoinedTableInfo INTEGER)");
+                           "JoinedTableInfo INTEGER,"
+                           "UpdatableViewInfo TEXT)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

@@ -72,4 +72,23 @@ struct DbMap final : NonCopyableClass
 
     };
 
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle  04/2017
+//+===============+===============+===============+===============+===============+======
+struct ClassMapFactory final : NonCopyableClass
+    {
+private:
+    ClassMapFactory();
+    ~ClassMapFactory();
+
+public:
+    template<typename TClassMap>
+    static ClassMapPtr CreateForLoading(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, ClassMap::UpdatableViewInfo const& updatableViewInfo)
+        {
+        return new TClassMap(ecdb, ecClass, mapStrategy, updatableViewInfo);
+        }
+
+    template<typename TClassMap>
+    static ClassMapPtr CreateForMapping(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) { return new TClassMap(ecdb, ecClass, mapStrategy); }
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

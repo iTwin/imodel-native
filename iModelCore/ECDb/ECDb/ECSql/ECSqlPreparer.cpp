@@ -515,48 +515,57 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     DbTable const* table = nullptr;
-    if (currentScopeECSqlType == ECSqlType::Insert)
+    switch (currentScopeECSqlType)
         {
-        //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
-        BeAssert(!exp.IsPolymorphic());
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-        SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
-        table = &preparedStmt.GetContextTable();
-#else
-        table = &classMap.GetJoinedTable();
-#endif
-        }
-    else
-        {
-        if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
+            case ECSqlType::Insert:
             {
-            if (currentScopeECSqlType == ECSqlType::Update)
-                {
+            BeAssert(!exp.IsPolymorphic());
 #ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-                SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
-                table = &preparedStmt.GetContextTable();
+            SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+            table = &preparedStmt.GetContextTable();
 #else
-                table = &classMap.GetJoinedTable();
+            table = &classMap.GetJoinedTable();
 #endif
-                }
-            else if (currentScopeECSqlType == ECSqlType::Delete)
-                table = &classMap.GetPrimaryTable();
+            break;
             }
-        else
+
+            case ECSqlType::Update:
             {
-            StorageDescription const& desc = classMap.GetStorageDescription();
-            if (exp.IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
+            if (classMap.GetUpdatableViewInfo().HasView())
                 {
-                BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 NativeSqlBuilder nativeSqlSnippet;
-                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewName().c_str());
+                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
                 nativeSqlSnippets.push_back(nativeSqlSnippet);
                 return ECSqlStatus::Success;
                 }
 
-            Partition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
-            table = &partition->GetTable();
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+            SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+            table = &preparedStmt.GetContextTable();
+#else
+            table = &classMap.GetJoinedTable();
+#endif
+
+            break;
             }
+
+            case ECSqlType::Delete:
+            {
+            if (classMap.GetUpdatableViewInfo().HasView())
+                {
+                NativeSqlBuilder nativeSqlSnippet;
+                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
+                nativeSqlSnippets.push_back(nativeSqlSnippet);
+                return ECSqlStatus::Success;
+                }
+
+            table = &classMap.GetPrimaryTable();
+            break;
+            }
+
+            default:
+                BeAssert(false);
+                return ECSqlStatus::Error;
         }
 
     BeAssert(table != nullptr);

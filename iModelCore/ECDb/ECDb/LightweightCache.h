@@ -121,10 +121,6 @@ struct StorageDescription final: NonCopyableClass
 
         std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
-        //! Returns nullptr, if more than one non-virtual partitions exist.
-        //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.
-        //! If has a single non-virtual partition returns that.
-        Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
         Partition const* GetVerticalPartition(DbTable const&) const;
         Partition const* GetHorizontalPartition(DbTable const&) const;
