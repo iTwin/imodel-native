@@ -388,6 +388,10 @@ void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR co
     {
     BeAssert(m_root.IsValid());
 
+    transfo.InitIdentity();
+    return;
+
+#if 0 // NOT_NOW: setting a depth transfo may cause the raster to disappear because it is being clipped away by the view frustum.
     if (0.0 == GetDepthBias() || context.GetViewport() == nullptr || !IsParallelToGround())
         {
         transfo.InitIdentity();
@@ -448,6 +452,7 @@ void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR co
     transB.InitFromPlaneOf3Points(newCorners[0], newCorners[1], newCorners[2]);
       
     transfo.InitProduct(transB, transAInverse);
+#endif
     }
 
 //----------------------------------------------------------------------------------------
