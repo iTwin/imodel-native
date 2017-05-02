@@ -25,7 +25,7 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 const size_t PCGroundTIN::CONTAINER_MAX_SIZE = 400000;
 const double PCGroundTIN::HISTO_STEP_PRECISION_FACTOR = 0.010; //default precision in meters
 const size_t PCGroundTIN::MAX_HISTO_STEP = 100000;
-const uint64_t PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD = 1; //Number of point that will be add as seed points
+const size_t PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD = 1; //Number of point that will be add as seed points
 const double PCGroundTIN::SEED_BORDER_FACTOR = 1.0; //the percentage of the max grid size we will use around the border -> help add seed points near the border
 const double Triangle::TOLERANCE_FACTOR = 0.001; //One millimeter
 const unsigned int PCGroundTINMT::MAX_NUMBER_THREAD = 8;
@@ -1069,7 +1069,7 @@ void PCGroundTIN::_SetNewSeedPoints(const bvector<DPoint3d>& newPoints)
 
     m_newPointToAdd.clear(); //clear the list
     
-    for (int i = 0; i<newPoints.size(); i++)
+    for (size_t i = 0; i<newPoints.size(); i++)
         m_newPointToAdd.insert(newPoints[i]);
 
     _ComputeTriangulation();
