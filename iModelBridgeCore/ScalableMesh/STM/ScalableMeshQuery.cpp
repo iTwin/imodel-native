@@ -1553,10 +1553,10 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     name.append(std::to_wstring(indices.size()).c_str());
     name.append(L".bcdtm");
     bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
-
-    std::cout << " Writing to " << std::to_string(indices.size())<<std::endl;
-    assert(status == SUCCESS);
 #endif
+
+    assert(status == SUCCESS);
+
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
