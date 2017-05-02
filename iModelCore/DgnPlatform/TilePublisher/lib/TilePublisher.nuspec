@@ -17,9 +17,37 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="crunchB02.dll"         target="lib\native\crunchB02.dll" />
-        <file src="TilePublisher.dll"     target="lib\native\TilePublisher.dll" />
-        <file src="Assets\scripts\**\*.*" target="Assets\scripts\" />
-        <file src="Notices\**\*.*"        target="Notices\" />
+        <file src="Delivery\TilePublisher.dll"                 target="lib\native\TilePublisher.dll" />
+        <file src="SubParts\Assemblies\crunchB02.dll"          target="lib\native\crunchB02.dll" />
+        <file src="SubParts\Libs\BeCsmapStatic.lib"            target="lib\native\BeCsmapStatic.lib" />
+        <file src="SubParts\Libs\BeIcu4c.lib"                  target="lib\native\BeIcu4c.lib" />
+        <file src="SubParts\Libs\BeJavaScript.lib"             target="lib\native\BeJavaScript.lib" />
+        <file src="SubParts\Libs\BeJsonCpp.lib"                target="lib\native\BeJsonCpp.lib" />
+        <file src="SubParts\Libs\BeLibJpegTurbo.lib"           target="lib\native\BeLibJpegTurbo.lib" />
+        <file src="SubParts\Libs\BeLibxml2.lib"                target="lib\native\BeLibxml2.lib" />
+        <file src="SubParts\Libs\Bentley.lib"                  target="lib\native\Bentley.lib" />
+        <file src="SubParts\Libs\BentleyGeom.lib"              target="lib\native\BentleyGeom.lib" />
+        <file src="SubParts\Libs\BentleyGeomSerialization.lib" target="lib\native\BentleyGeomSerialization.lib" />
+        <file src="SubParts\Libs\bentleylog4cxx.lib"           target="lib\native\bentleylog4cxx.lib" />
+        <file src="SubParts\Libs\BePng.lib"                    target="lib\native\BePng.lib" />
+        <file src="SubParts\Libs\BePointCloud.lib"             target="lib\native\BePointCloud.lib" />
+        <file src="SubParts\Libs\BeXml.lib"                    target="lib\native\BeXml.lib" />
+        <file src="SubParts\Libs\BeZlib.lib"                   target="lib\native\BeZlib.lib" />
+        <file src="SubParts\Libs\crunch.lib"                   target="lib\native\crunch.lib" />
+        <file src="SubParts\Libs\ECObjects.lib"                target="lib\native\ECObjects.lib" />
+        <file src="SubParts\Libs\liblog4cxx010.lib"            target="lib\native\liblog4cxx010.lib" />
+        <file src="SubParts\Libs\lzma.lib"                     target="lib\native\lzma.lib" />
+        <file src="SubParts\Libs\PointCloud.lib"               target="lib\native\PointCloud.lib" />
+        <file src="SubParts\Libs\PointoolsVortexAPI.lib"       target="lib\native\PointoolsVortexAPI.lib" />
+        <file src="SubParts\Libs\scz_compress.lib"             target="lib\native\scz_compress.lib" />
+        <file src="SubParts\Libs\snappy.lib"                   target="lib\native\snappy.lib" />
+        <file src="SubParts\Libs\ThreeMx.lib"                  target="lib\native\ThreeMx.lib" />
+        <file src="SubParts\Libs\TilePublisher.lib"            target="lib\native\TilePublisher.lib" />
+        <file src="SubParts\Libs\Units.lib"                    target="lib\native\Units.lib" />
+        <file src="SubParts\Libs\VortexFeatureExtract.lib"     target="lib\native\VortexFeatureExtract.lib" />
+        <file src="PublicAPI\**\*.*"                           target="include\" />        
+        <file src="VendorAPI\**\*.*"                           target="include\" />
+        <file src="Delivery\TilePublisher\scripts\**\*.*"      target="Assets\scripts\" />
+        <file src="SubParts\VendorNotices\**\*.*"              target="Notices\" />
     </files>
 </package>
