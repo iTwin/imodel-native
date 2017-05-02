@@ -80,11 +80,6 @@
         <ECProperty propertyName="StatementTypes" typeName="AutoHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="BfoMapping" displayLabel="BFO Mapping" appliesTo="Any" modifier="Sealed" description="Specifies the mapping to the concept described by the Basic Formal Ontology (http://ifomis.uni-saarland.de/bfo/) or the Information Artifact Ontology (http://www.ontobee.org/ontology/IAO)">
-        <ECProperty propertyName="Entity" typeName="string" description="The entity from BFO or IAO that is the most direct mapping"/>
-        <ECProperty propertyName="Comment" typeName="string" description="Comment explaining why the mapping was established to the specified BFO or IAO entity"/>
-    </ECCustomAttributeClass>
-
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -122,10 +117,6 @@
 
     <ECEntityClass typeName="Model" modifier="Abstract" description="A Model is a container for persisting a collection of related elements.">
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>None</Entity>
-                <Comment>In BIS, models are a way of partitioning (for performance reasons) an overall repository. BFO does not directly have this concept.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00">
                 <Restrictions>
                     <string>Clone</string><!-- It is never permitted to clone a model without its handler -->
@@ -362,10 +353,6 @@
         <!-- NOTE: Only platform can directly subclass from Element. Everyone else should pick the most appropriate superclass. -->
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:entity</Entity>
-                <Comment>In BFO, everything descends from bfo:entity. In BIS, this generally maps to bis:Element although BIS has other top-level concepts such as bis:Model and bis:ElementAspect.</Comment>
-            </BfoMapping>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
@@ -498,10 +485,6 @@
     <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="Information Content Element is an abstract base class for modeling pure information entities. Only the core framework should directly subclass from Information Content Element. Domain and application developers should start with the most appropriate subclass of Information Content Element.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:information_content_entity</Entity>
-                <Comment>In IAO, an iao:information_content_entity only identifies information. In BIS, a bis:InformationContentElement not only identifies, but can also contain the encoded information.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
@@ -834,9 +817,6 @@
     <ECEntityClass typeName="Document" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:document</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
@@ -964,10 +944,6 @@
         <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:independent_continuant</Entity>
-                <Comment>For BIS, bis:GeometricElement2d and bis:GeometricElement3d have a common bis:GeometricElement base class for source code optimization purposes. However, when mapped to BFO/IAO, bis:GeometricElement2d and bis:GeometricElement3d are in different branches of the hierarchy.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>32</SharedColumnCount>
@@ -1040,9 +1016,6 @@
         <!-- 3D geometric element that is used to convey information within 3D graphical presentations. -->
         <BaseClass>GeometricElement3d</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:figure</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -1052,9 +1025,6 @@
     <ECEntityClass typeName="PhysicalElement" modifier="Abstract" displayLabel="Physical Element" description="A Physical Element is spatially located, has mass, and can be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:material_entity</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -1065,9 +1035,6 @@
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract" displayLabel="Spatial Location Element" description="A Spatial Location Element identifies a 'tracked' real world location but has no mass and cannot be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:immaterial_entity</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -1085,10 +1052,6 @@
         <!-- NOTE: only platform should directly subclass GeometricElement2d -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:information_content_entity</Entity>
-                <Comment>For BIS, bis:GeometricElement2d and bis:GeometricElement3d have a common bis:GeometricElement base class for source code optimization purposes. However, when mapped to BFO/IAO, bis:GeometricElement2d and bis:GeometricElement3d are in different branches of the hierarchy.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
@@ -1136,11 +1099,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement2d" modifier="Abstract" displayLabel="2D Graphical Element" description="Abstract base class for 2D Geometric Elements that are used to convey information within graphical presentations (like drawings).">
         <BaseClass>GeometricElement2d</BaseClass>
-        <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:figure</Entity>
-            </BfoMapping>
-        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement2d" displayLabel="2D Annotation Element" description="2D element used to annotate drawings and sheets.">
         <BaseClass>GraphicalElement2d</BaseClass>
@@ -2137,9 +2095,6 @@
     <ECEntityClass typeName="RoleElement" modifier="Abstract" displayLabel="Role Element" description="A real world entity is modeled as a Role Element when a set of external circumstances define an important role (one that is worth tracking) that is not intrinsic to the entity playing the role. For example, a person can play the role of a teacher or a rock can play the role of a boundary marker.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:role</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
