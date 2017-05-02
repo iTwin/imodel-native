@@ -227,7 +227,7 @@ public:
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
     THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const override;
-    THREEMX_EXPORT Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip() const override;
+    THREEMX_EXPORT Dgn::ClipVectorPtr _GetPublishingClip() const override;
 
 
 
