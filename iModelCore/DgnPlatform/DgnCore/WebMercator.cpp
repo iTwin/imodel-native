@@ -97,10 +97,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
+void MapTile::_GetGraphics(DrawGraphicsR args, int depth) const
     {
     if (m_reprojected)  // if we were unable to re-project this tile, don't draw it.
-        T_Super::_DrawGraphics(args, depth);
+        T_Super::_GetGraphics(args, depth);
     }
 
 /*---------------------------------------------------------------------------------**//**

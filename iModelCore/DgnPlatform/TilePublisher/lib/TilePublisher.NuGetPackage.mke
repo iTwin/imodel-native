@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
-NUGET_BASE_PATH=$(OutputRootDir)Product/TilePublisher/
+NUGET_BASE_PATH=$(BuildContext)
 NuGetBaseName=TilePublisher
 NuGetDependencies=\#DgnClientSdk_version\#=$(BuildContext)SubParts\Assemblies\ecobjects.dll
 %include $(sharedMki)nuspecCreate.mki
