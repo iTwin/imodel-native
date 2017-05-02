@@ -107,7 +107,7 @@ struct Node : Dgn::TileTree::Tile
     struct Loader : Dgn::TileTree::TileLoader
         {
         Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
-        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), GetRenderSystem());};
+        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), m_tile->GetRootR().GetRenderSystem());};
         };
 
 private:
