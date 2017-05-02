@@ -238,6 +238,11 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         -----------------------------------------------------------------------------*/
         virtual void SaveProjectFiles() = 0;
 
+		/**----------------------------------------------------------------------------
+		Compact (vacuum) the content of the project files, if possible.
+		-----------------------------------------------------------------------------*/
+		virtual void CompactProjectFiles() = 0;
+
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/

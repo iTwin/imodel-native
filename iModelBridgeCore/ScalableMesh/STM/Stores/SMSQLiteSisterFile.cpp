@@ -202,6 +202,25 @@ void SMSQLiteSisterFile::SaveSisterFiles()
         }        
     }
 
+void SMSQLiteSisterFile::Compact()
+    {
+	//should we also compact the main file? operation can take a while
+	if (m_smFeatureSQLiteFile.IsValid())
+	{
+		m_smFeatureSQLiteFile->Compact();
+	}
+
+	if (m_smClipSQLiteFile.IsValid())
+	{
+		m_smClipSQLiteFile->Compact();
+	}
+
+	if (m_smClipDefinitionSQLiteFile.IsValid())
+	{
+		m_smClipDefinitionSQLiteFile->Compact();
+	}
+    }
+
 bool SMSQLiteSisterFile::IsProjectFilesPathSet()
     {
     return !m_projectFilesPath.empty();

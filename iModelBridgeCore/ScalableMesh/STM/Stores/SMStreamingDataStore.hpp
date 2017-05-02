@@ -1027,6 +1027,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
     __super::SaveSisterFiles();
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
+{
+	__super::Compact();
+}
+
 template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
     {
     assert(!"No implemented yet");
