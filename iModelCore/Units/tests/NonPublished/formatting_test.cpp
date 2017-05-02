@@ -38,9 +38,9 @@ public:
     static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
     {
     FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
-    Utf8String cols = curs1.CollapseSpaces();
-    Utf8CP sig = curs1.GetSignature(false);
-    Utf8CP pat = curs1.GetPattern(false);
+    Utf8String cols = curs1.CollapseSpaces(true);
+    Utf8CP sig = curs1.GetSignature(true, true);
+    Utf8CP pat = curs1.GetPattern(false, true);
     LOG.infov("Signature Test%02d  >%s<", tstN, txt);
     if (hexDump)
         {
@@ -55,7 +55,7 @@ public:
     static void ShowSignature(Utf8CP txt, int tstN)
         {
         FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
-        Utf8CP sig = curs.GetSignature(true);
+        Utf8CP sig = curs.GetSignature(true, true);
         LOG.infov("Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
         }
 
@@ -116,11 +116,15 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30¼\" S ", 11, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 11, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-¼\" S ", 11, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 3/4\" S ", 12, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-3/4\" S ", 12, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  -135     °     11     ' 30 3/4\" S ", 13, false);
     FormattingTestFixture::SignaturePattrenCollapsing("   22' 3 1/2\"", 14, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 15, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 15, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 16, false);
 
     FormattingTestFixture::ShowFUS("MM");
@@ -517,7 +521,7 @@ TEST(FormattingTest, Simple)
     EXPECT_EQ(2, FormatConstant::GetSequenceLength(uni[0]));
     EXPECT_TRUE(FormatConstant::IsTrailingByteValid(uni[1]));
 
-    curs.Rewind(true);
+    curs.Rewind();
 
     NumericTriad tr = NumericTriad(1000.0, (size_t)3, (size_t)12);
 

@@ -637,7 +637,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         // closing formatting
         if ('(' == sign)
             locBuf[ind++] = ')';
-        locBuf[ind++] = '\0';
+        locBuf[ind++] = FormatConstant::EndOfLine();
 
         if (ind > bufLen)
             ind = bufLen;

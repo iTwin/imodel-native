@@ -330,7 +330,7 @@ size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
             strL = static_cast<size_t>(cap);
         memcpy(static_cast<void*>(buf + index), str, strL);
         index += strL;
-        buf[index] = '\0';     
+        buf[index] = FormatConstant::EndOfLine();     
         return index;
     }
 
@@ -372,10 +372,10 @@ Utf8CP Utils::HexByte(Utf8Char c, Utf8P buf, size_t bufLen)
         buf[1] = s[h];
         h = (size_t)((c >> 4) & 0xF);
         buf[0] = s[h];
-        buf[2] = '\0';
+        buf[2] = FormatConstant::EndOfLine();
         }
     else if (nullptr != buf)
-        buf[0] = '\0';
+        buf[0] = FormatConstant::EndOfLine();
     return buf;
     }
 
@@ -420,12 +420,12 @@ Utf8Char Utils::MatchingDivider(Utf8Char div)
     {
     Utf8CP fd= FormatConstant::FUSDividers();
     Utf8CP df = FormatConstant::FUSDividerMatch();
-    for (int i = 0; fd[i] != '\0'; i++)
+    for (int i = 0; fd[i] != FormatConstant::EndOfLine(); i++)
         {
         if (div == fd[i])
             return df[i];
         }
-    return '\0';
+    return FormatConstant::EndOfLine();
     }
 
 //----------------------------------------------------------------------------------------
@@ -436,7 +436,7 @@ int Utils::IndexOf(Utf8Char c, Utf8CP text)
     int indx = -1;
     if (Utils::IsNameNullOrEmpty(text))
         return indx;
-    while (*text != '\0')
+    while (*text != FormatConstant::EndOfLine())
         {
         ++indx;
         if (c == *text)

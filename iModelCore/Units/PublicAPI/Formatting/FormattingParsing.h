@@ -134,7 +134,7 @@ private:
 public:
     UNITS_EXPORT FormatDividerInstance(Utf8CP  txt, Utf8Char div);
     UNITS_EXPORT FormatDividerInstance(Utf8CP  txt, Utf8CP divs);
-    UNITS_EXPORT FormatDividerInstance():m_div('\0'), m_mate('\0'), m_divCount(0), m_mateCount(0), m_totLen(0){}
+    UNITS_EXPORT FormatDividerInstance():m_div(FormatConstant::EndOfLine()), m_mate(FormatConstant::EndOfLine()), m_divCount(0), m_mateCount(0), m_totLen(0){}
     int GetDivCount() { return m_divCount; }
     int GetMateCount() { return m_mateCount; }
     bool BracketsMatched() { return (0 < m_divCount && m_divCount == m_mateCount); }
@@ -156,6 +156,8 @@ private:
     size_t m_segPos[m_maxNumSeg];
 
     //UNITS_EXPORT void ReleaseSignature();
+    //UNITS_EXPORT Utf8Char GetPatternChar(size_t ind);
+    UNITS_EXPORT size_t DetectUOMPattern(size_t ind);
 public:
     FormattingSignature():m_size(0), m_signature(nullptr), m_pattern(nullptr),m_segCount(0){ memset(m_segPos, 0, sizeof(m_segPos)); }
     UNITS_EXPORT FormattingSignature(size_t reserve);
@@ -169,9 +171,9 @@ public:
     UNITS_EXPORT size_t AppendSignature(Utf8Char c);
     UNITS_EXPORT size_t AppendPattern();
     UNITS_EXPORT size_t AppendPattern(Utf8Char c);
-    Utf8Char GetSignatureChar(size_t indx) { return (indx < m_sigIndx) ? m_signature[indx] : '\0'; }
-    Utf8Char GetPatternChar(size_t indx) { return (indx < m_patIndx) ? m_pattern[indx] : '\0'; }
-
+    Utf8Char GetSignatureChar(size_t indx) { return (indx < m_sigIndx) ? m_signature[indx] : FormatConstant::EndOfLine(); }
+    Utf8Char GetPatternChar(size_t indx) { return (indx < m_patIndx) ? m_pattern[indx] : FormatConstant::EndOfLine(); }
+    UNITS_EXPORT size_t CompressPattern();
     };
 
 //=======================================================================================
@@ -225,10 +227,10 @@ public:
     bool IsError() { return (m_status != ScannerCursorStatus::Success); }
     bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
     ScannerCursorStatus GetOperationStatus() { return m_status; }
-    bool IsEndOfLine() { return (m_text[m_detail.GetPosition()] == '\0'); }
+    bool IsEndOfLine() { return (m_text[m_detail.GetPosition()] == FormatConstant::EndOfLine()); }
     bool IsASCII() { return m_isASCII; }
     UNITS_EXPORT int CodePointCount();
-    UNITS_EXPORT void Rewind(bool freeBuf);
+    UNITS_EXPORT void Rewind();
     size_t GetUnicode() { return m_detail.GetUnicode(); }
     size_t GetLastScanned() { return m_detail.GetScanCount(); }
     UNITS_EXPORT size_t SkipBlanks();
@@ -242,9 +244,9 @@ public:
     UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
     //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
     //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
-    UNITS_EXPORT Utf8CP GetSignature(bool refresh);
-    Utf8CP GetPattern(bool refresh) { if (refresh) GetSignature(true); return m_traits.GetPattern(); }
-    UNITS_EXPORT Utf8String CollapseSpaces();
+    UNITS_EXPORT Utf8CP GetSignature(bool refresh, bool compress);
+    Utf8CP GetPattern(bool refresh, bool compress) { GetSignature(refresh, compress); return m_traits.GetPattern(); }
+    UNITS_EXPORT Utf8String CollapseSpaces(bool replace);
     };
 
 //=======================================================================================
