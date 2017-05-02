@@ -93,9 +93,9 @@ DgnModelId DgnElement::GetSubModelId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
     {
-    bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
-    BeAssert(isModellable && "Only element ECClasses that implement bis:IModellableElement can have SubModels");
-    return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
+    bool isSubModeled = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ISubModeledElement);
+    BeAssert(isSubModeled && "Only ECClasses that implement bis:ISubModeledElement can have SubModels");
+    return isSubModeled ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
     }
 
 /*---------------------------------------------------------------------------------**//**

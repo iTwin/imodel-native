@@ -55,7 +55,7 @@
 
     <ECEntityClass typeName="FunctionalPortion" displayLabel="Functional Portion" description="A Functional Portion is a Functional Component that will be broken down in more detail in a separate (sub) Functional Model.">
         <BaseClass>FunctionalComponentElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

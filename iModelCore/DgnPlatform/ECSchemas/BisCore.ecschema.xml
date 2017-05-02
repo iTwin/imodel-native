@@ -298,10 +298,10 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="IModellableElement" modifier="Abstract" displayLabel="Modellable Element" description="An interface which indicates that an Element can be broken down or described by a (sub) Model.  This interface is mutually exclusive with IParentElement.">
+    <ECEntityClass typeName="ISubModeledElement" modifier="Abstract" displayLabel="Modellable Element" description="An interface which indicates that an Element can be broken down or described by a (sub) Model.  This interface is mutually exclusive with IParentElement.">
         <ECCustomAttributes>
             <IsMixin xmlns="CoreCustomAttributes.01.00">
-                <!-- Only subclasses of bis:Element can implement the IModellableElement interface -->
+                <!-- Only subclasses of bis:Element can implement the ISubModeledElement interface -->
                 <AppliesToEntityClass>Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
@@ -630,14 +630,14 @@
     </ECEntityClass>
     <ECEntityClass typeName="TemplateRecipe2d" displayLabel="2D Template Recipe" description="A recipe that uses a 2D template for creating new instances.">
         <BaseClass>RecipeDefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="TemplateRecipe3d" displayLabel="3D Template Recipe" description="A recipe that uses a 3D template for creating new instances.">
         <BaseClass>RecipeDefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -671,7 +671,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract" displayLabel="Information Partition" description="Information Partition is an abstract base class for elements that indicate that there is a new modeling perspective within the overall DgnDb information hierarchy. An Information Partition is always parented to a Subject and broken down by a Model.">
         <BaseClass>InformationContentElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -774,7 +774,7 @@
 
     <ECEntityClass typeName="RepositoryLink" modifier="Sealed" displayLabel="Repository Link" description="An information element that links to a repository.">
         <BaseClass>UrlLink</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -827,7 +827,7 @@
 
     <ECEntityClass typeName="Drawing">
         <BaseClass>Document</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -873,7 +873,7 @@
 
     <ECEntityClass typeName="Sheet">
         <BaseClass>Document</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1030,7 +1030,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalPortion" modifier="Abstract" displayLabel="Physical Portion" description="A Physical Portion represents an arbitrary portion of a larger Physical Element that will be broken down in more detail in a separate (sub) Physical Model.">
         <BaseClass>PhysicalElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract" displayLabel="Spatial Location Element" description="A Spatial Location Element identifies a 'tracked' real world location but has no mass and cannot be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
@@ -1040,7 +1040,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationPortion" modifier="Abstract" displayLabel="Spatial Location Portion" description="A Spatial Location Portion represents an arbitrary portion of a larger Spatial Location Element that will be broken down in more detail in a separate (sub) Spatial Location Model.">
         <BaseClass>SpatialLocationElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement" displayLabel="Volume Element" description="A Volume Element is a Spatial Location Element that is restricted to defining a volume.">
         <BaseClass>SpatialLocationElement</BaseClass>
@@ -1406,7 +1406,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="IParentElement" modifier="Abstract" displayLabel="Parent Element" description="An interface that indicates that this Element is capable of being a parent (owning child Elements). This interface is mutually exclusive with IModellableElement.">
+    <ECEntityClass typeName="IParentElement" modifier="Abstract" displayLabel="Parent Element" description="An interface that indicates that this Element is capable of being a parent (owning child Elements). This interface is mutually exclusive with ISubModeledElement.">
         <ECCustomAttributes>
             <IsMixin xmlns="CoreCustomAttributes.01.00">
                 <!-- Only subclasses of bis:Element can implement the IParentElement interface -->
