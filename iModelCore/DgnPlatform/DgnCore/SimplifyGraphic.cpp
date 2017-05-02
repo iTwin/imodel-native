@@ -1659,8 +1659,18 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
         }
 
     PolyfaceHeaderPtr           polyface = args.ToPolyface();
+
+    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Ignore)
+        return;     
+
+    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Facet)
+        {
+        ClipAndProcessPolyface (*polyface, false);
+        return;
+        }
+
     SimplifyPolyfaceClipper     polyfaceClipper;
-    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), true);
 
     if (polyfaceClipper.IsUnclipped())
         {
@@ -1670,25 +1680,30 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
         {
         for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
             {
-            PolyfaceHeaderPtr       triangulated = clippedPolyface->Clone(), unified = PolyfaceHeader::CreateUnifiedIndexMesh(*triangulated);
+            if (!clippedPolyface->IsTriangulated())
+                clippedPolyface->Triangulate();
 
-            // unused - size_t              numFacets = unified->GetNumFacet();
-            size_t              numPoints = unified->GetPointCount();
+            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
+                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
+                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
+
+            // unused - size_t              numFacets = clippedPolyface->GetNumFacet();
+            size_t              numPoints = clippedPolyface->GetPointCount();
             bvector<int32_t>    indices;
-            bvector<FPoint3d>   points(numPoints), normals(nullptr == unified->GetNormalCP() ? 0 : numPoints);
-            bvector<FPoint2d>   params(nullptr == unified->GetParamCP() ? 0 : numPoints);
+            bvector<FPoint3d>   points(numPoints), normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
+            bvector<FPoint2d>   params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
 
             for (size_t i=0; i<numPoints; i++)
                 {
-                bsiFPoint3d_initFromDPoint3d(&points[i], &unified->GetPointCP()[i]);
-                if (nullptr != unified->GetNormalCP())
-                    bsiFPoint3d_initFromDPoint3d(&normals[i], &unified->GetNormalCP()[i]);
+                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
+                if (nullptr != clippedPolyface->GetNormalCP())
+                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
 
-                if (nullptr != unified->GetParamCP())
-                    bsiFPoint2d_initFromDPoint2d(&params[i], &unified->GetParamCP()[i]);
+                if (nullptr != clippedPolyface->GetParamCP())
+                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
                 }
             // unused - size_t  j = 0;
-            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*unified, true);
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
             for (visitor->Reset(); visitor->AdvanceToNextFace();)
                 {   
                 indices.push_back(visitor->GetClientPointIndexCP()[0]);
@@ -1698,7 +1713,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
 
             TriMeshArgs     triMesh;
 
-            triMesh.m_numIndices = 3 * unified->GetNumFacet();
+            triMesh.m_numIndices = 3 * clippedPolyface->GetNumFacet();
             triMesh.m_numPoints = numPoints;
             triMesh.m_vertIndex = &indices.front();
             triMesh.m_points  = &points.front();
