@@ -652,3 +652,32 @@ TEST(GeometryNode,Test0)
     CheckRangeTransformCommutes (child2, child3, t3);
     CheckRangeTransformCommutes (root, child3, t2 * t3);
     }
+
+TEST(FlatBuffer,CurvePrimitiveId)
+    {
+    uint32_t myIndex = 322;
+    auto cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3,4,5,6));
+    auto id = CurvePrimitiveId::Create (
+            CurvePrimitiveId::Type::ConceptStationAlignmentIndex,
+            (void*)&myIndex, sizeof (myIndex)
+            );
+    if (id.IsValid ())
+        cp0->SetId (id.get ());
+    auto g0 = IGeometry::Create (cp0);
+    bvector<Byte> buffer;
+    BentleyGeometryFlatBuffer::GeometryToBytes (*g0, buffer);
+    IGeometryPtr g1 = BentleyGeometryFlatBuffer::BytesToGeometry (buffer);
+    Check::True (g0->IsSameStructureAndGeometry (*g1));
+    auto cp1 = g1->GetAsICurvePrimitive ();
+    if (Check::True (cp1.IsValid ()))
+        {
+        auto id0 = cp0->GetId ();
+        auto id1 = cp1->GetId ();
+        if (Check::True (nullptr != id0, "cp0->GetId")
+            && Check::True (nullptr != id1, "cp1->GetId")
+            )
+            {
+            Check::Int ((int)id0->GetType (), (int)id1->GetType(),"Round trip id type");
+            }
+        }
+    }
