@@ -351,7 +351,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
              " AND e.Id=g.ElementId"
              " AND e.ECClassId=:ecClass"       //  select only Obstacles
-             " AND aspect.ElementId=e.Id AND aspect.sc1=:propertyValue"       // ... with certain items
+             " AND aspect.ElementId=e.Id AND aspect.ps1=:propertyValue"       // ... with certain items
         );
 
     //  Initial placement
@@ -698,7 +698,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         "SELECT aspect.ElementId,aspect.sc1 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(BIS_CLASS_Element) " e," BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect WHERE"
            " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
-           " AND aspect.ElementId=e.Id AND aspect.sc1=:propertyValue"   // ... with certain item value
+           " AND aspect.ElementId=e.Id AND aspect.ps1=:propertyValue"   // ... with certain item value
         );
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
