@@ -11,149 +11,7 @@
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 
-//===================================================
-//
-// ScanBuffer Methods
-//
-//===================================================
-size_t ScanBuffer::ExtractSegment(Utf8CP text, ScanSegmentR ss)
-    {
-    size_t totLen = Utils::TextLength(text); // actual length of the text
-    int indx = ss.GetIndex();
-    int len = ss.GetLength();
-    if (0 <= ss.GetIndex())
-        {
-        size_t maxLen = totLen - indx;  // how much text we have
-        size_t subLen = (ss.GetLength() < 0) ? maxLen : len;  // how much text we will try to extract
-        size_t actLen = Utils::MinInt(m_capacity, subLen); // how much text we can actually extract
-        memcpy(m_buffer, text + indx, actLen);
-        m_buffer[actLen] = 0;
-        return actLen;
-        }
-    return 0;
-    }
 
-//===================================================
-//
-// ScanSegment Methods
-//
-//===================================================
-
-Utf8String ScanSegment::ExtractSegment(Utf8CP text)
-    {
-    if (0 > m_indx || m_len == 0)
-        return Utf8String();
-    size_t actLen = Utils::MinInt(Utils::TextLength(text) - m_indx, m_len);
-    Utf8String str(text + m_indx, text + m_indx + actLen);
-    return str;
-    }
-
-Utf8String ScanSegment::SegmentInfo(Utf8CP prefix)
-    {
-    Utf8String str;
-    Utf8String type = TypeToName(m_type);
-    if (nullptr == prefix)
-        prefix = "";
-    str.reserve(80);
-    if(IsPresent())
-        str.Sprintf("%s%s(%d, %d)",prefix, type.c_str(), m_indx, m_len);
-    else
-        str.Sprintf("%s%s(absent)", prefix, type.c_str());
-    return str;
-    }
-
-ScanSegmentType ScanSegment::IndexToType(int indx)
-    {
-    if (indx < 0 || indx >= (int)ScanSegmentType::Undefined)
-        return ScanSegmentType::Undefined;
-    return (ScanSegmentType)indx;
-    }
-
-Utf8String ScanSegment::TypeToName(ScanSegmentType type)
-    {
-    switch (type)
-        {
-        case ScanSegmentType::Prefix: return "Prefix";
-        case ScanSegmentType::Sign: return "Sign";
-        case ScanSegmentType::IntPart : return "IntegerPart";
-        case ScanSegmentType::DecPoint: return "DecimalPoint";
-        case ScanSegmentType::FractPart: return "FractionalPart";
-        case ScanSegmentType::ExponentSymbol: return "ExponentSymbol";
-        case ScanSegmentType::ExponentSign: return "ExponentSign";
-        case ScanSegmentType::ExponentValue: return "ExponentPower";
-        case ScanSegmentType::Delimiter: return "Delimiter";
-        case ScanSegmentType::UnitName: return "UnitName";
-        case ScanSegmentType::UnitDelim: return "UnitDelim";
-        case ScanSegmentType::Suffix: return "Suffix";
-        case ScanSegmentType::Total: return "Total";
-        default: return "Undefined";
-        }
-    }
-
-//===================================================
-//
-// NumeriChunk Methods
-//
-//===================================================
-
-void NumeriChunk::Init()
-    {
-    for (int i = 0; i < (int)ScanSegmentType::Undefined; i++)
-        {
-        m_parts[i] = ScanSegment((ScanSegmentType)i);
-        }
-    }
-
-NumeriChunk::NumeriChunk(Utf8CP text)
-    {
-    Utf8CP ptr = text;
-    int phase = 0;
-    while (0 != *ptr && phase < (int)ScanSegmentType::Undefined)
-        {
-        switch (phase)
-            {
-            case (int)ScanSegmentType::Prefix:
-                break;
-            case (int)ScanSegmentType::Sign:
-                break;
-            case (int)ScanSegmentType::IntPart:
-                break;
-            case (int)ScanSegmentType::DecPoint:
-                break;
-            case (int)ScanSegmentType::FractPart:
-                break;
-            case (int)ScanSegmentType::ExponentSymbol:
-                break;
-            case (int)ScanSegmentType::ExponentSign:
-                break;
-            case (int)ScanSegmentType::ExponentValue:
-                break;
-            case (int)ScanSegmentType::Delimiter:
-                break;
-            case (int)ScanSegmentType::UnitName:
-                break;
-            case (int)ScanSegmentType::UnitDelim:
-                break;
-            case (int)ScanSegmentType::Suffix:
-                break;
-            case (int)ScanSegmentType::Total:
-            default:
-                break;
-            }
-        }
-
-    }
-
-
-Utf8String NumeriChunk::ChunkInfo(Utf8CP mess)
-    {
-    Utf8String str;
-    for (int i = 0; i < (int)ScanSegmentType::Total; i++)
-        {
-        str += m_parts[i].SegmentInfo(" ");
-        }
-    return str;
-    }
 
 //===================================================
 //
@@ -778,6 +636,28 @@ size_t FormattingSignature::DetectUOMPattern(size_t ind)
         }
     return 0;
     }
+
+size_t FormattingSignature::DetectFractPattern(size_t ind)
+    {
+    Utf8Char buf[12];
+    size_t i = 0;
+    memset(buf, 0, sizeof(buf));
+    Utf8Char c = GetPatternChar(ind);
+    if (c == FormatConstant::DigitSymbol())
+        {
+        while (i < 10)
+            {
+            buf[i++] = c;
+            c = GetPatternChar(ind + i);
+            if (c == FormatConstant::DigitSymbol() || c == FormatConstant::EndOfLine())
+                break;
+            }
+        if (strcmp(buf, "0sas") == 0 || strcmp(buf, "0as") == 0 || strcmp(buf, "0sa") == 0)
+            return i;
+        }
+    return 0;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------

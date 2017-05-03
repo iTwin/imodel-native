@@ -141,19 +141,6 @@ TEST(FormattingTest, Preliminary)
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
     //LOG.infov("TONNE_PER_HR-System  %s", sysN);
 
-    //ScanSegment ss(ScanSegmentType::Undefined, 5, 10);
-    //LOG.infov("%s", ss.SegmentInfo(nullptr).c_str());
-    //Utf8CP testT("abcdefeghijklmnopqrstuvwxyz");
-
-    //LOG.infov("TextSegment %s", ss.ExtractSegment(testT).c_str());
-
-    //Utf8Char buf[82];
-    //ScanBuffer sb(buf, 80);
-    //size_t actL = sb.ScanBuffer::ExtractSegment(testT, ss);
-    //LOG.infov("TextSegment2 %s len %d", buf, actL);
-
-    //NumeriChunk nc;
-    //LOG.infov("%s", nc.ChunkInfo("ChunkInfo: ").c_str());
     }
 
 TEST(FormattingTest, PhysValues)

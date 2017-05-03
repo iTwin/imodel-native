@@ -18,8 +18,6 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ScanBuffer)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ScanSegment)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatCursorDetail)
 
 
@@ -158,6 +156,7 @@ private:
     //UNITS_EXPORT void ReleaseSignature();
     //UNITS_EXPORT Utf8Char GetPatternChar(size_t ind);
     UNITS_EXPORT size_t DetectUOMPattern(size_t ind);
+    UNITS_EXPORT size_t DetectFractPattern(size_t ind);
 public:
     FormattingSignature():m_size(0), m_signature(nullptr), m_pattern(nullptr),m_segCount(0){ memset(m_segPos, 0, sizeof(m_segPos)); }
     UNITS_EXPORT FormattingSignature(size_t reserve);
@@ -293,66 +292,6 @@ public:
     UNITS_EXPORT Utf8Char GetDelimeter();
     };
 
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct ScanBuffer       // this class can be used only on stack and cannot be passed outside of the scope of the function
-    {
-private:
-    Utf8P  m_buffer;
-    size_t m_capacity;
-    size_t m_actLen;
-public:
-    ScanBuffer(Utf8P buff, size_t size)
-        {   
-            m_buffer = buff;
-            memset(m_buffer, 0, size + 2);
-            m_capacity = size;   
-        }
-    //UNITS_EXPORT size_t LoadTextSegment(Utf8CP text, int index, int len);
-    Utf8P GetBuffer() { return m_buffer; }
-    size_t GetCapacity() {return m_capacity; }
-    size_t SetActualLength(size_t len) { return m_actLen = len; }
-    size_t GetActualLength() { return m_actLen; }
-    UNITS_EXPORT size_t ExtractSegment(Utf8CP text, ScanSegmentR seg);
-    };
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct ScanSegment
-    {
-private:
-    ScanSegmentType m_type;
-    int m_indx;
-    int m_len;
-public: 
-    ScanSegment() { m_type = ScanSegmentType::Undefined;  m_indx = -1; m_len = -1; }
-    ScanSegment(ScanSegmentType type, int indx=-1, int len=-1) { m_type = type;  m_indx = indx; m_len = len; }
-    bool IsPresent() { return (0 <= m_indx && 0 < m_len); }  // a true segment must have index >= 0 and some length > 0
-    int GetIndex() { return m_indx; }
-    int SetIndex(int indx) { return m_indx = indx; }
-    int GetLength() { return m_len; }
-    int SetLength(int len) { return m_len = len; }
-    int IncrementLength(int delta) { m_len += delta;  return m_len; }
-    UNITS_EXPORT Utf8String ExtractSegment(Utf8CP text);
-    UNITS_EXPORT static Utf8String TypeToName(ScanSegmentType type);
-    UNITS_EXPORT static ScanSegmentType IndexToType(int indx);
-    UNITS_EXPORT Utf8String SegmentInfo(Utf8CP prefix);
-    };
-
-struct NumeriChunk
-    {
-private:
-    ScanSegment m_parts[(int)ScanSegmentType::Undefined];
-    double m_dval;
-    size_t m_ival;
-    void Init();
-public:
-    UNITS_EXPORT NumeriChunk() { Init();  m_dval = 0.0; m_ival = 0; }
-    UNITS_EXPORT NumeriChunk(Utf8CP text);
-    UNITS_EXPORT Utf8String ChunkInfo(Utf8CP mess);
-    };
 
 
 END_BENTLEY_FORMATTING_NAMESPACE
