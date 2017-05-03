@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -286,10 +286,10 @@ struct CIVdtmsrf **srfPP
 
 /*%-----------------------------------------------------------------------------
 FUNC: aecDTM_loadGUID
-DESC: Loads the surface GUID from the .DTM file.
+DESC: Loads the surface InroadsGuid from the .DTM file.
 HIST: Original - twl 22-Oct-1998
 MISC: static
-KEYW: DTM LOAD GUID
+KEYW: DTM LOAD InroadsGuid
 -----------------------------------------------------------------------------%*/
 
 static int aecDTM_loadGUID
@@ -308,7 +308,7 @@ struct CIVdtmsrf *srf,
         }
     else
         {
-        GUID guid;
+        InroadsGuid guid;
 
         if ( fread ( &guid, sizeof(srf->guid), 1, handleP ) != 1 )
             sts = DTM_M_RDFILF;
@@ -1463,7 +1463,7 @@ static int aecDTM_loadCheckFormat  /* <= TRUE if error              */
     wchar_t *filP                           /* => file to check              */
     )
     {
-    byte buf[3]; // Do not convert to unicode.
+    unsigned char buf[3]; // Do not convert to unicode.
     FILE *fptr = (FILE *)0;
     int  sts = SUCCESS;
 
@@ -1472,7 +1472,7 @@ static int aecDTM_loadCheckFormat  /* <= TRUE if error              */
         sts = DTM_M_FILNTF;
     else if ( fread ( buf, sizeof ( char ), 3, fptr ) != 3 )
         sts = DTM_M_RDFILF;
-    else if ( _mbsncmp ( (byte *)TTN_MAGIC, buf, EXTEN_CODE_SIZE ) == 0 )
+    else if ( _mbsncmp ( (unsigned char *)TTN_MAGIC, buf, EXTEN_CODE_SIZE ) == 0 )
         {
         if ( fread ( buf, sizeof ( char ), 1, fptr ) != 1 )
             sts = DTM_M_RDFILF;

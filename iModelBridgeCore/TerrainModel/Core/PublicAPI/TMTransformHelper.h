@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/TMTransformHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -194,7 +194,7 @@ struct TMTransformHelper : RefCountedBase
                     {
                     if (m_ownValues) delete m_params;
                     }
-                operator ::DTMFenceParamsCR () const
+                operator BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR () const
                     {
                     return *m_params;
                     }
@@ -390,7 +390,7 @@ struct TMTransformHelper : RefCountedBase
                     }
                 }
             }
-        Bentley::TerrainModel::DTMPointArray convertDTMPointArrayFromDTM (Bentley::TerrainModel::DTMPointArray& in)
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray convertDTMPointArrayFromDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& in)
             {
             int numPts = (int)in.size();
             DPoint3dP pts = in.data();
@@ -399,14 +399,14 @@ struct TMTransformHelper : RefCountedBase
                 convertPointsFromDTM (pts, numPts);
             return in;
             }
-        Bentley::TerrainModel::DTMDrainageFeaturePtr convertDTMDrainageFeaturePtrFromDTM (Bentley::TerrainModel::DTMDrainageFeaturePtr& in)
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr convertDTMDrainageFeaturePtrFromDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& in)
             {
             if (in.IsNull ())
                 return in;
 
             for (int i = 0; i < in->GetNumParts(); i++)
                 {
-                Bentley::TerrainModel::DTMPointArray pts;
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray pts;
 
                 if (in->GetPoints (pts, i) == DTM_SUCCESS)
                     convertDTMPointArrayFromDTM (pts);
@@ -500,7 +500,7 @@ struct TMTransformHelper : RefCountedBase
                 DTMFenceParamsP newParams = new DTMFenceParams (fence.fenceType, fence.fenceOption, newPts, fence.numPoints);
                 return DTMFenceParamsCopy (newParams, newParams->points, false);
                 }
-//            Bentley::TerrainModel::DTMFenceParams ()
+//            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ()
             return DTMFenceParamsCopy (&fence, fence.points, false);
             }
         double convertSlopeToDTM (const double& value)
@@ -862,8 +862,8 @@ struct TMTransformHelper : RefCountedBase
 #endif
     private:
         bool m_IsIdentity;
-        Bentley::Transform m_transform;
-        Bentley::Transform m_transformInv;
+        BENTLEY_NAMESPACE_NAME::Transform m_transform;
+        BENTLEY_NAMESPACE_NAME::Transform m_transformInv;
         double m_scale;
         double m_elevationOffset;
         double m_aspectFix;

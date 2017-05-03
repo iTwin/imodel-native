@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageCatchment.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject(BC_DTM_OBJ *dt
 
 //  Code To Refine Catchments
 
-int bcdtmDrainage_refineCatchmentBoundariesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *catchmentDtmP,double falseLowDepth,long descentTraceOverZeroSlope) ;
+int bcdtmDrainage_refineCatchmentBoundariesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *catchmentDtmP,double falseLowDepth,ZeroSlopeTraceOption descentTraceOverZeroSlope) ;
 int bcdtmDrainage_insertCatchmentPolygonIntoDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *polygonPtsP,long numPolygonPts,long *startPointP) ;
 int bcdtmDrainage_insertMaximumAscentLinesFromCatchmentDtmObject(BC_DTM_OBJ *dtmP,long startPoint) ;
 int bcdtmDrainage_checkForAngleBetweenTrianglePointsDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2,long p3,double angle) ;

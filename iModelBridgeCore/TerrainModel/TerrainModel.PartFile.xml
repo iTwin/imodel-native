@@ -35,8 +35,6 @@
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
         <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
-        <SubPart PartName="HeaderFiles"      PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
-        <SubPart PartName="BeLibxml2Dll"     PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="IppUtlDll"  PartFile="ImagePP" Repository="ImagePP" />
         <SubPart PartName="IppGraDll"  PartFile="ImagePP" Repository="ImagePP" />
@@ -50,8 +48,10 @@
       <SubPart PartName="Core" />
       <SubPart PartName="Formats" />      
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
+      <!--<SubPart PartName="Boost_1_5_7_0_Lib_Static" PartFile="Boost_1_5_7_0_Lib" Repository="boost_1.57.0_lib" />-->
       <Bindings>
-        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>
+        <Assemblies ProductDirectoryName="AutomaticGroundDetection" Required="false">Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>
+        <Assemblies ProductDirectoryName="PPNativeAssemblies" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>        
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
@@ -117,7 +117,7 @@
     </Part>
 
     <Part Name="TestDependencies">
-        <SubPart PartName="nunit_2.5.10" PartFile="${SrcBsiCommon}CvsPartFiles\bsitools" Repository="bsitools-nunit_2.5.10" />
+        <SubPart PartName="nunit_2.5.10" PartFile="${SrcRoot}bsicommon\CvsPartFiles\bsitools" Repository="bsitools-nunit_2.5.10" />
         <SubPart PartName="HeaderFiles" />
     </Part>
 

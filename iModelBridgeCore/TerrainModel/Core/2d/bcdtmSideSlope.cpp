@@ -4437,7 +4437,7 @@ int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy
             P2 = Tin->nullPnt;
             Ptype = 1;
             }
-        else if (bcdtmMath_normalDistanceToLineDtmObject(Tin, P1, P2, Sx, Sx) <= Tin->ppTol )
+        else if (bcdtmMath_normalDistanceToLineDtmObject(Tin, P1, P2, Sx, Sy) <= Tin->ppTol )
             Ptype = 3;
         }
      }

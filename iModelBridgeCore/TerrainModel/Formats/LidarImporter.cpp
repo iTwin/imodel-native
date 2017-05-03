@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LidarImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -24,7 +24,7 @@ const bvector<LidarImporter::Classification>* importFeatures,
 uint64_t& totalNumLidarPoints,     // Number Of Lidar Points Imported For Each Feature
 bvector<long>* numLidarPoints              // Number Of Lidar Points Imported For Each Feature
 );
-DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, Bentley::GeoCoordinates::BaseGCSPtr& gcs);
+DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs);
 
 LidarImporter::LidarImporter (WCharCP filename) : SingleTerrainImporter (filename)
         {
@@ -38,7 +38,12 @@ bool LidarImporter::IsFileSupported (WCharCP filename)
         {
         BeFile file;
 
+#ifdef BUILDTMFORDGNDB
+        if (file.Open (filename, BeFileAccess::Read) == BeFileStatus::Success)
+#else
         if (file.Open (filename, BeFileAccess::Read, BeFileSharing::None) == BeFileStatus::Success)
+
+#endif
             {
             char header[4];
             uint32_t bytesRead = 0;
@@ -63,7 +68,7 @@ BENTLEYDTMFORMATS_EXPORT LidarImporterPtr LidarImporter::Create (WCharCP filenam
     return nullptr;
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr LidarImporter::_GetGCS () const
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr LidarImporter::_GetGCS () const
     {
     if (!m_gcsValid)
         {
@@ -76,10 +81,10 @@ Bentley::GeoCoordinates::BaseGCSPtr LidarImporter::_GetGCS () const
 
 WCharCP LidarImporter::_GetFileUnitString () const
     {
-    Bentley::GeoCoordinates::BaseGCSPtr gcs = _GetGCS ();
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcs = _GetGCS ();
     if (gcs.IsValid ())
         {
-        T_WStringVector* unitNames = Bentley::GeoCoordinates::BaseGCS::GetUnitNames ();
+        T_WStringVector* unitNames = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::GetUnitNames ();
         return (*unitNames)[gcs->GetUnitCode()].GetWCharCP();
         }
     return TerrainImporter::_GetFileUnitString();
@@ -88,7 +93,7 @@ WCharCP LidarImporter::_GetFileUnitString () const
 
 FileUnit LidarImporter::_GetFileUnit () const
     {
-    Bentley::GeoCoordinates::BaseGCSPtr gcs = _GetGCS ();
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcs = _GetGCS ();
     if (gcs.IsValid())
         {
         return (FileUnit)gcs->GetUnitCode ();

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -183,7 +183,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_toFileDtmObject(BC_DTM_OBJ *dtmP,WCharCP dtmFil
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP,long filePosition)
 {
-    Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
     int status;
     bcdtmStream_createFromFILE(dtmFP, &dtmStreamP);
     status = bcdtmWriteStream_atFilePositionDtmObject(dtmP, dtmStreamP, filePosition);
@@ -195,7 +195,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,FILE *
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
+BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long dtmType = dtmP->dtmObjType ;
@@ -550,7 +550,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_fromFileDtmObject(BC_DTM_OBJ **dtmPP,WCharCP dtm
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmRead_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP,FILE *dtmFP,long filePosition)
 {
- Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+ BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
  int status;
  bcdtmStream_createFromFILE(dtmFP, &dtmStreamP);
  status = bcdtmReadStream_atFilePositionDtmObject(dtmPP, dtmStreamP, filePosition);
@@ -562,7 +562,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP,FILE 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
+BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long objType,verNum,offset,ident,verNumber,fileType ;
@@ -848,7 +848,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmRead_version100DtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP)
 {
-Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
 int status;
 
 bcdtmStream_createFromFILE(dtmFP, &dtmStreamP);
@@ -862,7 +862,7 @@ return status;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP)
+BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition,headerSize ;
@@ -1278,7 +1278,7 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP)
+BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition,flist,headerSize;
@@ -1694,7 +1694,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 BENTLEYDTM_Public int bcdtmRead_dtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP)
 {
  int ret=DTM_SUCCESS ;
- Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+ BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
 /*
 ** Create Stream
 */
@@ -1750,7 +1750,7 @@ BENTLEYDTM_Private void bcdtmObject_checkLastModifiedDate (BC_DTM_OBJ *dtmP)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP)
+BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition ;
@@ -2824,7 +2824,7 @@ goto cleanup ;
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP,long filePosition)
     {
-    Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
     int status;
 
     bcdtmStream_createFromFILE(dtmFP, &dtmStreamP);
@@ -2838,7 +2838,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
+BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
 /*
@@ -2906,7 +2906,7 @@ return(ret) ;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
+BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long point,dtmFeature,numDataFeatures ;
@@ -3144,7 +3144,7 @@ return(ret) ;
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmWrite_writeAtFilePositionGeopakTinObjectDtmObject(BC_DTM_OBJ *dtmP,FILE* dtmFP,long filePosition)
 {
-    Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
     int status;
 
     bcdtmStream_createFromFILE(dtmFP,&dtmStreamP);
@@ -3160,7 +3160,7 @@ BENTLEYDTM_Public int bcdtmWrite_writeAtFilePositionGeopakTinObjectDtmObject(BC_
 BENTLEYDTM_Public int bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObject
 (
  BC_DTM_OBJ          *dtmP,
- Bentley::TerrainModel::IBcDtmStream* dtmStreamP,
+ BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP,
  long                filePosition
 )
 {
@@ -3360,12 +3360,13 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
 **  Write Features
 */
     dtmTinFeature = 0 ;
+
     for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
       {
        dtmFeatureP  = ftableAddrP(dtmP,dtmFeature) ;
        if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType != DTMFeatureType::Hull )
          {
-          if( dbg == 2  ) bcdtmWrite_message(0,0,0,"Writing Feature %4ld",dtmFeatureP->dtmFeatureType) ;
+       if( dbg == 2  ) bcdtmWrite_message(0,0,0,"Writing Feature %4ld",dtmFeatureP->dtmFeatureType) ;
           geopakFeature.firstPnt           = dtmFeatureP->dtmFeaturePts.firstPoint ;
           geopakFeature.dtmFeatureType     = dtmFeatureP->dtmFeatureType ;
           geopakFeature.internalToFeature  = dtmFeatureP->internalToDtmFeature ;

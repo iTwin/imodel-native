@@ -21,7 +21,7 @@ int64_t IDTM::GetPointCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTM::GetBoundary (Bentley::TerrainModel::DTMPointArray& ret)
+DTMStatusInt IDTM::GetBoundary (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret)
     {
     return _GetBoundary (ret);
     }
@@ -78,7 +78,7 @@ IDTMVolume* IDTM::GetDTMVolume ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTM::GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
+DTMStatusInt IDTM::GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
     {
     return _GetTransformDTM (transformedDTM, transformation);
     }
@@ -219,7 +219,7 @@ DTMStatusInt BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::ExportToGeopakTinFile(W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMP Bentley::TerrainModel::IDTM::GetBcDTM()
+BcDTMP BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::GetBcDTM()
     {
     return _GetBcDTM();
     }

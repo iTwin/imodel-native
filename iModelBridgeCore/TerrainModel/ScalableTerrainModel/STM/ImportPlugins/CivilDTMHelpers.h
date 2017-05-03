@@ -6,7 +6,7 @@
 |       $Date: 2011/08/08 19:02:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ namespace Plugin {
 struct CivilDTMWrapper
     {
 private:
-    Bentley::TerrainModel::BcDTMPtr m_pDTM;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr m_pDTM;
     DTMState m_state;
     // Disable copy
                                     CivilDTMWrapper                    (const CivilDTMWrapper&);

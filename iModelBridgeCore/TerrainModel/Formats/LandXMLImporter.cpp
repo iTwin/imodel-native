@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -1046,7 +1046,7 @@ void LandXMLImporter::ReadContour ()
 
         m_reader->ReadToEndOfElement ();
 
-        m_gcs = Bentley::GeoCoordinates::BaseGCS::CreateGCS ();
+        m_gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
 
         m_gcs->SetName (name.GetWCharCP ());
         m_gcs->SetDescription (desc.GetWCharCP ());
@@ -1056,7 +1056,10 @@ void LandXMLImporter::ReadContour ()
             ret = m_gcs->InitFromEPSGCode (nullptr, nullptr, ConvertToInt (epsgCode));
 
         if (ret != SUCCESS && !ogcWktCode.empty())// Try a different method
-            ret = m_gcs->InitFromWellKnownText (nullptr, nullptr, Bentley::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, ogcWktCode.GetWCharCP());
+            ret = m_gcs->InitFromWellKnownText (nullptr, nullptr, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, ogcWktCode.GetWCharCP ());
+
+        if (ret != SUCCESS && !name.empty())// Try a different method
+            ret = m_gcs->SetFromCSName(name.c_str());
 
         if (ret != SUCCESS)
             m_gcs = nullptr;
@@ -1127,7 +1130,7 @@ void LandXMLImporter::ReadContour ()
         m_importAllDTMS = false;
         ImportedTerrainList ret;
 
-        for (bmap <WString, Bentley::TerrainModel::BcDTMPtr>::const_iterator iter = m_namedDtms.begin(); iter != m_namedDtms.end(); iter++)
+        for (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr>::const_iterator iter = m_namedDtms.begin(); iter != m_namedDtms.end(); iter++)
             ret.push_back (ImportedTerrain (iter->second.get(), iter->first.GetWCharCP(), nullptr, false));
         return ret;
         }

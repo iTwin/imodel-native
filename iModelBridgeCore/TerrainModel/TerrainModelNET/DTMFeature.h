@@ -348,7 +348,7 @@ public value struct DTMFeatureId
         //=======================================================================================
         static DTMFeatureId FromString (System::String^ string)
             {
-            Int64 id = Int64::Parse (string);
+            int64_t id = Int64::Parse (string);
             return DTMFeatureId (id);
             }
 
@@ -360,7 +360,7 @@ public value struct DTMFeatureId
         //=======================================================================================
         static DTMFeatureId FromStorage (array<Byte>^ bytes)
             {
-            Int64 fromStorage = 0;
+            int64_t fromStorage = 0;
             return DTMFeatureId (fromStorage);
             }
 

@@ -94,7 +94,7 @@ ref class DTMFeatureInfoDirect : DTMFeatureInfo
 DTMFeatureEnumerator::DTMFeatureEnumerator (DTM^ dtm) : m_dtm (dtm)
     {
     m_marshaller = ReleaseMarshaller::GetMarshaller();
-    DTMFeatureEnumeratorPtr native = Bentley::TerrainModel::DTMFeatureEnumerator::Create (*m_dtm->Handle);
+    DTMFeatureEnumeratorPtr native = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::Create (*m_dtm->Handle);
     m_native = native.get ();
     m_native->AddRef ();
     }

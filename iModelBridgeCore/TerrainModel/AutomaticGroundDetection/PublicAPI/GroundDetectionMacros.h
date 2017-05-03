@@ -2,9 +2,10 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/GroundDetectionMacros.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma  once
 #define BEGIN_GROUND_DETECTION_NAMESPACE                BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE namespace GroundDetection {
 #define END_GROUND_DETECTION_NAMESPACE                  END_BENTLEY_TERRAINMODEL_NAMESPACE }

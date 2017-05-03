@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #if !defined (mdl) && !defined (resource)
 #pragma warning(push)
-#pragma warning(disable: 4102) 
+#pragma warning(disable: 4102)
 #endif
 
 #define BC_START() \
@@ -76,5 +76,4 @@
    RTYPE(version,((objNum)/(16*16))%16,((objNum)/16)%16,(objNum)%16)
 
 #define  BC_NONERSCID  0xffff
-
 #pragma warning(pop)

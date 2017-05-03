@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/TerrainModelPolicy.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__DTMPolicy_mki__)

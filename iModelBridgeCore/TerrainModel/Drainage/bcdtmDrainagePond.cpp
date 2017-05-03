@@ -33,7 +33,7 @@ int bcdtmDrainage_calculatePondDtmObject
     void*              userP
 )
     {
-    return bcdtmDrainage_calculatePondWithLowPointDtmObject(dtmP, x, y, falseLowDepth, loadFunctionP, drawPond, pondDeterminedP, pondElevationP, pondAreaP, pondDepthP, pondVolumeP, nullptr, userP);
+    return bcdtmDrainage_calculatePondWithLowPointDtmObject(dtmP, x, y, falseLowDepth, loadFunctionP, drawPond, pondDeterminedP, pondElevationP, pondDepthP, pondAreaP, pondVolumeP, nullptr, userP);
     }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -61,7 +61,8 @@ int bcdtmDrainage_calculatePondWithLowPointDtmObject
 */
     {
     int       ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
-    long      p1, p2, p3, lp1, lp2, trace, fndType, onHullLine, zeroSlopeOption = 2;
+    long      p1, p2, p3, lp1, lp2, trace, fndType, onHullLine;
+    ZeroSlopeTraceOption zeroSlopeOption = ZeroSlopeTraceOption::Pond;
     bool inVoid;
     long      exitPoint, priorPoint, nextPoint, numSumpLines = 0, numPolyPts, startTime = bcdtmClock();
     double    z, cut, fill, balance, area;
@@ -517,7 +518,7 @@ int bcdtmDrainage_extractPondBoundaryDtmObject
 */
     {
     int     ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
-    long    clc, lp, sp, minPntZ, minPntNum, maxPntNum, numLowPoints, numHighPoints;
+    long    clc, lp, sp, minPntZ, minPntNum = -1, maxPntNum = -1, numLowPoints, numHighPoints;
     long    mark = -98798798, numMarked, numPondPts, pointType, pnt1, pnt2, pnt3;
     DPoint3d     *pondPtsP = nullptr;
     BC_DTM_OBJ  *tempDtmP = nullptr;
@@ -703,6 +704,7 @@ int bcdtmDrainage_extractPondBoundaryDtmObject
                     }
                 }
             }
+    cleanup:
         /*
         ** Null Out Marked points
         */
@@ -713,7 +715,6 @@ int bcdtmDrainage_extractPondBoundaryDtmObject
         /*
         ** Clean Up
         */
-    cleanup:
         if (pondPtsP != nullptr) free(pondPtsP);
         if (tempDtmP != nullptr) bcdtmObject_destroyDtmObject(&tempDtmP);
         if (clipTinP != nullptr) bcdtmObject_destroyDtmObject(&clipTinP);
@@ -755,9 +756,9 @@ int bcdtmDrainage_traceIslandBoundaryDtmObject
 */
     {
     int       ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
-    long      sp1, sp2, lp1, lp2, ifin = 0, numIslandPts = 0;
+    long      sp1, sp2, lp1, lp2, ifin = 0;
     double    ra, xs, ys, xn, yn;
-    DPoint3d  *islandPtsP = nullptr;
+    bvector<DPoint3d> islandPts;
     DTMPointCache  pondCache;
     /*
     ** Write Entry Message
@@ -837,8 +838,8 @@ int bcdtmDrainage_traceIslandBoundaryDtmObject
     */
     if (boundaryFlag)
         {
-        if (pondCache.CopyCachePointsToPointArray(&islandPtsP, &numIslandPts)) goto errexit;
-        if (bcdtmPolygon_storePointArrayPolygonInPolygonObject(polygonP, islandPtsP, numIslandPts, 1)) goto errexit;
+        if (pondCache.CopyCachePointsToPointArray(islandPts)) goto errexit;
+        if (bcdtmPolygon_storePointArrayPolygonInPolygonObject(polygonP, islandPts.data(), (long)islandPts.size(), 1)) goto errexit;
         }
     /*
     **  Plot Island
@@ -851,7 +852,6 @@ int bcdtmDrainage_traceIslandBoundaryDtmObject
     ** Clean Up
     */
 cleanup:
-    if (islandPtsP != nullptr) free(islandPtsP);
     /*
     ** Job Completed
     */
@@ -1422,7 +1422,7 @@ int bcdtmDrainage_determineLowPointPondsDtmObject
     ** Scan Tin For Internal Low Points
     */
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), tdbg = DTM_TIME_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
-    long   p1, p2, clc, node, exitPoint, priorPoint, nextPoint, expandStart;
+ long   p1 = 0,p2,clc,node,exitPoint,priorPoint,nextPoint,expandStart ;
     DTM_TIN_NODE *nodeP;
     DTM_POLYGON_OBJ *polygonP = nullptr;
     bool  lowPoint = true;
@@ -1593,7 +1593,7 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
     if (dbg)
         {
         bcdtmWrite_message(0, 0, 0, "priorPoint = %8ld exitPoint = %8ld nextPoint = %8ld", *priorPointP, *exitPointP, *nextPointP);
-        if (*exitPointP != dtmP->nullPnt)
+    if( *exitPointP != NULL )
             {
             bcdtmWrite_message(0, 0, 0, "ExitPoint = %8ld ** %12.5lf %12.5lf %10.4lf", *exitPointP, pointAddrP(dtmP, *exitPointP)->x, pointAddrP(dtmP, *exitPointP)->y, pointAddrP(dtmP, *exitPointP)->z);
             }
@@ -1644,10 +1644,6 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
         if (bcdtmDrainage_extractPondBoundaryDtmObject(dtmP, pointAddrP(dtmP, *exitPointP)->z, *exitPointP, *nextPointP, loadFunctionP, loadFlag, boundaryFlag, polygonPP, userP)) goto errexit;
         }
     /*
-    ** Null Out Tptr Polygon
-    */
-    bcdtmList_nullTptrListDtmObject(dtmP, *exitPointP);
-    /*
     ** Check For None Null Pointer Values
     */
     if (cdbg)
@@ -1667,6 +1663,10 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
     ** Clean Up
     */
 cleanup:
+    /*
+    ** Null Out Tptr Polygon
+    */
+    bcdtmList_nullTptrListDtmObject(dtmP, *exitPointP);
     if( pondPtsP != nullptr ) { free(pondPtsP) ; pondPtsP = nullptr ; }
     if (tempDtmP != nullptr) bcdtmObject_destroyDtmObject(&tempDtmP);
     /*
@@ -1693,7 +1693,7 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
     DTMDrainageTables *drainageTablesP,           // ==> Pointer To Drainage Tables
     long              startPoint,                 // ==> Tptr Polygon Start Point
     double            lowPointZ,                  // ==> Lowest Elevation Value On Tptr Polygon
-    long              *exitPointFoundP,           // <== Exit Point Found
+    bool&             exitPointFoundP,           // <== Exit Point Found
     long              *exitPointP,                // <== Exit Point
     long              *priorPointP,               // <== Prior Point To Exit Point On Tptr Polygon
     long              *nextPointP                 // <== Next Point After Exit Point On Tptr Polygon
@@ -1701,7 +1701,8 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
     long   cPnt, lpPnt, llPnt, lnPnt, hullPoint;
-    long   flowOutPoint, maxPpnt, maxFpnt, maxNpnt, descentType, descentPnt1, descentPnt2;
+    long   maxPpnt, maxFpnt, maxNpnt, descentType, descentPnt1, descentPnt2;
+    bool flowOutPoint;
     long   cFlowPnt, nFlowPnt, pFlowPnt, numFlowOutPoints;
     double area, descentAngle, descentSlope, maxDescentSlope;
     DTMDirection direction;
@@ -1709,7 +1710,7 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
     /*
     ** Initialise
     */
-    *exitPointFoundP = 0;
+    exitPointFoundP = false;
     *exitPointP = dtmP->nullPnt;
     *priorPointP = dtmP->nullPnt;
     *nextPointP = dtmP->nullPnt;
@@ -1730,16 +1731,16 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
                 *priorPointP = lpPnt;
                 *exitPointP = llPnt;
                 *nextPointP = lnPnt;
-                *exitPointFoundP = 1;
+                exitPointFoundP = true;
                 }
             }
         lpPnt = llPnt;
         llPnt = lnPnt;
-        } while (lpPnt != startPoint && !*exitPointFoundP);
+        } while (lpPnt != startPoint && !exitPointFoundP);
         /*
         **   Scan Pond For Exit Point At Low Point
         */
-        if (!*exitPointFoundP)
+        if (!exitPointFoundP)
             {
             if (dbg) bcdtmWrite_message(0, 0, 0, "Scanning Pond For Internal Exit Point");
             lpPnt = startPoint;
@@ -1750,26 +1751,26 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
                 if (pointAddrP(dtmP, llPnt)->z == lowPointZ)
                     {
                     if ((cPnt = bcdtmList_nextClkDtmObject(dtmP, llPnt, lnPnt)) < 0) goto errexit;
-                    while (nodeAddrP(dtmP, cPnt)->tPtr != llPnt && !*exitPointFoundP)
+                    while (nodeAddrP(dtmP, cPnt)->tPtr != llPnt && !exitPointFoundP)
                         {
                         if (pointAddrP(dtmP, cPnt)->z < lowPointZ)
                             {
                             *priorPointP = lpPnt;
                             *exitPointP = llPnt;
                             *nextPointP = lnPnt;
-                            *exitPointFoundP = 1;
+                            exitPointFoundP = true;
                             }
                         if ((cPnt = bcdtmList_nextClkDtmObject(dtmP, llPnt, cPnt)) < 0) goto errexit;
                         }
                     }
                 lpPnt = llPnt;
                 llPnt = lnPnt;
-                } while (lpPnt != startPoint && !*exitPointFoundP);
+                } while (lpPnt != startPoint && !exitPointFoundP);
             }
         /*
         **   Scan Pond For Exit Point At Low Point
         */
-        if (!*exitPointFoundP)
+        if (!exitPointFoundP)
             {
             if (dbg) bcdtmWrite_message(0, 0, 0, "Scanning Pond For Exit Point");
             lpPnt = startPoint;
@@ -1779,7 +1780,7 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
                 lnPnt = nodeAddrP(dtmP, llPnt)->tPtr;
                 if (pointAddrP(dtmP, llPnt)->z == lowPointZ)
                     {
-                    if (bcdtmDrainage_testForPondExitPointDtmObject(dtmP, llPnt, &lpPnt, &lnPnt, &flowOutPoint)) goto errexit;
+                    if (bcdtmDrainage_testForPondExitPointDtmObject(dtmP, llPnt, &lpPnt, &lnPnt, flowOutPoint)) goto errexit;
                     if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Point %8ld ** flowOutPoint = %2ld", llPnt, flowOutPoint);
                     if (flowOutPoint)
                         {
@@ -1801,7 +1802,7 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
                             nFlowPnt = nodeAddrP(dtmP, cFlowPnt)->tPtr;
                             if (pointAddrP(dtmP, cFlowPnt)->z == lowPointZ)
                                 {
-                                if (bcdtmDrainage_testForPondExitPointDtmObject(dtmP, cFlowPnt, &pFlowPnt, &nFlowPnt, &flowOutPoint)) goto errexit;
+                                if (bcdtmDrainage_testForPondExitPointDtmObject(dtmP, cFlowPnt, &pFlowPnt, &nFlowPnt, flowOutPoint)) goto errexit;
                                 if (flowOutPoint)
                                     {
                                     ++numFlowOutPoints;
@@ -1832,12 +1833,12 @@ int bcdtmDrainage_scanPondForExitPointDtmObject
                             *priorPointP = maxPpnt;
                             *exitPointP = maxFpnt;
                             *nextPointP = maxNpnt;
-                            *exitPointFoundP = 1;
+                            exitPointFoundP = true;
                         }
                     }
                 lpPnt = llPnt;
                 llPnt = lnPnt;
-                } while (lpPnt != startPoint && !*exitPointFoundP);
+                } while (lpPnt != startPoint && !exitPointFoundP);
             }
         /*
         ** Clean Up
@@ -1867,7 +1868,7 @@ int bcdtmDrainage_testForPondExitPointDtmObject
     long       lowPoint,
     long       *priorPointP,
     long       *nextPointP,
-    long       *exitFromPointP
+    bool&       exitFromPointP
 )
 /*
 ** This Function Tests If The Low Point Is A Pond Exit Point
@@ -1883,14 +1884,14 @@ int bcdtmDrainage_testForPondExitPointDtmObject
     */
     *priorPointP = dtmP->nullPnt;
     *nextPointP = dtmP->nullPnt;
-    *exitFromPointP = 0;
+    exitFromPointP = false;
     /*
     ** Get Next And Prior Points On Pond Boundary
     */
     *priorPointP = *nextPointP = nodeAddrP(dtmP, lowPoint)->tPtr;
     while (nodeAddrP(dtmP, *priorPointP)->tPtr != lowPoint)
         {
-        if (pointAddrP(dtmP, *priorPointP)->z < pointAddrP(dtmP, lowPoint)->z) *exitFromPointP = 1;
+        if (pointAddrP(dtmP, *priorPointP)->z < pointAddrP(dtmP, lowPoint)->z) exitFromPointP = true;
         if ((*priorPointP = bcdtmList_nextClkDtmObject(dtmP, lowPoint, *priorPointP)) < 0) goto errexit;
         }
     /*
@@ -2047,7 +2048,7 @@ int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject
     bool voidLine;
     long   startTime = bcdtmClock();
     long   numZeroSlopeSumpLines = 0, memZeroSlopeSumpLines = 0, memZeroSlopeSumpLinesInc = 1000;
-    double elevation1, elevation2;
+ double elevation1 = 0.0,elevation2 ;
     DTM_TIN_NODE      *dP;
     DPoint3d     *pnt1P, *pnt2P;
     DTM_POLYGON_OBJ   *polygonP = nullptr;
@@ -2525,7 +2526,7 @@ int bcdtmDrainage_concatenateZeroSlopeSumpLines
             {
             if (*numSumpLinesP == memSumpLines)
                 {
-                memSumpLines *= 1.5;
+          memSumpLines *= 15; memSumpLines /= 10;
                 *sumpLinesPP = (DTM_SUMP_LINES *)realloc(*sumpLinesPP, memSumpLines * sizeof(DTM_SUMP_LINES));
                 }
             (*sumpLinesPP + *numSumpLinesP)->sP1 = spt1P->point1;
@@ -2565,8 +2566,8 @@ int bcdtmDrainage_concatenateZeroSlopeSumpLines
                     {
                     if (*numSumpLinesP == memSumpLines)
                         {
-                        memSumpLines *= 1.5;
-                        long stackPtrIndex = stackPtrP - *sumpLinesPP;
+                 memSumpLines *= 15; memSumpLines /= 10;
+                 __int64 stackPtrIndex = stackPtrP - *sumpLinesPP;
                         *sumpLinesPP = (DTM_SUMP_LINES *)realloc(*sumpLinesPP, memSumpLines * sizeof(DTM_SUMP_LINES));
                         stackPtrP = *sumpLinesPP + stackPtrIndex;
                         }
@@ -5144,11 +5145,11 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
 )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(1), tdbg = DTM_TIME_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
-    int    ap, cp, p1, p2, edgeType, edgePnt1, edgePnt2, numPondPts, numZeroEdges;
-    long   sPnt, nPnt, pPnt, lowPoint, exitPointFound, extStartPoint, extEndPoint;
+ int    ap,cp,p1,p2,edgeType,edgePnt1 = 0,edgePnt2 = 0,numPondPts,numZeroEdges ;
+    long   sPnt, nPnt, pPnt, lowPoint, extStartPoint, extEndPoint;
     long   saveStartPoint, hullPoint, startTime, numFeaturePts;
     double area, lowPointZ, lastArea = 0.0;
-    bool   expandOut = false, expandPoints = false, expandAtPoint = false, pondExitPoint = false;
+    bool   expandOut = false, expandPoints = false, expandAtPoint = false, pondExitPoint = false, exitPointFound;
     DTMDirection direction;
     DPoint3d     *featurePtsP = nullptr;
     BC_DTM_OBJ   *dataP = nullptr;
@@ -5171,7 +5172,7 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
     *priorPointP = dtmP->nullPnt;
     *exitPointP = dtmP->nullPnt;
     *nextPointP = dtmP->nullPnt;
-    exitPointFound = 0;
+    exitPointFound = false;
     saveStartPoint = startPoint;
     startTime = bcdtmClock();
 
@@ -5401,7 +5402,7 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
             //     Check For Pond Exit Point After Zero Slope Expansion
 
             if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Checking For Exit Point After Zero Slope Expansion");
-            if (bcdtmDrainage_scanPondForExitPointDtmObject(dtmP, drainageTablesP, startPoint, lowPointZ, &exitPointFound, exitPointP, priorPointP, nextPointP)) goto errexit;
+            if (bcdtmDrainage_scanPondForExitPointDtmObject(dtmP, drainageTablesP, startPoint, lowPointZ, exitPointFound, exitPointP, priorPointP, nextPointP)) goto errexit;
             if (dbg == 2) bcdtmWrite_message(0, 0, 0, "After Zero Slope Expansion ** exitPointFound = %2ld ** priorPoint = %10ld exitPoint = %10ld nextPoint = %10ld", exitPointFound, *priorPointP, *exitPointP, *nextPointP);
 
             //     Expand Pond At All Low Points That Are Not Exit Points
@@ -5588,7 +5589,7 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
             //     Check For Pond Exit Point
 
             if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Checking For Exit Point");
-            if (bcdtmDrainage_scanPondForExitPointDtmObject(dtmP, drainageTablesP, startPoint, lowPointZ, &exitPointFound, exitPointP, priorPointP, nextPointP)) goto errexit;
+            if (bcdtmDrainage_scanPondForExitPointDtmObject(dtmP, drainageTablesP, startPoint, lowPointZ, exitPointFound, exitPointP, priorPointP, nextPointP)) goto errexit;
         }
 
     // Log Pond Exit Point And Expanded Tptr Polygon Stats
@@ -5665,7 +5666,7 @@ int bcdtmDrainage_expandPondOverSlopeTrianglesDtmObject
     int    edgePnt1, edgePnt2, zeroEdgeType, zeroStartPoint;
     DTMDirection expandDirection;
     long   numFeaturePts, startPoint, newStartPoint, startTime = bcdtmClock();
-    double area, beforeArea, afterArea;
+ double area,beforeArea = 0.0,afterArea ;
     bool   iterate = true;
     DTMDirection direction;
     DPoint3d    *featurePtsP = nullptr;
@@ -6000,7 +6001,7 @@ int bcdtmDrainage_expandPondToOuterEdgeOfZeroSlopeTrianglesDtmObjectOld
 )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), tdbg = DTM_TIME_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
-    int    numConnectedPoints, numLowPointElevation, newStartPoint, numZeroEdges;
+    int    numConnectedPoints, numLowPointElevation, newStartPoint = 0, numZeroEdges;
     DTMDirection direction;
     long   sp, np, cp, clc, startPnt, firstPnt, lastPnt, stopPnt, numMarked, totalMarked;
     long   p1, p2, p3, numFeaturePts, startTime = bcdtmClock();
@@ -6323,7 +6324,7 @@ int bcdtmDrainage_expandPondToOuterEdgeOfZeroSlopeTrianglesDtmObject
 )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), tdbg = DTM_TIME_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
-    int    numConnectedPoints, numLowPointElevation, numZeroEdges, newStartPoint;
+    int    numConnectedPoints, numLowPointElevation, numZeroEdges, newStartPoint = 0;
     DTMDirection direction;
     long   sp, np, cp, clc, startPnt, firstPnt, lastPnt, stopPnt, numMarked, totalMarked;
     long   p1, p2, p3, numFeaturePts, startTime = bcdtmClock();
@@ -6577,7 +6578,7 @@ int bcdtmDrainage_placeSptrPolygonAtPointAroundZeroSlopeTrianglesDtmObject
     {
     int          ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
     int          sp, np, cp, lcp, clc;
-    long         pnt, hullLine, edgePnt1, edgePnt2, antPnt, clkPnt;
+ long         pnt = 0,hullLine,edgePnt1,edgePnt2,antPnt = 0,clkPnt = 0;
     DTMDirection direction;
     double       elevation, area;
     bool         zeroEdge = false;
@@ -7349,7 +7350,7 @@ int bcdtmDrainage_expandPondOverZeroSlopeTrianglesFromZeroEdgeDtmObject
     DTMDirection expandDirection;
     long   numFeaturePts, startPoint, newStartPoint;
     DTMDirection  direction;
-    double area, beforeArea, afterArea;
+ double area,beforeArea = 0.0,afterArea ;
     DPoint3d    *featurePtsP = nullptr;
     BC_DTM_OBJ     *dataP = nullptr;
 
@@ -8067,11 +8068,11 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
         if (dbg) bcdtmWrite_message(0, 0, 0, "**** Checking Elevation Values Of Zero Slope Polygons");
         for (zsp = zeroSlopePolygons.begin(); zsp < zeroSlopePolygons.end(); ++zsp)
             {
-            double elevation;
-            for (int n = 0; n < zsp->pointList.numPoints; ++n)
+       double elevation = 0.0;
+            for (int n = 0; n < zsp->pointList.size(); ++n)
                 {
-                if (n == 0) elevation = pointAddrP(dtmP, zsp->pointList.pointsP[n])->z;
-                else if (pointAddrP(dtmP, zsp->pointList.pointsP[n])->z != elevation)
+                if (n == 0) elevation = pointAddrP(dtmP, zsp->pointList[n])->z;
+                else if (pointAddrP(dtmP, zsp->pointList[n])->z != elevation)
                     {
                     bcdtmWrite_message(1, 0, 0, "Different Elevations Values On Zero Slope Polygon");
                     goto errexit;
@@ -8084,10 +8085,10 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
         if (dbg) bcdtmWrite_message(0, 0, 0, "**** Checking For Zero Slope Triangles On Zero Slope Polygons");
         for (zsp = zeroSlopePolygons.begin(); zsp < zeroSlopePolygons.end(); ++zsp)
             {
-            for (int n = 0; n < zsp->pointList.numPoints - 1; ++n)
+            for (int n = 0; n < zsp->pointList.size() - 1; ++n)
                 {
-                sp = zsp->pointList.pointsP[n];
-                np = zsp->pointList.pointsP[n + 1];
+                sp = zsp->pointList[n];
+                np = zsp->pointList[n + 1];
                 if (zsp->direction == DTMDirection::Clockwise)
                     {
                     if ((cp = bcdtmList_nextClkDtmObject(dtmP, sp, np)) < 0) goto errexit;
@@ -8459,9 +8460,9 @@ int bcdtmDrainage_indexAllPointsAtZeroSlopeElevationDtmObject
     // Mark Zero Slope Polygon Booundary
 
     zsp = zspBegin + zeroSlopePolygon;
-    for (int n = 0; n < zsp->pointList.numPoints - 1; ++n)
+    for (int n = 0; n < zsp->pointList.size() - 1; ++n)
         {
-        pnt = zsp->pointList.pointsP[n];
+        pnt = zsp->pointList[n];
         if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Marking Point %6ld ** %12.5lf %12.5lf %10.4lf", pnt, pointAddrP(dtmP, pnt)->x, pointAddrP(dtmP, pnt)->y, pointAddrP(dtmP, pnt)->z);
         if (lastPnt == dtmP->nullPnt)
             {
@@ -8666,10 +8667,10 @@ int bcdtmDrainage_writeZeroSlopePolygonPointsDtmObject
     // Log
 
     bcdtmWrite_message(0, 0, 0, "**** Zero Slope Polygon %8ld ** direction = %2ld priorPoint = %8ld exitPoint  = %8ld nextPoint  = %8ld", zeroSlopePolygon, zsp->direction, zsp->priorPoint, zsp->exitPoint, zsp->nextPoint);
-    bcdtmWrite_message(0, 0, 0, "**** Number Of Points For Zero Slope Polygon %8ld = %8ld", zeroSlopePolygon, zsp->pointList.numPoints);
-    for (int n = 0; n < zsp->pointList.numPoints; ++n)
+    bcdtmWrite_message(0, 0, 0, "**** Number Of Points For Zero Slope Polygon %8ld = %8ld", zeroSlopePolygon, zsp->pointList.size());
+    for (int n = 0; n < zsp->pointList.size(); ++n)
         {
-        pnt = zsp->pointList.pointsP[n];
+        pnt = zsp->pointList[n];
         bcdtmWrite_message(0, 0, 0, "Point[%8ld] = %8ld ** %12.5lf %12.5lf %10.4lf", n, pnt, pointAddrP(dtmP, pnt)->x, pointAddrP(dtmP, pnt)->y, pointAddrP(dtmP, pnt)->z);
         }
 
