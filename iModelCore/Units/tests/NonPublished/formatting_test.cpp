@@ -127,7 +127,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 15, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 16, false);
 
-    FormattingTestFixture::ShowFUS("MM");
+   /* FormattingTestFixture::ShowFUS("MM");
     FormattingTestFixture::ShowFUS("MM|fract8");
     FormattingTestFixture::ShowFUS("MM|fract8|");
     FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
@@ -135,7 +135,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
     FormattingTestFixture::ShowFUS("W/(M*C)");
     FormattingTestFixture::ShowFUS("TONNE/HR(real4");
-    FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
+    FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");*/
 
     //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();

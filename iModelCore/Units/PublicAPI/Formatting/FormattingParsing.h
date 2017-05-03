@@ -38,80 +38,6 @@ public:
 
     };
 
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-//struct CodepointBuffer
-//    {
-//private:
-//    CodepointSize m_size;    // the size of the codepoint
-//    size_t    m_capacity;    // capacity in number of codepoints
-//    size_t    m_bufSize;     // the actual buffer size in bytes
-//    int       m_lastIndex;   // index of the last inserted symbol
-//    union {
-//        void*     ptr;     // pointer to the storage
-//        Utf8P     bytes;
-//        uint16_t* shorts;
-//        uint32_t* longs;
-//        } m_buff;
-//
-//    UNITS_EXPORT CodepointSize IntToSize(size_t cps);
-// 
-//    UNITS_EXPORT size_t SizeToInt(CodepointSize cps);
-//         
-//    UNITS_EXPORT void Init(CodepointSize cps, size_t capacity);
-//
-//
-//public:
-//
-//    CodepointBuffer() { Init(CodepointSize::Zero, 0); }
-//    CodepointBuffer(size_t codepointSize, size_t capacity) { Init(IntToSize(codepointSize), capacity); }
-//    CodepointBuffer(CodepointSize cps, size_t capacity) { Init(cps, capacity); }
-//    ~CodepointBuffer() { if (nullptr != m_buff.bytes) delete m_buff.bytes; }
-//
-//    size_t GetCapacity() { return m_capacity; }
-//    size_t GetCodepointSize() { return SizeToInt(m_size); }
-//    uint32_t* GetLongBuffer() { return  m_buff.longs; }
-//    uint16_t* GetShortBuffer() { return m_buff.shorts; }
-//    Utf8P     GetByteBuffer() { return m_buff.bytes; }
-//    UNITS_EXPORT void Reset(CodepointSize cps, size_t capacity);
-//    UNITS_EXPORT void Release();
-//    UNITS_EXPORT  Utf8P     AppendByte(Utf8Char c);
-//    UNITS_EXPORT  uint32_t* AppendSymbol(uint32_t symb);
-//    UNITS_EXPORT  uint16_t* AppendSymbol(uint16_t symb);
-//    };
-
-//= == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == ==
-// @bsiclass
-//=======================================================================================
-struct FormatCursorDetail
-    {
-private:
-    size_t m_totalLength; // this is the total length of the byte sequence that ought to be scanned/parsed
-    size_t m_position;   // the index of the next byte to be scanned
-    size_t m_scanCount;   // the number of bytes processed in the last step
-    size_t m_uniCode;
-
-    void Init() { m_totalLength = 0; m_position = 0; m_scanCount = 0; m_uniCode = 0; }
-public:
-    FormatCursorDetail(): m_totalLength(0), m_position(0), m_scanCount(0), m_uniCode(0){}
-    FormatCursorDetail(FormatCursorDetailCR src):m_totalLength(src.m_totalLength), m_position(src.m_position),
-                       m_scanCount(src.m_scanCount), m_uniCode(src.m_uniCode) { }
-    FormatCursorDetail(size_t totLen, size_t posit, size_t count, size_t code):m_totalLength(totLen), 
-                       m_position(posit), m_scanCount(count), m_uniCode(code) {}
-        
-    size_t GetPosition() { return m_position; }
-    size_t SetPosition(size_t position) { return m_position = position; }
-    size_t GetTotalLength() { return m_totalLength; }
-    size_t SetTotalLength(size_t len) { return m_totalLength = len; }
-    size_t GetScanCount() { return m_scanCount; }
-    size_t SetScanCount(size_t count) { return m_scanCount = count; }
-    size_t IncrementCount(size_t delta) { m_scanCount += delta; return m_scanCount; }
-    size_t GetUnicode() { return m_uniCode; }
-    char   GetASCII() { return (char)(m_uniCode & 0x7F); }
-    size_t SetUnicode(size_t code) { return m_uniCode = code; }
-    bool CursorInRange() { return m_position >= m_totalLength; }
-    };
 
 //=======================================================================================
 // can be used for detecting occurances of dividers and their "mates" in text strings
@@ -153,8 +79,6 @@ private:
     size_t m_segCount;
     size_t m_segPos[m_maxNumSeg];
 
-    //UNITS_EXPORT void ReleaseSignature();
-    //UNITS_EXPORT Utf8Char GetPatternChar(size_t ind);
     UNITS_EXPORT size_t DetectUOMPattern(size_t ind);
     UNITS_EXPORT size_t DetectFractPattern(size_t ind);
 public:
@@ -175,6 +99,23 @@ public:
     UNITS_EXPORT size_t CompressPattern();
     };
 
+//struct FormattingSignatureChunk
+//    {
+//    private:
+//        size_t m_start;
+//        size_t m_len;
+//        int m_ival;
+//        double m_dval;
+//        Utf8Char m_symbol;
+//    public:
+//        FormattingSignatureChunk(FormatCursorDetailCR curd)
+//            {
+//            m_start = curd.GetPosition();
+//
+//            }
+//
+//    };
+
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
@@ -182,67 +123,49 @@ struct FormattingScannerCursor
     {
 private:
     Utf8String m_text;           // pointer to the head of the string
-    FormatCursorDetail m_detail;
     size_t m_totalScanLength;    // this is the total length of the byte sequence that ought to be scanned/parsed
     size_t m_cursorPosition;     // the index of the next byte to be scanned
     size_t m_lastScannedCount;   // the number of bytes processed in the last step
     size_t m_breakIndex;         // special position  dividing the string into two parts
     size_t m_uniCode;
     FormattingDividers m_dividers;
-    //union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
     bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
-    //UnicodeConstantP m_unicodeConst; // reference to constants and character processors
     ScannerCursorStatus m_status;
     size_t m_effectiveBytes;
     char m_temp;
     FormattingSignature m_traits;
-    //CodepointBuffer m_unicodeBuff;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
     // returns the physical index of the same array adjusted by endianness. The little endian is default 
     //  and the index will be returned unchaged. This function does not check if supplied 
     size_t TrueIndex(size_t index, size_t wordSize);
     int AddTrailingByte();
-    size_t SetCurrentPosition(size_t position) { return m_detail.SetPosition(position); }
-    //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
 
 public:
-    //! Construct a cursor attached to the given Utf8 string 
-    // FormattingScannerCursor();
+
     UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div = nullptr);
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
-    //~FormattingScannerCursor() { ReleaseSignature(); }
 
     size_t GetTotalLength() { return m_totalScanLength; }
-    //UnicodeConstant* GetConstants() { return m_unicodeConst; }
-   // void ResetScanCount() { m_detail.SetScanCount(0); }
-   // void ResetUnicode() { m_detail.SetUnicode(0); }
-    //void SetUnicode(size_t code) { m_detail.SetUnicode(code); }
-    size_t GetCurrentPosition() { return m_detail.GetPosition(); }
-    bool CursorInRange() { return m_cursorPosition >= m_totalScanLength; }
+    size_t GetCurrentPosition() { return m_cursorPosition; }
+    bool CursorInRange() { return m_cursorPosition <= m_totalScanLength; }
     //size_t IncrementCount(size_t delta) { return m_lastScannedCount + delta; }
     UNITS_EXPORT size_t GetNextSymbol();
-    UNITS_EXPORT size_t GetNextCodePoint();
     bool IsError() { return (m_status != ScannerCursorStatus::Success); }
     bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
     ScannerCursorStatus GetOperationStatus() { return m_status; }
-    bool IsEndOfLine() { return (m_text[m_detail.GetPosition()] == FormatConstant::EndOfLine()); }
     bool IsASCII() { return m_isASCII; }
     UNITS_EXPORT int CodePointCount();
     UNITS_EXPORT void Rewind();
-    size_t GetUnicode() { return m_detail.GetUnicode(); }
-    size_t GetLastScanned() { return m_detail.GetScanCount(); }
+
     UNITS_EXPORT size_t SkipBlanks();
     UNITS_EXPORT Utf8String SelectKeyWord();
     void SetDividers(CharCP div) { m_dividers = FormattingDividers(div); }
-    bool IsDivider() { return m_isASCII ? m_dividers.IsDivider(m_detail.GetASCII()) : false; }
     size_t GetEffectiveBytes() { return m_effectiveBytes; }
     UNITS_EXPORT FormattingWord ExtractWord();
     UNITS_EXPORT FormattingWord ExtractLastEnclosure();
     UNITS_EXPORT FormattingWord ExtractBeforeEnclosure();
     UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
-    //UNITS_EXPORT uint32_t* GetLongUcode() { return m_unicodeBuff.GetLongBuffer(); }
-    //UNITS_EXPORT uint16_t* GetShortUcode() { return m_unicodeBuff.GetShortBuffer(); }
     UNITS_EXPORT Utf8CP GetSignature(bool refresh, bool compress);
     Utf8CP GetPattern(bool refresh, bool compress) { GetSignature(refresh, compress); return m_traits.GetPattern(); }
     UNITS_EXPORT Utf8String CollapseSpaces(bool replace);
@@ -291,7 +214,6 @@ public:
     UNITS_EXPORT CharCP GetASCII();
     UNITS_EXPORT Utf8Char GetDelimeter();
     };
-
 
 
 END_BENTLEY_FORMATTING_NAMESPACE

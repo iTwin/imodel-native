@@ -256,8 +256,8 @@ size_t FormattingScannerCursor::GetNextSymbol()
     size_t seqLen = FormatConstant::GetSequenceLength(c);
     if (0 == seqLen)
         m_status = ScannerCursorStatus::InvalidSymbol;
-    if (FormatConstant::EndOfLine() == c || CursorInRange())
-        return GetUnicode();
+    if (FormatConstant::EndOfLine() == c || !CursorInRange())
+        return 0; // GetUnicode();
     m_lastScannedCount++;
     switch (seqLen)
         {
