@@ -610,7 +610,13 @@ ECSqlStatus ECSqlInsertPreparedStatement::PrepareLeafStatements(PrepareInfo& pre
         if (!stat.IsSuccess())
             return stat;
 
-        BeAssert(!preparedStmt.IsNoopInSqlite() && "ECSQL INSERT statements are not expected to translate to no-ops in SQLite. Instead this should have been caught and resulted in an error.");
+        //If one leaf statement turns out to be noop, we assume everything is a noop (WIP: should be asserted on)
+        if (preparedStmt.IsNoopInSqlite())
+            {
+            BeAssert(classMap.GetType() == ClassMap::Type::RelationshipEndTable);
+            m_isNoopInSqlite = true;
+            }
+
         prepareInfo.AddLeafStatement(preparedStmt, *table);
         isPrimaryTable = false;
         }

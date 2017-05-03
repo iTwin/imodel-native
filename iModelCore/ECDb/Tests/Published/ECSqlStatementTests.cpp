@@ -5363,9 +5363,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    //Updates against mixins don't work yet. Once fixed this line should be uncommented.
-    //ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
-    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
     stmt.Finalize();
     }
 

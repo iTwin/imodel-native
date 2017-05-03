@@ -560,9 +560,8 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
         if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
             return ERROR;
 
-        const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Physical ? PersistenceType::Physical : PersistenceType::Virtual;
         DbTable& fkTableR = *const_cast<DbTable*>(foreignEndTable);
-        DbColumn* newFkCol = columns.GetColumnFactory().AllocateForeignKeyECInstanceId(fkTableR, fkColName, columnPersistenceType, fkColPosition);
+        DbColumn* newFkCol = columns.GetColumnFactory().AllocateForeignKeyECInstanceId(fkTableR, fkColName, fkColPosition);
         if (newFkCol == nullptr)
             {
             Issues().Report("Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
@@ -1763,39 +1762,39 @@ RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
+DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, int position)
     {
     const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
     const DbColumn::Type colType = DbColumn::Type::Integer;
     
-    if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
-        return table.CreateColumn(colName, colType, position, colKind, persType);
-
-    auto itor = m_constraintClassMaps.find(&table);
-    if (itor == m_constraintClassMaps.end())
+    //find out whether we have to create a shared or unshared col
+    //First criteria: physical FK or virtual table -> unshared
+    bool needsUnsharedCol = m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || table.GetPersistenceType() == PersistenceType::Virtual;
+    ClassMapCP rootClassMap = nullptr;
+    if (!needsUnsharedCol)
         {
-        BeAssert(false);
-        return nullptr;
+        //second criterion: TPH && shared col mode is on
+        auto it = m_constraintClassMaps.find(&table);
+        if (it == m_constraintClassMaps.end())
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+
+        rootClassMap = it->second;
+        TablePerHierarchyInfo const& tphInfo = rootClassMap->GetMapStrategy().GetTphInfo();
+        needsUnsharedCol = !tphInfo.IsValid() || tphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes;
         }
 
-    ClassMapCP rootClassMap = itor->second;
-    //ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-    if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
-        rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
-        {
-        return table.CreateColumn(colName, colType, position, colKind, persType);
-        }
-    //ECDB_RULE: Create shared column
-        
+    if (needsUnsharedCol)
+        return table.CreateColumn(colName, colType, position, colKind, PersistenceType::Physical);
+
+    //Create shared column
     ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
-    ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(
-        *constraintECInstanceIdProp,
-        colType,
-        DbColumn::CreateParams(colName.c_str()),
-        m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()),
-        nullptr);
+    ECPropertyCP constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()),
+        m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
     }
 
 //---------------------------------------------------------------------------------------

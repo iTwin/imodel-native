@@ -1237,14 +1237,14 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         return nullptr;
         }
 
-    PersistenceType resolvePersistenceType = persistenceType;
-    if (GetPersistenceType() == PersistenceType::Virtual)
-        resolvePersistenceType = PersistenceType::Virtual;
+    //PersistenceType resolvePersistenceType = persistenceType;
+    //if (GetPersistenceType() == PersistenceType::Virtual)
+    //    resolvePersistenceType = PersistenceType::Virtual;
 
     if (!id.IsValid())
         m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 
-    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
+    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, persistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
 

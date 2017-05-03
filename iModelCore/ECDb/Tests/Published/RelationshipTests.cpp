@@ -3941,23 +3941,23 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildEnd)
     {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                        "  <ECEntityClass typeName='Solid'>"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Face' modifier='Abstract'>"
-                        "    <ECProperty propertyName='FaceName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='SolidHasFaces' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class='Solid' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class='Face' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
+    SchemaItem testItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                          <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                          <ECEntityClass typeName="Solid">
+                            <ECProperty propertyName="Name" typeName="string" />
+                          </ECEntityClass>
+                          <ECEntityClass typeName="Face" modifier="Abstract">
+                            <ECProperty propertyName="FaceName" typeName="string" />
+                          </ECEntityClass>
+                          <ECRelationshipClass typeName="SolidHasFaces" strength="embedding" modifier="Sealed">
+                            <Source multiplicity="(0..1)" roleLabel="has" polymorphic="True">
+                              <Class class="Solid" />
+                            </Source>
+                            <Target multiplicity="(0..*)" roleLabel="belongs to" polymorphic="True">
+                              <Class class="Face" />
+                            </Target>
+                          </ECRelationshipClass>
+                        </ECSchema>)xml", true, "");
 
     ECDb ecdb;
     bool asserted = false;
