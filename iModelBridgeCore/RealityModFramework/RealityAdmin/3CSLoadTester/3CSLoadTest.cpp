@@ -58,27 +58,27 @@ void FullInfo::Clear()
 //* request per second class
 //* for each operation type, keep a cout of how many requests were sent at any given second
 //+---------------+---------------+---------------+---------------+---------------+------*/
-RPS::RPS():requestLog(bmap<OperationType, bmap<time_t, int>>())
+RPS::RPS():requestLog(bmap<OperationType, bmap<int64_t, int>>())
     {
-    requestLog.Insert(OperationType::LIST_PROJECT, bmap<time_t, int>());
-    requestLog.Insert(OperationType::ADD_PROJECT, bmap<time_t, int>());
-    requestLog.Insert(OperationType::DELETE_PROJECT, bmap<time_t, int>());
-    requestLog.Insert(OperationType::GET_PROJECT, bmap<time_t, int>());
-    requestLog.Insert(OperationType::SAS_URI, bmap<time_t, int>());
-    requestLog.Insert(OperationType::LIST_CLUSTERS, bmap<time_t, int>());
-    requestLog.Insert(OperationType::CREATE_JOB, bmap<time_t, int>());
-    requestLog.Insert(OperationType::ADD_JOB, bmap<time_t, int>());
-    requestLog.Insert(OperationType::DELETE_JOB, bmap<time_t, int>());
-    requestLog.Insert(OperationType::GET_JOBS, bmap<time_t, int>());
-    requestLog.Insert(OperationType::GET_JOB, bmap<time_t, int>());
-    //requestLog.Insert(OperationType::JOB_RESULT, bmap<time_t, int>());
-    requestLog.Insert(OperationType::JOB_CANCEL, bmap<time_t, int>());
+    requestLog.Insert(OperationType::LIST_PROJECT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::ADD_PROJECT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::DELETE_PROJECT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::GET_PROJECT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::SAS_URI, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::LIST_CLUSTERS, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::CREATE_JOB, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::ADD_JOB, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::DELETE_JOB, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::GET_JOBS, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::GET_JOB, bmap<int64_t, int>());
+    //requestLog.Insert(OperationType::JOB_RESULT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::JOB_CANCEL, bmap<int64_t, int>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void RPS::AddRequest(OperationType type, time_t time)
+void RPS::AddRequest(OperationType type, int64_t time)
     {
     std::lock_guard<std::mutex> lock(rpsMutex);
     requestLog[type][time] += 1;
@@ -87,13 +87,13 @@ void RPS::AddRequest(OperationType type, time_t time)
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-double RPS::GetRPS(OperationType type, time_t time)
+double RPS::GetRPS(OperationType type, int64_t time)
     {
-    bmap<time_t, int> times = requestLog[type];
+    bmap<int64_t, int> times = requestLog[type];
 
     int amount = 0;
     //get the average number of requests per second, over ten seconds
-    for(time_t i = (time - 12); i < (time - 2); i++)
+    for(int64_t i = (time - 12); i < (time - 2); i++)
         amount += times[i];
     return amount/10.0;
     }
@@ -167,7 +167,7 @@ void Terminate()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void Stat::Update(bool isSuccess, time_t time)
+void Stat::Update(bool isSuccess, int64_t time)
     {
     int total = success + failure;
     if(isSuccess)
@@ -224,7 +224,9 @@ void Stats::InsertStats(const User* user, bool success, int activeUsers)
     {
     std::lock_guard<std::mutex> lock(statMutex);
     m_activeUsers = activeUsers;
-    opStats[user->m_currentOperation]->Update(success, std::time(nullptr) - user->m_start);
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    opStats[user->m_currentOperation]->Update(success, currentTime - user->m_start);
     if(!success)
         errors[user->m_currentOperation].push_back(user->m_correspondance.LogError());
     }
@@ -247,11 +249,12 @@ void Stats::PrintStats()
     {
     std::lock_guard<std::mutex> statlock(statMutex);
     std::lock_guard<std::mutex> rpslock(rpsMutex);
-    time_t currentTime = std::time(nullptr);
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
     system("cls");
 
     std::cout << "Type        Success    Failure   minTime   maxTime   avgTime  requests/second" << std::endl;
-    
+                                                                       
     std::cout << Utf8PrintfString("List project %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_PROJECT]->success, opStats[OperationType::LIST_PROJECT]->failure, (int)opStats[OperationType::LIST_PROJECT]->minTime, (int)opStats[OperationType::LIST_PROJECT]->maxTime, (int)opStats[OperationType::LIST_PROJECT]->avgTime, s_rps.GetRPS(OperationType::LIST_PROJECT, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Add project  %6d %10d %9d %10d %9d        %f", opStats[OperationType::ADD_PROJECT]->success, opStats[OperationType::ADD_PROJECT]->failure, (int)opStats[OperationType::ADD_PROJECT]->minTime, (int)opStats[OperationType::ADD_PROJECT]->maxTime, (int)opStats[OperationType::ADD_PROJECT]->avgTime, s_rps.GetRPS(OperationType::ADD_PROJECT, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Del project  %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_PROJECT]->success, opStats[OperationType::DELETE_PROJECT]->failure, (int)opStats[OperationType::DELETE_PROJECT]->minTime, (int)opStats[OperationType::DELETE_PROJECT]->maxTime, (int)opStats[OperationType::DELETE_PROJECT]->avgTime, s_rps.GetRPS(OperationType::DELETE_PROJECT, currentTime)) << std::endl;
@@ -285,7 +288,8 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << asctime(localtime(&generatedFileName)) << std::endl;
     file << "Type        Success    Failure   minTime   maxTime   avgTime" << std::endl;
     
-    time_t currentTime = std::time(nullptr);
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
 
     file << Utf8PrintfString("List project %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_PROJECT]->success, opStats[OperationType::LIST_PROJECT]->failure, (int)opStats[OperationType::LIST_PROJECT]->minTime, (int)opStats[OperationType::LIST_PROJECT]->maxTime, (int)opStats[OperationType::LIST_PROJECT]->avgTime, s_rps.GetRPS(OperationType::LIST_PROJECT, currentTime)) << std::endl;
     file << Utf8PrintfString("Add project  %6d %10d %9d %10d %9d        %f", opStats[OperationType::ADD_PROJECT]->success, opStats[OperationType::ADD_PROJECT]->failure, (int)opStats[OperationType::ADD_PROJECT]->minTime, (int)opStats[OperationType::ADD_PROJECT]->maxTime, (int)opStats[OperationType::ADD_PROJECT]->avgTime, s_rps.GetRPS(OperationType::ADD_PROJECT, currentTime)) << std::endl;
@@ -488,7 +492,8 @@ void User::DoNext(UserManager* owner)
         curl = GetJobs();
         }
 
-    m_start = std::time(nullptr);
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
+
     if(curl != nullptr)
         owner->SetupCurl(curl, this);
     else
@@ -518,7 +523,7 @@ void User::WrapUp(UserManager* owner)
         curl = DeleteProject();
         }
 
-    m_start = std::time(nullptr);
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
     if (curl != nullptr)
         owner->SetupCurl(curl, this);
     }
@@ -790,6 +795,7 @@ UserManager::UserManager()
     m_pCurlHandle = curl_multi_init();
     m_certPath = WString();
     }
+
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
