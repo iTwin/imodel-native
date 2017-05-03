@@ -1933,6 +1933,7 @@ void GeometryListBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool fil
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextString(TextStringCR text)
     {
+    // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
     m_accum.Add(*text.Clone(), GetDisplayParams(true), GetLocalToWorldTransform());
     }
 

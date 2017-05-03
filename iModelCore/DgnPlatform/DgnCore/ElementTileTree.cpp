@@ -569,17 +569,6 @@ public:
         return m_lsStrokerOptions;
         }
 
-#if defined(TODO_ELEMENT_TILE)
-    UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
-        {
-        DRange2d        range = textString.GetRange();
-        Transform       transformToTile = Transform::FromProduct(GetTransformFromDgn(), simplifyGraphic.GetLocalToWorldTransform(), textString.ComputeTransform());
-        double          minTileDimension = transformToTile.ColumnXMagnitude() * std::min(range.XLength(), range.YLength());
-
-        return minTileDimension < m_minTextBoxSize ? UnhandledPreference::Box : UnhandledPreference::Curve;
-        }
-#endif
-
     DgnElementId GetCurrentElementId() const { return m_curElemId; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     IFacetOptionsR GetFacetOptions() { return m_facetOptions; }
