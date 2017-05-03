@@ -510,7 +510,7 @@ DgnGCSCR                destMstnGCS
 *                                   the transform will be applied. If NULL, a reasonable guess is used.
 * @param    doRotate        IN      true to allow rotation in the transform.
 * @param    doScale         IN      true to allow scaling in the transform.
-* @param    isCartesian     IN      true to allow cartesian coordinates, XYZ otherwise
+* @param    interpretation  IN      Indicates how the points should be interpreted
 * @param    destMstnGCS     OUT     The destination DgnGCS .
 * @return   SUCCESS or a CS_MAP error code if elementOrigin could not be reprojected.
 * @bsimethod                                                    Barry.Bentley   01/07
