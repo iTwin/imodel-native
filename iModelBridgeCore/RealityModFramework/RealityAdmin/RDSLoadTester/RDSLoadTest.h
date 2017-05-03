@@ -26,15 +26,12 @@ enum OperationType
     DETAILS,
     LIST_REALITYDATA,
     LIST_RELATIONSHIP,
-    DOWNLOAD,
     ENTERPRISE_STAT,
     AZURE_ADDRESS,
     MODIFY_REALITYDATA,
     DELETE_RELATIONSHIP,
     DELETE_REALITYDATA,
-    NAVNODE, 
-    last,
-
+    last
     };
 
 struct RawRequest
@@ -75,12 +72,6 @@ struct Stats
     bvector<Utf8String>           opLog;
     bmap<OperationType, bvector<Utf8String>>        errors;
     int                        m_activeUsers = 1;
-    bool m_targetAttained = false;
-    int m_totalRequests = 0;
-    bool m_firstLog = true;
-    bool m_currentlyDecreasing = false;
-    int m_increasingCount = 10;
-    int m_decreasingCount = 10;
 
     Stats();
     void InsertStats(const User* user, bool success, int activeUsers);
@@ -106,7 +97,6 @@ public:
     OperationType               m_currentOperation;
     Utf8String                  m_id;
     bool                        m_linked;
-    NavNode*                    m_node;
     FullInfo                    m_correspondance;
     AzureHandshake              m_handshake;
     BeFile                      m_file;
@@ -116,7 +106,6 @@ public:
 
     User();
     User(int id);
-    ~User();
     
     void DoNext(UserManager* owner);
     
@@ -126,8 +115,6 @@ public:
     void ValidateListRealityData(int activeUsers);
     CURL* ListRelationship();
     void ValidateListRelationship(int activeUsers);
-    CURL* NavNodeFunc();
-    void ValidateNavNode(int activeUsers);
     CURL* EnterpriseStat();
     void ValidateEnterpriseStat(int activeUsers);
     CURL* Details();
@@ -144,8 +131,6 @@ public:
     void ValidateDeleteRelationship(int activeUsers);
     CURL* DeleteRealityData();
     void ValidateDeleteRealityData(int activeUsers);
-    CURL* Download();
-    void ValidateDownload(int activeUsers);
 
     void WrapUp(UserManager* owner);
     };

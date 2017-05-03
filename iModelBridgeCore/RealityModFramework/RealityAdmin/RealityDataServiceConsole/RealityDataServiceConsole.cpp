@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/RealityDataService/RealityDataServiceConsole.cpp $
+|     $Source: RealityAdmin/RealityDataServiceConsole/RealityDataServiceConsole.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
