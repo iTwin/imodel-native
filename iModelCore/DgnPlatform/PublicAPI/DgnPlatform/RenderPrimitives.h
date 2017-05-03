@@ -763,14 +763,18 @@ struct PolylineArgs : IndexedPolylineArgs
 //=======================================================================================
 struct GeometryListBuilder : GraphicBuilder
 {
-protected:
+private:
     GeometryAccumulator m_accum;
     GraphicParams       m_graphicParams;
     GeometryParams      m_geometryParams;
     bool                m_geometryParamsValid = false;
     bool                m_isOpen = true;
 
-    explicit GeometryListBuilder(CreateParams const& params) : GraphicBuilder(params), m_accum(params.m_dgndb) { }
+    bool _IsOpen() const final override { return m_isOpen; }
+    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() final override;
+protected:
+    explicit GeometryListBuilder(CreateParams const& params, DgnElementId elemId=DgnElementId(), TransformCR accumulatorTf=Transform::FromIdentity())
+        : GraphicBuilder(params), m_accum(params.m_dgndb) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
@@ -794,11 +798,14 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineCurve2d(MSBsplineCurveCR, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
-    DGNPLATFORM_EXPORT bool _IsOpen() const override { return m_isOpen; }
 
+    virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0;
+
+public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
     DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    DgnElementId GetElementId() const { return m_accum.GetElementId(); }
 };
 
 //=======================================================================================
@@ -813,7 +820,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
-    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
 
     void AddTriMesh(TriMeshArgsCR args);
 public:

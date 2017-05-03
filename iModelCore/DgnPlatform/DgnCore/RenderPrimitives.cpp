@@ -2104,37 +2104,40 @@ GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipV
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/16
+* @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr PrimitiveBuilder::_Finish()
+GraphicPtr GeometryListBuilder::_Finish()
     {
-    BeAssert(IsOpen());
-
-    GraphicPtr graphic;
-    if (IsOpen())
+    if (!IsOpen())
         {
-        m_isOpen = false;
-        if (!m_accum.IsEmpty())
-            {
-            GeometryOptions options;
-            m_accum.SaveToGraphicList(m_primitives, m_system, options);
-            }
-
-        switch (m_primitives.size())
-            {
-            case 1:
-                graphic = *m_primitives.begin();
-                m_primitives.clear();
-                break;
-            default:
-                // NB: We may have zero primitives. Callers aren't going to check for null return value. So return an empty graphic list.
-                // (See for example DrawGrid() - often produces empty Graphic and adds directly to world decorations)
-                graphic = m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
-                break;
-            }
+        BeAssert(false);
+        return nullptr;
         }
 
+    GraphicPtr graphic = _FinishGraphic(m_accum);
+    BeAssert(graphic.IsValid()); // callers of Finish() assume they're getting back a non-null graphic...
+
+    m_isOpen = false;
     m_accum.Clear();
+    return graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
+    {
+    if (!accum.IsEmpty())
+        {
+        GeometryOptions options;
+        accum.SaveToGraphicList(m_primitives, m_system, options);
+        }
+
+    if (1 != m_primitives.size())
+        return m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
+
+    GraphicPtr graphic = *m_primitives.begin();
+    m_primitives.clear();
     return graphic;
     }
 
