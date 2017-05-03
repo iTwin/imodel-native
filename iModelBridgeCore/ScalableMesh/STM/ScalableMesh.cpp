@@ -1020,7 +1020,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
                 else
                     {
-                    m_isCesium3DTiles = true;
                     config["data_type"] = "3DTiles";
                     auto& config_server = config["server"];
                     auto utf8Path = Utf8String(m_path.c_str());
@@ -1065,6 +1064,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     }
                 SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(config);
+                m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
 
                 if (stream_settings->IsLocal() && stream_settings->GetURL().empty())
                     { // Provide default cloud data directory for streaming from local disk when url is not specified
