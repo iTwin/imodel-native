@@ -10,7 +10,9 @@
 #include <queue>
 #include <thread>
 
+#ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
+#endif
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
