@@ -1553,13 +1553,15 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
-    WString name = L"E:\\output\\scmesh\\2017-02-26\\bcdtm_";
+#ifndef NDEBUG
+   /* WString name = L"C:\\work\\2017q2\\CS\\bcdtm_";
     name.append(std::to_wstring(indices.size()).c_str());
     name.append(L".bcdtm");
-    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());
+    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
 
     std::cout << " Writing to " << std::to_string(indices.size())<<std::endl;
     assert(status == SUCCESS);
+#endif
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
@@ -2162,6 +2164,44 @@ void ScalableMeshMesh::RecalculateUVs(DRange3d& nodeRange)
         m_pUv[i].y = (m_points[i].y - nodeRange.low.y) / (nodeRange.YLength());
         }
     }
+
+//=======================================================================================
+// @description Removes duplicated vertices. This function is used before ScalableMeshMesh::GetAsBcDTM
+//              as DTM library has several functions which react badly to datasets with duplicated
+//              vertices.
+// @bsimethod                                                   Elenie.Godzaridis 04/17
+//=======================================================================================
+void ScalableMeshMesh::RemoveDuplicates()
+{
+	bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> firstOccurences(DPoint3dZYXTolerancedSortComparison(1e-5, 0)); // they use this tolerance in bclib
+
+
+	bvector<DPoint3d> newPoints;
+	bvector<int32_t> newIndices;
+
+	for (size_t i = 0; i < m_nbFaceIndexes; ++i)
+	    {
+		if (firstOccurences.count(m_points[m_faceIndexes[i]-1]) == 0)
+		    {
+			firstOccurences[m_points[m_faceIndexes[i]-1]] = (int32_t)newPoints.size();
+			newPoints.push_back(m_points[m_faceIndexes[i] - 1]);
+		    }
+		newIndices.push_back(firstOccurences[m_points[m_faceIndexes[i] - 1]]+1);
+	    }
+
+	delete[] m_faceIndexes;
+	delete[] m_points;
+
+	m_nbPoints = newPoints.size();
+
+	if (newPoints.size() == 0 || newIndices.size() == 0) return;
+	m_points = new DPoint3d[newPoints.size()];
+	m_faceIndexes = new int32_t[newIndices.size()];
+
+	memcpy(m_points, newPoints.data(), m_nbPoints * sizeof(DPoint3d));
+	memcpy(m_faceIndexes, newIndices.data(), m_nbFaceIndexes * sizeof(int32_t));
+
+}
 
 ScalableMeshMeshWithGraph::ScalableMeshMeshWithGraph(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
     : ScalableMeshMesh(nbPoints, points, nbFaceIndexes, faceIndexes, normalCount, pNormal, pNormalIndex, uvCount, pUv, pUvIndex)

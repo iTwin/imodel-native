@@ -1904,7 +1904,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
             return false;
         }    
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
@@ -1926,7 +1926,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
             return false;
         }
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 

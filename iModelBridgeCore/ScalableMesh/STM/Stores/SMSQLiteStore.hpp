@@ -12,6 +12,8 @@
 #include <ScalableMesh/Import/Source.h>
 #include "..\RasterUtilities.h"
 
+#include <ImagePP\all\h\HGF2DProjective.h>
+
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
     : SMSQLiteSisterFile(database)
@@ -188,18 +190,65 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     __super::SaveSisterFiles();
     }
 
+template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
+    {        
+    DRange3d total3dRange(DRange3d::NullRange());
+    
+    for (auto& range : tileRanges)
+        { 
+        total3dRange.Extend(range);
+        }        
+
+    HFCMatrix<3, 3> transfoMatrix;
+    transfoMatrix[0][0] = (tileRanges[0].high.x - tileRanges[0].low.x) / 256;
+    transfoMatrix[0][1] = 0;
+    transfoMatrix[0][2] = total3dRange.low.x;
+    transfoMatrix[1][0] = 0;
+    transfoMatrix[1][1] = -(tileRanges[0].high.y - tileRanges[0].low.y) / 256;
+    transfoMatrix[1][2] = total3dRange.high.y;
+    transfoMatrix[2][0] = 0;
+    transfoMatrix[2][1] = 0;
+    transfoMatrix[2][2] = 1;    
+
+    HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
+
+    HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
+
+    if (pSimplifiedModel != 0)
+    {
+        pTransfoModel = pSimplifiedModel;
+    }
+
+    DPoint2d lowInPixels; 
+    DPoint2d highInPixels;
+
+    pTransfoModel->ConvertInverse(total3dRange.low.x, total3dRange.low.y, &lowInPixels.x, &lowInPixels.y);
+    pTransfoModel->ConvertInverse(total3dRange.high.x, total3dRange.high.y, &highInPixels.x, &highInPixels.y);
+
+    HFCPtr<HGF2DCoordSys> coordSys(new HGF2DCoordSys(*pTransfoModel, m_raster->GetCoordSys()));
+
+    HVEShape shape(lowInPixels.x, highInPixels.y, highInPixels.x, lowInPixels.y, coordSys);
+
+    //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
+            
+    //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
+    uint32_t consumerID = 1;
+    m_raster->SetLookAhead(shape, consumerID);
+    }
+
+template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
+    {    
+/*
+    uint32_t consumerID = 1;
+    m_raster->SetLookAhead(shape, consumerID);
+*/
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
     SMSQLiteFilePtr sqlFilePtr;
-
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon)
-        {
-        sqlFilePtr = GetSisterSQLiteFile(dataType);
-        }
-    else
-        {
-        sqlFilePtr = m_smSQLiteFile;
-        }
+    
+    sqlFilePtr = m_smSQLiteFile;    
 
     assert(sqlFilePtr.IsValid());
 
@@ -208,27 +257,16 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     return true;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {
-    SMSQLiteFilePtr sqlFilePtr;
-
-    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName);
-    
-    assert(sqlFilePtr.IsValid());
-
-    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
-
-    return true;
-    }
-
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {   
     if (!IsProjectFilesPathSet())
         return false; 
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
-    assert(sqliteFilePtr.IsValid() == true);    
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
 
+    if (!sqliteFilePtr.IsValid())
+        return false;
+    
     dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
 
     return true;    
@@ -246,7 +284,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
 
     if (dataType == SMStoreDataType::LinearFeature)
         {
-        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature);            
+        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true);            
         assert(sqliteFilePtr.IsValid() == true);
         }
     else
@@ -264,11 +302,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
     SMSQLiteFilePtr sqliteFilePtr;
 
 
-    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph);
-        assert(sqliteFilePtr.IsValid() == true);
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true);
+    assert(sqliteFilePtr.IsValid() == true);
 
 
-        dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
                     
     return true;    
     }
@@ -312,6 +350,35 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3D
     dataStore = new SMSQLiteNodeDataStore<Cesium3DTilesBase, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
     return true;
     }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
+    { 
+    SMSQLiteFilePtr sqlFilePtr;
+    
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+    
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+
+    return true;
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
+    {
+    assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+
+    if (!sqlFilePtr.IsValid())
+        return false;
+
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+
+    return true;
+    }
+    
 
 template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
     {       
@@ -562,12 +629,15 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         case SMStoreDataType::Skirt : 
             blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
-        case SMStoreDataType::ClipDefinition :
+        case SMStoreDataType::ClipDefinition:
             blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
-        case SMStoreDataType::CoveragePolygon :
+        case SMStoreDataType::CoveragePolygon:
             blockDataCount = m_smSQLiteFile->GetCoveragePolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
+        case SMStoreDataType::CoverageName:
+            blockDataCount = m_smSQLiteFile->GetCoverageNameByteCount(blockID.m_integerID) > 0 ? 1 : 0;
+            break;            
 #ifdef WIP_MESH_IMPORT
         case SMStoreDataType::MeshParts:
             blockDataCount = m_smSQLiteFile->GetNumberOfMeshParts(blockID.m_integerID) / sizeof(DATATYPE);
@@ -696,6 +766,13 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     bvector<uint8_t> nodeData;
     size_t uncompressedSize = 0;
+
+    if (m_dataType == SMStoreDataType::CoverageName)
+        {
+        m_smSQLiteFile->GetCoverageName(blockID.m_integerID, (Utf8String*)DataTypeArray, uncompressedSize);
+        return uncompressedSize;
+        }
+
     this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
 
     if (this->IsCompressedType())
@@ -711,6 +788,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
         return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
+    else
     if (m_dataType == SMStoreDataType::DiffSet)
         {
         if (uncompressedSize == 0) return 1;
@@ -736,8 +814,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }        
 
         return nodeData.size();     
-        }
-
+        }        
+        
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
     pi_compressedPacket.SetDataSize(nodeData.size());
@@ -818,7 +896,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             break;  
         case SMStoreDataType::CoveragePolygon:
             m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
+            break;        
         case SMStoreDataType::Texture:
         case SMStoreDataType::TextureCompressed:
             m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);

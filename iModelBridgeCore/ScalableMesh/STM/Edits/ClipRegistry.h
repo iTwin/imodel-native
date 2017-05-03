@@ -28,6 +28,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     bool m_lastClipSet;
     uint64_t m_lastClipID;
     bvector<DPoint3d> m_lastClipValue;
+	std::mutex m_lastClipMutex;
 
     ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 
@@ -65,7 +66,9 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize, const Utf8String& coverageName);
 
-    void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);
+    void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);    
+
+    void GetCoverageName(uint64_t id, Utf8String& coverageName);
 
     bool HasCoverage(uint64_t id);
 
@@ -85,9 +88,10 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void SetClipOnOrOff(uint64_t id, bool isActive);
     void GetIsClipActive(uint64_t id, bool& isActive);
+	void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
 
-    void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
-
+    bool IsClipDefinitionFileExist();
+    
     void SetAutoCommit(bool autoCommit);
     };
 

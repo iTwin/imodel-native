@@ -312,7 +312,7 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
     uriEncodedBlobUrl += ("?" + this->m_getSASToken(Utf8String(this->getAccountKey().c_str()))).c_str();
-    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str()).c_str()));
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();

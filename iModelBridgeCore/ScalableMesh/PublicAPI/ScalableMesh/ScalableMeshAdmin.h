@@ -21,6 +21,8 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 {
     private :         
 
+        IScalableMeshTextureGeneratorPtr m_textureGeneratorPtr;
+
     public : 
 
         virtual int                     _GetVersion() const {return 1;} // Do not override!
@@ -33,10 +35,15 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator () 
             {
-            IScalableMeshTextureGeneratorPtr textureGeneratorPtr;
-
-            return textureGeneratorPtr;
+            return m_textureGeneratorPtr;            
             }        
+
+        virtual void _SetTextureGenerator(IScalableMeshTextureGeneratorPtr& textureGenerator)
+            {            
+            assert(m_textureGeneratorPtr == nullptr);
+
+            m_textureGeneratorPtr = textureGenerator;        
+            }
 
     #ifdef VANCOUVER_API
         virtual DgnModelRefP _GetActiveModelRef() const

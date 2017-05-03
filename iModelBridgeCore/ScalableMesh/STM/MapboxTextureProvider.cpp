@@ -49,4 +49,5 @@ MapBoxTextureProvider::MapBoxTextureProvider(WString url, DRange3d totalExtent, 
     auto mapBoxRaster = RasterUtilities::LoadRaster(url, targetCS, extent2d);
     HGF2DExtent maxExt;
     mapBoxRaster->GetPixelSizeRange(m_minExt, maxExt);
+    m_minExt.ChangeCoordSys(mapBoxRaster->GetCoordSys());
     }

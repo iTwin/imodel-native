@@ -612,6 +612,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         void RecalculateUVs(DRange3d& nodeRange);
 
+		void RemoveDuplicates();
+
         void StoreTriangleBoxes();
 
         static ScalableMeshMeshPtr Create (DVec3d viewNormal);
