@@ -219,21 +219,6 @@ RefCountedPtr<SystemPropertyMap::PerTableIdPropertyMap> ECClassIdPropertyMap::_C
     return PerTableClassIdPropertyMap::CreateInstance(parentPropMap, prop, col, defaultClassId);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle      11/16
-//---------------------------------------------------------------------------------------
-bool ECClassIdPropertyMap::IsVirtual(DbTable const& table) const
-    {
-    PerTableIdPropertyMap const* propMap = FindDataPropertyMap(table);
-    if (propMap == nullptr)
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    return propMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual;
-    }
-
 //************************************ConstraintECClassIdPropertyMap********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -268,21 +253,6 @@ RefCountedPtr<SystemPropertyMap::PerTableIdPropertyMap> ConstraintECClassIdPrope
         }
 
     return PerTableClassIdPropertyMap::CreateInstance(parentPropMap, prop, col, defaultClassId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle      11/16
-//---------------------------------------------------------------------------------------
-bool ConstraintECClassIdPropertyMap::IsVirtual(DbTable const& table) const
-    {
-    PerTableIdPropertyMap const* propMap = FindDataPropertyMap(table);
-    if (propMap == nullptr)
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    return propMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual;
     }
 
 //************************************ConstraintECInstanceIdPropertyMap********************

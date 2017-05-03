@@ -107,7 +107,6 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
 
     public:
         ~ECClassIdPropertyMap() {}
-        bool IsVirtual(DbTable const& table) const;
         static RefCountedPtr<ECClassIdPropertyMap> CreateInstance(ClassMap const&, std::vector<DbColumn const*> const&);
     };
 
@@ -128,7 +127,6 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
     public:
         ~ConstraintECClassIdPropertyMap() {}
 
-        bool IsVirtual(DbTable const& table) const;
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
      
         static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const&, ECN::ECRelationshipEnd, std::vector<DbColumn const*> const&);

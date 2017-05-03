@@ -206,6 +206,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             return true;
         }
 
+    ClassMap const& classMap = propMap.GetClassMap();
     switch (propMap.GetType())
         {
             case PropertyMap::Type::ConstraintECClassId:
@@ -214,12 +215,23 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
                 return true;
 
-            BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-            return constraintClassIdPropMap.IsVirtual(propMap.GetClassMap().GetJoinedOrPrimaryTable());
+            BeAssert(classMap.GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
+            DbTable const& contextTable = classMap.GetJoinedTable();
+            if (!classMap.GetUpdatableViewInfo().HasView() && contextTable.GetPersistenceType() == PersistenceType::Virtual)
+                return true; //if table is virtual and there is no alternative table to use this is a noop.
+
+            ConstraintECClassIdPropertyMap::PerTableIdPropertyMap const* contextConstraintClassIdPropMap = constraintClassIdPropMap.FindDataPropertyMap(contextTable);
+            BeAssert(contextConstraintClassIdPropMap != nullptr);
+            return contextConstraintClassIdPropMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual;
             }
             case PropertyMap::Type::NavigationRelECClassId:
-                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();
+            {
+            DbColumn const& col = propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn();
+            if (!classMap.GetUpdatableViewInfo().HasView() && col.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+                return true;
 
+            return col.GetPersistenceType() == PersistenceType::Virtual;
+            }
             default:
                 return false;
         }

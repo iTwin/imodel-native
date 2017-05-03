@@ -215,6 +215,7 @@ struct ConstraintECClassIdJoinInfo final
         DbColumn const& GetForignECInstanceIdColumn() const { BeAssert(RequiresJoin()); return *m_foreignECInstanceIdCol; }
         NativeSqlBuilder GetNativeConstraintECClassIdSql(bool appendAlias) const;
         NativeSqlBuilder GetNativeJoinSql() const;
-        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap, bool ignoreVirtualColumnCheck = false);
+
+        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const&, bool ignoreVirtualColumnCheck);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

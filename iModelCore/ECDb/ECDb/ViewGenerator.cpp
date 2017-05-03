@@ -1153,7 +1153,7 @@ ConstraintECClassIdJoinInfo ConstraintECClassIdJoinInfo::Create(ConstraintECClas
     {
     ConstraintECClassIdJoinInfo joinInfo;
 
-    DbTable const* primaryTable = RequiresJoinTo(propertyMap);
+    DbTable const* primaryTable = RequiresJoinTo(propertyMap, false);
     if (primaryTable == nullptr)
         return joinInfo;
 
@@ -1272,7 +1272,8 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
     DbTable const* table = propertyMap.GetTables().front();
     if (!ignoreVirtualColumnCheck)
         {
-        if (propertyMap.IsVirtual(*table))
+        BeAssert(propertyMap.FindDataPropertyMap(*table) != nullptr);
+        if (table->GetPersistenceType() == PersistenceType::Virtual || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             return nullptr;
         }
 
@@ -1400,13 +1401,13 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
     idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
 
     NativeSqlBuilder relClassIdColStrBuilder;
-    if (relClassIdPropMap.IsVirtual())
+    if (relClassIdPropMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
         relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
     else
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-    if (m_context.GetViewType() == ViewType::ECClassView || m_context.GetViewType()==ViewType::UpdatableView)
+    if (m_context.GetViewType() == ViewType::ECClassView || m_context.GetViewType() == ViewType::UpdatableView)
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
     else
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());

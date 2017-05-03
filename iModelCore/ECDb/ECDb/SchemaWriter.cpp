@@ -1909,7 +1909,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
                 }
 
             //For virtual column delete column from ec_Column.
-            if (column->GetPersistenceType() == PersistenceType::Virtual)
+            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetPersistenceType() == PersistenceType::Virtual)
                 {
                 CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id=?");
                 if (stmt == nullptr ||

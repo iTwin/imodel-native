@@ -24,6 +24,20 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ctx.PushScope(exp);
 
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+
+    DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+    if (table.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ECRelationshipClass' foreign key end is abstract. Cannot insert into such an ECRelationshipClass.");
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        BeAssert(false && "Should have been caught before");
+        return ECSqlStatus::InvalidECSql;
+        }
+
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto info = ctx.GetJoinedTableInfo())
         {
@@ -136,11 +150,11 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         NativeSqlBuilder::List const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
         if (ecinstanceIdValueSnippets.size() != 1)
             {
+            BeAssert(!ecinstanceIdValueSnippets.empty() && "Should have been caught before");
+
             //WIP Shouldn't this be caught much earlier??
             if (ecinstanceIdValueSnippets.size() > 1)
                 ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Multi-value ECInstanceIds not supported.");
-            else
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ECRelationshipClass' foreign key end is abstract and doesn't have subclasses. Cannot insert into such an ECRelationshipClass.");
 
             return ECSqlStatus::InvalidECSql;
             }
