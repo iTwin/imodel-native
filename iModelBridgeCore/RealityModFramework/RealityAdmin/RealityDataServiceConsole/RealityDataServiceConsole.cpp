@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
     if (infile.empty() || !infile.DoesPathExist() || outfile.empty())
         {
         console.Run();
-        return 1;
+        return 0;
         }
 
     console.Run(infile, outfile);
-    return 1;
+    return 0;
     }

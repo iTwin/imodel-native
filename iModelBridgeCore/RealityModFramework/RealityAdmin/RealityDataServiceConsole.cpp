@@ -194,6 +194,16 @@ RealityDataConsole::RealityDataConsole() :
     m_classificationOptions.push_back("Pinned");
     m_classificationOptions.push_back("Terrain");
 
+    m_typeOptions = bvector<Utf8String>();
+    m_typeOptions.push_back("3MX");
+    m_typeOptions.push_back("3SM");
+    m_typeOptions.push_back("RealityMesh3DTiles");
+    m_typeOptions.push_back("POD");
+    m_typeOptions.push_back("PointCloud3DTiles");
+    m_typeOptions.push_back("Orthophoto");
+    m_typeOptions.push_back("RasterDSM");
+    m_typeOptions.push_back("Custom");
+
     m_filterProperties = bvector<Utf8String>();
     m_filterProperties.push_back("Name");
     m_filterProperties.push_back("Group");
@@ -775,21 +785,27 @@ void RealityDataConsole::Upload()
             }
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
-        DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
+        DisplayInfo("Please choose a Classification\n  ?", DisplayOption::Question);
         Choice(m_classificationOptions, option);
         properties.Insert(RealityDataField::Classification, option);
 
-        DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
-        std::getline(*s_inputSource, input);
-        command = Utf8String(input.c_str());
-        if (command.EqualsI("Quit"))
+        DisplayInfo("Please choose a Type\n  ?", DisplayOption::Question);
+        Choice(m_typeOptions, option);
+        if(option == "Custom")
             {
-            m_lastCommand = Command::Quit;
-            return;
+            DisplayInfo("You have selected custom input. Please input value for Type\n  ?", DisplayOption::Question);
+            std::getline(*s_inputSource, input);
+            command = Utf8String(input.c_str());
+            if (command.EqualsI("Quit"))
+                {
+                m_lastCommand = Command::Quit;
+                return;
+                }
+            option = Utf8String(input.c_str()).Trim();
             }
-        properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
+        properties.Insert(RealityDataField::Type, option);
 
-        DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
+        DisplayInfo("Please choose a Visibility\n  ?", DisplayOption::Question);
         Choice(m_visibilityOptions, option);
         properties.Insert(RealityDataField::Visibility, option);
 
