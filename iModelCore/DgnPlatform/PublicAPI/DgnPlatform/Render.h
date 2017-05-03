@@ -1349,6 +1349,8 @@ protected:
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _IsSimplifyGraphic() const { return false; }
+    virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
+    virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
 public:
     // NOTE: subToGraphic is provided to allow stroking in world coords...
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
@@ -1358,6 +1360,8 @@ public:
     TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
+    bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
+    bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
 
     bool IsOpen() const {return _IsOpen();}
 

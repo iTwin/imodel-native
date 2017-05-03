@@ -429,6 +429,7 @@ protected:
     void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
+    bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
 
@@ -569,12 +570,6 @@ public:
         }
 
 #if defined(TODO_ELEMENT_TILE)
-    bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& opts, SimplifyGraphic& gf) const override
-        {
-        opts = GetLineStyleStrokerOptions(lsSymb);
-        return opts.IsValid();
-        }
-
     UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
         {
         DRange2d        range = textString.GetRange();
@@ -694,6 +689,15 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
 GraphicPtr TileBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
     return m_context.FinishGraphic(accum, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& options)
+    {
+    options = m_context.GetLineStyleStrokerOptions(symb);
+    return options.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**

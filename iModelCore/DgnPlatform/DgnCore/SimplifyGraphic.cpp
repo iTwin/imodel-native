@@ -2308,3 +2308,20 @@ Render::GraphicPtr SimplifyGraphic::_Finish()
     return new Base(GetDgnDb(), m_processor, m_context);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& options)
+    {
+    return m_processor._DoLineStyleStroke(symb, options, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::_WantStrokePattern(PatternParamsCR pattern)
+    {
+    return m_processor._DoPatternStroke(pattern, *this);
+    }
+
+

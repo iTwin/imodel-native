@@ -56,6 +56,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
+    DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
 
     bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}

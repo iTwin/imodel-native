@@ -1556,38 +1556,7 @@ bool ViewContext::_WantLineStyles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions)
     {
-    if (!lsSymb.GetUseStroker())
-        return false;
-
-    if (builder.IsSimplifyGraphic())
-        {
-        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
-
-        return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
-        }
-
-#if defined(TODO_ELEMENT_TILE)
-    // ###TODO: This probably just goes away...
-    double pixelSize = builder.GetPixelSize();
-    double maxWidth = (0.0 != pixelSize ? lsSymb.GetStyleWidth() : 0.0);
-
-    if (0.0 != maxWidth)
-        {
-        double pixelThreshold = 5.0;
-
-        if ((maxWidth / pixelSize) < pixelThreshold)
-            {
-            builder.UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
-
-            return false; // Width not discernable...
-            }
-
-        builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
-        }
-#endif
-
-    return true; // Width discernable (or no width)...
+    return lsSymb.GetUseStroker() && builder.WantStrokeLineStyle(lsSymb, facetOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**

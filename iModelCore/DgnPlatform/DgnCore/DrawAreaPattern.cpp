@@ -953,14 +953,8 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
     if (nullptr == (pattern = params.GetPatternParams()))
         return;
 
-    if (builder.IsSimplifyGraphic())
-        {
-        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
-
-        if (!sGraphic->GetGeometryProcesor()._DoPatternStroke(*pattern, *sGraphic))
-            return;
-        }
+    if (!builder.WantStrokePattern(*pattern))
+        return;
 
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
