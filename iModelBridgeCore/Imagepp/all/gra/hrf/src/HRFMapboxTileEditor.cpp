@@ -116,11 +116,12 @@ HRFMapBoxTileEditor::~HRFMapBoxTileEditor()
 // @bsimethod                                                   Mathieu.St-Pierre  1/2016
 //----------------------------------------------------------------------------------------
 Utf8String BuildTileUri(int resolution, uint64_t tilePosX, uint64_t tilePosY)
-    {                
+    {    
+             
     char tempBuffer[300];
-    int zoomFactor = MB_MAP_RESOLUTION - resolution;
+    //int zoomFactor = MB_MAP_RESOLUTION - resolution;
 
-    HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
+    //HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
     //sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, tilePosX / 256, tilePosY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
     //sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.jpg80?%s", zoomFactor, tilePosX / 256, tilePosY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
     
