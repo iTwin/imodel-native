@@ -584,7 +584,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const override;
-        virtual bool _IntersectRay(bvector<DPoint3d>& pts, const DRay3d& ray) const override;
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pts, const DRay3d& ray) const override;
 
         virtual void _WriteToFile(WString& filePath) override;
 

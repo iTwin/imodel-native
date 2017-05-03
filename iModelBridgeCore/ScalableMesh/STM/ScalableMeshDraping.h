@@ -50,7 +50,7 @@ struct ScalableMeshDraping : IDTMDraping
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
-        virtual bool _IntersectRay(bvector<DPoint3d>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
 
     public:
         ScalableMeshDraping(IScalableMeshPtr scMesh);
@@ -200,7 +200,7 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             return DTM_ERROR;
             }
 
-        virtual bool _IntersectRay(bvector<DPoint3d>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override
             {
             return DTM_ERROR;
             }

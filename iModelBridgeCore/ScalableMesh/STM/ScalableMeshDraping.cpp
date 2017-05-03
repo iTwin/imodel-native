@@ -634,7 +634,7 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
     }
 
 // Get all intesection with ray in an ordered vector (closest -> fardest)
-bool IntersectRay3D(bvector<DPoint3d>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint, IScalableMeshNodePtr& target)
+bool IntersectRay3D(bvector<DTMRayIntersection>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint, IScalableMeshNodePtr& target)
     {
     DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
@@ -645,9 +645,9 @@ bool IntersectRay3D(bvector<DPoint3d>& pointsOnDTM, DVec3dCR direction, DPoint3d
     return false;
     }
 
-bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
-    bvector<DPoint3d> AllHits;
+    bvector<DTMRayIntersection> AllHits;
 
     DPoint3d transformedPt = testPoint;
     m_UorsToStorage.Multiply(transformedPt);
@@ -687,13 +687,15 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR
                 }
             else pointOnDTM = segClipped.point[0];
             m_transform.Multiply(pointOnDTM);
-            pointsOnDTM.push_back(pointOnDTM); // we add only this one
+            DTMRayIntersection rayInter;
+            rayInter.point = pointOnDTM;
+            pointsOnDTM.push_back(rayInter); // we add only this one
             return true;
             }
         return false;
         }
     else if (nodes.empty()) 
-        QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr); // SN : why again with same params ????
+        QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
 
     bvector<bool> clips;
     bool ret = false;
@@ -705,7 +707,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(AllHits, newDirection, transformedPt))
                 {
                 for (auto hit : AllHits)
-                    m_transform.Multiply(hit);
+                    m_transform.Multiply(hit.point);
                 ret = true;
                 break;
                 }
@@ -713,7 +715,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR
         else if (IntersectRay3D(AllHits, newDirection, transformedPt, node))
             {
             for (auto hit : AllHits)
-                m_transform.Multiply(hit);
+                m_transform.Multiply(hit.point);
             ret = true;
             break;
             }
@@ -727,22 +729,22 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DPoint3d>& pointsOnDTM, DVec3dCR
             bool bInRegion = true;
             for (auto& region : m_regionRestrictions)
                 {
-                if ((region->PointInOnOutXY(hit) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
-                    (region->PointInOnOutXY(hit) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
+                if ((region->PointInOnOutXY(hit.point) == CurveVector::InOutClassification::INOUT_Out && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer) ||
+                    (region->PointInOnOutXY(hit.point) == CurveVector::InOutClassification::INOUT_In && region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner))
                     {
-                    // this hit is outside 
-                    bInRegion = false;
+                    bInRegion = false; // this hit is outside 
                     break;
                     }
                 }
             if (bInRegion)
                 {
-                pointsOnDTM.push_back(hit); // add the point in the output vector
+                DTMRayIntersection rayInter;;
+                pointsOnDTM.push_back(rayInter); // add the point in the output vector
                 ret = true; // we have at least a hit
                 }
             }
         }
-    else if (ret) // No restriction region, we keep all the hits
+    else if (ret) // No restrictions, we keep all the hits
         {
         pointsOnDTM.insert(pointsOnDTM.end(), AllHits.begin(), AllHits.end()); // insert, in case vector is not empty
         }
