@@ -14,7 +14,7 @@ ENABLE_CPP_CX_EXTENSIONS = 1
 %endif
 
 #--------------------------------------------------------------------------------------
-#   Building the BeHttp library
+#   Building the Licensing library
 #--------------------------------------------------------------------------------------
 nameToDefine = __BELICENSING_BUILD__
 %include cdefapnd.mki

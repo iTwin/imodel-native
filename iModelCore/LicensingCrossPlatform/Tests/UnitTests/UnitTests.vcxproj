@@ -6,6 +6,19 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Published\TestsHelper.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\TestsHelper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CF6DF431-C978-46EC-8E32-A409994F676D}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
