@@ -14,6 +14,7 @@ DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 1)
     {
+    RegisterHandler(AlignmentCategoryModelHandler::GetHandler());
     RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentModelHandler::GetHandler());
@@ -32,9 +33,11 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
     {
     DgnDbStatus status;
 
-    auto alignmentPartitionPtr = SpatialLocationPartition::Create(*db.Elements().GetRootSubject(), "Alignments");
+    auto alignmentPartitionPtr = SpatialLocationPartition::Create(*db.Elements().GetRootSubject(), GetPartitionName());
     if (alignmentPartitionPtr->Insert(&status).IsNull())
         return status;
+
+    AlignmentCategoryModel::SetUp(db);
 
     auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(db, alignmentPartitionPtr->GetElementId()));
 
@@ -58,7 +61,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    AlignmentCategory::InsertDomainCategories(dgndb);
+    SetUpModelHierarchy(dgndb);
 
     auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment);
     BeAssert(codeSpec.IsValid());

@@ -64,6 +64,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
+#define BRRA_CLASS_AlignmentCategoryModel                           "AlignmentCategoryModel"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
 #define BRRA_CLASS_AlignmentReferentElement                         "AlignmentReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
@@ -138,6 +139,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailAlignment namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentCategoryModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentIntersectionInfo)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
@@ -155,6 +157,7 @@ ROADRAILALIGNMENT_TYPEDEFS(StationRange)
 ROADRAILALIGNMENT_TYPEDEFS(StationRangeEdit)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentCategoryModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)

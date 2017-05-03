@@ -172,9 +172,6 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
     if (DbResult::BE_SQLITE_OK != projectPtr->SaveChanges())
         return nullptr;
 
-    if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
-        return nullptr;
-
     return projectPtr;
     }
 
