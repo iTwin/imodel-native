@@ -657,6 +657,7 @@
         <ProductDirectory Name="PPNativeAssemblies"                 Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path=""/>
         <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false"/>
+        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnPlatformFont"                    Deliver="false"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false"/>
         <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
