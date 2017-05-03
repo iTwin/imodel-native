@@ -439,7 +439,6 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
         return false;
 
     DgnViewportP     vp = context.GetViewport();
-    bool             isSimplify = graphic.IsSimplifyGraphic();
     bool             wasAborted = false;
     DPoint2d         patOrg;
     DPoint3d         tileCorners[8];
@@ -458,7 +457,7 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
             symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, 0.0); // NOTE: Don't supply net display priority, will be supplied by add calls...
             symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
-            if (isSimplify && vp)
+            if (vp)
                 {
                 Transform symbolToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), symbolTrans);
                 ElementAlignedBox3d range = symbol.GetBoundingBox();

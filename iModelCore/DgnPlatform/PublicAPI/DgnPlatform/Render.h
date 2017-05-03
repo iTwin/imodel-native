@@ -1280,16 +1280,12 @@ protected:
     DgnDbR      m_dgndb;
 
     virtual ~Graphic() {}
-    virtual bool _IsSimplifyGraphic() const {return false;}
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
     explicit Graphic(DgnDbR db) : m_dgndb(db) {}
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
-
-    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
-    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
 };
 
 //=======================================================================================
@@ -1348,7 +1344,6 @@ protected:
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
-    virtual bool _IsSimplifyGraphic() const { return false; }
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
     virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
 public:
@@ -1358,7 +1353,6 @@ public:
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
     DgnDbR GetDgnDb() const {return m_createParams.m_dgndb;}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
-    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
     bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }

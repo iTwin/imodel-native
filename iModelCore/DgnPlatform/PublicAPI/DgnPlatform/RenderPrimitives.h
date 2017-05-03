@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/DgnTexture.h>
@@ -55,6 +56,7 @@ typedef bvector<Strokes>            StrokesList;
 typedef bmap<double, PolyfaceList>  PolyfaceMap;
 
 //=======================================================================================
+//! Specifies under what circumstances a GeometryAccumulator should generate normals.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 enum class NormalMode
@@ -65,6 +67,7 @@ enum class NormalMode
 };
 
 //=======================================================================================
+//! Options for controlling how GeometryAccumulator generates geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct GeometryOptions
@@ -84,6 +87,7 @@ struct GeometryOptions
 };
 
 //=======================================================================================
+//! Describes the appearance of a Geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct DisplayParams : RefCountedBase
@@ -137,8 +141,8 @@ public:
 
     enum class ComparePurpose
     {
-        Merge,  // ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
-        Strict  // compares all members
+        Merge,  //!< ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
+        Strict  //!< compares all members
     };
 
     DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
@@ -146,6 +150,7 @@ public:
 };
 
 //=======================================================================================
+//! A cache of ref-counted pointers to DisplayParams objects.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct DisplayParamsCache
@@ -186,6 +191,7 @@ public:
 };
 
 //=======================================================================================
+//! A look-up table of unique colors. Each unique color is mapped to a sequential index.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct ColorTable
@@ -637,6 +643,9 @@ public:
 };
 
 //=======================================================================================
+//! Accumulates a list of Geometry objects from a set of high-level graphics primitives.
+//! The various Add() methods take ownership of the input object, which may later be
+//! modified.
 // @bsistruct                                                   Paul.Connelly   01/17
 //=======================================================================================
 struct GeometryAccumulator
@@ -684,6 +693,7 @@ public:
     //! Convert the geometry accumulated by this builder into a set of meshes.
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
+    //! Populate a list of Graphic objects from the accumulated Geometry objects.
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
@@ -808,8 +818,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
 
-    virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0;
-    virtual void _Reset() { }
+    virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
+    virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
 public:
@@ -819,10 +829,13 @@ public:
     DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
 
+    //! Reset this builder for reuse.
     DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());
 };
 
 //=======================================================================================
+//! General-purpose specialization of GeometryListBuilder which produces Graphic objects
+//! using a supplied Render::System.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct PrimitiveBuilder : GeometryListBuilder

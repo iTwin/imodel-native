@@ -587,8 +587,8 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 }
 
             DgnViewportCP viewport = nullptr != stopTester ? stopTester->GetViewport() : nullptr;
-            if (!includeFaceIso || nullptr == viewport || !graphic.IsSimplifyGraphic())
-                return; // QVis handles cone silhouette display...
+            if (!includeFaceIso || nullptr == viewport)
+                return;
 
             Transform   worldToLocalTrans;
 

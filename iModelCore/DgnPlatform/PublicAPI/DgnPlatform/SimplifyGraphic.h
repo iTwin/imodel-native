@@ -59,7 +59,6 @@ protected:
     DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
     DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
 
-    bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}
     Render::GraphicPtr _Finish() override;
 
@@ -137,8 +136,6 @@ public:
     private:
         IGeometryProcessorR m_processor;
         ViewContextR m_context;
-
-        bool _IsSimplifyGraphic() const override { return true; }
     public:
         Base(DgnDbR db, IGeometryProcessorR processor, ViewContextR context)
             : Render::Graphic(db), m_processor(processor), m_context(context) { }

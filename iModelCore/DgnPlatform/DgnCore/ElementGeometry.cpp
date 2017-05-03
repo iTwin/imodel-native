@@ -3470,7 +3470,6 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
-    bool isSimplify = mainGraphic.IsSimplifyGraphic();
     bool geomParamsChanged = true;
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
@@ -3520,16 +3519,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
 
-                // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
-                // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
                 geomParams.Resolve(context);
                 subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
 
-                if (isSimplify)
-                    {
-                    currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
-                    geomParamsChanged = false;
-                    }
+                currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
+                geomParamsChanged = false;
 
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
@@ -3561,7 +3555,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3632,7 +3626,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3691,7 +3685,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 DEllipse3d  arc;
@@ -3745,7 +3739,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3803,7 +3797,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3854,7 +3848,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3872,7 +3866,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3890,7 +3884,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3913,7 +3907,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
@@ -3952,7 +3946,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3967,7 +3961,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3986,7 +3980,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 TextString  text;
@@ -4014,7 +4008,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ImageGraphicPtr imagePtr;

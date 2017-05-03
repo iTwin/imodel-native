@@ -204,7 +204,7 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
     Render::GraphicBuilderR mainGraphic = context.GetGraphicR();
     ViewContextR viewContext = context.GetViewContext();
 
-    if (mainGraphic.IsSimplifyGraphic() && nullptr != viewContext.GetViewport())
+    if (nullptr != viewContext.GetViewport())
         {
         Transform partToWorld = Transform::FromProduct(mainGraphic.GetLocalToWorldTransform(), transform);
         ElementAlignedBox3d range = geomPart->GetBoundingBox();
