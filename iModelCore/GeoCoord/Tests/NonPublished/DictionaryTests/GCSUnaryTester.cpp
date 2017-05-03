@@ -126,16 +126,14 @@ static bvector<WString> const& s_GetListOfCoordinateSystems ()
 TEST_P (GCSUnaryTester, InstantiationTest)
     {
     GeoCoordinates::BaseGCSPtr toto = GeoCoordinates::BaseGCS::CreateGCS(GetParam().c_str());
-    
-    // Check transformation properties
-    EXPECT_TRUE(!toto.IsNull());
-    
-    // The two OSGB GCS may not be valid since they will only be properly created in the present co the OSGB specific grid shift files
-    const WChar* keyname = toto->GetName();
-    WString theKeyname(keyname);
+
+    WString theKeyname(GetParam().c_str());
     if (theKeyname.CompareTo(L"OSGB-GPS-2002") == 0 || theKeyname.CompareTo(L"OSGB-GPS-1997") == 0)
         return;
-        
+
+    // Check transformation properties
+    EXPECT_TRUE(!toto.IsNull());
+           
     EXPECT_TRUE(toto->IsValid());
     }
    
@@ -147,17 +145,17 @@ TEST_P (GCSUnaryTester, GCSDatumDeprecationConsistency)
     {
     WString deprecated = L"LEGACY";
 
+    // The two OSGB GCS may not be valid since they will only be properly created in the present co the OSGB specific grid shift files
+    WString theKeyname(GetParam().c_str());
+    if (theKeyname.CompareTo(L"OSGB-GPS-2002") == 0 || theKeyname.CompareTo(L"OSGB-GPS-1997") == 0)
+        return;
+
     GeoCoordinates::BaseGCSPtr toto = GeoCoordinates::BaseGCS::CreateGCS(GetParam().c_str());
     
     // Check transformation properties
     EXPECT_TRUE(!toto.IsNull());
     
-    // The two OSGB GCS may not be valid since they will only be properly created in the present co the OSGB specific grid shift files
-    const WChar* keyname = toto->GetName();
-    WString theKeyname(keyname);
-    if (theKeyname.CompareTo(L"OSGB-GPS-2002") == 0 || theKeyname.CompareTo(L"OSGB-GPS-1997") == 0)
-        return;
-        
+
     // If the GCS is not deprecated
     WString groupName;
 
