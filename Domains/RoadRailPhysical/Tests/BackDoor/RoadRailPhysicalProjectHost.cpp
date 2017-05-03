@@ -175,12 +175,6 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateClassViewsInDb();
 
-    if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
-        return nullptr;
-
-    if (DgnDbStatus::Success != RoadRailPhysicalDomain::SetUpModelHierarchy(*projectPtr))
-        return nullptr;    
-
     return projectPtr;
     }
 

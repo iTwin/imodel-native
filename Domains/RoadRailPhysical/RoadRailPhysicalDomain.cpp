@@ -14,6 +14,8 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
     {    
+    RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
+
     RegisterHandler(CrossSectionDefinitionModelHandler::GetHandler());
     RegisterHandler(CrossSectionPortionBreakDownModelHandler::GetHandler());
     /*RegisterHandler(CrossSectionElementHandler::GetHandler());
@@ -181,6 +183,8 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
     {
     DgnDbStatus status;
 
+    RoadRailCategoryModel::SetUp(db);
+
     if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(db)))
         return status;
 
@@ -198,7 +202,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    RoadRailCategory::InsertDomainCategories(dgndb);
+    SetUpModelHierarchy(dgndb);
 
     auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway);
     BeAssert(codeSpecPtr.IsValid());
