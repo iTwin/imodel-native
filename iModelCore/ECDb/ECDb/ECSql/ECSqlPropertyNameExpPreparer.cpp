@@ -36,7 +36,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     PropertyMap const* effectivePropMap = &propMap;
     if (currentScopeECSqlType == ECSqlType::Delete)
         {
-        if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause) &&
+        if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::UsePrimaryTableForSystemPropertyResolution) &&
             propMap.IsSystem() && propMap.GetAs<SystemPropertyMap>().GetTables().size() > 1)
             {
             BeAssert(exp.GetClassRefExp()->GetType() == Exp::Type::ClassName);
@@ -86,20 +86,24 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         BeAssert(false && "WIP");
         return false;
         }
-
+ 
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? &propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
+    const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
     const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount();
 
-    if (allColumnsAreVirtual || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
+    if (allColumnsAreVirtual || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             return (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId());
-
-        //If in UPDATE SET clause. it doesn't need to be prepared either
-        return currentScope.GetExp().GetType() != Exp::Type::AssignmentList;
+        
+        switch (currentScope.GetExp().GetType())
+            {
+                case Exp::Type::AssignmentList: //UPDATE SET clause
+                    return false;
+            }
         }
 
     return true;

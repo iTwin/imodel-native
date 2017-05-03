@@ -36,7 +36,7 @@ struct ECSqlPrepareContext final : NonCopyableClass
             enum class ExtendedOptions
                 {
                 None = 0,
-                SkipTableAliasWhenPreparingDeleteWhereClause = 1
+                UsePrimaryTableForSystemPropertyResolution = 1
                 };
 
             private:
@@ -166,7 +166,7 @@ struct ECSqlPrepareContext
             enum class ExtendedOptions
                 {
                 None = 0,
-                SkipTableAliasWhenPreparingDeleteWhereClause = 1
+                UsePrimaryTableForSystemPropertyResolution = 1
                 };
 
             private:
