@@ -90,7 +90,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)UILayout$(stlibext)
     DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCsmapStatic$(stlibext)
     DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCurl$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_base.arm$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libbase$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libplatform$(stlibext)
+    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libsampler$(stlibext)
     DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_snapshot$(stlibext)
     DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)scz_compress$(stlibext)    
 
