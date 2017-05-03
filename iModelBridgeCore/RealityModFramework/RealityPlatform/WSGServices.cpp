@@ -304,7 +304,7 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
 WSGURL::WSGURL(Utf8String url) : 
-    m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
+    m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
     {}
 
 //-------------------------------------------------------------------------------------
@@ -364,7 +364,7 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
 //-------------------------------------------------------------------------------------
 void WSGURL::EncodeId() const
     {
-    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
 WSGURL& WSGURL::operator=(WSGURL const & object)
@@ -598,7 +598,7 @@ void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
     m_httpRequestString.append("/Navigation/NavNode/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("/NavNode");
     }
 
@@ -632,7 +632,7 @@ void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(m_className);
     m_httpRequestString.append("/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //-------------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(m_className);
     m_httpRequestString.append("/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("/$file");
     }
 

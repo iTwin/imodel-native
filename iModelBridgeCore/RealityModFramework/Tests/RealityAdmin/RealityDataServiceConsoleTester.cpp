@@ -247,7 +247,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     commandString.append(id);
     commandString.append("\n");
     Utf8String commandString2 = "1\n"
-                                "3DTiles\n"
+                                "3\n"
                                 "1\n"
                                 "DummyRootDocument.json\n"
                                 "filter\n"

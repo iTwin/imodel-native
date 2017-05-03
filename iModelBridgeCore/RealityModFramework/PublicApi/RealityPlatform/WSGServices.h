@@ -241,6 +241,7 @@ protected:
     WSGInterface m_interface = WSGInterface::Repositories;
     Utf8String m_repoId;
     mutable Utf8String m_id;
+    mutable Utf8String m_encodedId;
     bool m_objectContent = false;
 
 
