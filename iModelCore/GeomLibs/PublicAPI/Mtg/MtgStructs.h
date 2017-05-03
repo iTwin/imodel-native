@@ -632,6 +632,9 @@ typedef MTGGraph const * MTGGraphCP;
 #ifdef __cplusplus
 struct _MTGFacets
     {
+public:
+void SetNormalMode (MTGFacets_NormalMode normalMode, int numVertex = 0, int numNormal = 0);
+public:
 /*** Controls data storage at vertices.*/
 MTGFacets_NormalMode       normalMode;
 /*** Offset to normal indices in graph nodes.*/
@@ -652,6 +655,9 @@ bvector<DPoint3d> param2ArrayHdr;
 int                         status;
 
 public:
+GEOMDLLIMPEXP _MTGFacets (MTGFacets_NormalMode);
+GEOMDLLIMPEXP _MTGFacets ();
+GEOMDLLIMPEXP ~_MTGFacets ();
 //! Property access with names similar to PolyfaceHeader:
 bvector<DPoint3d> &Point (){return vertexArrayHdr;}
 bvector<DPoint3d> &Normal (){return normalArrayHdr;}

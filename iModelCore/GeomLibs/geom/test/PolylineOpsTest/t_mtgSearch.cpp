@@ -133,16 +133,16 @@ void SaveGraph (MTGGraphP graph, VuMask mask = 0)
 
 
 
-void MakeEdge (MTGFacetsP facets, MTGNodeId &nodeA, size_t indexA, MTGNodeId &nodeB, size_t indexB, ptrdiff_t distance)
+void MakeEdge (MTGFacets & facets, MTGNodeId &nodeA, size_t indexA, MTGNodeId &nodeB, size_t indexB, ptrdiff_t distance)
     {
-    facets->GetGraphP ()->CreateEdge (nodeA, nodeB);
-    facets->SetPointIndex (nodeA, indexA);
-    facets->SetPointIndex (nodeB, indexB);
+    facets.GetGraphP ()->CreateEdge (nodeA, nodeB);
+    facets.SetPointIndex (nodeA, indexA);
+    facets.SetPointIndex (nodeB, indexB);
     }
 
-void AddTestGraph00 (MTGFacetsP facets, MTGNodeId &node0)
+void AddTestGraph00 (MTGFacets & facets, MTGNodeId &node0)
     {
-    MTGGraphP graph = facets->GetGraphP ();
+    MTGGraphP graph = facets.GetGraphP ();
 // Create a graph useful for various tests.
 // PRIMARY GRAPH
 //                     50       60
@@ -162,14 +162,14 @@ void AddTestGraph00 (MTGFacetsP facets, MTGNodeId &node0)
     MTGNodeId node1, node2, node3, node4, node5, node6, node7, node8, node9, node10, node11;
     MTGNodeId node12, node13;
 
-    auto indexA = facets->AddPoint (DPoint3d::From (0,0,0));
-    auto indexB = facets->AddPoint ( DPoint3d::From(10, 0, 0));
-    auto indexC = facets->AddPoint ( DPoint3d::From(10, 10, 0));
-    auto indexD = facets->AddPoint ( DPoint3d::From(15, 10, 0));
-    auto indexE = facets->AddPoint ( DPoint3d::From(24, 0, 0));
-    auto indexF = facets->AddPoint ( DPoint3d::From(20, 10, 0));
-    auto indexX = facets->AddPoint ( DPoint3d::From(0, -10, 0));
-    auto indexY = facets->AddPoint ( DPoint3d::From(10, -10, 0));
+    auto indexA = facets.AddPoint (DPoint3d::From (0,0,0));
+    auto indexB = facets.AddPoint ( DPoint3d::From(10, 0, 0));
+    auto indexC = facets.AddPoint ( DPoint3d::From(10, 10, 0));
+    auto indexD = facets.AddPoint ( DPoint3d::From(15, 10, 0));
+    auto indexE = facets.AddPoint ( DPoint3d::From(24, 0, 0));
+    auto indexF = facets.AddPoint ( DPoint3d::From(20, 10, 0));
+    auto indexX = facets.AddPoint ( DPoint3d::From(0, -10, 0));
+    auto indexY = facets.AddPoint ( DPoint3d::From(10, -10, 0));
 
     MakeEdge(facets, node0, indexA, node1, indexB, 10);
     MakeEdge(facets, node2, indexB, node3, indexE, 20);
@@ -190,13 +190,11 @@ void AddTestGraph00 (MTGFacetsP facets, MTGNodeId &node0)
 
 void TestShortestPaths (MTGShortestPathContext::MTGGraphSearchFunctions *functions)
     {
-    MTGFacets *facets = jmdlMTGFacets_new ();
-    jmdlMTGFacets_setNormalMode (facets, MTG_Facets_VertexOnly, 0, 0);
-    MTGGraphP graph = facets->GetGraphP ();
-    MTGShortestPathContext::SetGraphOrFacetsInSearchFunctions (functions, facets);
+    MTGFacets facets (MTG_Facets_VertexOnly);
+    MTGGraphP graph = facets.GetGraphP ();
+    MTGShortestPathContext::SetGraphOrFacetsInSearchFunctions (functions, &facets);
     MTGNodeId node0;
     AddTestGraph00(facets, node0);
-
     MTGShortestPathContext context(graph);
     context.SearchFromSeed(node0, functions);
     if (s_noisy)
@@ -205,7 +203,7 @@ void TestShortestPaths (MTGShortestPathContext::MTGGraphSearchFunctions *functio
         printf("\n\n ===============  ShortestPathContext Test ===============\n");
         for (size_t i = 0; context.GetVertexData (i, data); i++)
             {
-            DPoint3d xyz = facets->GetXYZ (data.m_nodeA);
+            DPoint3d xyz = facets.GetXYZ (data.m_nodeA);
             printf(" (vtx %d   %.17g %.17g) (a %g) (primary %d)",
                 (int)i,
                 xyz.x,
@@ -234,11 +232,11 @@ void TestShortestPaths (MTGShortestPathContext::MTGGraphSearchFunctions *functio
         MTGNodeId nodeA = data.m_nodeA;
         MTGNodeId nodeB = data.m_nodeB;
         size_t numMask = graph->CountMaskAroundVertex(nodeA, context.BackEdgeMask ());
-        DPoint3d xyz0 = facets->GetXYZ(nodeA);
+        DPoint3d xyz0 = facets.GetXYZ(nodeA);
         MTGARRAY_VERTEX_LOOP (node, graph, nodeA)
             {
             Check::Int(context.NodeToVertexIndex (node), (int)i, "All nodes around vertex loop index to same array entry");
-            Check::Near(xyz0, facets->GetXYZ(node), "Consistent xyz");
+            Check::Near(xyz0, facets.GetXYZ(node), "Consistent xyz");
             }
         MTGARRAY_END_VERTEX_LOOP (node, graph, nodeA)
         if (Check::True(numMask == 0 || numMask == 1, "Zero or one back edges at vertex")
@@ -277,7 +275,6 @@ void TestShortestPaths (MTGShortestPathContext::MTGGraphSearchFunctions *functio
     Check::Size(1, numRoot, "Shortest path has 1 root");
     Check::True(numUnvisited == 0, "Shortest path numUnVisited");
     Check::True(numReached >= 4, "Shortest paths numReached");
-    jmdlMTGFacets_free (facets);
     }
 
 #ifdef BuildMTGDisplayableGeometry
