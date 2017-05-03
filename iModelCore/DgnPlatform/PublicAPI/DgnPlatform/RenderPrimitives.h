@@ -801,6 +801,7 @@ protected:
 
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0;
 
+    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }

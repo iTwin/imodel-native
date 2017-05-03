@@ -426,6 +426,7 @@ protected:
     TileContext&        m_context;
     double              m_rangeDiagonalSquared;
 
+    void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
@@ -459,7 +460,6 @@ struct TileContext : NullContext
     enum class Result { Success, NoGeometry, Aborted };
 private:
     IFacetOptionsR                  m_facetOptions;
-    IFacetOptionsPtr                m_targetFacetOptions;
     mutable IFacetOptionsPtr        m_lsStrokerOptions;
     RootR                           m_root;
     GeometryList&                   m_geometries;
@@ -562,6 +562,7 @@ public:
 
     DgnElementId GetCurrentElementId() const { return m_curElemId; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
+    IFacetOptionsR GetFacetOptions() { return m_facetOptions; }
 
     GraphicPtr FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder);
     GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
@@ -583,6 +584,30 @@ TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
     : GeometryListBuilder(CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileBuilder::_AddPolyface(PolyfaceQueryCR geom, bool filled)
+    {
+    size_t maxPerFace;
+    PolyfaceHeaderPtr polyface;
+    auto& facetOptions = m_context.GetFacetOptions();
+    if ((facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount()) ||
+        (facetOptions.GetParamsRequired() && (0 == geom.GetParamCount() || 0 == geom.GetFaceCount())) ||
+        (geom.GetNumFacet(maxPerFace) > 0 && (int) maxPerFace > facetOptions.GetMaxPerFace()))
+        {
+        IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
+        builder->AddPolyface(geom);
+        polyface = &builder->GetClientMeshR();
+        }
+    else
+        {
+        polyface = geom.Clone();
+        }
+
+    Add(*polyface, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -649,13 +674,12 @@ GraphicPtr TileSubGraphic::_FinishGraphic(GeometryAccumulatorR accum)
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileContext::TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tileTolerance, double rangeTolerance, LoadContextCR loadContext)
-  : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_transformFromDgn(transformFromDgn),
+  : m_geometries (geometries), m_facetOptions(facetOptions), m_root(root), m_range(range), m_transformFromDgn(transformFromDgn),
     m_tolerance(tileTolerance), m_statement(root.GetDgnDb().GetCachedStatement(root.Is3d() ? GeometrySelector3d::GetSql() : GeometrySelector2d::GetSql())),
     m_loadContext(loadContext), m_finishedGraphic(new Graphic(root.GetDgnDb()))
     {
     static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
-    m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
     m_minRangeDiagonalSquared = s_minRangeBoxSize * rangeTolerance;
     m_minRangeDiagonalSquared *= m_minRangeDiagonalSquared;
     m_minTextBoxSize  = s_minTextBoxSize * rangeTolerance;

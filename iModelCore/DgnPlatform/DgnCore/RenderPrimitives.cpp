@@ -1907,7 +1907,7 @@ void GeometryListBuilder::_AddPointString(int numPoints, DPoint3dCP points)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
     {
-    m_accum.Add(*meshDataIn.Clone(), filled, GetDisplayParams(), GetLocalToWorldTransform());
+    Add(*meshDataIn.Clone(), filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
