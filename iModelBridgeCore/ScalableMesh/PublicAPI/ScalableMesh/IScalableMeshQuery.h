@@ -327,6 +327,7 @@ struct IScalableMeshMesh : public RefCountedBase
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const = 0;
 
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const = 0;
+        virtual bool _IntersectRay(bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& pt, const DRay3d& ray) const = 0;
 
         virtual void _WriteToFile(WString& filePath) = 0;
 
@@ -357,6 +358,7 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
 
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray) const;
+        BENTLEY_SM_EXPORT bool IntersectRay(bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& points, const DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
 
@@ -456,6 +458,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
 
         virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const = 0;
+
+        virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
         virtual void     _ApplyAllExistingClips() const = 0;
 
@@ -533,6 +537,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetNeighborAt(char relativePosX,  char relativePosY,  char relativePosZ) const;
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;        
+
+        BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
         BENTLEY_SM_EXPORT void     ApplyAllExistingClips() const;
 

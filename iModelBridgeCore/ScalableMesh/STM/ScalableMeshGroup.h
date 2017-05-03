@@ -61,6 +61,7 @@ struct ScalableMeshGroupDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainM
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        virtual bool _IntersectRay(bvector<DPoint3d>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
 
         //volume calls
 

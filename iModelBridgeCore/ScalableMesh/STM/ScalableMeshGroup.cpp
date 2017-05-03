@@ -918,6 +918,11 @@ bool ScalableMeshGroupDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMa
     return DTM_ERROR;
     }
 
+bool ScalableMeshGroupDTM::_IntersectRay(bvector<DPoint3d>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    return false;
+    }
+
 bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
 
