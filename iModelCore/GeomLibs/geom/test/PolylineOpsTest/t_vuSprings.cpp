@@ -6,13 +6,15 @@ typedef VuSpringModel<uint64_t> BCSSpringModel;
 
 void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
     {
-    Check::ShiftToLowerRight (10.0);
+    auto range = sm.Range ();
+    double ax = range.XLength () * 1.5;
+    Check::Shift (ax, 0, 0);
     Check::SaveTransformed (wall);
     bvector<BCSSpringModel::StationPolygon> zones;
     sm.CollectStationAreas (zones, false, 0.01, 0.10);
     for (auto &zone : zones)
         Check::SaveTransformed (zone.m_xyz);
-    Check::ShiftToLowerRight (10.0);
+    Check::Shift (ax, 0, 0);
     sm.CollectStationAreas (zones, true, 0.01, 0.10);
     for (auto &zone : zones)
         Check::SaveTransformed (zone.m_xyz);
@@ -21,8 +23,6 @@ void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
 
 TEST(BCS,SpringModelA)
     {
-    BCSSpringModel sm;
-
     auto wall = bvector<DPoint3d>
         {
         DPoint3d::From (0,0),
@@ -31,15 +31,23 @@ TEST(BCS,SpringModelA)
         DPoint3d::From ( 0,10),
         DPoint3d::From (0,0)
         };
+    double ay = 100.0;
+    for (bool doProjection : bvector<bool> {false, true})
+        {
+        SaveAndRestoreCheckTransform shifter (0, ay, 0);
 
-    sm.AddWall (wall, 10.0);
-    sm.AddStation (DPoint3d::From (8,5),  20.0);  // big blob
-    sm.AddStation (DPoint3d::From (12,5), 1.0); // small blob
+        BCSSpringModel sm;
 
-    Check::SaveTransformed (wall);
-    sm.SolveSprings ();
-    SaveZones (wall, sm);
-    Check::SaveTransformed (wall);
+        sm.AddWall (wall, doProjection ? 0.0 : 10.0);
+        sm.AddStation (DPoint3d::From (8,5),  20.0);  // big blob
+        sm.AddStation (DPoint3d::From (12,5), 1.0); // small blob
+
+        Check::SaveTransformed (wall);
+        Check::Shift (30,0,0);
+        sm.SolveSprings (doProjection);
+        SaveZones (wall, sm);
+        Check::SaveTransformed (wall);
+        }
     Check::ClearGeometry ("BCS.SpringModelA");
     }
 
@@ -55,6 +63,11 @@ TEST(BCS,SpringModelB)
         DPoint3d::From (30,35),
         DPoint3d::From (50,35),
         DPoint3d::From (50,53),
+        DPoint3d::From (30,53),
+        DPoint3d::From (30,60),
+        DPoint3d::From (50,60),
+        DPoint3d::From (50,80),
+        DPoint3d::From (0, 70),
         DPoint3d::From (0,53),
         DPoint3d::From (0,30),
         DPoint3d::From (10,30),
@@ -66,43 +79,56 @@ TEST(BCS,SpringModelB)
     Check::SaveTransformed (wall);
 
 
-    sm.AddWall (wall, 10.0);
+    double ay = 400.0;
+    for (bool doLaplace : bvector<bool> {false, true})
+        {
+        SaveAndRestoreCheckTransform shifter (0, ay, 0);
+        bool doProjection = true;
+        double edgeFactor = doProjection ? 0.0 : 1.0;
+        sm.AddWall (wall, edgeFactor * 10.0);
 
-    // Along lower wall
-    sm.AddStation (DPoint3d::From (10,5), 15.0);
-    sm.AddStation (DPoint3d::From (25,5), 5.0);
-    sm.AddStation (DPoint3d::From (35,5), 5.0);
-    sm.AddStation (DPoint3d::From (45,5), 5.0);
-    sm.AddStation (DPoint3d::From (55,5), 5.0);
-    sm.AddStation (DPoint3d::From (65,5), 5.0);
-    sm.AddStation (DPoint3d::From (75,5), 5.0);
+        // Along lower wall
+        sm.AddStation (DPoint3d::From (10,5), 15.0);
+        sm.AddStation (DPoint3d::From (25,5), 5.0);
+        sm.AddStation (DPoint3d::From (35,5), 5.0);
+        sm.AddStation (DPoint3d::From (45,5), 5.0);
+        sm.AddStation (DPoint3d::From (55,5), 5.0);
+        sm.AddStation (DPoint3d::From (65,5), 5.0);
+        sm.AddStation (DPoint3d::From (75,5), 5.0);
 
-    sm.AddStation (DPoint3d::From (15,20), 15); // lobby/reception
-    sm.AddStation (DPoint3d::From (28,28), 7); // musuc lounge stage
+        sm.AddStation (DPoint3d::From (15,20), 15); // lobby/reception
+        sm.AddStation (DPoint3d::From (28,28), 7); // musuc lounge stage
 
-    // below upper wall of large section
-    sm.AddStation (DPoint3d::From (45,25), 5);
-    sm.AddStation (DPoint3d::From (55,25), 5);
-    sm.AddStation (DPoint3d::From (65,25), 5);
-    sm.AddStation (DPoint3d::From (75,25), 5);
-    sm.AddStation (DPoint3d::From (10,38), 15);  // restaurant
+        // below upper wall of large section
+        sm.AddStation (DPoint3d::From (45,25), 5);
+        sm.AddStation (DPoint3d::From (55,25), 5);
+        sm.AddStation (DPoint3d::From (65,25), 5);
+        sm.AddStation (DPoint3d::From (75,25), 5);
+        sm.AddStation (DPoint3d::From (10,38), 15);  // restaurant
 
-    sm.AddStation (DPoint3d::From (30,38), 3);  // upper alcove restrooms
-    sm.AddStation (DPoint3d::From (35,38), 3);
+        sm.AddStation (DPoint3d::From (30,38), 3);  // upper alcove restrooms
+        sm.AddStation (DPoint3d::From (35,38), 3);
 
-    sm.AddStation (DPoint3d::From (40, 42), 5);    // upper alcove seating
-    sm.AddStation (DPoint3d::From (30, 48), 5);
-    sm.AddStation (DPoint3d::From (40, 48), 8);     // kitchen
+        sm.AddStation (DPoint3d::From (40, 42), 5);    // upper alcove seating
+        sm.AddStation (DPoint3d::From (30, 48), 5);
+        sm.AddStation (DPoint3d::From (40, 48), 8);     // kitchen
 
-    // Walkway. These need to be coupled
-    sm.AddStation (DPoint3d::From (35,15), 8.0);
-    sm.AddStation (DPoint3d::From (45,15), 8.0);
-    sm.AddStation (DPoint3d::From (55,15), 8.0);
-    sm.AddStation (DPoint3d::From (65,15), 8.0);
+        // Walkway. These need to be coupled
+        sm.AddStation (DPoint3d::From (35,15), 8.0);
+        sm.AddStation (DPoint3d::From (45,15), 8.0);
+        sm.AddStation (DPoint3d::From (55,15), 8.0);
+        sm.AddStation (DPoint3d::From (65,15), 8.0);
 
-    sm.SolveSprings (true);
-    Check::SaveTransformed (wall);
-    SaveZones (wall, sm);
+        sm.AddStation (DPoint3d::From (35,65), 8.0);
+        sm.AddStation (DPoint3d::From (45,65), 8.0);
+        sm.AddStation (DPoint3d::From (45,75), 8.0);
+        sm.AddStation (DPoint3d::From (25,70), 8.0);
+
+
+        sm.SolveSprings (doProjection, doLaplace);
+        Check::SaveTransformed (wall);
+        SaveZones (wall, sm);
+        }
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
@@ -1078,7 +1104,7 @@ void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double the
     Stroke (conic, strokes, theta0, theta1, s_numPoints);
     Check::SaveTransformed (strokes);
     }
-#ifdef DoVoronoiHyperbolaTest
+
 TEST(Voronoi,Hyperbolas6)
     {
     bvector<DPoint3d> xyzOuter;
