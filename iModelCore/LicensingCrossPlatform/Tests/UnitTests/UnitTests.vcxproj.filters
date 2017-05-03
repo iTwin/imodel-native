@@ -18,9 +18,15 @@
     <ClCompile Include="Published\TestsHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

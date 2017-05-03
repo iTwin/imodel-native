@@ -7,9 +7,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Published\ClientTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Published\ClientTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
   </ItemGroup>
   <ItemGroup>
@@ -46,7 +48,7 @@
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\Licensing\VendorAPI;$(OutRoot)Winx64\BuildContexts\Licensing\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>
