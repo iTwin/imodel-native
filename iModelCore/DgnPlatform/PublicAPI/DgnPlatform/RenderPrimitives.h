@@ -685,6 +685,15 @@ public:
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
+
+    //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
+    void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
+        {
+        Clear();
+        SetTransform(transform);
+        SetElementId(elemId);
+        m_surfacesOnly = surfacesOnly;
+        }
 };
 
 //=======================================================================================
@@ -800,13 +809,17 @@ protected:
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
 
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0;
+    virtual void _Reset() { }
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
-    DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
     DgnElementId GetElementId() const { return m_accum.GetElementId(); }
+    DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
+
+    DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());
 };
 
 //=======================================================================================
@@ -822,6 +835,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
     DGNPLATFORM_EXPORT Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _Reset() override { m_primitives.clear(); }
 
     void AddTriMesh(TriMeshArgsCR args);
 public:

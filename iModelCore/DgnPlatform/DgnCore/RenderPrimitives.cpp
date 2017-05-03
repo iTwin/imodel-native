@@ -2149,3 +2149,16 @@ DisplayParamsCR GeometryListBuilder::GetDisplayParams(bool ignoreLighting) const
     return m_accum.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::ReInitialize(TransformCR localToWorld, TransformCR accumTf, DgnElementId elemId)
+    {
+    m_accum.ReInitialize(accumTf, elemId);
+    ActivateGraphicParams(GraphicParams(), nullptr);
+    m_createParams.m_placement = localToWorld;
+    m_isOpen = true;
+
+    _Reset();
+    }
+
