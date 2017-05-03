@@ -661,20 +661,25 @@ double TestTrigRoundTrips (double radians0, size_t n,
     }
 
 bool TestYPRRoundTrips (YawPitchRollAngles angle0, size_t numTest,
-        double &angleDrift, double &matrixDrift)
+        double &angleDrift, double &matrixDrift, size_t &numTestBeforeStable)
     {
     RotMatrix matrix0, matrix;
     YawPitchRollAngles angle1, angle = angle0;
     matrix0 = matrix = angle.ToRotMatrix ();
     // hm... there are always to YPR's with equivalent matrix.
     // find the one the class prefers as baseline ...
+    numTestBeforeStable = 0;
     if (!YawPitchRollAngles::TryFromRotMatrix(angle1, matrix))
         return false;
     for (size_t i = 0; i < numTest; i++)
         {
+        numTestBeforeStable++;
         if (!YawPitchRollAngles::TryFromRotMatrix(angle, matrix))
             return false;
+        RotMatrix matrix2 = matrix;
         matrix = angle.ToRotMatrix ();
+        if (matrix.MaxDiff (matrix2) == 0.0)
+            break;
         }
     angleDrift = angle.MaxDiffRadians (angle1);
     matrixDrift = matrix.MaxDiff (matrix0);
@@ -721,6 +726,7 @@ double angleDrift, matrixDrift;
 
 static double s_angleTol = 1.0e-14;
 static double s_anglePrintTol = 6.0e-15;
+static double s_matrixDriftWarningFraction = 0.1;
 static double s_matrixTol = 8.0e-14;
 UsageSums angleDiffs;
 UsageSums matrixDiffs;
@@ -744,10 +750,10 @@ for (size_t i = 0; i < numRotation; i++)
     trigDiffs.Accumulate (e0);
     trigDiffs.Accumulate (e1);
     trigDiffs.Accumulate (e2);
-
-    TestYPRRoundTrips (ypr, numRoundTrip, angleDrift, matrixDrift);
+    size_t numBeforeFailure = 0;
+    TestYPRRoundTrips (ypr, numRoundTrip, angleDrift, matrixDrift, numBeforeFailure);
     if (angleDrift > s_anglePrintTol
-        || matrixDrift > s_matrixTol * 0.01 )
+        || matrixDrift > s_matrixTol * s_matrixDriftWarningFraction )
         {
         GEOMAPI_PRINTF (" Drifting YPR: %.17g %.17g %.17g   (angle drift %.17g)  (matrix drift %.17g)\n",
                 ypr.GetYaw ().Degrees (),
@@ -758,8 +764,8 @@ for (size_t i = 0; i < numRotation; i++)
                 );
         numSuspect ++;
         }
-    Check::True (angleDrift < s_angleTol, "Angle drift in YPR roundtrip");
-    Check::True (matrixDrift < s_matrixTol, "Matrix drift in YPR roundtrip");
+    Check::LessThanOrEqual (angleDrift, s_angleTol, "Angle drift in YPR roundtrip");
+    Check::LessThanOrEqual (matrixDrift, s_matrixTol, "Matrix drift in YPR roundtrip");
     angleDiffs.Accumulate (angleDrift);
     matrixDiffs.Accumulate (matrixDrift);
     }
@@ -801,31 +807,78 @@ GEOMAPI_PRINTF (" (divergedTrig :max %.4lg :mean %.4lg :sdv %.4lg :n %g)\n",
         printf ("(:n %.10g :radians %.16g :d %.4g)\n",
               xyz.z, xyz.x, xyz.y);
         }
-
+}
+TEST(YPR,DriftSuspects)
     {
-    auto ypr = YawPitchRollAngles::FromDegrees (
-            125.84912646501039,
-            -28.059548194294162,
-            -91.115460149719638
-            );
-
-
-    TestYPRRoundTrips (ypr, numRoundTrip, angleDrift, matrixDrift);
-    if (angleDrift > s_angleTol
-            || matrixDrift > s_matrixTol
-            )
+    bvector<YawPitchRollAngles> candidates
         {
-        GEOMAPI_PRINTF (" Drifting YPR: %.17g %.17g %.17g   (drift %.17g)\n",
+        YawPitchRollAngles::FromDegrees (125.84912646501039, -28.059548194294162, -91.115460149719638),
+        YawPitchRollAngles::FromDegrees (-133.02302268659332, -4.7723197644609154, 72.573836118745035),
+        YawPitchRollAngles::FromDegrees (-88.007082666831593, -53.115407922932704, -93.134314064195678),
+        YawPitchRollAngles::FromDegrees (-103.19095628007744, -175.28868466299173, -126.37517965389067),
+        YawPitchRollAngles::FromDegrees (-133.54650112974241, -1.9423659932863306, 77.724764566984263),
+        YawPitchRollAngles::FromDegrees (30,60,45),
+        YawPitchRollAngles::FromDegrees (-30,60,45),
+        YawPitchRollAngles::FromDegrees (30,-60,45),
+        YawPitchRollAngles::FromDegrees (30,60,-45),
+        YawPitchRollAngles::FromDegrees (-30,-60,45),
+        YawPitchRollAngles::FromDegrees (-30,60,-45),
+        YawPitchRollAngles::FromDegrees (30,-60,-45),
+        YawPitchRollAngles::FromDegrees (-30,-60,-45),
+        YawPitchRollAngles::FromDegrees (-3.546501, -1.9423, 7.724),
+        YawPitchRollAngles::FromDegrees (3.1,6.1,4.2897),
+        YawPitchRollAngles::FromDegrees (-3.1,6.1,4.2897),
+        YawPitchRollAngles::FromDegrees (3.1,-6.1,4.2897),
+        YawPitchRollAngles::FromDegrees (3.1,6.1,-4.2897),
+        YawPitchRollAngles::FromDegrees (-3.1,-6.1,4.2897),
+        YawPitchRollAngles::FromDegrees (-3.1,6.1,-4.2897),
+        YawPitchRollAngles::FromDegrees (3.1,-6.1,-4.2897),
+        YawPitchRollAngles::FromDegrees (-3.1,-6.1,-4.2897)
+        };
+    static size_t numRoundTrip = 200;
+    for (auto ypr : candidates)
+        {
+        double angleDrift, matrixDrift;
+        size_t numTestsRun;
+        TestYPRRoundTrips (ypr, numRoundTrip, angleDrift, matrixDrift, numTestsRun);
+        GEOMAPI_PRINTF (" Drifting YPR: %.17g %.17g %.17g   (angle drift %.17g) (matrix drift %.17g) (numTestsRun %d)\n",
                 ypr.GetYaw ().Degrees (),
                 ypr.GetPitch ().Degrees (),
                 ypr.GetRoll ().Degrees (),
-                angleDrift
+                angleDrift,
+                matrixDrift,
+                (int)numTestsRun
                 );
         }
     }
 
-}
-
+TEST(YPR,DriftSuspectsSingleAxis)
+    {
+    static size_t numTheta = 180 * 257; // hit integer degrees exactly (within IEEE precision), and divide into a prime number of parts.
+    static size_t numRoundTrip = 200;
+    UsageSums num1, num2, num3;
+    UsageSums angleDrift1, angleDrift2, angleDrift3;
+    
+    for (size_t i = 0; i <= numTheta; i++)
+        {
+        double f = i / (double)numTheta;
+        double degrees = DoubleOps::Interpolate (-180.0, f, 180.0);
+        auto ypr0 = YawPitchRollAngles::FromDegrees (degrees, 0, 0);
+        auto ypr1 = YawPitchRollAngles::FromDegrees (0, degrees, 0);
+        auto ypr2 = YawPitchRollAngles::FromDegrees (0, 0, degrees);
+        double angleDrift, matrixDrift;
+        size_t numTestsRun;
+        TestYPRRoundTrips (ypr0, numRoundTrip, angleDrift, matrixDrift, numTestsRun);
+        num1.Accumulate (numTestsRun);
+        angleDrift1.Accumulate (angleDrift);
+        TestYPRRoundTrips (ypr1, numRoundTrip, angleDrift, matrixDrift, numTestsRun);
+        num2.Accumulate (numTestsRun);
+        angleDrift2.Accumulate (angleDrift);
+        TestYPRRoundTrips (ypr2, numRoundTrip, angleDrift, matrixDrift, numTestsRun);
+        num3.Accumulate (numTestsRun);
+        angleDrift3.Accumulate (angleDrift);
+        }
+    }
 void TestYPROrder (double yawDegrees, double pitchDegrees, double rollDegrees)
     {
     RotMatrix Y = RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0,0,1), Angle::DegreesToRadians (yawDegrees));
