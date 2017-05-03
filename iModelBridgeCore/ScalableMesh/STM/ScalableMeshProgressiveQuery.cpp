@@ -399,6 +399,27 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
 //NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
 static bool s_delayJoinThread = true;
 
+void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
+    {
+    
+    bvector<DRange3d> tileRanges;
+
+    for (auto& loadNode : toLoadNodes)
+        {
+        //tileRanges.push_back(loadNode->GetContentExtent());
+        tileRanges.push_back(loadNode->GetNodeExtent());
+        }
+    
+    ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());    
+
+    if (cancelLastPreload)
+        dataStore->CancelPreloadData();
+
+    dataStore->PreloadData(tileRanges);
+    }
+
+static bool s_doPreLoad = false;
+
 class QueryProcessor
     {
 public:
@@ -561,8 +582,17 @@ private:
 
                 if (nodePtr != 0)
                     {
-                    processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
-                    processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
+                    ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
+                    processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();                   
+
+                    if (s_doPreLoad)
+                        {                        
+                        processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &producedFoundNodes, threadId);
+                        }
+                    else
+                        {
+                        processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
+                        }
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].unlock();
 
                     processingQueryPtr->m_searchingNodeMutexes[threadId].lock();                                    
@@ -572,6 +602,16 @@ private:
                     if (!processingQueryPtr->m_isCancel)
                         {
                         processingQueryPtr->m_nodeQueryProcessors[threadId]->DoQuery();
+
+                        if (producedFoundNodes.GetNodes().size() > 0 && s_doPreLoad)
+                            {                                         
+                            ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), producedFoundNodes.GetNodes(), false);
+
+                            for (auto& node : producedFoundNodes.GetNodes())
+                                {                                
+                                processingQueryPtr->m_producedFoundNodes.AddNode(node);
+                                }                            
+                            }                                                                        
 
                         processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
                         processingQueryPtr->m_nodeQueryProcessors[threadId] = 0;
@@ -936,7 +976,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     {     
     if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false);
+    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || node->GetNbPoints() == 0);
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
@@ -1391,7 +1431,6 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
     }
 
 static bool s_loadNodeNearCamFirst = true;
-static bool s_doPreLoad = false;
     
 void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
@@ -1445,18 +1484,9 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     
     if (toLoadNodes.size() > 0 && s_doPreLoad)
         {         
-        bvector<DRange3d> tileRanges;
+        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
 
-        for (auto& loadNode : toLoadNodes)
-            {
-            //tileRanges.push_back(loadNode->GetContentExtent());
-            tileRanges.push_back(loadNode->GetNodeExtent());
-            }
-    
-        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));    
-        ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore()); 
-        dataStore->CancelPreloadData();
-        dataStore->PreloadData(tileRanges);
+        ScalableMeshProgressiveQueryEngine::PreloadData(smP, toLoadNodes, true);
         }
     //PRE
 

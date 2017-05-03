@@ -598,8 +598,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     bvector<DPoint3d> geomData;
     for (size_t g = 0; g < meshGraphs.size(); ++g)
         {
-        int* pointsInTile = new int[pts[g].size()];
-        for (size_t t = 0; t < pts[g].size(); t++) pointsInTile[t] = -1;
+        bvector<int> pointsInTile(pts[g].size(), -1);
         MTGMask visitedMask = meshGraphs[g]->GrabMask();
         std::vector<int> indicesForFace;
         int newPtsIndex = 0;
@@ -679,7 +678,6 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
                 }
             }
         pts[g].resize(newPtsIndex);
-        delete[] pointsInTile;
         }
     IScalableMeshMeshPtr smPtr = IScalableMeshMesh::Create(geomData.size(), &(geomData[0]), faceIndices.size(), &faceIndices[0], 0, 0, 0, 0, 0, 0);
     ScalableMeshMesh* meshP = (ScalableMeshMesh*)smPtr.get();
@@ -781,8 +779,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     geometryData[i].y = stitchedPoints[i].y;
     geometryData[i].z = stitchedPoints[i].z;
     }*/
-    int* pointsInTile = new int[stitchedPoints.size()];
-    for (size_t i = 0; i < stitchedPoints.size(); i++) pointsInTile[i] = -1;
+    bvector<int> pointsInTile(stitchedPoints.size(), -1);
     MTGMask visitedMask = meshGraphStitched->GrabMask();
     std::vector<int> indicesForFace;
     int newPtsIndex = 0;
@@ -868,7 +865,6 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
             }
         }
     stitchedPoints.resize(newPtsIndex);
-    delete[] pointsInTile;
     IScalableMeshMeshPtr smPtr = IScalableMeshMesh::Create(newPtsIndex, &(geomData[0]), faceIndices.size(), &faceIndices[0], 0, 0, 0,0,0,0);
     ScalableMeshMesh* meshP = (ScalableMeshMesh*)smPtr.get();
     std::string str;

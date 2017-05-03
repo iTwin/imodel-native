@@ -2394,10 +2394,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::AddCli
     uint64_t id = -1;
     if (bsiGeom_getXYPolygonArea(&points[0], (int)points.size()) < 0) //need to flip polygon so it's counterclockwise
         {
-        DPoint3d* flippedPts = new DPoint3d[points.size()];
+        bvector<DPoint3d> flippedPts(points.size());
+        
         for (size_t pt = 0; pt < points.size(); ++pt) flippedPts[pt] = points[points.size() - 1 - pt];
-        id = GetClipRegistry()->AddClip(flippedPts, points.size()) + 1;
-        delete[] flippedPts;
+
+        id = GetClipRegistry()->AddClip(flippedPts.data(), flippedPts.size()) + 1;
         }
     else id = GetClipRegistry()->AddClip(&points[0], points.size()) + 1;
     bool wasClipAdded = AddClip(id, false);
