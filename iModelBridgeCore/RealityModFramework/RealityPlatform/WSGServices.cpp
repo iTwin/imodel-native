@@ -427,10 +427,11 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                03/2017
 //-------------------------------------------------------------------------------------
-NavNode::NavNode(Utf8String schema, Utf8String id, Utf8String typeSystem, Utf8String className)
+NavNode::NavNode(Utf8StringCR schema, Utf8String id, Utf8StringCR typeSystem, Utf8StringCR className)
     : m_typeSystem(typeSystem), m_schemaName(schema), m_rootId(id), m_instanceId(id), m_className(className)
     {
-    m_rootNode = m_navString = Utf8PrintfString("%s--%s-RealityData-%s", m_typeSystem, m_schemaName, m_instanceId);
+    id.ReplaceAll("-","--");
+    m_rootNode = m_navString = Utf8PrintfString("%s--%s-RealityData-%s", m_typeSystem, m_schemaName, id);
     }
 
 //-------------------------------------------------------------------------------------
