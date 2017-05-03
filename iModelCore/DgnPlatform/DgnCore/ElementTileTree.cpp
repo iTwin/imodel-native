@@ -422,7 +422,7 @@ struct GeometrySelector2d
 //=======================================================================================
 struct TileBuilder : GeometryListBuilder
 {
-private:
+protected:
     TileContext&        m_context;
     double              m_rangeDiagonalSquared;
 
@@ -430,10 +430,25 @@ private:
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+
+    TileBuilder(TileContext& context, DRange3dCR range);
 public:
     TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params);
 
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct TileSubGraphic : TileBuilder
+{
+    DgnGeometryPartCPtr m_input;
+    GeomPartPtr         m_output;
+
+    TileSubGraphic(TileContext& context, DgnGeometryPartCR part);
+
+    GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
 };
 
 //=======================================================================================
@@ -489,7 +504,7 @@ public:
 
     void ProcessElement(DgnElementId elementId, double diagonalRangeSquared);
     Result OutputGraphics();
-    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams);
 
     RootR GetRoot() const { return m_root; }
 
@@ -549,6 +564,7 @@ public:
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
     GraphicPtr FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder);
+    GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -558,6 +574,15 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
     : GeometryListBuilder(params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
+    : GeometryListBuilder(CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    {
+    // for TileSubGraphic...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -589,9 +614,10 @@ void TileBuilder::_AddSubGraphic(GraphicR mainGraphic, TransformCR subToGraphic,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP clip) const
     {
-    // ###TODO_ELEMENT_TILE
     CreateParams params(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), tf));
-    return new TileBuilder(m_context, GetElementId(), m_rangeDiagonalSquared, params);
+    RefCountedPtr<TileBuilder> subGf = new TileBuilder(m_context, GetElementId(), m_rangeDiagonalSquared, params);
+    subGf->ActivateGraphicParams(GetGraphicParams(), GetGeometryParams());
+    return subGf.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,6 +626,23 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
 GraphicPtr TileBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
     return m_context.FinishGraphic(accum, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCR part)
+    : TileBuilder(context, part.GetBoundingBox()), m_input(&part)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr TileSubGraphic::_FinishGraphic(GeometryAccumulatorR accum)
+    {
+    return m_context.FinishSubGraphic(accum, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1457,6 +1500,17 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
+    {
+    DgnGeometryPartCR input = *subGf.m_input;
+    subGf.m_output = GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries());
+    m_root.AddGeomPart(input.GetId(), *subGf.m_output);
+    return m_finishedGraphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquared)
@@ -1488,9 +1542,8 @@ void TileContext::PushGeometry(GeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
+void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams)
     {
-#if defined(TODO_ELEMENT_TILE)
     GeomPartPtr tileGeomPart = m_root.GetGeomPart(partId);
     if (tileGeomPart.IsNull())
         {
@@ -1498,17 +1551,13 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
         if (geomPart.IsNull())
             return;
 
-        Transform inverseLocalToWorld;
-        inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
-
-        auto partBuilder = graphic.CreateSubGraphic(inverseLocalToWorld);
+        RefCountedPtr<TileSubGraphic> partBuilder = new TileSubGraphic(*this, *geomPart);
         GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
-        collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
+        collection.Draw(*partBuilder, *this, geomParams, false, geomPart.get());
 
-        if (viewContext._CheckStop())
-            return;
-
-        m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(geomPart->GetBoundingBox(), m_geometryListBuilder.GetGeometries())));
+        // Apparently _AddSubGraphic() caller does not call Finish()?
+        partBuilder->Finish();
+        tileGeomPart = partBuilder->m_output;
         }
 
     DRange3d range;
@@ -1516,9 +1565,8 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
     Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     tf.Multiply(range, tileGeomPart->GetRange());
 
-    DisplayParamsCPtr displayParams = DisplayParams::Create(graphicParams, geomParams);
+    DisplayParamsCPtr displayParams = DisplayParams::Create(graphicParams, &geomParams);
     m_geometries.push_back(Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), *displayParams, GetDgnDb()));
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1553,7 +1601,7 @@ void TileContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     {
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
-    AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
+    AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
