@@ -92,7 +92,7 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
     
     if (columnsRequired <= (sharedColumnThatCanBeReused + sharedColumnThatCanBeCreated))
         {
-        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(columnsRequired, sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(sharedColumnThatCanBeReused, sharedColumnThatCanBeCreated));
         }
     else
         {
@@ -103,7 +103,7 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
             return ERROR;
             }
 
-        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(columnsRequired, *overflowTable));
+        m_columnReservationInfo = std::unique_ptr<ColumnReservationInfo>(new ColumnReservationInfo(*overflowTable));
         }
 
     RemoveCompoundFilter();

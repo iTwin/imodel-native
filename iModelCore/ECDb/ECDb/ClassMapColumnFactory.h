@@ -96,20 +96,17 @@ struct ClassMapColumnFactory final : NonCopyableClass
             {
             private:
                 int m_createdColumnCount;
-                int m_reservedColumnsCount;
                 int m_reusedColumnCount;
                 DbTable* m_overflowTable;
             public:
-                ColumnReservationInfo(int reservedColumns, int reusedColumn, int createdColumns)
-                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn), m_overflowTable(nullptr)
+                ColumnReservationInfo(int reusedColumn, int createdColumns)
+                    : m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn), m_overflowTable(nullptr)
                     {}
 
-                ColumnReservationInfo(int reservedColumns, DbTable& overflowTable)
-                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(0), m_reusedColumnCount(0), m_overflowTable(&overflowTable)
+                ColumnReservationInfo(DbTable& overflowTable)
+                    : m_createdColumnCount(0), m_reusedColumnCount(0), m_overflowTable(&overflowTable)
                     {}
                 ~ColumnReservationInfo(){}
-                int GetReservedColumnCount() const { m_reservedColumnsCount; }
-                int GetCreatedColumnCount() const { m_createdColumnCount; }
                 int GetReusedColumnCount() const { return m_reusedColumnCount; }
                 DbTable* GetOverflowTable () const { return m_overflowTable; }
                 void AllocateNew() { BeAssert(m_createdColumnCount > 0);  m_createdColumnCount--; }
