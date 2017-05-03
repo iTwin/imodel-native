@@ -356,14 +356,14 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     std::set<DbTable const*> referencedEndTables = GetReferencedEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables() : classMappingInfo.GetTargetTables();
     BeAssert(referencedEndTables.size() == 1);
     DbTable const* referencedTable = *referencedEndTables.begin();
-    DbColumn const* referencedTablePKCol = referencedTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* referencedTablePKCol = referencedTable->FindFirst(DbColumn::Kind::ECInstanceId);
     if (referencedTablePKCol == nullptr)
         {
         BeAssert(referencedTablePKCol != nullptr);
         return ERROR;
         }
 
-    DbColumn const* referencedTableClassIdCol = referencedTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* referencedTableClassIdCol = referencedTable->FindFirst(DbColumn::Kind::ECClassId);
     for (DbColumn const* fkCol : columns.GetFkECInstanceIdColumns())
         {
         DbTable& fkTable = fkCol->GetTableR();
@@ -377,7 +377,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
         columns.AddFkRelECClassIdColumn(*relClassIdCol);
 
-        DbColumn const* fkTableClassIdCol = fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+        DbColumn const* fkTableClassIdCol = fkTable.FindFirst(DbColumn::Kind::ECClassId);
         //If ForeignEndClassId column is missing create a virtual one
         if (fkTableClassIdCol == nullptr)
             {
@@ -406,7 +406,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 }
             }
 
-        columns.AddECInstanceIdColumn(*fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId));
+        columns.AddECInstanceIdColumn(*fkTable.FindFirst(DbColumn::Kind::ECInstanceId));
         columns.AddECClassIdColumn(*fkTableClassIdCol);
 
         if (referencedTableClassIdCol != nullptr)
@@ -442,7 +442,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             }
 
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
-        if (fkTable.GetParentOfJoinedTable() != nullptr)
+        if (fkTable.GetBaseTable() != nullptr)
             {
             if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade ||
                 (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relClass.GetStrength() == StrengthType::Embedding))
@@ -494,7 +494,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
         {
         for (DbTable const* foreignEndTable : foreignEndTables)
             {
-            DbColumn const* pkColumn = foreignEndTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+            DbColumn const* pkColumn = foreignEndTable->FindFirst(DbColumn::Kind::ECInstanceId);
             BeAssert(pkColumn != nullptr);
 
             DbColumn* pkColumnP = const_cast<DbColumn*> (pkColumn);
@@ -1185,13 +1185,13 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         //Create FK from Source-Primary to LinkTable
         DbTable const* sourceTable = *relationClassMapInfo.GetSourceTables().begin();
         DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        DbColumn const* referencedColumn = sourceTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
         //Create FK from Target-Primary to LinkTable
         DbTable const* targetTable = *relationClassMapInfo.GetTargetTables().begin();
         fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        referencedColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
 
@@ -1291,7 +1291,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     else
         {
         //! We will use JOIN to otherTable to get the ECClassId (if any)
-        endECClassIdColumn = const_cast<DbColumn*>(foreignEndClassMap->GetPrimaryTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId));
+        endECClassIdColumn = const_cast<DbColumn*>(foreignEndClassMap->GetPrimaryTable().FindFirst(DbColumn::Kind::ECClassId));
         if (endECClassIdColumn == nullptr)
             endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Virtual);
         }
@@ -1792,9 +1792,28 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
     //Create shared column
     ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
-    ECPropertyCP constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()),
-        m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
+    ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
+    if (rootClassMap->GetColumnFactory().UsesSharedColumnStrategy())
+        {
+        auto itor = m_sharedBlock.find(rootClassMap);
+        if (itor == m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            m_sharedBlock.insert(rootClassMap);
+            itor = m_sharedBlock.end();
+            }
+
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
+        if (itor != m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().EndSharedColumnBlock();
+            m_sharedBlock.erase(itor);
+            }
+
+        return col;
+        }
+
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1825,8 +1844,27 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
     //ECDB_RULE: Note we are using ECClassId here its not a mistake.
     ECPropertyCP relECClassIdProp = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()),
-                                m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+    if (rootClassMap->GetColumnFactory().UsesSharedColumnStrategy())
+        {
+        auto itor = m_sharedBlock.find(rootClassMap);
+        if (itor == m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            m_sharedBlock.insert(rootClassMap);
+            itor = m_sharedBlock.end();
+            }
+
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+        if (itor != m_sharedBlock.end())
+            {
+            rootClassMap->GetColumnFactory().EndSharedColumnBlock();
+            m_sharedBlock.erase(itor);
+            }
+
+        return col;
+        }
+
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1843,7 +1881,10 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
         if (classMap != nullptr)
             {
-            m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
+            m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()] = classMap;
+            if (DbTable* overflowTable = classMap->GetOverflowTable())
+                m_constraintClassMaps[overflowTable] = classMap;
+
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
             }

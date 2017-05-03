@@ -104,11 +104,13 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 RelationshipClassEndTableMap const& m_relMap;
                 RelationshipMappingInfo const& m_relInfo;
                 bmap<DbTable const*, ClassMapCP> m_constraintClassMaps;
+                bset<ClassMapCP> m_sharedBlock;
                 void Initialize();
 
             public:
                 explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);
                 ~ColumnFactory(){}
+
                 DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, int position);
                 DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
         

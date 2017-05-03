@@ -62,7 +62,8 @@ public:
     ~DbSchemaNameGenerator() {}
 
     void Initialize(int lastId) { m_lastId = lastId; }
-
+    void SetSeed(int seed) { m_lastId = seed; }
+    int GetSeed() const { return m_lastId; }
     void Generate(Utf8StringR generatedName)
         {
         m_lastId++;
@@ -345,8 +346,9 @@ public:
     enum class Type
         {
         Primary = 0,
-        Joined = 1,
-        Existing = 2
+        Joined = 1, //! Derived Table cannot exist without a primary table
+        Existing = 2, 
+        Overflow =3 //! Derived table cannot exist without a primary or joined table
         };
 
     struct EditHandle : NonCopyableClass
@@ -367,7 +369,7 @@ public:
 private:
     DbTableId m_id;
     Utf8String m_name;
-    DbTable const* m_parentOfJoinedTable;
+    DbTable const* m_baseTable;
     DbSchema& m_dbSchema;
     DbSchemaNameGenerator m_sharedColumnNameGenerator;
     Type m_type;
@@ -382,20 +384,20 @@ private:
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
     EditHandle m_editHandle;
-    std::vector<DbTable const*> m_joinedTables;
+    std::vector<DbTable const*> m_derviedTables;
 
     DbColumn* CreateColumn(DbColumnId, Utf8StringCR name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* baseTable);
 
     ~DbTable() {}
 
     void InitializeSharedColumnNameGenerator(int existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
     //!If this is a joined table the method returns the parent of the joined table, aka primary table.
     //!Otherwise the method returns nullptr
-    DbTable const* GetParentOfJoinedTable() const { return m_parentOfJoinedTable; }
-
+    DbTable const* GetBaseTable() const { return m_baseTable; }
+    BentleyStatus Validate(bool assert) const;
     DbTableId GetId() const { return m_id; }
     void SetId(DbTableId id) { m_id = id; }
     Utf8StringCR GetName() const { return m_name; }
@@ -413,22 +415,24 @@ public:
 
         return m_exclusiveRootECClassId; 
         }
+    DbSchemaNameGenerator const& GetSharedColumnNameGenerator() const { return m_sharedColumnNameGenerator; }
+    DbSchemaNameGenerator & GetSharedColumnNameGeneratorR()  { return m_sharedColumnNameGenerator; }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
-    std::vector<DbTable const*> const& GetJoinedTables() const { return m_joinedTables; }
-
+    std::vector<DbTable const*> const& GetDerivedTables() const { return m_derviedTables; }
+    bool IsDerivedTable() const { return m_type == Type::Joined || m_type == Type::Overflow; }
     BentleyStatus CreateTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);
     std::vector<const DbTrigger*> GetTriggers()const;
     DbColumn const* FindColumn(Utf8CP name) const;
     DbColumn* FindColumnP(Utf8CP name) const;
     DbColumn const& GetECClassIdColumn() const { BeAssert(m_classIdColumn != nullptr); return *m_classIdColumn; }
     bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
-    BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
-    DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
+    const std::vector<DbColumn const*> FindAll(PersistenceType) const;
+    const std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
+    DbColumn const* FindFirst(DbColumn::Kind) const;
     BentleyStatus DeleteColumn(DbColumn&);
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
@@ -438,6 +442,7 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
+    DbTable const* FindOverflowTable() const;
     //! Only changing to persistence type is supported in limited conditions
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
@@ -530,6 +535,8 @@ public:
     //! Create a table with a given name or if name is null a name will be generated
     DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateOverflowTable(DbTable const& baseTable);
+    DbTable* CreateJoinedTable(DbTable const& baseTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
     DbTable const* FindTable(DbTableId id) const;

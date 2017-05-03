@@ -552,7 +552,7 @@ DbMap::ClassMapsByTable DbMap::GetClassMapsByTable() const
             continue;
 
         DbTable* primaryTable = &entry.second->GetPrimaryTable();
-        DbTable* joinedTable = &entry.second->GetJoinedTable();
+        DbTable* joinedTable = &entry.second->GetJoinedOrPrimaryTable();
         map[primaryTable].insert(entry.second.get());
         if (primaryTable != joinedTable)
             map[joinedTable].insert(entry.second.get());
@@ -696,7 +696,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
                     return ERROR;
                     }
 
-                DbTable const& joinedOrSingleTable = derivedClassMap->GetJoinedTable();
+                DbTable const& joinedOrSingleTable = derivedClassMap->GetJoinedOrPrimaryTable();
                 if (alreadyProcessedTables.find(&joinedOrSingleTable) != alreadyProcessedTables.end())
                     continue;
 
@@ -821,7 +821,7 @@ size_t DbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relation
     for (ClassMap const* classMap : classMaps)
         {
         if (abstractEndPoint)
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedOrPrimaryTable());
         else
             tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
         }

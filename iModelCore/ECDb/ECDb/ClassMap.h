@@ -17,6 +17,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
 
+/* ----------------Required Refactor--------------------------------------
+struct ClassMap
+    {};
+struct IRelationshipClassMap
+    {};
+struct ForeignKeyRelationshipClassMap :ClassMap, IRelationshipClassMap
+    {};
+struct SingleTableClassMap :ClassMap
+    {};
+struct EntityClassMap :SingleTableClassMap
+    {};
+struct LinkTableRelationshipClassMap :SingleTableClassMap, IRelationshipClassMap
+    {};
+*/
+
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
@@ -77,7 +93,7 @@ struct ClassMap : RefCountedBase
         enum class PropertyMapInheritanceMode
             {
             NotInherited, //!< indicates that base property map is not inherited, but created from scratch
-            Clone //! inherited property maps are cloned from the base class property map
+            Clone //! inherited property maps areGet cloned from the base class property map
             };
 
         struct TablePerHierarchyHelper final
@@ -158,7 +174,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
-        void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
+        void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
 
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
@@ -178,8 +194,58 @@ struct ClassMap : RefCountedBase
         Type GetType() const { return m_type; }
         ClassMapColumnFactory const& GetColumnFactory(bool refresh = false) const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
-        DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
+        
+        DbTable& GetPrimaryTable() const 
+            { 
+            DbTable* nulltable = nullptr;
+            if (GetType() == Type::RelationshipEndTable)
+                return *m_tables.front();
+
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing)
+                    {
+                    return *table;
+                    }
+                }
+
+            BeAssert(false);
+            return *nulltable;
+            }
+
+        DbTable& GetJoinedOrPrimaryTable() const 
+            {
+            //if (GetType() == Type::RelationshipEndTable)
+            //    {
+            //    DbTable* nulltable = nullptr;
+            //    BeAssert(false);
+            //    return *nulltable;
+            //    }
+
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Joined)
+                    {
+                    return *table;
+                    }
+                }
+
+            return GetPrimaryTable();
+            }
+
+        DbTable* GetOverflowTable() const
+            {
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Overflow)
+                    {
+                    return table;
+                    }
+                }
+
+            return nullptr;
+            }
+
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
         UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
@@ -196,7 +262,7 @@ struct ClassMap : RefCountedBase
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         DbTable const* ExpectingSingleTable() const;
-
+        BentleyStatus SetOverflowTable(DbTable& overflowTable);
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 

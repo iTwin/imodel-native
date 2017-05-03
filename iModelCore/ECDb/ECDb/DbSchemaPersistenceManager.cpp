@@ -116,8 +116,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    std::vector<DbColumn const*> columns;
-    table.GetFilteredColumnList(columns, PersistenceType::Physical);
+    const std::vector<DbColumn const*> columns = table.FindAll(PersistenceType::Physical);
     if (columns.empty())
         {
         BeAssert(false && "Table have no persisted columns");
@@ -228,8 +227,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         }
 
     //Create a fast hash set of in-memory column list;
-    std::vector<DbColumn const*> columns;
-    table.GetFilteredColumnList(columns, PersistenceType::Physical);
+    const std::vector<DbColumn const*> columns = table.FindAll( PersistenceType::Physical);
 
     std::vector<DbColumn const*> newColumns;
     //compute new columns;

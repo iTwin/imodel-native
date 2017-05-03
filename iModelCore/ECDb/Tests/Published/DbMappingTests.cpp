@@ -3766,22 +3766,23 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>");
-    m_ecdb.SaveChanges();
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
+    m_ecdb.SaveChanges();
 
-    geometricElement2dExpectedColCount++;
-    geometricElement3dExpectedColCount++;
+    int geometricElement2dOverflowExpectedColCount = 3;
+    int geometricElement3dOverflowExpectedColCount = 3;
     const int sub4ExpectedColCount = 3;
 
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
-
     AssertColumnCount(ecdb, testItems, "after second schema import");
 
     SchemaItem thirdSchema(
@@ -3800,13 +3801,14 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
     ASSERT_FALSE(asserted);
     m_ecdb.SaveChanges();
     
-    geometricElement3dExpectedColCount++;
-
+    geometricElement3dOverflowExpectedColCount+=2;
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
 
     AssertColumnCount(ecdb, testItems, "after third schema import");
@@ -7472,7 +7474,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                     "    </ECEntityClass>"
                                 "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    GetECDb().SaveChanges();
 
     bvector<Utf8String> actualColNames;
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Base"));
@@ -7504,17 +7506,26 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 
     actualColNames.clear();
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
-    ASSERT_EQ(5, actualColNames.size()) << "ts_Sub2Sub2";
+    ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("sc1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("sc2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc3", actualColNames[4].c_str()) << "ts_Sub2Sub2";
 
     Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc2] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc3] BLOB,")) << tsSub2Sub2Ddl.c_str();
+
+    actualColNames.clear();
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
+    ASSERT_EQ(3, actualColNames.size()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
+
+    Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(ecdb, "ts_Sub2Sub2_Overflow");
+    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[sc64] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
+
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -9715,5 +9726,173 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
 
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsiMethod                                      Affan Khan                  04/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(DbMappingTestFixture, OverflowTableTest)
+        {
+        SchemaItem testItem = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="B1" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>20</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P01" typeName="point3d" />
+                <ECProperty propertyName="P02" typeName="point3d" />
+                <ECProperty propertyName="P03" typeName="point3d" />
+                <ECProperty propertyName="P04" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B2" modifier="None" >
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName="P11" typeName="point3d" />
+                <ECProperty propertyName="P12" typeName="point3d" />
+                <ECProperty propertyName="P13" typeName="point3d" />
+                <ECProperty propertyName="P14" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B3" modifier="None" >
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName="P21" typeName="point3d" />
+                <ECProperty propertyName="P22" typeName="point3d" />
+                <ECProperty propertyName="P23" typeName="point3d" />
+                <ECProperty propertyName="P24" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B4" modifier="None" >
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName="P31" typeName="point3d" />
+                <ECProperty propertyName="P32" typeName="point3d" />
+                <ECProperty propertyName="P33" typeName="point3d" />
+                <ECProperty propertyName="P34" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B5" modifier="None" >
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName="P41" typeName="point3d" />
+                <ECProperty propertyName="P42" typeName="point3d" />
+                <ECProperty propertyName="P43" typeName="point3d" />
+                <ECProperty propertyName="P44" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B6" modifier="None" >
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName="P51" typeName="point3d" />
+                <ECProperty propertyName="P52" typeName="point3d" />
+                <ECProperty propertyName="P53" typeName="point3d" />
+                <ECProperty propertyName="P54" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B7" modifier="None" >
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName="P61" typeName="point3d" />
+                <ECProperty propertyName="P62" typeName="point3d" />
+                <ECProperty propertyName="P63" typeName="point3d" />
+                <ECProperty propertyName="P64" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B8" modifier="None" >
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName="P71" typeName="point3d" />
+                <ECProperty propertyName="P72" typeName="point3d" />
+                <ECProperty propertyName="P73" typeName="point3d" />
+                <ECProperty propertyName="P74" typeName="point3d" />
+            </ECEntityClass>
+        </ECSchema>)xml", true);
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb");
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, testItem);
+        ecdb.Schemas().CreateClassViewsInDb();
+
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsiMethod                                      Affan Khan                  04/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
+        {
+        SchemaItem testItem = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="B1" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <SharedColumnCount>20</SharedColumnCount>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                    <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                </ECCustomAttributes>
+                <ECProperty propertyName="P01" typeName="point3d" />
+                <ECProperty propertyName="P02" typeName="point3d" />
+                <ECProperty propertyName="P03" typeName="point3d" />
+                <ECProperty propertyName="P04" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B2" modifier="None" >
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName="P11" typeName="point3d" />
+                <ECProperty propertyName="P12" typeName="point3d" />
+                <ECProperty propertyName="P13" typeName="point3d" />
+                <ECProperty propertyName="P14" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B3" modifier="None" >
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName="P21" typeName="point3d" />
+                <ECProperty propertyName="P22" typeName="point3d" />
+                <ECProperty propertyName="P23" typeName="point3d" />
+                <ECProperty propertyName="P24" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B4" modifier="None" >
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName="P31" typeName="point3d" />
+                <ECProperty propertyName="P32" typeName="point3d" />
+                <ECProperty propertyName="P33" typeName="point3d" />
+                <ECProperty propertyName="P34" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B5" modifier="None" >
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName="P41" typeName="point3d" />
+                <ECProperty propertyName="P42" typeName="point3d" />
+                <ECProperty propertyName="P43" typeName="point3d" />
+                <ECProperty propertyName="P44" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B6" modifier="None" >
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName="P51" typeName="point3d" />
+                <ECProperty propertyName="P52" typeName="point3d" />
+                <ECProperty propertyName="P53" typeName="point3d" />
+                <ECProperty propertyName="P54" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B7" modifier="None" >
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName="P61" typeName="point3d" />
+                <ECProperty propertyName="P62" typeName="point3d" />
+                <ECProperty propertyName="P63" typeName="point3d" />
+                <ECProperty propertyName="P64" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B8" modifier="None" >
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName="P71" typeName="point3d" />
+                <ECProperty propertyName="P72" typeName="point3d" />
+                <ECProperty propertyName="P73" typeName="point3d" />
+                <ECProperty propertyName="P74" typeName="point3d" />
+            </ECEntityClass>
+        </ECSchema>)xml", true);
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb",testItem,3);
+        /*bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, testItem);
+        */
+        ECSqlStatement b1,b2,b3;
+        b3.Prepare(ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
+        b1.Prepare(ecdb, "SELECT * FROM diego.B1"); //Acess B1
+        b2.Prepare(ecdb, "SELECT * FROM diego.B2"); //Access B1, B2
+
+        }
 END_ECDBUNITTESTS_NAMESPACE
  

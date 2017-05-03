@@ -70,8 +70,9 @@ struct ClassMapColumnFactory final : NonCopyableClass
         mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
         mutable std::set<DbColumn const*> m_usedColumnSet;
         bool m_usesSharedColumnStrategy;
+        int m_sharedColumnCount;
         mutable std::vector<ClassMap const*> m_compoundFilter;
-                
+        DbTable* GetOverflowTable() const;
         void Initialize() const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
@@ -91,17 +92,47 @@ struct ClassMapColumnFactory final : NonCopyableClass
 
         DbTable& GetTable() const;
         ECDbCR GetECDb() const;
+        struct ColumnReservationInfo
+            {
+            private:
+                int m_createdColumnCount;
+                int m_reservedColumnsCount;
+                int m_reusedColumnCount;
+                DbTable* m_overflowTable;
+            public:
+                ColumnReservationInfo(int reservedColumns, int reusedColumn, int createdColumns)
+                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn), m_overflowTable(nullptr)
+                    {}
 
+                ColumnReservationInfo(int reservedColumns, DbTable& overflowTable)
+                    :m_reservedColumnsCount(reservedColumns), m_createdColumnCount(0), m_reusedColumnCount(0), m_overflowTable(&overflowTable)
+                    {}
+                ~ColumnReservationInfo(){}
+                int GetReservedColumnCount() const { m_reservedColumnsCount; }
+                int GetCreatedColumnCount() const { m_createdColumnCount; }
+                int GetReusedColumnCount() const { return m_reusedColumnCount; }
+                DbTable* GetOverflowTable () const { return m_overflowTable; }
+                void AllocateNew() { BeAssert(m_createdColumnCount > 0);  m_createdColumnCount--; }
+                void AllocateExisting() { BeAssert(m_reusedColumnCount > 0); m_reusedColumnCount--; }
+                static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
+            };
+
+        mutable std::unique_ptr<ColumnReservationInfo> m_columnReservationInfo;
+        //! This method determine how many avaliable columns is present in current table.
+        //! It presume current table GetTable() is either JoinedTable or PrimaryTable.
+        BentleyStatus TryGetAvaliableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const;
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         //This function either creates a column or grabs an existing column
+        bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
+        BentleyStatus BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter =nullptr, int requiredColumn=0) const;
+        BentleyStatus EndSharedColumnBlock() const;
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
 
 
         void Debug() const;
-        //! Estimate Maximum number of columns required.
-        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
+
     };
 
 

@@ -33,20 +33,51 @@ SystemPropertyMap::PerTableIdPropertyMap const* SystemPropertyMap::FindDataPrope
 
     return nullptr;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+SystemPropertyMap::PerTableIdPropertyMap const* SystemPropertyMap::FindDataPropertyMap(ClassMap const& classMap) const
+    {
+    PerTableIdPropertyMap const* last = nullptr;
+    for (DbTable const* table : classMap.GetTables())
+        {
+        if (PerTableIdPropertyMap const* current = FindDataPropertyMap(*table))
+            {
+            if (last)
+                {
+                BeAssert(false && "DataProperty must belong to one of the table else its a programmer error");
+                return nullptr;
+                }
+            else
+                last = current;
+            }
+        }
 
+    return last;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& columns)
+BentleyStatus SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(SystemPropertyMap& propertyMap, DbColumn const& column)
+    {
+    return propertyMap.Init({&column}, true);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& columns, bool appendMode)
     {
     if (columns.empty())
-        {
-        BeAssert(false && "Columns cannot be empty");
-        return ERROR;
-        }
+    {
+    BeAssert(false && "Columns cannot be empty");
+    return ERROR;
+    }
 
     bset<DbTable const*> doneList;
+    if (appendMode)
+        doneList.insert(begin(m_tables), end(m_tables));
+
     for (DbColumn const* column : columns)
         {
         if ((column->GetType() != DbColumn::Type::Integer && column->GetType() != DbColumn::Type::Any) || doneList.find(&column->GetTable()) != doneList.end())
@@ -73,7 +104,7 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
         m_tables.push_back(&propMap->GetTable());
         m_dataPropMapList.push_back(propMap.get());
         }
-    
+
     return SUCCESS;
     }
 

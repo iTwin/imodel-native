@@ -81,6 +81,8 @@ static_assert(0 == (int) DbTable::Type::Primary, "Persisted enum DbTable::Type h
 static_assert(1 == (int) DbTable::Type::Joined, "Persisted enum DbTable::Type has changed");
 #define SQLVAL_DbTable_Type_Existing "2"
 static_assert(2 == (int) DbTable::Type::Existing, "Persisted enum DbTable::Type has changed");
+#define SQLVAL_DbTable_Type_Overflow "3"
+static_assert(3 == (int) DbTable::Type::Overflow, "Persisted enum DbTable::Type has changed");
 
 //** Enum ECClassType
 #define SQLVAL_ECClassType_Entity "0"

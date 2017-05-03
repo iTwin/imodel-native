@@ -82,7 +82,18 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                 needsToCreateTable = true;
                 }
             else
-                AddTable(tphBaseClassMap->GetJoinedTable());
+                {
+                AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
+                                }
+            }
+
+        for (DbTable* table : GetTables())
+            {
+            if (DbTable const* overflowTable = table->FindOverflowTable())
+                {
+                AddTable(*const_cast<DbTable*>(overflowTable));
+                break;
+                }
             }
         }
 
@@ -99,6 +110,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         AddTable(*table);
         }
 
+    
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
 
@@ -172,16 +184,16 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
-    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
-    if (&baseClassMapJoinedTable == &GetJoinedTable())
+    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedOrPrimaryTable();
+    if (&baseClassMapJoinedTable == &GetJoinedOrPrimaryTable())
         return ClassMappingStatus::Success;
 
-    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* foreignKeyColumn = GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
     PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
-    for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
+    for (DbConstraint const* constraint : GetJoinedOrPrimaryTable().GetConstraints())
         {
         if (constraint->GetType() != DbConstraint::Type::ForeignKey)
             continue;
@@ -197,7 +209,7 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
 
     if (createFKConstraint)
         {
-        if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
+        if (GetJoinedOrPrimaryTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
             return ClassMappingStatus::Error;
         }
 
@@ -373,7 +385,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            DbTable const& table = GetJoinedTable();
+            DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
@@ -408,7 +420,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedOrPrimaryTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
@@ -467,9 +479,9 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
-    std::set<DbTable*> tables;
+    std::set<DbTable*> primaryTables;
     std::set<DbTable*> joinedTables;
-
+    std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
         {
         SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
@@ -483,17 +495,22 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
             {
             if (column->GetTable().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
+            else if (column->GetTable().GetType() == DbTable::Type::Overflow)
+                overflowTables.insert(&column->GetTableR());
             else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
                 {
-                tables.insert(&column->GetTableR());
+                primaryTables.insert(&column->GetTableR());
                 }
             }
         }
-
-    for (DbTable* table : tables)
+    //Orderly add the tables
+    for (DbTable* table : primaryTables)
         AddTable(*table);
 
     for (DbTable* table : joinedTables)
+        AddTable(*table);
+
+    for (DbTable* table : overflowTables)
         AddTable(*table);
 
     BeAssert(!GetTables().empty());
@@ -710,7 +727,56 @@ BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR
     tableName.append("_").append(ecclass.GetName());
     return SUCCESS;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04 / 2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
+    {
+    if (GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy)
+        {
+        BeAssert(GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+        return ERROR;
+        }
 
+    ECInstanceIdPropertyMap* ecInstanceIdPropertyMap = const_cast<ECInstanceIdPropertyMap*>(GetECInstanceIdPropertyMap());
+    ECClassIdPropertyMap* ecClassIdPropertyMap = const_cast<ECClassIdPropertyMap*>(GetECClassIdPropertyMap());
+
+    if (ecInstanceIdPropertyMap == nullptr || ecClassIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    //!Overflow is delay created which mean system property map are not upto day
+    AddTable(overflowTable);
+
+    DbColumn const* ecInstanceIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    if (ecInstanceIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    DbColumn const* ecClassIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECClassId);
+    if (ecClassIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecInstanceIdPropertyMap, *ecInstanceIdColumn) == ERROR)
+        return ERROR;
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
+        return ERROR;
+    
+    for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
+        if (derviedClassMap)
+            const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
+
+    return SUCCESS;
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       10 / 2016
 //------------------------------------------------------------------------------------------
@@ -726,14 +792,14 @@ BentleyStatus ClassMap::MapSystemColumns()
 
     for (DbTable const* table : GetTables())
         {
-        DbColumn const* ecInstanceIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* ecInstanceIdColumn = table->FindFirst(DbColumn::Kind::ECInstanceId);
         if (ecInstanceIdColumn == nullptr)
             {
             BeAssert(false);
             return ERROR;
             }
 
-        DbColumn const* ecClassIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+        DbColumn const* ecClassIdColumn = table->FindFirst(DbColumn::Kind::ECClassId);
         if (ecClassIdColumn == nullptr)
             {
             BeAssert(false);
@@ -830,7 +896,7 @@ DbTable const* ClassMap::ExpectingSingleTable() const
     if (GetTables().size() != 1)
         return nullptr;
 
-    return &GetJoinedTable();
+    return &GetJoinedOrPrimaryTable();
     }
 
 //---------------------------------------------------------------------------------------

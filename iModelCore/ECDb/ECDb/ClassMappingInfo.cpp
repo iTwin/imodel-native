@@ -188,9 +188,9 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
 
     m_tphBaseClassMap = &baseClassMap; //only need to hold the base class map for TPH case
 
-    DbTable const& baseClassJoinedTable = baseClassMap.GetJoinedTable();
+    DbTable const& baseClassJoinedTable = baseClassMap.GetJoinedOrPrimaryTable();
     m_tableName = baseClassJoinedTable.GetName();
-    m_ecInstanceIdColumnName.assign(baseClassJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
+    m_ecInstanceIdColumnName.assign(baseClassJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId)->GetName());
 
     ClassMappingCACache const* baseClassCACache = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(baseClassMap.GetClass());
     if (baseClassCACache == nullptr)
@@ -450,14 +450,14 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
                     }
 
                 if (&baseClassMap->GetPrimaryTable() != &tphBaseClassMap->GetPrimaryTable() ||
-                    &baseClassMap->GetJoinedTable() != &tphBaseClassMap->GetJoinedTable())
+                    &baseClassMap->GetJoinedOrPrimaryTable() != &tphBaseClassMap->GetJoinedOrPrimaryTable())
                     {
                     Issues().Report("ECClass '%s' has two base ECClasses with MapStrategy 'TablePerHierarchy' which don't map to the same tables. "
                                     "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'. "
                                     "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'.",
                                     m_ecClass.GetFullName(), tphBaseClassMap->GetClass().GetFullName(),
-                                    tphBaseClassMap->GetPrimaryTable().GetName().c_str(), tphBaseClassMap->GetJoinedTable().GetName().c_str(),
-                                    baseClassMap->GetClass().GetFullName(), baseClassMap->GetPrimaryTable().GetName().c_str(), baseClassMap->GetJoinedTable().GetName().c_str());
+                                    tphBaseClassMap->GetPrimaryTable().GetName().c_str(), tphBaseClassMap->GetJoinedOrPrimaryTable().GetName().c_str(),
+                                    baseClassMap->GetClass().GetFullName(), baseClassMap->GetPrimaryTable().GetName().c_str(), baseClassMap->GetJoinedOrPrimaryTable().GetName().c_str());
                     return ClassMappingStatus::Error;
                     }
 
@@ -983,7 +983,11 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
     std::set<DbTable const*> tables;
     for (ClassMap const* classMap : classMaps)
         {
-        std::vector<DbTable*> const& classPersistInTables = classMap->GetTables();
+        std::vector<DbTable*> classPersistInTables; ;
+        for (DbTable * table : classMap->GetTables())
+            if (table->GetType() != DbTable::Type::Overflow)
+                classPersistInTables.push_back(table);
+
         if (classPersistInTables.size() == 1)
             {
             tables.insert(classPersistInTables.front());
@@ -992,7 +996,8 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 
         for (DbTable const* table : classPersistInTables)
             {
-            if (DbTable const* primaryTable = table->GetParentOfJoinedTable())
+   
+            if (DbTable const* primaryTable = table->GetBaseTable())
                 {
                 joinedTables[primaryTable].insert(table);
                 tables.insert(table);
@@ -1008,7 +1013,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
         bool isPrimaryTableSelected = tables.find(primaryTable) != tables.end();
         if (ignoreJoinedTables)
             {
-            for (auto childTable : primaryTable->GetJoinedTables())
+            for (auto childTable : primaryTable->GetDerivedTables())
                 tables.erase(childTable);
 
             tables.insert(primaryTable);

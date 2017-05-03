@@ -216,7 +216,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
                 return true;
 
             BeAssert(classMap.GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-            DbTable const& contextTable = classMap.GetJoinedTable();
+            DbTable const& contextTable = classMap.GetJoinedOrPrimaryTable();
             if (!classMap.GetUpdatableViewInfo().HasView() && contextTable.GetPersistenceType() == PersistenceType::Virtual)
                 return true; //if table is virtual and there is no alternative table to use this is a noop.
 

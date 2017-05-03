@@ -205,16 +205,34 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         return itor->second;
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
+    ECClassId mixInId;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement( 
+            "SELECT [CA].[ContainerId] "
+            "FROM   " TABLE_Class " C "
+            "       INNER JOIN " TABLE_CustomAttribute " CA ON [CA].[ClassId] = [C].[Id] "
+            "       INNER JOIN " TABLE_Schema " S ON [S].[Id] = [C].[SchemaId] AND [C].[Name] = 'IsMixin' AND [S].[Name] = 'CoreCustomAttributes' "
+            "WHERE  [CA].[ContainerId] = ? ");
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
+    bool isMixin = (stmt->Step() == BE_SQLITE_ROW);
+    if (isMixin)
+        stmt = m_ecdb.GetCachedStatement(
+            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+            "WHERE ch.BaseClassId=?1 ");
+    else
+        stmt = m_ecdb.GetCachedStatement(
+            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+            "WHERE ch.BaseClassId=?1 AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow);
 
+    BeAssert(stmt != nullptr);
+    stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
