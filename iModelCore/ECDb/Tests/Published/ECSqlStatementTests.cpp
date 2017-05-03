@@ -4851,7 +4851,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ECClassId sub1ClassId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
 #ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[sc2],[sc3],[sc4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[js2],[js3],[js4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
 #else
     expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[Id],ECClassId) VALUES (1.1,:_ecdb_sqlparam_ix1_col1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseId],ECClassId) VALUES (:_ecdb_sqlparam_ix1_col1,:_ecdb_sqlparam_ix1_col2,:_ecdb_sqlparam_ix1_col3,:_ecdb_sqlparam_id_col1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
 #endif

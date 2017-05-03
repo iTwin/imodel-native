@@ -58,12 +58,11 @@ private:
     Utf8String m_format;
 
 public:
+    DbSchemaNameGenerator() :m_format("___%d____"), m_lastId(0) {}
     explicit DbSchemaNameGenerator(Utf8CP format) :m_format(format), m_lastId(0) {}
     ~DbSchemaNameGenerator() {}
 
     void Initialize(int lastId) { m_lastId = lastId; }
-    void SetSeed(int seed) { m_lastId = seed; }
-    int GetSeed() const { return m_lastId; }
     void Generate(Utf8StringR generatedName)
         {
         m_lastId++;

@@ -1388,8 +1388,8 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
     GetECDb().SaveChanges();
 
     assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "IdECClassIdAB");
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 3, 1, "C1IdECClassIdsc1");
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2_Overflow", 3, 1, "C1IdECClassIdsc63");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 3, 1, "C1IdECClassIdjs1");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2_Overflow", 3, 1, "C1IdECClassIdos1");
 
     //Verifying the inserted values for classes C1 and C2
     ECSqlStatement stmt;
@@ -1530,8 +1530,8 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         GetECDb().SaveChanges();
 
         //Verifying values
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1IdECClassIdsc1");
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3_Overflow", 7, 2, "C1IdECClassIdsc63sc64sc65sc66sc67");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1IdECClassIdjs1");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3_Overflow", 7, 2, "C1IdECClassIdos1os2os3os4os5");
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());

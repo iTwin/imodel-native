@@ -2652,33 +2652,33 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    </ECEntityClass>"
         "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    ecdb.SaveChanges();
     std::vector<std::pair<Utf8CP, std::vector<Utf8CP>>> expectedTableLayouts {
             //Base1 hierarchy
             {"ts_Base1", {"Id", "ECClassId", "PropBase1_1", "PropSub1_1"}},
-            {"ts_Sub11", {"Base1Id", "ECClassId", "sc1"}},
-            {"ts_Sub12", {"Base1Id", "ECClassId", "sc1"}},
+            {"ts_Sub11", {"Base1Id", "ECClassId", "js1"}},
+            {"ts_Sub12", {"Base1Id", "ECClassId", "js1"}},
 
             //Base2 hierarchy
-            {"ts_Base2", {"Id", "ECClassId", "PropBase2_1", "sc1"}},
-            {"ts_Sub21", {"Base2Id", "ECClassId", "sc1"}},
-            {"ts_Sub22", {"Base2Id", "ECClassId", "sc1"}},
+            {"ts_Base2", {"Id", "ECClassId", "PropBase2_1", "ps1"}},
+            {"ts_Sub21", {"Base2Id", "ECClassId", "js1"}},
+            {"ts_Sub22", {"Base2Id", "ECClassId", "js1"}},
 
             //Base3 hierarchy
-            {"ts_Base3", {"Id", "ECClassId", "PropBase3_1", "sc1", "sc2"}},
-            {"ts_Sub311", {"Base3Id", "ECClassId", "sc1"}},
+            {"ts_Base3", {"Id", "ECClassId", "PropBase3_1", "ps1", "ps2"}},
+            {"ts_Sub311", {"Base3Id", "ECClassId", "js1"}},
 
             //Base4 hierarchy
-            {"ts_Base4", {"Id", "ECClassId", "PropBase4_1", "PropSub4_1", "sc1"}},
-            {"ts_Sub411", {"Base4Id", "ECClassId", "sc1"}},
+            {"ts_Base4", {"Id", "ECClassId", "PropBase4_1", "PropSub4_1", "ps1"}},
+            {"ts_Sub411", {"Base4Id", "ECClassId", "js1"}},
 
             //Base5 hierarchy
             {"ts_Base5", {"Id", "ECClassId", "PropBase5_1", "PropSub5_1"}},
-            {"ts_Sub51", {"Base5Id", "ECClassId", "PropSub51_1", "sc1"}},
+            {"ts_Sub51", {"Base5Id", "ECClassId", "PropSub51_1", "js1"}},
 
             //Base6 hierarchy
             {"ts_Base6", {"Id", "ECClassId", "PropBase6_1", "PropSub6_1"}},
-            {"ts_Sub61", {"Base6Id", "ECClassId", "sc1", "sc2"}},
+            {"ts_Sub61", {"Base6Id", "ECClassId", "js1", "js2"}},
 
         };
 
@@ -3884,7 +3884,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
     ASSERT_EQ(5, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "IdECClassIdP1sc1sc2";
+    Utf8CP expectedColumnNames = "IdECClassIdP1ps1ps2";
     Utf8String actualColumnNames;
     for (int i = 0; i < statement.GetColumnCount(); i++)
         {
@@ -4017,7 +4017,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "IdECClassIdP0sc1sc2";
+    Utf8CP expectedColumnNames = "IdECClassIdP0ps1ps2";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {
@@ -6472,7 +6472,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest5.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"sc1"});
+                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"ps1"});
                 }
 
                 {
@@ -6531,7 +6531,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                 ECClassId sub1ClassId = db.Schemas().GetClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
-                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc1"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"ps1"}, indexWhereClause.c_str());
                 }
 
                 {
@@ -7509,12 +7509,12 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
+    ASSERT_STRCASEEQ("js1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
+    ASSERT_STRCASEEQ("js2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
 
     Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc2] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js1] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js2] BLOB,")) << tsSub2Sub2Ddl.c_str();
 
     actualColNames.clear();
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
@@ -7523,7 +7523,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
 
     Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(ecdb, "ts_Sub2Sub2_Overflow");
-    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[sc64] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
+    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[os1] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
 
 
     }

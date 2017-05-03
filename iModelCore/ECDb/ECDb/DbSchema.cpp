@@ -505,8 +505,6 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
 
     table->CreatePrimaryKeyConstraint({npk});
     table->CreateForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
-    //63- ECInstanceId and ECClassId is gap that we leave in base for mor eshared columns
-    table->GetSharedColumnNameGeneratorR().SetSeed(baseTable.GetSharedColumnNameGenerator().GetSeed() + 61);
     Nullable<Utf8String> indexName("ix_");
     indexName.ValueR().append(table->GetName()).append("_ecclassid");
     CreateIndex(*table, indexName, false, {ncl}, false, false, ECClassId());
@@ -1174,13 +1172,20 @@ DbTable const* DbSchema::GetNullTable() const
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
 DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* baseTable)
-    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_baseTable(baseTable)
+    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
+    m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_baseTable(baseTable)
     {
     if (IsDerivedTable() && baseTable != nullptr)
         {
         const_cast<DbTable*>(baseTable)->m_derviedTables.push_back(this);
         }
+
+    if (tableType == Type::Joined)
+        m_sharedColumnNameGenerator = DbSchemaNameGenerator("js%d");
+    else if (tableType == Type::Overflow)
+        m_sharedColumnNameGenerator = DbSchemaNameGenerator("os%d");
+    else if (tableType == Type::Primary)
+        m_sharedColumnNameGenerator = DbSchemaNameGenerator("ps%d");
 
     //!Assert must be called after above
     BeAssert(Validate(true) == SUCCESS);
@@ -1429,14 +1434,14 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         return nullptr;
         }
 
-    //PersistenceType resolvePersistenceType = persistenceType;
-    //if (GetPersistenceType() == PersistenceType::Virtual)
-    //    resolvePersistenceType = PersistenceType::Virtual;
+    PersistenceType resolvePersistenceType = persistenceType;
+    if (GetPersistenceType() == PersistenceType::Virtual)
+        resolvePersistenceType = PersistenceType::Virtual;
 
     if (!id.IsValid())
         m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 
-    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, persistenceType);
+    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
