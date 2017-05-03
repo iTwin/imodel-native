@@ -228,19 +228,6 @@ int             index
 
 /*----------------------------------------------------------------------+
 |                                                                       |
-| Name:     jmdlRIMSBS_setElementHeader                                 |
-|                                                                       |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP bool             jmdlRIMSBS_setElementHeader
-(
-RIMSBS_Context          *pContext,
-RIMSBS_ElementHeader    *pElementHeader,
-int                     index
-);
-
-/*----------------------------------------------------------------------+
-|                                                                       |
 | Name:     jmdlRIMSBS_addArc                                           |
 |                                                                       |
 |                                                                       |

@@ -756,28 +756,6 @@ int             index
 
     }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_setElementHeader                                 |
-|                                                                       |
-| Author:   EarlinLutz                               6/22/98            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public bool             jmdlRIMSBS_setElementHeader
-(
-RIMSBS_Context          *pContext,
-RIMSBS_ElementHeader    *pElementHeader,
-int                     index
-)
-    {
-    if (index < 0)
-        return false;
-    if ((size_t)index >= pContext->m_geometry.size ())
-        return false;
-    pContext->m_geometry[index] = *pElementHeader;
-    return true;
-    }
-
 
 /*----------------------------------------------------------------------+
 |                                                                       |
