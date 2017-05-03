@@ -5049,9 +5049,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     
     SMNodeGroup::Ptr group(
 #ifndef VANCOUVER_API
-        new SMNodeGroup(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path + L"\\data", 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
+        new SMNodeGroup(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path, 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
 #else
-        SMNodeGroup::Create(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path + L"\\data", 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
+        SMNodeGroup::Create(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path, 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
 #endif
     );
 
