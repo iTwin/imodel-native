@@ -253,22 +253,6 @@ TEST_F(CreateFromInstanceTests, FullyCreateBim)
     {
     SetupSeedProject();
 
-    DbResult openStat;
-    BeFileName fileName(L"d:\\temp\\teleporter\\bim0200\\04_Plant.i.bim");
-    DgnDbPtr converted = DgnDb::OpenDgnDb(&openStat, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
-    BeAssert(converted.IsValid());
-    GeometricElement3dPtr shape = converted->Elements().GetForEdit<GeometricElement3d>(DgnElementId((uint64_t) 5026));
-    GeometrySource3dP source = shape->GetAsGeometrySource3dP();
-
-    GeometryCollection collection(*source);
-
-    for (auto iter : collection)
-        {
-        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
-        BeAssert(geom.IsValid());
-        }
-
-
     // First create entities using the API.  Get each entity as an IECInstance.  And then use those to create new elements
     // Create a new Subject
     SubjectCPtr subjectElement = Subject::CreateAndInsert(*m_db->Elements().GetRootSubject(), "TestSubject", "Subject used for testing");
