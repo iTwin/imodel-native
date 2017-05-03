@@ -80,6 +80,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, ValueExpListExp const&, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
         static ECSqlStatus PrepareWhereExp(NativeSqlBuilder&, ECSqlPrepareContext&, WhereExp const&);
 
+        static ECSqlStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const&);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
 
         static bool IsNullExp(ExpCR);

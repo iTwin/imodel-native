@@ -30,10 +30,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 #endif
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
 
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
         {
@@ -164,38 +163,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         {
         // WHERE clause
         Utf8String systemWhereClause;
-        DbTable const* table = &classMap.GetPrimaryTable();
-        DbColumn const& classIdColumn = table->GetECClassIdColumn();
-
-        if (classIdColumn.GetPersistenceType() == PersistenceType::Physical)
-            {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-            if (ctx.IsParentOfJoinedTable())
-                {
-                auto joinedTableClass = ctx.GetECDb().Schemas().GetClass(ctx.GetJoinedTableClassId());
-                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*joinedTableClass);
-                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            else if (ctx.GetJoinedTableInfo() != nullptr  && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
-                {
-                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
-                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            else
-#endif
-                {
-                if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            }
+        if (ECSqlStatus::Success != ECSqlExpPreparer::GenerateECClassIdFilter(systemWhereClause, *classNameExp))
+            return ECSqlStatus::Error;
 
         if (!systemWhereClause.empty())
             {

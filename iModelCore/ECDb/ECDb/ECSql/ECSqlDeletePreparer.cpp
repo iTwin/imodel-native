@@ -192,14 +192,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
     if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         return ECSqlStatus::Success;
 
-    ClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    DbTable const* table = &classMap.GetPrimaryTable();
-    DbColumn const& classIdColumn = table->GetECClassIdColumn();
-    if (classIdColumn.GetPersistenceType() != PersistenceType::Physical)
-        return ECSqlStatus::Success; //no class id column exists -> no system where clause
-
     Utf8String classIdFilter;
-    if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(classIdFilter, *table, classIdColumn, exp.GetClassNameExp()->IsPolymorphic()))
+    if (ECSqlStatus::Success != ECSqlExpPreparer::GenerateECClassIdFilter(classIdFilter, classNameExp))
         return ECSqlStatus::Error;
 
     deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.Append(classIdFilter.c_str());

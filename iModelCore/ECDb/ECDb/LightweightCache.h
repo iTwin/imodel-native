@@ -99,7 +99,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription final: NonCopyableClass
+struct StorageDescription final : NonCopyableClass
     {
     private:
         ECN::ECClassId m_classId;
@@ -131,9 +131,6 @@ struct StorageDescription final: NonCopyableClass
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
-        //Uses ec_cache_ClassHiearchy instead of creating ORed or ANDed ECClassId clauses
-        //This is mainly used for SELECT/UPDATE/DELETE but not indexes which does not support subquery
-        BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

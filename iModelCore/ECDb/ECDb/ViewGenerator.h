@@ -171,6 +171,8 @@ struct ViewGenerator final
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
 
+        static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, bool polymorphic);
+
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
 
     public:

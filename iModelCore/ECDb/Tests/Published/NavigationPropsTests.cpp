@@ -1935,12 +1935,20 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
         stmt.Finalize();
         };
 
+    int modifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - modifiedRowCountBefore) << "Non-polymorphic update against mixin should be no-op";
+    stmt.Finalize();
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
     verifyCategoryId(ecdb, catKey.GetInstanceId());
+
 
     //UPDATE via classes that is mapped to a single joined table, is expected to work
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.SpatialElement SET Category.Id=? WHERE Category.Id IS NULL"));
@@ -1954,6 +1962,40 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
     verifyCategoryId(ecdb, catKey.GetInstanceId());
+
+    auto getCount = [] (ECDbCR ecdb, Utf8CP className, Utf8CP whereClause = nullptr)
+        {
+        Utf8String ecsql("SELECT count(*) FROM ");
+        ecsql.append(className);
+        if (whereClause != nullptr)
+            ecsql.append(" WHERE ").append(whereClause);
+
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()) || BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    int rowCountBefore = getCount(ecdb, "np.IGeometrySource");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY np.IGeometrySource"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(0, rowCountBefore - getCount(ecdb, "np.IGeometrySource")) << "Non-polymorphic delete against mixin should be no-op";
+
+    rowCountBefore = getCount(ecdb, "np.IGeometrySource");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY np.IGeometrySource WHERE Category.Id IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(0, rowCountBefore - getCount(ecdb, "np.IGeometrySource")) << "Non-polymorphic delete against mixin should be no-op";
+
+    rowCountBefore = getCount(ecdb, "np.IGeometrySource", "Category.Id IS NOT NULL");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM np.IGeometrySource WHERE Category.Id IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(1, rowCountBefore - getCount(ecdb, "np.IGeometrySource", "Category.Id IS NOT NULL"));
+
+    ecdb.AbandonChanges();
     }
     }
 

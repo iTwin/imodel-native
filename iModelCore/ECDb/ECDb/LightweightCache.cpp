@@ -322,64 +322,6 @@ Partition const* StorageDescription::GetPartition(DbTable const& table) const
 
 
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    10 / 2015
-//------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
-    {
-    if (table.GetPersistenceType() != PersistenceType::Physical)
-        return SUCCESS; //table is virtual -> noop
-
-    Partition const* partition = GetHorizontalPartition(table);
-    if (partition == nullptr)
-        {
-        if (!GetVerticalPartitions().empty())
-            {
-            partition = GetVerticalPartition(table);
-            }
-
-        if (partition == nullptr)
-            {
-            BeAssert(false && "Should always find a partition for the given table");
-            return ERROR;
-            }
-        }
-
-    Utf8String classIdColSql;
-    if (fullyQualifyColumnName)
-        {
-        classIdColSql.append("[");
-        if (tableAlias)
-            classIdColSql.append(tableAlias);
-        else
-            classIdColSql.append(table.GetName());
-
-        classIdColSql.append("].");
-        }
-
-    classIdColSql.append(classIdColumn.GetName());
-    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-    m_classId.ToString(classIdStr);
-
-    if (!polymorphic)
-        {
-        //if partition's table is only used by a single class, no filter needed     
-        if (partition->IsSharedTable())
-            {
-            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
-            }
-
-        return SUCCESS;
-        }
-
-    if ( partition->NeedsECClassIdFilter())
-        {
-        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
-        }
-   
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
 //static

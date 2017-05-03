@@ -1644,6 +1644,54 @@ ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet
     return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp.GetSearchConditionExp());
     }
 
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const& exp)
+    {
+    ClassMap const& classMap = exp.GetInfo().GetMap();
+    DbTable const& contextTable = classMap.GetPrimaryTable();
+    DbColumn const& classIdColumn = contextTable.GetECClassIdColumn();
+
+    //if no class id column exists and the SQL is not against an updatable view (which always has a class id col) -> no system where clause
+    if (classIdColumn.GetPersistenceType() == PersistenceType::Virtual && !classMap.GetUpdatableViewInfo().HasView())
+        return ECSqlStatus::Success;
+
+    StorageDescription const& desc = classMap.GetStorageDescription();
+    Partition const* partition = desc.GetHorizontalPartition(contextTable);
+    if (partition == nullptr)
+        {
+        if (!desc.GetVerticalPartitions().empty())
+            partition = desc.GetVerticalPartition(contextTable);
+
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ECSqlStatus::Error;
+            }
+        }
+
+    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    classMap.GetClass().GetId().ToString(classIdStr);
+
+    Utf8String classIdColSql(classIdColumn.GetName());
+
+    if (!exp.IsPolymorphic())
+        {
+        if (classMap.GetUpdatableViewInfo().HasView() || partition->IsSharedTable())
+            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+
+        return ECSqlStatus::Success;
+        }
+
+    if (partition->NeedsECClassIdFilter())
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
+
+    return ECSqlStatus::Success;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2015
 //+---------------+---------------+---------------+---------------+---------------+------

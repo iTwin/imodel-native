@@ -530,8 +530,9 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
                 (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {
                 const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
+
                 Utf8String whereClause;
-                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition->GetTable(), classIdPropertyMap->GetColumn(), considerSubclasses, true))
+                if (SUCCESS != GenerateECClassIdFilter(whereClause, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), considerSubclasses))
                     return ERROR;
 
                 if (!whereClause.empty())
@@ -674,7 +675,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
                 {
                 Utf8String whereClause;
                 const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
-                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition.GetTable(), classIdDataPropertyMap->GetColumn(), considerSubclasses, true))
+                if (SUCCESS != GenerateECClassIdFilter(whereClause, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), considerSubclasses))
                     return ERROR;
 
                 if (!whereClause.empty())
@@ -1151,6 +1152,49 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     return SUCCESS;
     }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
+//------------------------------------------------------------------------------------------
+//static
+    BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
+    {
+    if (table.GetPersistenceType() != PersistenceType::Physical)
+        return SUCCESS;
+
+    StorageDescription const& desc = classMap.GetStorageDescription();
+    Partition const* partition = desc.GetHorizontalPartition(table);
+    if (partition == nullptr)
+        {
+        if (!desc.GetVerticalPartitions().empty())
+            partition = desc.GetVerticalPartition(table);
+
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ERROR;
+            }
+        }
+
+    Utf8String classIdColSql("[");
+    classIdColSql.append(table.GetName()).append("].").append(classIdColumn.GetName());
+
+    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    classMap.GetClass().GetId().ToString(classIdStr);
+
+    if (!polymorphic)
+        {
+        //if partition's table is only used by a single class, no filter needed     
+        if (partition->IsSharedTable())
+            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+
+        return SUCCESS;
+        }
+
+    if (partition->NeedsECClassIdFilter())
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
+
+    return SUCCESS;
+    }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
