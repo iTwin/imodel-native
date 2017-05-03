@@ -177,6 +177,8 @@
         <SubPart PartName="Formats" />
         <SubPart PartName="FormatsNET" />
         <SubPart PartName="ScalableTerrainModel" />
+        <SubPart PartName="AutomaticGroundDetection" />
+
     </Part>
 
     <Part Name="FullProduct"  PrgOutputDir="TerrainModel">
