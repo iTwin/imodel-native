@@ -124,7 +124,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
-        <ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
+        <ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedAtPositionRefersToReferent" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
@@ -132,11 +132,27 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="FromPosition" typeName="DistanceExpression"/>
-        <ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
+        <ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedFromPositionRefersToReferent" direction="Forward"/>
         <ECStructProperty propertyName="ToPosition" typeName="DistanceExpression"/>
-        <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="Forward"/>
+        <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedToPositionRefersToReferent" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LinearlyReferencedLocationRefersToReferent" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="LinearlyReferencedAtPositionRefersToReferent" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+            <Class class="LinearlyReferencedLocation"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+            <Class class="IReferent"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="LinearlyReferencedFromPositionRefersToReferent" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+            <Class class="LinearlyReferencedLocation"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+            <Class class="IReferent"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="LinearlyReferencedToPositionRefersToReferent" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
             <Class class="LinearlyReferencedLocation"/>
         </Source>
