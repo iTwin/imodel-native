@@ -130,7 +130,7 @@ public:
     CURL* ListClusters();
     CURL* CreateJob();
     void  ValidateCreateJob(int activeUsers);
-    CURL* AddJobForId();
+    CURL* SubmitJob();
     CURL* DeleteJob();
     CURL* GetJobs();
     CURL* GetJobById();
