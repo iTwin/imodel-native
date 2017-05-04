@@ -42,7 +42,7 @@ public:
     //! @param[in] colorBookName The name of the ColorBook.
     //! @param[in] description The optional description of the ColorBook
     ColorBook(DefinitionModelR model, Utf8StringCR colorBookName, Utf8StringCR description="") 
-        : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, colorBookName))) {SetDescription(description);}
+        : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, colorBookName))) {if (!description.empty()) SetDescription(description);}
 
     //! Return the DgnClassId for the BisCore:ColorBook ECClass
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ColorBook));}

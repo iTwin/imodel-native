@@ -1741,6 +1741,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="PaletteName" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">

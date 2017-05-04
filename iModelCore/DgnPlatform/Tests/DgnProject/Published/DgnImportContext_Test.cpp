@@ -82,7 +82,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
-    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
+    DgnMaterial material(dictionary, "Test Palette", materialName);
     material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
