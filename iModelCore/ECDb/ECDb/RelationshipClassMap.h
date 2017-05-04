@@ -103,7 +103,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             private:
                 RelationshipClassEndTableMap const& m_relMap;
                 RelationshipMappingInfo const& m_relInfo;
-                bmap<DbTable const*, ClassMapCP> m_constraintClassMaps;
+                bmap<DbTable const*, bset<ClassMapCP>> m_constraintClassMaps;
                 bset<ClassMapCP> m_sharedBlock;
                 void Initialize();
 

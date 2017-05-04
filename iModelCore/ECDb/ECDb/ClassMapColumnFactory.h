@@ -40,7 +40,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         //Find list of columns with access string that cannot be used by current classmap
         struct UsedColumnFinder final
             {
-            typedef std::map<Utf8String, DbColumn const*> ColumnMap;
+            typedef bmap<Utf8String, DbColumn const*> ColumnMap;
             private:
                 std::set<ClassMap const*> m_deepestClassMapped;//Set of deepest classmap in traversed hierarchy.
                 std::set<ECN::ECEntityClassCP> m_mixins; //Set of identitifed mixin during traversing class hierarchy

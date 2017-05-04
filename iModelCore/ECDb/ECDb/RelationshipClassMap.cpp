@@ -1766,29 +1766,25 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
     {
     const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
     const DbColumn::Type colType = DbColumn::Type::Integer;
-    
-    //find out whether we have to create a shared or unshared col
-    //First criteria: physical FK or virtual table -> unshared
-    bool needsUnsharedCol = m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || table.GetPersistenceType() == PersistenceType::Virtual;
-    ClassMapCP rootClassMap = nullptr;
-    if (!needsUnsharedCol)
-        {
-        //second criterion: TPH && shared col mode is on
-        auto it = m_constraintClassMaps.find(&table);
-        if (it == m_constraintClassMaps.end())
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        rootClassMap = it->second;
-        TablePerHierarchyInfo const& tphInfo = rootClassMap->GetMapStrategy().GetTphInfo();
-        needsUnsharedCol = !tphInfo.IsValid() || tphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes;
-        }
-
-    if (needsUnsharedCol)
+    if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk())
         return table.CreateColumn(colName, colType, position, colKind, PersistenceType::Physical);
 
+    auto itor = m_constraintClassMaps.find(&table);
+    if (itor == m_constraintClassMaps.end())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    bset<ClassMapCP> const& compoundFilter = itor->second;
+    ClassMapCP rootClassMap = *begin(compoundFilter);
+    //ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
+    if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+        rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+        {
+        return table.CreateColumn(colName, colType, position, colKind, PersistenceType::Physical);
+        };
+    
     //Create shared column
     ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
@@ -1803,7 +1799,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
             itor = m_sharedBlock.end();
             }
 
-        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), &compoundFilter);
         if (itor != m_sharedBlock.end())
             {
             rootClassMap->GetColumnFactory().EndSharedColumnBlock();
@@ -1813,7 +1809,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
         return col;
         }
 
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), nullptr);
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()), &compoundFilter);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1833,7 +1829,8 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
         return nullptr;
         }
 
-    ClassMapCP rootClassMap = itor->second;
+    bset<ClassMapCP> const& compoundFilter = itor->second;
+    ClassMapCP rootClassMap = *begin(compoundFilter);
     //ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
     if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
         rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
@@ -1854,7 +1851,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
             itor = m_sharedBlock.end();
             }
 
-        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+        DbColumn* col = rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), &compoundFilter);
         if (itor != m_sharedBlock.end())
             {
             rootClassMap->GetColumnFactory().EndSharedColumnBlock();
@@ -1864,7 +1861,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
         return col;
         }
 
-    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), &compoundFilter);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1881,9 +1878,10 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
         if (classMap != nullptr)
             {
-            m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()] = classMap;
+            classMap->DeleteColumnFactory();
+            auto itor =  m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()].insert(classMap);
             if (DbTable* overflowTable = classMap->GetOverflowTable())
-                m_constraintClassMaps[overflowTable] = classMap;
+                m_constraintClassMaps[overflowTable].insert(classMap);
 
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
@@ -1892,7 +1890,7 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         if (!constraint.GetIsPolymorphic())
             return;
 
-        for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
+        for (ECClassCP derivedClass : ecdbMap.GetECDb().Schemas().GetDerivedClasses(constraintClass))
             traverseConstraintClass(ecdbMap, *derivedClass, constraint);
         };
 
