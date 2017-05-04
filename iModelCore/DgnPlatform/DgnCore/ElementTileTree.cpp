@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG) && false
+#if defined(NDEBUG)
 #define ELEMENT_TILE_DEBUG_RANGE false
 #else
 #define ELEMENT_TILE_DEBUG_RANGE true
