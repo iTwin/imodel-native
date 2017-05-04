@@ -915,6 +915,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
         viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+        viewDependentQueryParams->SetMaxPixelError(3);
             
         ClipVectorCP clip;
         clip = context.GetTransformClipStack().GetClip();
@@ -1384,7 +1385,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             Transform       approxTransform;
 
             StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
-            if (0 == status || 1 == status)
+            if (0 == status || 1 == status || 25 == status)
                 {                
                 DRange3d smExtentInDestGCS1;
                 approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);                
@@ -1392,6 +1393,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
                 DRange3d smExtentInDestGCS;
                 m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);                
+                }
+            else
+                { 
+                m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
                 }
             }
         else
