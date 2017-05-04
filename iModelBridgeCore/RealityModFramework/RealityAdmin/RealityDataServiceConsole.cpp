@@ -526,15 +526,20 @@ void RealityDataConsole::List()
     else
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node, nodeResponse);
 
-    for (NavNode node : m_serverNodes)
+    if(nodeResponse.body.ContainsI("not listable"))
+        DisplayInfo("This entity is not listable/n", DisplayOption::Error);
+    else
         {
-        nodeString = node.GetLabel();
-        if (node.GetClassName() == "Folder")
-            nodeString.append("/");
-        nodeStrings.push_back(nodeString);
-        }   
+        for (NavNode node : m_serverNodes)
+            {
+            nodeString = node.GetLabel();
+            if (node.GetClassName() == "Folder")
+                nodeString.append("/");
+            nodeStrings.push_back(nodeString);
+            }   
 
-    PrintResults(nodeStrings);
+        PrintResults(nodeStrings);
+        }
     }
 
 void RealityDataConsole::ListRoots()
@@ -574,7 +579,7 @@ void RealityDataConsole::ListRoots()
     Utf8String schema = RealityDataService::GetSchemaName();
     for (RealityDataPtr rData : enterpriseVec)
         {
-        nodes.push_back(Utf8PrintfString("%-30s (%s) %s", rData->GetName(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier()));
+        nodes.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
         }
 

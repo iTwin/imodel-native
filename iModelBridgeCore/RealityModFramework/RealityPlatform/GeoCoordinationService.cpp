@@ -221,7 +221,7 @@ void SpatialEntityWithDetailsByIdRequest::_PrepareHttpRequestStringAndPayload() 
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/SpatialEntityWithDetailsView/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -232,7 +232,7 @@ void SpatialEntityByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/SpatialEntity/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -243,7 +243,7 @@ void SpatialEntityDataSourceByIdRequest::_PrepareHttpRequestStringAndPayload() c
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/SpatialDataSource/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -254,7 +254,7 @@ void SpatialEntityServerByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/Server/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -265,7 +265,7 @@ void SpatialEntityMetadataByIdRequest::_PrepareHttpRequestStringAndPayload() con
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/Metadata/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -315,7 +315,7 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/PreparedPackage/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("/$file");
     }
 

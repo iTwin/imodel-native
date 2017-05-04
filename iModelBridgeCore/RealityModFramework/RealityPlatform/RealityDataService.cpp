@@ -286,7 +286,7 @@ Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetR
 void RealityDataUrl::EncodeId() const 
     {
     m_id.ReplaceAll("/", "~2F");
-    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
 //=====================================================================================
@@ -306,7 +306,7 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/EnterpriseStat/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -316,7 +316,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -326,7 +326,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -335,7 +335,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
     }
 
 //=====================================================================================
@@ -344,7 +344,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
 void RealityDataProjectRelationshipByRealityDataIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
     }
 
 //=====================================================================================
@@ -354,7 +354,7 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/Folder/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -364,7 +364,7 @@ void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/Document/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     }
 
 //=====================================================================================
@@ -432,7 +432,7 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         {
         RealityDataUrl::_PrepareHttpRequestStringAndPayload();
         m_httpRequestString.append("/Document/");
-        m_httpRequestString.append(m_id);
+        m_httpRequestString.append(m_encodedId);
         m_httpRequestString.append("/$file");
         }
     }
@@ -443,11 +443,11 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
 void RealityDataDocumentContentByIdRequest::EncodeId() const
     {
     if(m_AzureRedirected)
-        m_id = BeStringUtilities::UriEncode(m_id.c_str());
+        m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
     else
         {
         m_id.ReplaceAll("/", "~2F");
-        m_id = BeStringUtilities::UriEncode(m_id.c_str());
+        m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
         }
     }
 
@@ -767,7 +767,7 @@ void RealityDataPagedRequest::SetProject(Utf8StringCR project)
 void RealityDataPagedRequest::EncodeId() const
     {
     m_id.ReplaceAll("/", "~2F");
-    m_id = BeStringUtilities::UriEncode(m_id.c_str());
+    m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
 //=====================================================================================
@@ -778,7 +778,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append("/RealityData?$filter=EnterpriseId+eq+'");
 
-    if(m_id.length() == 0)
+    if(m_encodedId.length() == 0)
         {
         Utf8String token = CurlConstructor().GetToken();
         token.ReplaceAll("Authorization: Token ","");
@@ -795,9 +795,10 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         bvector<Utf8String> lines;
         BeStringUtilities::Split(idString.c_str(), "< ", lines);
         m_id = lines[0];
+        EncodeId();
         }
 
-    m_httpRequestString.append(Utf8PrintfString("%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("%s'", m_encodedId));
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
     if (m_order.length() > 0)
@@ -818,7 +819,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -991,7 +992,7 @@ void RealityDataChangeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
@@ -1040,7 +1041,7 @@ void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityDataProjectRelationship/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("~2F1");
     m_requestHeader.push_back("Content-Type: application/json");
     }
@@ -1213,7 +1214,7 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+");
     if(m_isWrite)
         m_httpRequestString.append("'Write'");
