@@ -124,7 +124,6 @@
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
-#define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"

@@ -2141,18 +2141,6 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing" modifier="None">
-        <BaseClass>ElementRefersToElements</BaseClass>
-        <!-- WIP: Remove? -->
-        <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is used by" polymorphic="false">
-            <Class class="GeometryPart"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">

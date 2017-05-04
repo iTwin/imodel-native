@@ -107,29 +107,6 @@ DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnDbR db, DgnCodeCR code
     return DgnGeometryPartId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId)
-    {
-    if (!elementId.IsValid() || !geomPartId.IsValid())
-        return BentleyStatus::ERROR;
-
-    CachedECSqlStatementPtr statementPtr = db.GetNonSelectPreparedECSqlStatement(
-        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", db.GetECCrudWriteToken());
-
-    if (!statementPtr.IsValid())
-        return BentleyStatus::ERROR;
-
-    statementPtr->BindId(1, elementId);
-    statementPtr->BindId(2, geomPartId);
-
-    if (BE_SQLITE_DONE != statementPtr->Step())
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
