@@ -59,7 +59,6 @@
 
     <Part Name="WSClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
-        <SubPart PartName="PublishedApi" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
@@ -115,8 +114,6 @@
 
     <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
@@ -125,7 +122,6 @@
 
     <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache.so</Libs>
             <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
@@ -410,6 +406,7 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
+        <SubPart PartName="WSClientTestsL10N" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
@@ -420,6 +417,18 @@
 
     <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
+    <!-- Tests need translatable strings, so sqlang file has to be build -->
+    <Part
+        Name="WSClientTestsL10N"
+        BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/UnitTests/sqlang/WSClient_test.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WebServicesClient"/>
+        <Bindings>
+            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_test.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+    
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
         BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS"
@@ -439,11 +448,9 @@
         <SubPart PartName="UnitTests-Published"/>
 
         <!-- Ensure that builds, run manually if needed -->
-      <!-- 
-        <SubPart PartName="WSClientIntegrationTests" />
-        <SubPart PartName="WSClientCompatibilityTestTool" />
-      -->
-      </Part>
+        <!-- <SubPart PartName="WSClientIntegrationTests" /> -->
+        <!-- <SubPart PartName="WSClientCompatibilityTestTool" /> -->
+    </Part>
 
     <!-- Define a gtest program to run the tests. 
         The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
