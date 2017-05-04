@@ -3629,6 +3629,7 @@ void  GeometricElement::_OnDeleted() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_OnAppliedDelete() const 
     {
+    T_Super::_OnAppliedDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**
