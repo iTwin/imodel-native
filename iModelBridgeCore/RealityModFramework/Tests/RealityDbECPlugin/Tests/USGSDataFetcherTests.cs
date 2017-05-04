@@ -274,7 +274,7 @@ namespace IndexECPlugin.Tests.Tests
             using ( m_mock.Record() )
                 {
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Once().Return(tnmApiDatasetsJsonString);
-                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Times(6).Throw(new TaskCanceledException());
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.AtLeastOnce().Throw(new TaskCanceledException());
                 }
             using ( m_mock.Playback() )
                 {
@@ -310,7 +310,7 @@ namespace IndexECPlugin.Tests.Tests
                 {
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Once().Return(tnmApiDatasetsJsonString);
                 var ex = new AggregateException(new List<Exception>() { new TaskCanceledException() });
-                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Times(6).Throw(ex);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.AtLeastOnce().Throw(ex);
                 }
             using ( m_mock.Playback() )
                 {
