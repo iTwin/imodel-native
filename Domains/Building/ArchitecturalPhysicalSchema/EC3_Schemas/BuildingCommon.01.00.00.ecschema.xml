@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="BuildingCommon" alias="bldcom" version="01.00.00" description="This schema contains Classes the span the building schemas" displayLabel="Building Common" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <SchemaFullNameAtEditingStart>BuildingCommon.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECEntityClass typeName="Classification" description="Contains the definition for the Classifications that are applied to building elements">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="OmniClass" typeName="string" displayLabel="Omni Class"/>
+        <ECProperty propertyName="OmniClassDescription" typeName="string" displayLabel="Omni Class Description"/>
+        <ECProperty propertyName="MasterFormat" typeName="string" displayLabel="Master Format"/>
+        <ECProperty propertyName="MasterFormatDescription" typeName="string" displayLabel="Master Format Description"/>
+        <ECProperty propertyName="UniFormat" typeName="string"/>
+        <ECProperty propertyName="UniFormatDescription" typeName="string" displayLabel="UniFormat Description"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Manufacturer" description="This is a class to group the Manufacturer properties applied to Building Classes">
+        <ECProperty propertyName="Manufacturer" typeName="string"/>
+        <ECProperty propertyName="ModelNumber" typeName="string" displayLabel="Model Number"/>
+        <ECProperty propertyName="ManufacturerURL" typeName="string" displayLabel="Manufacturer URL"/>
+    </ECEntityClass>
+</ECSchema>

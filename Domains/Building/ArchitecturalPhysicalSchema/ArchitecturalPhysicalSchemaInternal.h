@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <DataCaptureSchema/DataCaptureSchemaApi.h>
+#include <ArchitecturalPhysical/ArchitecturalPhysicalApi.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 
 
@@ -15,4 +15,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_DATACAPTURE
+USING_NAMESPACE_BENTLEY_ARCHITECTURAL_PHYSICAL
+
+

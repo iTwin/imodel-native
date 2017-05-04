@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="IfcRevitDomain2x3" alias="rvtbphys" version="01.00.00" description="Revit Vertical Grid Pattern Properties" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="BuildingPhysical" version="01.00.00" alias="bphys"/>
+    <ECEnumeration typeName="Pset_Revit_Construction_WallFunction" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Interior"/>
+        <ECEnumerator value="1" displayLabel="Exterior"/>
+        <ECEnumerator value="2" displayLabel="Foundation"/>
+        <ECEnumerator value="3" displayLabel="Retaining"/>
+        <ECEnumerator value="4" displayLabel="Soffit"/>
+        <ECEnumerator value="5" displayLabel="Coreshaft"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Pset_Revit_Structural_StructuralUsage" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Non-bearing"/>
+        <ECEnumerator value="1" displayLabel="Bearing"/>
+        <ECEnumerator value="2" displayLabel="Shear"/>
+        <ECEnumerator value="3" displayLabel="Combined"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="RevitPsetBase" displayLabel="Revit Properties" modifier="Abstract">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BuildingElementOwnsRevitPSet" displayLabel="Building Element Owns Revit Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Revit Properties" polymorphic="true">
+            <Class class="bphys:BuildingElementComponent"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Building Element" polymorphic="true">
+            <Class class="RevitPsetBase"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RevitPsetTypeBase" displayLabel="Revit Type Properties" modifier="Abstract">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BuildingElementOwnsRevitTypePSet" displayLabel="Building Element Owns Revit Type Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Revit Type Properties" polymorphic="true">
+            <Class class="bphys:BuildingElementComponent"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Building Element" polymorphic="true">
+            <Class class="RevitPsetTypeBase"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BuildingElementTypeOwnsRevitTypePSet" displayLabel="Building Element Type Owns Revit Type Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Revit Type Properties" polymorphic="true">
+            <Class class="bphys:BuildingElementType"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Building Element Type" polymorphic="true">
+            <Class class="RevitPsetTypeBase"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Pset_Revit_AnalyticalModel" displayLabel="Revit: AnalyticalModel">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="AutodetectHorizontalProjection" typeName="boolean" description="Auto-detect Horizontal Projection Property Of Analytical Model" displayLabel="Autodetect Horizontal Projection"/>
+        <ECProperty propertyName="RigidLinks" typeName="boolean" description="Rigid Links Property Of Analytical Model" displayLabel="Rigid Links"/>
+        <ECProperty propertyName="EnableAnalyticalModel" typeName="boolean" description="Enable Analytical Model Property Of Analytical Model" displayLabel="Enable Analytical Model"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Constraints" displayLabel="Revit: Constraints">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Constraints" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseOffset" typeName="double" description="Base Offset Property Of Constraints" displayLabel="Base Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseisAttached" typeName="boolean" description="Base is Attached Property Of Constraints" displayLabel="Base is Attached"/>
+        <ECProperty propertyName="UnconnectedHeight" typeName="double" description="Unconnected Height Property Of Constraints" displayLabel="Unconnected Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SillHeight" typeName="double" description="Sill Height Property Of Constraints" displayLabel="Sill Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TopExtensionDistance" typeName="double" description="Top Extension Distance Property Of Constraints" displayLabel="Top Extension Distance" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseExtensionDistance" typeName="double" description="Base Extension Distance Property Of Constraints" displayLabel="Base Extension Distance" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseConstraint" typeName="string" description="Base Constraint Property Of Constraints" displayLabel="Base Constraint"/>
+        <ECProperty propertyName="TopConstraint" typeName="string" description="Top Constraint Property Of Constraints" displayLabel="Top Constraint"/>
+        <ECProperty propertyName="ColumnLocationMark" typeName="string" description="Column Location Mark Property Of Constraints" displayLabel="Column Location Mark"/>
+        <ECProperty propertyName="MovesWithNearbyElements" typeName="boolean" description="Moves With Nearby Elements Property Of Constraints" displayLabel="Moves With Nearby Elements"/>
+        <ECProperty propertyName="Host" typeName="string" description="Host Property Of Constraints"/>
+        <ECProperty propertyName="MovesWithGrids" typeName="boolean" description="Moves With Grids Property Of Constraints" displayLabel="Moves With Grids"/>
+        <ECProperty propertyName="CrossSectionRotation" typeName="double" description="Cross-Section Rotation Property Of Constraints" displayLabel="Cross Section Rotation" kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="RelatedtoMass" typeName="boolean" description="Related to Mass Property Of Constraints" displayLabel="Related to Mass"/>
+        <ECProperty propertyName="RoomBounding" typeName="boolean" description="Room Bounding Attached Property Of Constraints" displayLabel="Room Bounding"/>
+        <ECProperty propertyName="TopisAttached" typeName="boolean" description="Top is Attached Property Of Constraints" displayLabel="Top is Attached"/>
+        <ECProperty propertyName="TopOffset" typeName="double" description="Top Offset Rotation Property Of Constraints" displayLabel="Top Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Orientation" typeName="int" description="Orientation Property Of Constraints"/>
+        <ECProperty propertyName="HeightOffsetFromLevel" typeName="double" description="Height Offset From Level Property Of Constraints" displayLabel="Height Offset From Level" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Level" typeName="string" description="Level Property Of Constraints"/>
+        <ECProperty propertyName="LimitOffset" typeName="double" description="Limit Offset Property Of Constraints" displayLabel="Limit Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseLevel" typeName="string" description="Base Level Property Of Constraints" displayLabel="Base Level"/>
+        <ECProperty propertyName="UpperLimit" typeName="string" description="Upper Limit Property Of Constraints" displayLabel="Upper Limit"/>
+        <ECProperty propertyName="LateralJustification" typeName="int" description="Lateral Justification Property Of Constraints" displayLabel="Lateral Justification"/>
+        <ECProperty propertyName="LocationLine" typeName="int" description="Location Line Property Of Constraints" displayLabel="Location Line"/>
+        <ECProperty propertyName="zDirectionOffsetValue" typeName="double" description="z-Direction Offset Value Property Of Constraints" displayLabel="z-Direction Offset Value" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CutoffOffset" typeName="double" description="Cutoff Offset Property Of Constraints" displayLabel="Cutoff Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseOffsetFromLevel" typeName="double" description="Base Offset From Level Property Of Constraints" displayLabel="Base Offset From Level" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Slope" typeName="double" description="Slope Property Of Constraints"/>
+        <ECProperty propertyName="Elevation" typeName="double" description="Elevation Property Of Constraints" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="zDirectionJustification" typeName="int" description="z-Direction Justification Property Of Constraints" displayLabel="z-Direction Justification"/>
+        <ECProperty propertyName="EndLevelOffset" typeName="double" description="End Level Offset Property Of Constraints" displayLabel="End Level Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StartLevelOffset" typeName="double" description="Start Level Offset Property Of Constraints" displayLabel="Start Level Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Constraints" kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="WorkPlane" typeName="string" description="Work Plane Property Of Constraints" displayLabel="Work Plane"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Construction" displayLabel="Revit: Construction">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="RafterCut" typeName="int" description="Rafter Cut Property Of Construction" displayLabel="Rafter Cut"/>
+        <ECProperty propertyName="FasciaDepth" typeName="double" description="Fascia Depth Property Of Construction" displayLabel="Fascia Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RafterorTruss" typeName="int" description="Rafter Or Truss Property Of the Construction" displayLabel="Rafteror Truss"/>
+        <ECProperty propertyName="MaximumRidgeHeight" typeName="double" description="Maximum Ridge Height Property Of the Construction" displayLabel="Maximum Ridge Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Thickness" typeName="double" description="Thickness Property Of the Construction" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DefaultThickness" typeName="double" description="Default Thickness Property Of the Construction" displayLabel="Default Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CornerMullion" typeName="boolean" description="Corner Mullion Property Of the Construction" displayLabel="Corner Mullion"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width Property Of the Construction" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WrappingatInserts" typeName="int" description="Wrapping at Inserts Property Of the Construction" displayLabel="Wrapping at Inserts"/>
+        <ECProperty propertyName="WallClosure" typeName="int" description="Wall Closure Property Of the Construction" displayLabel="Wall Closure"/>
+        <ECProperty propertyName="UndersideofWinder" typeName="int" description="Underside of Winder Property Of the Construction" displayLabel="Underside of Winder"/>
+        <ECProperty propertyName="LandingOverlap" typeName="double" description="Landing Overlap Property Of the Construction" displayLabel="Landing Overlap" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="MonolithicStairs" typeName="boolean" description="Monolithic Stairs Property Of the Construction" displayLabel="Monolithic Stairs"/>
+        <ECProperty propertyName="ExtendBelowBase" typeName="double" description="Extend Below Base Property Of the Construction" displayLabel="Extend Below Base" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RailingHeight" typeName="double" description="Railing Height Property Of the Construction" displayLabel="Railing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BalusterOffset" typeName="double" description="Baluster Offset Property Of the Construction" displayLabel="Baluster Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LandingHeightAdjustment" typeName="double" description="Landing Height Adjustment Property Of the Construction" displayLabel="Landing Height Adjustment" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="UseLandingHeightAdjustment" typeName="int" description="Use Landing Height Adjustment Property Of the Construction" displayLabel="Use Landing Height Adjustment"/>
+        <ECProperty propertyName="AngledJoins" typeName="int" description="Angled Joins Property Of the Construction" displayLabel="Angled Joins"/>
+        <ECProperty propertyName="TangentJoins" typeName="int" description="Tangent Joins Property Of the Construction" displayLabel="Tangent Joins"/>
+        <ECProperty propertyName="RailConnections" typeName="int" description="Rail Connections Property Of the Construction" displayLabel="Rail Connections"/>
+        <ECProperty propertyName="WallFunction" typeName="Pset_Revit_Construction_WallFunction" description="Wall Function Property Of the Construction" displayLabel="Wall Function"/>
+        <ECProperty propertyName="JoinCondition" typeName="int" description="Join Condition Property Of the Construction" displayLabel="Join Condition"/>
+        <ECProperty propertyName="WrappingatEnds" typeName="int" description="Wrapping at Ends Property Of the Construction" displayLabel="Wrapping at Ends"/>
+        <ECProperty propertyName="AutomaticallyEmbed" typeName="boolean" description="Automatically Embed Property Of the Construction" displayLabel="Automatically Embed"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Dimensions" displayLabel="Revit: Dimensions">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Length" typeName="double" description="Length Property Of dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Perimeter" typeName="double" description="Perimeter Property Of dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="UnboundedHeight" typeName="double" description="Unbounded Height Property Of dimension" displayLabel="Unbounded Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Volume" typeName="double" description="Volume Property Of dimension" kindOfQuantity="VOLUME"/>
+        <ECProperty propertyName="Area" typeName="double" description="Area Property Of the dimension" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="ActualTreadDepth" typeName="double" description="Actual Tread Depth Property of the dimension" displayLabel="Actual Tread Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ActualRiserHeight" typeName="double" description="Actual Riser Height Property of the dimension" displayLabel="Actual Riser Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ActualNumberofRisers" typeName="int" description="Actual Number of Risers Property of the dimension" displayLabel="Actual Number of Risers"/>
+        <ECProperty propertyName="DesiredNumberofRisers" typeName="int" description="Desired Number of Risers Property of the dimension" displayLabel="Desired Number of Risers"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width Property of the dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height Property Of the dimension" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_ElectricalLighting" displayLabel="Revit: Electrical Lighting">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="CalculateCoefficientofUtilization" typeName="boolean" description="Calculate Coefficient of Utilization Property Of Electrical Lighting"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_ElectricalLoads" displayLabel="Revit: Electrical Loads">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Panel" typeName="string" description="Panel Property Of Type Electrical Loads"/>
+        <ECProperty propertyName="CircuitNumber" typeName="string" description="Circuit Number Property Of Type Electrical Loads"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Graphics" displayLabel="Revit: Graphics">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="CoarseScaleFillColor" typeName="int" description="Coarse Scale Fill Color Property of the Graphics" displayLabel="Coarse Scale Fill Color"/>
+        <ECProperty propertyName="CoarseScaleFillPattern" typeName="string" description="Coarse Scale Fill Pattern Property of the Graphics" displayLabel="Coarse Scale Fill Pattern"/>
+        <ECProperty propertyName="CenterMarkVisible" typeName="boolean" description="Center Mark Visible Property of the Graphics" displayLabel="Center Mark Visible"/>
+        <ECProperty propertyName="BreakSymbolinPlan" typeName="boolean" description="Break Symbol in Plan Property of the Graphics" displayLabel="Break Symbol in Plan"/>
+        <ECProperty propertyName="Uplabel" typeName="boolean" description="Up label Property of the Graphics" displayLabel="Up Label"/>
+        <ECProperty propertyName="Uparrow" typeName="boolean" description="Up arrow Property of the Graphics" displayLabel="Up Arrow"/>
+        <ECProperty propertyName="ShowUparrowinallviews" typeName="boolean" description="Show Up arrow in all views Property of the Graphics" displayLabel="Show Up Arrow in All Views"/>
+        <ECProperty propertyName="Uptext" typeName="string" description="Up text Property of the Graphics" displayLabel="Up Text"/>
+        <ECProperty propertyName="Downtext" typeName="string" description="Down text Property of the Graphics" displayLabel="Down Text"/>
+        <ECProperty propertyName="TextFont" typeName="string" description="Text Font Property of the Graphics" displayLabel="Text Font"/>
+        <ECProperty propertyName="TextSize" typeName="double" description="Text Size Property Of the Graphics" displayLabel="Text Size"/>
+        <ECProperty propertyName="Color" typeName="int" description="Color Property Of Graphics"/>
+        <ECProperty propertyName="LineWeight" typeName="int" description="Line Weight Property Of Graphics" displayLabel="Line Weight"/>
+        <ECProperty propertyName="LinePattern" typeName="string" description="Line Pattern Property Of Graphics" displayLabel="Line Pattern"/>
+        <ECProperty propertyName="Symbol" typeName="string" description="Symbol Property Of Graphics"/>
+        <ECProperty propertyName="SymbolatEnd1Default" typeName="string" description="Symbol at End 1 Default Property Of Graphics" displayLabel="Symbol at End 1 Default"/>
+        <ECProperty propertyName="SymbolatEnd2Default" typeName="string" description="Symbol at End 2 Default Property Of Graphics" displayLabel="Symbol at End 2 Default"/>
+        <ECProperty propertyName="Downlabel" typeName="boolean" description="Down label Property of the Graphics" displayLabel="Down Label"/>
+        <ECProperty propertyName="Downarrow" typeName="boolean" description="Down arrow Property of the Graphics" displayLabel="Down Arrow"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Grid1Pattern" displayLabel="Revit: Grid 1 Pattern">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Number" typeName="int" description="Number Property Of Revit Grid 1 Pattern "/>
+        <ECProperty propertyName="Justification" typeName="int" description="Justification Property Of Revit Grid 1 Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Revit Grid 1 Pattern " kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Revit Grid 1 Pattern " kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Grid2Pattern" displayLabel="Revit: Grid 2 Pattern">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Number" typeName="int" description="Number Property Of Revit Grid 2 Pattern "/>
+        <ECProperty propertyName="Justification" typeName="int" description="Justification Property Of Revit Grid 2 Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Revit Grid 2 Pattern " kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Revit Grid 2 Pattern " kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_HorizontalGridPattern" displayLabel="Revit: Horizontal Grid Pattern">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Number" typeName="int" description="Number Property Of Horizontal Grid Pattern "/>
+        <ECProperty propertyName="Justification" typeName="int" description="Justification Property Of Horizontal Grid Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Horizontal Grid Pattern " kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Horizontal Grid Pattern " kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_IdentityData" displayLabel="Revit: Identity Data">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="AssemblyDescription" typeName="string" description="Assembly Description Property Of Identity Data" displayLabel="Assembly Description"/>
+        <ECProperty propertyName="AssemblyCode" typeName="string" description="Assembly Code Property Of Identity Data" displayLabel="Assembly Code"/>
+        <ECProperty propertyName="Number" typeName="string" description="Number Property Of Identity Data"/>
+        <ECProperty propertyName="Cost" typeName="double" description="Cost Property Of Identity Data"/>
+        <ECProperty propertyName="Mark" typeName="string" description="Mark Property Of Identity Data"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_MaterialsandFinishes" displayLabel="Revit: Materials and Finishes">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Material" typeName="string" description="Material Property Of Materials and Finishes"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Other" displayLabel="Revit: Other">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="l" typeName="double" description="l Property Of Other" displayLabel="L" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="HeadHeight" typeName="double" description="Head Height Property Of Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Other" kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="VisibleChair" typeName="boolean" description="Visible Chair Property Of Other"/>
+        <ECProperty propertyName="ProjectIssueDate" typeName="string" description="Project Issue Date Property Of Other"/>
+        <ECProperty propertyName="ProjectStatus" typeName="string" description="Project Status Property Of Other"/>
+        <ECProperty propertyName="ClientName" typeName="string" description="Client Name Property Of Other"/>
+        <ECProperty propertyName="ProjectAddress" typeName="string" description="Project Address Property Of Other"/>
+        <ECProperty propertyName="ProjectName" typeName="string" description="Project Name Property Of Other"/>
+        <ECProperty propertyName="ProjectNumber" typeName="string" description="Project Number Property Of Other"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Phasing" displayLabel="Revit: Phasing">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="PhaseCreated" typeName="string" description="Phase Created Property Of Phasing" displayLabel="Phase Created"/>
+        <ECProperty propertyName="Phase" typeName="string" description="Phase Property Of Phasing"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Structural" displayLabel="Revit: Structural">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="CutLength" typeName="double" description="Cut Length Of Structural" displayLabel="Cut Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StructuralUsage" typeName="Pset_Revit_Structural_StructuralUsage" description="Structural Usage Of Structural" displayLabel="Structural Usage"/>
+        <ECProperty propertyName="EndAttachmentType" typeName="int" description="End Attachment Type Of Structural" displayLabel="End Attachment Type"/>
+        <ECProperty propertyName="MomentConnectionEnd" typeName="int" description="Moment Connection End Of Structural" displayLabel="Moment Connection End"/>
+        <ECProperty propertyName="MomentConnectionStart" typeName="int" description="Moment Connection Start Of Structural" displayLabel="Moment Connection Start"/>
+        <ECProperty propertyName="StartAttachmentElevation" typeName="double" description="Start Attachment Elevation of Structural" displayLabel="Start Attachment Elevation" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EndofReferencedElement" typeName="int" description="End of Referenced Element Of Structural" displayLabel="End of Referenced Element"/>
+        <ECProperty propertyName="EndAttachmentDistance" typeName="double" description="End Attachment Distance of Structural" displayLabel="End Attachment Distance" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_StructuralAnalysis" displayLabel="Revit: Structural Analysis">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="BottomMz" typeName="boolean" description="Bottom Mz Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomMy" typeName="boolean" description="Bottom My Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomMx" typeName="boolean" description="Bottom Mx Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomFz" typeName="boolean" description="Bottom Fz Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomFy" typeName="boolean" description="Bottom Fy Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomFx" typeName="boolean" description="Bottom Fx Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopMz" typeName="boolean" description="Top Mz Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopMy" typeName="boolean" description="Top My Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopMx" typeName="boolean" description="Top Mx Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopFz" typeName="boolean" description="Top Fz Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopFy" typeName="boolean" description="Top Fy Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopFx" typeName="boolean" description="Top Fx Property Of Structural Analysis "/>
+        <ECProperty propertyName="TopRelease" typeName="int" description="Top Release Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndMz" typeName="boolean" description="End Mz Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndMy" typeName="boolean" description="End My Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndMx" typeName="boolean" description="End Mx Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndFz" typeName="boolean" description="End Fz Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndFy" typeName="boolean" description="End Fy Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndFx" typeName="boolean" description="End Fx Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartMz" typeName="boolean" description="Start Mz Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartMy" typeName="boolean" description="Start My Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartMx" typeName="boolean" description="Start Mx Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartFz" typeName="boolean" description="Start Fz Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartFy" typeName="boolean" description="Start Fy Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartFx" typeName="boolean" description="Start Fx Property Of Structural Analysis "/>
+        <ECProperty propertyName="BottomRelease" typeName="int" description="End Release Property Of Structural Analysis "/>
+        <ECProperty propertyName="EndRelease" typeName="int" description="End Release Property Of Structural Analysis "/>
+        <ECProperty propertyName="StartRelease" typeName="int" description="Start Release Property Of Structural Analysis "/>
+        <ECProperty propertyName="AnalyzeAs" typeName="int" description="Analyze As Property Of Structural Analysis "/>
+        <ECProperty propertyName="StructuralUsage" typeName="Pset_Revit_Structural_StructuralUsage" description="Structural Usage Property Of Structural Analysis " displayLabel="Structural Usage"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Constraints" displayLabel="Revit: Constraints (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Type Constraints" kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Type Constraints" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Construction" displayLabel="Revit: Construction (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Function" typeName="int" description="Function Property Of Type Construction"/>
+        <ECProperty propertyName="Thickness" typeName="double" description="Thickness Property Of the Type Construction" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CornerMullion" typeName="boolean" description="Corner Mullion Property Of the Type Construction" displayLabel="Corner Mullion"/>
+        <ECProperty propertyName="WallFunction" typeName="Pset_Revit_Construction_WallFunction" description="Wall Function Property Of Type Construction" displayLabel="Wall Function"/>
+        <ECProperty propertyName="AutomaticallyEmbed" typeName="boolean" description="Automatically Embed Property Of Type Construction" displayLabel="Automatically Embed"/>
+        <ECProperty propertyName="JoinCondition" typeName="int" description="Join Condition Property Of the Type Construction" displayLabel="Join Condition"/>
+        <ECProperty propertyName="DefaultThickness" typeName="double" description="Default Thickness Property Of the Type Construction" displayLabel="Default Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WrappingatInserts" typeName="int" description="Wrapping at Inserts Property Of the Type Construction" displayLabel="Wrapping at Inserts"/>
+        <ECProperty propertyName="WrappingatEnds" typeName="int" description="Wrapping at Ends Property Of the Type Construction" displayLabel="Wrapping at Ends"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width Property Of the Type Construction" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ExtendBelowBase" typeName="double" description="Extend Below Base Property Of the Type Construction" displayLabel="Extend Below Base" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="MonolithicStairs" typeName="boolean" description="Monolithic Stairs Property Of the Type Construction" displayLabel="Monolithic Stairs"/>
+        <ECProperty propertyName="LandingOverlap" typeName="double" description="Landing Overlap Property Of the Type Construction" displayLabel="Landing Overlap" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="UndersideofWinder" typeName="int" description="Underside of Winder Property Of the Type Construction" displayLabel="Underside of Winder"/>
+        <ECProperty propertyName="RailingHeight" typeName="double" description="Railing Height Property Of the Type Construction" displayLabel="Railing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BalusterOffset" typeName="double" description="Baluster Offset Property Of the Type Construction" displayLabel="Baluster Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LandingHeightAdjustment" typeName="double" description="Landing Height Adjustment Property Of the Type Construction" displayLabel="Landing Heigh Adjustment" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="UseLandingHeightAdjustment" typeName="int" description="Use Landing Height Adjustment Property Of the Type Construction" displayLabel="Use Landing Height Adjustment"/>
+        <ECProperty propertyName="AngledJoins" typeName="int" description="Angled Joins Property Of the Type Construction" displayLabel="Angled Joins"/>
+        <ECProperty propertyName="TangentJoins" typeName="int" description="Tangent Joins Property Of the Type Construction" displayLabel="Tangent Joins"/>
+        <ECProperty propertyName="RailConnections" typeName="int" description="Rail Connections Property Of the Type Construction" displayLabel="Rail Connections"/>
+        <ECProperty propertyName="WallClosure" typeName="int" description="Wall Closure Property Of the Construction" displayLabel="Wall Closure"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Dimensions" displayLabel="Revit: Dimensions (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="AutomaticRoomComputationHeight" typeName="boolean" description="Automatic Room Computation Height Property of the Type dimension" displayLabel="Automatic Room Computation Height"/>
+        <ECProperty propertyName="BowlHeight" typeName="double" description="Bowl Height Property of the Type dimension" displayLabel="Bowl Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="MountingHeight" typeName="double" description="Mounting Height Property of the Type dimension" displayLabel="Mounting Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width Property of the Type dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height Property Of the Type dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Thickness" typeName="double" description="Thickness Property Of Type dimension" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Widthonside2" typeName="double" description="Width on side 2 Property Of Type dimension" displayLabel="Width on Side 2" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Widthonside1" typeName="double" description="Width on side 1 Property Of Type dimension" displayLabel="Width on Side 1" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Electrical" displayLabel="Revit: Electrical (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Lamp" typeName="string" description="Lamp Property Of Type Electrical"/>
+        <ECProperty propertyName="WattageComments" typeName="string" description="Wattage Comments Property Of Type Electrical"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Graphics" displayLabel="Revit: Graphics (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="CoarseScaleFillColor" typeName="int" description="Coarse Scale Fill Color Property of the Type Graphics" displayLabel="Coarse Scale Fill Color"/>
+        <ECProperty propertyName="BreakSymbolinPlan" typeName="boolean" description="Break Symbol in Plan Property of the Type Graphics" displayLabel="Break Symbol in Plan"/>
+        <ECProperty propertyName="TextSize" typeName="double" description="Text Size Property of the Type Graphics" displayLabel="Text Size"/>
+        <ECProperty propertyName="TextFont" typeName="string" description="Text Font Property of the Type Graphics" displayLabel="Text Font"/>
+        <ECProperty propertyName="LineWeight" typeName="int" description="Line Weight Property Of the Type Graphics" displayLabel="Line Weight"/>
+        <ECProperty propertyName="Color" typeName="int" description="Color Property Of Type Graphics"/>
+        <ECProperty propertyName="SymbolatEnd1Default" typeName="boolean" description="Symbol at End 1 Default Property Of Type Graphics" displayLabel="Symbol at End 1 Default"/>
+        <ECProperty propertyName="SymbolatEnd2Default" typeName="boolean" description="Symbol at End 2 Default Property Of Type Graphics" displayLabel="Symbol at End 2 Default"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Grid1Pattern" displayLabel="Revit: Grid 1 Pattern (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Layout" typeName="int" description="Layout Property Of Revit Type Grid 1 Pattern "/>
+        <ECProperty propertyName="AdjustforMullionSize" typeName="boolean" description="Adjust for Mullion Size Property Of Revit Type Grid 1 Pattern " displayLabel="Adjust for Mullion Size"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Grid2Pattern" displayLabel="Revit: Grid 2 Pattern (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Layout" typeName="int" description="Layout Property Of Revit Type Grid 2 Pattern "/>
+        <ECProperty propertyName="AdjustforMullionSize" typeName="boolean" description="Adjust for Mullion Size Property Of Revit Type Grid 2 Pattern "/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_HorizontalGridPattern" displayLabel="Revit: Horizontal Grid Pattern (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Spacing" typeName="double" description="Spacing Property Of Type Vertical Grid Pattern " kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Layout" typeName="int" description="Layout Property Of Type Horizontal Grid Pattern "/>
+        <ECProperty propertyName="AdjustforMullionSize" typeName="boolean" description="Adjust for Mullion Size Of Type Horizontal Grid Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Type Vertical Grid Pattern " kindOfQuantity="PLANE_ANGLE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_IdentityData" displayLabel="Revit: Identity Data (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertyName>TypeName</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Manufacturer" typeName="string" description="Manufacturer Property Of Type Identity Data"/>
+        <ECProperty propertyName="Model" typeName="string" description="Model Property Of Type Identity Data"/>
+        <ECProperty propertyName="AssemblyDescription" typeName="string" description="Assembly Description Property Of Type Identity Data" displayLabel="Assembly Description"/>
+        <ECProperty propertyName="AssemblyCode" typeName="string" description="Assembly Code Property Of Type Identity Data" displayLabel="Assembly Code"/>
+        <ECProperty propertyName="Cost" typeName="double" description="Cost Property Of Type Identity Data"/>
+        <ECProperty propertyName="TypeName" typeName="string" displayLabel="Type Name"/>
+        <ECProperty propertyName="OmniClassNumber" typeName="string" displayLabel="OmniClass Number"/>
+        <ECProperty propertyName="TypeMark" typeName="string" displayLabel="Type Mark"/>
+        <ECProperty propertyName="OmniClassTitle" typeName="string" displayLabel="OmniClass Title"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_MaterialsandFinishes" displayLabel="Revit: Materials and Finishes (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Finish" typeName="string" description="Finish Property Of Type Materials and Finishes"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Other" displayLabel="Revit: Other (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="A" typeName="double" description="A Property Of Type Other" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="Ix" typeName="double" description="Ix Property Of Type Other"/>
+        <ECProperty propertyName="M" typeName="double" description="M Property Of Type Other"/>
+        <ECProperty propertyName="Contractor" typeName="string" description="Contractor Property Of Type Other"/>
+        <ECProperty propertyName="tonoun" typeName="string" description="to noun Property Of Type Other"/>
+        <ECProperty propertyName="Zx" typeName="double" description="Zx Property Of Type Other"/>
+        <ECProperty propertyName="b" typeName="double" description="b Property Of Type Other" displayLabel="B" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Row1" typeName="int" description="Row1 Property Of Type Other"/>
+        <ECProperty propertyName="Row1Radius" typeName="double" description="Row1 Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Row2" typeName="int" description="Row2 Property Of Type Other"/>
+        <ECProperty propertyName="Row2Radius" typeName="double" description="Row2 Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Row3" typeName="int" description="Row3 Property Of Type Other"/>
+        <ECProperty propertyName="Row3Radius" typeName="double" description="Row3 Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Row4" typeName="int" description="Row4 Property Of Type Other"/>
+        <ECProperty propertyName="Row4Radius" typeName="double" description="Row4 Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Row5" typeName="int" description="Row5 Property Of Type Other"/>
+        <ECProperty propertyName="Row5Radius" typeName="double" description="Row5 Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="h" typeName="double" description="h Property Of Type Other" displayLabel="H" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="r" typeName="double" description="r Property Of Type Other" displayLabel="R" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="s" typeName="double" description="s Property Of Type Other" displayLabel="S" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="t" typeName="double" description="t Property Of Type Other" displayLabel="T" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="D" typeName="double" description="D Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="GlobeRadius" typeName="double" description="Globe Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseRadius" typeName="double" description="Base Radius Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BaseHeight" typeName="double" description="Base Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="OffsetBase" typeName="double" description="Offset Base Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="OffsetTop" typeName="double" description="Offset Top Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Depth" typeName="double" description="Depth Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="MountingHeight" typeName="double" description="Mounting Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="OC" typeName="double" description="O.C. Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SideBarLength" typeName="double" description="Side Bar Length Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BackBarLength" typeName="double" description="Back Bar Length Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LevelHeight" typeName="double" description="Level Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Length" typeName="double" description="Length Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="D1" typeName="double" description="D1 Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DoorWidth" typeName="double" description="Door Width Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BraceHeight" typeName="double" description="Brace Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RoomHeight" typeName="double" description="Room Height Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TrimWidth" typeName="double" description="Trim Width Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TrimProjectionInt" typeName="double" description="Trim Projection Int Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TrimProjectionExt" typeName="double" description="Trim Projection Ext Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FrameWidth" typeName="double" description="Frame Width Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FrameProjectionInt" typeName="double" description="Frame Projection Int Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FrameProjectionExt" typeName="double" description="Frame Projection Ext Property Of Type Other" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Schedule" typeName="boolean" description="Schedule Property Of Type Other"/>
+        <ECProperty propertyName="ShowPanel" typeName="boolean" description="Show Panel Property Of Type Other"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Photometrics" displayLabel="Revit: Photometrics (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="LightLossFactor" typeName="int" description="Light Loss Factor Property Of Type Photometrics"/>
+        <ECProperty propertyName="InitialIntensity" typeName="int" description="Initial Intensity Property Of Type Photometrics"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Risers" displayLabel="Revit: Risers (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="RisertoTreadConnection" typeName="int" description="Riser to Tread Connection Property Of Risers"/>
+        <ECProperty propertyName="RiserThickness" typeName="double" description="Riser Thickness Property Of Risers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RiserType" typeName="int" description="Riser Type Property Of Risers"/>
+        <ECProperty propertyName="MaximumRiserHeight" typeName="double" description="Maximum Riser Height Property Of Risers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EndwithRiser" typeName="boolean" description="End with Riser Type Property Of Risers"/>
+        <ECProperty propertyName="BeginwithRiser" typeName="boolean" description="Begin with Riser Type Property Of Risers"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Stringers" displayLabel="Revit: Stringers (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="StringerThickness" typeName="double" description="Stringer Thickness Property Of Type Stringers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="OpenStringerOffset" typeName="double" description="Open Stringer Offset Property Of Type Stringers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StringerHeight" typeName="double" description="Stringer Height Property Of Type Stringers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StringerCarriageHeight" typeName="double" description="Stringer Carriage Height Property Of Type Stringers" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TrimStringersatTop" typeName="int" description="Trim Stringers at Top Property Of Type Stringers"/>
+        <ECProperty propertyName="RightStringer" typeName="int" description="Right Stringer Property Of Type Stringers"/>
+        <ECProperty propertyName="LeftStringer" typeName="int" description="Left Stringer Property Of Type Stringers"/>
+        <ECProperty propertyName="MiddleStringers" typeName="int" description="Middle Stringers Property Of Type Stringers"/>
+        <ECProperty propertyName="LandingCarriageHeight" typeName="double" description="Landing Carriage Height Property Of Type Stringers" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Text" displayLabel="Revit: Text (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="TextFont" typeName="string" description="Text Font Property Of Type Text"/>
+        <ECProperty propertyName="Bold" typeName="boolean" description="Bold Property Of Type Text"/>
+        <ECProperty propertyName="Italic" typeName="boolean" description="Italic Property Of Type Text"/>
+        <ECProperty propertyName="TextSize" typeName="double" description="Text Size Property Of Type Text"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_Treads" displayLabel="Revit: Treads (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="MinimumTreadDepth" typeName="double" description="Minimum Tread Depth Property Of Type Treads" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TreadThickness" typeName="double" description="Tread Thickness Property Of Type Treads" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="NosingLength" typeName="double" description="Nosing Length Property Of Type Treads" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="NosingProfile" typeName="string" description="Nosing Profile Property Of Type Treads"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_Type_VerticalGridPattern" displayLabel="Revit: Vertical Grid Pattern (Type)">
+        <BaseClass>RevitPsetTypeBase</BaseClass>
+        <ECProperty propertyName="Spacing" typeName="double" description="Spacing Property Of Type Vertical Grid Pattern " kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Layout" typeName="int" description="Layout Property Of Type Vertical Grid Pattern "/>
+        <ECProperty propertyName="AdjustforMullionSize" typeName="boolean" description="Adjust for Mullion Size Property Of Type Vertical Grid Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Type Vertical Grid Pattern " kindOfQuantity="PLANE_ANGLE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Pset_Revit_VerticalGridPattern" displayLabel="Revit: Vertical Grid Pattern">
+        <BaseClass>RevitPsetBase</BaseClass>
+        <ECProperty propertyName="Number" typeName="int" description="Number Property Of Vertical Grid Pattern "/>
+        <ECProperty propertyName="Justification" typeName="int" description="Justification Property Of Vertical Grid Pattern "/>
+        <ECProperty propertyName="Angle" typeName="double" description="Angle Property Of Vertical Grid Pattern " kindOfQuantity="PLANE_ANGLE"/>
+        <ECProperty propertyName="Offset" typeName="double" description="Offset Property Of Vertical Grid Pattern " kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.MM(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RAD(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VOLUME" displayLabel="VOLUME" persistenceUnit="CUB.M(DefaultReal)" relativeError="0.0001"/>
+</ECSchema>

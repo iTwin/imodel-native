@@ -7,11 +7,11 @@
 #---------------------------------------------------------------------------------------+
 %include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-appName                         = DataCaptureSchema
+appName                         = ArchitecturalPhysical
 o                               = $(OutputRootDir)build/$(appName)/
 CCompPDBName                    = $(appName)
 MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
-nameToDefine = __DATACAPTURE_BUILD__
+nameToDefine = __ARCHITECTURAL_PHYSICAL_BUILD__
 %include cdefapnd.mki

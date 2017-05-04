@@ -2,41 +2,44 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="Building" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
-        <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="ECDb"            PartFile="ECDb"         Repository="ECDb"/>
-        <SubPart PartName="ECObjectsNative" PartFile="ECObjects"    Repository="ecobjects" />
-        <SubPart PartName="DgnPlatformLib"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <Bindings>
-            <Libs>Delivery/$(libprefix)Buildinging$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)Buildinging$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
+    <Part Name="BuildingDomains" >
+        <SubPart PartName="ArchitecturalPhysical"/>
     </Part>
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="Building.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="Building"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ArchitecturalPhysical*.xml
-            </Files>
-            <Directory SourceName="Dox/Pages/Building" SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/>
-        </Bindings>
-    </Part>
-
-<!-- NOT YET
     
-    <Part Name="BuildingPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json  +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
-        <SubPart PartName="Building"/>
-        <SubPart PartName="BuildingView"/>
+    <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
+        <SubPart PartName="ArchPhysPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Building"/>
+            <Libs>Delivery/$(libprefix)ArchitecturalPhysical$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
--->
+    
+    <Part Name="ArchPhysPublicAPI" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ArchitecturalPhysical"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ArchitecturalPhysical.01.00.00.ecschema.xml
+                ECSchemas/Domain/BuildingCommon.01.00.00.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
 
-<!-- NOT YET
+    <!-- NOT YET
+    
+    BentleyBuildMakeFile="Building.mke" ApiNumber="B02"
+        <SubPart PartName="ArchPhysPublishedApi"/>
+    
+    <Part Name="ArchPhysPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json  +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
+    <!-    <SubPart PartName="BuildingView"/> ->
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/ArchitecturalPhysical"/>
+        </Bindings>
+    </Part>
+
     <Part Name="BuildingView" BentleyBuildMakeFile="View/View.mke" ApiNumber="B02">
         <SubPart PartName="BeSQLite"          PartFile="BeSQLite"    Repository="BeSQLite" />
         <SubPart PartName="ECDb"              PartFile="ECDb"        Repository="ECDb" />
@@ -70,7 +73,7 @@
 -->
 <!-- NOT YET
     
-    <!-- ======================================================================================================== 
+    <!- ======================================================================================================== 
       Build Unit Tests 
      ======================================================================================================== ->
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
@@ -97,12 +100,12 @@
         </Bindings>
     </Part>
 
-    <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate ->
+    <!- Define a test collection part. This is included in DgnClientFx's TestsAggregate ->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published"/>
     </Part>
 
-    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts ->
+    <!- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts ->
     
     <Product Name="Building-Tests">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
@@ -128,7 +131,7 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Building-Gtest/BuildingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Building-Gtest" />
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> ->
+        <!- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> ->
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingTests.log</Files>
         </Bindings>

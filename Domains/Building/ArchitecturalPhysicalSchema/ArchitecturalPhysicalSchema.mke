@@ -6,14 +6,14 @@
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(_MakeFilePath)DataCaptureSchema.mki
+%include $(_MakeFilePath)ArchitecturalPhysicalSchema.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
-appPublicApi        = $(appSrc)../PublicAPI/$(appName)/
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ArchitecturalPhysicalSchemaInternal.h $(appPublicApi)ArchitecturalPhysicalSchemaApi.h
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ArchitecturalPhysicalSchemaInternal.h $(appPublicApi)ArchitecturalPhysicalApi.h
 
 always:
     !~@mkdir $(o)
@@ -31,7 +31,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(_MakeFilePath)DataCaptureSchema.mki
+CompileOptionsMki =$(_MakeFilePath)ArchitecturalPhysicalSchema.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -64,7 +64,7 @@ $(o)ArchitecturalPhysicalDomain$(oext) : $(_MakeFilePath)ArchitecturalPhysicalDo
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)DataCaptureSchemaInternal$(oext) 
+DLM_OBJECT_PCH              = $(o)ArchitecturalPhysicalSchemaInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1

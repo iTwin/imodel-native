@@ -7,11 +7,12 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/Building : $(_MakeFilePath)PublicAPI/Building
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml : $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysical.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
+always:
+    bmake $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.prewire.mke
+    
+    
+#$(BuildContext)ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml : $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysical.ecschema.xml
+#    $(LinkFirstDepToFirstTarget)
 
 #$(BuildContext)Dox/Pages/Planning/Buildinging.doxpage : $(_MakeFilePath)docs/source/Building.doxpage
 #    $(LinkFirstDepToFirstTarget)
