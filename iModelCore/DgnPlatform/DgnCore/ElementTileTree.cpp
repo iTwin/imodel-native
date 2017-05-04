@@ -544,7 +544,7 @@ public:
         }
 
     size_t GetGeometryCount() const { return m_geometries.size(); }
-    void TruncateGeometryList(size_t maxSize) { m_geometries.resize(maxSize); }
+    void TruncateGeometryList(size_t maxSize) { m_geometries.resize(maxSize); m_geometries.MarkIncomplete(); }
 
     IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
         {
@@ -576,6 +576,8 @@ public:
 
     GraphicPtr FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder);
     GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
+
+    void MarkIncomplete() { m_geometries.MarkIncomplete(); }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -788,12 +790,18 @@ struct GeometryCollector : RangeIndex::Traverser
         {
         m_entries.Insert(diagonalSq, elemId);
         if (m_entries.size() > m_maxFeaturesPerTile)
+            {
             m_entries.erase(--m_entries.end()); // remove the smallest element. Note element != feature - we may need to skip more elements later.
+            m_context.MarkIncomplete();
+            }
         }
 
     Accept _CheckRangeTreeNode(FBox3d const& box, bool is3d) const override
         {
-        return !m_aborted && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
+        if (!m_aborted && box.IntersectsWith(m_range))
+            return Accept::Yes;
+        else
+            return Accept::No;
         }
 
     Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
@@ -807,6 +815,8 @@ struct GeometryCollector : RangeIndex::Traverser
             double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
             if (sizeSq >= m_context.GetMinRangeDiagonalSquared())
                 Insert(sizeSq, entry.m_id);
+            else
+                m_context.MarkIncomplete();
             }
 
         return Stop::No;
@@ -887,6 +897,15 @@ BentleyStatus Loader::_LoadTile()
     if (loadContext.WasAborted())
         return ERROR;
 
+    // No point subdividing empty nodes - improves performance if we don't
+    // Also not much point subdividing nodes containing no curved geometry
+    // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
+    if (geometry.IsComplete())
+        {
+        if (geometry.IsEmpty() || !geometry.ContainsCurves())
+            tile.SetIsLeaf();
+        }
+
     PolylineArgs polylineArgs;
     MeshArgs meshArgs;
     bvector<Render::GraphicPtr> graphics;
@@ -948,10 +967,6 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsValid())
             tile.SetGraphic(*system._CreateBatch(*graphic, std::move(geometryMeshes.m_features)));
         }
-
-    // No point subdividing empty nodes - improves performance if we don't
-    if (geometry.IsEmpty())
-        tile.SetIsLeaf();   // ###TODO: Is this true - or can all the geometry be too small for this tile's tolerance?
 
     tile.SetIsReady();
     return SUCCESS;
@@ -1064,7 +1079,7 @@ GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRa
 
     IGeometryPtr geom = IGeometry::Create(&prim);
     GeometryList geomList;
-    geomList.push_back(Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db));
+    geomList.push_back(*Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db));
     auto part = GeomPart::Create(range, geomList);
     m_map.Insert(key, part);
 
@@ -1161,7 +1176,7 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
     if (geometry.empty())
         geometry = iter->second;
     else
-        geometry.insert(geometry.end(), iter->second.begin(), iter->second.end());
+        geometry.append(iter->second);
 
     return true;
     }
@@ -1502,7 +1517,14 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 
     auto const& root = GetElementRoot();
     GeometryList geometries = CollectGeometry(m_tolerance, context);
-    return CreateGeometryCollection(geometries, context);
+    auto collection = CreateGeometryCollection(geometries, context);
+    if (collection.IsEmpty() && !geometries.empty())
+        collection.MarkIncomplete();
+
+    if (geometries.ContainsCurves())
+        collection.MarkCurved();
+
+    return collection;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1543,7 +1565,11 @@ Render::Primitives::GeometryCollection Tile::CreateGeometryCollection(GeometryLi
         }
 
     if (!context.WasAborted())
+        {
         collection.Meshes() = generator.GetMeshes();
+        if (!geometries.IsComplete())
+            collection.MarkIncomplete();
+        }
 
     return collection;
     }
@@ -1570,14 +1596,11 @@ GeometryList Tile::CollectGeometry(double tolerance, LoadContextCR loadContext)
     transformFromDgn.InverseOf(root.GetLocation());
 
     GeometryList geometries;
-
     if (loadContext.WasAborted())
         return geometries;
 
     TileContext tileContext(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, tolerance, loadContext);
-
     tileContext.OutputGraphics();
-
     return geometries;
     }
 
@@ -1631,7 +1654,7 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
 void TileContext::PushGeometry(GeometryR geom)
     {
     if (!BelowMinRange(geom.GetTileRange()))
-        m_geometries.push_back(&geom);
+        m_geometries.push_back(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1671,7 +1694,7 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
     tf.Multiply(range, tileGeomPart->GetRange());
 
     DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
-    m_geometries.push_back(Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1681,7 +1704,7 @@ TileContext::Result TileContext::OutputGraphics()
     {
     GeometryCollector collector(m_range, *this);
     auto status = collector.Collect();
-    if (Result::Aborted == status)
+    if (TileContext::Result::Aborted == status)
         m_geometries.clear();
 
     return status;

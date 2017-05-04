@@ -145,6 +145,7 @@ public:
 struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
+
 private:
     double          m_tolerance;
 
