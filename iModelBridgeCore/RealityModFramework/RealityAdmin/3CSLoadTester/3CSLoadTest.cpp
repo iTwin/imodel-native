@@ -417,7 +417,7 @@ void User::DoNext(UserManager* owner)
         if (m_jobId.empty())
             m_currentOperation = OperationType::CREATE_JOB;
         else
-            curl = AddJobForId();
+            curl = SubmitJob();
         }
     else if (m_currentOperation == OperationType::DELETE_JOB)
         {
@@ -447,7 +447,7 @@ void User::DoNext(UserManager* owner)
         else if (!m_submitted)
             {
             OperationType::ADD_JOB;
-            curl = AddJobForId();
+            curl = SubmitJob();
             }
         else
             curl = CancelJob();
@@ -598,12 +598,12 @@ CURL* User::CreateJob()
     m_jobCount++; //this is to avoid adding a job with the same name as one that was recently deleted
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/jobs", m_id));
+    m_correspondance.req.url.append("api/v1/jobs");
     m_correspondance.req.type = POST;
     Utf8String body =   "{"
-                            "\"id\":\"%s%d\","
                             "\"projectName\" : \"load test job\","
                             "\"jobType\" : \"Photos2Mesh\","
+                            "\"projectId\": \"%s\","
                             "\"inputs\" : {"
                                 "\"storage\":{"
                                     "\"storageType\":\"Rds\","
@@ -625,7 +625,7 @@ CURL* User::CreateJob()
                                         "\"storages\" : ["
                                             "{"
                                                 "\"storageType\":\"Rds\", "
-                                                "\"path\" : \"6f7ff17c-bc86-4261-b04a-06cade6631ef\""
+                                                "\"path\" : \"%s\""
                                             "}"
                                         "]"
                                     "}"
@@ -640,18 +640,30 @@ CURL* User::CreateJob()
                             "}"
                         "}";
 
-    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, m_jobCount);
+    Utf8String outputPath = m_id;
+    bvector<Utf8String> numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
+    
+    for (int i = 0; i < 10; i++)
+        {
+        if(outputPath.ContainsI(numbers[i]))
+            {
+            outputPath.ReplaceAll(numbers[i].c_str(), numbers[i+1].c_str());
+            break;
+            }
+        }
+
+    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, outputPath);
     
     return PrepareRequest();
     }
 
-CURL* User::AddJobForId()
+CURL* User::SubmitJob()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/jobs/%s/submit", m_id, m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/submit", m_jobId));
     m_correspondance.req.type = POST;
-    m_correspondance.req.payload = Utf8PrintfString("{\"id\":\"%s\", \"jobId\":\"%s\"", m_id, m_jobId);
+    //m_correspondance.req.payload = Utf8PrintfString("{\"id\":\"%s\", \"jobId\":\"%s\"", m_id, m_jobId);
 
     m_submitted = true;
 
@@ -676,7 +688,7 @@ CURL* User::GetJobs()
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs", m_id));
+    m_correspondance.req.url.append("api/v1/jobs");
     m_correspondance.req.type = GET;
 
     return PrepareRequest();
@@ -720,11 +732,6 @@ CURL* User::CancelJob()
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void User::ValidatePrevious(int activeUsers)
     {
-    if(m_correspondance.response.curlCode != CURLE_OK || m_correspondance.response.responseCode > 399)
-        {
-        s_stats.InsertStats(this, false, activeUsers);
-        return;
-        }
     switch (m_currentOperation)
         {
         case OperationType::ADD_PROJECT:
@@ -732,7 +739,15 @@ void User::ValidatePrevious(int activeUsers)
         case OperationType::CREATE_JOB:
             return ValidateCreateJob(activeUsers);
         default:
-            s_stats.InsertStats(this, (m_correspondance.response.curlCode == CURLE_OK), activeUsers);
+            {
+            if(m_correspondance.response.curlCode != CURLE_OK || m_correspondance.response.responseCode > 399)
+                {
+                s_stats.InsertStats(this, false, activeUsers);
+                return;
+                }
+            else
+                s_stats.InsertStats(this, (m_correspondance.response.curlCode == CURLE_OK), activeUsers);
+            }
         }
     }
 
