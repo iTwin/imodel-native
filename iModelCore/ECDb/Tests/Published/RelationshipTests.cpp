@@ -3385,7 +3385,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECEntityClass typeName="Child" >
                                 <ECProperty propertyName="ChildName" typeName="string" />
-                                <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
                                  <ECCustomAttributes>
@@ -3567,7 +3567,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
@@ -3591,7 +3591,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
@@ -3615,7 +3615,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
