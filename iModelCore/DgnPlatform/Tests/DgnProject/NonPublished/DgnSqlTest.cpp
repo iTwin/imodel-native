@@ -344,8 +344,8 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     ASSERT_TRUE( robot1.IsValid() );
         
     Statement stmt;
-    stmt.Prepare(*m_db,        // aspect.sc1 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId, aspect.sc1 FROM " BIS_TABLE(BIS_CLASS_Element) " e, " BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect," BIS_TABLE(BIS_CLASS_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
+    stmt.Prepare(*m_db,        // aspect.ps1 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId, aspect.ps1 FROM " BIS_TABLE(BIS_CLASS_Element) " e, " BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect," BIS_TABLE(BIS_CLASS_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
              " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)" // FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
