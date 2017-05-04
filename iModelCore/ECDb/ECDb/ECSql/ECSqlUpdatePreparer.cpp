@@ -22,51 +22,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     BeAssert(exp.IsComplete());
 
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
-
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
-    if (stat != ECSqlStatus::Success)
-        return stat;
-#endif
+    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
-
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
-    if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated " ECDBSYS_PROP_ECInstanceId "s.");
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    if (auto info = ctx.GetJoinedTableInfo())
-        {
-        if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
-            {
-            ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
-            ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql(), ctx.GetWriteToken());
-            if (status != ECSqlStatus::Success)
-                {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. Could not prepare the subset of the ECSQL that targets the primary table: %s.", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
-                return ECSqlStatus::InvalidECSql;
-                }
-            }
-        }
-    if (classMap.IsRelationshipClassMap())
-        {
-        if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECClassId())||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
-            return ECSqlStatus::InvalidECSql;
-            }
-        }
-#endif
-
-    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
     // UPDATE clause
     nativeSqlBuilder.Append("UPDATE ");
@@ -109,50 +67,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
         topLevelWhereClause = whereClause;
-#else
-        //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
-        auto const & currentClassMap = classMap;
-        if (!currentClassMap.IsMappedToSingleTable())
-            {
-            auto& primaryTable = currentClassMap.GetPrimaryTable();
-            auto& secondaryTable = currentClassMap.GetJoinedOrPrimaryTable();
-
-            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&secondaryTable) != tableBeenAccessed.end());
-            if (!referencedRootOfJoinedTable && referencedJoinedTable)
-                {
-                //do not modifiy where
-                topLevelWhereClause = whereClause;
-                }
-            else
-                {
-                auto joinedTableId = secondaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
-                auto parentOfjoinedTableId = primaryTable.FindFirst(DbColumn::Kind::ECInstanceId);
-                NativeSqlBuilder snippet;
-                snippet.AppendFormatted(
-                    "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",
-                    joinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    joinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
-                    whereClause.ToString()
-                    );
-                
-                //topLevelWhereClause.GetParameterIndexMappings()
-                topLevelWhereClause = snippet;
-                }
-            }
-        else
-            topLevelWhereClause = whereClause;
-#endif
         }
 
     if (!topLevelWhereClause.IsEmpty())
@@ -181,36 +96,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     return status;
     }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                         05/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
-    {
-    OptionsExp const* optionsExp = ctx.GetCurrentScope().GetOptions();
-    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
-        return ECSqlStatus::Success;
-
-    for (Exp const* expr : exp.GetAssignmentListExp()->GetChildren())
-        {
-        AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*>(expr);        
-        if (!assignmentExp->GetPropertyNameExp()->IsPropertyRef())
-            {
-            ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap().GetProperty();
-
-            if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
-                {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
-                                                                        prop.GetName().c_str(), exp.ToECSql().c_str());
-                return ECSqlStatus::InvalidECSql;
-                }
-            }
-        }
-
-    return ECSqlStatus::Success;
-    }
-#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------

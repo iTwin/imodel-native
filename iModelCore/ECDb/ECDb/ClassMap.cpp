@@ -82,16 +82,15 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                 needsToCreateTable = true;
                 }
             else
-                {
                 AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
-                                }
             }
 
-        for (DbTable* table : GetTables())
+        for (DbTable const* table : GetTables())
             {
-            if (DbTable const* overflowTable = table->FindOverflowTable())
+            DbTable::LinkNode const* overflowTableNode = table->GetLinkNode().FindOverflowTable();
+            if (overflowTableNode != nullptr)
                 {
-                AddTable(*const_cast<DbTable*>(overflowTable));
+                AddTable(overflowTableNode->GetTableR());
                 break;
                 }
             }

@@ -264,12 +264,14 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     //Remove any primary table
     for (DbTable const* joinedTable : joinedTables)
         {
-        updateTables.erase(joinedTable->GetBaseTable());
+        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
+        updateTables.erase(&joinedTable->GetLinkNode().GetParent()->GetTable());
         }
 
     for (DbTable const* joinedTable : joinedTables)
         {
-        deleteTables.insert(joinedTable->GetBaseTable());
+        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
+        deleteTables.insert(&joinedTable->GetLinkNode().GetParent()->GetTable());
         deleteTables.erase(joinedTable);
         }
 

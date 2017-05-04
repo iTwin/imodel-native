@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -1647,5 +1645,3 @@ IECSqlBinder& CompoundECSqlPreparedStatement::ProxyECSqlBinder::_AddArrayElement
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
-#endif

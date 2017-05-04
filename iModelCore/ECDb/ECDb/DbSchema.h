@@ -51,24 +51,31 @@ struct PropertyPathId final : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(PropertyPathId, BeInt64Id)
     };
 
+//======================================================================================
+// @bsiclass                                                 Affan.Khan         09/2014
+//======================================================================================
 struct DbSchemaNameGenerator final
     {
 private:
-    int m_lastId;
+    int m_lastId = 0;
     Utf8String m_format;
 
 public:
-    DbSchemaNameGenerator() :m_format("___%d____"), m_lastId(0) {}
-    explicit DbSchemaNameGenerator(Utf8CP format) :m_format(format), m_lastId(0) {}
+    DbSchemaNameGenerator() {}
+    //! @param[in] namePrefix Prefix for the names to be generated. The generator appends a number to it.
+    //! Must not include a placeholder for the number appended.
+    explicit DbSchemaNameGenerator(Utf8CP namePrefix) :m_format(namePrefix) 
+        { 
+        BeAssert(!Utf8String::IsNullOrEmpty(namePrefix));
+        if (!Utf8String::IsNullOrEmpty(namePrefix))
+            m_format.assign(namePrefix).append("%d");
+        }
     ~DbSchemaNameGenerator() {}
 
-    void Initialize(int lastId) { m_lastId = lastId; }
-    void Generate(Utf8StringR generatedName)
-        {
-        m_lastId++;
-        generatedName.clear();
-        generatedName.Sprintf(m_format.c_str(), m_lastId);
-        }
+    void Initialize(int lastId) { BeAssert(IsValid()); m_lastId = lastId; }
+    void Generate(Utf8StringR generatedName) { BeAssert(IsValid()); m_lastId++; generatedName.Sprintf(m_format.c_str(), m_lastId); }
+
+    bool IsValid() const { return !m_format.empty(); }
     };
 
 struct DbTable;
@@ -350,13 +357,35 @@ public:
         Overflow =3 //! Derived table cannot exist without a primary or joined table
         };
 
-    struct EditHandle : NonCopyableClass
+    struct LinkNode final : NonCopyableClass
+        {
+        private:
+            DbTable const& m_table;
+            LinkNode const* m_parent = nullptr;
+            std::vector<LinkNode const*> m_children;
+
+        public:
+            LinkNode(DbTable const& thisTable, DbTable const* parent);
+
+            DbTable const& GetTable() const { return m_table; }
+            DbTable& GetTableR() const { return const_cast<DbTable&>(m_table); }
+            DbTable::Type GetType() const { return m_table.GetType(); }
+            bool IsChildTable() const { return GetType() == Type::Joined || GetType() == Type::Overflow; }
+
+            LinkNode const* GetParent() const { return m_parent; }
+            std::vector<LinkNode const*> const& GetChildren() const { return m_children; }
+            LinkNode const* FindOverflowTable() const;
+
+            BentleyStatus Validate() const;
+        };
+
+    struct EditHandle final : NonCopyableClass
         {
     private:
-        bool m_canEdit;
+        bool m_canEdit = true;
 
     public:
-        EditHandle() :m_canEdit(true) {}
+        EditHandle() {}
         ~EditHandle() {}
 
         bool BeginEdit();
@@ -366,37 +395,34 @@ public:
         };
 
 private:
+    DbSchema& m_dbSchema;
     DbTableId m_id;
     Utf8String m_name;
-    DbTable const* m_baseTable;
-    DbSchema& m_dbSchema;
-    DbSchemaNameGenerator m_sharedColumnNameGenerator;
     Type m_type;
     PersistenceType m_persistenceType;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
     bvector<DbColumn const*> m_orderedColumns;
-    DbColumn const* m_classIdColumn;
+    DbColumn const* m_classIdColumn = nullptr;
 
     std::unique_ptr<PrimaryKeyDbConstraint> m_pkConstraint;
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
+    DbSchemaNameGenerator m_sharedColumnNameGenerator;
+    LinkNode m_linkNode;
+
     EditHandle m_editHandle;
-    std::vector<DbTable const*> m_derviedTables;
 
     DbColumn* CreateColumn(DbColumnId, Utf8StringCR name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
-public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* baseTable);
+    static Utf8CP GetSharedColumnNamePrefix(Type);
 
+public:
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema&, PersistenceType, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     void InitializeSharedColumnNameGenerator(int existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
-    //!If this is a joined table the method returns the parent of the joined table, aka primary table.
-    //!Otherwise the method returns nullptr
-    DbTable const* GetBaseTable() const { return m_baseTable; }
-    BentleyStatus Validate(bool assert) const;
     DbTableId GetId() const { return m_id; }
     void SetId(DbTableId id) { m_id = id; }
     Utf8StringCR GetName() const { return m_name; }
@@ -405,24 +431,14 @@ public:
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
-    ECN::ECClassId GetExclusiveRootECClassId() const 
-        {
-        if (!HasExclusiveRootECClass())
-            {
-            BeAssert(HasExclusiveRootECClass());
-            }
-
-        return m_exclusiveRootECClassId; 
-        }
-    DbSchemaNameGenerator const& GetSharedColumnNameGenerator() const { return m_sharedColumnNameGenerator; }
-    DbSchemaNameGenerator & GetSharedColumnNameGeneratorR()  { return m_sharedColumnNameGenerator; }
-
+    ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+    
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
-    std::vector<DbTable const*> const& GetDerivedTables() const { return m_derviedTables; }
-    bool IsDerivedTable() const { return m_type == Type::Joined || m_type == Type::Overflow; }
+
+    LinkNode const& GetLinkNode() const { return m_linkNode; }
     BentleyStatus CreateTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);
     std::vector<const DbTrigger*> GetTriggers()const;
     DbColumn const* FindColumn(Utf8CP name) const;
@@ -441,8 +457,6 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
-    DbTable const* FindOverflowTable() const;
-    //! Only changing to persistence type is supported in limited conditions
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
     };
@@ -507,20 +521,20 @@ private:
     mutable std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> m_tableMapByName;
     mutable bmap<DbTableId, Utf8String> m_tableMapById;
 
-    mutable DbTable* m_nullTable;
+    mutable DbTable* m_nullTable = nullptr;
     mutable std::vector<std::unique_ptr<DbIndex>> m_indexes;
     mutable bset<Utf8CP, CompareIUtf8Ascii> m_usedIndexNames;
-    mutable bool m_indexesLoaded;
-    mutable bool m_syncTableCacheNames;
+    mutable bool m_indexesLoaded = false;
+    mutable bool m_isTableCacheUpToDate = false;
 
-    BentleyStatus LoadTable(Utf8StringCR name, DbTable*& tableP) const;
-    BentleyStatus LoadColumns(DbTable& table) const;
-    BentleyStatus InsertTable(DbTable const& table) const;
-    BentleyStatus InsertColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const;
+    BentleyStatus LoadTable(Utf8StringCR name, DbTable*&) const;
+    BentleyStatus LoadColumns(DbTable&) const;
+    BentleyStatus InsertTable(DbTable const&) const;
+    BentleyStatus InsertColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
     BentleyStatus LoadIndexes() const;
-    BentleyStatus InsertIndex(DbIndex const& index) const;
-    BentleyStatus UpdateTable(DbTable const& table) const;
-    BentleyStatus UpdateColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdina) const;
+    BentleyStatus InsertIndex(DbIndex const&) const;
+    BentleyStatus UpdateTable(DbTable const&) const;
+    BentleyStatus UpdateColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdina) const;
 
     bool IsTableNameInUse(Utf8StringCR tableName) const;
 
@@ -528,12 +542,14 @@ private:
     bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetExistingTableMap() const;
     bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetPersistedColumnMap(DbTableId) const;
 
+    void UpdateTableCache() const;
+
 public:
-    explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_%d"), m_nullTable(nullptr), m_indexesLoaded(false), m_syncTableCacheNames(false) { }
+    explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_") {}
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
-    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateOverflowTable(DbTable const& baseTable);
     DbTable* CreateJoinedTable(DbTable const& baseTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId);
     std::vector<DbTable const*> GetCachedTables() const;
@@ -546,7 +562,6 @@ public:
     DbIndex* CreateIndex(DbTable&, Nullable<Utf8String> const& indexName, bool isUnique, std::vector<DbColumn const*> const&, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial = true);
     DbIndex* CreateIndex(DbTable&, Nullable<Utf8String> const& indexName, bool isUnique, std::vector<Utf8CP> const& columnNames, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial = true);
     BentleyStatus SynchronizeExistingTables();
-    void SyncTableCache() const;
     ECDbCR GetECDb() const { return m_ecdb; }
     void Reset() const;
 

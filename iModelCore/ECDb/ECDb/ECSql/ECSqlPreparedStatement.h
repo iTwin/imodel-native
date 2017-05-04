@@ -14,8 +14,6 @@
 #include "ECSqlField.h"
 #include "DynamicSelectClauseECClass.h"
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -491,5 +489,3 @@ public:
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
-#endif
