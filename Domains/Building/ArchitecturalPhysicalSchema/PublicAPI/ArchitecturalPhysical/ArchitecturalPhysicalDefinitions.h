@@ -86,6 +86,9 @@
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
+ARCHITECTURAL_PHYSICAL_TYPEDEFS(ArchitecturalPhysicalModel)
+ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(ArchitecturalPhysicalModel)
+
 /*PLANNING_TYPEDEFS(Calendar)
 PLANNING_TYPEDEFS(Activity)
 PLANNING_REFCOUNTED_TYPEDEFS(Activity)
