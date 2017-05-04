@@ -140,7 +140,6 @@ public:
     
     public:
         LinkTableMappingInfo() {}
-        //LinkTableMappingInfo(bool allowDuplicateRelationships) : m_allowDuplicateRelationships(allowDuplicateRelationships) {}
         LinkTableMappingInfo(Nullable<Utf8String> const& sourceIdColname, Nullable<Utf8String> const& targetIdColName, Nullable<bool> allowDuplicateRelationships)
             : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName), m_allowDuplicateRelationships(allowDuplicateRelationships.IsNull() ? false : allowDuplicateRelationships.Value())
             {}
@@ -150,7 +149,7 @@ public:
         bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
         };
 private:
-    bool m_isRootClass;
+    bool m_isRootClass = false;
     std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
     std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
     std::set<DbTable const*> m_sourceTables;
@@ -171,9 +170,7 @@ private:
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
-        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()),
-        m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
-        {}
+        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
 
     ~RelationshipMappingInfo() {}
 
