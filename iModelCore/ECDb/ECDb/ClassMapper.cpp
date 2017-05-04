@@ -44,7 +44,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
         }
 
     if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext)
-        if (m_classMap.GetColumnFactory().BeignSharedColumnBlock(property.GetName().c_str()) != SUCCESS)
+        if (m_classMap.GetColumnFactory().BeginSharedColumnBlock(property.GetName().c_str()) != SUCCESS)
             return nullptr;
 
     if (auto typedProperty = property.GetAsPrimitiveProperty())

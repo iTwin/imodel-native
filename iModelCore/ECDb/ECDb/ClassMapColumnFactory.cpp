@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //@bsimethod                                                    Affan.Khan       12 / 2016
 //------------------------------------------------------------------------------------------
 ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) 
-    : m_classMap(classMap), m_usesSharedColumnStrategy(classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes), m_sharedColumnCount(-1)
+    : m_classMap(classMap), m_usesSharedColumnStrategy(classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
     {
     if (m_usesSharedColumnStrategy)
         {
@@ -31,17 +31,18 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
 //------------------------------------------------------------------------------------------
 DbTable* ClassMapColumnFactory::GetOverflowTable() const
     {
-    if (GetTable().GetDerivedTables().empty())
+    if (GetTable().GetLinkNode().GetChildren().empty())
         {
-        DbTable*  overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(GetTable());
+        DbTable* overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(GetTable());
         const_cast<ClassMap&>(m_classMap).SetOverflowTable(*overflowTable);
         return overflowTable;
         }
-    else if (GetTable().GetDerivedTables().size() == 1)
+
+    if (GetTable().GetLinkNode().GetChildren().size() == 1)
         {
-        DbTable* overflowTable = const_cast<DbTable*>(GetTable().GetDerivedTables().front());
+        DbTable::LinkNode const* overflowTable = GetTable().GetLinkNode().GetChildren()[0];
         if (overflowTable->GetType() == DbTable::Type::Overflow)
-            return overflowTable;
+            return &overflowTable->GetTableR();
         }
 
     BeAssert(false && "Cannot create overflow table");
@@ -51,7 +52,7 @@ DbTable* ClassMapColumnFactory::GetOverflowTable() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04/2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter, int columnsRequired) const
+BentleyStatus ClassMapColumnFactory::BeginSharedColumnBlock(Utf8CP propertyName, bset<const ClassMap*> const* additionalFilter, int columnsRequired) const
     {
     if (m_columnReservationInfo != nullptr)
         {
@@ -78,13 +79,13 @@ BentleyStatus ClassMapColumnFactory::BeignSharedColumnBlock(Utf8CP propertyName,
             return ERROR;
             }
 
-        columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(*property);
+        columnsRequired = ColumnReservationInfo::MaxColumnsRequiredToPersistProperty(*property);
         }
 
     SetupCompoundFilter(additionalFilter);
     int sharedColumnThatCanBeCreated;
     int sharedColumnThatCanBeReused;
-    if (TryGetAvaliableColumns(sharedColumnThatCanBeCreated, sharedColumnThatCanBeReused) != SUCCESS)
+    if (TryGetAvailableColumns(sharedColumnThatCanBeCreated, sharedColumnThatCanBeReused) != SUCCESS)
         {
         RemoveCompoundFilter();
         return ERROR;
@@ -130,14 +131,14 @@ BentleyStatus ClassMapColumnFactory::EndSharedColumnBlock() const
 //------------------------------------------------------------------------------------------
 void ClassMapColumnFactory::Initialize() const
     {
-        UsedColumnFinder::ColumnMap columnMap;
+    bmap<Utf8String, DbColumn const*> columnMap;
     if (SUCCESS != UsedColumnFinder::Find(columnMap, m_classMap))
         {
         BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
         return;
         }
 
-    for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
+    for (bpair<Utf8String, DbColumn const*> const& entry : columnMap)
         {
         AddColumnToCache(*entry.second, entry.first);
         }
@@ -338,7 +339,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      04/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::TryGetAvaliableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const
+BentleyStatus ClassMapColumnFactory::TryGetAvailableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const
     {
     const int maxColumnInBaseTable = 63;
     const std::vector<DbColumn const*> physicalColumns = GetTable().FindAll(PersistenceType::Physical);
@@ -418,13 +419,9 @@ DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR pro
     
     DbColumn* col;
     if (m_columnReservationInfo && m_columnReservationInfo->GetOverflowTable())
-        {
         col = m_columnReservationInfo->GetOverflowTable()->CreateSharedColumn(colType);
-        }
     else
-        {
         col = GetTable().CreateSharedColumn(colType);
-        }
 
     if (m_columnReservationInfo && !m_columnReservationInfo->GetOverflowTable())
         m_columnReservationInfo->AllocateNew();
@@ -791,7 +788,7 @@ ClassMapColumnFactory::UsedColumnFinder::UsedColumnFinder(ClassMap const& classM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixins()
     {
     ECDbCR ecdb = m_classMap.GetDbMap().GetECDb();
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
@@ -825,14 +822,14 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& columnMap)
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(bmap<Utf8String, DbColumn const*>& columnMap)
     {
     //Traverse derived class hierarchy and find deepest mapped classes. 
     //It also identify any mixin that it encounter
     if (TraverseClassHierarchy(m_classMap.GetClass(), nullptr) != SUCCESS)
         return ERROR;
 
-    if (QueryRelevantMixIns() != SUCCESS)
+    if (QueryRelevantMixins() != SUCCESS)
         return ERROR;
 
     //Find implementation for mixins and also remove the mixin from queue that has implementation as part of deepest mapped classes
@@ -850,7 +847,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
         SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
         m_classMap.GetPropertyMaps().AcceptVisitor(visitor);
         for (PropertyMap const* propertyMap : visitor.Results())
-            columnMap.insert(std::make_pair(propertyMap->GetAccessString(), &propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn()));
+            columnMap.insert(bpair<Utf8String, DbColumn const*>(propertyMap->GetAccessString(), &propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn()));
         }
 
     for (ClassMapCP deepestClassMapped : m_deepestClassMapped)
@@ -865,7 +862,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             if (IsMappedIntoContextClassMapTables(*propertyMap))
                 {
                 SingleColumnDataPropertyMap const& singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
-                columnMap.insert(std::make_pair(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
+                columnMap.insert(bpair<Utf8String, DbColumn const*>(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
                 }
             }
         }
@@ -894,7 +891,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             if (IsMappedIntoContextClassMapTables(*propertyMap))
                 {
                 SingleColumnDataPropertyMap const& singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
-                columnMap.insert(std::make_pair(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
+                columnMap.insert(bpair<Utf8String, DbColumn const*>(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
                 }
             }
         }
@@ -914,14 +911,14 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
                 {
                 ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
                 if (ecInstanceIdPropMap != nullptr)
-                    columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
+                    columnMap.insert(bpair<Utf8String, DbColumn const*>(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
                 }
 
             if (!relECClassIdPropMap) 
                 {
                 relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
                 if (relECClassIdPropMap != nullptr)
-                    columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
+                    columnMap.insert(bpair<Utf8String, DbColumn const*>(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
                 }
             }
         }
@@ -932,7 +929,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Find(ClassMapColumnFactory::UsedColumnFinder::ColumnMap& columnMap, ClassMap const& classMap)
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Find(bmap<Utf8String, DbColumn const*>& columnMap, ClassMap const& classMap)
     {
     UsedColumnFinder calc(classMap);
     return calc.Execute(columnMap);
@@ -945,7 +942,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Find(ClassMapColumnFactor
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
 //static 
-int ClassMapColumnFactory::ColumnReservationInfo::MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty)
+int ClassMapColumnFactory::ColumnReservationInfo::MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR ecProperty)
     {
     int columnsRequired = 0;
     if (ecProperty.GetIsNavigation())
@@ -968,7 +965,7 @@ int ClassMapColumnFactory::ColumnReservationInfo::MaxColumnsRequiredToPersistAPr
     else if (StructECPropertyCP structProperty = ecProperty.GetAsStructProperty())
         {
         for (ECN::ECPropertyCP prop : structProperty->GetType().GetProperties(true))
-            columnsRequired += MaxColumnsRequiredToPersistAProperty(*prop);
+            columnsRequired += MaxColumnsRequiredToPersistProperty(*prop);
         }
     else
         {

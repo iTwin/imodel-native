@@ -442,7 +442,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             }
 
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
-        if (fkTable.GetBaseTable() != nullptr)
+        if (fkTable.GetLinkNode().IsChildTable())
             {
             if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade ||
                 (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relClass.GetStrength() == StrengthType::Embedding))
@@ -1798,7 +1798,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
         auto itor = m_sharedBlock.find(rootClassMap);
         if (itor == m_sharedBlock.end())
             {
-            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            rootClassMap->GetColumnFactory().BeginSharedColumnBlock(nullptr, nullptr, 2);
             m_sharedBlock.insert(rootClassMap);
             itor = m_sharedBlock.end();
             }
@@ -1849,7 +1849,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
         auto itor = m_sharedBlock.find(rootClassMap);
         if (itor == m_sharedBlock.end())
             {
-            rootClassMap->GetColumnFactory().BeignSharedColumnBlock(nullptr, nullptr, 2);
+            rootClassMap->GetColumnFactory().BeginSharedColumnBlock(nullptr, nullptr, 2);
             m_sharedBlock.insert(rootClassMap);
             itor = m_sharedBlock.end();
             }

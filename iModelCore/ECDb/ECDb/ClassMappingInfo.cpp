@@ -983,8 +983,8 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
     std::set<DbTable const*> tables;
     for (ClassMap const* classMap : classMaps)
         {
-        std::vector<DbTable*> classPersistInTables; ;
-        for (DbTable * table : classMap->GetTables())
+        std::vector<DbTable const*> classPersistInTables;
+        for (DbTable const* table : classMap->GetTables())
             if (table->GetType() != DbTable::Type::Overflow)
                 classPersistInTables.push_back(table);
 
@@ -996,10 +996,9 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 
         for (DbTable const* table : classPersistInTables)
             {
-   
-            if (DbTable const* primaryTable = table->GetBaseTable())
+            if (DbTable::LinkNode const* previousTableNode = table->GetLinkNode().GetParent())
                 {
-                joinedTables[primaryTable].insert(table);
+                joinedTables[&previousTableNode->GetTable()].insert(table);
                 tables.insert(table);
                 }
             }
@@ -1013,8 +1012,8 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
         bool isPrimaryTableSelected = tables.find(primaryTable) != tables.end();
         if (ignoreJoinedTables)
             {
-            for (auto childTable : primaryTable->GetDerivedTables())
-                tables.erase(childTable);
+            for (DbTable::LinkNode const* nextTableNode : primaryTable->GetLinkNode().GetChildren())
+                tables.erase(&nextTableNode->GetTable());
 
             tables.insert(primaryTable);
             continue;
