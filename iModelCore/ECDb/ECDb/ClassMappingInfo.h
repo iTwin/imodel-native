@@ -161,7 +161,7 @@ private:
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
 
-    bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
+    bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const&) const;
 
     bool RequiresLinkTable() const;
     BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&) const;
