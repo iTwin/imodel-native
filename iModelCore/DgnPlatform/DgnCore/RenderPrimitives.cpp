@@ -819,11 +819,7 @@ GeomPart::GeomPart(DRange3dCR range, GeometryList const& geometries) : m_range (
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomPart::IsCurved() const
     {
-    for (auto& geometry : m_geometries)
-        if (geometry->IsCurved())
-            return true;
-
-    return false;
+    return m_geometries.ContainsCurves();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1202,7 +1198,7 @@ bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
     if (geometry.IsNull())
         return false;
 
-    m_geometries.push_back(geometry);
+    m_geometries.push_back(*geometry);
     return true;
     }
 
@@ -1298,7 +1294,7 @@ bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, 
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 
@@ -1319,7 +1315,7 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
     Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 

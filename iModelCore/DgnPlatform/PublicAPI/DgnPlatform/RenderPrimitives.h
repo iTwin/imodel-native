@@ -28,6 +28,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Strokes);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryCollection);
@@ -48,7 +49,6 @@ DEFINE_REF_COUNTED_PTR(GeomPart);
 
 typedef bvector<MeshInstance>       MeshInstanceList;
 typedef bvector<MeshPartPtr>        MeshPartList;
-typedef bvector<GeometryPtr>        GeometryList;
 typedef bvector<Triangle>           TriangleList;
 typedef bvector<Polyline>           PolylineList;
 typedef bvector<Polyface>           PolyfaceList;
@@ -602,6 +602,35 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct GeometryList
+{
+    typedef bvector<GeometryPtr> List;
+private:
+    List    m_list;
+    bool    m_complete = true;
+    bool    m_curved = false;
+public:
+    bool IsComplete() const { return m_complete; }
+    bool ContainsCurves() const { return m_curved; }
+    void MarkIncomplete() { m_complete = false; }
+    void MarkCurved() { m_curved = true; }
+
+    typedef List::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    bool empty() const { return m_list.empty(); }
+    size_t size() const { return m_list.size(); }
+
+    void push_back(GeometryR geom) { m_list.push_back(&geom); m_curved = m_curved || geom.IsCurved(); }
+    void append(GeometryListR src) { m_list.insert(m_list.end(), src.m_list.begin(), src.m_list.end()); m_curved = m_curved || src.ContainsCurves(); }
+    void resize(size_t newSize) { m_list.resize(newSize); }
+    void clear() { m_list.clear(); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct GeomPart : RefCountedBase
@@ -637,12 +666,15 @@ private:
     MeshList            m_meshes;
     MeshPartList        m_parts;
     bool                m_isComplete = true;
+    bool                m_curved = false;
 public:
     MeshList& Meshes()              { return m_meshes; }
     MeshPartList& Parts()           { return m_parts; }
     bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
     bool IsComplete() const         { return m_isComplete; }
+    bool ContainsCurves() const     { return m_curved; }
     void MarkIncomplete()           { m_isComplete = false; }
+    void MarkCurved()               { m_curved = true; }
 };
 
 //=======================================================================================
@@ -668,7 +700,7 @@ public:
     GeometryAccumulator(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
     explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
 
-    void AddGeometry(GeometryR geom) { m_geometries.push_back(&geom); }
+    void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
     DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform);

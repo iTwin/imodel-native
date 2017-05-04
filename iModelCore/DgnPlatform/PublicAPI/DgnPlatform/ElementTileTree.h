@@ -146,7 +146,6 @@ struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
-    enum class CollectionResult { Success, NoGeometry, Aborted, Incomplete };
 private:
     double          m_tolerance;
 
@@ -157,7 +156,7 @@ private:
     double _GetMaximumSize() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-    CollectionResult CollectGeometry(Render::Primitives::GeometryList&, double tolerance, LoadContextCR context);
+    Render::Primitives::GeometryList CollectGeometry(double tolerance, LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
 public:
