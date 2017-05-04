@@ -406,6 +406,7 @@ int main(int argc, char **argv)
     Utf8String pathComparison;
     Utf8String umdhPathJoin;
     Utf8String symbolPath;
+    Utf8String gflagsPathJoin;
     
     if (umdh_Use(argc, argv))
         {
@@ -417,7 +418,7 @@ int main(int argc, char **argv)
         BeFileName::GetCwd(currentDirectory);
 
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
-        printf("%d\n",WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
+        printf("%d\n", WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
         //printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
@@ -426,14 +427,14 @@ int main(int argc, char **argv)
         bvector<Utf8CP> umdhPath2 = {winSdkDir,"Debuggers\\", defArch,"\\umdh.exe" };
         bvector<Utf8CP> gflagsPath2 = {winSdkDir,"Debuggers\\", defArch,"\\gflags.exe" };
         umdhPathJoin =  BeStringUtilities::Join(umdhPath2);
-        Utf8String gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
+        gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
         
         WString currentDirectoryExe = currentDirectory ;
         currentDirectoryExe.AppendUtf8("\\");
         currentDirectoryExe.AppendUtf8(argv[0]);
         BeStringUtilities::WCharToUtf8(gflagsSet, currentDirectoryExe.c_str());
-        bvector<Utf8CP> gflags = {gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " +ust"  };
-        Utf8String setGflags =  BeStringUtilities::Join(gflags);
+        bvector<Utf8CP> gflagsEnable = {gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " +ust"  };
+        Utf8String setGflags =  BeStringUtilities::Join(gflagsEnable);
 
         sprintf_s(strCommand, sizeof(strCommand), setGflags.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
@@ -508,7 +509,14 @@ int main(int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
         printf(strCommand, "\n");
-        
+
+
+        bvector<Utf8CP> gflagsDisable = { gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " -ust" };
+        Utf8String disGflags = BeStringUtilities::Join(gflagsDisable);
+
+        sprintf_s(strCommand, sizeof(strCommand), disGflags.c_str());
+        spawnRet = SpawnProcessWin32(strCommand, retCode);
+
         }
 #endif
     //  Run the tests
