@@ -636,10 +636,13 @@ struct GeometryCollection
 private:
     MeshList            m_meshes;
     MeshPartList        m_parts;
+    bool                m_isComplete = true;
 public:
     MeshList& Meshes()              { return m_meshes; }
     MeshPartList& Parts()           { return m_parts; }
     bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+    bool IsComplete() const         { return m_isComplete; }
+    void MarkIncomplete()           { m_isComplete = false; }
 };
 
 //=======================================================================================
