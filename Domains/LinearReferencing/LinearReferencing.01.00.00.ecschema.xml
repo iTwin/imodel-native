@@ -105,10 +105,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearlyLocatedOwnsLocations" strength="embedding" modifier="None">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N LinearlyReferencedLocations">
             <Class class="LinearlyReferencedLocation"/>
         </Target>
     </ECRelationshipClass>
