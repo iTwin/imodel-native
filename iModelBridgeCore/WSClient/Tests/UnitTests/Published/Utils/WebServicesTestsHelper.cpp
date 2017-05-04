@@ -15,10 +15,7 @@ void BackDoor::DgnClientFx_Device::Initialize()
     {
 #if defined (__ANDROID__)
     // WIP06 - DgnClientFx is not initialized, need to initialize APIs seperately
-    if (ClientInfo::GetDeviceId().empty())
-        {
-        ClientInfo::CacheAndroidDeviceId ("TEST_DEVICE_ID");
-        }
+    ClientInfo::CacheAndroidDeviceId ("TestDeviceId");
 #endif
     }
 
