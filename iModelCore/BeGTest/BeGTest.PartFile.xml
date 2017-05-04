@@ -67,6 +67,7 @@
         <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
         <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
         <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+        <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
         <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
         
 		<ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData"/>
