@@ -1657,7 +1657,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("date", ECN::ECValue(dateTime)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("utc", ECN::ECValue(dateTimeUtc)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("i", ECN::ECValue(1)));
-        ASSERT_EQ(SUCCESS, testProps.SetValueEC("l", ECN::ECValue(1000000000001ULL)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("l", ECN::ECValue((uint64_t)1000000000001)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("s", ECN::ECValue("StringVal")));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("p2d", ECN::ECValue(point2d)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("p3d", ECN::ECValue(point3d)));

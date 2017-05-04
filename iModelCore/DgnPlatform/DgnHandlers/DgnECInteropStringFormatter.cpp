@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/DgnECInteropStringFormatter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -152,7 +152,7 @@ bool InteropStringFormatter::Parse(ECValueR v, Utf8CP rawString, PrimitiveType p
         case PRIMITIVETYPE_Long:
             {
             int64_t l;
-            if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(str.c_str(), "%lld", &l))
+            if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(str.c_str(), "%" SCNd64, &l))
                 return false;
 
             v.SetLong(l);

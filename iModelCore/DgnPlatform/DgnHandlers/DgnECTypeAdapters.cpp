@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 static const Utf8CP    s_fmtInteger        = "%d",
-                        s_fmtLong           = "%lld",
+                        s_fmtLong           = "%" SCNd64,
                         s_fmtDouble         = "%lf";
 static const int32_t    USE_ACTIVE          = -1;                   // for formatter instance properties to indicate active settings should be applied.
 
@@ -2139,7 +2139,7 @@ bool FileSizeLongTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP strVal, IDg
             toParse.erase(std::remove(toParse.begin(), toParse.end(), ','), toParse.end());
 
             int64_t nBytes;
-            if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(toParse.c_str(), "%lld", &nBytes))
+            if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(toParse.c_str(), "%" SCNd64, &nBytes))
                 {
                 v.SetLong (nBytes);
                 return true;

@@ -824,7 +824,7 @@ bool GeometricPrimitive::IsWire() const
     switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
-            return true;
+            return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString != GetAsICurvePrimitive()->GetCurvePrimitiveType();
 
         case GeometryType::CurveVector:
             return GetAsCurveVector()->IsOpenPath();
@@ -4257,8 +4257,26 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
             return EntryType::GeometryPart;
 
         case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::CurvePrimitive:
             return EntryType::CurvePrimitive;
 
@@ -4302,10 +4320,30 @@ bool GeometryCollection::Iterator::IsCurve() const
     switch (m_egOp.m_opCode)
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::CurvePrimitive:
-            return true;
+            {
+            return true; // NOTE: Should never be a point string or closed bcurve...
+            }
 
         case GeometryStreamIO::OpCode::CurveVector:
             {
@@ -4326,8 +4364,31 @@ bool GeometryCollection::Iterator::IsSurface() const
     {
     switch (m_egOp.m_opCode)
         {
-        case GeometryStreamIO::OpCode::BsplineSurface:
-            return true;
+        case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::CurvePrimitive:
+            {
+            return false; // NOTE: Should never be a point string or closed bcurve...
+            }
 
         case GeometryStreamIO::OpCode::CurveVector:
             {
@@ -4348,6 +4409,11 @@ bool GeometryCollection::Iterator::IsSurface() const
             GeometricPrimitivePtr geom = GetGeometryPtr();
 
             return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+
+        case GeometryStreamIO::OpCode::BsplineSurface:
+            {
+            return true;
             }
 
 #if defined (BENTLEYCONFIG_PARASOLID)  
