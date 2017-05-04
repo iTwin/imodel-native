@@ -49,10 +49,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <BaseClass>rralign:SpatialElementRefersToAlignment</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Pathways">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Alignment">
             <Class class="rralign:Alignment"/>
         </Target>
     </ECRelationshipClass>
