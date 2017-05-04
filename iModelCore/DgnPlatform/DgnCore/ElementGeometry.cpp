@@ -3784,11 +3784,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2dR(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, false);
+                currGraphic->AddCurveVectorR(*curvePtr, false);
                 break;
                 }
 
@@ -3831,11 +3831,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2dR(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
+                currGraphic->AddCurveVectorR(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3875,7 +3875,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddSolidPrimitive(*solidPtr);
+                currGraphic->AddSolidPrimitiveR(*solidPtr);
                 break;
                 }
 
@@ -3893,7 +3893,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddBSplineSurface(*surfacePtr);
+                currGraphic->AddBSplineSurfaceR(*surfacePtr);
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3932,7 +3932,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddBody(*entityPtr);
+                currGraphic->AddBodyR(*entityPtr);
                 break;
                 }
 #else
@@ -3970,7 +3970,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddCurveVector(*curvePtr, false);
+                currGraphic->AddCurveVectorR(*curvePtr, false);
                 break;
                 };
 #endif
@@ -4177,9 +4177,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
 
                 if (hit.GetViewport().Is3dView())
-                    graphic->AddCurveVector(*curve, false);
+                    graphic->AddCurveVectorR(*curve, false);
                 else
-                    graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
+                    graphic->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
 
                 return graphic->Finish();
                 }

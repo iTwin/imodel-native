@@ -427,6 +427,7 @@ protected:
     double              m_rangeDiagonalSquared;
 
     void _AddPolyface(PolyfaceQueryCR, bool) override;
+    void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
     void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
@@ -635,6 +636,27 @@ void TileBuilder::_AddPolyface(PolyfaceQueryCR geom, bool filled)
         }
 
     Add(*polyface, filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
+    {
+    size_t maxPerFace;
+    auto& facetOptions = m_context.GetFacetOptions();
+    if ((facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount()) ||
+        (facetOptions.GetParamsRequired() && (0 == geom.GetParamCount() || 0 == geom.GetFaceCount())) ||
+        (geom.GetNumFacet(maxPerFace) > 0 && (int) maxPerFace > facetOptions.GetMaxPerFace()))
+        {
+        IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
+        builder->AddPolyface(geom);
+        Add(builder->GetClientMeshR(), filled);
+        }
+    else
+        {
+        Add(geom, filled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

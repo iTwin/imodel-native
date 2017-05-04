@@ -1309,8 +1309,6 @@ struct GraphicBuilder : RefCountedBase
     enum class AsThickenedLine { No=0, Yes=1 };
 
 protected:
-    friend struct GraphicBuilder;
-
     CreateParams    m_createParams;
 
     GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
@@ -1346,6 +1344,17 @@ protected:
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
     virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
+
+    virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
+    virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
+    virtual void _AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVector(curves, isFilled); }
+    virtual void _AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2d(curves, isFilled, zDepth); }
+    virtual void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitive(primitive); }
+    virtual void _AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurface(surface); }
+    virtual void _AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyface(meshData, filled); }
+    virtual void _AddBodyR(IBRepEntityR body) { _AddBody(body); }
+    virtual void _AddTextStringR(TextStringR text) { _AddTextString(text); }
+    virtual void _AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2d(text, zDepth); }
 public:
     // NOTE: subToGraphic is provided to allow stroking in world coords...
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
@@ -1532,6 +1541,21 @@ public:
         {
         ActivateGraphicParams(GraphicParams::FromBlankingFill(fillColor));
         }
+
+    // The following potentially take ownership of and/or modify the input graphic primitives.
+    // Callers should prefer these functions when they do not need to preserve the input primitives.
+    // Implementations should implement these functions if they would otherwise clone or take ownership of the input primitives.
+    // The default implementations forward to the corresponding function taking const primitives.
+    void AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurveR(curve, filled); }
+    void AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2dR(curve, filled, zDepth); }
+    void AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVectorR(curves, isFilled); }
+    void AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2dR(curves, isFilled, zDepth); }
+    void AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitiveR(primitive); }
+    void AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurfaceR(surface); }
+    void AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyfaceR(meshData, filled); }
+    void AddBodyR(IBRepEntityR body) { _AddBodyR(body); }
+    void AddTextStringR(TextStringR text) { _AddTextStringR(text); }
+    void AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2dR(text, zDepth); }
 };
 
 //=======================================================================================

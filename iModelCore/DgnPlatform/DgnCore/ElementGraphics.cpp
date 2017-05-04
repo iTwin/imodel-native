@@ -506,14 +506,14 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
     {
     if (nullptr == entryId || !entryId->IsValid())
         {
-        graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
         return;
         }
 
     CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     primitive->SetId(newId.get());
 
-    graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+    graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -855,7 +855,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR
                 if (!curve.IsValid())
                     continue;
 
-                graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
             }
         }
@@ -926,7 +926,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
                 }
 
             curve->TransformInPlace(entity.GetEntityTransform());
-            graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+            graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
             }
 
         PK_MEMORY_free(edgeTags);

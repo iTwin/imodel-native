@@ -789,7 +789,7 @@ Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
                             continue;
 
                         curve->TransformInPlace(m_parentGeom->GetAsIBRepEntity()->GetEntityTransform());
-                        m_graphic->AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, curve), false);
+                        m_graphic->AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, curve), false);
                         }
                     }
                 }

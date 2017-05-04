@@ -396,7 +396,7 @@ double          scale
         
         pointIndices.push_back(0);
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().AddPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyfaceR(*polyface, true);
 
         PatternHelper::PopBoundaryClipStencil(context, qvElem);
         }
@@ -421,7 +421,7 @@ double          scale
             }
 
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().AddPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyfaceR(*polyface, true);
         }
 
     return true;
