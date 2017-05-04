@@ -17,9 +17,13 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="crunchB02.dll"         target="lib\native\crunchB02.dll" />
-        <file src="TilePublisher.dll"     target="lib\native\TilePublisher.dll" />
-        <file src="Assets\scripts\**\*.*" target="Assets\scripts\" />
-        <file src="Notices\**\*.*"        target="Notices\" />
+        <file src="Delivery\TilePublisher\scripts\**\*.*" target="Assets\scripts\" />
+        <file src="PublicAPI\**\*.*"                      target="include\" />        
+        <file src="VendorAPI\**\*.*"                      target="include\" />
+        <file src="SubParts\Assemblies\crunchB02.dll"     target="lib\native\crunchB02.dll" />
+        <file src="SubParts\Libs\crunch.lib"              target="lib\native\crunch.lib" />
+        <file src="Delivery\TilePublisher.dll"            target="lib\native\TilePublisher.dll" />
+        <file src="SubParts\Libs\TilePublisher.lib"       target="lib\native\TilePublisher.lib" />
+        <file src="SubParts\VendorNotices\**\*.*"         target="Notices\" />
     </files>
 </package>

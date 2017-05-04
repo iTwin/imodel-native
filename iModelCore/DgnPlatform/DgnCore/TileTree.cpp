@@ -472,7 +472,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -480,7 +480,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         return ERROR;
         }
 
-    TileLoaderPtr loader = tile._CreateTileLoader(loads);
+    TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
         return ERROR;
 
@@ -514,6 +514,8 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP
         m_isHttp = false;
         }
     }
+
+void Tile::_DrawGraphics(DrawArgsR args, int depth) const { _GetGraphics(args.m_graphics, depth); }
 
 /*---------------------------------------------------------------------------------**//**
 * This method gets called on the (valid) children of nodes as they are unloaded. Its purpose is to notify the loading
@@ -744,9 +746,9 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
 void DrawArgs::DrawGraphics()
     {
     ViewFlags flags = m_root._GetDrawViewFlags(m_context);
-    DrawBranch(flags, m_graphics, 0.0, "Main");
-    DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
-    DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
+    DrawBranch(flags, m_graphics.m_graphics, 0.0, "Main");
+    DrawBranch(flags, m_graphics.m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
+    DrawBranch(flags, m_graphics.m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -823,7 +825,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
     for (;;)
         {
         m_rootTile->Draw(args, 0);
-        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
         // Do we still have missing tiles?
         if (args.m_missing.empty())
@@ -863,7 +865,7 @@ void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
 * we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
+bool QuadTree::Tile::TryLowerRes(DrawGraphicsR args, int depth) const
     {
     Tile* parent = (Tile*) m_parent;
     if (depth <= 0 || nullptr == parent)
@@ -886,7 +888,7 @@ bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
 * We do not have any graphics for this tile, try its immediate children. Not recursive.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
+void QuadTree::Tile::TryHigherRes(DrawGraphicsR args) const
     {
     for (auto const& child : m_children)
         {
@@ -903,13 +905,21 @@ void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
+void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const 
+    {
+     _GetGraphics(args.m_graphics, depth);
+
+    if (!IsReady() && !IsNotFound())
+        args.m_missing.Insert(depth, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuadTree::Tile::_GetGraphics(DrawGraphicsR args, int depth) const
     {
     if (!IsReady())
         {
-        if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
-
         TryLowerRes(args, 10);
         TryHigherRes(args);
 
