@@ -2,7 +2,7 @@
 #
 #     $Source: Bentley.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ENABLE_CPP_CX_EXTENSIONS = 1
@@ -89,9 +89,6 @@ $(o)BeStringUtilities$(oext)    : $(nonportDir)BeStringUtilities.cpp $(BentleyAP
 $(o)BeSystemInfo$(oext)         : $(nonportDir)BeSystemInfo.cpp $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
 
 $(o)BeTimeUtilities$(oext)      : $(nonportDir)BeTimeUtilities.cpp $(BentleyAPISrc)BeTimeUtilities.h ${MultiCompileDepends}
-
-
-$(o)BeIconUtilities$(oext)      : $(nonportDir)BeIconUtilities.cpp $(BentleyAPISrc)BeIconUtilities.h ${MultiCompileDepends}
 
 $(o)DirectoryObserver$(oext)    : $(bentleyDir)DirectoryObserver.cpp $(BentleyAPISrc)DirectoryObserver.h ${MultiCompileDepends}
 
