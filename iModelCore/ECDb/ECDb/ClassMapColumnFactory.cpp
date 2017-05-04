@@ -838,7 +838,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(bmap<Utf8String, 
 
     //Find relationship that is relevant to current class so to adds its column to used column list
     for(ECClassCP ecClass: m_primaryHierarchy)
-        if (FindRelationshipEndTableMaps(ecClass->GetId()) != SUCCESS)
+        if (FindRelationshipEndTableMaps(m_classMap.GetClass().GetId()) != SUCCESS)
             return ERROR;
 
     //Append current map property maps
@@ -856,7 +856,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(bmap<Utf8String, 
         deepestClassMapped->GetPropertyMaps().AcceptVisitor(visitor);
         for (PropertyMap const* propertyMap : visitor.Results())
             {
-            if (columnMap.find(propertyMap->GetAccessString().c_str()) != columnMap.end())
+            if (columnMap.find(propertyMap->GetAccessString()) != columnMap.end())
                 continue;
 
             if (IsMappedIntoContextClassMapTables(*propertyMap))
@@ -877,7 +877,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(bmap<Utf8String, 
         entry.second->GetPropertyMaps().AcceptVisitor(visitor);
         for (PropertyMap const* propertyMap : visitor.Results())
             {
-            if (columnMap.find(propertyMap->GetAccessString().c_str()) != columnMap.end())
+            if (columnMap.find(propertyMap->GetAccessString()) != columnMap.end())
                 continue;
 
             PropertyMap const* cur = propertyMap;
