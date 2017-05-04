@@ -218,7 +218,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, ElementProprties3d)
+TEST_F(GetSetCustomHandledProprty, ElementProperties3d)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -370,7 +370,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
+TEST_F(GetSetCustomHandledProprty, ElementProperties2d)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -414,7 +414,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
 
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(Rotindex, ECN::ECValue(6.5)));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Rotindex));
-        ASSERT_EQ(checkValue1.GetDouble(),AngleInDegrees::FromRadians(6.5).Degrees());
+        ASSERT_EQ(checkValue1.GetDouble(),AngleInDegrees::FromDegrees(6.5).Degrees());
         checkValue1.Clear();
 
         // Insert the element
@@ -443,7 +443,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint2d::From(2, 4))));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue1, Rotindex));
-    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromRadians(6.5).Degrees());
+    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromDegrees(6.5).Degrees());
     checkValue1.Clear();
     }
     m_db->CloseDb();
@@ -467,7 +467,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, eledit->SetPropertyValue(Rotindex, ECN::ECValue(3.5)));
     ASSERT_EQ(DgnDbStatus::Success, eledit->GetPropertyValue(checkValue1, Rotindex));
-    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromRadians(3.5).Degrees());
+    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromDegrees(3.5).Degrees());
     checkValue1.Clear();
     // Update the element
     DgnDbStatus stat;
@@ -491,7 +491,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint2d::From(2, 8))));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue1, Rotindex));
-    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromRadians(3.5).Degrees());
+    ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromDegrees(3.5).Degrees());
     checkValue1.Clear();
     }
 /*---------------------------------------------------------------------------------**//**
