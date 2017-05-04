@@ -694,8 +694,8 @@ TEST_F(SqlFunctionsTest, spatialQuery)
     // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
     // item property = :propertyValue.
     Statement stmt;
-    stmt.Prepare(*m_db,       // aspect.sc1 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId,aspect.sc1 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(BIS_CLASS_Element) " e," BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect WHERE"
+    stmt.Prepare(*m_db,       // aspect.ps1 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId,aspect.ps1 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(BIS_CLASS_Element) " e," BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect WHERE"
            " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
            " AND aspect.ElementId=e.Id AND aspect.ps1=:propertyValue"   // ... with certain item value
