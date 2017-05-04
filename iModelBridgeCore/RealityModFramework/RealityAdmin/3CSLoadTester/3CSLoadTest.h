@@ -28,7 +28,7 @@ enum OperationType
     SAS_URI,
     LIST_CLUSTERS,
     CREATE_JOB,
-    ADD_JOB,
+    SUBMIT_JOB,
     DELETE_JOB,
     GET_JOBS,
     GET_JOB,

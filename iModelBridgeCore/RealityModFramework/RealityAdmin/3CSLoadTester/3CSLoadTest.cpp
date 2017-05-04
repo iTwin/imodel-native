@@ -68,7 +68,7 @@ RPS::RPS():requestLog(bmap<OperationType, bmap<int64_t, int>>())
     requestLog.Insert(OperationType::SAS_URI, bmap<int64_t, int>());
     requestLog.Insert(OperationType::LIST_CLUSTERS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::CREATE_JOB, bmap<int64_t, int>());
-    requestLog.Insert(OperationType::ADD_JOB, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::SUBMIT_JOB, bmap<int64_t, int>());
     requestLog.Insert(OperationType::DELETE_JOB, bmap<int64_t, int>());
     requestLog.Insert(OperationType::GET_JOBS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::GET_JOB, bmap<int64_t, int>());
@@ -195,7 +195,7 @@ Stats::Stats()
     opStats.Insert(OperationType::SAS_URI, new Stat());
     opStats.Insert(OperationType::LIST_CLUSTERS, new Stat());
     opStats.Insert(OperationType::CREATE_JOB, new Stat());
-    opStats.Insert(OperationType::ADD_JOB, new Stat());
+    opStats.Insert(OperationType::SUBMIT_JOB, new Stat());
     opStats.Insert(OperationType::DELETE_JOB, new Stat());
     opStats.Insert(OperationType::GET_JOBS, new Stat());
     opStats.Insert(OperationType::GET_JOB, new Stat());
@@ -210,7 +210,7 @@ Stats::Stats()
     errors.Insert(OperationType::SAS_URI, bvector<Utf8String>());
     errors.Insert(OperationType::LIST_CLUSTERS, bvector<Utf8String>());
     errors.Insert(OperationType::CREATE_JOB, bvector<Utf8String>());
-    errors.Insert(OperationType::ADD_JOB, bvector<Utf8String>());
+    errors.Insert(OperationType::SUBMIT_JOB, bvector<Utf8String>());
     errors.Insert(OperationType::DELETE_JOB, bvector<Utf8String>());
     errors.Insert(OperationType::GET_JOBS, bvector<Utf8String>());
     errors.Insert(OperationType::GET_JOB, bvector<Utf8String>());
@@ -263,7 +263,7 @@ void Stats::PrintStats()
     std::cout << Utf8PrintfString("SAS URI      %6d %10d %9d %10d %9d        %f", opStats[OperationType::SAS_URI]->success, opStats[OperationType::SAS_URI]->failure, (int)opStats[OperationType::SAS_URI]->minTime, (int)opStats[OperationType::SAS_URI]->maxTime, (int)opStats[OperationType::SAS_URI]->avgTime, s_rps.GetRPS(OperationType::SAS_URI, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("List Cluster %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_CLUSTERS]->success, opStats[OperationType::LIST_CLUSTERS]->failure, (int)opStats[OperationType::LIST_CLUSTERS]->minTime, (int)opStats[OperationType::LIST_CLUSTERS]->maxTime, (int)opStats[OperationType::LIST_CLUSTERS]->avgTime, s_rps.GetRPS(OperationType::LIST_CLUSTERS, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Create Job   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CREATE_JOB]->success, opStats[OperationType::CREATE_JOB]->failure, (int)opStats[OperationType::CREATE_JOB]->minTime, (int)opStats[OperationType::CREATE_JOB]->maxTime, (int)opStats[OperationType::CREATE_JOB]->avgTime, s_rps.GetRPS(OperationType::CREATE_JOB, currentTime)) << std::endl;
-    std::cout << Utf8PrintfString("Add Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::ADD_JOB]->success, opStats[OperationType::ADD_JOB]->failure, (int)opStats[OperationType::ADD_JOB]->minTime, (int)opStats[OperationType::ADD_JOB]->maxTime, (int)opStats[OperationType::ADD_JOB]->avgTime, s_rps.GetRPS(OperationType::ADD_JOB, currentTime)) << std::endl;
+    std::cout << Utf8PrintfString("Add Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::SUBMIT_JOB]->success, opStats[OperationType::SUBMIT_JOB]->failure, (int)opStats[OperationType::SUBMIT_JOB]->minTime, (int)opStats[OperationType::SUBMIT_JOB]->maxTime, (int)opStats[OperationType::SUBMIT_JOB]->avgTime, s_rps.GetRPS(OperationType::SUBMIT_JOB, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Del Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_JOB]->success, opStats[OperationType::DELETE_JOB]->failure, (int)opStats[OperationType::DELETE_JOB]->minTime, (int)opStats[OperationType::DELETE_JOB]->maxTime, (int)opStats[OperationType::DELETE_JOB]->avgTime, s_rps.GetRPS(OperationType::DELETE_JOB, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Get Jobs     %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOBS]->success, opStats[OperationType::GET_JOBS]->failure, (int)opStats[OperationType::GET_JOBS]->minTime, (int)opStats[OperationType::GET_JOBS]->maxTime, (int)opStats[OperationType::GET_JOBS]->avgTime, s_rps.GetRPS(OperationType::GET_JOBS, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Get Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOB]->success, opStats[OperationType::GET_JOB]->failure, (int)opStats[OperationType::GET_JOB]->minTime, (int)opStats[OperationType::GET_JOB]->maxTime, (int)opStats[OperationType::GET_JOB]->avgTime, s_rps.GetRPS(OperationType::GET_JOB, currentTime)) << std::endl;
@@ -299,7 +299,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << Utf8PrintfString("SAS URI      %6d %10d %9d %10d %9d        %f", opStats[OperationType::SAS_URI]->success, opStats[OperationType::SAS_URI]->failure, (int)opStats[OperationType::SAS_URI]->minTime, (int)opStats[OperationType::SAS_URI]->maxTime, (int)opStats[OperationType::SAS_URI]->avgTime, s_rps.GetRPS(OperationType::SAS_URI, currentTime)) << std::endl;
     file << Utf8PrintfString("List Cluster %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_CLUSTERS]->success, opStats[OperationType::LIST_CLUSTERS]->failure, (int)opStats[OperationType::LIST_CLUSTERS]->minTime, (int)opStats[OperationType::LIST_CLUSTERS]->maxTime, (int)opStats[OperationType::LIST_CLUSTERS]->avgTime, s_rps.GetRPS(OperationType::LIST_CLUSTERS, currentTime)) << std::endl;
     file << Utf8PrintfString("Create Job   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CREATE_JOB]->success, opStats[OperationType::CREATE_JOB]->failure, (int)opStats[OperationType::CREATE_JOB]->minTime, (int)opStats[OperationType::CREATE_JOB]->maxTime, (int)opStats[OperationType::CREATE_JOB]->avgTime, s_rps.GetRPS(OperationType::CREATE_JOB, currentTime)) << std::endl;
-    file << Utf8PrintfString("Add Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::ADD_JOB]->success, opStats[OperationType::ADD_JOB]->failure, (int)opStats[OperationType::ADD_JOB]->minTime, (int)opStats[OperationType::ADD_JOB]->maxTime, (int)opStats[OperationType::ADD_JOB]->avgTime, s_rps.GetRPS(OperationType::ADD_JOB, currentTime)) << std::endl;
+    file << Utf8PrintfString("Add Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::SUBMIT_JOB]->success, opStats[OperationType::SUBMIT_JOB]->failure, (int)opStats[OperationType::SUBMIT_JOB]->minTime, (int)opStats[OperationType::SUBMIT_JOB]->maxTime, (int)opStats[OperationType::SUBMIT_JOB]->avgTime, s_rps.GetRPS(OperationType::SUBMIT_JOB, currentTime)) << std::endl;
     file << Utf8PrintfString("Del Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_JOB]->success, opStats[OperationType::DELETE_JOB]->failure, (int)opStats[OperationType::DELETE_JOB]->minTime, (int)opStats[OperationType::DELETE_JOB]->maxTime, (int)opStats[OperationType::DELETE_JOB]->avgTime, s_rps.GetRPS(OperationType::DELETE_JOB, currentTime)) << std::endl;
     file << Utf8PrintfString("Get Jobs     %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOBS]->success, opStats[OperationType::GET_JOBS]->failure, (int)opStats[OperationType::GET_JOBS]->minTime, (int)opStats[OperationType::GET_JOBS]->maxTime, (int)opStats[OperationType::GET_JOBS]->avgTime, s_rps.GetRPS(OperationType::GET_JOBS, currentTime)) << std::endl;
     file << Utf8PrintfString("Get Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOB]->success, opStats[OperationType::GET_JOB]->failure, (int)opStats[OperationType::GET_JOB]->minTime, (int)opStats[OperationType::GET_JOB]->maxTime, (int)opStats[OperationType::GET_JOB]->avgTime, s_rps.GetRPS(OperationType::GET_JOB, currentTime)) << std::endl;
@@ -342,7 +342,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
         file << error << std::endl;
 
     file << "Add Job:" << std::endl;
-    for (Utf8String error : errors[OperationType::ADD_JOB])
+    for (Utf8String error : errors[OperationType::SUBMIT_JOB])
         file << error << std::endl;
 
     file << "Delete Job:" << std::endl;
@@ -413,7 +413,7 @@ void User::DoNext(UserManager* owner)
         else
             curl = SASUri();
         }
-    else if (m_currentOperation == OperationType::ADD_JOB)
+    else if (m_currentOperation == OperationType::SUBMIT_JOB)
         {
         if (m_jobId.empty())
             m_currentOperation = OperationType::CREATE_JOB;
@@ -447,7 +447,7 @@ void User::DoNext(UserManager* owner)
             m_currentOperation = OperationType::CREATE_JOB;
         else if (!m_submitted)
             {
-            OperationType::ADD_JOB;
+            m_currentOperation = OperationType::SUBMIT_JOB;
             curl = SubmitJob();
             }
         else
