@@ -2,7 +2,7 @@
 |
 |     $Source: serialization/src/FlatBuffer/FixedStructs.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -164,6 +164,21 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (MSBsplineSu
 
     }
 
+public: flatbuffers::Offset<BGFB::CurvePrimitiveId> WriteVariantGeometryTag (CurvePrimitiveIdCP tag)
+    {
+    if (nullptr != tag)
+        {
+        flatbuffers::Offset<flatbuffers::Vector<uint8_t>> fbBytes =
+            tag->GetIdSize () == 0 ? 0 : m_fbb.CreateVector (tag->PeekId (), tag->GetIdSize ());
+        BGFB::CurvePrimitiveIdBuilder builder (m_fbb);
+        builder.add_type ((uint16_t)tag->GetType ());
+        builder.add_geomIndex ((uint16_t)tag->GetGeometryStreamIndex ());
+        builder.add_partIndex ((uint16_t)tag->GetPartGeometryStreamIndex ());
+        builder.add_bytes (fbBytes);
+        return builder.Finish ();
+        }
+    return 0;
+    }
 public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICurvePrimitiveCR parent)
     {
     if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
@@ -174,7 +189,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
         //return CreateLineSegment (m_fbb, &dataA, &dataB);
         auto dataC = BGFB::CreateLineSegment (m_fbb, &fbSegment);
         return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_LineSegment, dataC.Union ());
+                BGFB::VariantGeometryUnion_LineSegment, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc)
         {
@@ -184,7 +199,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
         //return CreateLineEllipse (m_fbb, &dataA, &dataB);
         auto dataC = BGFB::CreateEllipticArc (m_fbb, &fbArc);
         return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_EllipticArc, dataC.Union ());
+                BGFB::VariantGeometryUnion_EllipticArc, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve)
         {
@@ -226,7 +241,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_BsplineCurve,
-                fbCurve.Union ());
+                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString)
         {
@@ -250,7 +265,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_LineString,
-                builder.Finish ().Union ());
+                builder.Finish ().Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString)
         {
@@ -272,7 +287,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
         builder.add_points (fbPoints);
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_PointString,
-                builder.Finish ().Union ());
+                builder.Finish ().Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector)
         {
@@ -324,7 +339,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_InterpolationCurve,
-                fbCurve.Union ());
+                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve)
         {
@@ -348,7 +363,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_AkimaCurve,
-                fbCurve.Union ());
+                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral)
         {
@@ -373,7 +388,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
             return CreateVariantGeometry (m_fbb,
                     BGFB::VariantGeometryUnion_TransitionSpiral,
-                    fbCurve.Union ());
+                    fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
            }
        }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary)
@@ -400,7 +415,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_CatenaryCurve,
-                fbCurve.Union ());
+                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
        }    
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PartialCurve)
         {
@@ -414,7 +429,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
             );
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_PartialCurve,
-                fbCurve.Union ());
+                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
         }
     return 0;
     }
@@ -1513,7 +1528,39 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
     return nullptr;
     }
 
-
+static CurvePrimitiveIdPtr ReadCurvePrimitiveId (const BGFB::CurvePrimitiveId *fbTag)
+    {
+    if (fbTag != nullptr)
+        {
+        auto tagType = (CurvePrimitiveId::Type)fbTag->type ();
+        auto geomIndex  = fbTag->geomIndex ();
+        auto partIndex  = fbTag->partIndex ();
+        if (fbTag->has_bytes ())
+            {
+            auto bytes = fbTag->bytes ();
+            auto numBytes = bytes->size ();
+            bvector<uint8_t> buffer;
+            for (unsigned int i = 0; i < numBytes; i++)
+                buffer.push_back (bytes->Get (i));
+            if (numBytes > 0)
+                return CurvePrimitiveId::Create (tagType, &buffer[0], numBytes, geomIndex, partIndex);
+            else
+                return CurvePrimitiveId::Create (tagType, nullptr, 0, geomIndex, partIndex);
+            }
+        }
+    return nullptr;
+    }
+static void AddCurvePrimitiveId (const BGFB::VariantGeometry *fbGeometry, IGeometryPtr geometry)
+    {
+    // only CurvePrimitive can accept the tag. (alas)   Don't bother reading it on others.
+    auto cp = geometry->GetAsICurvePrimitive ();
+    if (cp.IsValid ())
+        {
+        auto taggedInfo = ReadCurvePrimitiveId (fbGeometry->tag ());
+        if (taggedInfo.IsValid ())
+            cp->SetId (taggedInfo.get ());
+        }
+    }
 
 static IGeometryPtr ReadGeometry (const BGFB::VariantGeometry * fbGeometry)
     {
@@ -1531,6 +1578,7 @@ static IGeometryPtr ReadGeometry (const BGFB::VariantGeometry * fbGeometry)
         case BGFB::VariantGeometryUnion_PartialCurve:
             {
             ICurvePrimitivePtr cp = ReadCurvePrimitive(fbGeometry);
+            AddCurvePrimitiveId (fbGeometry, IGeometry::Create (cp));
             return cp.IsValid () ? IGeometry::Create (cp) : nullptr;
             }
 

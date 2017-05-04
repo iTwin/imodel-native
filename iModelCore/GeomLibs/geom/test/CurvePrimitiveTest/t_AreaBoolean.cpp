@@ -4,7 +4,207 @@
 #include <Geom/CGWriter.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
+#include <Regions/regionsAPI.h>
+#include <Regions/rimsbsAPI.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+// build up arrays with reference
+struct RIElement
+{
+int curveId;
+int groupId;
+int userData;
+int64_t userData64;
+ICurvePrimitivePtr curve;
+
+size_t errors;
+
+bool CheckBool (bool v, char const *message = nullptr)
+    {
+    if (v)
+        return true;
+    errors++;
+    Check::True (v, message);
+    return false;
+    }
+
+ bool CheckInt (int iA, int iB, char const *message = nullptr)
+    {
+    if (iA == iB)
+        return true;
+    return Check::Int (iA, iB, message);
+    }
+size_t ValidationErrors_go (RIMSBS_Context *curves)
+    {
+
+    errors = 0;
+    int iB;
+    if (!CheckBool (jmdlRIMSBS_getUserInt (curves, &iB, curveId), "get userInt"))
+        return errors;
+    Check::Print (userData, "iA");
+    Check::Print (iB, "iB");
+    if (!CheckInt (userData, iB, "userInt"))
+        return errors;
+
+    int64_t i64B;
+    if (!CheckBool (jmdlRIMSBS_getUserInt64 (curves, &i64B, curveId)))
+        return errors;
+    Check::Print (userData64, "i64A");
+    Check::Print (i64B, "i64B");
+    if (!CheckBool (Check::Ptrdiff ((ptrdiff_t)userData64, (ptrdiff_t)i64B, "access userInt64"), "access userInt64"))
+        return errors;
+
+    void *ptrA = (void*)0xa1234567b1234567;
+    void *ptrB;
+    jmdlRIMSBS_setUserPointer (curves, curveId, ptrA);
+    jmdlRIMSBS_getUserPointer (curves, &ptrB, curveId);
+    Check::Print ((int64_t)ptrA, "ptrA");
+    Check::Print ((int64_t)ptrB, "ptrB");
+
+    if (!CheckBool (Check::True (ptrA == ptrB, "set/get pointer")))
+        return errors;
+
+    int groupIdB;
+    if (!CheckBool (Check::True (jmdlRIMSBS_getGroupId (curves, &groupIdB, curveId))))
+        return errors;
+     if (!CheckInt (groupId, groupIdB, "groupId from currGroupId"))
+        return errors;
+
+    for (double u : bvector<double>{0.25, 0.40, 0.80})
+        {
+        DPoint3d X0;
+        DVec3d dX0, ddX0;
+        DPoint3d xyzR[3];
+        curve->FractionToPoint (u, X0, dX0, ddX0);
+        jmdlRIMSBS_evaluateDerivatives (curves, xyzR, 2, u, curveId);
+        Check::Near (X0, xyzR[0], "Evaluate X");
+        Check::Near (dX0, xyzR[1], "Evaluate dX");
+        Check::Near (ddX0, xyzR[2], "Evaluate ddX");
+        }
+    DRange3d rangeR;
+    if (CheckBool (jmdlRIMSBS_getCurveRange (curves, &rangeR, curveId)))
+        {
+        DRange3d rangeC;
+        curve->GetRange (rangeC);
+        Check::Print (rangeR.low, "range.low");
+        Check::Print (rangeR.high, "range.high");
+        Check::Near (rangeC, rangeR, "RIMSBS range");
+        }
+    return errors;
+    }
+size_t ValidationErrors (RIMSBS_Context *curves)
+    {
+    Check::StartScope ("Validate curveId", (size_t)curveId);
+    auto e = ValidationErrors_go (curves);
+    Check::EndScope ();
+    return e;
+    }
+};
+
+struct RIArray : bvector<RIElement>
+{
+RIMSBS_Context *m_curves;
+RG_Header *m_regions;
+int m_currentUserData;
+int m_currentGroupId;
+int64_t m_int64Multiplier;
+
+RIArray (int startUserData, int startGroupId) : m_currentGroupId (startGroupId), m_currentUserData (startUserData), m_int64Multiplier (4)
+    {
+    m_curves = jmdlRIMSBS_newContext ();
+    m_regions     = jmdlRG_new ();
+    jmdlRIMSBS_setupRGCallbacks (m_curves, m_regions);
+    jmdlRG_setFunctionContext (m_regions, m_curves);
+    IncrementGroupId (0);
+    }
+
+~RIArray ()
+    {
+    jmdlRIMSBS_freeContext (m_curves);
+    jmdlRG_free (m_regions);
+    }
+
+void IncrementGroupId (int step)
+    {
+    m_currentGroupId += step;
+    jmdlRIMSBS_setCurrGroupId (m_curves, m_currentGroupId);
+    }
+
+void AddCurve (int curveId, ICurvePrimitivePtr curve)
+    {
+    m_currentUserData++;
+    push_back (RIElement ());
+    back ().curveId = curveId;
+    back ().groupId = m_currentGroupId;
+    back ().curve = curve;
+    back ().userData64 = (int64_t)(m_currentUserData * m_int64Multiplier);
+    back ().userData = m_currentUserData;
+    jmdlRIMSBS_setUserInt (m_curves, curveId, back().userData);
+    jmdlRIMSBS_setUserInt64 (m_curves, curveId, back().userData64);
+    // !! group id is set by RIMSBS
+    }
+bool CreateAndAddPartialCurve (size_t existingCurveIndex, double s0, double s1)
+    {
+    bool stat = false;
+    if (existingCurveIndex < size ()
+        && at(existingCurveIndex).curve.IsValid ())
+        {
+        int newCurveId;
+        if (jmdlRIMSBS_createSubcurve (m_curves, &newCurveId, at(existingCurveIndex).curveId, s0, s1))
+            {
+            auto partialCurve = ICurvePrimitive::CreatePartialCurve (at(existingCurveIndex).curve.get (), s0, s1);
+            AddCurve (newCurveId, partialCurve);
+            int groupId;
+            jmdlRIMSBS_getGroupId (m_curves, &groupId, newCurveId); // partial curve gets group from parent !!!
+            back ().groupId = groupId;
+            stat = true;
+            }
+        }
+    return stat;
+    }
+size_t ValidationErrors ()
+    {
+    size_t errors = 0;
+    for (auto &c: *this)
+        {
+        errors += c.ValidationErrors (m_curves);
+        }
+    return errors;
+    }
+};
+
+TEST(AreaBoolean,RIMSBS0)
+    {
+    int oldVolume = Check::SetMaxVolume (10000);
+    double r = 10.0;
+    RIArray myCurves (100, 1000);
+
+//    int userInt0 = 100;
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    DEllipse3d arc0 =  DEllipse3d::FromVectors
+                (
+                DPoint3d::From (0,0,0),
+                r * DVec3d::UnitX (),
+                r * DVec3d::UnitY (),
+                Angle::DegreesToRadians (-170),
+                Angle::DegreesToRadians (340)
+                );
+    DEllipse3d arc1 = DEllipse3d::FromVectors (
+                DPoint3d::From (r * 0.5, 0, 0),
+                r * DVec3d::UnitX (),
+                r * DVec3d::UnitY (),
+                Angle::DegreesToRadians (-170),
+                Angle::DegreesToRadians (340)
+                );
+
+    myCurves.AddCurve (jmdlRIMSBS_addDEllipse3d (myCurves.m_curves, 1000, nullptr, &arc0), ICurvePrimitive::CreateArc (arc0));
+    myCurves.AddCurve (jmdlRIMSBS_addDEllipse3d (myCurves.m_curves, 1000, nullptr, &arc1), ICurvePrimitive::CreateArc (arc1));
+    myCurves.IncrementGroupId (2);
+
+    myCurves.CreateAndAddPartialCurve (0, 0.1, 0.25);
+
+    Check::Size (0, myCurves.ValidationErrors (), "ValidationErrors");
+    Check::SetMaxVolume (oldVolume);
+    }
 
 #ifdef indetableDisplay
 void Indent (size_t depth)

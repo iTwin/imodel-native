@@ -2,14 +2,14 @@
 #
 #     $Source: common/inc/geomlibsdev.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
 
 GEOMLIBS_ROOT               = $(SrcRoot)GeomLibs/
 srcGeomLibs                 = $(GEOMLIBS_ROOT)
-OutGeomLibs                 = $(OutputRootDir)Geom/
+OutGeomLibs                 = $(OutputRootDir)build/GeomLibs/
 
 BuildContext                = $(OutBuildContexts)geomlibs/
 GeomPublicAPISrc            = $(SrcGeomLibs)PublicAPI/

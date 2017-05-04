@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_intersect1.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -359,11 +359,10 @@ double                  radius              /* => circle radius */
 | Author:   EarlinLutz                               9/21/00            |
 |                                                                       |
 +----------------------------------------------------------------------*/
-static bool    jmdlRIMSBS_intersectXY_mappedCurve_circle
+bool RIMSBS_Context::TryIntersectXY_mappedCurve_circle
 (
-RIMSBS_Context          *pContext,          /* => general context */
-EmbeddedDoubleArray     *pParameterArray,   /* <= curve parameters of intersections. */
-EmbeddedDPoint3dArray   *pPointArray,       /* <= curve points of intersections */
+bvector<double> *pParameterArray,   /* <= curve parameters of intersections. */
+bvector<DPoint3d>*pPointArray,       /* <= curve points of intersections */
 int                     parentCurveId,
 double                  s0,
 double                  s1,
@@ -372,29 +371,30 @@ double                  radius
 )
     {
     bool    myResult = false;
-    RIMSBS_ElementHeader desc;
 
     if (s_noisy)
         printf ("    mapped curve (%lf,%lf) circle \n", s0, s1);
 
     if (pParameterArray)
-        jmdlEmbeddedDoubleArray_empty (pParameterArray);
+        pParameterArray->empty ();
 
     if (pPointArray)
-        jmdlEmbeddedDPoint3dArray_empty (pPointArray);
+        pPointArray->empty ();
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, parentCurveId))
+    if (IsValidCurveIndex (parentCurveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (parentCurveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (parentCurveId, arc);
                 DEllipse3d partialEllipse;
-                jmdlRIMSBS_initPartialEllipse (&partialEllipse, pEllipse, s0, s1);
+                jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
                 jmdlRIMSBS_intersectXY_DEllipse3d_circle
                         (
-                        pContext,
+                        this,
                         pParameterArray, pPointArray,
                         &partialEllipse,
                         pCenter, radius
@@ -404,7 +404,7 @@ double                  radius
                 }
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (parentCurveId));
 #ifdef USE_ARTIFICIAL_GEOMETRY
                 MSBsplineCurve partialCurve;
                 bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1);
@@ -435,13 +435,12 @@ double                  radius
                 }
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 double dt = pInterval->s1 - pInterval->s0;
                 double t0 = pInterval->s0 + s0 * dt;
                 double t1 = pInterval->s0 + s1 * dt;
-                myResult = jmdlRIMSBS_intersectXY_mappedCurve_circle
+                myResult = TryIntersectXY_mappedCurve_circle
                         (
-                        pContext,
                         pParameterArray, pPointArray,
                         pInterval->parentId, t0, t1,
                         pCenter, radius
@@ -452,7 +451,7 @@ double                  radius
                 {
                 RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)desc.pGeometryData;
                 RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
-                myResult = jmdlRIMSBS_intersectXY_mappedCurve_circle (pContext, pParameterArray, pPointArray, primaryCurveId,
+                myResult = TryIntersectXY_mappedCurve_circle (pParameterArray, pPointArray, primaryCurveId,
                           s0, s1, pCenter, radius);
                 break;
                 }
@@ -479,30 +478,44 @@ const DPoint3d          *pCenter,           /* => circle center */
 double                  radius
 )
     {
+    return pContext->TryCurveCircleIntersectionXY (pParameterArray, pPointArray, pEdgeData, pCenter, radius);
+    }
+
+bool    RIMSBS_Context::TryCurveCircleIntersectionXY
+(
+bvector<double> *pParameterArray,   /* <= curve parameters of intersections. */
+bvector<DPoint3d>*pPointArray,       /* <= curve points of intersections */
+RG_EdgeData             *pEdgeData,         /* => segment edge data */
+const DPoint3d          *pCenter,           /* => circle center */
+double                  radius
+)
+    {
     bool    myResult = false;
-    RIMSBS_ElementHeader desc;
     int curveId = jmdlRGEdge_getCurveId (pEdgeData);
 
     if (pParameterArray)
-        jmdlEmbeddedDoubleArray_empty (pParameterArray);
+        pParameterArray->empty ();
+
     if (pPointArray)
-        jmdlEmbeddedDPoint3dArray_empty (pPointArray);
+        pPointArray->empty ();
 
     if (s_noisy)
         printf (" (jmdlRIMSBS_curveCircleIntersectionXY\n");
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
                 jmdlRIMSBS_intersectXY_DEllipse3d_circle
                         (
-                        pContext,
+                        this,
                         pParameterArray, pPointArray,
-                        pEllipse,
+                        &arc,
                         pCenter, radius
                         );
                 myResult = true;
@@ -510,7 +523,7 @@ double                  radius
                 }
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
 #ifdef USE_ARTIFICIAL_GEOMETRY
                 jmdlRIMSBS_intersectXY_MSBsplineCurve_circle
                             (
@@ -530,10 +543,9 @@ double                  radius
                 }
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
-                myResult = jmdlRIMSBS_intersectXY_mappedCurve_circle
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
+                myResult = TryIntersectXY_mappedCurve_circle
                         (
-                        pContext,
                         pParameterArray, pPointArray,
                         pInterval->parentId, pInterval->s0, pInterval->s1,
                         pCenter, radius

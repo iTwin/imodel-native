@@ -240,6 +240,14 @@ table PartialCurve
     target:VariantGeometry;  // well, of course it can only be a single curve primitive.
     }
 
+table CurvePrimitiveId
+    {
+    type: short;
+    geomIndex: short;
+    partIndex: short;
+    bytes:[ubyte];
+    }
+
 
 table CurveVector
     {
@@ -371,5 +379,6 @@ union VariantGeometryUnion
 table VariantGeometry
     {
     geometry:VariantGeometryUnion;
+    tag:CurvePrimitiveId;
     }
     

@@ -3,7 +3,7 @@
 |
 |     $Source: PublicAPI/Geom/CurvePrimitiveId.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,7 +41,8 @@ struct CurvePrimitiveId : RefCountedBase
         CurveVector            = 8,        // CurveTopologyId.
         PolyfaceCut            = 9,        // CurveTopologyId.
         PolyfaceEdge           = 10,       // CurveTopologyId.
-        UnspecifiedTopologyId  = 11,       // CurveTopologyId. 
+        UnspecifiedTopologyId  = 11,       // CurveTopologyId.
+        ConceptStationAlignmentIndex = 50, 
         Max,
         CutGeometry            = 99        // Cut Associations.
     };
@@ -69,9 +70,9 @@ public:
     //! Get the type code.
     Type GetType() const {return m_type;}
     //! Query the geometry stream index
-    uint32_t GetGeometryStreamIndex() {return m_geomStreamIndex;}
+    uint32_t GetGeometryStreamIndex() const {return m_geomStreamIndex;}
     //! Query the part geometry stream index (valid when m_geomStreamIndex refers to a part)
-    uint32_t GetPartGeometryStreamIndex() {return m_partStreamIndex;}
+    uint32_t GetPartGeometryStreamIndex() const {return m_partStreamIndex;}
     //! Return size of the id data array.
     size_t GetIdSize() const {return m_idData.size();}
     //! Return interior pointer to id data.
