@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -491,6 +491,10 @@ static int getLinuxAccessMode(BeFileAccess m)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileStatus   BeFile::Create(WCharCP filename, bool createAlways)
     {
+    // Don't leak a handle; ensure we don't already represent an open file.
+    if (IsOpen())
+        return BeFileStatus::FileAlreadyOpened;
+
     m_mode  = BeFileAccess::ReadWrite;
 
 #if defined (BENTLEY_WIN32)
@@ -544,6 +548,10 @@ BeFileStatus   BeFile::Create(WCharCP filename, bool createAlways)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileStatus BeFile::Open(WCharCP filename, BeFileAccess mode)
     {
+    // Don't leak a handle; ensure we don't already represent an open file.
+    if (IsOpen())
+        return BeFileStatus::FileAlreadyOpened;
+
     m_mode  = mode;
 
 #if defined (BENTLEYCONFIG_OS_WINRT)

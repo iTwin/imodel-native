@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFile.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,7 @@ enum class BeFileStatus
     NotLockedError,                          //!< The file is not locked.
     ReadError,                               //!< An error during read.
     DiskFull,                                //!< Not enough storage available to complete operation
+    FileAlreadyOpened,                       //!< This object already represents an open file; close it first before calling Open or Create again.
     UnknownError                  = ERROR,   //!< An unknown file I/O error occurred.
     };
 
