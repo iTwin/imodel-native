@@ -341,7 +341,7 @@
                     </Source>
                 </Blue>
                 <Panchromatic>
-                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"" type="jp2">
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2" type="jp2">
                         <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:PANCHROMATIC</Id>
                         <ServerLoginKey>EarthExplorer</ServerLoginKey>
                         <ServerLoginMethod>CUSTOM</ServerLoginMethod> 
@@ -373,7 +373,7 @@
                 <!-- The no data value is the padding color of raster file -->
                 <NoDataValue>0</NoDataValue>
                 <Red>
-                    <Source uri="#S2A_OPER_PRD_MSIL1C_PDMC_20161013T120754_R054_V20160918T154922_20160918T155625.SAFE\GRANULE\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_N02.04\IMG_DATA\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_B04.jp2"" type="jp2">
+                    <Source uri="#S2A_OPER_PRD_MSIL1C_PDMC_20161013T120754_R054_V20160918T154922_20160918T155625.SAFE\GRANULE\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_N02.04\IMG_DATA\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_B04.jp2" type="jp2">
                         <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:RED</Id>
                         <!-- The size of individual bands is unknown -->
                         <!-- Since there is no way to correlate the band source with the compound multiband source, login information is repeated for every band. The application
@@ -390,7 +390,7 @@
                     <!-- IMPORTANT: You will notice here that all bands are located in the same compound file. Since there are no provisions in the package file to refer to a file already
                          downloaded, the full compound document based URI is specified for every band. The download manager should make use of the MultiBandSource size estimate upon downloading and
                          use the cached file for the other bands  -->
-                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"" type="jp2">
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2" type="jp2">
                         <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:GREEN</Id>
                         <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>
                         <ServerLoginMethod>STANDARD</ServerLoginMethod>
@@ -401,7 +401,7 @@
                     </Source>
                 </Green>
                 <Blue>
-                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"" type="jp2">
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2" type="jp2">
                         <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:BLUE</Id>
                         <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>                        
                         <ServerLoginMethod>STANDARD</ServerLoginMethod>
@@ -412,7 +412,7 @@
                     </Source>
                 </Blue>
                 <Panchromatic>
-                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"" type="jp2">
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2" type="jp2">
                         <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:PANCHROMATIC</Id>
                         <ServerLoginKey>Scihub.Copernicus</ServerLoginKey> 
                         <ServerLoginMethod>STANDARD</ServerLoginMethod>
