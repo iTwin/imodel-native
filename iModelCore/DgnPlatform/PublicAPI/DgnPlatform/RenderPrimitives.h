@@ -818,6 +818,17 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
 
+    DGNPLATFORM_EXPORT void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddCurveVectorR(CurveVectorR curves, bool isFilled) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) override;
+    DGNPLATFORM_EXPORT void _AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) override;
+    DGNPLATFORM_EXPORT void _AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) override;
+    DGNPLATFORM_EXPORT void _AddBodyR(IBRepEntityR body) override;
+    DGNPLATFORM_EXPORT void _AddTextStringR(TextStringR text) override;
+    DGNPLATFORM_EXPORT void _AddTextString2dR(TextStringR text, double zDepth) override;
+
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 

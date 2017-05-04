@@ -113,7 +113,7 @@ BentleyStatus LsComponent::StrokeContinuousArc(LineStyleContextR context, LineSt
         curve->push_back(ICurvePrimitive::CreateArc(tmpArc));
         curve->push_back(ICurvePrimitive::CreateLineString(pts, 3));
 
-        context.GetGraphicR().AddCurveVector(*curve, true);
+        context.GetGraphicR().AddCurveVectorR(*curve, true);
         }
 
     return SUCCESS;
