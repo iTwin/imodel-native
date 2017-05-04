@@ -168,7 +168,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
-        void InitializeTerrainRegions(Dgn::ViewContextR);        
+		void InitializeTerrainRegions(Dgn::ViewContextR);
+      
 
     protected:
 
@@ -296,6 +297,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void QueueDeleteTerrainRegions(uint64_t id);
 
         SCALABLEMESH_SCHEMA_EXPORT void QueueAddTerrainRegions(uint64_t id, const bvector<DPoint3d>& boundary);
+
+		SCALABLEMESH_SCHEMA_EXPORT void ActivateTerrainRegion(BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel);
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
