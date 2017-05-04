@@ -838,7 +838,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(bmap<Utf8String, 
 
     //Find relationship that is relevant to current class so to adds its column to used column list
     for(ECClassCP ecClass: m_primaryHierarchy)
-        if (FindRelationshipEndTableMaps(m_classMap.GetClass().GetId()) != SUCCESS)
+        if (FindRelationshipEndTableMaps(ecClass->GetId()) != SUCCESS)
             return ERROR;
 
     //Append current map property maps
