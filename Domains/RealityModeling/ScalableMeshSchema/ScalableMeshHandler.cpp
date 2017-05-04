@@ -1428,6 +1428,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::CloseFile()
     {
+	if (m_subModel)
+	{
+		m_loadedAllModels = false;
+	}
     if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
@@ -1714,6 +1718,7 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel)
         SetDefaultClipsActive();
+
 
     bvector<uint64_t> coverageIds;
     m_smPtr->GetCoverageIds(coverageIds);
@@ -2122,6 +2127,16 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     return model.get();    
     }
 
+void ScalableMeshModel::ActivateTerrainRegion(BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel)
+{
+	if(terrainModel->GetScalableMesh() == nullptr)
+		terrainModel->OpenFile(terrainModel->GetPath(), GetDgnDb());
+	ActivateClip(id.GetValue());
+	ReloadClipMask(id, true);
+	terrainModel->GetScalableMesh()->SetInvertClip(true);
+	terrainModel->ActivateClip(id.GetValue(), ClipMode::Clip);
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  03/2016
 //----------------------------------------------------------------------------------------
@@ -2177,7 +2192,6 @@ void ScalableMeshModel::ReloadMesh() // force to reload the entire mesh data
 
 DgnDbStatus ScalableMeshModel::_OnDelete()
     {
-    DgnDbStatus stat = T_Super::_OnDelete();
 
     if (m_subModel)
     {
@@ -2186,6 +2200,8 @@ DgnDbStatus ScalableMeshModel::_OnDelete()
 
 
     Cleanup(true);
+
+	DgnDbStatus stat = T_Super::_OnDelete();
 
     return stat;
     }
