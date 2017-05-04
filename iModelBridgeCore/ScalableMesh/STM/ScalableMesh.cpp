@@ -538,6 +538,7 @@ void  IScalableMesh::ClearGroupSelection()
     }
 
 #ifdef SCALABLE_MESH_ATP
+    
 int IScalableMesh::ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
     {
     return _ChangeGeometricError(outContainerName, outDatasetName, server, newGeometricErrorValue);
@@ -2761,6 +2762,9 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
 
 #ifndef VANCOUVER_API
     assert(!terrainAbsName.DoesPathExist());
+#else    
+    assert(!BeFileName::DoesPathExist(terrainAbsName.c_str()));
+#endif
 
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {
@@ -2794,9 +2798,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
             m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();*/
             }
         }
-#else
-    assert(false); // NEEDS_WORK_SM : enable ground detection in vancouver
-#endif
+
 
     createdTerrain = terrainAbsName;
     return SUCCESS;
