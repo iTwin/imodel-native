@@ -1106,7 +1106,6 @@ IPolyfaceVisitorFilter *filter
 ) const;
 
 
-
 //! @description Compute volumes "between" primary and barrier facets
 //! @param [in] polyfaceA first facet set (e.g. road surface)
 //! @param [in] polyfaceB second facet set (e.g. ground dtm)
@@ -1945,6 +1944,23 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFa
 
 //! Create a mesh with (just) point and index data.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData);
+
+
+//! Create a (indexed) polyface containing all polygons from a TaggedPolygonVector
+GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons
+(
+TaggedPolygonVectorCR polygons  //!< [in] tagged polygons to place in polyface
+);
+
+//! Create a polyface containing all visible parts for a flat view of among multiple meshes.
+GEOMDLLIMPEXP void static VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+PolyfaceHeaderPtr &dest,            //!< [out] new mesh, containing only the visible portions of the inputs
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+);
 
 
 //! DEPRECATED -- Use PolyfaceHeader::CreateVariableSizeIndexed ();

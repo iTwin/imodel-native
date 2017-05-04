@@ -2572,7 +2572,6 @@ PolyfaceHeaderPtr ISolidPrimitive::Facet (IFacetOptionsPtr const &options)
     }
 
 ISolidPrimitive::ISolidPrimitive ()
-    : m_invertedOrientation (false)
     {
     }
 
