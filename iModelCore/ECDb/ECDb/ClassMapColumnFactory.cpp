@@ -211,7 +211,7 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
     for (ClassMap const* classMapFilter : m_compoundFilter)
         {
         itor = classMapFilter->GetColumnFactory().m_usedColumnMap.find(accessString);
-        if (itor != m_usedColumnMap.end())
+        if (itor != classMapFilter->GetColumnFactory().m_usedColumnMap.end())
             {
             foundColumn = true;
             break;
