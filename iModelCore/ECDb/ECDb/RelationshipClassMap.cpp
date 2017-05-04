@@ -1878,7 +1878,6 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
         ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
         if (classMap != nullptr)
             {
-            classMap->DeleteColumnFactory();
             auto itor =  m_constraintClassMaps[&classMap->GetJoinedOrPrimaryTable()].insert(classMap);
             if (DbTable* overflowTable = classMap->GetOverflowTable())
                 m_constraintClassMaps[overflowTable].insert(classMap);
