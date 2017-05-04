@@ -653,19 +653,19 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
             <Class class="Subject"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="InformationPartitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SubjectOwnsChildSubjects" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="Subject"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
             <Class class="Subject"/>
         </Target>
     </ECRelationshipClass>
@@ -1133,10 +1133,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="TextAnnotation2d"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
@@ -1149,10 +1149,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="TextAnnotation3d"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
@@ -1208,10 +1208,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableHeader"/>
         </Target>
     </ECRelationshipClass>
@@ -1225,10 +1225,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableRow"/>
         </Target>
     </ECRelationshipClass>
@@ -1242,10 +1242,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableColumn"/>
         </Target>
     </ECRelationshipClass>
@@ -1274,10 +1274,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableCell"/>
         </Target>
     </ECRelationshipClass>
@@ -1291,10 +1291,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableMerge"/>
         </Target>
     </ECRelationshipClass>
@@ -1312,10 +1312,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableSymbology"/>
         </Target>
     </ECRelationshipClass>
@@ -1331,10 +1331,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableEdgeRun"/>
         </Target>
     </ECRelationshipClass>
@@ -1580,10 +1580,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="ElementExternalKey"/>
         </Target>
     </ECRelationshipClass>
@@ -1671,10 +1671,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="CategoryOwnsSubCategories" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
             <Class class="Category"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="SubCategory"/>
         </Target>
     </ECRelationshipClass>
@@ -1746,10 +1746,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="MaterialElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
             <Class class="MaterialElement"/>
         </Target>
     </ECRelationshipClass>
@@ -2145,20 +2145,20 @@
         <BaseClass>ElementRefersToElements</BaseClass>
         <!-- WIP: Remove? -->
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is used by" polymorphic="false">
             <Class class="GeometryPart"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="DrawingGraphic"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
             <Class class="GeometricElement"/>
         </Target>
     </ECRelationshipClass>
