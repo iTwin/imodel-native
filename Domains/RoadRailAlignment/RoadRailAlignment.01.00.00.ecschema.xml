@@ -10,7 +10,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="Alignment" modifier="Sealed">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
