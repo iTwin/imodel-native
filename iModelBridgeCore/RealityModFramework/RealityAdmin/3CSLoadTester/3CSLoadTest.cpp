@@ -26,6 +26,7 @@ static RPS s_rps = RPS();
 static bool s_keepRunning = true;
 static Stats s_stats = Stats();
 static const Utf8String s_server("https://qa-contextcapture-eus.cloudapp.net/");
+static bvector<Utf8String> s_guidparts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U" };
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
@@ -469,6 +470,11 @@ void User::DoNext(UserManager* owner)
             m_currentOperation = OperationType::DELETE_JOB;
             curl = DeleteJob();
             }
+        else if (m_jobCount > 20)
+            {
+            m_currentOperation = OperationType::DELETE_PROJECT;
+            curl = DeleteProject();
+            }
         else
             curl = CreateJob();
         }
@@ -595,7 +601,6 @@ CURL* User::ListClusters()
 
 CURL* User::CreateJob()
     {
-    m_jobCount++; //this is to avoid adding a job with the same name as one that was recently deleted
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append("api/v1/jobs");
@@ -641,15 +646,23 @@ CURL* User::CreateJob()
                         "}";
 
     Utf8String outputPath = m_id;
-    bvector<Utf8String> numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
     
-    for (int i = 0; i < 10; i++)
+    bool swapped = false;
+    for (int i = m_jobCount; i < 25; i++)
         {
-        if(outputPath.ContainsI(numbers[i]))
+        if(!outputPath.EndsWith(s_guidparts[i]))
             {
-            outputPath.ReplaceAll(numbers[i].c_str(), numbers[i+1].c_str());
+            outputPath.replace(outputPath.length()-1, outputPath.length(), s_guidparts[i]);
+            m_jobCount = i+1;
+            swapped = true;
             break;
             }
+        }
+
+    if (!swapped)
+        {
+        m_jobCount = 50;
+        return nullptr;
         }
 
     m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, outputPath);
@@ -776,6 +789,7 @@ void User::ValidateCreateJob(int activeUsers)
         {
         success = true;
         m_jobId = instances["id"].asString();
+        m_submitted = false;
         }
 
     s_stats.InsertStats(this, success, activeUsers);
