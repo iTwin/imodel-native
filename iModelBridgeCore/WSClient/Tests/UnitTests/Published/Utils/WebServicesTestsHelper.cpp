@@ -9,15 +9,15 @@
 #include "WebServicesTestsHelper.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
+#include <WebServices/Client/ClientInfo.h>
 
-#include "../../../../../DgnClientFx/PublicAPI/DgnClientFx/Device.h"
 void BackDoor::DgnClientFx_Device::Initialize()
     {
 #if defined (__ANDROID__)
     // WIP06 - DgnClientFx is not initialized, need to initialize APIs seperately
-    if (DgnClientFx::Device::GetDeviceId().empty())
+    if (ClientInfo::GetDeviceId().empty())
         {
-        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+        ClientInfo::CacheAndroidDeviceId ("TEST_DEVICE_ID");
         }
 #endif
     }
@@ -335,6 +335,7 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
 BeFileName GetTestsAssetsDir()
     {
     BeFileName path;
+
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
     return path;
     }

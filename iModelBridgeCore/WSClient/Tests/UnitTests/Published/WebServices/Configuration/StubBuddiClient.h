@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/StubBuddiClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,6 @@
 
 #include <WebServices/Configuration/BuddiClient.h>
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
