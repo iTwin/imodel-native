@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:50:52 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -17,7 +17,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 
-static const DataType POINT_TYPE_FAMILY(PointType3d64fCreator().Create());
+
 struct TypeConfigImpl : public RefCountedBase
     {
     friend struct TypeConfig;
@@ -26,7 +26,7 @@ struct TypeConfigImpl : public RefCountedBase
         bool m_isSet;
     public:
         TypeConfigImpl()
-            : m_type(POINT_TYPE_FAMILY)
+            : m_type(PointType3d64fCreator().Create())
             {
             m_isSet = false;
             }

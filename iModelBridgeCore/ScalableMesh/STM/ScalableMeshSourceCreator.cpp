@@ -1204,12 +1204,14 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
+#ifndef VANCOUVER_API    
         if (dynamic_cast<DGNLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr || dynamic_cast<DGNReferenceLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr)
             {
             importConfig->SetClipShape(clipShapePtr);
             importer.AddSDKSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }
         else
+#endif
             {
             importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }
