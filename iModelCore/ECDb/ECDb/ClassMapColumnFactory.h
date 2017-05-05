@@ -84,7 +84,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
 
         ClassMap const& m_classMap;
         bool m_usesSharedColumnStrategy = false;
-        int m_sharedColumnCount = -1;
+        Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
         mutable std::set<DbColumn const*> m_usedColumnSet;
         mutable std::vector<ClassMap const*> m_compoundFilter;

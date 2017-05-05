@@ -160,7 +160,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
                                         <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns="ECDbMap.02.00">
-                                        <SharedColumnCount>10</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="string" />
@@ -1811,7 +1811,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
                                     <ECEntityClass typeName='PhysicalElement'>
                                         <ECCustomAttributes>
                                             <ShareColumns xmlns='ECDbMap.02.00'>
-                                                <SharedColumnCount>4</SharedColumnCount>
+                                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
                                                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                                             </ShareColumns>
                                         </ECCustomAttributes>

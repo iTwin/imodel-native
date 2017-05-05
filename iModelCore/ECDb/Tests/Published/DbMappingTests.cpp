@@ -1963,7 +1963,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2000,12 +2000,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2028,12 +2028,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2058,12 +2058,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
     }
@@ -2199,7 +2199,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "               <SharedColumnCount>10</SharedColumnCount>"
+        "               <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
@@ -2261,7 +2261,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCount)
+TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
     {
             {
             AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -2273,17 +2273,17 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                                           "            </ClassMap>"
                                           "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                          "              <SharedColumnCount>-3</SharedColumnCount>"
+                                          "              <MaxSharedColumnsBeforeOverflow>-3</MaxSharedColumnsBeforeOverflow>"
                                           "            </ShareColumns>"
                                           "        </ECCustomAttributes>"
                                           "       <ECProperty propertyName='P1' typeName='int' />"
                                           "   </ECEntityClass>"
-                                          "</ECSchema>", false, "SharedColumnCount must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
+                                          "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
 
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2293,7 +2293,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>5</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
                 "       <ECProperty propertyName='P1' typeName='int' />"
@@ -2304,11 +2304,11 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "SharedColumnCount");
+            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2318,7 +2318,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>5</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                 "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
@@ -2330,11 +2330,11 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "SharedColumnCount");
+            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2344,7 +2344,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>100</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
                 "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
@@ -2398,9 +2398,9 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaImports)
+TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_SubsequentSchemaImports)
     {
-    ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2410,7 +2410,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaIm
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2471,7 +2471,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaIm
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
     {
-    ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2486,7 +2486,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2514,7 +2514,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub2' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2542,7 +2542,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub3' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2572,7 +2572,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub4' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2609,7 +2609,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub51' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2639,7 +2639,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub61' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2710,7 +2710,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>0</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>0</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2879,7 +2879,7 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>3</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2954,7 +2954,7 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>3</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3110,7 +3110,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAnd
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3656,9 +3656,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
+TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     {
-    ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("MaxSharedColumnsBeforeOverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3679,7 +3679,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='DefinitionElement' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>50</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>50</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3694,7 +3694,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='GeometricElement2d' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3704,7 +3704,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='GeometricElement3d' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3970,7 +3970,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                         "            </ClassMap>"
                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                        "              <SharedColumnCount>4</SharedColumnCount>"
+                        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
                         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                         "            </ShareColumns>"
                         "        </ECCustomAttributes>"
@@ -6435,7 +6435,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <SharedColumnCount>5</SharedColumnCount>"
+                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -6486,7 +6486,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <SharedColumnCount>5</SharedColumnCount>"
+                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -7203,7 +7203,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "               <MapStrategy>TablePerHierarchy</MapStrategy>"
                                         "            </ClassMap>"
                                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                         "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                         "             </ShareColumns>"
                                         "           </ECCustomAttributes>"
@@ -7226,7 +7226,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "               <MapStrategy>TablePerHierarchy</MapStrategy>"
                                         "            </ClassMap>"
                                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                         "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                         "             </ShareColumns>"
                                         "           </ECCustomAttributes>"
@@ -7304,7 +7304,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                 "    <ECEntityClass typeName='Sub2Sub2' modifier='None'>"
                                 "      <ECCustomAttributes>"
                                 "        <ShareColumns xmlns='ECDbMap.02.00'>"
-                                "           <SharedColumnCount>2</SharedColumnCount>"
+                                "           <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                 "           <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                                 "        </ShareColumns>"
                                 "       </ECCustomAttributes>"
@@ -7439,7 +7439,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                 "    <ECEntityClass typeName='Sub2Sub2' modifier='None'>"
                                 "      <ECCustomAttributes>"
                                 "        <ShareColumns xmlns='ECDbMap.02.00'>"
-                                "           <SharedColumnCount>2</SharedColumnCount>"
+                                "           <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                 "           <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                 "        </ShareColumns>"
                                 "       </ECCustomAttributes>"
@@ -7786,7 +7786,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
                          "        <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "      </ClassMap>"
                          "      <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "        <SharedColumnCount>10</SharedColumnCount>"
+                         "        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "      </ShareColumns>"
                          "    </ECCustomAttributes>"
@@ -8025,7 +8025,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>7</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8106,7 +8106,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>10</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8227,7 +8227,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>10</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8391,7 +8391,7 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
                 <ShareColumns xmlns='ECDbMap.02.00'>
-                    <SharedColumnCount>10</SharedColumnCount>
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
                     <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
                 </ShareColumns>
             </ECCustomAttributes>
@@ -8434,7 +8434,7 @@ TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -9457,7 +9457,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <BaseClass>GeometricElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9479,7 +9479,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <BaseClass>InformationContentElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9610,7 +9610,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <BaseClass>GeometricElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9632,7 +9632,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <BaseClass>InformationContentElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9742,7 +9742,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>20</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9824,7 +9824,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>20</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                     <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"

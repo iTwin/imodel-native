@@ -19,8 +19,8 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
     {
     if (m_usesSharedColumnStrategy)
         {
-        if (m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().IsValid())
-            m_sharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().Value();
+        if (m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
+            m_maxSharedColumnsBeforeOverflow = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
         }
 
     Initialize();
@@ -344,27 +344,27 @@ BentleyStatus ClassMapColumnFactory::TryGetAvailableColumns(int& sharedColumnTha
     const int maxColumnInBaseTable = 63;
     const std::vector<DbColumn const*> physicalColumns = GetTable().FindAll(PersistenceType::Physical);
     const std::vector<DbColumn const*> sharedColumns = GetTable().FindAll(DbColumn::Kind::SharedDataColumn);
-    const int nAvaliablePhysicalColumns = maxColumnInBaseTable - (int) physicalColumns.size();
+    const int nAvailablePhysicalColumns = maxColumnInBaseTable - (int) physicalColumns.size();
     sharedColumnThatCanBeReused = 0;
     for (DbColumn const* sharedColumn : sharedColumns)
         if (!IsColumnInUseByClassMap(*sharedColumn))
             sharedColumnThatCanBeReused++;
 
-    if (m_sharedColumnCount >= 0)
+    if (m_maxSharedColumnsBeforeOverflow.IsValid())
         {
-        if (sharedColumns.size() > m_sharedColumnCount)
+        if (sharedColumns.size() > m_maxSharedColumnsBeforeOverflow.Value())
             {
-            BeAssert(false && "SharedColumnCount bypassed the limit set in CA");
+            BeAssert(false && "MaxSharedColumnsBeforeOverflow bypassed the limit set in CA");
             return ERROR;
             }
 
-        sharedColumnThatCanBeCreated = m_sharedColumnCount - (int)sharedColumns.size();
-        if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
-            sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict avaliable shared columns to avaliable physical columsn
+        sharedColumnThatCanBeCreated = (int) m_maxSharedColumnsBeforeOverflow.Value() - (int)sharedColumns.size();
+        if (sharedColumnThatCanBeCreated > nAvailablePhysicalColumns)
+            sharedColumnThatCanBeCreated = nAvailablePhysicalColumns; //restrict avaliable shared columns to avaliable physical columsn
         }
     else
         {
-        sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns;
+        sharedColumnThatCanBeCreated = nAvailablePhysicalColumns;
         }
 
 
