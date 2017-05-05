@@ -24,6 +24,7 @@
 #include "ScalableMeshMesher.h"
 #include <ctime>
 #include <fstream>
+#include <codecvt>
 #include "Edits/ClipUtilities.h"
 #include "vuPolygonClassifier.h"
 #include "LogUtils.h"
@@ -5069,12 +5070,12 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Handle all open groups 
     strategy->SaveAllOpenGroups();
 
-    // Save group master file which contains info about all the generated groups (groupID and blockID)
-    BeFileName masterHeaderPath(path.c_str());
-    masterHeaderPath.PopDir();
-    masterHeaderPath.PopDir();
-
-    strategy->SaveMasterHeader(masterHeaderPath);
+    //// Save group master file which contains info about all the generated groups (groupID and blockID)
+    //BeFileName masterHeaderPath(path.c_str());
+    //masterHeaderPath.PopDir();
+    //masterHeaderPath.PopDir();
+    //
+    //strategy->SaveMasterHeader(masterHeaderPath);
 
 
     //Json::Value         rootJson;

@@ -13,6 +13,7 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
+#include <codecvt>
 #ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
 #endif
@@ -190,8 +191,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        BeFileName url(settings->GetURL().c_str());
-        if (m_settings->IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
+        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceCURL"))) == nullptr)
+
             {
             BeFileName::CreateNewDirectory(url.c_str());
             }
@@ -212,8 +213,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceWSG";
         account_name = L"WSGAccount";
-        account_prefix = DataSourceURL(settings->GetURL().c_str());
-        account_identifier = settings->GetServerID().c_str();
 
         Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
         assert(!tokenUtf8.empty());

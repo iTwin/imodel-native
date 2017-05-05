@@ -14,6 +14,7 @@
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
+#include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_wsg;

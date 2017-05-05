@@ -649,7 +649,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             return 0; // Error opening file
             }
         }
-    else if (/*BeFileName::IsUrl(filePath) &&*/ BeFileName(filePath).ContainsI(L"json"))
+    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
         { // Open json streaming format
         auto directory = BeFileName::GetDirectoryName(filePath);
         isLocal = BeFileName::DoesPathExist(directory.c_str());
