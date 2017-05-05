@@ -517,8 +517,8 @@ struct Tile : TileTree::Tile
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; m_children.clear();}
     ChildTiles const* _GetChildren(bool load) const override;
-    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const;
-    virtual void _DrawGraphics(DrawArgsR args, int depth) const;
+    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const override;
+    virtual void _DrawGraphics(DrawArgsR args, int depth) const override;
 
 
     Utf8String _GetTileCacheKey () const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}

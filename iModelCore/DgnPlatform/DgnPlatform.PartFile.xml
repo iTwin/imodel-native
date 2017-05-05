@@ -36,7 +36,7 @@
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="PsolidShim" OnlyPlatforms="x64,x86">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1"/>
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1_241"/>
     </Part>
     
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
@@ -636,14 +636,6 @@
         <SubProduct ProductName="TilePublisher" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
-        </Bindings>
-    </Part>
-    
-    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke" OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubPart PartName="TilePublisherLib" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.Sdk.*.nupkg</Files>
         </Bindings>
     </Part>
 

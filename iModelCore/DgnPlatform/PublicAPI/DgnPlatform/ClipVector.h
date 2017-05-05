@@ -26,9 +26,11 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     ClipVector(ClipPrimitiveP primitive) {push_back(primitive);}
     ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP transform);
 
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} 
+
     static ClipVectorPtr Create() {return new ClipVector();}
     static ClipVectorPtr CreateFromPrimitive(ClipPrimitiveP primitive) {return new ClipVector(primitive);}
-    static ClipVectorPtr CreateFromGPA(GPArrayCR gpa, double chordTolerance, double angleTolerance,  double* zLow, double* zHigh, TransformCP transform)  {return new ClipVector (gpa, chordTolerance, angleTolerance, zLow, zHigh, transform);}
+    DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromGPA(GPArrayCR gpa, double chordTolerance, double angleTolerance,  double* zLow, double* zHigh, TransformCP transform)  {return new ClipVector (gpa, chordTolerance, angleTolerance, zLow, zHigh, transform);}
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow = NULL, double* zHigh = NULL);
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateCopy(ClipVectorCR vector);
 
@@ -61,5 +63,6 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static ClipVectorPtr FromJson(JsonValueCR);
 };
+
 
 END_BENTLEY_DGN_NAMESPACE

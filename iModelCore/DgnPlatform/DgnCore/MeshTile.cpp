@@ -555,8 +555,7 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
     for (size_t i=0; i<4; i++)
         m_points.push_back(tileCorners.m_pts[i]);
 
-    transform.Multiply (m_points, m_points);
-
+    transform.Multiply (m_points, m_points);                                                                                                                                                                                                                      
     m_uvParams.push_back(DPoint2d::From(0.0, 0.0));
     m_uvParams.push_back(DPoint2d::From(1.0, 0.0));
     m_uvParams.push_back(DPoint2d::From(0.0, 1.0));
@@ -569,7 +568,7 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform)
+void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
     {
     m_points.resize(triMesh.m_numPoints);
 
@@ -586,10 +585,11 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
             m_normals.at(i).Init((double) triMesh.m_normals[i].x, (double) triMesh.m_normals[i].y, (double) triMesh.m_normals[i].z);
 
         if (nullptr != triMesh.m_textureUV)
-            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) triMesh.m_textureUV[i].y);
+            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
-    for (int32_t i=0; i<triMesh.m_numIndices; )
-        AddTriangle(TileTriangle(triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], triMesh.m_vertIndex[i++], false));
+    
+    for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
+        AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1833,7 +1833,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](TileGeneratorStatus status)
             {
-            return status;
+            return status;                           
             });
         }
     }
@@ -1900,7 +1900,8 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
+(ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {

@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_DGN
 struct CsvFileTests : public testing::Test
 {
 static void SetUpTestCase();
+static void TearDownTestCase();
 
 static BeFileName GetTestFilePath()
     {
@@ -35,7 +36,7 @@ static BeFileName GetTestFilePath()
 void CsvFileTests::SetUpTestCase()
     {
     auto testFilePath = GetTestFilePath();
-
+    
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testFilePath.GetDirectoryName().c_str()));
 
     Utf8String outRootUtf8(testFilePath);
@@ -46,6 +47,12 @@ void CsvFileTests::SetUpTestCase()
 "2,033_Master_GSA.i.dgn,Building\n"
 "3,049_HealthCare_Master.i.dgn,Building\n", fp);
     fclose(fp);
+    }
+
+void CsvFileTests::TearDownTestCase() 
+    {
+    auto testFilePath = GetTestFilePath();
+    BeFileName::EmptyAndRemoveDirectory(testFilePath.GetDirectoryName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
