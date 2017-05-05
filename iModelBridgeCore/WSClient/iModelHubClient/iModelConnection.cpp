@@ -680,7 +680,7 @@ BeBriefcaseId                  briefcaseId
     const Utf8String methodName = "iModelConnection::WriteBriefcaseIdIntoFile";
     BeSQLite::DbResult status;
 
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
         StatusResult result = m_iModelInfo.WriteiModelInfo (*db, briefcaseId);
