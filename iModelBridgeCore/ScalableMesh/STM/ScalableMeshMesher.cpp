@@ -161,31 +161,140 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
     bvector<bool> used(polygons.size(),false);
     VuPolygonClassifier vu(1e-8, 0);
 
+	for (auto& poly : polygons)
+	{
+		DRange3d range = DRange3d::From(poly);
+		if (poly.empty()) continue;
+		for (auto& poly2 : polygons)
+		{
+			if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
+			if (!DRange3d::From(poly2).IntersectsWith(range)) continue;
+			//compute intersects on vertices
+			bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+			bvector<DPoint3d> intersectingVertices;
+			for (auto& pt : poly)
+				setOfPts.insert(pt);
+			for (auto& pt : poly2)
+				if (setOfPts.count(pt))
+					intersectingVertices.push_back(pt);
+
+			if (intersectingVertices.size() == std::min(poly.size(), poly2.size()))
+			    {
+				if (poly.size() < poly2.size()) poly = poly2;
+				poly2.clear();
+			    }
+			else if (!intersectingVertices.empty())
+			{
+				bvector<DPoint3d> withoutIntersect;
+				if (poly.size() < poly2.size())
+				{
+					for (auto& pt : poly)
+					{
+						bool insert = true;
+						for (auto& ptB : intersectingVertices)
+							if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+						if (insert) withoutIntersect.push_back(pt);
+					}
+				}
+				else
+				{
+					for (auto& pt : poly2)
+					{
+						bool insert = true;
+						for (auto& ptB : intersectingVertices)
+							if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+						if (insert) withoutIntersect.push_back(pt);
+					}
+				}
+				if (poly.size() < poly2.size()) poly = poly2;
+
+				if (!bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+				if (withoutIntersect.size() > 4)
+				{
+					poly2 = withoutIntersect;
+				}
+				else poly2.clear();
+
+			}
+		}
+	}
+
     for (auto& poly : polygons)
         {
         if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
 
         //pre-compute the union of polys with this function because apparently sometimes Unify hangs
         for (auto& poly2:polygons)
             { 
             if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
             if (used[&poly2 - &polygons[0]]) continue;
             if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()))
                 {
-                used[&poly2 - &polygons[0]] = true;
                 vu.ClassifyAUnionB(poly, poly2);
                 bvector<DPoint3d> xyz;
+				bvector<bvector<DPoint3d>> faces;
                 for (; vu.GetFace(xyz);)
                     {
                     if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
                     else
                         {
                         //  postFeatureBoundary.push_back(xyz);
-                        poly = xyz;
+						faces.push_back(xyz);
 
                         }
 
                     }
+				if (faces.size() == 1)
+				    {
+					poly = faces.front();
+					used[&poly2 - &polygons[0]] = true;
+				    }
+				else
+				   {
+					//compute intersects on vertices
+					bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+					bvector<DPoint3d> intersectingVertices;
+					for (auto& pt : poly)
+						setOfPts.insert(pt);
+					for (auto& pt : poly2)
+						if (setOfPts.count(pt))
+							intersectingVertices.push_back(pt);
+					if (!intersectingVertices.empty())
+					{
+						bvector<DPoint3d> withoutIntersect;
+						if (poly.size() < poly2.size())
+						{
+							for (auto& pt : poly)
+							{
+								bool insert = true;
+								for (auto& ptB : intersectingVertices)
+									if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+								if(insert) withoutIntersect.push_back(pt);
+							}
+						}
+						else
+						{
+							for (auto& pt : poly2)
+							{
+								bool insert = true;
+								for (auto& ptB : intersectingVertices)
+									if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+								if (insert) withoutIntersect.push_back(pt);
+							}
+						}
+						if (poly.size() < poly2.size()) poly = poly2;
+
+						if (!bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+						if (withoutIntersect.size() > 4)
+						{
+							poly2 = withoutIntersect;
+						}
+						else used[&poly2 - &polygons[0]] = true;
+					}
+			        }
                 }
 
             }
@@ -195,6 +304,8 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
         {
         if (!choosePolygonInSet(&poly - &polygons.front(), poly)) continue;
         if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
+
         UntieLoopsFromPolygon(poly);
         HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
 

@@ -1816,8 +1816,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             clipShape = clipShape->IntersectShape(*newShape);
             AddClipToDTM(dtmPtr, *clipShape);
             }
-        else
-           status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
+		else
+		{
+			status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
+		}
 
     status = AddPolygonsToDTMObject(stitchedNeighborsBoundary, DTMFeatureType::Breakline, dtmObjP);
 
@@ -1836,6 +1838,15 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
         }
 #endif
+
+		/*WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
+		dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
+		dtmFileName.append(L"_");
+		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+		dtmFileName.append(L"_");
+		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+		dtmFileName.append(L".tin");
+		bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());*/
 
     status = bcdtmObject_triangulateDtmObject(dtmObjP);
    // assert(status == SUCCESS || ((*dtmObjP).numPoints < 4));
