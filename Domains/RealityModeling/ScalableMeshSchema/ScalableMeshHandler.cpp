@@ -863,7 +863,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     bool restartQuery = true;
 
-    if ((m_currentDrawingInfoPtr != nullptr) && m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)
+    if ((m_currentDrawingInfoPtr != nullptr) && m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false && !m_forceRedraw)
         { 
         restartQuery = false;
         }
