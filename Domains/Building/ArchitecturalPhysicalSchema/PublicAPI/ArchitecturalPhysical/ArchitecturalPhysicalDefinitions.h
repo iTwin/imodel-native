@@ -38,8 +38,8 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME                        "ArchitectrualPhysical"
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_PATH                        L"ECSchemas/Domain/ArchitectrualPhysical.01.00.00.ecschema.xml"
+#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME                        "ArchitecturalPhysical"
+#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_PATH                        L"ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml"
 #define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA(className)                  BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME "." className
 #define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_CODE                        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME 
 #define BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY                          BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME
@@ -136,3 +136,6 @@ typedef BeSQLite::IdSet<ActivityId> ActivityIdSet;
 */
 
 //END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
+
+
+

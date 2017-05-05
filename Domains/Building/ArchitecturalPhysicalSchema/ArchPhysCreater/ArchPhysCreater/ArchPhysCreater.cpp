@@ -130,18 +130,20 @@ BentleyStatus ArchPhysCreator::DoCreate()
     {
 
     Dgn::DgnDomains::RegisterDomain( ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+  //  Dgn::DgnDomains::RegisterDomain( BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
         return BentleyStatus::ERROR;
 
-    // Create an DefinitionPartitionElement for the ToyTilePhysicalModel to model
+    // Create an DefinitionPartitionElement for the building model
 
-#ifdef NOTYET
     Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
-    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, "BuildingPhysicalModel");
+    Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*rootSubject, "BuildingPhysicalModel");
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
+
+#ifdef NOTYET
 
     BBPH::BuildingPhysicalModelPtr physicalModel = BBPH::BuildingPhysicalModel::Create(*partition);
     if (!physicalModel.IsValid())

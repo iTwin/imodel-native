@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include "ArchitecturalPhysicalDefinitions.h"
+
 BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
 
 //=======================================================================================
@@ -30,3 +31,5 @@ public:
 };
 
 END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
+
+

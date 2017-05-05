@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchemaInternal.h $
+|     $Source: BuildingCommonSchema/BuildingCommonSchemaInternal.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGN
 //USING_NAMESPACE_BENTLEY_BUILDING_COMMON
 
 namespace APH = BentleyApi::ArchitecturalPhysical;
+namespace BBC = BentleyApi::BuildingCommon;
 
 
 

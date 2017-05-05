@@ -4,6 +4,7 @@
 
     <Part Name="BuildingDomains" >
         <SubPart PartName="ArchitecturalPhysical"/>
+        <SubPart PartName="BuildingCommon"/>
     </Part>
 
     
@@ -20,14 +21,34 @@
         <Bindings>
             <PublicAPI Domain="ArchitecturalPhysical"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ArchitecturalPhysical.01.00.00.ecschema.xml
-                ECSchemas/Domain/BuildingCommon.01.00.00.ecschema.xml
+                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
             </Files>
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
+    
+    <Part Name="BuildingCommon" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.mke" ApiNumber="B02">
+        <SubPart PartName="BuildignCommonPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingCommon$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingCommon$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildignCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BuildingCommon"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BuildingCommon.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+    
     <!-- NOT YET
     
     BentleyBuildMakeFile="Building.mke" ApiNumber="B02"

@@ -7,7 +7,7 @@
 
  Warning!!! Auto Generated!.
 -->
-<ECSchema schemaName="ArchitectrualPhysical" nameSpacePrefix="ArchPhys" version="1.0" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="ArchitecturalPhysical" nameSpacePrefix="ArchPhys" version="1.0" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
