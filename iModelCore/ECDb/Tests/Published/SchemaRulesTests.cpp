@@ -601,6 +601,169 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRulesTestFixture, NavigationProperties)
+    {
+    std::vector <SchemaItem> testItems {
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship (even if one is inherited from a base class)"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="RelSub" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="Sealed" strength="Referencing">
+                       <BaseClass>Rel</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="RelSub1" direction="Backward" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="RelSub2" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub1" modifier="Sealed" strength="Referencing">
+                       <BaseClass>Rel</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub2" modifier="Sealed" strength="Referencing">
+                       <BaseClass>Rel</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
+
+    SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="RelSub" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="Sealed" strength="Referencing">
+                       <BaseClass>Rel</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="ChildSub"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy")
+    };
+
+    AssertSchemaImport(testItems, "ecdbschemarules_navprops.ecdb");
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -615,7 +778,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
         "  <ECEntityClass typeName='B'>"
         "    <ECProperty propertyName='CodeId' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
+        "  <ECRelationshipClass typeName='Rel1' modifier='Sealed' strength='Referencing'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
         "      <Class class='bsc:AnyClass'/>"
         "    </Source>"
@@ -634,7 +797,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "  <ECEntityClass typeName='B'>"
                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
+                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -653,8 +816,8 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "  <ECEntityClass typeName='B'>"
                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
-                   "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Source'>"
+                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
+                   "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Source' >"
                    "      <Class class='A'/>"
                    "    </Source>"
                    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target'>"
@@ -672,7 +835,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "  <ECEntityClass typeName='B'>"
                  "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
-                 "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel1' modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "    </Source>"
@@ -680,7 +843,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2' modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel2' modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "    </Source>"
@@ -698,7 +861,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "  <ECEntityClass typeName='B'>"
                  "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
-                 "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel1' modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "    </Source>"
@@ -706,7 +869,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2' modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel2' modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='Rel1'/>"
                  "    </Source>"
@@ -724,7 +887,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "  <ECEntityClass typeName='B'>"
                  "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
-                 "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "    </Source>"
@@ -732,7 +895,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2'  modifier='Sealed'>"
+                 "  <ECRelationshipClass typeName='Rel2'  modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "      <Class class='Rel1'/>"
@@ -751,7 +914,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                     "  <ECEntityClass typeName='B'>"
                     "    <ECProperty propertyName='CodeId' typeName='string' />"
                     "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                     "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                     "    </Source>"
                     "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
@@ -768,7 +931,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                     "  <ECEntityClass typeName='B'>"
                     "    <ECProperty propertyName='CodeId' typeName='string' />"
                     "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                     "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
                     "      <Class class='B'/>"
                     "    </Target>"
@@ -783,7 +946,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Abstract' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
                  "    </Source>"
@@ -800,7 +963,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Abstract' strength='Referencing'>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -814,7 +977,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Abstract' strength='Referencing'>"
                 "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
                 "      <Class class='B'/>"
                 "    </Target>"
@@ -828,7 +991,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Abstract' strength='Referencing'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -836,7 +999,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='Rel2' modifier='Abstract'>"
+                   "  <ECRelationshipClass typeName='Rel2' modifier='Abstract' strength='Referencing'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -844,7 +1007,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "      <Class class='B'/>"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='ConcreteRel' modifier='Sealed'>"
+                   "  <ECRelationshipClass typeName='ConcreteRel' modifier='Sealed' strength='Referencing'>"
                    "    <BaseClass>Rel</BaseClass>"
                    "    <BaseClass>Rel2</BaseClass>"
                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
@@ -880,7 +1043,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                 "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -945,7 +1108,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                 "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -1004,7 +1167,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                 "    <ECCustomAttributes>"
                 "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "    </ECCustomAttributes>"
@@ -1074,7 +1237,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                 "    <ECCustomAttributes>"
                 "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "    </ECCustomAttributes>"
@@ -1141,7 +1304,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                 "    <ECCustomAttributes>"
                 "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "    </ECCustomAttributes>"

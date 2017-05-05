@@ -17,13 +17,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
     {
-    SchemaValidationRules rules;
-    rules.m_classRules.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
-    rules.m_classRules.push_back(std::make_unique<ValidRelationshipRule>());
-
-    rules.m_propertyRules.push_back(std::make_unique<NoPropertiesOfSameTypeAsClassRule>());
-    rules.m_propertyRules.push_back(std::make_unique<ValidPropertyNameRule>());
-    rules.m_propertyRules.push_back(std::make_unique<ValidNavigationPropertyRule>());
+    std::vector<std::unique_ptr<ISchemaValidationRule>> rules;
+    rules.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
+    rules.push_back(std::make_unique<ValidRelationshipRule>());
+    rules.push_back(std::make_unique<NoPropertiesOfSameTypeAsClassRule>());
+    rules.push_back(std::make_unique<ValidPropertyNameRule>());
+    rules.push_back(std::make_unique<ValidNavigationPropertyRule>());
 
     SchemaValidationResult result;
     bool valid = true;
@@ -45,38 +44,14 @@ bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool SchemaValidator::ValidateSchema(SchemaValidationResult& result, SchemaValidationRules const& rules, ECN::ECSchemaCR schema)
+bool SchemaValidator::ValidateSchema(SchemaValidationResult& result, std::vector<std::unique_ptr<ISchemaValidationRule>> const& rules, ECN::ECSchemaCR schema)
     {
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (std::unique_ptr<ISchemaValidationRule> const& rule : rules.m_classRules)
+        for (std::unique_ptr<ISchemaValidationRule> const& rule : rules)
             {
             bool succeeded = rule->ValidateSchema(result, schema, *ecClass);
-            if (!succeeded)
-                valid = false;
-            }
-
-        bool succeeded = ValidateClass(result, rules, *ecClass);
-        if (!succeeded)
-            valid = false;
-        }
-
-    return valid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-//static
-bool SchemaValidator::ValidateClass(SchemaValidationResult& result, SchemaValidationRules const& rules, ECN::ECClassCR ecClass)
-    {
-    bool valid = true;
-    for (ECPropertyCP prop : ecClass.GetProperties(true))
-        {
-        for (std::unique_ptr<ISchemaValidationRule> const& rule : rules.m_propertyRules)
-            {
-            bool succeeded = rule->ValidateClass(result, ecClass, *prop);
             if (!succeeded)
                 valid = false;
             }
@@ -168,8 +143,8 @@ bool ValidBaseClassesRule::_ValidateSchema(SchemaValidationResult& result, ECN::
             {
             error.AddViolatingClass(ecClass, Error::Kind::MultiInheritance);
 
-            if (m_doNotFailForLegacyIssues)
-                continue; //in legacy mode we log all issues as warning, so do not return on first issue
+            if (entityBaseClass != nullptr && m_doNotFailForLegacyIssues)
+                continue; //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
 
             return false;
             }
@@ -183,46 +158,46 @@ bool ValidBaseClassesRule::_ValidateSchema(SchemaValidationResult& result, ECN::
 //---------------------------------------------------------------------------------------
 void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (m_violatingClasses.empty() || !issues.IsEnabled())
+    if (m_violatingClasses.empty())
         return;
 
     for (auto const& kvPair : m_violatingClasses)
         {
         for (std::pair<ECClassCP, Kind> const& violatingClass : kvPair.second)
             {
-            Utf8CP className = violatingClass.first->GetFullName();
-            Utf8CP error = nullptr;
+            ECClassCP violatingClassP = violatingClass.first;
             switch (violatingClass.second)
                 {
                     case Kind::AbstractClassHasNonAbstractBaseClass:
-                        error = "An abstract class must not have a non-abstract base class.";
-                        break;
+                    {
+                    if (m_doNotFailForLegacyIssues)
+                       LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
+                                      violatingClassP->GetFullName());
+                    else
+                        issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
+                                      violatingClassP->GetFullName());
+
+                    break;
+                    }
 
                     case Kind::MultiInheritance:
-                        error = "Multi-inheritance is not supported. Use mixins instead.";
-                        break;
+                    {
+                    if (!m_doNotFailForLegacyIssues || !violatingClassP->IsEntityClass())
+                        issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported.",
+                                      violatingClassP->GetFullName());
+                    else
+                        LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",
+                                      violatingClassP->GetFullName());
+
+                    break;
+                    }
 
                     default:
                         BeAssert(false);
                 }
-
-            if (m_doNotFailForLegacyIssues)
-                {
-                if (LOG.isSeverityEnabled(NativeLogging::LOG_WARNING))
-                    {
-                    LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: %s",
-                                 className, error);
-                    }
-                }
-            else
-                issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: %s",
-                              className, error);
-
             }
         }
     }
-
-
 
 //**********************************************************************
 // ValidRelationshipRule
@@ -337,43 +312,48 @@ void ValidRelationshipRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-bool ValidPropertyNameRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool ValidPropertyNameRule::_ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
-    Utf8StringCR propName = ecProperty.GetName();
-
-    bool isCollision = false;
-    if (propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
-        propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id) ||
-        propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+    //only iterate local props as every class will be validated separately
+    bool isValid = true;
+    for (ECPropertyCP prop : ecClass.GetProperties(false))
         {
-        isCollision = true;
-        }
+        Utf8StringCR propName = prop->GetName();
 
-    if (!isCollision && ecClass.GetClassType() == ECClassType::Relationship)
-        {
-        if (propName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
-            propName.EqualsIAscii(ECDBSYS_PROPALIAS_SourceId) ||
-            propName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
-            propName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
-            propName.EqualsIAscii(ECDBSYS_PROPALIAS_TargetId) ||
-            propName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+        bool isCollision = false;
+        if (propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
+            propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id) ||
+            propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
             {
             isCollision = true;
             }
+
+        if (!isCollision && ecClass.GetClassType() == ECClassType::Relationship)
+            {
+            if (propName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
+                propName.EqualsIAscii(ECDBSYS_PROPALIAS_SourceId) ||
+                propName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
+                propName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
+                propName.EqualsIAscii(ECDBSYS_PROPALIAS_TargetId) ||
+                propName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+                {
+                isCollision = true;
+                }
+            }
+
+        if (isCollision)
+            {
+            IError* errorP = result[GetType()];
+            if (errorP == nullptr)
+                errorP = &result.AddError(std::make_unique<Error>());
+
+            Error& error = *static_cast<Error*>(errorP);
+            error.AddInconsistency(*prop, Error::Kind::SystemPropertyNamingCollision);
+            isValid = false;
+            }
         }
 
-    if (isCollision)
-        {
-        IError* errorP = result[GetType()];
-        if (errorP == nullptr)
-            errorP = &result.AddError(std::make_unique<Error>());
-
-        Error& error = *static_cast<Error*>(errorP);
-        error.AddInconsistency(ecProperty, Error::Kind::SystemPropertyNamingCollision);
-        return false;
-        }
-
-    return true;
+    return isValid;
     }
 
 
@@ -422,61 +402,123 @@ void ValidPropertyNameRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-bool ValidNavigationPropertyRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool ValidNavigationPropertyRule::_ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
-    NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-    if (navProp == nullptr)
-        return true;
-
-    if (navProp->IsMultiple())
+    bool isValid = true;
+    //only iterate local props as every class will be validated separately
+    for (ECPropertyCP prop : ecClass.GetProperties(false))
         {
-        IError* errorP = result[GetType()];
-        if (errorP == nullptr)
-            errorP = &result.AddError(std::make_unique<Error>());
+        NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+        if (navProp == nullptr)
+            continue;
 
-        Error& error = *static_cast<Error*>(errorP);
-        error.AddInconsistency(*navProp, Error::Kind::MultiplicityGreaterThanOne);
-        return false;
+        //Multiplicity validation
+        if (navProp->IsMultiple())
+            {
+            GetError(result).AddMultiplicityInconsistency(ecClass, *navProp);
+            isValid = false;
+            continue;
+            }
+
+        //Duplicate relationships validation
+        ECRelationshipClassCR rootRelClass = GetRootRelationship(*navProp->GetRelationshipClass());
+
+        bset<NavigationECPropertyCP>& duplicateNavProps = m_navPropsPerRelClass[&rootRelClass][navProp->GetDirection()];
+        duplicateNavProps.insert(navProp);
+        
+        if (duplicateNavProps.size() > 1)
+            {
+            GetError(result).AddMultipleNavPropsWithSameRelHierarchyInconsistency(m_navPropsPerRelClass);
+            isValid = false;
+            }
         }
 
-    return true;
+    return isValid;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    05/2017
+//---------------------------------------------------------------------------------------
+ValidNavigationPropertyRule::Error& ValidNavigationPropertyRule::GetError(SchemaValidationResult& result) const
+    {
+    IError* error = result[GetType()];
+    if (error == nullptr)
+        error = &result.AddError(std::make_unique<Error>());
+
+    return *static_cast<Error*>(error);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    05/2017
+//---------------------------------------------------------------------------------------
+//static
+ECRelationshipClassCR ValidNavigationPropertyRule::GetRootRelationship(ECN::ECRelationshipClassCR relClass)
+    {
+    if (!relClass.HasBaseClasses())
+        return relClass;
+
+    //multi-inheritance is not support for relationships (caught by another rule), so we
+    //can safely just use the first base class
+    return GetRootRelationship(*relClass.GetBaseClasses()[0]->GetRelationshipClassCP());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
 void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (m_inconsistencies.empty() || !issues.IsEnabled())
+    if (!issues.IsEnabled())
         return;
 
-    for (auto const& kvPair : m_inconsistencies)
+    for (auto const& kvPair : m_multiplicityGreaterOneInconsistencies)
         {
         ECClassCR ecClass = *kvPair.first;
 
         Utf8String str;
         bool isFirstItem = true;
-        for (Inconsistency const& inconsistency : kvPair.second)
+        for (NavigationECPropertyCP navProp : kvPair.second)
             {
             if (!isFirstItem)
                 str.append("| ");
 
-            const Kind kind = inconsistency.m_kind;
-            if (Enum::Contains(kind, Kind::MultiplicityGreaterThanOne))
-                {
-                NavigationECProperty const& navProp = *inconsistency.m_navProp;
-                ECRelationshipClassCR relClass = *navProp.GetRelationshipClass();
-                ECRelationshipConstraintCR toConstraint = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
-                str.append("NavigationECProperty '").append(navProp.GetName());
-                str.append("' has a multiplicity of '").append(toConstraint.GetMultiplicity().ToString().c_str());
-                str.append("ECDb only supports NavigationECProperties with a maximum multiplicity of 1.");
-                }
-
+            ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
+            ECRelationshipConstraintCR toConstraint = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
+            str.append("navigation property '").append(navProp->GetName());
+            str.append("' has a multiplicity of '").append(toConstraint.GetMultiplicity().ToString().c_str());
+            str.append("ECDb only supports navigation property with a maximum multiplicity of 1.");
             isFirstItem = false;
             }
 
         issues.Report("ECClass '%s' contains invalid NavigationECProperties: %s", ecClass.GetFullName(), str.c_str());
+        }
+
+    if (m_multipleNavPropsWithSameRelHierarchyInconsistency == nullptr)
+        return;
+
+    for (auto const& kvPair : *m_multipleNavPropsWithSameRelHierarchyInconsistency)
+        {
+        ECRelationshipClassCP rootRel = kvPair.first;
+        for (auto const& innerKvPair : kvPair.second)
+            {
+            ECRelatedInstanceDirection direction = innerKvPair.first;
+
+            Utf8String msg;
+            msg.Sprintf("More than one navigation property is defined on the relationship '%s' or a subclass thereof with direction '%s': ",
+                        rootRel->GetFullName(), direction == ECRelatedInstanceDirection::Forward ? "Forward" : "Backward");
+
+            bool isFirstProp = true;
+            for (NavigationECPropertyCP navProp : innerKvPair.second)
+                {
+                if (!isFirstProp)
+                    msg.append(", ");
+
+                msg.append(navProp->GetClass().GetFullName()).append(".").append(navProp->GetName());
+                }
+
+            issues.Report(msg.c_str());
+            }
+
         }
     }
 
@@ -487,30 +529,36 @@ void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool NoPropertiesOfSameTypeAsClassRule::_ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
-    IError* errorP = result[GetType()];
-    if (errorP == nullptr)
-        errorP = &result.AddError(std::make_unique<Error>());
-
-    Error& error = *static_cast<Error*>(errorP);
-
-    ECClassCP structType = nullptr;
-    if (ecProperty.GetIsStruct())
-        structType = &ecProperty.GetAsStructProperty()->GetType();
-    else if (ecProperty.GetIsArray())
+    bool isValid = true;
+    //only iterate local props as every class will be validated separately
+    for (ECPropertyCP prop : ecClass.GetProperties(false))
         {
-        auto structArrayProp = ecProperty.GetAsStructArrayProperty();
-        if (nullptr != structArrayProp)
-            structType = &structArrayProp->GetStructElementType();
+        ECClassCP structType = nullptr;
+        if (prop->GetIsStruct())
+            structType = &prop->GetAsStructProperty()->GetType();
+        else if (prop->GetIsArray())
+            {
+            auto structArrayProp = prop->GetAsStructArrayProperty();
+            if (nullptr != structArrayProp)
+                structType = &structArrayProp->GetStructElementType();
+            }
+
+        if (structType == nullptr)
+            continue; //prop is of primitive type or prim array type -> no validation needed
+
+        if (structType->Is(&ecClass))
+            {
+            IError* errorP = result[GetType()];
+            if (errorP == nullptr)
+                errorP = &result.AddError(std::make_unique<Error>());
+
+            Error& error = *static_cast<Error*>(errorP);
+            error.AddInvalidProperty(*prop);
+            isValid = false;
+            }
         }
-
-    if (structType == nullptr)
-        return true; //prop is of primitive type or prim array type -> no validation needed
-
-    bool isValid = !structType->Is(&ecClass);
-    if (!isValid)
-        error.AddInvalidProperty(ecProperty);
 
     return isValid;
     }

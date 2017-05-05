@@ -11,8 +11,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct ISchemaValidationRule;
 struct SchemaValidationResult;
-struct SchemaValidationRules;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
@@ -20,13 +20,10 @@ struct SchemaValidationRules;
 struct SchemaValidator final
     {
     private:
-
         SchemaValidator();
         ~SchemaValidator();
 
-        static bool ValidateSchema(SchemaValidationResult&, SchemaValidationRules const&, ECN::ECSchemaCR);
-        static bool ValidateClass(SchemaValidationResult&, SchemaValidationRules const&, ECN::ECClassCR);
-
+        static bool ValidateSchema(SchemaValidationResult&, std::vector<std::unique_ptr<ISchemaValidationRule>> const&, ECN::ECSchemaCR);
         static void Log(IssueReporter const&, SchemaValidationResult const&);
 
     public:
@@ -75,7 +72,6 @@ struct ISchemaValidationRule
         Type m_type;
 
         virtual bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return true; }
-        virtual bool _ValidateClass(SchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const { return true; }
 
     protected:
         explicit ISchemaValidationRule(Type type) : m_type(type) {}
@@ -85,16 +81,6 @@ struct ISchemaValidationRule
         virtual ~ISchemaValidationRule() {}
 
         bool ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return _ValidateSchema(result, schema, ecClass); }
-        bool ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const { return _ValidateClass(result, ecClass, ecProperty); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      03/2017
-//+===============+===============+===============+===============+===============+======
-struct SchemaValidationRules final
-    {
-    std::vector<std::unique_ptr<ISchemaValidationRule>> m_classRules;
-    std::vector<std::unique_ptr<ISchemaValidationRule>> m_propertyRules;
     };
 
 //=======================================================================================
@@ -178,7 +164,7 @@ struct ValidRelationshipRule final : ISchemaValidationRule
                 };
 
             private:
-                struct Inconsistency
+                struct Inconsistency final
                     {
                     ECN::ECRelationshipClassCP m_relationshipClass;
                     Kind m_kind;
@@ -235,16 +221,12 @@ struct NoPropertiesOfSameTypeAsClassRule final : ISchemaValidationRule
                 void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties[&prop.GetClass()].push_back(&prop); }
             };
 
-        bool _ValidateClass(SchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
+        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
 
     public:
         NoPropertiesOfSameTypeAsClassRule() : ISchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass) {}
         ~NoPropertiesOfSameTypeAsClassRule() {}
     };
-
-
-
-
 
 
 //=======================================================================================
@@ -264,7 +246,7 @@ struct ValidPropertyNameRule final : ISchemaValidationRule
                 };
 
             private:
-                struct Inconsistency
+                struct Inconsistency final
                     {
                     ECN::ECPropertyCP m_prop = nullptr;
                     Kind m_kind;
@@ -283,7 +265,7 @@ struct ValidPropertyNameRule final : ISchemaValidationRule
                 void AddInconsistency(ECN::ECPropertyCR prop, Kind kind) { m_inconsistencies[&prop.GetClass()].push_back(Inconsistency(prop, kind)); }
             };
 
-        bool _ValidateClass(SchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
+        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
 
     public:
         ValidPropertyNameRule() : ISchemaValidationRule(Type::ValidPropertyName) {}
@@ -301,35 +283,32 @@ struct ValidNavigationPropertyRule final : ISchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         struct Error final : IError
             {
-            enum class Kind
-                {
-                MultiplicityGreaterThanOne
-                };
-
             private:
-                struct Inconsistency
-                    {
-                    ECN::NavigationECPropertyCP m_navProp;
-                    Kind m_kind;
-
-                    Inconsistency(ECN::NavigationECPropertyCR navProp, Kind kind)
-                        : m_navProp(&navProp), m_kind(kind)
-                        {}
-                    };
-
-                std::map<ECN::ECClassCP, std::vector<Inconsistency>> m_inconsistencies;
+                bmap<ECN::ECClassCP, bvector<ECN::NavigationECPropertyCP>> m_multiplicityGreaterOneInconsistencies;
+                bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> const* m_multipleNavPropsWithSameRelHierarchyInconsistency = nullptr;
 
                 void _Log(IssueReporter const&) const override;
-
 
             public:
                 Error() : IError(Type::ValidNavigationProperty) {}
                 ~Error() {}
 
-                void AddInconsistency(ECN::NavigationECPropertyCR navProp, Kind kind) { m_inconsistencies[&navProp.GetClass()].push_back(Inconsistency(navProp, kind)); }
+                void AddMultiplicityInconsistency(ECN::ECClassCR ecClass, ECN::NavigationECPropertyCR navProp) { m_multiplicityGreaterOneInconsistencies[&ecClass].push_back(&navProp); }
+                void AddMultipleNavPropsWithSameRelHierarchyInconsistency(bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> const& incons) 
+                    { 
+                    if (m_multipleNavPropsWithSameRelHierarchyInconsistency == nullptr)
+                        m_multipleNavPropsWithSameRelHierarchyInconsistency = &incons; 
+                    }
             };
 
-        bool _ValidateClass(SchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
+
+        mutable bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> m_navPropsPerRelClass;
+
+        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
+
+        Error& GetError(SchemaValidationResult&) const;
+
+        static ECN::ECRelationshipClassCR GetRootRelationship(ECN::ECRelationshipClassCR);
 
     public:
         ValidNavigationPropertyRule() : ISchemaValidationRule(Type::ValidNavigationProperty) {}
