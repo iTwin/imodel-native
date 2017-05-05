@@ -236,6 +236,7 @@ $(o)bcdtmDrainageTrace$(oext)     : $(baseDir)..\Drainage\bcdtmDrainageTrace.cpp
 
 $(o)bcdtmDrainageUtility$(oext)   : $(baseDir)..\Drainage\bcdtmDrainageUtility.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
+$(o)newTrace$(oext)            : $(baseDir)..\Drainage\newTrace.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

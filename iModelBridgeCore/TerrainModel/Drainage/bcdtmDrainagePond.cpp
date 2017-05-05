@@ -407,6 +407,7 @@ int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject
     long               *exitPointP,
     long               *priorPointP,
     long               *nextPointP,
+    DTM_POLYGON_OBJ**  polygonPP,
     void               *userP
 )
 /*
@@ -432,6 +433,7 @@ int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject
         }
 
     // Initialise
+    if (polygonPP != nullptr && *polygonPP != nullptr) bcdtmPolygon_deletePolygonObject(polygonPP);
 
     *exitPointP = *priorPointP = *nextPointP = dtmP->nullPnt;
 
@@ -474,7 +476,9 @@ int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject
 
     if (loadFlag || boundaryFlag)
         {
-        if (bcdtmDrainage_extractPondBoundaryDtmObject(dtmP, pointAddrP(dtmP, *exitPointP)->z, *exitPointP, *nextPointP, loadFunctionP, loadFlag, boundaryFlag, &polygonP, userP)) goto errexit;
+        if (polygonPP == nullptr)
+            polygonPP = &polygonP;
+        if (bcdtmDrainage_extractPondBoundaryDtmObject(dtmP, pointAddrP(dtmP, *exitPointP)->z, *exitPointP, *nextPointP, loadFunctionP, loadFlag, boundaryFlag, polygonPP, userP)) goto errexit;
         }
 
     // Null Out Tptr Polygon
@@ -1571,7 +1575,9 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
     *exitPointP = dtmP->nullPnt;
     *priorPointP = dtmP->nullPnt;
     *nextPointP = dtmP->nullPnt;
-    if (*polygonPP != nullptr) bcdtmPolygon_deletePolygonObject(polygonPP);
+
+    if ((loadFlag || boundaryFlag) && polygonPP == nullptr) goto errexit;
+    if (polygonPP != nullptr && *polygonPP != nullptr) bcdtmPolygon_deletePolygonObject(polygonPP);
     /*
     ** Check For None Null Tptr Or Sptr Values
     */
@@ -5141,7 +5147,7 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
     long                      startPoint,                 // ==> Start Point On Tptr Polygon
     long                      *exitPointP,                // <== Exit Point On Tptr Polygon
     long                      *priorPointP,               // <== Prior Point To Exit Point On Tptr Polygon
-    long                      *nextPointP                 // <== Next Point After Exit Point On Tptr Polygon
+    long                      *nextPointP                // <== Next Point After Exit Point On Tptr Polygon,
 )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(1), tdbg = DTM_TIME_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
@@ -5177,7 +5183,6 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
     startTime = bcdtmClock();
 
     // Log Start Polygon For Expansion
-
     if (dbg == 1)
         {
         if (bcdtmObject_createDtmObject(&dataP)) goto errexit;

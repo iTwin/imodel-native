@@ -292,6 +292,9 @@
     <ClCompile Include="cppwrappers\TMEditor.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
+    <ClCompile Include="..\Drainage\NewTrace.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrivateAPI\BcDTMWrapperClass.h">
