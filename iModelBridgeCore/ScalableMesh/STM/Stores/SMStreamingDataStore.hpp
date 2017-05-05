@@ -191,17 +191,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceCURL"))) == nullptr)
-
-            {
-            BeFileName::CreateNewDirectory(url.c_str());
-            }
-        else
-            {
-            m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
-            url = BeFileName(BEFILENAME(GetDirectoryName, url).c_str());
-            }
-        account_prefix = DataSourceURL((L"file:///" + url).c_str());
+        account_prefix = DataSourceURL((L"file:///" + settings->GetURL()).c_str());
         }
     else if (settings->IsLocal())
         {
