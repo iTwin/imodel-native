@@ -135,7 +135,7 @@ public:
     //! 4 corners of tile, in world coordinates
     Dgn::Render::GraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
 
-    bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
+    bool _HasGraphics() const override { return IsReady() && m_graphic.IsValid(); }
 
     bool _HasChildren() const override { return m_id.resolution > 0; }
 

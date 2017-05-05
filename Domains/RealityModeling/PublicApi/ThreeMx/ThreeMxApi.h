@@ -61,6 +61,7 @@ public:
     void ClearGraphic() {m_graphic = nullptr;}
     bvector<FPoint3d> const& GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
+    bool HasGraphics() const {return m_graphic.IsValid();}
 };
 
 /*=================================================================================**//**
@@ -125,6 +126,7 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
 
+    bool _HasGraphics() const override;
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
