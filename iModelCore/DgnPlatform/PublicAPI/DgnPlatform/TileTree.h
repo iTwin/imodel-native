@@ -174,6 +174,9 @@ public:
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
     virtual bool _HasChildren() const = 0;
 
+    //! Returns whether this tile has graphics.
+    virtual bool _HasGraphics() const = 0;
+
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
@@ -580,7 +583,7 @@ struct Tile : TileTree::Tile
 
     virtual TilePtr _CreateChild(TileId) const = 0;
     bool _HasChildren() const override {return !m_isLeaf;}
-    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
+    bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
     ChildTiles const* _GetChildren(bool load) const override;
     void _DrawGraphics(TileTree::DrawArgsR) const override;
@@ -656,7 +659,7 @@ public:
     
     TileId GetTileId() const { return m_id; }
     TileId GetRelativeTileId() const;
-    bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
+    bool _HasGraphics() const override { return IsReady() && m_graphic.IsValid(); }
     Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
     Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
     Render::GraphicPtr GetGraphic() const { return m_graphic; }

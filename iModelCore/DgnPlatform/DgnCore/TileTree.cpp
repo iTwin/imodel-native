@@ -626,7 +626,8 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         bool substitutingChildren = false;
         if (IsReady())
             {
-            selected.push_back(this);
+            if (_HasGraphics())
+                selected.push_back(this);
             }
         else if (IsNotFound())
             {
@@ -652,7 +653,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                     else if (!arg->IsReady())
                         return false;
 
-                    selected.push_back(arg);
+                    if (arg->_HasGraphics())
+                        selected.push_back(arg);
+
                     return true;
                     });
 
@@ -666,7 +669,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                 m_childrenLastUsed = args.m_now;
                 substitutingChildren = true;
                 for (auto const& child : *children)
-                    if (!child->IsCulled(args))
+                    if (!child->IsCulled(args) && child->_HasGraphics())
                         selected.push_back(child);
                 }
             else
@@ -711,7 +714,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     if (IsReady())
         {
         // We can draw this tile in place of its children
-        selected.push_back(this);
+        if (_HasGraphics())
+            selected.push_back(this);
+
         return SelectParent::No;
         }
 
@@ -761,7 +766,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     if (ready)
         {
-        selected.push_back(this);
+        if (_HasGraphics())
+            selected.push_back(this);
+
         return SelectParent::No;
         }
 
@@ -1166,7 +1173,8 @@ void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
 void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     BeAssert(IsReady());
-    if (HasGraphics())
+    BeAssert(_HasGraphics()); // _SelectTiles() checks this - does not select tiles with no graphics.
+    if (_HasGraphics())
         args.m_graphics.Add(*m_graphic);
     }
 
