@@ -119,7 +119,7 @@ namespace ServerSchema
         static Utf8CP Initialized = "Initialized";
         static Utf8CP InitializationState = "InitializationState";
         static Utf8CP FileInitialized = "FileInitialized";
-        static Utf8CP iModelInitialized = "RepositoryInitialized";
+        static Utf8CP iModelInitialized = "iModelInitialized";
         static Utf8CP ContainingChanges = "ContainingChanges";
         static Utf8CP UploadUrl = "UploadUrl";
         static Utf8CP DownloadUrl = "DownloadUrl";

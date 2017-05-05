@@ -59,6 +59,7 @@
 
     <Part Name="WSClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
+        <SubPart PartName="WSClientLibrarySubParts"/>
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
@@ -114,6 +115,7 @@
 
     <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WSClientLibrarySubParts"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
@@ -122,6 +124,7 @@
 
     <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WSClientLibrarySubParts" LibType="Static"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache.so</Libs>
             <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
@@ -747,5 +750,40 @@
         </Bindings>
     </Part>
 
+    <!-- Not all libraries might be actuall required, TODO: remove not needed libraries -->
+    <Part Name="WSClientLibrarySubParts">
+        <!-- Make sure that the environment-specific source/tools for DgnClientFx are current for syncpull workflows -->
+        <!-- Some of these are just so that when we pull in Firebug for winx86 we also get the repos for Android -->
+        <RequiredRepository>Bsitools-WinX86</RequiredRepository>
+        <RequiredRepository>Bsitools-MacX64</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX86</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX64</RequiredRepository>
+        <RequiredRepository>Bsitools-Doclava</RequiredRepository>
+        <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
+        <RequiredRepository>Libsrc-duktapejs</RequiredRepository>
+        <RequiredRepository>Libsrc-OpenSSL-UWP</RequiredRepository>
+        <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
+        <RequiredRepository>BeGTest</RequiredRepository>
+        <RequiredRepository>BeTestAndroid</RequiredRepository>
+        <RequiredRepository>BeTestiOS</RequiredRepository>
+        <RequiredRepository>BeTestWinRT</RequiredRepository>
+        <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
+
+        <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
+        <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="libxml2"                     PartFile="BeLibxml2"        Repository="libsrc-libxml2" />
+        <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
+        <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
+        <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
+        <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
+        <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeCurl"                      PartFile="BeCurl"           Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeJavaScript"                PartFile="BePortableUi"     Repository="BePortableUi"/>
+        <SubPart PartName="LoggingManagedInterop"       PartFile="LoggingSdk"       Repository="LoggingSdk"/>
+    </Part>
 
 </BuildContext>
