@@ -185,7 +185,8 @@
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
-        <ProductDirectory Name="PCLLicenses" Path="Notices" />        
+        <ProductDirectory Name="PCLLicenses" Path="Notices" />    
+		<ProductDirectory Name="MdlsysAsneededLuxology" Path="Dlls"/>
     </ProductDirectoryList>
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
