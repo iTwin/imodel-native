@@ -96,8 +96,6 @@ public:
     virtual bool _Progress(float progress) { return true; }
 };
 
-// We have to store the parent of nodes because we do not have access through the API
-typedef std::map<IScalableMeshNodeEdit*, IScalableMeshNodeEditPtr> ParentNodeMap;
 
 // Class handling conversion of a single 3MXB file. It implements the BaseMeshNode interface used by ThreeMXReader
 #ifndef VANCOUVER_API
@@ -129,7 +127,6 @@ private:
     SMFrom3MXStatus m_convertStatus;                // Conversion status 
     bvector<Convert3MXBNode> m_nodeArray;            // Array of information collected about each node of the 3MXB file
     bvector<int64_t> m_textureIDArray;                // Array of texture IDs used in the 3MXB file
-    ParentNodeMap& m_parentNodeMap;                 // Map from a node to its parent
 
 
 #ifndef VANCOUVER_API // The virtual functions below are called while reading a 3MXB file        
@@ -375,9 +372,9 @@ private:
                 return SMFrom3MXStatus::ScalableMeshSDKError;
 
             // Check the same for the parent if not root
-            auto it = m_parentNodeMap.find(scNode.get());
-            if (it != m_parentNodeMap.end())
-                return fixNodeExtents(it->second, range);
+            IScalableMeshNodeEditPtr scParentNode = scNode->EditParentNode();
+            if (scParentNode != nullptr)
+                return fixNodeExtents(scParentNode, range);
         }
 
         return SMFrom3MXStatus::Success;
@@ -385,7 +382,7 @@ private:
 
 public:
     // Constructor
-    Convert3MXBFile(IScalableMeshNodeCreatorPtr scMesh, DPoint3dCR pOrigin, IScalableMeshFrom3MXGCSHandler& gcsHandler, ParentNodeMap& parentNodeMap) : m_scMesh(scMesh), m_pOrigin(pOrigin), m_gcsHandler(gcsHandler), m_parentNodeMap(parentNodeMap), m_convertStatus(SMFrom3MXStatus::Success) {}
+    Convert3MXBFile(IScalableMeshNodeCreatorPtr scMesh, DPoint3dCR pOrigin, IScalableMeshFrom3MXGCSHandler& gcsHandler) : m_scMesh(scMesh), m_pOrigin(pOrigin), m_gcsHandler(gcsHandler), m_convertStatus(SMFrom3MXStatus::Success) {}
 
     // Create the 3SM nodes read from the 3MXB file
     SMFrom3MXStatus Create3SMNodes(IScalableMeshNodeEditPtr scParentNode, IScalableMeshNodeEditPtr& scRootNode)
@@ -438,8 +435,6 @@ public:
             else
             {
                 scNode = m_scMesh->AddNode(scParentNode, node.nodeExtent, status);
-                if (scNode != nullptr)
-                    m_parentNodeMap[scNode.get()] = scParentNode; // Store parent node
             }
 
             // We handle errors differently depending on whether the node extent is empty or not
@@ -510,9 +505,8 @@ private:
     DPoint3d m_pOrigin;
     IScalableMeshFrom3MXGCSHandler& m_gcsHandler;
     IScalableMeshFrom3MXProgressHandler& m_progressHandler;
-    ParentNodeMap m_parentNodeMap;
 
-    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float beginProgress, float endProgress)
+    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float& dataResolution, float beginProgress, float endProgress)
     {
         // Report progress
         if (!m_progressHandler._Progress(beginProgress))
@@ -533,7 +527,7 @@ private:
         // Isolate this in a block to avoid useless memory consumption in the recursion
         {
             // Read the 3MXB file
-            Convert3MXBFile conv3MXB(m_scMesh, m_pOrigin, m_gcsHandler, m_parentNodeMap);
+            Convert3MXBFile conv3MXB(m_scMesh, m_pOrigin, m_gcsHandler);
             string sError;
             if (conv3MXB.Read3MXB(filename, sError) != SUCCESS)
                 return SMFrom3MXStatus::Read3MXBError;
@@ -554,6 +548,10 @@ private:
                 const auto& tmpNodeInfo = tmpNodeArray[i];
                 nodeArray[i].geomExtent = tmpNodeInfo.geomExtent;
                 nodeArray[i].scNode = tmpNodeInfo.scNode;
+
+                // Update best data resolution
+                if (!tmpNodeInfo.isProxy && tmpNodeInfo.resolution < dataResolution)
+                    dataResolution = tmpNodeInfo.resolution;
 
                 // If node as an empty node extent, we don't traverse the children files (there shouldn't be any child anyway, but we never know ;-))
                 if (!tmpNodeInfo.nodeExtent.IsNull())
@@ -589,7 +587,7 @@ private:
 
                 // Traverse the child files
                 DRange3d childContentExtent = DRange3d::NullRange();
-                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, beginChildProgress, endChildProgress);
+                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, dataResolution, beginChildProgress, endChildProgress);
                 if (convertStatus != SMFrom3MXStatus::Success)
                     return convertStatus;
 
@@ -700,12 +698,16 @@ public:
         root3MXBPath.AppendToPath(BeFileName(sceneInfo.meshChildren[0].c_str(), false));
 
         DRange3d contentExtent;
-        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, 0.f, 0.95f);
+        float dataResolution = std::numeric_limits<float>::max();
+        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, dataResolution, 0.f, 0.95f);
         if (convertStatus != SMFrom3MXStatus::Success)
             return convertStatus;
 
+        // Set data resolution of the 3SM
+        if (dataResolution < std::numeric_limits<float>::max())
+            m_scMesh->SetDataResolution(dataResolution);
+
         // Force nodes and Scalable Mesh to be persisted
-        m_parentNodeMap.clear();
         m_scRootNode = nullptr;
         m_scMesh = nullptr;
 
