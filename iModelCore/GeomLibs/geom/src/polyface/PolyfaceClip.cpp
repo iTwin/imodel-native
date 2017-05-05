@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClip.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -743,6 +743,53 @@ bool                    formNewFacesOnClipPlanes
 
     PolyfaceClipContext::ClipToChain (visitor, insideDest, outsideDest, clipPlanes, formNewFacesOnClipPlanes);
     }
+
+PolyfaceHeaderPtr PolyfaceHeader::CreateFromTaggedPolygons (TaggedPolygonVectorCR polygons)
+    {
+    auto pf = PolyfaceHeader::CreateVariableSizeIndexed ();
+    for (auto &p : polygons)
+        {
+        pf->AddPolygon (p.GetPointsCR ());
+        }
+    return pf;
+    }
+
+
+void PolyfaceHeader::VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+PolyfaceHeaderPtr &dest,            //!< [out] new mesh, containing only the visible portions of the inputs
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+)
+    {
+    localToWorld.InitIdentity ();
+    worldToLocal.InitIdentity ();
+    TaggedPolygonVector polygonsIn, polygonsOut;
+    for (size_t i = 0; i < source.size (); i++)
+        {
+        auto visitor = PolyfaceVisitor::Attach (*source[i], false);
+        bvector<DPoint3d> &points = visitor->Point ();
+        for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            PolygonVectorOps::AddPolygon (polygonsIn,
+                points, i, visitor->GetReadIndex ());
+        }
+    dest = nullptr;
+    if (polygonsIn.size () == 0)
+        return;
+    DRange3d range = PolygonVectorOps::GetRange (polygonsIn);
+    DPoint3d center = range.LocalToGlobal (0.5, 0.5, 0.5);
+    auto axes = RotMatrix::From1Vector (vectorToEye, 2, true);
+    localToWorld = Transform::From (axes, center);
+    worldToLocal.InverseOf (localToWorld);
+
+    PolygonVectorOps::Multiply (polygonsIn, worldToLocal);
+    bsiPolygon_clipByXYVisibility (polygonsIn, polygonsOut, true, false);
+    PolygonVectorOps::Multiply (polygonsOut, localToWorld);
+    dest = CreateFromTaggedPolygons (polygonsOut);
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE
 
