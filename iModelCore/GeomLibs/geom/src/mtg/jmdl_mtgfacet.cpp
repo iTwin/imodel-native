@@ -80,7 +80,7 @@ _MTGFacets::_MTGFacets (MTGFacets_NormalMode mode)
     normalMode = MTG_Facets_NoData;
     vertexLabelOffset = -1;
     normalLabelOffset = -1;
-    SetNormalMode (normalMode);
+    SetNormalMode (mode);
     }
 
 

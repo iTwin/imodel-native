@@ -132,3 +132,38 @@ TEST(Clip,XYVisibilityB)
 
     Check::ClearGeometry ("Clip.XYVisibilityB");
     }
+
+TEST(Clip,XYVisibilityAB)
+    {
+    bvector<PolyfaceHeaderPtr> meshA;
+    BuildClipTestMeshSet (meshA);
+    double a = 20.0;
+
+    bvector<bool> trueFalse {true, false};
+    for (auto &mesh : meshA)
+        Check::SaveTransformed (*mesh);
+
+    Check::Shift (0,a,0);
+    for (DVec3d vectorToEye :
+        bvector<DVec3d>
+            {
+            DVec3d::From (0,0,1),
+            DVec3d::From (0,0,-1),
+            DVec3d::From (1,1,1)
+            }
+        )
+        {
+        SaveAndRestoreCheckTransform shift0 (0, a, 0);
+        bvector<PolyfaceHeaderPtr> meshB;
+        Transform localToWorld, worldToLocal;
+        bvector<bvector<SizeSize>> bToA;
+        PolyfaceHeader::VisibleParts (meshA, vectorToEye, meshB, &bToA, localToWorld, worldToLocal);
+        for (auto m : meshB)
+            {
+            if (m.IsValid ())
+                Check::SaveTransformed (*m);
+            }
+        }
+
+    Check::ClearGeometry ("Clip.XYVisibilityAB");
+    }
