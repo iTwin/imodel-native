@@ -20,7 +20,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 std::mutex innactiveUserMutex;
 std::mutex statMutex;
 std::mutex rpsMutex;
+std::mutex guidMutex;
 
+static std::queue<Utf8String> s_availableGuids = std::queue<Utf8String>();
 static std::queue<User*> s_innactiveUsers = std::queue<User*>();
 static RPS s_rps = RPS();
 static bool s_keepRunning = true;
@@ -73,7 +75,7 @@ RPS::RPS():requestLog(bmap<OperationType, bmap<int64_t, int>>())
     requestLog.Insert(OperationType::GET_JOBS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::GET_JOB, bmap<int64_t, int>());
     //requestLog.Insert(OperationType::JOB_RESULT, bmap<int64_t, int>());
-    requestLog.Insert(OperationType::JOB_CANCEL, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::CANCEL_JOB, bmap<int64_t, int>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -200,7 +202,7 @@ Stats::Stats()
     opStats.Insert(OperationType::GET_JOBS, new Stat());
     opStats.Insert(OperationType::GET_JOB, new Stat());
     //opStats.Insert(OperationType::JOB_RESULT, new Stat());
-    opStats.Insert(OperationType::JOB_CANCEL, new Stat());
+    opStats.Insert(OperationType::CANCEL_JOB, new Stat());
 
     errors = bmap<OperationType, bvector<Utf8String>>();
     errors.Insert(OperationType::LIST_PROJECT, bvector<Utf8String>());
@@ -215,7 +217,7 @@ Stats::Stats()
     errors.Insert(OperationType::GET_JOBS, bvector<Utf8String>());
     errors.Insert(OperationType::GET_JOB, bvector<Utf8String>());
     //errors.Insert(OperationType::JOB_RESULT, bvector<Utf8String>());
-    errors.Insert(OperationType::JOB_CANCEL, bvector<Utf8String>());
+    errors.Insert(OperationType::CANCEL_JOB, bvector<Utf8String>());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -268,7 +270,7 @@ void Stats::PrintStats()
     std::cout << Utf8PrintfString("Get Jobs     %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOBS]->success, opStats[OperationType::GET_JOBS]->failure, (int)opStats[OperationType::GET_JOBS]->minTime, (int)opStats[OperationType::GET_JOBS]->maxTime, (int)opStats[OperationType::GET_JOBS]->avgTime, s_rps.GetRPS(OperationType::GET_JOBS, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Get Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOB]->success, opStats[OperationType::GET_JOB]->failure, (int)opStats[OperationType::GET_JOB]->minTime, (int)opStats[OperationType::GET_JOB]->maxTime, (int)opStats[OperationType::GET_JOB]->avgTime, s_rps.GetRPS(OperationType::GET_JOB, currentTime)) << std::endl;
     //std::cout << Utf8PrintfString("Job Result   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_RESULT]->success, opStats[OperationType::JOB_RESULT]->failure, (int)opStats[OperationType::JOB_RESULT]->minTime, (int)opStats[OperationType::JOB_RESULT]->maxTime, (int)opStats[OperationType::JOB_RESULT]->avgTime, s_rps.GetRPS(OperationType::JOB_RESULT, currentTime)) << std::endl;
-    std::cout << Utf8PrintfString("Job Cancel   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_CANCEL]->success, opStats[OperationType::JOB_CANCEL]->failure, (int)opStats[OperationType::JOB_CANCEL]->minTime, (int)opStats[OperationType::JOB_CANCEL]->maxTime, (int)opStats[OperationType::JOB_CANCEL]->avgTime, s_rps.GetRPS(OperationType::JOB_CANCEL, currentTime)) << std::endl;
+    std::cout << Utf8PrintfString("Job Cancel   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CANCEL_JOB]->success, opStats[OperationType::CANCEL_JOB]->failure, (int)opStats[OperationType::CANCEL_JOB]->minTime, (int)opStats[OperationType::CANCEL_JOB]->maxTime, (int)opStats[OperationType::CANCEL_JOB]->avgTime, s_rps.GetRPS(OperationType::CANCEL_JOB, currentTime)) << std::endl;
 
     std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
 
@@ -304,7 +306,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file << Utf8PrintfString("Get Jobs     %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOBS]->success, opStats[OperationType::GET_JOBS]->failure, (int)opStats[OperationType::GET_JOBS]->minTime, (int)opStats[OperationType::GET_JOBS]->maxTime, (int)opStats[OperationType::GET_JOBS]->avgTime, s_rps.GetRPS(OperationType::GET_JOBS, currentTime)) << std::endl;
     file << Utf8PrintfString("Get Job      %6d %10d %9d %10d %9d        %f", opStats[OperationType::GET_JOB]->success, opStats[OperationType::GET_JOB]->failure, (int)opStats[OperationType::GET_JOB]->minTime, (int)opStats[OperationType::GET_JOB]->maxTime, (int)opStats[OperationType::GET_JOB]->avgTime, s_rps.GetRPS(OperationType::GET_JOB, currentTime)) << std::endl;
     //file << Utf8PrintfString("Job Result   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_RESULT]->success, opStats[OperationType::JOB_RESULT]->failure, (int)opStats[OperationType::JOB_RESULT]->minTime, (int)opStats[OperationType::JOB_RESULT]->maxTime, (int)opStats[OperationType::JOB_RESULT]->avgTime, s_rps.GetRPS(OperationType::JOB_RESULT, currentTime)) << std::endl;
-    file << Utf8PrintfString("Job Cancel   %6d %10d %9d %10d %9d        %f", opStats[OperationType::JOB_CANCEL]->success, opStats[OperationType::JOB_CANCEL]->failure, (int)opStats[OperationType::JOB_CANCEL]->minTime, (int)opStats[OperationType::JOB_CANCEL]->maxTime, (int)opStats[OperationType::JOB_CANCEL]->avgTime, s_rps.GetRPS(OperationType::JOB_CANCEL, currentTime)) << std::endl;
+    file << Utf8PrintfString("Job Cancel   %6d %10d %9d %10d %9d        %f", opStats[OperationType::CANCEL_JOB]->success, opStats[OperationType::CANCEL_JOB]->failure, (int)opStats[OperationType::CANCEL_JOB]->minTime, (int)opStats[OperationType::CANCEL_JOB]->maxTime, (int)opStats[OperationType::CANCEL_JOB]->avgTime, s_rps.GetRPS(OperationType::CANCEL_JOB, currentTime)) << std::endl;
 
     file << std::endl << std::endl << "operation list:" << std::endl;
 
@@ -362,7 +364,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
         file << error << std::endl;*/
 
     file << "Cancel Job:" << std::endl;
-    for (Utf8String error : errors[OperationType::JOB_CANCEL])
+    for (Utf8String error : errors[OperationType::CANCEL_JOB])
         file << error << std::endl;
 
     file.close();
@@ -373,7 +375,7 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User(int id, Utf8String token) :
     m_currentOperation(OperationType::LIST_PROJECT), m_userId(id), m_token(token),
-    m_submitted(false), m_jobCount(0)
+    m_submitted(false)
     {}
 
 ///*---------------------------------------------------------------------------------**//**
@@ -417,6 +419,11 @@ void User::DoNext(UserManager* owner)
         {
         if (m_jobId.empty())
             m_currentOperation = OperationType::CREATE_JOB;
+        else if (m_submitted)
+            {
+            m_currentOperation = OperationType::CANCEL_JOB;
+            curl = CancelJob();
+            }
         else
             curl = SubmitJob();
         }
@@ -441,7 +448,7 @@ void User::DoNext(UserManager* owner)
         else
             curl = GetJobResult();
         }*/
-    else if (m_currentOperation == OperationType::JOB_CANCEL)
+    else if (m_currentOperation == OperationType::CANCEL_JOB)
         {
         if (m_jobId.empty())
             m_currentOperation = OperationType::CREATE_JOB;
@@ -463,6 +470,7 @@ void User::DoNext(UserManager* owner)
     
     if (m_currentOperation == OperationType::CREATE_JOB)
         {
+        std::lock_guard<std::mutex> lock(guidMutex);
         if (m_id.empty())
             m_currentOperation = OperationType::ADD_PROJECT;
         else if (!m_jobId.empty())
@@ -470,13 +478,16 @@ void User::DoNext(UserManager* owner)
             m_currentOperation = OperationType::DELETE_JOB;
             curl = DeleteJob();
             }
-        else if (m_jobCount > 20)
+        else if (s_availableGuids.size() == 0)
             {
             m_currentOperation = OperationType::DELETE_PROJECT;
             curl = DeleteProject();
             }
         else
-            curl = CreateJob();
+            {
+            curl = CreateJob(s_availableGuids.front());
+            s_availableGuids.pop();
+            }
         }
     
     if (m_currentOperation == OperationType::ADD_PROJECT)
@@ -552,8 +563,6 @@ CURL* User::AddProject()
     m_correspondance.req.type = POST;
     m_correspondance.req.payload = "{\"region\": \"eus\", \"name\":\"something\"}";
 
-    m_jobCount = 0;
-
     return PrepareRequest();
     }
 
@@ -563,6 +572,8 @@ CURL* User::DeleteProject()
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
     m_correspondance.req.type = DEL;
+
+    s_availableGuids.push(m_id);
 
     m_id.clear();
 
@@ -599,7 +610,7 @@ CURL* User::ListClusters()
     return PrepareRequest();
     }
 
-CURL* User::CreateJob()
+CURL* User::CreateJob(Utf8String outputGuid)
     {
     m_correspondance.Clear();
     m_correspondance.req.url = s_server;
@@ -644,28 +655,8 @@ CURL* User::CreateJob()
                                 "\"path\" : \"https://qa-contextcapture-eus.cloudapp.net/api/v1/job-result\""
                             "}"
                         "}";
-
-    Utf8String outputPath = m_id;
     
-    bool swapped = false;
-    for (int i = m_jobCount; i < 25; i++)
-        {
-        if(!outputPath.EndsWith(s_guidparts[i]))
-            {
-            outputPath.replace(outputPath.length()-1, outputPath.length(), s_guidparts[i]);
-            m_jobCount = i+1;
-            swapped = true;
-            break;
-            }
-        }
-
-    if (!swapped)
-        {
-        m_jobCount = 50;
-        return nullptr;
-        }
-
-    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, outputPath);
+    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, outputGuid);
     
     return PrepareRequest();
     }
@@ -734,8 +725,6 @@ CURL* User::CancelJob()
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/cancel", m_jobId));
     m_correspondance.req.type = POST;
 
-    m_submitted = false;
-
     return PrepareRequest();
     }
 
@@ -751,6 +740,8 @@ void User::ValidatePrevious(int activeUsers)
             return ValidateAddProject(activeUsers);
         case OperationType::CREATE_JOB:
             return ValidateCreateJob(activeUsers);
+        case OperationType::CANCEL_JOB:
+            return ValidateCancelJob(activeUsers);
         default:
             {
             if(m_correspondance.response.curlCode != CURLE_OK || m_correspondance.response.responseCode > 399)
@@ -789,6 +780,21 @@ void User::ValidateCreateJob(int activeUsers)
         {
         success = true;
         m_jobId = instances["id"].asString();
+        m_submitted = false;
+        }
+
+    s_stats.InsertStats(this, success, activeUsers);
+    }
+
+void User::ValidateCancelJob(int activeUsers)
+    {
+    Json::Value instances(Json::objectValue);
+
+    bool success = false;
+
+    if (m_correspondance.response.responseCode < 399 || m_correspondance.response.body.ContainsI("Job does not seem to be pending nor running"))
+        {
+        success = true;
         m_submitted = false;
         }
 
