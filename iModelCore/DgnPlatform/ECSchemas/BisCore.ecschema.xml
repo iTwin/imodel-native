@@ -126,7 +126,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -675,7 +675,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -728,7 +728,7 @@
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -819,7 +819,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -927,7 +927,7 @@
         <BaseClass>InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1054,7 +1054,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1485,7 +1485,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1518,7 +1518,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1595,7 +1595,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1619,7 +1619,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
