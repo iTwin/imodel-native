@@ -776,8 +776,7 @@ bool            reversed
                 }
             case RIMSBS_CurveChain:
                 {
-                RIMSBS_CurveChainStruct *pChain = &desc.m_chainData;
-                RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
+                RG_CurveId primaryCurveId = desc.m_chainData.m_primaryCurveId;
                 myResult = TryGetResolvedArc (arc, primaryCurveId, false);
                 break;
                 }
@@ -852,8 +851,7 @@ double          s1
                 }
             case RIMSBS_CurveChain:
                 {
-                RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)desc.pGeometryData;
-                RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
+                RG_CurveId primaryCurveId = desc.m_chainData.m_primaryCurveId;
                 myResult = jmdlRIMSBS_getMappedMSBsplineCurve (this, pCurve, primaryCurveId, s0, s1);
                 break;
                 }

@@ -449,8 +449,7 @@ double                  radius
                 }
             case RIMSBS_CurveChain:
                 {
-                RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)desc.pGeometryData;
-                RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
+                RG_CurveId primaryCurveId = desc.m_chainData.m_primaryCurveId;
                 myResult = TryIntersectXY_mappedCurve_circle (pParameterArray, pPointArray, primaryCurveId,
                           s0, s1, pCenter, radius);
                 break;

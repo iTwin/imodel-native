@@ -21,8 +21,7 @@ RIMSBS_CurveChainStruct::RIMSBS_CurveChainStruct (RIMSBS_CurveId primaryCurveId)
     }
 
 
-RIMSBS_ElementHeader::RIMSBS_ElementHeader ()
-    : pGeometryData (nullptr),
+RIMSBS_ElementHeader::RIMSBS_ElementHeader () :
     pUserData (nullptr),
     m_chainData(RIMSBS_NULL_CURVE_ID)
     {

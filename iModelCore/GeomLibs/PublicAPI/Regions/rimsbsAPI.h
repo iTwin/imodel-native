@@ -38,7 +38,6 @@ struct RIMSBS_ElementHeader
     int     groupId;
     int     userInt;
     void    *pUserData;
-    void *pGeometryData;            // old name -- so new stuff compiles.
     ICurvePrimitivePtr curve;
     int     alternateCurveId;
     int64_t userInt64;
