@@ -462,8 +462,8 @@ TEST_F(RevisionTestFixture, Codes)
     auto codeSpec = CodeSpec::Create(db, "MyCodeSpec");
     EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());
 
-    auto cpElX1 = InsertPhysicalElementByCode(codeSpec->CreateCode("X", "1")),
-        cpElY2 = InsertPhysicalElementByCode(codeSpec->CreateCode("Y", "2")),
+    auto cpElX1 = InsertPhysicalElementByCode(codeSpec->CreateCode("X")),
+        cpElY2 = InsertPhysicalElementByCode(codeSpec->CreateCode("Y")),
         cpUncoded = InsertPhysicalElementByCode(defaultCode);
 
     ExtractCodesFromRevision(createdCodes, discardedCodes);

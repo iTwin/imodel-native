@@ -291,8 +291,6 @@ public:
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const;
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value, Utf8StringCR nameSpace); // WIP: Deprecate?
-    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace) const { return DgnCode(m_codeSpecId, value, nameSpace); } // WIP: Deprecate?
 
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;

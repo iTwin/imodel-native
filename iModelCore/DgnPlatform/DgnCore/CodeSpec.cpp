@@ -390,16 +390,6 @@ DbResult DgnDb::CreateCodeSpecs()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value, Utf8StringCR scope)
-    {
-    CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);
-    BeAssert(codeSpec.IsValid());
-    return codeSpec.IsValid() ? codeSpec->CreateCode(value, scope) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value)
     {
     CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);

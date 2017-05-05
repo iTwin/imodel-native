@@ -728,9 +728,9 @@ struct ElementUriTests : ::testing::Test
         return *m_codeSpec;
         }
 
-    DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
+    DgnCode CreateCode(DgnDbR db, Utf8CP elementCode)
         {
-        return GetTestCodeSpec(db).CreateCode(elementCode, ns);
+        return GetTestCodeSpec(db).CreateCode(elementCode);
         }
 
 };
@@ -778,7 +778,7 @@ TEST_F(ElementUriTests, Test1)
     DgnElementCPtr elNoProps;
     if (true)
         {
-        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "TestNS", "E1"));
+        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "E1"));
         testel->SetTestElementProperty("foo");
         el = testel->Insert();
         ASSERT_TRUE(el.IsValid());
