@@ -8,7 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "BuilgindCommonDefinitions.h"
+#include "BuildingCommonDefinitions.h"
 
 BEGIN_BENTLEY_BUILDING_COMMON_NAMESPACE
 
@@ -26,8 +26,8 @@ struct BuildingCommonDomain : Dgn::DgnDomain
 
     public:
         BuildingCommonDomain();
-        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::CodeSpecId QueryBuildingCommonCodeSpecId(Dgn::DgnDbCR dgndb);
-        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+        BUILDING_COMMON_EXPORT static Dgn::CodeSpecId QueryBuildingCommonCodeSpecId(Dgn::DgnDbCR dgndb);
+        BUILDING_COMMON_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
     };
 
 END_BENTLEY_BUILDING_COMMON_NAMESPACE
