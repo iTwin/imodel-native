@@ -1236,24 +1236,37 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
     {
     if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
         {
-        auto reprojectHelper = [this](DPoint3d& point)
+        auto reprojectExtentHelper = [this](DPoint3d& low, DPoint3d& high)
             {
-            GeoPoint inLatLong, outLatLong;
-            if (m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
-                assert(false); // Error in reprojection
-            if (m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
-                assert(false); // Error in reprojection
-            if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
-                assert(false); // Error in reprojection
+            auto reprojectPointHelper = [this](DPoint3d& point)
+                {
+                GeoPoint inLatLong, outLatLong;
+                if (m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
+                    assert(false); // Error in reprojection
+                if (m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
+                    assert(false); // Error in reprojection
+                if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
+                    assert(false); // Error in reprojection
+                };
+            bvector<DPoint3d> corners =
+                { low,
+                  DPoint3d::From(high.x, low.y,  low.z),
+                  DPoint3d::From(high.x, high.y, low.z),
+                  DPoint3d::From(low.x,  high.y, low.z),
+                  DPoint3d::From(low.x,  low.y,  high.z),
+                  DPoint3d::From(high.x, low.y,  high.z),
+                  high,
+                  DPoint3d::From(low.x, high.y, high.z)
+                };
+            for (auto& point : corners) reprojectPointHelper(point);
+            DRange3d newExtent = DRange3d::From(corners);
+            low = newExtent.low;
+            high = newExtent.high;
             };
-
-        reprojectHelper(pi_NodeHeader.m_nodeExtent.low);
-        reprojectHelper(pi_NodeHeader.m_nodeExtent.high);
-
+        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent.low, pi_NodeHeader.m_nodeExtent.high);
         if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
             {
-            reprojectHelper(pi_NodeHeader.m_contentExtent.low);
-            reprojectHelper(pi_NodeHeader.m_contentExtent.high);
+            reprojectExtentHelper(pi_NodeHeader.m_contentExtent.low, pi_NodeHeader.m_contentExtent.high);
             }
         }
     Json::Value nodeTile;
