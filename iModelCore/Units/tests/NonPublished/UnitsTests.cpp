@@ -36,7 +36,6 @@ void WriteToFile(Utf8CP fileName, bvector<bpair<Utf8String, Utf8String>> lines)
     {
     BeFile file;
     EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
     for (auto line : lines)
         {
         Utf8PrintfString formatted("%s,%s", line.first.c_str(), line.second.c_str());
@@ -1040,12 +1039,10 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"AllUnitsByPhenomenon.csv");
     BeFile file;
     EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
 
     Utf8String fileName2 = UnitsTestFixture::GetOutputDataPath(L"AllUnitNamesFlat.csv");
     BeFile file2;
     EXPECT_EQ(file2.Create(fileName2, true), BeFileStatus::Success);
-    EXPECT_EQ(file2.Open(fileName2, BeFileAccess::Write), BeFileStatus::Success);
 
     bvector<PhenomenonCP> phenomena;
     UnitRegistry::Instance().AllPhenomena(phenomena);
@@ -1124,7 +1121,6 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"UnitNamesByReferencedComponents.csv");
     BeFile file;
     EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
     for (auto const& unitsWhichRefUnit : unitNamesByReferencedComponent)
         {
         WriteLine(file, unitsWhichRefUnit.first.c_str());
@@ -1257,7 +1253,6 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"NewUnitLabelsByName.csv");
     BeFile file;
     EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
     for (auto const& s : labels)
         {
         Utf8PrintfString line("%s,%s", s.first.c_str(), s.second.c_str());
@@ -1270,7 +1265,6 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
         {
         fileName = UnitsTestFixture::GetOutputDataPath(L"OldUnitLabelsNotUsedInNewSystem.txt");
         EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-        EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
         for (auto const& s : missingUnits)
             {
             WriteLine(file, s.c_str());
@@ -1290,7 +1284,6 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
 
     fileName = UnitsTestFixture::GetOutputDataPath(L"UnitsWithoutDisplayLabel.csv");
     EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
     for (auto const& s : missingLabels)
         {
         WriteLine(file, s.c_str());
