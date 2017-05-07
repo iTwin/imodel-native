@@ -1138,4 +1138,3 @@ TEST(Voronoi,Hyperbolas6)
         }
     Check::ClearGeometry ("Voronoi.Hyperbolas");
     }
-#endif
