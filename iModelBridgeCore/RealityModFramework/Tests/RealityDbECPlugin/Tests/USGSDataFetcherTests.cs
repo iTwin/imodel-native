@@ -114,7 +114,7 @@ namespace IndexECPlugin.Tests.Tests
                 Assert.AreEqual(6, resultList.Count());
                 foreach ( var result in resultList )
                     {
-                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset));
+                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset), "The dataset returned should be present in the category table");
                     }
 
                 }
@@ -155,7 +155,7 @@ namespace IndexECPlugin.Tests.Tests
                 Assert.AreEqual(2, resultList.Count());
                 foreach ( var result in resultList )
                     {
-                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset));
+                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset), "The dataset returned should be present in the category table");
                     }
                 }
             }
@@ -202,7 +202,7 @@ namespace IndexECPlugin.Tests.Tests
                 Assert.AreEqual(1, resultList.Count());
                 foreach ( var result in resultList )
                     {
-                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset));
+                    Assert.IsTrue(dataFetcher.CategoryTable.Any(category => category.SbDatasetTag == result.Dataset), "The dataset returned should be present in the category table");
                     }
                 }
             }
@@ -229,7 +229,7 @@ namespace IndexECPlugin.Tests.Tests
                 });
 
                 IEnumerable<USGSRequestBundle> resultList;
-                Assert.Throws<EnvironmentalException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList));
+                Assert.Throws<EnvironmentalException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList), "The call to GetNonFormattedUSGSResults should have thrown an EnvironmentalException");
 
                 }
             }
@@ -257,7 +257,7 @@ namespace IndexECPlugin.Tests.Tests
                 });
 
                 IEnumerable<USGSRequestBundle> resultList;
-                Assert.Throws<EnvironmentalException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList));
+                Assert.Throws<EnvironmentalException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList), "The call to GetNonFormattedUSGSResults should have thrown an EnvironmentalException");
 
                 }
             }
@@ -274,7 +274,7 @@ namespace IndexECPlugin.Tests.Tests
             using ( m_mock.Record() )
                 {
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Once().Return(tnmApiDatasetsJsonString);
-                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Times(6).Throw(new TaskCanceledException());
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.AtLeastOnce().Throw(new TaskCanceledException());
                 }
             using ( m_mock.Playback() )
                 {
@@ -291,8 +291,8 @@ namespace IndexECPlugin.Tests.Tests
 
                 IEnumerable<USGSRequestBundle> resultList;
                 AggregateException ex = Assert.Throws<AggregateException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList));
-                Assert.IsTrue(ex.InnerExceptions.Count == 6);
-                Assert.IsTrue(ex.InnerExceptions.First() is EnvironmentalException);
+                Assert.IsTrue(ex.InnerExceptions.Count >= 1, "There should have been at least 1 exception returned, but " + ex.InnerExceptions.Count + " were returned instead.");
+                Assert.IsTrue(ex.InnerExceptions.First() is EnvironmentalException, "The exceptions should have been of type EnvironmentalException.");
 
                 }
             }
@@ -310,7 +310,7 @@ namespace IndexECPlugin.Tests.Tests
                 {
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Once().Return(tnmApiDatasetsJsonString);
                 var ex = new AggregateException(new List<Exception>() { new TaskCanceledException() });
-                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Times(6).Throw(ex);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.AtLeastOnce().Throw(ex);
                 }
             using ( m_mock.Playback() )
                 {
@@ -327,8 +327,8 @@ namespace IndexECPlugin.Tests.Tests
 
                 IEnumerable<USGSRequestBundle> resultList;
                 AggregateException ex = Assert.Throws<AggregateException>(() => resultList = dataFetcher.GetNonFormattedUSGSResults(criteriaList));
-                Assert.IsTrue(ex.InnerExceptions.Count == 6);
-                Assert.IsTrue(ex.InnerExceptions.First() is EnvironmentalException);
+                Assert.IsTrue(ex.InnerExceptions.Count >= 1, "There should have been 1 exception returned, but " + ex.InnerExceptions.Count + " were returned instead.");
+                Assert.IsTrue(ex.InnerExceptions.First() is EnvironmentalException, "The exceptions should have been of type EnvironmentalException.");
 
                 }
             }
