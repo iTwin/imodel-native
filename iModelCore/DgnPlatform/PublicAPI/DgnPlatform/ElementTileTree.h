@@ -150,10 +150,12 @@ private:
     double          m_tolerance;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
+    void InitTolerance();
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
+    void _Invalidate() override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
     Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);

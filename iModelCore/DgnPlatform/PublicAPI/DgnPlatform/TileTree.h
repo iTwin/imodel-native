@@ -79,6 +79,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DirtyRanges)
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
@@ -121,6 +122,34 @@ public:
 };
 
 //=======================================================================================
+//! A set of ranges within a TileTree which have become damaged due to modification of
+//! the model. Can be partitioned to include only those damaged ranges which intersect
+//! a given range.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct DirtyRanges
+{
+    typedef bvector<DRange3d> List;
+    using iterator = List::iterator;
+    using const_iterator = List::const_iterator;
+private:
+    iterator    m_begin;
+    iterator    m_end;
+public:
+    DirtyRanges(iterator begin, iterator end) : m_begin(begin), m_end(end) { }
+    explicit DirtyRanges(List& list) : m_begin(list.begin()), m_end(list.end()) { }
+    
+    //! Returns the set of dirty ranges which intersect the given range.
+    //! Note that this modifies the ordering of the underlying List's contents (but only within the range thereof represented by this object).
+    DGNPLATFORM_EXPORT DirtyRanges Intersect(DRange3dCR range) const;
+
+    bool empty() const { return m_begin == m_end; }
+    size_t size() const { return std::distance(m_begin, m_end); }
+    const_iterator begin() const { return m_begin; }
+    const_iterator end() const { return m_end; }
+};
+
+//=======================================================================================
 //! A Tile in a TileTree. Every Tile has 0 or 1 parent Tile and 0 or more child Tiles. 
 //! The range member is an ElementAlignedBox in the local coordinate system of the TileTree.
 //! All child Tiles must be contained within the range of their parent Tile.
@@ -143,6 +172,9 @@ protected:
 
     void SetAbandoned() const;
     void UnloadChildren(BeTimePoint olderThan) const;
+
+    //! Mark this tile as invalidated, e.g. because its contents have been modified.
+    virtual void _Invalidate() = 0;
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -214,6 +246,8 @@ public:
 
     //! Returns true if this tile is entirely outside of the viewing frustum or clipping planes
     bool IsCulled(DrawArgsCR args) const;
+
+    void Invalidate(DirtyRangesCR dirty);
 };
 
 /*=================================================================================**//**
@@ -238,6 +272,7 @@ protected:
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
+    DirtyRanges::List m_damagedRanges;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -246,6 +281,8 @@ protected:
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
+
+    void InvalidateDamagedTiles();
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
     void RequestTiles(MissingNodesCR);
@@ -264,6 +301,7 @@ public:
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
+    DGNPLATFORM_EXPORT void MarkDamaged(DRange3dCR range);
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
     virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
@@ -591,6 +629,7 @@ struct Tile : TileTree::Tile
     Utf8String _GetTileCacheKey () const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
+    void _Invalidate() override { m_graphic = nullptr; }
 };
 
 } // end QuadTree

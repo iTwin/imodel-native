@@ -1170,19 +1170,28 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend(*range);
 
+    InitTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::InitTolerance()
+    {
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
 
-    bool isLeaf = tileTolerance <= leafTolerance;
-    if (isLeaf)
-        {
-        m_tolerance = leafTolerance;
-        SetIsLeaf();
-        }
-    else
-        {
-        m_tolerance = tileTolerance;
-        }
+    m_isLeaf = tileTolerance <= leafTolerance;
+    m_tolerance = m_isLeaf ? leafTolerance : tileTolerance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::_Invalidate()
+    {
+    m_graphic = nullptr;
+    InitTolerance();
     }
 
 /*---------------------------------------------------------------------------------**//**

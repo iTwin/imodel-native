@@ -608,9 +608,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     // ###TODO_ELEMENT_TILE: It would be nice to be able to generate only the tiles we need for the current frustum.
     // However, if we don't generate parents before children, then when the viewing frustum changes we will have nothing to draw until more tiles load.
     // So for now we do similarly to 3mx: only process children after parent is ready.
-#if defined(TILETREE_SKIP_INTERMEDIATES)
     DgnDb::VerifyClientThread();
 
+#if defined(TILETREE_SKIP_INTERMEDIATES)
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
@@ -834,6 +834,8 @@ void Root::DrawInView(RenderContextR context)
         BeAssert(false);
         return;
         }
+
+    InvalidateDamagedTiles();
 
     auto now = BeTimePoint::Now();
     DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
@@ -1317,3 +1319,68 @@ bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
     memcpy(buf, start, size);
     return true;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DirtyRanges DirtyRanges::Intersect(DRange3dCR range) const
+    {
+    auto end = std::partition(m_begin, m_end, [&range](DRange3dCR arg) { return arg.IntersectsWith(range); });
+    return DirtyRanges(m_begin, end);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::MarkDamaged(DRange3dCR range)
+    {
+    DRange3d tileRange;
+    GetLocation().Multiply(tileRange, range);
+
+    BeMutexHolder lock(m_cv.GetMutex());
+    m_damagedRanges.push_back(tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::InvalidateDamagedTiles()
+    {
+    DgnDb::VerifyClientThread();
+    BeAssert(m_rootTile.IsValid());
+
+    if (m_damagedRanges.empty() || m_rootTile.IsNull())
+        return;
+
+    DirtyRanges dirty(m_damagedRanges);
+    m_rootTile->Invalidate(dirty);
+
+    m_damagedRanges.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Invalidate(DirtyRangesCR dirty)
+    {
+    DgnDb::VerifyClientThread();
+
+    // NB: The caller has already filtered the ranges to include only those which intersect this tile's range.
+    if (dirty.empty())
+        return;
+
+    // This tile needs to be regenerated
+    SetNotLoaded();
+    _Invalidate();
+
+    // Test children. Note that we are only partitioning the subset of damaged ranges which intersect the parent.
+    auto children = _GetChildren(false);
+    if (nullptr == children)
+        return;
+
+    for (auto const& child : *children)
+        {
+        DirtyRanges childDirty = dirty.Intersect(child->GetRange());
+        child->Invalidate(childDirty);
+        }
+    }
+
