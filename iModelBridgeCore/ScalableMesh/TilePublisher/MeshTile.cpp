@@ -757,6 +757,11 @@ void TileMesh::ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordin
         }
     }
 
+void TileMesh::ApplyTransform(const Transform & transform)
+    {
+    for (auto& p : m_points) transform.Multiply(p);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -485,6 +485,7 @@ public:
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param/*, BeInt64Id entityId*/);
 
     void ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS);
+    void ApplyTransform(const Transform& transform);
 };
 
 //=======================================================================================

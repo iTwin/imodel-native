@@ -29,6 +29,13 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, GeoCoordinates::B
     if (!meshes.empty())
         {
         meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
+
+        // Convert points to follow Y-up convention
+        Transform transform = Transform::FromRowValues(1, 0, 0, 0,
+                                                       0, 0, 1, 0,
+                                                       0, -1, 0, 0);
+        meshes[0]->ApplyTransform(transform);
+
         // SM_NEEDS_WORK_STREAMING : do we need a specific context?
         //PublisherContextPtr context = new PublisherContext(outDir, (/*L"p_" +*/ std::to_wstring(blockID.m_integerID) + L".b3dm").c_str());
         TilePublisher publisher(nullptr/*context*/);
