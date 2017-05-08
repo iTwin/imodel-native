@@ -8,12 +8,12 @@
 #ifdef CompileFromGeomLibsGTest
 extern void SaveGraph (VuSetP graph, VuMask mask = 0);
 extern void SaveGraphEdges (VuSetP graph, VuMask mask = 0);
-extern void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask);
+extern void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask, bool doVoronoi = false);
 #else
 // stub implementations of debug logic called from VuSpringModel
 void SaveGraph (VuSetP graph, VuMask mask = 0) {}
 void SaveGraphEdges (VuSetP graph, VuMask mask = 0) {}
-void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask) {}
+void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask, bool doVornoi = false) {}
 struct Check
 {
 static void SaveTransformed(IGeometryPtr const &data) {}
@@ -87,7 +87,7 @@ void DoShift ()
 //
 
 template <typename TElementId>
-struct VuSpringModel : private _VuSet
+struct VuSpringModel : public _VuSet
     {
 
     VuSetP Graph () { return this; }
@@ -264,7 +264,7 @@ struct VuSpringModel : private _VuSet
                 DPoint3d xyzA = newXYZ.back ();
                 DPoint3d xyzB = xyz[i];
                 double d = xyzA.Distance (xyzB);
-                if (d > maxEdgeLength)
+                if (maxEdgeLength > 0.0 && d > maxEdgeLength)
                     {
                     size_t n = (int)(0.9999999 + d / maxEdgeLength);
                     for (size_t k = 1; k < n; k++)
@@ -465,9 +465,85 @@ struct VuSpringModel : private _VuSet
                 END_VU_SET_LOOP (seedNode, this)
                 return numFlip;
                 }
-        void MergeAndTriangulate ()
+
+        bool IsProjectionCandidate (VuP nodeA)
+            {
+            auto id = nodeA->GetUserData1 ();
+            if (id >= 0)
+                {
+                VuP nodeB = nodeA->FSucc ();
+                VuP nodeC = nodeB->FSucc ();
+                VuP nodeD = nodeC->FSucc ();
+                return IsFixedEdge (nodeB) && nodeD == nodeA;
+                }
+            return false;
+            }
+        // return fractional position of projection of spaceNode on the edgeNode's edge
+        bool ComputeProjection (VuP spaceNode, VuP edgeNode, double &s, DPoint3d &xyzOut)
+            {
+            DPoint3d xyz = spaceNode->GetXYZ ();
+            DPoint3d xyz0 = edgeNode->GetXYZ ();
+            DPoint3d xyz1 = edgeNode->FSucc ()->GetXYZ ();
+            DVec3d edgeVector = xyz1 - xyz0;
+            DVec3d spaceVector = xyz - xyz0;
+            ValidatedDouble q = DoubleOps::ValidatedDivide ( edgeVector.DotProductXY (spaceVector), edgeVector.DotProductXY (edgeVector), 0.0);
+            s = q.Value ();
+            xyzOut = DPoint3d::FromInterpolate (xyz0, s, xyz1);
+            return q.IsValid ();
+            }
+
+        void CollectProjectionCandidates (bvector<VuP> &candidates)
+            {
+            candidates.clear ();
+            int numFlip = 0;
+            VU_SET_LOOP (nodeA, this)
+                {
+                if (IsProjectionCandidate (nodeA))
+                   candidates.push_back (nodeA);
+                }
+            END_VU_SET_LOOP (seedNode, this)
+            }
+
+        void AddProjectionsToWalls ()
+            {
+            bvector<VuP> candidates, newEdges;
+
+            static double s_fractionTol = 0.01;
+
+            for (int numSplit = 1, numPass = 0; numSplit > 0 && numPass < 10; numPass++)
+                {
+                numSplit = 0;
+                CollectProjectionCandidates (candidates);
+                for (auto nodeA : candidates)
+                    {
+                    VuP nodeB = nodeA->FSucc ();
+                    double fraction;
+                    DPoint3d xyz;
+                    if (IsProjectionCandidate (nodeA)
+                        && ComputeProjection (nodeA, nodeB, fraction, xyz)
+                        && fabs (fraction - 0.5) < (0.5 - s_fractionTol)
+                        )
+                        {
+                        numSplit++;
+                        VuP nodeB0, nodeB1, nodeC0, nodeC1;
+                        vu_splitEdgeAtDPoint3d (this, &nodeB0, &nodeB1, nodeB, &xyz);
+                        vu_join (this, nodeA, nodeB0, &nodeC0, &nodeC1);
+                        newEdges.push_back (nodeC0);
+                        }
+                    }
+                if (numSplit > 0)
+                    vu_flipTrianglesToImproveQuadraticAspectRatio (this);
+                }
+            }
+
+        void MergeAndTriangulate
+            (
+            bool doProjectionToWalls        // if true: look for stations that can project directly to walls. Add those edges and flip.
+            )
             {
             DRange3d range = Range ();
+            double shiftX = range.XLength () * 1.5;
+            double shiftY = range.YLength () * 1.5;
             for (auto &station : m_station)
                 range.Extend (station.m_xyzBase);
 
@@ -481,6 +557,7 @@ struct VuSpringModel : private _VuSet
             vu_splitMonotoneFacesToEdgeLimit (this, 3);
             vu_flipTrianglesToImproveQuadraticAspectRatio (this);
 
+
             bvector<DPoint3d> stationBase;
             size_t numStation = m_station.size ();
             if (numStation > 0)
@@ -489,13 +566,21 @@ struct VuSpringModel : private _VuSet
                     stationBase.push_back (station.m_xyzBase);
                 vu_insertAndRetriangulate (this, &stationBase[0], numStation, true);
                 }
-
             IndexStations ();
-            Check::ShiftToLowerRight (10.0);
-            SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
-            FlipTrianglesSoStationsFillCorners ();
-            Check::Shift (0,40,0);
-            SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+            if (doProjectionToWalls)
+                {
+                AddProjectionsToWalls ();
+                IndexStations ();
+                }
+
+                {
+                SaveAndRestoreCheckTransform shifter (shiftX, 0, 0);
+                Check::SaveTransformed (*CreateVoronoi ());
+                FlipTrianglesSoStationsFillCorners ();
+                Check::Shift (0, shiftY, 0);
+                SaveGraphEdgesInsideBarrier (Graph (), m_wallMask, false);
+                Check::SaveTransformed (*CreateVoronoi ());
+                }
 
             }
         void ClearMaskAroundVerticesWithOutboundMask (VuMask maskToFind, VuMask maskToClear)
@@ -517,7 +602,7 @@ struct VuSpringModel : private _VuSet
         // Triangulate the station & walls data.
         //  Optionally do smoothing to simulate springs ..
 
-        void SolveSprings (bool doSmoothing = true)
+        void SolveSprings (bool doProjectionToWalls = false, bool doSmoothing = true)
             {
             for (auto &station : m_station)
                 {
@@ -526,15 +611,13 @@ struct VuSpringModel : private _VuSet
                 }
             SaveGraphEdges (Graph (), m_wallMask);
 
-            MergeAndTriangulate ();
-
-            Check::ShiftToLowerRight (10.0);
-            SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
-            Check::ShiftToLowerRight (10.0);
-            DRange3d range;
-            vu_graphRange (Graph (), &range);
+            MergeAndTriangulate (doProjectionToWalls);
+            auto range = Graph ()->Range ();
             double dX = range.XLength () * 1.10;
             double dY = range.YLength () * 1.10;
+            Check::Shift (2 * dX,0,0);
+            SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+            Check::Shift (2 * dX,0,0);
             if (doSmoothing)
                 {
                 double shiftFraction;
@@ -670,6 +753,119 @@ struct VuSpringModel : private _VuSet
                 }
             END_VU_SET_LOOP (vertexSeedNode, Graph ())
             }
+
+
+PolyfaceHeaderPtr CreateVoronoi ()
+    {
+    VuSetP graph = this;
+    PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
+    _VuSet::TempMask visited (graph);
+    _VuSet::TempMask exteriorMask (graph);
+    vu_floodFromNegativeAreaFaces (graph, m_wallMask, exteriorMask.Mask ());
+
+    ConvexClipPlaneSet planes, outsidePlanes;
+    DRange3d range = graph->Range ();
+    static double s_rangeExpansionFactor = 1.0;
+    double dx = range.XLength () * s_rangeExpansionFactor;
+    double dy = range.YLength () * s_rangeExpansionFactor;
+    range.low.x -= dx;
+    range.high.x += dx;
+    range.low.y -= dy;
+    range.high.y += dy;
+    bvector<DPoint3d> outerBox, clip1, clip2, clip1A, work1, work2;
+    BVectorCache<DPoint3d> outsideClip;
+    outerBox.push_back (DPoint3d::From (range.low.x, range.low.y));
+    outerBox.push_back (DPoint3d::From (range.high.x, range.low.y));
+    outerBox.push_back (DPoint3d::From (range.high.x, range.high.y));
+    outerBox.push_back (DPoint3d::From (range.low.x, range.high.y));
+    static bool s_interior = false;
+    static double s_sign = -1.0;
+    size_t errors = 0;
+
+    VU_SET_LOOP (vertexSeed, graph)
+        {
+        if (!visited.IsSetAtNode (vertexSeed))
+            {
+            vertexSeed->SetMaskAroundVertex (visited.Mask ());
+            DPoint3d xyz0 = vertexSeed->GetXYZ ();
+            planes.clear ();
+            outsidePlanes.clear ();
+            ValidatedDVec3d exteriorVectorA;
+            ValidatedDVec3d exteriorVectorB;
+
+            VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+                {
+                VuP mate = outboundEdge->EdgeMate ();
+                bool exteriorEdge = outboundEdge->HasMask (exteriorMask.Mask ());
+                bool exteriorMate = mate->HasMask (exteriorMask.Mask ());
+                DPoint3d xyzA = outboundEdge->GetXYZ ();
+                DPoint3d xyzB = outboundEdge->FSucc ()->GetXYZ ();
+                if ( exteriorEdge && exteriorMate)
+                    {
+                    }
+                else
+                    {
+                    if (exteriorEdge)
+                        exteriorVectorA = ValidatedDVec3d (xyzB - xyzA, true);
+                    else if (exteriorMate)
+                        exteriorVectorB = ValidatedDVec3d (xyzB - xyzA, true);
+                        
+                    double r = 0.5 * xyzA.DistanceXY (xyzB);
+
+                    auto plane  = DPlane3d::VoronoiSplitPlane (xyzA, r, xyzB, r, 0);
+                    if (plane.IsValid ())
+                        {
+                        DPlane3d plane1 = plane.Value ();
+                        plane1.normal = s_sign * plane1.normal;
+                        planes.push_back (ClipPlane (plane1, false, s_interior));
+                        }
+                    }
+                }
+            END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+            if (planes.size () > 0)
+                {
+                if (exteriorVectorA.IsValid () && exteriorVectorB.IsValid ())
+                    {
+                    double theta = exteriorVectorA.Value ().AngleToXY (exteriorVectorB.Value ());
+                    auto  perpA = DVec3d::FromUnitPerpendicularXY (s_sign * exteriorVectorA);
+                    auto  perpB = DVec3d::FromUnitPerpendicularXY (-s_sign * exteriorVectorB);
+                    if (Angle::NearlyEqualAllowPeriodShift (theta, Angle::Pi ()))
+                        {
+                        // straight line.   clip once
+                        planes.push_back (ClipPlane (DPlane3d::FromOriginAndNormal (xyz0, perpA), false, s_interior));
+                        }
+                    else if (theta <= 0.0)
+                        {
+                        planes.push_back (ClipPlane (DPlane3d::FromOriginAndNormal (xyz0, perpA), false, s_interior));
+                        planes.push_back (ClipPlane (DPlane3d::FromOriginAndNormal (xyz0, perpB), false, s_interior));
+                        }
+                    else
+                        {
+                        outsidePlanes.push_back (ClipPlane (DPlane3d::FromOriginAndNormal (xyz0, -1.0 * perpA), false, s_interior));
+                        outsidePlanes.push_back (ClipPlane (DPlane3d::FromOriginAndNormal (xyz0, -1.0 * perpB), false, s_interior));
+                        }
+                    }
+
+                planes.ConvexPolygonClip (outerBox, clip1, clip2);
+                if (outsidePlanes.size () > 0)
+                    {
+                    outsidePlanes.ConvexPolygonClipInsideOutside (clip1, clip1A, outsideClip, work1, work2);
+                    for (auto &shard : outsideClip)
+                        voronoi->AddPolygon (shard);
+                    }
+                else
+                    {
+                    voronoi->AddPolygon (clip1);
+                    }
+                }
+            }
+        }
+    END_VU_SET_LOOP (vertexSeed, graph)
+    voronoi->Compress ();
+    return voronoi;
+    }
+
+
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -727,18 +923,20 @@ private:
 VuSetP m_graph;
 bvector<bvector <DPoint3d>> m_parityLoops;
 bvector<bvector <DPoint3d>> m_chains;
-double m_meshSize;
+double m_meshMaxSize;
+uint32_t m_meshGridCount;
 bool m_isoGrid;
 bool m_smoothTriangles;
 int    m_lastSpaceId;
 bmap<int, SpaceDescriptor> m_spaces;
 public:
 // Constructor -- empty manager
-GriddedSpaceManager () :
+GriddedSpaceManager (double meshMaxSize = 0.0, uint32_t meshMinGridCount = 20, bool isoGrid = true, bool smoothTriangles = true) :
     m_graph(nullptr),
-    m_isoGrid (true),
-    m_smoothTriangles (true),
-    m_meshSize (0.0)
+    m_isoGrid (isoGrid),
+    m_smoothTriangles (smoothTriangles),
+    m_meshMaxSize (meshMaxSize),
+    m_meshGridCount (meshMinGridCount)
     {
     }
 ~GriddedSpaceManager ()
@@ -746,9 +944,10 @@ GriddedSpaceManager () :
     if (m_graph != nullptr)
         vu_freeVuSet (m_graph);
     }
-void SetMeshParams (double meshSize, bool isoGrid = true, bool smoothTriangles = true)
+void SetMeshParams (double maxMeshSize, uint32_t meshGridCount, bool isoGrid = true, bool smoothTriangles = true)
     {
-    m_meshSize = meshSize;
+    m_meshMaxSize = maxMeshSize;
+    m_meshGridCount = meshGridCount;
     m_isoGrid = isoGrid;
     m_smoothTriangles = smoothTriangles;
     }
@@ -771,7 +970,7 @@ bvector<bvector <DPoint3d>> &parityLoops,
 bvector<bvector <DPoint3d>> &chains
 )
     {
-    static double s_numGridLine = 20.0;
+    static double s_maxGridCount = 200.0;
     if (m_graph != nullptr)
         vu_freeVuSet (m_graph);
     m_graph = nullptr;
@@ -779,11 +978,17 @@ bvector<bvector <DPoint3d>> &chains
     m_chains      = chains;
     m_lastSpaceId = 0;
     DRange3d range = DRange3d::From (parityLoops);
-	if (m_meshSize <= 0.0)
-	    m_meshSize = DoubleOps::Max (range.XLength (), range.YLength ()) / s_numGridLine;
+    auto meshGridCount = m_meshGridCount <= 0 ? 10 : m_meshGridCount;
+    double minMeshSize = DoubleOps::Max (range.XLength (), range.YLength ()) / s_maxGridCount;
+    double meshSize = DoubleOps::Max (range.XLength (), range.YLength ()) / meshGridCount;
+    if (m_meshMaxSize > 0.0 && meshSize > m_meshMaxSize )
+        meshSize = m_meshMaxSize;
+
+    if (meshSize < minMeshSize)
+        meshSize = minMeshSize;
     m_graph = VuOps::CreateTriangulatedGrid (m_parityLoops, m_chains, bvector<DPoint3d> (),
                         bvector<double> (), bvector<double> (),
-                        m_meshSize, m_meshSize, m_meshSize, m_meshSize, m_isoGrid, m_smoothTriangles);
+                        meshSize, meshSize, meshSize, meshSize, m_isoGrid, m_smoothTriangles);
     return m_graph != nullptr;
     }
 
@@ -1073,4 +1278,7 @@ void SaveWalls ()
     Check::SaveTransformed (m_manager.m_parityLoops);
     Check::SaveTransformed (m_manager.m_chains);
     }
+
+
+
 };

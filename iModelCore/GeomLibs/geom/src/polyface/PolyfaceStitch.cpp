@@ -366,7 +366,7 @@ void MarkEdgesAroundFacet (PolyfaceVisitorCR visitor, bool value)
         }
     }
 
-void MarkEdgesAroundFacet (SizeSize readIndexRange, bool value)
+void MarkEdgesAroundFacet (Size2 readIndexRange, bool value)
     {
     // This is the seed for a search.  Mark all its edges ..
     for (size_t i = readIndexRange.m_dataA; i < readIndexRange.m_dataB; i++)
@@ -380,7 +380,7 @@ void MarkEdgesAroundFacet (SizeSize readIndexRange, bool value)
 
 // Run ReverseIndicesOneFace to fix up the polyface itself.
 // Walk around
-void ReverseHalfEdgeVerticesOneFace (SizeSize readIndexRange)
+void ReverseHalfEdgeVerticesOneFace (Size2 readIndexRange)
     {
     auto numThisFace = readIndexRange.m_dataB - readIndexRange.m_dataA;
     // reverse the half edges .. uh oh, the read indices are wrong now ...
@@ -392,10 +392,10 @@ void ReverseHalfEdgeVerticesOneFace (SizeSize readIndexRange)
         }
     }
 
-SizeSize SectorReadIndexToFacetReadIndexRange (size_t sectorReadIndex)
+Size2 SectorReadIndexToFacetReadIndexRange (size_t sectorReadIndex)
     {
     auto numPerFacet = m_facets.GetNumPerFace ();
-    SizeSize range (sectorReadIndex); 
+    Size2 range (sectorReadIndex); 
     size_t numIndex = m_facets.PointIndex ().size ();
     if (numPerFacet > 1)
         {
@@ -429,7 +429,7 @@ void DoSearch (size_t seedReadIndex)
             size_t readIndex = facetReadIndexRange.m_dataA + i;
             auto halfEdgeIndexA = m_readIndexToHalfEdge[readIndex];
             BeAssert (halfEdgeIndexA != SIZE_MAX);
-            SizeSize halfEdgeClusterRange = m_halfEdges.MateRange (halfEdgeIndexA);
+            Size2 halfEdgeClusterRange = m_halfEdges.MateRange (halfEdgeIndexA);
             ptrdiff_t numHalfEdgesInCluster = halfEdgeClusterRange.m_dataB - halfEdgeClusterRange.m_dataA;
             if (numHalfEdgesInCluster == 1)
                 {
@@ -439,7 +439,7 @@ void DoSearch (size_t seedReadIndex)
                 {
                 size_t halfEdgeIndexB = halfEdgeClusterRange.GetFirstDifferentIndex (halfEdgeIndexA);
                 size_t sectorReadIndexB  = m_halfEdges[halfEdgeIndexB].m_readIndex;
-                SizeSize neighborFaceReadIndexRange = SectorReadIndexToFacetReadIndexRange (sectorReadIndexB);
+                Size2 neighborFaceReadIndexRange = SectorReadIndexToFacetReadIndexRange (sectorReadIndexB);
                 if (m_halfEdges[halfEdgeIndexB].m_visible)
                     {
                     // We are visiting this facet from a different entry point.

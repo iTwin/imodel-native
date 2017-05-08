@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/Polynomials.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -222,8 +222,9 @@ struct Torus
 {
 double m_R; // xy circle radius
 double m_r; // pipe diameter radius
+bool m_reversePhi; // false for phi circle (+X, +Z), true for phi circle (+X,-Z)
 //! Constructor from major and minor radius
-GEOMDLLIMPEXP Torus (double R, double r);
+GEOMDLLIMPEXP Torus (double R, double r, bool reversePhi);
 
 //! @return size of box (e.g. for use as scale factor)
 GEOMDLLIMPEXP double BoxSize () const;
@@ -287,6 +288,10 @@ GEOMDLLIMPEXP DEllipse3d MinorCircle (double theta) const;
 //! @return minor section circle at specified major circle angle.
 //! @param [in] phi minor circle angle.
 GEOMDLLIMPEXP DEllipse3d MajorCircle (double phi) const;
+
+//! @return z multiplied by plus or minus 1 per the m_reversePhi flag.
+GEOMDLLIMPEXP double OrientPhiCoordinate (double z) const;
+
 };
 
 //! Perfect sphere of radius r centered at origin.

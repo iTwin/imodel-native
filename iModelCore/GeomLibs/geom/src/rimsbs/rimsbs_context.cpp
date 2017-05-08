@@ -11,14 +11,61 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 // UNUSED static int s_globalNoisy = 0;
 
 
-RIMSBS_Context::~RIMSBS_Context ()
+RIMSBS_Context::~RIMSBS_Context () {}
+RIMSBS_Context::RIMSBS_Context () {}
+
+RIMSBS_CurveChainStruct::RIMSBS_CurveChainStruct() :m_primaryCurveId (0) {}
+RIMSBS_CurveChainStruct::RIMSBS_CurveChainStruct (RIMSBS_CurveId primaryCurveId)
+    : m_primaryCurveId (primaryCurveId)
     {
     }
 
-RIMSBS_Context::RIMSBS_Context ()
+
+RIMSBS_ElementHeader::RIMSBS_ElementHeader () :
+    pUserData (nullptr),
+    m_chainData(RIMSBS_NULL_CURVE_ID)
     {
     }
 
+RIMSBS_ElementHeader ::RIMSBS_ElementHeader
+(
+ICurvePrimitivePtr const &_curve,
+int _type,
+int _userInt,
+void *_pUserData,
+int _groupId,
+int _alternateCurveId,
+int64_t _userInt64
+)
+    :
+    curve (_curve),
+    type (_type),
+    userInt (_userInt),
+    pUserData (_pUserData),
+    groupId (_groupId),
+    alternateCurveId (_alternateCurveId),
+    userInt64 (_userInt64)
+    {
+
+    }
+
+RIMSBS_CurveIntervalStruct::RIMSBS_CurveIntervalStruct (int _parentId, double _s0, double _s1, int _partialCurveId)
+    :
+    parentId (_parentId),
+    s0 (_s0),
+    s1 (_s1),
+    partialCurveId (_partialCurveId)
+    {
+    }
+
+RIMSBS_CurveIntervalStruct::RIMSBS_CurveIntervalStruct ()
+    :
+    parentId (RIMSBS_NULL_CURVE_ID),
+    s0 (0.0),
+    s1 (1.0),
+    partialCurveId (RIMSBS_NULL_CURVE_ID)
+    {
+    }
 /*----------------------------------------------------------------------+
 |                                                                       |
 | Name:     jmdlRIMSBS_newContext                                       |
@@ -115,109 +162,360 @@ Public void     jmdlRIMSBS_releaseMem
 RIMSBS_Context *pContext
 )
     {
-    /* Free the type-specfic memor of each curve */
-    for(RIMSBS_ElementHeader header : pContext->m_geometry)
-        {
-        switch (header.type)
-            {
-            case RIMSBS_MSBsplineCurve:
-                {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)header.pGeometryData;
-                bspcurv_freeCurve (pCurve);
-                free (pCurve);
-                header.pGeometryData = NULL;
-                }
-                break;
-            case RIMSBS_DEllipse3d:
-                {
-                DEllipse3d *pEllipse = (DEllipse3d *)header.pGeometryData;
-                free (pEllipse);
-                header.pGeometryData = NULL;
-                }
-                break;
-            case RIMSBS_CurveInterval:
-                {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)header.pGeometryData;
-                free (pInterval);
-                header.pGeometryData = NULL;
-                break;
-                }
-            case RIMSBS_CurveChain:
-                {
-                RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)header.pGeometryData;
-                delete pChain;
-                header.pGeometryData = NULL;
-                }
-            }
-        }
-    // Scope exit for onTheSpot bvector forces memory release...
+    // Scope exit for onTheSpot bvector forces memory release in curve and curveChainStruct ..
     bvector<RIMSBS_ElementHeader>().swap (pContext->m_geometry);
     }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_addElement                                       |
-|                                                                       |
-| Author:   EarlinLutz                               6/22/98            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public int      jmdlRIMSBS_addElement
-(
-RIMSBS_Context *pContext,
-int             type,
-int             userInt,
-void            *pUserData,
-const void      *pGeometry,
-int             dataSize
-)
+int RIMSBS_Context::AddArc (DEllipse3dCR arc, int userInt, void *pUserData)
     {
-    RIMSBS_ElementHeader header;
-    header.type          = type;
-    header.userInt       = userInt;
-    header.pUserData     = pUserData;
-    header.alternateCurveId = RIMSBS_NULL_CURVE_ID;
-    header.groupId      = pContext->currGroupId;
-
-    if (pGeometry && dataSize > 0)
-        {
-        header.pGeometryData = malloc (dataSize);
-        memcpy (header.pGeometryData, pGeometry, dataSize);
-        }
-    else if (pGeometry != NULL && dataSize == 0)
-        {
-        // use the pointer directly -- no copy.
-        header.pGeometryData = (void *)pGeometry;
-        }
-    else
-        {
-        header.pGeometryData = NULL;
-        }
-
-    size_t newId = pContext->m_geometry.size ();
-    pContext->m_geometry.push_back (header);
-
-    return  (int)newId;
+    m_geometry.push_back (
+        RIMSBS_ElementHeader
+            (
+            ICurvePrimitive::CreateArc (arc),
+            RIMSBS_DEllipse3d,
+            userInt,
+            pUserData,
+            currGroupId));
+    return (int)m_geometry.size () - 1;
     }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_getElementHeader                                 |
-|                                                                       |
-| Author:   EarlinLutz                               6/22/98            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public bool             jmdlRIMSBS_getElementHeader
-(
-RIMSBS_Context          *pContext,
-RIMSBS_ElementHeader    *pElementHeader,
-int                     index
-)
+int RIMSBS_Context::AddDataCarrier (int userInt, void *pUserData)
     {
-    // We do NOT support (-1) as reference to last entry ...
-    if (index < 0 || (size_t)index >= pContext->m_geometry.size ())
-        return false;
-    *pElementHeader = pContext->m_geometry[(size_t)index];
-    return true;
+    m_geometry.push_back (
+        RIMSBS_ElementHeader
+            (
+            nullptr,
+            RIMSBS_DataCarrier,
+            userInt,
+            pUserData,
+            currGroupId
+            ));
+    return (int)m_geometry.size () - 1;
+    }
+
+int RIMSBS_Context::AddCurveChain (int primaryCurveId, int userInt, void *pUserData)
+    {
+    m_geometry.push_back (
+        RIMSBS_ElementHeader
+            (
+            nullptr,
+            RIMSBS_CurveChain,
+            userInt,
+            pUserData,
+            currGroupId));
+    m_geometry.back ().m_chainData.m_primaryCurveId = primaryCurveId;
+    return (int)m_geometry.size () - 1;
+    }
+
+int RIMSBS_Context::AddCurve (ICurvePrimitivePtr &curve, int userInt, void *pUserData)
+    {
+    int rimsbsCurveType = RIMSBS_NoGeometry;
+    switch (curve->GetCurvePrimitiveType ())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            rimsbsCurveType = RIMSBS_MSBsplineCurve;
+            break;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            rimsbsCurveType = RIMSBS_DEllipse3d;
+            break;
+        default:
+            return -1;      // unsupported curve type . . .
+        }
+    m_geometry.push_back (
+        RIMSBS_ElementHeader
+            (
+            curve,
+            rimsbsCurveType,
+            userInt,
+            pUserData,
+            currGroupId
+            ));
+    return (int)m_geometry.size () - 1;
+    }
+
+void RIMSBS_Context::SetCurrentGroupId (int data)
+    {
+    currGroupId = data;
+    }
+
+
+int RIMSBS_Context::AddCurveInterval (RIMSBS_CurveIntervalStruct const &data, int userInt, void *pUserData)
+    {
+    m_geometry.push_back (RIMSBS_ElementHeader (nullptr, RIMSBS_CurveInterval, userInt, pUserData, currGroupId));
+    m_geometry.back ().m_partialCurve = data;
+    return (int)m_geometry.size () - 1;
+    }
+
+MSBsplineCurveCP RIMSBS_Context::GetMSBsplineCurveCP (int curveIndex)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ()
+            && m_geometry[index].type == RIMSBS_MSBsplineCurve
+            && m_geometry[index].curve.IsValid ()
+            )
+            {
+            return m_geometry[index].curve->GetBsplineCurveCP ();
+            }
+        }
+    return nullptr;
+    }
+
+
+bool RIMSBS_Context::IsCurveChain (int curveIndex, int &primaryCurveId)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ()
+            && m_geometry[index].type == RIMSBS_CurveChain
+            )
+            {
+            primaryCurveId = m_geometry[index].m_chainData.m_primaryCurveId;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TryGetCurveChainChild (int curveIndex, int childIndex, int &childId)
+    {
+    RIMSBS_ElementHeader parentHeader;
+    childId = -1;
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ()
+            && m_geometry[index].type == RIMSBS_CurveChain
+            && childIndex >= 0
+            )
+            {
+            size_t ci = (size_t)childIndex;
+            if (ci < m_geometry[index].m_chainData.size ())
+                {
+                childId = m_geometry[index].m_chainData[ci];
+                return true;
+                }
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TryAddCurveToCurveChain (int curveIndex, int childCurveIndex)
+    {
+    if (IsValidCurveIndex (curveIndex))
+        {
+        auto &desc = GetElementR (curveIndex);
+        if (desc.type == RIMSBS_CurveChain)
+            {
+            desc.m_chainData.push_back ((size_t)childCurveIndex);
+            return true;
+            }
+        }
+    return false;
+    }
+
+
+void *RIMSBS_Context::GetUserDataP (int curveIndex)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            return m_geometry[index].pUserData;
+        }
+    return nullptr;
+    }
+
+ICurvePrimitiveCP RIMSBS_Context::GetICurvePrimitiveCP (int curveIndex)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            return m_geometry[index].curve.get ();
+        }
+    return nullptr;
+    }
+
+
+int RIMSBS_Context::GetUserInt (int curveIndex)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            return m_geometry[index].userInt;
+        }
+    return 0;
+    }
+
+
+bool RIMSBS_Context::IsValidCurveIndex (int curveIndex)
+    {
+    return 0 <= curveIndex && (size_t)curveIndex < m_geometry.size ();
+    }
+
+RIMSBS_ElementHeader &RIMSBS_Context::GetElementR (int curveId)
+    {
+    return m_geometry[(size_t)curveId];
+    }
+
+bool RIMSBS_Context::TryGetImmediateParent (int curveIndex, int &parentIndex)
+    {
+    parentIndex = curveIndex;
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            parentIndex = m_geometry.at (index).m_partialCurve.parentId;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TryGetGroupId (int curveIndex, int &data)
+    {
+    data = -1;
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            data = m_geometry.at (index).groupId;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TryGetArc (int curveIndex, DEllipse3dR arc)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            if (m_geometry[index].type == RIMSBS_DEllipse3d)
+                return m_geometry.at (index).curve->TryGetArc (arc);
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TrySetArc (int curveIndex, DEllipse3dCR arc)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).curve = ICurvePrimitive::CreateArc (arc);
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TryGetUserInt64 (int curveIndex, int64_t &data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            data = m_geometry.at (index).userInt64;
+            return true;
+            }
+        }
+    return false;
+    }
+
+
+bool RIMSBS_Context::TrySetUserInt (int curveIndex, int data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).userInt = data;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TrySetUserInt64 (int curveIndex, int64_t data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).userInt64 = data;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TrySetUserPointer (int curveIndex, void* data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).pUserData = data;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TrySetAlternateCurveId (int curveIndex, int data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).alternateCurveId = data;
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool RIMSBS_Context::TrySetGroupId (int curveIndex, int data)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            m_geometry.at (index).groupId = data;
+            return true;
+            }
+        }
+    return false;
+    }
+
+int RIMSBS_Context::GetGeometryType (int curveIndex)
+    {
+    if (0 <= curveIndex)
+        {
+        size_t index = (size_t)curveIndex;
+        if (index < m_geometry.size ())
+            {
+            return m_geometry.at (index).type;
+            }
+        }
+    return RIMSBS_NoGeometry;
     }
 
 /*----------------------------------------------------------------------+
@@ -233,12 +531,7 @@ RIMSBS_Context *pContext,
 int             index
 )
     {
-    RIMSBS_ElementHeader header;
-    if (!jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        return NULL;
-    if (header.type != RIMSBS_MSBsplineCurve)
-        return NULL;
-    return (MSBsplineCurveP)header.pGeometryData;
+    return const_cast <MSBsplineCurveP> (pContext->GetMSBsplineCurveCP (index));
     }
 
 /*----------------------------------------------------------------------+
@@ -256,10 +549,9 @@ void            **pUserData,
 int             index
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
+    if (pContext->IsValidCurveIndex (index))
         {
-        *pUserData      = header.pUserData;
+        *pUserData      = pContext->GetUserDataP (index);
         return true;
         }
 
@@ -281,10 +573,9 @@ int             *pUserInt,
 int             index
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
+    if (pContext->IsValidCurveIndex (index))
         {
-        *pUserInt      = header.userInt;
+        *pUserInt      = pContext->GetUserInt (index);
         return true;
         }
 
@@ -306,14 +597,7 @@ int64_t         *pUserInt64,
 int             index
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        *pUserInt64      = header.userInt64;
-        return true;
-        }
-
-    return false;
+    return pContext->TryGetUserInt64 (index, *pUserInt64);
     }
 
 
@@ -332,15 +616,7 @@ int             index,
 int             userInt
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        header.userInt = userInt;
-        jmdlRIMSBS_setElementHeader (pContext, &header, index);
-        return true;
-        }
-
-    return false;
+    return pContext->TrySetUserInt (index, userInt);
     }
 
 /*----------------------------------------------------------------------+
@@ -358,15 +634,7 @@ int             index,
 int64_t         userInt64
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        header.userInt64 = userInt64;
-        jmdlRIMSBS_setElementHeader (pContext, &header, index);
-        return true;
-        }
-
-    return false;
+    return pContext->TrySetUserInt64(index, userInt64);
     }
 
 /*----------------------------------------------------------------------+
@@ -384,15 +652,7 @@ int             index,
 void            *pUserData
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        header.pUserData = pUserData;
-        jmdlRIMSBS_setElementHeader (pContext, &header, index);
-        return true;
-        }
-
-    return false;
+    return pContext->TrySetUserPointer (index, pUserData);
     }
 
 /*----------------------------------------------------------------------+
@@ -409,14 +669,7 @@ RIMSBS_CurveId  index,
 int             groupId
 )
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        header.groupId = groupId;
-        jmdlRIMSBS_setElementHeader (pContext, &header, index);
-        return true;
-        }
-    return  false;
+    return pContext->TrySetGroupId (index, groupId);
     }
 
 /*----------------------------------------------------------------------+
@@ -433,15 +686,7 @@ int             *pGroupId,
 RIMSBS_CurveId  curveId
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader descr;
-
-    if  (jmdlRIMSBS_getElementHeader (pContext, &descr, curveId))
-        {
-        *pGroupId = descr.groupId;
-        myResult = true;
-        }
-    return  myResult;
+    return pContext->TryGetGroupId (curveId, *pGroupId);
     }
 
 
@@ -459,9 +704,8 @@ RIMSBS_Context  *pContext,
 int             groupId
 )
     {
-    bool    myResult = true;
-    pContext->currGroupId = groupId;
-    return  myResult;
+    pContext->SetCurrentGroupId (groupId);
+    return  true;
     }
 
 
@@ -481,21 +725,7 @@ int             *pParentIndex,
 int             index
 )
     {
-    RIMSBS_ElementHeader header;
-    RIMSBS_CurveIntervalStruct *pInterval;
-    *pParentIndex = index;
-
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, index))
-        {
-        if (header.type == RIMSBS_CurveInterval)
-            {
-            pInterval = (RIMSBS_CurveIntervalStruct *)header.pGeometryData;
-            *pParentIndex = pInterval->parentId;
-            }
-        return true;
-        }
-
-    return false;
+    return pContext->TryGetImmediateParent (index, *pParentIndex);
     }
 
 /*----------------------------------------------------------------------+
@@ -525,28 +755,6 @@ int             index
 
     }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| Name:     jmdlRIMSBS_setElementHeader                                 |
-|                                                                       |
-| Author:   EarlinLutz                               6/22/98            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public bool             jmdlRIMSBS_setElementHeader
-(
-RIMSBS_Context          *pContext,
-RIMSBS_ElementHeader    *pElementHeader,
-int                     index
-)
-    {
-    if (index < 0)
-        return false;
-    if ((size_t)index >= pContext->m_geometry.size ())
-        return false;
-    pContext->m_geometry[index] = *pElementHeader;
-    return true;
-    }
-
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -566,9 +774,7 @@ const DEllipse3d *pEllipse
 
     if (pEllipse->IsFullEllipse ())
         {
-        RG_CurveId fullEllipseCurveId = jmdlRIMSBS_addElement (pContext,
-                            RIMSBS_DEllipse3d, userInt, NULL,
-                            pEllipse, sizeof (DEllipse3d));
+        RG_CurveId fullEllipseCurveId = pContext->AddArc (*pEllipse, userInt, nullptr);
         // RG does not like closed curves.
         // Split in halves, create (and return) chain.
         RIMSBS_CurveId chainId = jmdlRIMSBS_addCurveChain (pContext, userInt, pUserData, fullEllipseCurveId);
@@ -595,10 +801,7 @@ const DEllipse3d *pEllipse
         return chainId;
         }
     else
-        return jmdlRIMSBS_addElement (pContext,
-                            RIMSBS_DEllipse3d, userInt, pUserData,
-                            pEllipse, sizeof (DEllipse3d));
-
+        return pContext->AddArc (*pEllipse, userInt, pUserData);
     }
 
 /*----------------------------------------------------------------------+
@@ -615,15 +818,9 @@ int             userInt,
 void            *pUserData
 )
     {
-    return  jmdlRIMSBS_addElement (pContext,
-                            RIMSBS_DataCarrier, userInt, pUserData, NULL, 0);
-
+    return  pContext->AddDataCarrier (userInt, pUserData);
     }
 
-RIMSBS_CurveChainStruct::RIMSBS_CurveChainStruct (RIMSBS_CurveId primaryCurveId)
-    : m_primaryCurveId (primaryCurveId)
-    {
-    }
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -640,9 +837,7 @@ void            *pUserData,
 RIMSBS_CurveId  primaryCurveId
 )
     {
-    RIMSBS_CurveChainStruct* chain = new RIMSBS_CurveChainStruct (primaryCurveId);
-    return  jmdlRIMSBS_addElement (pContext,
-                            RIMSBS_CurveChain, userInt, pUserData, chain, 0);
+    return pContext->AddCurveChain (primaryCurveId, userInt, pUserData);
     }
 
 /*----------------------------------------------------------------------+
@@ -657,16 +852,7 @@ RIMSBS_CurveId  chainId,
 RIMSBS_CurveId  childCurveId
 )
     {
-    RIMSBS_ElementHeader parentHeader;
-
-    if (jmdlRIMSBS_getElementHeader (pContext, &parentHeader, chainId)
-        && parentHeader.type == RIMSBS_CurveChain)
-        {
-        RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct*)parentHeader.pGeometryData;
-        pChain->push_back (childCurveId);
-        return true;
-        }
-    return false;
+    return pContext->TryAddCurveToCurveChain (chainId, childCurveId);
     }
 
 /*----------------------------------------------------------------------+
@@ -681,17 +867,7 @@ RIMSBS_CurveId  *pPrimaryCurveId,
 RIMSBS_CurveId  curveId
 )
     {
-    RIMSBS_ElementHeader parentHeader;
-    if (pPrimaryCurveId != NULL)
-        *pPrimaryCurveId = 0;
-    if (jmdlRIMSBS_getElementHeader (pContext, &parentHeader, curveId)
-        && parentHeader.type == RIMSBS_CurveChain)
-        {
-        RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct*)parentHeader.pGeometryData;
-        *pPrimaryCurveId = pChain->m_primaryCurveId;
-        return true;
-        }
-    return false;
+    return pContext->IsCurveChain (curveId, *pPrimaryCurveId);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -708,19 +884,7 @@ int             childIndex,
 RIMSBS_CurveId  *pChildId
 )
     {
-    RIMSBS_ElementHeader parentHeader;
-    *pChildId = -1;
-    if (jmdlRIMSBS_getElementHeader (pContext, &parentHeader, curveId)
-        && parentHeader.type == RIMSBS_CurveChain)
-        {
-        RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct*)parentHeader.pGeometryData;
-        if (NULL != pChain && childIndex >= 0 && (size_t)childIndex < pChain->size ())
-            {
-            *pChildId = pChain->at(childIndex);
-            return true;
-            }
-        }
-    return false;
+    return pContext->TryGetCurveChainChild (curveId, childIndex, *pChildId);
     }
 
 
@@ -738,32 +902,18 @@ RIMSBS_Context  *pContext,
 RIMSBS_CurveId  parentId
 )
     {
-    RIMSBS_CurveId childId = RIMSBS_NULL_CURVE_ID;
-    MSBsplineCurve *pCurve;
-    RIMSBS_ElementHeader parentHeader;
-
-    if (jmdlRIMSBS_getElementHeader (pContext, &parentHeader, parentId))
+    DEllipse3d arc;
+    int childId = RIMSBS_NULL_CURVE_ID;
+    MSBsplineCurve bcurve;
+    if (pContext->TryGetArc (parentId, arc)
+        && SUCCESS == bspconv_convertDEllipse3dToCurve (&bcurve, &arc))
         {
-        switch (parentHeader.type)
-            {
-            case RIMSBS_DEllipse3d:
-                {
-                DEllipse3d *pEllipse = (DEllipse3d *)parentHeader.pGeometryData;
-                pCurve = (MSBsplineCurve *)malloc (sizeof(MSBsplineCurve));
-                if (   pCurve
-                    && SUCCESS == bspconv_convertDEllipse3dToCurve (pCurve, pEllipse)
-                    )
-                    {
-                    childId = jmdlRIMSBS_addMSBsplineCurve (pContext, -1, NULL, pCurve);
-                    parentHeader.alternateCurveId = childId;
-                    jmdlRIMSBS_setElementHeader (pContext, &parentHeader, parentId);
-                    }
-                }
-                break;
-            }
+        // This takes responsitility for pointers from the curve.
+        childId = jmdlRIMSBS_addMSBsplineCurve (pContext, -1, NULL, &bcurve);
+        pContext->TrySetAlternateCurveId (parentId, childId);
+        return true;
         }
     return childId;
-
     }
 
 /*----------------------------------------------------------------------+
@@ -786,12 +936,8 @@ MSBsplineCurveP  pCurve
     static bool    s_forceOpenCurves = 1;
     if (s_forceOpenCurves && pCurve->params.closed)
         bspcurv_openCurve (pCurve, pCurve, 0.0);
-    // This copies bits from the curve struct ...    
-    int stat =jmdlRIMSBS_addElement (pContext,
-                        RIMSBS_MSBsplineCurve, userInt, pUserData,
-                        pCurve, sizeof (MSBsplineCurve));
-    memset (pCurve, 0, sizeof (MSBsplineCurve));
-    return stat;
+    auto cp = ICurvePrimitive::CreateBsplineCurveSwapFromSource (*pCurve);
+    return pContext->AddCurve (cp, userInt, pUserData);
     }
 
 /*----------------------------------------------------------------------+
@@ -914,26 +1060,18 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
     RIMSBS_CurveId  newCurveId = -1;
-    RIMSBS_ElementHeader desc0;
-    RIMSBS_CurveIntervalStruct refData;
-
-    if  (jmdlRIMSBS_getElementHeader (pContext, &desc0, parentCurveId))
+    int groupId;
+    if (pContext->TryGetGroupId (parentCurveId, groupId))
         {
-        myResult = true;
-        refData.parentId = parentCurveId;
-        refData.s0 = s0;
-        refData.s1 = s1;
-        refData.partialCurveId = partialCurveId;
-        newCurveId = jmdlRIMSBS_addElement (pContext,
-                            RIMSBS_CurveInterval, 0, NULL,
-                            &refData, sizeof (refData));
-        jmdlRIMSBS_setGroupId (pContext, newCurveId, desc0.groupId);
+        newCurveId = pContext->AddCurveInterval (
+                    RIMSBS_CurveIntervalStruct (parentCurveId, s0, s1, partialCurveId),
+                    0, nullptr);
+        pContext->TrySetGroupId (newCurveId, groupId);
+        *pNewCurveId = newCurveId;
+        return true;
         }
-
-    *pNewCurveId = newCurveId;
-    return  myResult;
+    return false;
     }
 
 /*----------------------------------------------------------------------+
@@ -1070,10 +1208,7 @@ RIMSBS_Context  *pContext,
 double tolerance
 )
     {
-    RIMSBS_ElementHeader header0, header1;
     int xyrIndex0, xyrIndex1, elementIndex0, elementIndex1;
-    DEllipse3d *pEllipse0, *pEllipse1;
-    DPoint3d xyr0;
     int numMatch = 0;
     int numTotalMatch = 0;
     EmbeddedIntArray *pXYRToElementIndexArray = jmdlEmbeddedIntArray_grab ();
@@ -1081,16 +1216,15 @@ double tolerance
     EmbeddedIntArray *pBlockedXYRIndexArray = jmdlEmbeddedIntArray_grab ();
 
     /* Free the type-specfic memor of each curve */
-    for (int i0 = 0; jmdlRIMSBS_getElementHeader (pContext, &header0, i0); i0++)
+    for (int i0 = 0; pContext->IsValidCurveIndex (i0); i0++)
         {
-        if (header0.type == RIMSBS_DEllipse3d)
+        DEllipse3d arc;
+        pContext->TryGetArc (i0, arc);
+        DPoint3d xyr0;
+        if (circularParts (&arc, &xyr0, tolerance))
             {
-            pEllipse0 = (DEllipse3d *)header0.pGeometryData;
-            if (circularParts (pEllipse0, &xyr0, tolerance))
-                {
-                jmdlEmbeddedDPoint3dArray_addDPoint3d (pXYRArray, &xyr0);
-                jmdlEmbeddedIntArray_addInt (pXYRToElementIndexArray, i0);
-                }
+            jmdlEmbeddedDPoint3dArray_addDPoint3d (pXYRArray, &xyr0);
+            jmdlEmbeddedIntArray_addInt (pXYRToElementIndexArray, i0);
             }
         }
 
@@ -1104,9 +1238,12 @@ double tolerance
                 {
                 numMatch = 0;
                 jmdlEmbeddedIntArray_getInt (pXYRToElementIndexArray, &elementIndex0, xyrIndex0);
-                jmdlRIMSBS_getElementHeader (pContext, &header0, elementIndex0);
-                pEllipse0 = (DEllipse3d *)header0.pGeometryData;
-                circularParts (pEllipse0, &xyr0, tolerance);
+                DPoint3d xyr0;
+                DEllipse3d arc0, arc1;
+                pContext->TryGetArc (elementIndex0, arc0);
+                forceEllipseToExactCircular (&arc0);
+                circularParts (&arc0, &xyr0, tolerance);
+                // apply the first arc coordinates bit-by-bit to all declared duplicates
                 for (
                     i0++;
                     jmdlEmbeddedIntArray_getInt (pBlockedXYRIndexArray, &xyrIndex1, i0)
@@ -1114,13 +1251,13 @@ double tolerance
                     i0++
                     )
                     {
+                    if (numMatch == 0)
+                        pContext->TrySetArc (elementIndex0, arc0);
                     jmdlEmbeddedIntArray_getInt (pXYRToElementIndexArray, &elementIndex1, xyrIndex1);
-                    jmdlRIMSBS_getElementHeader (pContext, &header1, elementIndex1);
-                    pEllipse1 = (DEllipse3d *)header1.pGeometryData;
-                    if (mergeCircularParts (pEllipse1, &xyr0, tolerance))
+                    pContext->TryGetArc (elementIndex1, arc1);
+                    if (mergeCircularParts (&arc1, &xyr0, tolerance))
                         {
-                        if (numMatch == 0)
-                            forceEllipseToExactCircular (pEllipse0);
+                        pContext->TrySetArc (elementIndex1, arc1);
                         numMatch++;
                         numTotalMatch++;
                         }

@@ -4,7 +4,207 @@
 #include <Geom/CGWriter.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
+#include <Regions/regionsAPI.h>
+#include <Regions/rimsbsAPI.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+// build up arrays with reference
+struct RIElement
+{
+int curveId;
+int groupId;
+int userData;
+int64_t userData64;
+ICurvePrimitivePtr curve;
+
+size_t errors;
+
+bool CheckBool (bool v, char const *message = nullptr)
+    {
+    if (v)
+        return true;
+    errors++;
+    Check::True (v, message);
+    return false;
+    }
+
+ bool CheckInt (int iA, int iB, char const *message = nullptr)
+    {
+    if (iA == iB)
+        return true;
+    return Check::Int (iA, iB, message);
+    }
+size_t ValidationErrors_go (RIMSBS_Context *curves)
+    {
+
+    errors = 0;
+    int iB;
+    if (!CheckBool (jmdlRIMSBS_getUserInt (curves, &iB, curveId), "get userInt"))
+        return errors;
+    Check::Print (userData, "iA");
+    Check::Print (iB, "iB");
+    if (!CheckInt (userData, iB, "userInt"))
+        return errors;
+
+    int64_t i64B;
+    if (!CheckBool (jmdlRIMSBS_getUserInt64 (curves, &i64B, curveId)))
+        return errors;
+    Check::Print (userData64, "i64A");
+    Check::Print (i64B, "i64B");
+    if (!CheckBool (Check::Ptrdiff ((ptrdiff_t)userData64, (ptrdiff_t)i64B, "access userInt64"), "access userInt64"))
+        return errors;
+
+    void *ptrA = (void*)0xa1234567b1234567;
+    void *ptrB;
+    jmdlRIMSBS_setUserPointer (curves, curveId, ptrA);
+    jmdlRIMSBS_getUserPointer (curves, &ptrB, curveId);
+    Check::Print ((int64_t)ptrA, "ptrA");
+    Check::Print ((int64_t)ptrB, "ptrB");
+
+    if (!CheckBool (Check::True (ptrA == ptrB, "set/get pointer")))
+        return errors;
+
+    int groupIdB;
+    if (!CheckBool (Check::True (jmdlRIMSBS_getGroupId (curves, &groupIdB, curveId))))
+        return errors;
+     if (!CheckInt (groupId, groupIdB, "groupId from currGroupId"))
+        return errors;
+
+    for (double u : bvector<double>{0.25, 0.40, 0.80})
+        {
+        DPoint3d X0;
+        DVec3d dX0, ddX0;
+        DPoint3d xyzR[3];
+        curve->FractionToPoint (u, X0, dX0, ddX0);
+        jmdlRIMSBS_evaluateDerivatives (curves, xyzR, 2, u, curveId);
+        Check::Near (X0, xyzR[0], "Evaluate X");
+        Check::Near (dX0, xyzR[1], "Evaluate dX");
+        Check::Near (ddX0, xyzR[2], "Evaluate ddX");
+        }
+    DRange3d rangeR;
+    if (CheckBool (jmdlRIMSBS_getCurveRange (curves, &rangeR, curveId)))
+        {
+        DRange3d rangeC;
+        curve->GetRange (rangeC);
+        Check::Print (rangeR.low, "range.low");
+        Check::Print (rangeR.high, "range.high");
+        Check::Near (rangeC, rangeR, "RIMSBS range");
+        }
+    return errors;
+    }
+size_t ValidationErrors (RIMSBS_Context *curves)
+    {
+    Check::StartScope ("Validate curveId", (size_t)curveId);
+    auto e = ValidationErrors_go (curves);
+    Check::EndScope ();
+    return e;
+    }
+};
+
+struct RIArray : bvector<RIElement>
+{
+RIMSBS_Context *m_curves;
+RG_Header *m_regions;
+int m_currentUserData;
+int m_currentGroupId;
+int64_t m_int64Multiplier;
+
+RIArray (int startUserData, int startGroupId) : m_currentGroupId (startGroupId), m_currentUserData (startUserData), m_int64Multiplier (4)
+    {
+    m_curves = jmdlRIMSBS_newContext ();
+    m_regions     = jmdlRG_new ();
+    jmdlRIMSBS_setupRGCallbacks (m_curves, m_regions);
+    jmdlRG_setFunctionContext (m_regions, m_curves);
+    IncrementGroupId (0);
+    }
+
+~RIArray ()
+    {
+    jmdlRIMSBS_freeContext (m_curves);
+    jmdlRG_free (m_regions);
+    }
+
+void IncrementGroupId (int step)
+    {
+    m_currentGroupId += step;
+    jmdlRIMSBS_setCurrGroupId (m_curves, m_currentGroupId);
+    }
+
+void AddCurve (int curveId, ICurvePrimitivePtr curve)
+    {
+    m_currentUserData++;
+    push_back (RIElement ());
+    back ().curveId = curveId;
+    back ().groupId = m_currentGroupId;
+    back ().curve = curve;
+    back ().userData64 = (int64_t)(m_currentUserData * m_int64Multiplier);
+    back ().userData = m_currentUserData;
+    jmdlRIMSBS_setUserInt (m_curves, curveId, back().userData);
+    jmdlRIMSBS_setUserInt64 (m_curves, curveId, back().userData64);
+    // !! group id is set by RIMSBS
+    }
+bool CreateAndAddPartialCurve (size_t existingCurveIndex, double s0, double s1)
+    {
+    bool stat = false;
+    if (existingCurveIndex < size ()
+        && at(existingCurveIndex).curve.IsValid ())
+        {
+        int newCurveId;
+        if (jmdlRIMSBS_createSubcurve (m_curves, &newCurveId, at(existingCurveIndex).curveId, s0, s1))
+            {
+            auto partialCurve = ICurvePrimitive::CreatePartialCurve (at(existingCurveIndex).curve.get (), s0, s1);
+            AddCurve (newCurveId, partialCurve);
+            int groupId;
+            jmdlRIMSBS_getGroupId (m_curves, &groupId, newCurveId); // partial curve gets group from parent !!!
+            back ().groupId = groupId;
+            stat = true;
+            }
+        }
+    return stat;
+    }
+size_t ValidationErrors ()
+    {
+    size_t errors = 0;
+    for (auto &c: *this)
+        {
+        errors += c.ValidationErrors (m_curves);
+        }
+    return errors;
+    }
+};
+
+TEST(AreaBoolean,RIMSBS0)
+    {
+    int oldVolume = Check::SetMaxVolume (10000);
+    double r = 10.0;
+    RIArray myCurves (100, 1000);
+
+//    int userInt0 = 100;
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    DEllipse3d arc0 =  DEllipse3d::FromVectors
+                (
+                DPoint3d::From (0,0,0),
+                r * DVec3d::UnitX (),
+                r * DVec3d::UnitY (),
+                Angle::DegreesToRadians (-170),
+                Angle::DegreesToRadians (340)
+                );
+    DEllipse3d arc1 = DEllipse3d::FromVectors (
+                DPoint3d::From (r * 0.5, 0, 0),
+                r * DVec3d::UnitX (),
+                r * DVec3d::UnitY (),
+                Angle::DegreesToRadians (-170),
+                Angle::DegreesToRadians (340)
+                );
+
+    myCurves.AddCurve (jmdlRIMSBS_addDEllipse3d (myCurves.m_curves, 1000, nullptr, &arc0), ICurvePrimitive::CreateArc (arc0));
+    myCurves.AddCurve (jmdlRIMSBS_addDEllipse3d (myCurves.m_curves, 1000, nullptr, &arc1), ICurvePrimitive::CreateArc (arc1));
+    myCurves.IncrementGroupId (2);
+
+    myCurves.CreateAndAddPartialCurve (0, 0.1, 0.25);
+
+    Check::Size (0, myCurves.ValidationErrors (), "ValidationErrors");
+    Check::SetMaxVolume (oldVolume);
+    }
 
 #ifdef indetableDisplay
 void Indent (size_t depth)
@@ -980,3 +1180,114 @@ for (double scale = 1.0; scale > 2.0e-7; scale *= 0.01)
     Check::Int (nClip, 6);
     }
 }
+
+
+TEST(CurveVector,AreaBooleanMultipleAreas)
+    {
+    auto oldVolume = Check::SetMaxVolume (1000);
+    auto nullShapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    auto allShapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    for (int i = 0; i < 5; i++)
+        {
+        double x0 = (double)i;
+        auto r = CurveVector::CreateRectangle (x0, 0.0, x0 + 1, 1.0, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
+        allShapes->Add (r);
+        }
+    auto result = CurveVector::AreaUnion (*allShapes, *nullShapes);
+    Check::Print (*allShapes, "Input");
+    Check::PrintStructure (result.get ());
+    if (result.IsValid ())
+        {
+        Check::Print (*result, "Union");
+        result->ConsolidateAdjacentPrimitives (true);
+        Check::Print (*result, "After ConsolidateAdjacentPrimitives");
+        }
+    Check::SetMaxVolume (oldVolume);
+    }
+
+TEST(Polyface,BoundaryFromCompressedFacets)
+    {
+    auto oldVolume = Check::SetMaxVolume (1000);
+    PolyfaceHeaderPtr facets = PolyfaceHeader::CreateVariableSizeIndexed ();
+    double y0 = 0;
+    int maxI = 14;
+    int iStep = maxI / 3;
+    int numJ = 0;
+    for (int numI = maxI; numI > 0; numI -= iStep)
+        {
+        numJ++;
+        double y1 = y0 + 1;
+        for (int i = 0; i < numI; i++)
+            {
+            double x0 = (double)i;
+            double x1 = x0 + 1;
+            bvector<DPoint3d> points
+                {
+                DPoint3d::From (x0, y0),
+                DPoint3d::From (x1, y0),
+                DPoint3d::From (x1, y1),
+                DPoint3d::From (x0, y1)
+                };
+            facets->AddPolygon (points);
+            }
+        y0 += 1;
+        }
+    facets->Compress ();
+    size_t numOpen = 0;
+    size_t numClosed = 0;
+    facets->MarkTopologicalBoundariesVisible (false);
+    auto boundaries = facets->ExtractBoundaryStrings (numOpen, numClosed);
+    Check::Size (0, numOpen, "NumOpen");
+    Check::Size (1, numClosed, "NumClosed");
+    double outerLength = 2.0 * (maxI + numJ);
+    Check::Near (outerLength, boundaries->Length (), "Boundary length");
+    {
+    SaveAndRestoreCheckTransform shifter (maxI + 2.0, 0,0);
+    Check::SaveTransformed (*facets);
+    Check::Shift (0,y0 + 2,0);
+    Check::SaveTransformed (*boundaries);
+    }
+//    PrintPolyface (*facets, "facets", stdout, 10000, true);
+//    Check::Print (*boundaries, "Boundaries from Compressed facets");
+
+    bvector<int> &pointIndex = facets->PointIndex ();
+    size_t numReadIndex = pointIndex.size ();
+    // for "various" readIndices, toggle their visibility and make sure ExtractBoundaryString returns with at most 2 paths
+    size_t skip = 7;//numReadIndex / 5;
+    for (size_t readIndex = 0; readIndex < numReadIndex; readIndex += skip)
+        {
+        int ri = pointIndex[readIndex];
+        if (ri != 0)
+            {
+            // flip its visibility
+            pointIndex[readIndex] = -ri;
+            auto b1 = facets->ExtractBoundaryStrings (numOpen, numClosed);
+            {
+            SaveAndRestoreCheckTransform shifter (maxI + 2.0, 0,0);
+            Check::SaveTransformed (*facets);
+            Check::Shift (0,y0 + 2,0);
+            Check::SaveTransformed (*b1);
+            }
+
+            if (ri > 0)
+                {
+                // an outer edge was hidden -- there is a break in the outer loop.  BUT .. the stitcher
+                //    forces it visbile. So we expect no change
+                Check::True (numClosed == 1, "Forced fill of outer boundary error");
+                Check::Size (0, numOpen, "Forced fill of outer boundary error");
+                Check::Near (outerLength, b1->Length (), "Expect reduced length of boundary");
+                }
+            else
+                {
+                // an interior edge was made visible (but only on one side?)  
+                Check::True (numOpen + numClosed <= 2, "Expected limit on boundary paths?");
+                double l1 = b1->Length ();
+                Check::True (l1 > outerLength && l1 <= outerLength + 2.0, "Expect one or two additional visible edges in interior");
+                }
+
+            pointIndex[readIndex] = ri;
+            }
+        }
+    Check::SetMaxVolume (oldVolume);
+    Check::ClearGeometry ("Polyface.BoundaryFromCompressedFacets");
+    }

@@ -1106,7 +1106,6 @@ IPolyfaceVisitorFilter *filter
 ) const;
 
 
-
 //! @description Compute volumes "between" primary and barrier facets
 //! @param [in] polyfaceA first facet set (e.g. road surface)
 //! @param [in] polyfaceB second facet set (e.g. ground dtm)
@@ -1946,6 +1945,42 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFa
 //! Create a mesh with (just) point and index data.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData);
 
+
+//! Create a (indexed) polyface containing all polygons from a TaggedPolygonVector
+GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons
+(
+TaggedPolygonVectorCR polygons  //!< [in] tagged polygons to place in polyface
+);
+
+//! Create a polyface from (a subset of) polygons.
+GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons
+(
+TaggedPolygonVectorCR polygons,     //!< [in] source polygons
+Acceptor<TaggedPolygon> &acceptor,   //!< [in] object with Accept () method to be called to test each polygon in the TaggedPolygonsVector
+bvector<SizeSize> *destToSource = nullptr    //!< [inout] optional array.  In each entry, dataA is a readIndex in the output facets, and dataB is the index of its soruce in polygons.
+);
+
+//! Create a polyface containing all visible parts for a flat view of among multiple meshes.
+GEOMDLLIMPEXP void static VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+PolyfaceHeaderPtr &dest,            //!< [out] new mesh, containing only the visible portions of the inputs
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+);
+
+//! Find visible parts from facets in multiple input polygons.
+//! 
+GEOMDLLIMPEXP void static VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+bvector<PolyfaceHeaderPtr> &dest,            //!< [out] array of new mesh, containing only the visible portions of the inputs.  If a particular mesh source[i] has no visible parts, its corresponding dest[i] is a null pointer.
+bvector<bvector<SizeSize>> *destReadIndexToSourceReadIndex,  //!< [out] array connecting destMesh readIndex to its corresponsding readIndex in the corresponding source mesh
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+);
 
 //! DEPRECATED -- Use PolyfaceHeader::CreateVariableSizeIndexed ();
 GEOMDLLIMPEXP static PolyfaceHeaderPtr New ();

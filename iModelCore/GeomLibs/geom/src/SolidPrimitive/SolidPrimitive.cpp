@@ -383,7 +383,7 @@ double &rMinor,             //!< [in] minor radius
 double &sweepRadians        //!< [in]
 )
     {
-    Polynomial::Implicit::Torus torus (rMajor, rMinor);
+    Polynomial::Implicit::Torus torus (rMajor, rMinor, GetReverseVector90 ());
     double theta, phi, r, xyDist;
     torus.XYZToThetaPhiDistance (localuvw, theta, phi, r, xyDist);
     double u = Angle::NormalizeToSweep (phi, 0.0, Angle::TwoPi ());
@@ -2571,5 +2571,9 @@ PolyfaceHeaderPtr ISolidPrimitive::Facet (IFacetOptionsPtr const &options)
     return builder->GetClientMeshPtr ();
     }
 
-    END_BENTLEY_GEOMETRY_NAMESPACE
+ISolidPrimitive::ISolidPrimitive ()
+    {
+    }
+
+END_BENTLEY_GEOMETRY_NAMESPACE
 

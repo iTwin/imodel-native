@@ -2,24 +2,28 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_Range.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
+double DgnTorusPipeDetail::GetVector90Sign () { return -1.0;}
+bool DgnTorusPipeDetail::GetReverseVector90 () { return true;}
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DgnTorusPipeDetail::VFractionToUSectionDEllipse3d (double fraction) const
     {
+    double vSign = GetVector90Sign ();
     double theta = fraction * m_sweepAngle;
     double c = cos (theta);
     double s = sin (theta);
     DVec3d vectorU, vectorV;
     vectorU.SumOf (m_vectorX, c, m_vectorY, s);
-    vectorV.SumOf (m_vectorX, -s, m_vectorY, c);
+    vectorV.SumOf (m_vectorX, -s * vSign, m_vectorY, c * vSign);
     DPoint3d center =  DPoint3d::FromSumOf (m_center, vectorU, m_majorRadius);
     DVec3d unitW;
     unitW.NormalizedCrossProduct (vectorU, vectorV);
@@ -78,7 +82,7 @@ DEllipse3d DgnTorusPipeDetail::UFractionToVSectionDEllipse3d (double fraction) c
     {
     double phi = fraction * Angle::TwoPi ();
     double cR = cos (phi) * m_minorRadius;
-    double sR = sin (phi) * m_minorRadius;
+    double sR = sin (phi) * m_minorRadius * GetVector90Sign ();;
     DVec3d unitW, vectorU, vectorV;
     unitW.NormalizedCrossProduct (m_vectorX, m_vectorY);
     

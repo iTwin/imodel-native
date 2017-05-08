@@ -1096,6 +1096,138 @@ TEST(CurveCurve,MultiRadiusBlendInCorner)
     Check::ClearGeometry ("CurveCurve.MultiRadiusBlendInCorner");
     }
 
+
+void RunTaperFilletTaper (char const * jsonA, char const * jsonB,
+double setbackA,
+double taperA,
+double filletRadius,
+double setbackB,
+double taperB,
+double &distanceA,
+double &distanceB,
+double offsetA,
+double offsetB,
+bool  setExtendedPath = false   // false forces new logic to use tangent extension
+)
+    {
+    bvector<IGeometryPtr> geometryA, geometryB;
+    BentleyGeometryJson::TryJsonStringToGeometry (jsonA, geometryA);
+    BentleyGeometryJson::TryJsonStringToGeometry (jsonB, geometryB);
+    Check::SaveTransformed (geometryA);
+    Check::SaveTransformed (geometryB);
+
+    for (auto &gA : geometryA)
+        {
+        for (auto &gB : geometryB)
+            {
+            auto cvA = gA->GetAsCurveVector ();
+            auto cvB = gB->GetAsCurveVector ();
+
+            if (cvA.IsValid () && cvB.IsValid ())
+                {
+                PathLocationDetail startA, endA, startB, endB;
+                auto pathA = CurveVectorWithDistanceIndex::Create ();
+                auto pathB = CurveVectorWithDistanceIndex::Create ();
+
+                if (setExtendedPath)
+                    {
+                    pathA->SetExtendedPath (cvA,
+                        1.0,
+                        startA, endA, false, 2.0);
+                    pathB->SetExtendedPath (cvB,
+                        1.0,
+                        startB, endB, false, 2.0);
+                    }
+                else
+                    {
+                    pathA->SetPath (cvA);
+                    pathB->SetPath (cvB);
+                    }
+                auto rayA = pathA->DistanceAlongToPointAndUnitTangent (distanceA);
+                auto rayB = pathB->DistanceAlongToPointAndUnitTangent (distanceB);
+                double markerSize = pathA->TotalPathLength () * 0.04;
+                Check::SaveTransformedMarkers (
+                        bvector<DPoint3d> {rayA.Value ().origin, rayB.Value ().origin}, markerSize);
+                auto blend = CurveCurve::ConstructTaperFilletTaper
+                    (
+                    *pathA, *pathB,
+                    setbackA, taperA, filletRadius, setbackB, taperB,
+                    distanceA, distanceB,
+                    offsetA, offsetB
+                    );
+                if (blend.IsValid ())
+                    Check::SaveTransformed (*blend);
+                }
+            }
+        }
+    }
+TEST(CurveCurve,TaperFilletTaperBad)
+    {
+    char const * jsonA = "{\"DgnCurveVector\":{\"Member\":[{\"LineSegment\":{\"endPoint\":[591651.21287459158,4615479.0561747560,0.0],\"startPoint\":[591709.10318203433,4615489.1559713706,0.0]}}],\"boundaryType\":1}}\n";
+    char const * jsonB = "{\"DgnCurveVector\":{\"Member\":[{\"LineSegment\":{\"endPoint\":[591716.22036095220,4615457.3934983332,0.0],\"startPoint\":[591709.10318083060,4615489.1559721744,0.0]}}],\"boundaryType\":1}}\n";
+
+    //double distanceA = 25.64;
+    //double distanceB = 32.55;
+    double offsetA = 12;
+    double offsetB = 4.3;
+    double filletRadius  = 15.239999999943588;
+    double distanceA = 25.635999999943589;
+    double distanceB = 32.550099806237583;
+
+    RunTaperFilletTaper (jsonA, jsonB,
+                    0.6096, 6.096,
+                    filletRadius,
+                    0.6096, 6.096,
+                    distanceA, distanceB,
+                    offsetA, offsetB, false
+                    );
+    Check::ClearGeometry ("CurveCurve.TaperFilletTaperBad");
+    }
+
+TEST(CurveCurve,TaperFilletTaperOutOfBounds)
+    {
+
+    char const * jsonA = "{\"DgnCurveVector\":{\"Member\":[{\"LineSegment\":{\"endPoint\":[591709.10318203433,4615489.1559713706,0.0],\"startPoint\":[591766.28518248675,4615499.1321936445,0.0]}}],\"boundaryType\":1}}\n";
+    char const * jsonB = "{\"DgnCurveVector\":{\"Member\":[{\"LineSegment\":{\"endPoint\":[591709.10318083060,4615489.1559721744,0.0],\"startPoint\":[591699.79062477022,4615530.7159458166,0.0]}}],\"boundaryType\":1}}\n";
+    double a = 200.0;
+    double b = 3000.0;
+    bvector<double> signs {1.0, -1.0};
+    // These two paths are perpendicular lines, with distance 0 at their intersection.
+    // The outer loops select combinations of positive and negative signs for offset.
+    // The inner loops run taper search from start spots before, along, and after the curve bodies.
+    // All cases converge to "first quadrant" arcs solutions (with negative offset, parts of the solution curve are 
+    //   shifted to the other side -- but the arcs still go to the quadrant.)
+    for (double signA : signs)
+        {
+        SaveAndRestoreCheckTransform shifter (0,b,0);
+        for (double signB : signs)
+            {
+            SaveAndRestoreCheckTransform shifter (b, 0, 0);
+            for (double distanceA : bvector<double> {-1.0, 1.0, 10.0, 20.0, 40.0, 45.0,  50.0, 80.0})
+                {
+                SaveAndRestoreCheckTransform shifter (0,a,0);
+
+                for (double distanceB : bvector<double> {-1.0, 1.0, 10.0, 20.0, 40.0, 40.0, 45.0, 80.0 })
+                    {
+                    SaveAndRestoreCheckTransform shifter (a, 0, 0);
+                    double offsetA = signA * 12;
+                    double offsetB = signB * 4.3;
+                    double dA = distanceA;
+                    double dB = distanceB;
+                    RunTaperFilletTaper (jsonA, jsonB,
+                                    0.6096, 6.096,
+                                    22.86,
+                                    0.6096, 6.096,
+                                    dA, dB,
+                                    offsetA, offsetB, false
+                                    );
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("CurveCurve.TaperFilletTaperOutOfBounds");
+    }
+
 bool testCurveCurveConstructMultiRadiusBlend
 (
 ICurvePrimitiveR curveA,
@@ -2115,3 +2247,5 @@ TEST(CurvePrimitive,ConstructArcs_PointTangentCurveTangent)
 
     Check::ClearGeometry ("CurvePrimitive.ConstructArcs_PointTangentCurveTangent");
     }
+
+

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveVectorWithDistanceIndex.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -419,6 +419,36 @@ bool computeDistanceAlong
         }
     return closestPointDetail;
     }
+
+ValidatedDRay3d CurveVectorWithDistanceIndex::DistanceAlongToPointAndUnitTangent (double distanceAlong, bool extrapolate) const
+    {
+    PathLocationDetail detail;
+    bool inbounds = SearchByDistanceFromPathStart (distanceAlong, detail);
+    DPoint3d xyz;
+    DVec3d tangent;
+    xyz = detail.PointAndUnitTangent (tangent);
+    if (inbounds)
+        return ValidatedDRay3d (DRay3d::FromOriginAndVector (xyz, tangent), true);
+    if (!extrapolate)
+        return ValidatedDRay3d (DRay3d::FromOriginAndVector (xyz, tangent), false);
+    PathLocationDetail atStart = AtStart ();
+    PathLocationDetail atEnd   = AtEnd ();
+    double u1 = atEnd.DistanceFromPathStart ();
+    double u0 = atStart.DistanceFromPathStart ();
+    // if before start or after end, extrapolate the respective tangent
+    if (distanceAlong < u0)
+        {
+        DPoint3d xyz0 = atStart.PointAndUnitTangent (tangent);
+        xyz = xyz0 + (distanceAlong - u0) * tangent;
+        }
+    else if (distanceAlong > u1) // beyond the end -- extrapolate the tangent.
+        {
+        DPoint3d xyz1 = atEnd.PointAndUnitTangent (tangent);
+        xyz = xyz1 + (distanceAlong - u1) * tangent;
+        }
+    return ValidatedDRay3d (DRay3d::FromOriginAndVector (xyz, tangent), true);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      05/2015
 +--------------------------------------------------------------------------------------*/

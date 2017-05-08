@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_eval.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -96,29 +96,40 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetMappedCurveRange (*pRange, curveId, s0, s1);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool    RIMSBS_Context::TryGetMappedCurveRange
+(
+DRange3dR       range,
+RIMSBS_CurveId  curveId,
+double          s0,
+double          s1
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                DEllipse3d partialEllipse = *pEllipse;
-                jmdlRIMSBS_initPartialEllipse (&partialEllipse, pEllipse, s0, s1);
-                bsiDEllipse3d_getRange (&partialEllipse, pRange);
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                DEllipse3d partialEllipse = arc;
+                jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
+                bsiDEllipse3d_getRange (&partialEllipse, &range);
                 myResult = true;
                 break;
                 }
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_getMappedCurveRange (pContext, pRange, pInterval->partialCurveId, s0, s1);
+                    myResult = TryGetMappedCurveRange (range, pInterval->partialCurveId, s0, s1);
                     }
                 else
                     {
@@ -126,18 +137,17 @@ double          s1
                     double t0 = pInterval->s0 + s0 * dt;
                     double t1 = pInterval->s0 + s1 * dt;
                     int parentCurveId = pInterval->parentId;
-                    myResult = jmdlRIMSBS_getMappedCurveRange (pContext,
-                                    pRange, parentCurveId, t0, t1);
+                    myResult = TryGetMappedCurveRange (range, parentCurveId, t0, t1);
                     }
                 break;
                 }
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 MSBsplineCurve partialCurve;
                 bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1);
-		*pRange = partialCurve.GetRange ();
+		        range = partialCurve.GetRange ();
                 bspcurv_freeCurve (&partialCurve);
                 myResult = true;
                 break;
@@ -161,46 +171,37 @@ DRange3d        *pRange,
 RIMSBS_CurveId  curveId
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetRange (curveId, *pRange);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TryGetRange (int curveIndex, DRange3dR range)
+    {
+    if (IsValidCurveIndex (curveIndex))
         {
-        switch  (desc.type)
+        RIMSBS_ElementHeader &desc = GetElementR (curveIndex);
+        switch (desc.type)
             {
+            case RIMSBS_MSBsplineCurve:
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                bsiDEllipse3d_getRange (pEllipse, pRange);
-                myResult = true;
-                break;
+                return desc.curve->GetRange (range);
                 }
-
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
-                if (IS_CURVEID (pInterval->partialCurveId))
-                    myResult = jmdlRIMSBS_getCurveRange (pContext, pRange, pInterval->partialCurveId);
+                if (IS_CURVEID (desc.m_partialCurve.partialCurveId))
+                    return TryGetRange (desc.m_partialCurve.partialCurveId, range);
                 else
-                    myResult = jmdlRIMSBS_getMappedCurveRange (pContext,
-                                pRange,
-                                pInterval->parentId,
-                                pInterval->s0,
-                                pInterval->s1
+                    return jmdlRIMSBS_getMappedCurveRange (this,
+                                &range,
+                                desc.m_partialCurve.parentId,
+                                desc.m_partialCurve.s0,
+                                desc.m_partialCurve.s1
                                 );
-                break;
-                }
-
-            case RIMSBS_MSBsplineCurve:
-                {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
-		*pRange = pCurve->GetRange ();
-                myResult = true;
-                break;
                 }
             }
         }
-    return  myResult;
+    range.Init ();
+    return false;
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -264,26 +265,40 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryEvaluateMappedDerivatives (pXYZ, numDerivatives, param, curveId, s0, s1);
+    }
+
+bool RIMSBS_Context::TryEvaluateMappedDerivatives
+(
+DPoint3d        *pXYZ,
+int             numDerivatives,
+double          param,
+RG_CurveId      curveId,
+double          s0,
+double          s1
+)
+    {
     double ds = s1 - s0;
     double s;
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                double scale = ds * pEllipse->sweep;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                double scale = ds * arc.sweep;
                 s = s0 + param * ds;
                 bsiDEllipse3d_evaluateDerivativeArray
                         (
-                        pEllipse,
+                        &arc,
                         pXYZ,
                         numDerivatives,
-                        bsiDEllipse3d_fractionToAngle (pEllipse, s)
+                        bsiDEllipse3d_fractionToAngle (&arc, s)
                         );
 
                 jmdlRIMSBS_applyScalePowers (pXYZ, numDerivatives, scale);
@@ -293,12 +308,11 @@ double          s1
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_evaluateMappedDerivatives
+                    myResult = TryEvaluateMappedDerivatives
                                     (
-                                    pContext,
                                     pXYZ,
                                     numDerivatives,
                                     param,
@@ -314,9 +328,8 @@ double          s1
                     double t1 = pInterval->s0 + s1 * dt;
                     int parentCurveId = pInterval->parentId;
 
-                    myResult = jmdlRIMSBS_evaluateMappedDerivatives
+                    myResult = TryEvaluateMappedDerivatives
                                     (
-                                    pContext,
                                     pXYZ,
                                     numDerivatives,
                                     param,
@@ -332,7 +345,7 @@ double          s1
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 s = s0 + param * ds;
                 myResult = mappedCartesianDerivatives (pCurve, pXYZ, numDerivatives, s, ds);
                 break;
@@ -358,40 +371,51 @@ double          param,
 RG_CurveId      curveId
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryEvaluateDerivatives (pXYZ, numDerivatives, param, curveId);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TryEvaluateDerivatives
+(
+DPoint3d        *pXYZ,
+int             numDerivatives,
+double          param,
+RG_CurveId      curveId
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+
                 bsiDEllipse3d_evaluateDerivativeArray
                         (
-                        pEllipse,
+                        &arc,
                         pXYZ,
                         numDerivatives,
-                        bsiDEllipse3d_fractionToAngle (pEllipse, param)
+                        bsiDEllipse3d_fractionToAngle (&arc, param)
                         );
-                jmdlRIMSBS_applyScalePowers (pXYZ, numDerivatives, pEllipse->sweep);
+                jmdlRIMSBS_applyScalePowers (pXYZ, numDerivatives, arc.sweep);
                 myResult = true;
                 break;
                 }
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_evaluateDerivatives (pContext, pXYZ, numDerivatives, param, pInterval->partialCurveId);
+                    myResult = TryEvaluateDerivatives (pXYZ, numDerivatives, param, pInterval->partialCurveId);
                     }
                 else
                     {
-                    myResult = jmdlRIMSBS_evaluateMappedDerivatives
+                    myResult = TryEvaluateMappedDerivatives
                                 (
-                                pContext,
                                 pXYZ,
                                 numDerivatives,
                                 param,
@@ -404,7 +428,7 @@ RG_CurveId      curveId
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 myResult = mappedCartesianDerivatives (pCurve, pXYZ, numDerivatives, param, 1.0);
                 break;
                 }
@@ -433,30 +457,44 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryEvaluateMapped (pXYZ, pTangent, pParam, nParam, curveId, s0, s1);
+    }
+
+bool        RIMSBS_Context::TryEvaluateMapped
+(
+DPoint3d        *pXYZ,
+DPoint3d        *pTangent,
+double          *pParam,
+int             nParam,
+RG_CurveId      curveId,
+double          s0,
+double          s1
+)
+    {
     double ds = s1 - s0;
     double s;
-    int i;
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                double scale = ds * pEllipse->sweep;
-                for (i = 0; i < nParam; i++)
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                double scale = ds * arc.sweep;
+                for (int i = 0; i < nParam; i++)
                     {
                     s = s0 + pParam[i] * ds;
                     bsiDEllipse3d_evaluateDerivatives
                             (
-                            pEllipse,
+                            &arc,
                             pXYZ ? &pXYZ[i] : NULL,
                             pTangent ? &pTangent[i] : NULL,
                             NULL,
-                            bsiDEllipse3d_fractionToAngle (pEllipse, s)
+                            bsiDEllipse3d_fractionToAngle (&arc, s)
                             );
                     }
                 if (pTangent)
@@ -468,12 +506,10 @@ double          s1
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_evaluateMapped
-                                    (
-                                    pContext,
+                    myResult = TryEvaluateMapped (
                                     pXYZ,
                                     pTangent,
                                     pParam,
@@ -489,9 +525,7 @@ double          s1
                     double t0 = pInterval->s0 + s0 * dt;
                     double t1 = pInterval->s0 + s1 * dt;
                     int parentCurveId = pInterval->parentId;
-                    myResult = jmdlRIMSBS_evaluateMapped
-                                    (
-                                    pContext,
+                    myResult = TryEvaluateMapped (
                                     pXYZ,
                                     pTangent,
                                     pParam,
@@ -508,8 +542,8 @@ double          s1
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
-                for (i = 0; i < nParam; i++)
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
+                for (int i = 0; i < nParam; i++)
                     {
                     s = s0 + pParam[i] * ds;
                     bspcurv_evaluateCurvePoint (
@@ -546,26 +580,37 @@ int             nParam,
 RG_CurveId      curveId
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
-    int i;
+    return pContext->TryEvaluate (pXYZ, pTangent, pParam, nParam, curveId);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TryEvaluate
+(
+DPoint3d        *pXYZ,
+DPoint3d        *pTangent,
+double          *pParam,
+int             nParam,
+RG_CurveId      curveId
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                for (i = 0; i < nParam; i++)
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                for (int i = 0; i < nParam; i++)
                     {
                     bsiDEllipse3d_evaluateDerivatives
                             (
-                            pEllipse,
+                            &arc,
                             pXYZ ? &pXYZ[i] : NULL,
                             pTangent ? &pTangent[i] : NULL,
                             NULL,
-                            bsiDEllipse3d_fractionToAngle (pEllipse, pParam[i])
+                            bsiDEllipse3d_fractionToAngle (&arc, pParam[i])
                             );
                     }
                 myResult = true;
@@ -574,13 +619,13 @@ RG_CurveId      curveId
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
-                    myResult = jmdlRIMSBS_evaluate (pContext, pXYZ, pTangent, pParam, nParam, pInterval->partialCurveId);
+                    myResult = TryEvaluate (pXYZ, pTangent, pParam, nParam, pInterval->partialCurveId);
                 else
                     myResult = jmdlRIMSBS_evaluateMapped
                                 (
-                                pContext,
+                                this,
                                 pXYZ,
                                 pTangent,
                                 pParam,
@@ -593,8 +638,8 @@ RG_CurveId      curveId
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
-                for (i = 0; i < nParam; i++)
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
+                for (int i = 0; i < nParam; i++)
                     bspcurv_evaluateCurvePoint (
                                     pXYZ     ? pXYZ + i     : NULL,
                                     pTangent ? pTangent + i : NULL,
@@ -625,21 +670,31 @@ RG_CurveId      curveId,
 bool            reversed
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetCurveInterval (pParentCurveId, pStartFraction, pEndFraction, curveId, reversed);
+    }
 
+bool RIMSBS_Context::TryGetCurveInterval
+(
+RG_CurveId      *pParentCurveId,
+double          *pStartFraction,
+double          *pEndFraction,
+RG_CurveId      curveId,
+bool            reversed
+)
+    {
     *pParentCurveId = RIMSBS_NULL_CURVE_ID;
-
     *pStartFraction = 0.0;
     *pEndFraction   = 1.0;
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 *pParentCurveId = pInterval->parentId;
                 *pStartFraction = pInterval->s0;
                 *pEndFraction   = pInterval->s1;
@@ -681,49 +736,54 @@ RG_CurveId      curveId,
 bool            reversed
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetResolvedArc (*pEllipse, curveId, reversed);
+    }
 
-    if (curveId != RG_NULL_CURVEID
-        && jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TryGetResolvedArc
+(
+DEllipse3dR      arc,
+RG_CurveId      curveId,
+bool            reversed
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pOriginalEllipse = (DEllipse3d *)desc.pGeometryData;
-                *pEllipse = *pOriginalEllipse;
-                myResult = true;
+                myResult = TryGetArc (curveId, arc);
                 break;
                 }
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
-                if (jmdlRIMSBS_getDEllipse3d (pContext, pEllipse, pInterval->partialCurveId, false))
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
+                if (TryGetResolvedArc (arc, pInterval->partialCurveId, false))
                     {
                     myResult = true;
                     }
-                else if (jmdlRIMSBS_getDEllipse3d (pContext, pEllipse, pInterval->parentId, false))
+                else if (TryGetResolvedArc (arc, pInterval->parentId, false))
                     {
-                    double theta0 = bsiDEllipse3d_fractionToAngle (pEllipse, pInterval->s0);
-                    double theta1 = bsiDEllipse3d_fractionToAngle (pEllipse, pInterval->s1);
-                    bsiDEllipse3d_setLimits (pEllipse, theta0, theta1);
+                    double theta0 = bsiDEllipse3d_fractionToAngle (&arc, pInterval->s0);
+                    double theta1 = bsiDEllipse3d_fractionToAngle (&arc, pInterval->s1);
+                    bsiDEllipse3d_setLimits (&arc, theta0, theta1);
                     myResult = true;
                     }
                 break;
                 }
             case RIMSBS_CurveChain:
                 {
-                RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)desc.pGeometryData;
-                RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
-                myResult = jmdlRIMSBS_getDEllipse3d (pContext, pEllipse, primaryCurveId, false);
+                RG_CurveId primaryCurveId = desc.m_chainData.m_primaryCurveId;
+                myResult = TryGetResolvedArc (arc, primaryCurveId, false);
                 break;
                 }
             }
         }
     if (myResult && reversed)
-        bsiDEllipse3d_initReversed (pEllipse, pEllipse);
+        bsiDEllipse3d_initReversed (&arc, &arc);
     return  myResult;
     }
 
@@ -734,7 +794,7 @@ bool            reversed
 | Author:   EarlinLutz                               6/22/98            |
 |                                                                       |
 +----------------------------------------------------------------------*/
-Public bool        jmdlRIMSBS_getMappedMSBsplineCurve
+Public bool jmdlRIMSBS_getMappedMSBsplineCurve
 (
 RIMSBS_Context  *pContext,
 MSBsplineCurve  *pCurve,
@@ -743,18 +803,29 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetMappedMSBsplineCurve (pCurve, curveId, s0, s1);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TryGetMappedMSBsplineCurve
+(
+MSBsplineCurve  *pCurve,
+RG_CurveId      curveId,
+double          s0,
+double          s1
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                DEllipse3d partialEllipse = *pEllipse;
-                jmdlRIMSBS_initPartialEllipse (&partialEllipse, pEllipse, s0, s1);
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                DEllipse3d partialEllipse = arc;
+                jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
                 bspconv_convertDEllipse3dToCurve (pCurve, &partialEllipse);
                 myResult = true;
                 break;
@@ -763,9 +834,9 @@ double          s1
             case RIMSBS_CurveInterval:
                 {
                 /* Recurse to a (remapped) part of the referenced curve */
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId)
-                    && (myResult = jmdlRIMSBS_getMappedMSBsplineCurve (pContext, pCurve, pInterval->partialCurveId, s0, s1))
+                    && (myResult = jmdlRIMSBS_getMappedMSBsplineCurve (this, pCurve, pInterval->partialCurveId, s0, s1))
                     )
                     {
                     }
@@ -774,20 +845,19 @@ double          s1
                     double dt = pInterval->s1 - pInterval->s0;
                     double t0 = pInterval->s0 + s0 * dt;
                     double t1 = pInterval->s0 + s1 * dt;
-                    myResult = jmdlRIMSBS_getMappedMSBsplineCurve (pContext, pCurve, pInterval->parentId, t0, t1);
+                    myResult = jmdlRIMSBS_getMappedMSBsplineCurve (this, pCurve, pInterval->parentId, t0, t1);
                     }
                 break;
                 }
             case RIMSBS_CurveChain:
                 {
-                RIMSBS_CurveChainStruct *pChain = (RIMSBS_CurveChainStruct *)desc.pGeometryData;
-                RG_CurveId primaryCurveId = pChain->m_primaryCurveId;
-                myResult = jmdlRIMSBS_getMappedMSBsplineCurve (pContext, pCurve, primaryCurveId, s0, s1);
+                RG_CurveId primaryCurveId = desc.m_chainData.m_primaryCurveId;
+                myResult = jmdlRIMSBS_getMappedMSBsplineCurve (this, pCurve, primaryCurveId, s0, s1);
                 break;
                 }
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pStoredCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pStoredCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 StatusInt status = ERROR;
                 if (s0 == 0.0 && s1 == 1.0)
                     {
@@ -843,18 +913,31 @@ double          s0,
 double          s1
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TrySweptPropertiesMapped (pArea, pAngle, pPoint, curveId, s0, s1);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool        RIMSBS_Context::TrySweptPropertiesMapped
+(
+double          *pArea,
+double          *pAngle,
+const DPoint3d  *pPoint,
+int             curveId,
+double          s0,
+double          s1
+)
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                DEllipse3d partialEllipse = *pEllipse;
-                jmdlRIMSBS_initPartialEllipse (&partialEllipse, pEllipse, s0, s1);
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                DEllipse3d partialEllipse = arc;
+                jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
                 bsiDEllipse3d_xySweepProperties (&partialEllipse, pArea, pAngle, pPoint);
                 myResult = true;
                 break;
@@ -862,10 +945,10 @@ double          s1
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID(pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_sweptPopertiesMapped (pContext, pArea, pAngle, pPoint, pInterval->partialCurveId, s0, s1);
+                    myResult = jmdlRIMSBS_sweptPopertiesMapped (this, pArea, pAngle, pPoint, pInterval->partialCurveId, s0, s1);
                     }
                 else
                     {
@@ -875,7 +958,7 @@ double          s1
                     int parentCurveId = pInterval->parentId;
                     myResult = jmdlRIMSBS_sweptPopertiesMapped
                                     (
-                                    pContext,
+                                    this,
                                     pArea,
                                     pAngle,
                                     pPoint,
@@ -889,7 +972,7 @@ double          s1
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 double area = 0.0, angle = 0.0, dArea = 0.0, dAngle = 0.0;
                 static double relTol_angle = 1.0e-6;
                 static double relTol_area  = 1.0e-8;
@@ -926,35 +1009,46 @@ double          *pAngle,
 const DPoint3d  *pPoint
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
-    int curveId = jmdlRGEdge_getCurveId (pEdgeData);
+    return pContext->TrySweptProperties (pEdgeData, pArea, pAngle, pPoint);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool RIMSBS_Context::TrySweptProperties
+(
+RG_EdgeData     *pEdgeData,
+double          *pArea,
+double          *pAngle,
+const DPoint3d  *pPoint
+)
+    {
+    bool    myResult = false;
+    int curveId = jmdlRGEdge_getCurveId (pEdgeData);
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                bsiDEllipse3d_xySweepProperties (pEllipse, pArea, pAngle, pPoint);
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                bsiDEllipse3d_xySweepProperties (&arc, pArea, pAngle, pPoint);
                 myResult = true;
                 break;
                 }
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
                     {
                     // hmmm..  we'd normally recurse to ourself, but the curveId arg is hidden in the EdgeData, so we have 
                     // to recurse on the mapped evaluator with whole interval.
-                    myResult = jmdlRIMSBS_sweptPopertiesMapped (pContext, pArea, pAngle, pPoint, pInterval->partialCurveId, 0.0, 1.0);
+                    myResult = jmdlRIMSBS_sweptPopertiesMapped (this, pArea, pAngle, pPoint, pInterval->partialCurveId, 0.0, 1.0);
                     }
                 else
                     myResult = jmdlRIMSBS_sweptPopertiesMapped
                                 (
-                                pContext,
+                                this,
                                 pArea,
                                 pAngle,
                                 pPoint,
@@ -966,7 +1060,7 @@ const DPoint3d  *pPoint
                 }
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 double area = 0.0, angle = 0.0, dArea, dAngle;
                 static double relTol_angle = 1.0e-6;
                 static double relTol_area  = 1.0e-8;
@@ -994,18 +1088,14 @@ const DPoint3d  *pPoint
     return  myResult;
     }
 
-static RG_CurveId jmdlRIMSBS_resolveThroughPartialCurve
-(
-RIMSBS_Context          *pContext,
-RG_CurveId              curveId
-)
+RG_CurveId RIMSBS_Context::ResolveThroughPartialCurve (RG_CurveId curveId)
     {
-    RIMSBS_ElementHeader header;
-    if (jmdlRIMSBS_getElementHeader (pContext, &header, curveId))
+    if (IsValidCurveIndex (curveId))
         {
-        if (header.type == RIMSBS_CurveInterval)
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
+        if (desc.type == RIMSBS_CurveInterval)
             {
-            RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)header.pGeometryData;
+            RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
             if (IS_CURVEID(pInterval->partialCurveId))
                 return pInterval->partialCurveId;
             }
@@ -1029,17 +1119,30 @@ RG_EdgeData             *pEdgeData0,        /* => segment edge data */
 RG_EdgeData             *pEdgeData1         /* => curve edge data */
 )
     {
+    return pContext->TryCurveCurveIntersection (pRG, pIntersections, pEdgeData0, pEdgeData1);
+    }
+
+bool RIMSBS_Context::TryCurveCurveIntersection
+(
+RG_Header               *pRG,               /* => receives declarations of intersections */
+RG_IntersectionList     *pIntersections,    /* <=> list of intersection parameters */
+RG_EdgeData             *pEdgeData0,        /* => segment edge data */
+RG_EdgeData             *pEdgeData1         /* => curve edge data */
+)
+    {
     bool    myResult = false;
     RIMSBS_ElementHeader desc0, desc1;
-    int curve0Id = jmdlRIMSBS_resolveThroughPartialCurve (pContext, jmdlRGEdge_getCurveId (pEdgeData0));
-    int curve1Id = jmdlRIMSBS_resolveThroughPartialCurve (pContext, jmdlRGEdge_getCurveId (pEdgeData1));
+    int curve0Id = ResolveThroughPartialCurve (jmdlRGEdge_getCurveId (pEdgeData0));
+    int curve1Id = ResolveThroughPartialCurve (jmdlRGEdge_getCurveId (pEdgeData1));
     int type0, type1;
 
 
-    if (   jmdlRIMSBS_getElementHeader (pContext, &desc0, curve0Id)
-        && jmdlRIMSBS_getElementHeader (pContext, &desc1, curve1Id)
-       )
+    if (   IsValidCurveIndex (curve0Id)
+        && IsValidCurveIndex (curve1Id)
+        )
         {
+        RIMSBS_ElementHeader &desc0 = GetElementR (curve0Id);
+        RIMSBS_ElementHeader &desc1 = GetElementR (curve1Id);
         type0 = desc0.type;
         type1 = desc1.type;
 
@@ -1047,10 +1150,10 @@ RG_EdgeData             *pEdgeData1         /* => curve edge data */
             {
             if (type0 == RIMSBS_MSBsplineCurve)
                 {
-                MSBsplineCurve *pCurve0 = (MSBsplineCurve *)desc0.pGeometryData;
+                MSBsplineCurveP pCurve0 = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curve0Id));
                 jmdlRIMSBS_MSBsplineCurveSelfIntersection
                         (
-                        pContext,
+                        this,
                         pRG,
                         pIntersections,
                         pEdgeData0,
@@ -1060,7 +1163,7 @@ RG_EdgeData             *pEdgeData1         /* => curve edge data */
                 }
             else if (type0 == RIMSBS_DEllipse3d)
                 {
-                jmdlRIMSBS_checkClosedEdge (pContext, pRG, pIntersections, pEdgeData0);
+                jmdlRIMSBS_checkClosedEdge (this, pRG, pIntersections, pEdgeData0);
                 myResult = true;
                 }
             else
@@ -1070,28 +1173,29 @@ RG_EdgeData             *pEdgeData1         /* => curve edge data */
             }
         else if  (type0 == RIMSBS_DEllipse3d && type1 == RIMSBS_DEllipse3d)
             {
-            DEllipse3d *pEllipse0 = (DEllipse3d *)desc0.pGeometryData;
-            DEllipse3d *pEllipse1 = (DEllipse3d *)desc1.pGeometryData;
+            DEllipse3d arc0, arc1;
+            TryGetArc (curve0Id, arc0);
+            TryGetArc (curve1Id, arc1);
             jmdlRIMSBS_ellipseEllipseIntersection
                     (
-                    pContext,
+                    this,
                     pRG,
                     pIntersections,
                     pEdgeData0,
-                    pEllipse0,
+                    &arc0,
                     pEdgeData1,
-                    pEllipse1
+                    &arc1
                     );
             myResult = true;
             }
 
         else if  (type0 == RIMSBS_MSBsplineCurve && type1 == RIMSBS_MSBsplineCurve)
             {
-            MSBsplineCurve *pCurve0 = (MSBsplineCurve *)desc0.pGeometryData;
-            MSBsplineCurve *pCurve1 = (MSBsplineCurve *)desc1.pGeometryData;
+            MSBsplineCurveP pCurve0 = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curve0Id));
+            MSBsplineCurveP pCurve1 = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curve1Id));
             jmdlRIMSBS_MSBsplineCurveMSBsplineCurveIntersection
                     (
-                    pContext,
+                    this,
                     pRG,
                     pIntersections,
                     pEdgeData0,
@@ -1103,34 +1207,36 @@ RG_EdgeData             *pEdgeData1         /* => curve edge data */
             }
         else if  (type0 == RIMSBS_DEllipse3d && type1 == RIMSBS_MSBsplineCurve)
             {
-            DEllipse3d *pEllipse0 = (DEllipse3d *)desc0.pGeometryData;
-            MSBsplineCurve *pCurve1 = (MSBsplineCurve *)desc1.pGeometryData;
+            DEllipse3d arc0;
+            TryGetArc (curve0Id, arc0);
+            MSBsplineCurveP pCurve1 = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curve1Id));
             jmdlRIMSBS_MSBsplineCurveDEllipse3dIntersection
                     (
-                    pContext,
+                    this,
                     pRG,
                     pIntersections,
                     pEdgeData1,
                     pCurve1,
                     pEdgeData0,
-                    pEllipse0,
+                    &arc0,
                     NULL
                     );
             myResult = true;
             }
         else if  (type0 == RIMSBS_MSBsplineCurve && type1 == RIMSBS_DEllipse3d)
             {
-            MSBsplineCurve *pCurve0 = (MSBsplineCurve *)desc0.pGeometryData;
-            DEllipse3d *pEllipse1 = (DEllipse3d *)desc1.pGeometryData;
+            DEllipse3d arc1;
+            TryGetArc (curve1Id, arc1);
+            MSBsplineCurveP pCurve0 = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curve0Id));
             jmdlRIMSBS_MSBsplineCurveDEllipse3dIntersection
                     (
-                    pContext,
+                    this,
                     pRG,
                     pIntersections,
                     pEdgeData0,
                     pCurve0,
                     pEdgeData1,
-                    pEllipse1,
+                    &arc1,
                     NULL
                     );
             myResult = true;
@@ -1162,23 +1268,36 @@ double                  s0,
 double                  s1
 )
     {
+    return pContext->TrySegmentCurveIntersectionMapped (pRG, pIntersections, pEdgeData0, pEdgeData1, parentCurveId, s0, s1);
+    }
+bool RIMSBS_Context::TrySegmentCurveIntersectionMapped
+(
+RG_Header               *pRG,               /* => receives declarations of intersections */
+RG_IntersectionList     *pIntersections,    /* <=> list of intersection parameters */
+RG_EdgeData             *pEdgeData0,        /* => segment edge data */
+RG_EdgeData             *pEdgeData1,        /* => curve edge data, known to be mapped */
+int                     parentCurveId,
+double                  s0,
+double                  s1
+)
+    {
     bool    myResult = false;
-    RIMSBS_ElementHeader desc;
-
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, parentCurveId))
+    if (IsValidCurveIndex (parentCurveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (parentCurveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (parentCurveId, arc);
 
-                DEllipse3d partialEllipse = *pEllipse;
-                jmdlRIMSBS_initPartialEllipse (&partialEllipse, pEllipse, s0, s1);
+                DEllipse3d partialEllipse = arc;
+                jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
 
                 jmdlRIMSBS_segmentEllipseIntersection
                         (
-                        pContext,
+                        this,
                         pRG,
                         pIntersections,
                         pEdgeData0,
@@ -1191,23 +1310,23 @@ double                  s1
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (parentCurveId));
                 MSBsplineCurve partialCurve;
                 bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1);
                 jmdlRIMSBS_segmentMSBSplineCurveIntersection
-                            (pContext, pRG, pIntersections, pEdgeData0, pEdgeData1, &partialCurve);
+                            (this, pRG, pIntersections, pEdgeData0, pEdgeData1, &partialCurve);
                 bspcurv_freeCurve (&partialCurve);
                 break;
                 }
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID(pInterval->partialCurveId))
                     {
                     myResult = jmdlRIMSBS_segmentCurveIntersectionMapped
                                 (
-                                pContext,
+                                this,
                                 pRG,
                                 pIntersections,
                                 pEdgeData0,
@@ -1224,7 +1343,7 @@ double                  s1
                     double t1 = pInterval->s0 + s1 * dt;
                     myResult = jmdlRIMSBS_segmentCurveIntersectionMapped
                                 (
-                                pContext,
+                                this,
                                 pRG,
                                 pIntersections,
                                 pEdgeData0,
@@ -1257,46 +1376,56 @@ RG_EdgeData     *pEdgeData0,                /* => segment edge data */
 RG_EdgeData     *pEdgeData1                 /* => curve edge data */
 )
     {
+    return pContext->TrySegmentCurveIntersection (pRG, pIntersections, pEdgeData0, pEdgeData1);
+    }
+bool RIMSBS_Context::TrySegmentCurveIntersection
+(
+RG_Header               *pRG,               /* => receives declarations of intersections */
+RG_IntersectionList     *pIntersections,    /* <=> list of intersection parameters */
+RG_EdgeData     *pEdgeData0,                /* => segment edge data */
+RG_EdgeData     *pEdgeData1                 /* => curve edge data */
+)
+    {
     bool    myResult = false;
-    RIMSBS_ElementHeader desc;
     int curveId = jmdlRGEdge_getCurveId (pEdgeData1);
-
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
                 jmdlRIMSBS_segmentEllipseIntersection
                         (
-                        pContext,
+                        this,
                         pRG,
                         pIntersections,
                         pEdgeData0,
                         pEdgeData1,
-                        pEllipse
+                        &arc
                         );
                 myResult = true;
                 break;
                 }
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 jmdlRIMSBS_segmentMSBSplineCurveIntersection
-                            (pContext, pRG, pIntersections, pEdgeData0, pEdgeData1, pCurve);
+                            (this, pRG, pIntersections, pEdgeData0, pEdgeData1, pCurve);
                 break;
                 }
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID (pInterval->partialCurveId))
-                    myResult = jmdlRIMSBS_segmentCurveIntersectionMapped (pContext, pRG, pIntersections,
+                    myResult = jmdlRIMSBS_segmentCurveIntersectionMapped (this, pRG, pIntersections,
                                 pEdgeData0, pEdgeData1, pInterval->partialCurveId, 0.0, 1.0);
                 else
                     myResult = jmdlRIMSBS_segmentCurveIntersectionMapped
                                 (
-                                pContext,
+                                this,
                                 pRG,
                                 pIntersections,
                                 pEdgeData0,
@@ -1333,25 +1462,39 @@ double    s0,               /* => start of active interval */
 double    s1                /* => end param for active interval */
 )
     {
+    return pContext->TryGetClosestXYPointOnMappedCurve (pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint, curveId, s0, s1);
+    }
+bool RIMSBS_Context::TryGetClosestXYPointOnMappedCurve
+(
+double   *pMinParam,        /* => parameter at closest approach point */
+double   *pMinDistSquared,  /* => squard distance to closest approach point */
+DPoint3d *pMinPoint,        /* => closest approach point */
+DPoint3d *pMinTangent,      /* => tangent vector at closest approach point */
+DPoint3d *pPoint,           /* => space point */
+RG_CurveId  curveId,        /* => curve identifier */
+double    s0,               /* => start of active interval */
+double    s1                /* => end param for active interval */
+)
+    {
     bool    myResult = false;
-    RIMSBS_ElementHeader desc;
-    double param;
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                DEllipse3d partialEllipse = *pEllipse;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
+                DEllipse3d partialEllipse = arc;
                 double theta;
-                partialEllipse.start = pEllipse->start + pEllipse->sweep * s0;
-                partialEllipse.sweep = (s1 - s0) * pEllipse->sweep;
+                partialEllipse.start = arc.start + arc.sweep * s0;
+                partialEllipse.sweep = (s1 - s0) * arc.sweep;
                 if (bsiDEllipse3d_closestPointXYBounded (&partialEllipse,
                                         &theta, pMinDistSquared, pMinPoint, pPoint)
                     )
                     {
-                    param = bsiTrig_normalizeAngleToSweep (
+                    double param = bsiTrig_normalizeAngleToSweep (
                                             theta,
                                             partialEllipse.start,
                                             partialEllipse.sweep);
@@ -1371,10 +1514,10 @@ double    s1                /* => end param for active interval */
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID(pInterval->partialCurveId))
                     {
-                    myResult = jmdlRIMSBS_getClosestXYPointOnMappedCurve (pContext,
+                    myResult = TryGetClosestXYPointOnMappedCurve (
                                 pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint,
                                 pInterval->partialCurveId, s0, s1);
                     }
@@ -1384,7 +1527,7 @@ double    s1                /* => end param for active interval */
                     double t0 = pInterval->s0 + s0 * dt;
                     double t1 = pInterval->s0 + s1 * dt;
                     int parentCurveId = pInterval->parentId;
-                    myResult = jmdlRIMSBS_getClosestXYPointOnMappedCurve (pContext,
+                    myResult = TryGetClosestXYPointOnMappedCurve (
                                 pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint,
                                 parentCurveId, t0, t1);
                     }
@@ -1394,9 +1537,10 @@ double    s1                /* => end param for active interval */
 
             case RIMSBS_MSBsplineCurve:
                 {
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 double ds = s1 - s0;
                 DPoint3d xyz[2];
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                double param;
                 myResult = bspcurv_closestXYPoint (
                             pMinPoint, &param, pMinDistSquared,
                             pCurve, s0, s1,
@@ -1405,7 +1549,7 @@ double    s1                /* => end param for active interval */
                     *pMinParam = (param - s0) / ds;
                 if (myResult && pMinTangent)
                     {
-                    jmdlRIMSBS_evaluateDerivatives (pContext, xyz, 1, param, curveId);
+                    jmdlRIMSBS_evaluateDerivatives (this, xyz, 1, param, curveId);
                     *pMinTangent = xyz[1];
                     bsiDPoint3d_scale (pMinTangent, pMinTangent, ds);
                     }
@@ -1434,34 +1578,48 @@ DPoint3d *pPoint,           /* => space point */
 RG_CurveId  curveId         /* => curve identifier */
 )
     {
-    bool    myResult = false;
-    RIMSBS_ElementHeader desc;
+    return pContext->TryGetClosestXYPointOnCurve (pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint, curveId);
+    }
 
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveId))
+bool        RIMSBS_Context::TryGetClosestXYPointOnCurve
+(
+double   *pMinParam,        /* => parameter at closest approach point */
+double   *pMinDistSquared,  /* => squard distance to closest approach point */
+DPoint3d *pMinPoint,        /* => closest approach point */
+DPoint3d *pMinTangent,      /* => tangent vector at closest approach point */
+DPoint3d *pPoint,           /* => space point */
+RG_CurveId  curveId         /* => curve identifier */
+)
+
+    {
+    bool    myResult = false;
+    if (IsValidCurveIndex (curveId))
         {
+        RIMSBS_ElementHeader &desc = GetElementR (curveId);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
+                DEllipse3d arc;
+                TryGetArc (curveId, arc);
                 double theta, param;
-                if (bsiDEllipse3d_closestPointXYBounded (pEllipse,
+                if (bsiDEllipse3d_closestPointXYBounded (&arc,
                                         &theta, pMinDistSquared, pMinPoint, pPoint)
                     )
                     {
                     param = bsiTrig_normalizeAngleToSweep (
                                             theta,
-                                            pEllipse->start,
-                                            pEllipse->sweep);
+                                            arc.start,
+                                            arc.sweep);
                     if (pMinParam)
                         *pMinParam = param;
 
                     if (pMinTangent)
                         {
                         DPoint3d angularTangent;
-                        bsiDEllipse3d_evaluateDerivatives (pEllipse,
+                        bsiDEllipse3d_evaluateDerivatives (&arc,
                                             NULL, &angularTangent, NULL, theta);
-                        bsiDPoint3d_scale (pMinTangent, &angularTangent, pEllipse->sweep);
+                        bsiDPoint3d_scale (pMinTangent, &angularTangent, arc.sweep);
                         }
                     }
                 myResult = true;
@@ -1470,13 +1628,13 @@ RG_CurveId  curveId         /* => curve identifier */
 
             case RIMSBS_CurveInterval:
                 {
-                RIMSBS_CurveIntervalStruct *pInterval = (RIMSBS_CurveIntervalStruct *)desc.pGeometryData;
+                RIMSBS_CurveIntervalStruct *pInterval = &desc.m_partialCurve;
                 if (IS_CURVEID(pInterval->partialCurveId))
-                    myResult = jmdlRIMSBS_getClosestXYPointOnCurve (pContext,
+                    myResult = TryGetClosestXYPointOnCurve (
                                 pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint,
                                 pInterval->partialCurveId);
                 else 
-                    myResult = jmdlRIMSBS_getClosestXYPointOnMappedCurve (pContext,
+                    myResult = TryGetClosestXYPointOnMappedCurve (
                                 pMinParam, pMinDistSquared, pMinPoint, pMinTangent, pPoint,
                                 pInterval->parentId,
                                 pInterval->s0,
@@ -1487,7 +1645,7 @@ RG_CurveId  curveId         /* => curve identifier */
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
+                MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (curveId));
                 double param;
                 DPoint3d xyz[2];
                 myResult = bspcurv_closestXYPoint (
@@ -1498,7 +1656,7 @@ RG_CurveId  curveId         /* => curve identifier */
                     *pMinParam = param;
                 if (myResult && pMinTangent)
                     {
-                    jmdlRIMSBS_evaluateDerivatives (pContext, xyz, 1, param, curveId);
+                    jmdlRIMSBS_evaluateDerivatives (this, xyz, 1, param, curveId);
                     *pMinTangent = xyz[1];
                     }
                 break;
@@ -1522,49 +1680,46 @@ RIMSBS_Context  *pContext,
 EmbeddedDPoint3dArray *pXYZArray
 )
     {
+    return pContext->AppendAllCurveSamplePoints (*pXYZArray);
+    }
+
+void RIMSBS_Context::AppendAllCurveSamplePoints (bvector<DPoint3d> &xyzArray)
+    {
     RIMSBS_ElementHeader desc;
     static int s_numPerEllipse = 4;
-    int curveIndex;
     DPoint3d point;
-    int i;
 
-    for (curveIndex = 0;
-        jmdlRIMSBS_getElementHeader (pContext, &desc, curveIndex);
-        curveIndex++)
+    for (auto &desc : m_geometry)
         {
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
                 {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                double df = pEllipse->sweep / (double)(s_numPerEllipse - 1);
-                double f;
-                for (i = 0; i < s_numPerEllipse; i++)
+                DEllipse3d arc;
+                if (desc.curve->TryGetArc (arc))
                     {
-                    f = df * i;
-                    bsiDEllipse3d_evaluateDerivatives (pEllipse,
-                                        &point, NULL, NULL,
-                                        bsiDEllipse3d_fractionToAngle (pEllipse, f));
-                    jmdlEmbeddedDPoint3dArray_addDPoint3d (pXYZArray, &point);
+                    double df = arc.sweep / (double)(s_numPerEllipse - 1);
+                    double f;
+                    for (int i = 0; i < s_numPerEllipse; i++)
+                        {
+                        f = df * i;
+                        bsiDEllipse3d_evaluateDerivatives (&arc,
+                                            &point, NULL, NULL,
+                                            bsiDEllipse3d_fractionToAngle (&arc, f));
+                        xyzArray.push_back (point);
+                        }
                     }
                 break;
                 }
 
             case RIMSBS_MSBsplineCurve:
                 {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
-                int n = pCurve->params.numPoles;
-                if (pCurve->rational)
+                MSBsplineCurveCP pCurve = desc.curve->GetBsplineCurveCP ();
+                if (nullptr != pCurve)
                     {
-                    for (i = 0; i < n; i++)
-                        {
-                        if (bsiDPoint3d_safeDivide (&point, &pCurve->GetPoleCP ()[i], pCurve->weights[i]))
-                            jmdlEmbeddedDPoint3dArray_addDPoint3d (pXYZArray, &point);
-                        }
-                    }
-                else
-                    {
-                    jmdlEmbeddedDPoint3dArray_addDPoint3dArray (pXYZArray, pCurve->GetPoleCP (), n);
+                    int n = pCurve->params.numPoles;
+                    for (int k = 0; k < n; k++)
+                        xyzArray.push_back (pCurve->GetUnWeightedPole (k));
                     }
                 break;
                 }
@@ -1588,33 +1743,31 @@ int                     curveIndex,
 const Transform         *pTransform
 )
     {
-    RIMSBS_ElementHeader desc;
+    return pContext->TryTransformCurve (curveIndex, *pTransform);
+    }
+
+bool RIMSBS_Context::TryTransformCurve (int curveIndex, TransformCR transform)
+    {
     bool    bResult = false;
-    if (jmdlRIMSBS_getElementHeader (pContext, &desc, curveIndex))
+    if (IsValidCurveIndex (curveIndex))
         {
+        auto &desc = GetElementR (curveIndex);
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
-                {
-                DEllipse3d *pEllipse = (DEllipse3d *)desc.pGeometryData;
-                bsiTransform_multiplyDPoint3dInPlace (pTransform, &pEllipse->center);
-                bsiTransform_multiplyDPoint3dByMatrixPartInPlace (pTransform, &pEllipse->vector0);
-                bsiTransform_multiplyDPoint3dByMatrixPartInPlace (pTransform, &pEllipse->vector90);
-                bResult = true;
-                break;
-                }
-
             case RIMSBS_MSBsplineCurve:
-                {
-                MSBsplineCurve *pCurve = (MSBsplineCurve *)desc.pGeometryData;
-                pCurve->TransformCurve (*pTransform);
-                bResult = true;
-                break;
-                }
+                bResult = desc.curve->TransformInPlace (transform);
             }
         }
     return bResult;
     }
+
+void RIMSBS_Context::TransformAllCurves (TransformCR transform)
+    {
+    for (size_t i = 0; i < m_geometry.size (); i++)
+        TryTransformCurve ((int)i, transform);
+    }
+
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1630,14 +1783,6 @@ RIMSBS_Context          *pContext,
 const Transform         *pTransform
 )
     {
-    RIMSBS_ElementHeader desc;
-    int curveIndex;
-
-    for (curveIndex = 0;
-        jmdlRIMSBS_getElementHeader (pContext, &desc, curveIndex);
-        curveIndex++)
-        {
-        jmdlRIMSBS_transformCurve (pContext, curveIndex, pTransform);
-        }
+    pContext->TransformAllCurves (*pTransform);
     }
 END_BENTLEY_GEOMETRY_NAMESPACE

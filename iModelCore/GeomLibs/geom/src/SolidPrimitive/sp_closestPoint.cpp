@@ -213,7 +213,7 @@ SolidLocationDetailR pickData
         {
         localToWorld = Transform::From (axes, center);
         worldToLocal.InverseOf (localToWorld);
-        Polynomial::Implicit::Torus torus (radiusA, radiusB);
+        Polynomial::Implicit::Torus torus (radiusA, radiusB, GetReverseVector90 ());
         DPoint3d localSpacePoint, localTorusPoint, worldTorusPoint;
         worldToLocal.Multiply (localSpacePoint, spacePoint);
         double theta, phi, r, xyDist;

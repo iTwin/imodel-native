@@ -761,7 +761,12 @@ void Check::Print (int64_t value,  char const *name)
     {
     if (!PrintPrimitives ())
         return;
-    printf ("(%s %d)", name, (int32_t)value);
+    // ah, what is the portable printf?
+
+    printf ("(%s %#010x %#010x)\n",
+            name,
+            (int32_t)(value >> 32),
+            (int32_t) (value & 0x00000000ffffffff));
     }
 void Check::Print (uint64_t value, char const *name)
     {
@@ -1379,6 +1384,12 @@ void Check::SaveTransformed(IGeometryPtr const &data)
     s_cache.push_back (data->Clone ());
     s_cache.back ()->TryTransformInPlace (s_transform);
     }
+
+void Check::SaveTransformed(bvector<IGeometryPtr> const &data)
+    {
+    for (auto &g : data)
+        SaveTransformed (g);
+    }
     // Save (clone of) geometry in a cache
 void Check::SaveTransformed(CurveVectorCR data)
     {
@@ -1474,18 +1485,22 @@ void Check::Shift (DVec3dCR shift)
     {
     s_transform = Transform::From (shift.x, shift.y, shift.z) * s_transform;
     }
-
+static size_t s_lowerRightBaseIndex = 0;
 void Check::ShiftToLowerRight (double dx)
     {
     auto range = DRange3d::NullRange ();
-    for (auto g : s_cache)
+    for (size_t i = s_lowerRightBaseIndex; i < s_cache.size (); i++)
         {
         DRange3d gRange;
-        if (g->TryGetRange (gRange))
+        if (s_cache[i]->TryGetRange (gRange))
             range.Extend (gRange);
         }
-    auto frame = Transform::From (range.LocalToGlobal (1,0,0) + DVec3d::From (dx, 0, 0));
-    SetTransform (frame);
+    if (!range.IsNull ())
+        {
+        auto frame = Transform::From (range.LocalToGlobal (1,0,0) + DVec3d::From (dx, 0, 0));
+        SetTransform (frame);
+        s_lowerRightBaseIndex = s_cache.size ();
+        }
     }
 
 Transform Check::GetTransform () {return s_transform;}
@@ -1532,6 +1547,7 @@ void Check::ClearGeometry (char const *name)
         //BentleyGeometryJson::TryJsonStringToGeometry (string, g1);
         }
     s_cache.clear ();
+    s_lowerRightBaseIndex = 0;   // first index of "lower right" range.
     s_transform = Transform::FromIdentity ();
     }
 
@@ -1545,6 +1561,7 @@ void Check::SetUp()
     s_stack.clear ();
     m_toleranceStack.clear ();
     m_tolerance = m_defaultTolerance;
+    s_lowerRightBaseIndex = 0;
     }
 
 void Check::TearDown() 

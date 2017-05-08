@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/Polynomials.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -382,10 +382,11 @@ bool Power::Degree2::TryGetVertexFactorization (double &x0, double &y0, double &
     return false;
     }
 
-Implicit::Torus::Torus (double R, double r)
+Implicit::Torus::Torus (double R, double r, bool reversePhi)
     {
     m_R = R;
     m_r = r;
+    m_reversePhi = reversePhi;
     }
 
 // Return size of box (e.g. for use as scale factor)
@@ -474,9 +475,10 @@ DPoint3d Implicit::Torus::EvaluateThetaPhi (double theta, double phi) const
     {
     double c = cos(theta);
     double s = sin(theta);
+
     // theta=0 point.
     double x0 = m_R + m_r * cos (phi);
-    double z0 = m_r * sin (phi);
+    double z0 = OrientPhiCoordinate (m_r) * sin (phi);
     return DPoint3d::From (c * x0, s * x0, z0);
     }
 
@@ -486,9 +488,10 @@ GEOMDLLIMPEXP void Implicit::Torus::EvaluateDerivativesThetaPhi (double theta, d
     double sTheta = sin (theta);
     double bx = m_r * cos (phi);
     double bz = m_r * sin (phi);
+
     double x0  = m_R + bx;
     dXdTheta.Init (-x0 * sTheta, x0 * cTheta, 0.0);
-    dXdPhi.Init (-cTheta * bz, -sTheta * bz, bx);
+    dXdPhi.Init (-cTheta * bz, -sTheta * bz, OrientPhiCoordinate (bx));
     }
 DPoint3d Implicit::Torus::EvaluateThetaPhiDistance (double theta, double phi, double distance) const
     {
@@ -496,7 +499,7 @@ DPoint3d Implicit::Torus::EvaluateThetaPhiDistance (double theta, double phi, do
     double s = sin(theta);
     // theta=0 point.
     double x0 = m_R + distance * cos (phi);
-    double z0 = distance * sin (phi);
+    double z0 = OrientPhiCoordinate (distance) * sin (phi);
     return DPoint3d::From (c * x0, s * x0, z0);
     }
 
@@ -520,14 +523,14 @@ bool Implicit::Torus::XYZToThetaPhiDistance (DPoint3dCR xyz, double &theta, doub
         }
     else
         {
-        phi = atan2 (xyz.z, drho);
+        phi = atan2 (OrientPhiCoordinate (xyz.z), drho);
         safePhi = true;
         }
     return safeMajor && safePhi;
     }
 
     
-    
+double  Implicit::Torus::OrientPhiCoordinate (double z) const {return m_reversePhi ? -z : z;}
     
 DEllipse3d Implicit::Torus::MinorCircle (double theta) const
     {
@@ -537,7 +540,7 @@ DEllipse3d Implicit::Torus::MinorCircle (double theta) const
             (
             c * m_R, s * m_R, 0.0,
             c * m_r, s * m_r, 0.0,
-            0.0, 0.0, m_r,
+            0.0, 0.0, OrientPhiCoordinate (m_r),
             0.0, Angle::TwoPi ()
             );
     }

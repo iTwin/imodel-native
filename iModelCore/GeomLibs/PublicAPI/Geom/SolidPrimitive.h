@@ -282,6 +282,10 @@ double &rMajor,            //!< [in] major radius
 double &rMinor,             //!< [in] minor radius
 double &sweepRadians        //!< [in] sweep angle
 );
+//! Return the (constant !!) sign for the vector90 direction of the minor ellipse.
+static GEOMDLLIMPEXP double GetVector90Sign ();
+//! Return the (constant !!) flag for the vector90 direction of the minor ellipse.  (Equivalent to GetVector90Sign () < 0.0)
+static GEOMDLLIMPEXP bool GetReverseVector90 ();
 };
 
 
@@ -1583,8 +1587,10 @@ GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, D
 //! @ingroup GROUP_Geometry
 struct ISolidPrimitive : public RefCountedBase
 {
-
+private:
 protected:
+    ISolidPrimitive ();
+
 // Protected side of VPP wrappers.  Implementations in IsolidPrimitive return false. Concrete classes implement the one relevant to them.
     GEOMAPI_VIRTUAL SolidPrimitiveType _GetSolidPrimitiveType () const = 0;
     GEOMAPI_VIRTUAL bool _GetRange (DRange3dR range) const = 0;
@@ -1971,7 +1977,26 @@ GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (DMatrix4dR worldProducts) 
 //! Return a polyface mesh approximation of the solid primitive.
 GEOMDLLIMPEXP PolyfaceHeaderPtr Facet (IFacetOptionsPtr const &options);
 
+//! Apply the canonical changes to reverse (u,v) fraction space orientation.
+//!<ul>
+//!<li>u replaced by {1-u)
+//!<li>v is unchanged
+//!<li>dXdu is negated
+//!<li>dXdv is unchanged
+//!</ul>
+static GEOMDLLIMPEXP void ReverseFractionOrientation (double &u, double &v, DVec3dR dXdu, DVec3dR dXdv)
+    {
+    u = 1.0 - u;
+    dXdu.Negate ();
+    }
+
+static GEOMDLLIMPEXP void ReverseFractionOrientation (double &u, double &v){u = 1.0 - u;}   // and v is unchanged
+static GEOMDLLIMPEXP void ReverseFractionOrientation (DVec3dR dXdu, DVec3dR dXdv) {dXdu.Negate ();} // and dXdv is unchanged
 
 
+static GEOMDLLIMPEXP void ReverseFractionOrientation (SolidLocationDetail &pd)
+    {
+    ReverseFractionOrientation (pd.m_uParameter, pd.m_vParameter, pd.m_uDirection, pd.m_vDirection);
+    }
 };
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -1268,10 +1268,10 @@ TEST(SolidPrimitive, Rotation)
 
 TEST(TorusSurf,Implicits)
     {
-    Polynomial::Implicit::Torus surface1 (10, 1);
-    Polynomial::Implicit::Torus  surface2 (10, 2);
-    Polynomial::Implicit::Torus  surface3 (10, 3);
-    Polynomial::Implicit::Torus  surface4 (10,3.1);
+    Polynomial::Implicit::Torus surface1 (10, 1, DgnTorusPipeDetail::GetReverseVector90 ());
+    Polynomial::Implicit::Torus  surface2 (10, 2, DgnTorusPipeDetail::GetReverseVector90 ());
+    Polynomial::Implicit::Torus  surface3 (10, 3, DgnTorusPipeDetail::GetReverseVector90 ());
+    Polynomial::Implicit::Torus  surface4 (10,3.1, DgnTorusPipeDetail::GetReverseVector90 ());
 
     for (double theta = -2.0; theta < 4.0; theta += 1.0)
         {
@@ -1294,7 +1294,7 @@ TEST(TorusSurf,Implicits)
 
 TEST(TorusSurf,RayPierce)
     {
-    Polynomial::Implicit::Torus  surface (10, 1);
+    Polynomial::Implicit::Torus  surface (10, 1, DgnTorusPipeDetail::GetReverseVector90 ());
     static double s_fractionTol = 1.0e-8;
     double thetaShift = 0.0;
     double phiShift = Angle::Pi ();
@@ -2311,7 +2311,7 @@ TEST(CurveCurve,IntersectRotatedCurveArc)
 
 TEST(Polynomials,Torus)
     {
-    Polynomial::Implicit::Torus torus (1.5, 0.5);
+    Polynomial::Implicit::Torus torus (1.5, 0.5, DgnTorusPipeDetail::GetReverseVector90 ());
     for (double theta : bvector<double>{0, 0.1})
         {
         Check::StartScope ("theta", theta);
@@ -2330,4 +2330,176 @@ TEST(Polynomials,Torus)
             }
         Check::EndScope ();
         }
+    }
+
+bool ShowFrame (ISolidPrimitivePtr &solid, SolidLocationDetail::FaceIndices &indices, double u, double v, double frameScale = 0.10)
+    {
+    DPoint3d X;
+    DVec3d dXdu, dXdv;
+    if (Check::True (solid->TryUVFractionToXYZ (indices, u, v, X, dXdu, dXdv)))
+        {
+        DVec3d normal;
+        normal.GeometricMeanCrossProduct (dXdu, dXdv);
+        bvector<DPoint3d> points
+            {
+            X + frameScale * dXdv,
+            X,
+            X + frameScale * dXdu,
+            X + (0.1 * frameScale * dXdv),
+            X,
+            X + frameScale * normal
+            };
+        Check::SaveTransformed (points);
+        return true;
+        }
+    return false;
+    }
+
+void TestFaceUV (IGeometryPtr const& geometry)
+    {
+    auto solid = geometry->GetAsISolidPrimitive ();
+    if (!solid.IsValid ())
+        return;
+    Check::SaveTransformed (*solid);
+    bvector<DPoint2d> allUV
+        {
+        DPoint2d::From (0.25, 0.25),
+        DPoint2d::From (0.5, 0.25),
+        DPoint2d::From (0.25, 0.5),
+        DPoint2d::From (0.5, 0.5)
+        };
+    bvector<SolidLocationDetail::FaceIndices> allFaces;
+    solid->GetFaceIndices (allFaces);
+    for (auto &f : allFaces)
+        {
+        for (auto uv : allUV)
+            {
+            ShowFrame (solid, f, uv.x, uv.y);
+            }
+        }
+    }
+
+bool IsSameTopType (IGeometryPtr &g0, IGeometryPtr &g1)
+    {
+    if (g0.IsNull () || g1.IsNull ())
+        return false;
+    if (g0->GetGeometryType () != g1->GetGeometryType ())
+        return false;
+    if (g0->GetGeometryType () == IGeometry::GeometryType::SolidPrimitive)
+        {
+        auto s0 = g0->GetAsISolidPrimitive ();
+        auto s1 = g1->GetAsISolidPrimitive ();
+        if (s0.IsValid () && s1.IsValid ())
+            return s0->GetSolidPrimitiveType () == s1->GetSolidPrimitiveType ();
+        }
+    return true;
+    }
+
+
+void ShowFrames (bvector<IGeometryPtr> &geometry)
+    {
+    auto baseFrame = Check::GetTransform ();
+    DRange3d range0;
+    range0.Init ();
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        IGeometryPtr g = geometry[i];
+        DRange3d range;
+        if (g->TryGetRange (range))
+            {
+            SaveAndRestoreCheckTransform shifter (3.0 * range.XLength (), 0,0);
+            range0.Extend (range.low);
+            range0.Extend (range.high);
+            TestFaceUV (g);
+            }
+        }
+    Check::SetTransform (baseFrame);
+    Check::Shift (0, 3.0 * range0.YLength (), 0);
+    }
+
+void ShowFacets (bvector<IGeometryPtr> &geometry)
+    {
+    auto baseFrame = Check::GetTransform ();
+    DRange3d range0;
+    range0.Init ();
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        IGeometryPtr g = geometry[i];
+        DRange3d range;
+        ISolidPrimitivePtr primitive = g->GetAsISolidPrimitive ();
+        if (primitive.IsValid () && g->TryGetRange (range) )
+            {
+            SaveAndRestoreCheckTransform shifter (4.0 * range.XLength (), 0,0);
+            range0.Extend (range.low);
+            range0.Extend (range.high);
+            PolyfaceHeaderPtr facets = PolyfaceHeader::CreateVariableSizeIndexed ();
+            IFacetOptionsPtr options = IFacetOptions::Create ();
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            builder->AddSolidPrimitive (*primitive);
+            Check::SaveTransformed (*primitive);            
+            Check::Shift (1.5 * range.XLength (), 0,0);
+            Check::SaveTransformed (*builder->GetClientMeshPtr ());
+            }
+        }
+    Check::SetTransform (baseFrame);
+    Check::Shift (0, 3.0 * range0.YLength (), 0);
+    }
+
+
+
+void AnnounceAllSolids (void (*function)(bvector<IGeometryPtr> &))
+    {
+    Check::QuietFailureScope scoper;
+    //SampleGeometryCreator::AddAllSolidTypes (geometry);
+
+    bvector<IGeometryPtr> geometry;
+    for (bool capped : bvector<bool>{false, true})
+        {
+        SampleGeometryCreator::AddAllCones (geometry, capped);
+        function (geometry);
+        geometry.clear ();
+
+        SampleGeometryCreator::AddSpheres (geometry, capped);
+        function (geometry);
+        geometry.clear ();
+
+        SampleGeometryCreator::AddExtrusions (geometry, capped);
+        function (geometry);
+        geometry.clear ();
+ 
+        SampleGeometryCreator::AddRotations (geometry, capped);
+        function (geometry);
+        geometry.clear ();
+
+        SampleGeometryCreator::AddBoxes (geometry, 3,2,1, capped);
+        function (geometry);
+        geometry.clear ();
+
+        SampleGeometryCreator::AddTorusPipes (geometry, 3, 1, capped);
+        function (geometry);
+        geometry.clear ();
+
+        SampleGeometryCreator::AddRuled (geometry, capped);
+        function (geometry);
+        geometry.clear ();
+        }
+    }
+TEST(SolidPrimitive,FaceUV)
+    {
+    Check::QuietFailureScope scoper;
+    //SampleGeometryCreator::AddAllSolidTypes (geometry);
+
+    AnnounceAllSolids (ShowFrames);
+    Check::ClearGeometry ("SolidPrimitive.FaceUV");
+    }
+
+
+TEST(SolidPrimitive,Facets)
+    {
+    Check::QuietFailureScope scoper;
+    //SampleGeometryCreator::AddAllSolidTypes (geometry);
+
+    AnnounceAllSolids (ShowFacets);
+    Check::ClearGeometry ("SolidPrimitive.Facets");
+
     }

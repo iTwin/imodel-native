@@ -107,7 +107,7 @@ TEST (PolynomialPowerDegree2, BigRoots)
 
 TEST(PolynomialPowerDegree2, EvaluateThetaPhiDistance)
     {
-    Polynomial::Implicit::Torus tor(30, 5);
+    Polynomial::Implicit::Torus tor(30, 5, false);  // "old style".  Internal convention is now true!!!
     DPoint3d point3D = tor.EvaluateThetaPhiDistance(60, 15, 5);
     DPoint3d pointSecond3D = DPoint3d::From(-24.9547062661, -7.98651391025, 3.25143920079);
     Check::Near(point3D, pointSecond3D);

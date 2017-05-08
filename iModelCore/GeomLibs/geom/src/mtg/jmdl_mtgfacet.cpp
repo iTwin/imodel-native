@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgfacet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -65,11 +65,28 @@ void
 )
     {
     MTGFacets * pFacetHeader = new MTGFacets ();
-    jmdlMTGFacets_init (pFacetHeader);
     return pFacetHeader;
 
     }
+_MTGFacets::_MTGFacets ()
+    {
+    normalMode = MTG_Facets_NoData;
+    vertexLabelOffset = -1;
+    normalLabelOffset = -1;
+    }
 
+_MTGFacets::_MTGFacets (MTGFacets_NormalMode mode)
+    {
+    normalMode = MTG_Facets_NoData;
+    vertexLabelOffset = -1;
+    normalLabelOffset = -1;
+    SetNormalMode (mode);
+    }
+
+
+_MTGFacets::~_MTGFacets ()
+    {
+    }
 
 /**
 * Initialize a facet header structure.   Prior contents ignored and destroyed.
@@ -82,10 +99,7 @@ MTGFacets *pFacetHeader
 )
     {
 
-    pFacetHeader->normalMode = MTG_Facets_NoData;
-    pFacetHeader->vertexLabelOffset = -1;
-    pFacetHeader->normalLabelOffset = -1;
-    jmdlMTGGraph_initGraph (&pFacetHeader->graphHdr);
+
     }
 
 
@@ -191,33 +205,34 @@ int                 numVertex,
 int                 numNormal
 )
     {
-    if (pFacetHeader)
+    pFacetHeader->SetNormalMode (normalMode, numVertex, numNormal);
+    }
+void _MTGFacets::SetNormalMode (MTGFacets_NormalMode _normalMode, int numVertex, int numNormal)
+    {
+    normalMode = _normalMode;
+    switch (normalMode)
         {
-        pFacetHeader->normalMode = normalMode;
-        switch (normalMode)
-            {
-            case MTG_Facets_VertexOnly:
-                pFacetHeader->vertexLabelOffset = jmdlMTGGraph_defineLabel ((&pFacetHeader->graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
-                pFacetHeader->normalLabelOffset = -1;
-                jmdlVArrayDPoint3d_extend ((&pFacetHeader->vertexArrayHdr), numVertex);
-                break;
-            case MTG_Facets_NormalPerVertex:
-                pFacetHeader->vertexLabelOffset = jmdlMTGGraph_defineLabel ((&pFacetHeader->graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
-                pFacetHeader->normalLabelOffset = pFacetHeader->vertexLabelOffset;
-                jmdlVArrayDPoint3d_extend ((&pFacetHeader->vertexArrayHdr), numVertex);
-                jmdlVArrayDPoint3d_extend ((&pFacetHeader->normalArrayHdr), numVertex);
-                break;
-            case MTG_Facets_SeparateNormals:
-                pFacetHeader->vertexLabelOffset = jmdlMTGGraph_defineLabel ((&pFacetHeader->graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
-                pFacetHeader->normalLabelOffset = jmdlMTGGraph_defineLabel ((&pFacetHeader->graphHdr), -2, MTG_LabelMask_SectorProperty, -1);
-                jmdlVArrayDPoint3d_extend ((&pFacetHeader->vertexArrayHdr), numVertex);
-                jmdlVArrayDPoint3d_extend ((&pFacetHeader->normalArrayHdr), numNormal);
-                break;
-            case MTG_Facets_NoData:
-                pFacetHeader->normalLabelOffset = -1;
-                pFacetHeader->vertexLabelOffset = -1;
-                break;
-            }
+        case MTG_Facets_VertexOnly:
+            vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
+            normalLabelOffset = -1;
+            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
+            break;
+        case MTG_Facets_NormalPerVertex:
+            vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
+            normalLabelOffset = vertexLabelOffset;
+            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
+            jmdlVArrayDPoint3d_extend ((&normalArrayHdr), numVertex);
+            break;
+        case MTG_Facets_SeparateNormals:
+            vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
+            normalLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -2, MTG_LabelMask_SectorProperty, -1);
+            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
+            jmdlVArrayDPoint3d_extend ((&normalArrayHdr), numNormal);
+            break;
+        case MTG_Facets_NoData:
+            normalLabelOffset = -1;
+            vertexLabelOffset = -1;
+            break;
         }
     }
 

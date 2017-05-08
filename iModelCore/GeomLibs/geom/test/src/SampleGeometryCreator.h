@@ -59,6 +59,70 @@ static void AddLines (bvector<IGeometryPtr> &data)
                 (1,2,3, 5,2,1))));
     }
 
+static void AddSpheres (bvector<IGeometryPtr> &data, bool capped)
+    {
+    // <positiveAndNegativeDeterminant> X <full, positiveAndNegativeSweepsWithAndWithoutPoles>
+    bvector<double> degrees {-90.0, -10.0, 45.0, 90.0};
+    bvector<double> zSign {1.0, -1.0};
+    double radius = 2.0;
+    for (double sZ : zSign)
+        {
+        for (double d0 : degrees)
+            {
+            for (double d1 : degrees)
+                {
+                if (d0 != d1)
+                    {
+                    DgnSphereDetail sphere (DPoint3d::From (0,0,0), radius);
+                    sphere.m_startLatitude = Angle::DegreesToRadians (d0);
+                    sphere.m_latitudeSweep = Angle::DegreesToRadians (d1 - d0);
+                    sphere.m_localToWorld.ScaleMatrixColumns (1.0, 1.0, sZ);
+                    sphere.m_capped = capped;
+                    data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnSphere (sphere)));
+                    }
+                }
+            }
+        }
+    }
+
+static void AddBoxes (bvector<IGeometryPtr> &data, double ax, double ay, double az, bool capped)
+    {
+    bvector<double>signs {1.0, -1.0};
+    for (double sZ : signs)
+        for (double sX : signs)
+            for (double sY : signs)
+                {
+                DgnBoxDetail detail(
+                        DPoint3d::From (0,0,0),
+                        DPoint3d::From (0,0,sZ * az),
+                        DVec3d::From (sX, 0, 0),
+                        DVec3d::From (0, sY, 0),
+                        ax, ay,
+                        ax, ay,
+                        capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnBox (detail)));
+                }
+
+    }
+static void AddTorusPipes (bvector<IGeometryPtr> &data, double majorRadius, double minorRadius, bool capped)
+    {
+    bvector<double>signs {1.0, -1.0};
+    bvector <double>sweeps {-1.0, 1.0, 2.0, -2.0};
+    for (double sY : signs)
+        for (double sX : signs)
+            for (double sSweep : signs)
+                {
+                DgnTorusPipeDetail detail(
+                        DPoint3d::From (0,0,0),
+                        DVec3d::From (sX, 0, 0),
+                        DVec3d::From (0, sY, 0),
+                        majorRadius,
+                        minorRadius,
+                        sSweep * Angle::Pi (),
+                        capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnTorusPipe (detail)));
+                }
+    }
 static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped)
     {
     bvector <double>sweeps;
@@ -68,8 +132,8 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
     signs.push_back (1.0);
     signs.push_back (-1.0);
 
-    double aX = 3.0;
-    double aY  = 5.0;
+    //double aX = 3.0;
+    //double aY  = 5.0;
 
     // ====================
     for (double sZ : signs)
@@ -112,21 +176,7 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
 
 
     // ====================
-    for (double sZ : signs)
-        for (double sX : signs)
-            for (double sY : signs)
-                {
-                DgnBoxDetail detail(
-                        DPoint3d::From (0,0,0),
-                        DPoint3d::From (0,0,10.0 * sZ),
-                        DVec3d::From (sX, 0, 0),
-                        DVec3d::From (0, sY, 0),
-                        aX, aY,
-                        aX, aY,
-                        capped);
-                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnBox (detail)));
-                }
-
+    AddBoxes (data, 1,1,10, capped);
     // ====================
     for (double sY : signs)
         for (double sX : signs)
@@ -235,6 +285,142 @@ static void AddCone (bvector<IGeometryPtr> &data)
         rA, rB, true);
     data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData)));
     }
+static void AddAllCones (bvector<IGeometryPtr> &data, bool capped)
+    {
+    //double rA = 1.0;
+    //double rB = 0.5;
+    double zA = 0.0;
+    double zB = 1.0;
+    for (double rA : bvector<double>{1.0, 2.0, 0.0})
+        {
+        for (double rB : bvector<double>{1.0, 2.0, 0.0})
+            {
+            if (rA != 0.0 || rB != 0.0)
+                {
+                DgnConeDetail ConeData (
+                    DPoint3d::From (0,0,zA),
+                    DPoint3d::From (0,0,zB),
+                    rA, rB, capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData)));
+                DgnConeDetail ConeData1 (
+                    DPoint3d::From (0,0,zB),
+                    DPoint3d::From (0,0,zA),
+                    rA, rB, capped);
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (ConeData1)));
+                }
+            }
+        }
+    }
+
+static void GetContours (bvector<CurveVectorPtr> &contours, double z = 0.0)
+    {
+    bvector<DPoint3d> points
+            {
+            DPoint3d::From (0,0,z),
+            DPoint3d::From (3,0,z),
+            DPoint3d::From (3,2,z),
+            DPoint3d::From (2.1,2.0, z),
+            DPoint3d::From (2,3,z)
+            };
+        
+    contours.push_back (CurveVector::CreateLinear (points));
+    contours.push_back (CurveVector::CreateRectangle (0,0, 4,3, z));
+    contours.push_back (CurveVector::CreateDisk (DEllipse3d::From (2,0,z,   2,0,0,   0,1,0,  0.0, Angle::TwoPi ())));
+    CurveVectorPtr bcurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    bcurve->push_back (ICurvePrimitive::CreateBsplineCurve 
+            (MSBsplineCurve::CreateFromPolesAndOrder (points, nullptr, nullptr, 4, false, true)));
+    contours.push_back (bcurve);
+    }
+
+static void AddExtrusions (bvector<IGeometryPtr> &data, bool capped)
+    {
+    bvector<CurveVectorPtr> contours;
+
+    GetContours (contours, 0.0);
+
+    for (auto &c : contours)
+        {
+        if (!capped || c->IsAnyRegionType ())
+            {
+            for (auto dz : bvector<double> {3.0, -3.0})
+                {
+                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion
+                    (
+                    DgnExtrusionDetail (c, DVec3d::From (0,0, dz), capped)
+                    )));
+                }
+            }
+        }
+    }
+
+
+static void AddRuled (bvector<IGeometryPtr> &data, bool capped)
+    {
+    bvector<CurveVectorPtr> baseContours;
+    GetContours (baseContours, 0.0);
+    bvector<size_t> numSection {2, 3, 5};
+    bvector<double> sectionScale {1.0, 0.8, 1.2, 0.9, 1.5};
+    bvector<double> signs {1.0, -1.0};
+    for (double sign : signs)
+        {
+        for (auto &base : baseContours)
+            {
+            if (!capped || base->IsAnyRegionType ())
+                {
+                for (auto n : numSection)
+                    {
+                    bvector<CurveVectorPtr> contours;
+                    for (size_t i = 0; i < n; i++)
+                        {
+                        double s = sectionScale[i];
+                        auto c = base->Clone (Transform::From (DVec3d::From (0,0, sign * i)) * Transform::FromScaleFactors (s, s, s));
+                        contours.push_back (c);
+                        }
+                    data.push_back (
+                        IGeometry::Create (
+                        ISolidPrimitive::CreateDgnRuledSweep
+                            (
+                            DgnRuledSweepDetail
+                                (
+                                contours,
+                                capped
+                                )
+                            )));
+                    }
+                }
+            }
+        }
+    }
+
+
+static void AddRotations (bvector<IGeometryPtr> &data, bool capped)
+    {
+    bvector<CurveVectorPtr> contours;
+    GetContours (contours);
+
+    for (auto &c : contours)
+        {
+        if (!capped || c->IsAnyRegionType ())
+            {
+            double dx = -1.0;
+            for (auto sweepDegrees : bvector<double> {45.0, -45.0, 360.0, -360.0})
+                {
+                data.push_back (IGeometry::Create (
+                    ISolidPrimitive::CreateDgnRotationalSweep
+                        (
+                        DgnRotationalSweepDetail
+                            (
+                            c,
+                            DPoint3d::From (0,5,0), DVec3d::From (dx, 0, 0),
+                            Angle::DegreesToRadians (sweepDegrees),
+                            capped
+                            )
+                        )));
+                }
+            }
+        }
+    }
+
 
 static void AddExtrusion (bvector<IGeometryPtr> &data)
     {
