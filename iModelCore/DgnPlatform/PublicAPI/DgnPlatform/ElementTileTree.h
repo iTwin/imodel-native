@@ -156,7 +156,7 @@ private:
     double _GetMaximumSize() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-    Render::Primitives::GeometryList CollectGeometry(double tolerance, LoadContextCR context);
+    Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
 public:

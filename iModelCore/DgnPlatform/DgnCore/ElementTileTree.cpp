@@ -231,6 +231,7 @@ constexpr uint32_t s_minElementsPerTile = 50;
 constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 4.0;
+constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
@@ -530,7 +531,6 @@ public:
         : TileContext(geometries, root, range, facetOptions, transformFromDgn, tolerance, tolerance, loadContext) { }
 
     void ProcessElement(DgnElementId elementId, double diagonalRangeSquared);
-    Result OutputGraphics();
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams);
 
     RootR GetRoot() const { return m_root; }
@@ -764,35 +764,30 @@ TileContext::TileContext(GeometryList& geometries, RootR root, DRange3dCR range,
     }
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   11/16
+//! Populates a set of the largest N elements within a range, excluding any elements below
+//! a specified size. Keeps track of whether any elements were skipped.
+// @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
-struct GeometryCollector : RangeIndex::Traverser
+struct ElementCollector : RangeIndex::Traverser
 {
     typedef bmultimap<double, DgnElementId, std::greater<double>> Entries;
+private:
+    Entries         m_entries;
+    FBox3d          m_range;
+    double          m_minRangeDiagonalSquared;
+    uint32_t        m_maxElements;
+    LoadContextCR   m_loadContext;
+    bool            m_aborted = false;
+    bool            m_anySkipped = false;
 
-    Entries                     m_entries;
-    TileContext&                m_context;
-    FBox3d                      m_range;
-    uint32_t                    m_maxFeaturesPerTile = 2048*1024;
-    bool                        m_aborted = false;
-
-    GeometryCollector(DRange3dCR range, TileContext& context)
-        : m_range(range), m_context(context)
-        {
-        auto sys = context.GetRoot().GetRenderSystem();
-        if (nullptr != sys)
-            m_maxFeaturesPerTile = sys->_GetMaxFeaturesPerBatch();
-        }
-
-
-    bool CheckStop() { return (m_aborted = m_aborted && m_context.CheckStop()); }
+    bool CheckStop() { return (m_aborted = m_aborted && m_loadContext.WasAborted()); }
     void Insert(double diagonalSq, DgnElementId elemId)
         {
         m_entries.Insert(diagonalSq, elemId);
-        if (m_entries.size() > m_maxFeaturesPerTile)
+        if (m_entries.size() > m_maxElements)
             {
-            m_entries.erase(--m_entries.end()); // remove the smallest element. Note element != feature - we may need to skip more elements later.
-            m_context.MarkIncomplete();
+            m_entries.erase(--m_entries.end()); // remove the smallest element.
+            m_anySkipped = true;
             }
         }
 
@@ -808,43 +803,26 @@ struct GeometryCollector : RangeIndex::Traverser
         {
         if (CheckStop())
             return Stop::Yes;
+        else if (!entry.m_range.IntersectsWith(m_range))
+            return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        // ###TODO: We shouldn't need to test this again here, right?
-        if (entry.m_range.IntersectsWith(m_range))
-            {
-            double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
-            if (sizeSq >= m_context.GetMinRangeDiagonalSquared())
-                Insert(sizeSq, entry.m_id);
-            else
-                m_context.MarkIncomplete();
-            }
-
+        double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
+        if (sizeSq >= m_minRangeDiagonalSquared)
+            Insert(sizeSq, entry.m_id);
+        else
+            m_anySkipped = true;
+        
         return Stop::No;
         }
-
-    TileContext::Result Collect()
+public:
+    ElementCollector(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements)
+        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loadContext(loadContext)
         {
-        auto model = m_context.GetRoot().GetModel();
-        if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
-            return TileContext::Result::NoGeometry;
-
-        model->GetRangeIndex()->Traverse(*this);
-
-        for (auto const& kvp : m_entries)
-            {
-            m_context.ProcessElement(kvp.second, kvp.first);
-            if (CheckStop())
-                return TileContext::Result::Aborted;
-
-            if (m_context.GetGeometryCount() >= m_maxFeaturesPerTile)
-                {
-                m_context.TruncateGeometryList(m_maxFeaturesPerTile);
-                break;
-                }
-            }
-
-        return TileContext::Result::Success;
+        rangeIndex.Traverse(*this);
         }
+
+    bool AnySkipped() const { return m_anySkipped; }
+    Entries const& GetEntries() const { return m_entries; }
 };
 
 END_UNNAMED_NAMESPACE
@@ -1282,7 +1260,7 @@ public:
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
     m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
-    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : 2048*1024)
+    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
     {
     //
     }
@@ -1516,7 +1494,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     Render::Primitives::GeometryCollection geom;
 
     auto const& root = GetElementRoot();
-    GeometryList geometries = CollectGeometry(m_tolerance, context);
+    GeometryList geometries = CollectGeometry(context);
     auto collection = CreateGeometryCollection(geometries, context);
     if (collection.IsEmpty() && !geometries.empty())
         collection.MarkIncomplete();
@@ -1587,20 +1565,67 @@ DRange3d Tile::GetDgnRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryList Tile::CollectGeometry(double tolerance, LoadContextCR loadContext)
+GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
     {
+    GeometryList geometries;
+
     auto& root = GetElementRoot();
-    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tolerance);
+    auto model = root.GetModel();
+    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+        return geometries;
+
+    // Collect the set of largest elements for this tile's range, excluding any too small to contribute at this tile's tolerance.
+    uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element
+    auto sys = root.GetRenderSystem();
+    if (nullptr != sys)
+        maxFeatures = std::min(maxFeatures, sys->_GetMaxFeaturesPerBatch());
+
+    double minRangeDiagonalSq = s_minRangeBoxSize * m_tolerance;
+    minRangeDiagonalSq *= minRangeDiagonalSq;
+    ElementCollector collector(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, loadContext, maxFeatures);
+
+    if (loadContext.WasAborted())
+        return geometries;
+
+    if (collector.AnySkipped())
+        {
+        // We may want to turn this into a leaf node if it contains strictly linear geometry - but we can't do that if any elements were excluded
+        geometries.MarkIncomplete();
+        }
+    else if (!IsLeaf() && collector.GetEntries().size() <= s_minElementsPerTile)
+        {
+        // If no elements were skipped and only a small number of elements exist within this tile's range, make it a leaf tile.
+        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
+        SetIsLeaf();
+        m_tolerance = root.GetLeafTolerance();
+        }
+
+    if (collector.AnySkipped())
+        geometries.MarkIncomplete();
+
+    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
 
     Transform transformFromDgn;
     transformFromDgn.InverseOf(root.GetLocation());
 
-    GeometryList geometries;
-    if (loadContext.WasAborted())
-        return geometries;
+    // Process the geometry of each element selected for inclusion in this tile
+    TileContext tileContext(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, m_tolerance, loadContext);
+    for (auto const& entry : collector.GetEntries())
+        {
+        tileContext.ProcessElement(entry.second, entry.first);
+        if (loadContext.WasAborted())
+            {
+            geometries.clear();
+            break;
+            }
+        else if (tileContext.GetGeometryCount() >= maxFeatures)
+            {
+            BeAssert(!IsLeaf());
+            tileContext.TruncateGeometryList(maxFeatures);
+            break;
+            }
+        }
 
-    TileContext tileContext(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, tolerance, loadContext);
-    tileContext.OutputGraphics();
     return geometries;
     }
 
@@ -1695,19 +1720,6 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
 
     DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
     m_geometries.push_back(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileContext::Result TileContext::OutputGraphics()
-    {
-    GeometryCollector collector(m_range, *this);
-    auto status = collector.Collect();
-    if (TileContext::Result::Aborted == status)
-        m_geometries.clear();
-
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

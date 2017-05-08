@@ -737,7 +737,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
     // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
     // The GetDepth() test below allows us to skip intermediate tiles, but never the root tile.
-    bool skipThisTile = tooCoarse && (ready /* || 0 != GetDepth() */);
+    bool skipThisTile = tooCoarse && (ready || 0 != GetDepth());
     auto children = skipThisTile ? _GetChildren(true) : nullptr;
     if (nullptr != children)
         {
