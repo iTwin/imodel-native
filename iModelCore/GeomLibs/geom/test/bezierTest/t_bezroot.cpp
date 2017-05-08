@@ -415,10 +415,13 @@ void CheckBezierCircleAngleDoubling (bvector<double> c, bvector<double> s, bvect
     CheckBezierEvaluationOnCircle (c, s, w);
     if (noisy > 0)
         {
-        GEOMAPI_PRINTF("\n\n Bezier Circle base order %d\n         cc             ss           ww\n", (int)c.size ());
+        GEOMAPI_PRINTF("\n\n Bezier Circle base order %d\n         c             s           w     degrees  delta\n", (int)c.size ());
+        double degrees0 = 0.0;
         for (size_t i = 0; i < c.size (); i++)
             {
-            GEOMAPI_PRINTF (" %23.17g   %23.17g   %23.17g \n", c[i], s[i], w[i]);
+            double degrees1 = Angle::RadiansToDegrees (atan2 (s[i], c[i]));
+            GEOMAPI_PRINTF ("( %23.17g   %23.17g )/  %23.17g   (%23.17g  %10.5f)\n", c[i], s[i], w[i], degrees1, degrees1 - degrees0);
+            degrees0 = degrees1;
             }
         }
     // c,s,w are beziers for degree d circle polynomial, initially d=2;
