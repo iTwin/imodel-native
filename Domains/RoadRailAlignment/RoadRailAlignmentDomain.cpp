@@ -29,17 +29,16 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
+DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto alignmentPartitionPtr = SpatialLocationPartition::Create(*db.Elements().GetRootSubject(), GetPartitionName());
+    auto alignmentPartitionPtr = SpatialLocationPartition::Create(subject, "Alignments");
     if (alignmentPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    AlignmentCategoryModel::SetUp(db);
+    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(subject.GetDgnDb(), alignmentPartitionPtr->GetElementId()));
 
-    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(db, alignmentPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
         return status;
@@ -48,7 +47,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
     if (horizontalPartitionCPtr.IsNull())
         return DgnDbStatus::BadModel;
 
-    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(HorizontalAlignmentModel::CreateParams(db, horizontalPartitionCPtr->GetElementId()));
+    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
         return status;
@@ -62,6 +61,12 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     SetUpModelHierarchy(dgndb);
+
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());
+    if (DgnDbStatus::Success != status)
+        {
+        BeAssert(false);
+        }
 
     auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment);
     BeAssert(codeSpec.IsValid());
