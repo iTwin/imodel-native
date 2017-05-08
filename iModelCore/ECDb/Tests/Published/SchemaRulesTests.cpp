@@ -627,6 +627,22 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                    </ECSchema>)xml", false, "A nav prop must not point to a relationship end with multiplicity greater than 1"),
 
         SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="Rel" direction="Forward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Foo"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Foo"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship with different direction"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -673,6 +689,32 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship (even if one is inherited from a base class)"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Foo" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="FooSub" >
+                       <BaseClass>Foo</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="MyParent2" relationshipName="Rel" direction="Forward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Foo"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Foo"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship (if one is inherited from a base class) if the direction is different"),
 
         SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >

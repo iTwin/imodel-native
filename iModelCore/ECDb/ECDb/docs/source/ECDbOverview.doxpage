@@ -312,9 +312,12 @@
     callers have to make sure to not assign values which are not defined in the %ECEnumeration.
     
     ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" must not have these names which are used by ECSQL system properties: @b Id, @b ECInstanceId,
+    @b ECClassId, @b SourceECInstanceId, @b SourceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetId, @b TargetECClassId 
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    
-   
+    - An %ECClass cannot have more than one @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" that are defined with the same
+    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" (or a subclass of it) and with the same @ref BentleyApi::ECN::ECRelatedInstanceDirection "direction"
+       
     @see @ref ECDbOverview
     */
 
