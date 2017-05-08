@@ -119,6 +119,16 @@ public:
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
     TileCR GetTile() const { return *m_tile; }
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(TileLoadStatePtr const& lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs->m_tile.get(), rhs->m_tile.get()); }
+        bool operator()(TileLoadStatePtr const& lhs, TileCP rhs) const { return operator()(lhs->m_tile.get(), rhs); }
+        bool operator()(TileCP lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs, rhs->m_tile.get()); }
+        bool operator()(TileCP lhs, TileCP rhs) const { return lhs < rhs; }
+    };
 };
 
 //=======================================================================================
@@ -262,7 +272,7 @@ struct Root : RefCountedBase, NonCopyableClass
 protected:
     bool m_isHttp;
     bool m_pickable = false;
-    mutable bset<TileLoadStatePtr> m_activeLoads;
+    mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;         // transform from tile coordinates to world coordinates
@@ -290,6 +300,7 @@ public:
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad(TileLoadStatePtr) const;
     void DoneTileLoad(TileLoadStatePtr) const;
+    void CancelTileLoad(TileCR tile);
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}

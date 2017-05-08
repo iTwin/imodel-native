@@ -1319,6 +1319,7 @@ bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
     memcpy(buf, start, size);
     return true;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1333,8 +1334,10 @@ DirtyRanges DirtyRanges::Intersect(DRange3dCR range) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::MarkDamaged(DRange3dCR range)
     {
+    Transform transformToTile;
+    transformToTile.InverseOf(GetLocation());
     DRange3d tileRange;
-    GetLocation().Multiply(tileRange, range);
+    transformToTile.Multiply(tileRange, range);
 
     BeMutexHolder lock(m_cv.GetMutex());
     m_damagedRanges.push_back(tileRange);
@@ -1369,6 +1372,7 @@ void Tile::Invalidate(DirtyRangesCR dirty)
         return;
 
     // This tile needs to be regenerated
+    m_root.CancelTileLoad(*this);
     SetNotLoaded();
     _Invalidate();
 
@@ -1381,6 +1385,22 @@ void Tile::Invalidate(DirtyRangesCR dirty)
         {
         DirtyRanges childDirty = dirty.Intersect(child->GetRange());
         child->Invalidate(childDirty);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::CancelTileLoad(TileCR tile)
+    {
+    // ###TODO_ELEMENT_TILE: Bentley containers don't support 'transparent' comparators, meaning we can't compare a TileLoadStatePtr to a Tile even
+    // though the comparator can. We should fix that - but for now, instead, we're using std::set.
+    BeMutexHolder lock(m_cv.GetMutex());
+    auto iter = m_activeLoads.find(&tile);
+    if (iter != m_activeLoads.end())
+        {
+        (*iter)->SetCanceled();
+        m_activeLoads.erase(iter);
         }
     }
 
