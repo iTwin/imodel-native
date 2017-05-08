@@ -621,6 +621,14 @@ ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
     if (!isKindOfQuantityCompatible(*this, this->GetBaseProperty(), kindOfQuantity))
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
+    for (ECClassCP derived : this->GetClass().GetDerivedClasses())
+        {
+        ECPropertyP derivedProp = derived->GetPropertyP(this->GetName().c_str());
+        if (nullptr == derivedProp)
+            continue;
+        if (!isKindOfQuantityCompatible(*this, derivedProp, kindOfQuantity))
+            return ECObjectsStatus::KindOfQuantityNotCompatible;
+        }
     m_kindOfQuantity = kindOfQuantity;
     return ECObjectsStatus::Success;
     }

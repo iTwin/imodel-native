@@ -845,8 +845,11 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 newKOQ->SetDefaultPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newDisplayUnit->GetName()));
             }
         }
-
-    prop->SetKindOfQuantity(newKOQ);
+    
+    if (ECObjectsStatus::KindOfQuantityNotCompatible == prop->SetKindOfQuantity(newKOQ))
+        {
+        LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
+        }
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
     prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
