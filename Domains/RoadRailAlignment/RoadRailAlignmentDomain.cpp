@@ -60,7 +60,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    SetUpModelHierarchy(dgndb);
+    AlignmentCategoryModel::SetUp(dgndb);
 
     DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), "Alignments");
     if (DgnDbStatus::Success != status)
