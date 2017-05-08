@@ -25,11 +25,14 @@ DirectoryObserverTests.*
 AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
     # bim0200, x64, NDEBUG, PRG, Hang
 
-#-------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
 # Randomly hanging tests, NDEGUG, Winx64
-#---------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
 UniqueTaskHolderTests.GetRunningTask_CalledTwice_ExecutesJustFirstTask
 UniqueTaskHolderTests.GetRunningTask_CalledSecondTimeAfterFirstFinished_ExecutesSecondTime     
 UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens        
 
 UniqueTasksHolderTests.GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval
+
+AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
+AsyncTaskTests.Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted
