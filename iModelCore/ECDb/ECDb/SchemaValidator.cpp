@@ -376,7 +376,4 @@ ECRelationshipClassCR ValidPropertiesRule::NavigationPropertyValidationContext::
     }
 
 
-
-
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
