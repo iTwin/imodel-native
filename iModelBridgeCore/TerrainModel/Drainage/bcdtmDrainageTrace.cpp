@@ -361,7 +361,7 @@ errexit:
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmDrainage_traceMaximumDescentDtmObject
+int bcdtmDrainage_traceMaximumDescentDtmObjectOld
 (
     BC_DTM_OBJ         *dtmP,                  // ==> Pointer To Tin Object
     DTMDrainageTables  *drainageTablesP,       // ==> Pointer To Drainage Tables
@@ -1704,7 +1704,7 @@ int bcdtmDrainage_traceToLowPointDtmObject
                                     }
                                 else if (nextPnt2 != dtmP->nullPnt && nextPnt3 != dtmP->nullPnt)
                                     {
-                                    if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, savePnt1, nextPnt2, nextPnt3, loadFunctionP, 1, 0, &exitPoint, &priorPoint, &nextPoint, userP)) goto errexit;
+                                    if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, savePnt1, nextPnt2, nextPnt3, loadFunctionP, 1, 0, &exitPoint, &priorPoint, &nextPoint, nullptr, userP)) goto errexit;
                                     }
                                 }
 
@@ -1712,7 +1712,7 @@ int bcdtmDrainage_traceToLowPointDtmObject
 
                             else if (pointAddrP(dtmP, savePnt1)->z == pointAddrP(dtmP, savePnt2)->z  && pointAddrP(dtmP, savePnt1)->z == pointAddrP(dtmP, savePnt3)->z)
                                 {
-                                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, savePnt1, savePnt2, savePnt3, loadFunctionP, 1, 0, &exitPoint, &priorPoint, &nextPoint, userP)) goto errexit;
+                                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, savePnt1, savePnt2, savePnt3, loadFunctionP, 1, 0, &exitPoint, &priorPoint, &nextPoint, nullptr, userP)) goto errexit;
                                 }
 
                             //                 Determine Pond About Zero Slope Sump Line
@@ -1959,7 +1959,7 @@ int bcdtmDrainage_traceMaximumDescentFromTriangleEdgeDtmObject
             else
                 {
                 if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond Over Zero Slope Triangle");
-                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt1, startPnt3, startPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr)) goto errexit;
+                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt1, startPnt3, startPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr, nullptr)) goto errexit;
                 *tracePointFoundP = true;
                 }
             }
@@ -2321,7 +2321,7 @@ int bcdtmDrainage_traceMaximumDescentFromTrianglePointDtmObject
                 descentPnt2 = oldDescentPnt2;
                 // We can't flow out of the Z slope area using last direction use the other routine.
                 if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond About Zero Slope Triangle");
-                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt, descentPnt1, descentPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr)) goto errexit;
+                if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt, descentPnt1, descentPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr, nullptr)) goto errexit;
                 *nextPnt1P = startPnt;
                 *nextPnt2P = descentPnt1;
                 *nextPnt3P = descentPnt2;
@@ -2341,7 +2341,7 @@ int bcdtmDrainage_traceMaximumDescentFromTrianglePointDtmObject
         else
             {
             if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond About Zero Slope Triangle");
-            if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt, descentPnt1, descentPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr)) goto errexit;
+            if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, startPnt, descentPnt1, descentPnt2, callBackP, 0, 0, exitPointP, priorPointP, nextPointP, nullptr, nullptr)) goto errexit;
             *nextPnt1P = startPnt;
             *nextPnt2P = descentPnt1;
             *nextPnt3P = descentPnt2;
@@ -6647,3 +6647,7 @@ int bcdtmDrainage_checkTraceToDrainPointDtmObject
         goto cleanup;
 
     }
+
+
+
+
