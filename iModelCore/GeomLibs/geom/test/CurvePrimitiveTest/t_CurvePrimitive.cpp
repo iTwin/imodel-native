@@ -2292,9 +2292,7 @@ TEST(CurveVector, CloneOffsetCurvesXY)
     Check::ClearGeometry("CurveVector.CloneOffsetCurvesXY");
     }
 
-
-#ifdef WIP
-
+#if defined(WIP)
 
 TEST(CurveVector, GeometricConstructions) 
     {// Arc
@@ -2304,7 +2302,7 @@ TEST(CurveVector, GeometricConstructions)
     ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
     Check::SaveTransformed(*ellipsePrim);
     Check::Shift(10, 0, 0);
-    
+
     //Partial Curve
     double a = 0.10;
     double b = 0.20;
@@ -2320,7 +2318,7 @@ TEST(CurveVector, GeometricConstructions)
     poles.push_back (DPoint3d::From (0,-1,0));
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, 3, false, false);
     ICurvePrimitivePtr bsplineCurve = ICurvePrimitive::CreateBsplineCurve(*curve);
-    
+
     Check::SaveTransformed(*bsplineCurve);
     Check::Shift(10, 0, 0);
 
@@ -2355,9 +2353,10 @@ TEST(CurveVector, GeometricConstructions)
     Check::SaveTransformed(*cp);
     Check::Shift(10, 0, 0);
 
-    
+
 
     Check::ClearGeometry("CurveVector.GeometricConstructions");
     }
 
-#endif //WIP
+
+#endif
