@@ -2292,6 +2292,10 @@ TEST(CurveVector, CloneOffsetCurvesXY)
     Check::ClearGeometry("CurveVector.CloneOffsetCurvesXY");
     }
 
+
+#ifdef WIP
+
+
 TEST(CurveVector, GeometricConstructions) 
     {// Arc
     DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 0, 0),
@@ -2355,3 +2359,5 @@ TEST(CurveVector, GeometricConstructions)
 
     Check::ClearGeometry("CurveVector.GeometricConstructions");
     }
+
+#endif //WIP
