@@ -28,11 +28,11 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
+DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject, Utf8CP partitionName)
     {
     DgnDbStatus status;
 
-    auto alignmentPartitionPtr = SpatialLocationPartition::Create(subject, "Alignments");
+    auto alignmentPartitionPtr = SpatialLocationPartition::Create(subject, partitionName);
     if (alignmentPartitionPtr->Insert(&status).IsNull())
         return status;
 
@@ -60,7 +60,7 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     AlignmentCategory::InsertDomainCategories(dgndb);
 
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), "Alignments");
     if (DgnDbStatus::Success != status)
         {
         BeAssert(false);

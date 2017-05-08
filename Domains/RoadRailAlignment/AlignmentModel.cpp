@@ -12,6 +12,20 @@ HANDLER_DEFINE_MEMBERS(HorizontalAlignmentModelHandler)
 HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject, Utf8CP modelName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, modelName);
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    SpatialLocationPartitionCPtr partition = db.Elements().Get<SpatialLocationPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+    return dynamic_cast<AlignmentModelP>(partition->GetSubModel().get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 HorizontalAlignmentsPortionCPtr AlignmentModel::QueryHorizontalPartition() const
