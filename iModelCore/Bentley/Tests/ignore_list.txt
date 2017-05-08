@@ -15,8 +15,6 @@ DoubleFormatterTest.ReplaceDecimalSeparator     # Defect 570798. Non-default dec
 
 CRuntimeTests.posixregex # runs only on Android, and it crashes there in regfree, because preg contains garbage $1 = {buffer = 0x0, allocated = 0, used = 0, syntax = 242396, fastmap = 0x0, translate = 0x2 <Address 0x2 out of bounds>
 
-UniqueTasksHolderTests.*
-
 DirectoryObserverTests.ModificationInObservedDirectory_UIThread
     # WinX64, DgnDb0601, NDEBUG, PRG
     # <crash, no output provided>
@@ -24,19 +22,22 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
 #TFS 633328: randomly Crash on iosArm64
 DirectoryObserverTests.*
 
-UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
-    # bim0200dev, x86, DEBUG, random
-    # [ RUN      ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
-    # F:\Bim0200Dev\src-staging\Bentley\Tests\Published\Tasks\UniqueTaskHolderTests.cpp(102): error:       Expected: 2
-    # To be equal to: ++i
-    #       Which is: 1
-    # F:\Bim0200Dev\src-staging\Bentley\Tests\Published\Tasks\UniqueTaskHolderTests.cpp(95): error:       Expected: 1
-    # To be equal to: ++i
-    #       Which is: 2
-    # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)
+AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
+    # bim0200, x64, NDEBUG, PRG, Hang
+
+#--------------------------------------------------------------------------------------
+# Randomly hanging tests, NDEGUG, Winx64
+#--------------------------------------------------------------------------------------
+UniqueTaskHolderTests.GetRunningTask_CalledTwice_ExecutesJustFirstTask
+UniqueTaskHolderTests.GetRunningTask_CalledSecondTimeAfterFirstFinished_ExecutesSecondTime     
+UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens        
+
+UniqueTasksHolderTests.GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval
 
 AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
     # bim0200, x64, NDEBUG, PRG, Hang
+
+AsyncTaskTests.Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted
 
 WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
     # bim0200, x64, NDEBUG, PRG, Random
