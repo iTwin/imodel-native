@@ -3534,11 +3534,11 @@ public:
                 break;
             case EdgeSymbologyId::C:
                 symb.SetLineColor  (ColorDef::Yellow());
-                symb.SetLineStyle  (DgnStyleId(4ULL), 2.0);
+                symb.SetLineStyle  (DgnStyleId((uint64_t)4), 2.0);
                 symb.SetLineWeight (4);
                 break;
             case EdgeSymbologyId::D:
-                symb.SetLineStyle  (DgnStyleId(6ULL), 6.0);
+                symb.SetLineStyle  (DgnStyleId((uint64_t)6), 6.0);
                 break;
             case EdgeSymbologyId::E:
                 symb.SetLineWeight (8);
