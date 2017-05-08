@@ -8,14 +8,13 @@
 #pragma once
 
 #include "WebServicesUnitTests.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
+struct TestAppPathProvider
     {
     private:
         BeFileName m_documentsDirectory;
@@ -38,29 +37,28 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
             m_localStateDirectory.AppendToPath(L"AppLocalState").AppendSeparator();
             }
 
-    protected:
-        virtual BeFileNameCR _GetDocumentsDirectory() const  override
+    public:
+        BeFileNameCR GetDocumentsDirectory()
             {
             return m_documentsDirectory;
             }
-        virtual BeFileNameCR _GetTemporaryDirectory() const override
+        BeFileNameCR GetTemporaryDirectory()
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetCachesDirectory() const override
+        BeFileNameCR GetCachesDirectory()
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetLocalStateDirectory() const override
+        BeFileNameCR GetLocalStateDirectory()
             {
             return m_localStateDirectory;
             }
-        virtual BeFileNameCR _GetAssetsRootDirectory() const override
+        BeFileNameCR GetAssetsRootDirectory()
             {
             return m_platformAssetsDirectory;
             }
 
-    public:
         TestAppPathProvider()
             {
             BeFileName programDir;
