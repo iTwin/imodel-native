@@ -495,7 +495,6 @@ struct VuSpringModel : public _VuSet
         void CollectProjectionCandidates (bvector<VuP> &candidates)
             {
             candidates.clear ();
-            int numFlip = 0;
             VU_SET_LOOP (nodeA, this)
                 {
                 if (IsProjectionCandidate (nodeA))
@@ -780,7 +779,6 @@ PolyfaceHeaderPtr CreateVoronoi ()
     outerBox.push_back (DPoint3d::From (range.low.x, range.high.y));
     static bool s_interior = false;
     static double s_sign = -1.0;
-    size_t errors = 0;
 
     VU_SET_LOOP (vertexSeed, graph)
         {

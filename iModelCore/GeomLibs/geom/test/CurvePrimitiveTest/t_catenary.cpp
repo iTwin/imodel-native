@@ -28,7 +28,6 @@ TEST(Catenary,HelloWorld)
 
             auto bcurve = cp0->CloneAsBspline();
             // NOW ... We know that cp0's bspline has been created.  We would like the cloned cp to never evaluate its own.
-
             double bcurveLength, strokeLength, catenaryPrimitiveLength;
             Check::True ((int)cp->GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary);
             double trueCatenaryLength = x1;
@@ -36,6 +35,7 @@ TEST(Catenary,HelloWorld)
             Check::True (cp->Length (catenaryPrimitiveLength));
             bvector<DPoint3d> points;
             cp->AddStrokes (points, *options);
+            auto bcurve0 = cp->CloneAsBspline();
             //Check::Print (points, "Catenary Stroke Points");
             strokeLength = PolylineOps::Length (points);
             Check::PrintIndent (4);
@@ -49,7 +49,7 @@ TEST(Catenary,HelloWorld)
             Check::Print(bcurveLength, "bcurve length");
             Check::Print (bcurveLength-trueCatenaryLength, "Ebc");
 
-
+            Check::Shift(10, 0, 0);
 
             // We know the catenary is y = a*cosh(x/a) . . .
             UsageSums error;
@@ -185,15 +185,14 @@ TEST(Catenary, TrimCatenary)
     Check::True(cp0->TryGetCatenary(dp));
     Check::ExactDouble(2, dp.StartDistance());
     Check::ExactDouble(20, dp.EndDistance());
-    dp.ReverseInPlace();
     auto cpReversed = ICurvePrimitive::CreateCatenary(10, dTri3d, 20, 2);
     DCatenary3dPlacement dpReversed;
     Check::True(cpReversed->TryGetCatenary(dpReversed));
 
     double tol = 1.0e-3;
+    dp.ReverseInPlace();
     Check::True(dp.AlmostEqual(dpReversed, tol));
 
-    dp.ReverseInPlace();
     
     double len, lenFraction;
     Check::True(bspline->Length(len));
@@ -204,6 +203,7 @@ TEST(Catenary, TrimCatenary)
     DPoint3dDVec3dDVec3d identity;
     fractionedCatenary.Get(parameter, identity, startEnd);
     auto fractionCatenary = ICurvePrimitive::CreateCatenary(10, identity, startEnd.GetStart(), startEnd.GetEnd());
+    
     auto bsplineFraction = fractionCatenary->CloneAsBspline();
     Check::SaveTransformed(*bsplineFraction);
     Check::True(bsplineFraction->Length(lenFraction));
@@ -211,4 +211,36 @@ TEST(Catenary, TrimCatenary)
     Check::Near(Rounding::Round(lenFraction, Rounding::RoundingMode_Up, 8.5, 9), 0.5 * Rounding::Round(len, Rounding::RoundingMode_Up, 17.5, 18));
     Check::ClearGeometry("Catenary.TrimCatenary");
     
+    }
+
+TEST(Catenary, CloneBetweenFractions_Reverse) 
+    {
+    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+
+    auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
+    
+    //cloning
+    auto cloned = cp0->CloneBetweenFractions(0.2, 0.6, false);
+    auto bsplineFraction = cp0->CloneAsBspline();
+    auto bsplineCloned = cloned->CloneAsBspline();
+    Check::SaveTransformed(*bsplineFraction);
+    Check::Shift(10, 0, 0);
+    Check::SaveTransformed(*bsplineCloned);
+    Check::ClearGeometry("Catenary.CloneBetweenFractions_Reverse");
+    double length, lengtCloned;
+    Check::True(cloned->Length(lengtCloned));
+    Check::True(cp0->Length(length));
+    Check::Near(0.4*length, lengtCloned);
+
+    double lengthBefore, lengthAfter, leng;
+    cp0->Length(lengthBefore);
+    Check::True(cp0->ReverseCurvesInPlace());
+
+    cp0->Length(lengthAfter);
+    Check::True(lengthBefore == lengthAfter);
+    cp0->CloneAsBspline();
+    Check::True(1 == cp0->NumComponent());
+    RotMatrix rotMat = RotMatrix::FromAxisAndRotationAngle(2, Angle::DegreesToRadians(60));
+    Check::True(false == cp0->Length(&rotMat, leng));
+    Check::True(0.0 == leng);
     }
