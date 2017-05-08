@@ -12,11 +12,11 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
 
-struct SizeSize
+struct Size2
 {
 size_t m_dataA;
 size_t m_dataB;
-SizeSize (size_t data) : m_dataA(data), m_dataB(data) {}
+Size2 (size_t data) : m_dataA(data), m_dataB(data) {}
 
 bool ContainsAsBeginEnd (size_t data) const {return data >= m_dataA && data < m_dataB;}
 
@@ -173,9 +173,9 @@ void Add(size_t position, size_t faceSuccessorPosition, ptrdiff_t indexA, ptrdif
     push_back (HalfEdge (position, faceSuccessorPosition, indexA, indexB, visible));
     }
 
-SizeSize MateRange (size_t index)
+Size2 MateRange (size_t index)
     {
-    SizeSize range (index);
+    Size2 range (index);
     size_t n = size ();
     if (index < n)
         {

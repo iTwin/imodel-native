@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClip.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -744,6 +744,143 @@ bool                    formNewFacesOnClipPlanes
     PolyfaceClipContext::ClipToChain (visitor, insideDest, outsideDest, clipPlanes, formNewFacesOnClipPlanes);
     }
 
+PolyfaceHeaderPtr PolyfaceHeader::CreateFromTaggedPolygons (TaggedPolygonVectorCR polygons)
+    {
+    auto pf = PolyfaceHeader::CreateVariableSizeIndexed ();
+    for (auto &p : polygons)
+        {
+        pf->AddPolygon (p.GetPointsCR ());
+        }
+    return pf;
+    }
+
+
+void PolyfaceHeader::VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+PolyfaceHeaderPtr &dest,            //!< [out] new mesh, containing only the visible portions of the inputs
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+)
+    {
+    localToWorld.InitIdentity ();
+    worldToLocal.InitIdentity ();
+    TaggedPolygonVector polygonsIn, polygonsOut;
+    for (size_t i = 0; i < source.size (); i++)
+        {
+        auto visitor = PolyfaceVisitor::Attach (*source[i], false);
+        bvector<DPoint3d> &points = visitor->Point ();
+        for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            PolygonVectorOps::AddPolygon (polygonsIn,
+                points, i, visitor->GetReadIndex ());
+        }
+    dest = nullptr;
+    if (polygonsIn.size () == 0)
+        return;
+    DRange3d range = PolygonVectorOps::GetRange (polygonsIn);
+    DPoint3d center = range.LocalToGlobal (0.5, 0.5, 0.5);
+    auto axes = RotMatrix::From1Vector (vectorToEye, 2, true);
+    localToWorld = Transform::From (axes, center);
+    worldToLocal.InverseOf (localToWorld);
+
+    PolygonVectorOps::Multiply (polygonsIn, worldToLocal);
+    bsiPolygon_clipByXYVisibility (polygonsIn, polygonsOut, true, false);
+    PolygonVectorOps::Multiply (polygonsOut, localToWorld);
+    dest = CreateFromTaggedPolygons (polygonsOut);
+    }
+
+
+
+
+struct AcceptByIndex : Acceptor <TaggedPolygon>
+{
+size_t index;
+AcceptByIndex (size_t i) : index(i) {}
+bool Accept (TaggedPolygonCR polygon) override { return index == polygon.GetIndexA ();}
+};
+
+PolyfaceHeaderPtr PolyfaceHeader::CreateFromTaggedPolygons
+(
+TaggedPolygonVectorCR polygons,
+Acceptor<TaggedPolygon> &acceptor,
+bvector<SizeSize> *destReadIndexToSourceIndex
+)
+    {
+    PolyfaceHeaderPtr pf = nullptr;
+    for (size_t i = 0; i < polygons.size (); i ++)
+        {
+        TaggedPolygon const & p = polygons[i];
+        if (acceptor.Accept (p))
+            {
+            if (pf == nullptr)
+                pf = PolyfaceHeader::CreateVariableSizeIndexed ();
+            size_t destReadIndex = pf->PointIndex ().size ();
+            pf->AddPolygon (p.GetPointsCR ());
+            if (destReadIndexToSourceIndex != nullptr)
+                destReadIndexToSourceIndex->push_back (SizeSize (destReadIndex, i));
+            }
+        }
+    return pf;
+    }
+
+
+
+void PolyfaceHeader::VisibleParts
+(
+bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
+DVec3dCR vectorToEye,               //!< [in] vector towards the eye
+bvector<PolyfaceHeaderPtr> &dest,            //!< [out] array of new mesh, containing only the visible portions of the inputs.  If a particular mesh source[i] has no visible parts, its corresponding dest[i] is a null pointer.
+bvector<bvector<SizeSize>> *destReadIndexToSourceReadIndex,  //!< [out] array connecting destMesh readIndex to its corresponsding readIndex in the corresponding source mesh
+TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
+TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+)
+    {
+    dest.clear ();
+    localToWorld.InitIdentity ();
+    worldToLocal.InitIdentity ();
+    TaggedPolygonVector polygonsIn, polygonsOut;
+    for (size_t i = 0; i < source.size (); i++)
+        {
+        auto visitor = PolyfaceVisitor::Attach (*source[i], false);
+        bvector<DPoint3d> &points = visitor->Point ();
+        for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            PolygonVectorOps::AddPolygon (polygonsIn,
+                points, i, visitor->GetReadIndex ());
+        }
+    if (polygonsIn.size () == 0)
+        return;
+    DRange3d range = PolygonVectorOps::GetRange (polygonsIn);
+    DPoint3d center = range.LocalToGlobal (0.5, 0.5, 0.5);
+    auto axes = RotMatrix::From1Vector (vectorToEye, 2, true);
+    localToWorld = Transform::From (axes, center);
+    worldToLocal.InverseOf (localToWorld);
+
+    PolygonVectorOps::Multiply (polygonsIn, worldToLocal);
+    bsiPolygon_clipByXYVisibility (polygonsIn, polygonsOut, true, false);
+    PolygonVectorOps::Multiply (polygonsOut, localToWorld);
+    // ASSUME ... a smallish number of input meshes, so this loop doesn't execute often ..
+    for (size_t i = 0; i < source.size (); i++)
+        {
+        AcceptByIndex acceptor (i);
+        if (destReadIndexToSourceReadIndex != nullptr)
+            {
+            destReadIndexToSourceReadIndex->push_back (bvector<SizeSize> ());
+            dest.push_back(CreateFromTaggedPolygons (polygonsOut, acceptor , &destReadIndexToSourceReadIndex->back ()));
+            // the mapping dataB is index in the visible polygons.
+            // dereference that to the source readIndex.
+            for (auto &p : destReadIndexToSourceReadIndex->back ())
+                {
+                size_t polygonIndex = p.dataB;
+                p.dataB = polygonsOut[polygonIndex].GetIndexB ();
+                }
+            }
+        else
+            {
+            dest.push_back(CreateFromTaggedPolygons (polygonsOut, acceptor , nullptr));
+            }
+        }
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include "PolyfaceSectionMTG.h"

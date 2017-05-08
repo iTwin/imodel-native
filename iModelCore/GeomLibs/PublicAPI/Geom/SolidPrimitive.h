@@ -1587,8 +1587,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, D
 //! @ingroup GROUP_Geometry
 struct ISolidPrimitive : public RefCountedBase
 {
-private:    // This is determined at time of creation ..
-bool m_invertedOrientation;
+private:
 protected:
     ISolidPrimitive ();
 

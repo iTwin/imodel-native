@@ -3770,16 +3770,14 @@ void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, DVec3dCR viewV
             outsideMap->AddPolygon (3, t.point);
 
 #else
-        MTGFacets *pFacets = jmdlMTGFacets_grab();
-        jmdlMTGFacets_setNormalMode (pFacets, MTG_Facets_VertexOnly, 0, 0);
+        MTGFacets facets (MTG_Facets_VertexOnly);
         if (jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries (
-                            pFacets,
+                            &facets,
                             &loopA[0], (int)loopA.size (),
                             &loopB[0], (int)loopB.size ()
                             ))
             {
-            /*size_t numFaceB = */AddMTGFacetsToIndexedPolyface (pFacets, *outsideMesh);
-            jmdlMTGFacets_free (pFacets);
+            /*size_t numFaceB = */AddMTGFacetsToIndexedPolyface (&facets, *outsideMesh);
             outsideMesh->AddPolygon (&triangulationMate[0], triangulationMate.size ());
             outsideMesh->Compress ();
 

@@ -324,7 +324,13 @@ template<typename T> struct ZeroInit
     ZeroInit& operator=(ZeroInit const&) = default;
     ZeroInit& operator=(ZeroInit&&)      = default;
 };
-
+//! POD struct for pair of size_t values
+struct SizeSize
+{
+size_t dataA;
+size_t dataB;
+SizeSize (size_t a, size_t b) : dataA(a), dataB (b) {}
+};
 //=======================================================================================
 //! Inlinable template for a value of type T with two size_t tags named TagA and TagB.
 //! @bsiclass 
@@ -558,6 +564,14 @@ void CompressDuplicates (bvector<T> &data, bool (*SameMember)(T const &memberA, 
         data.resize (numAccept);
         }
     }
+
+//! Interface with a virtual method to test 1 parameter.
+template <typename T>
+struct Acceptor
+{
+//! Virtual method to test a parameter; use of true/false return subject to context.
+virtual bool Accept (T const &data) = 0;
+};
 
 
 //=======================================================================================
