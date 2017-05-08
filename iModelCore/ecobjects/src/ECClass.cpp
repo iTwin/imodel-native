@@ -2750,7 +2750,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
         {
         LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
                     GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                    baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
+                    nullptr == baseConstraint.GetAbstractConstraint() ? "(unknown)" : baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
