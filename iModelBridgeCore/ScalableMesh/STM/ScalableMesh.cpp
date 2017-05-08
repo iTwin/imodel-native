@@ -2884,11 +2884,14 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
     GeoCoordinates::DgnGCSPtr          smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
     assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
 
+	auto& modelInfo = dgnModel->AsDgnModelCP()->GetModelInfo();
+	DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
     if (smGCS != nullptr && !targetCS.IsEquivalent(*smGCS))
         {
         DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
         smGCS->UorsFromCartesian(scale, scale);
-        computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scale.x, scale.y, scale.z);
+		scale.DifferenceOf(scale, globalOrigin);
+        computedTransform = Transform::FromFixedPointAndScaleFactors(globalOrigin, scale.x, scale.y, scale.z);
 
         DRange3d smExtent, smExtentUors;
         this->GetRange(smExtent);
@@ -2907,6 +2910,8 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             computedTransform = Transform::FromProduct(approxTransform, computedTransform);
             }
         }
+	Transform translation = Transform::From(globalOrigin);
+	computedTransform = Transform::FromProduct(computedTransform, translation);
 
     return _SetReprojection(targetCS, computedTransform);
     }
