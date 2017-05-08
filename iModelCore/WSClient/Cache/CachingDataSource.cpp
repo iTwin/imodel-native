@@ -36,6 +36,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define CachedResultsName_Navigation    "CachingDataSource.Navigation"
 #define CachedResultsName_Schemas       "CachingDataSource.Schemas"
 
+static BeFileName s_assetDirectory;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -58,6 +60,16 @@ m_fileDownloadManager(new FileDownloadManager(*this))
     {}
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Arturas.Januska    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+void CachingDataSource::Initialize (BeFileNameCR hostAssetsDirectory)
+    {
+    s_assetDirectory = hostAssetsDirectory;
+    s_assetDirectory.AppendSeparator();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
@@ -67,6 +79,15 @@ CachingDataSource::~CachingDataSource()
         {
         CancelAllTasks()->Wait();
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Arturas.Januska    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+BeFileNameCR CachingDataSource::GetHostAssetsDirectory ()
+    {
+    return s_assetDirectory;
     }
 
 /*--------------------------------------------------------------------------------------+
