@@ -1152,7 +1152,10 @@ TEST(CurvePrimitive,TrivialPrimitives)
         ICurvePrimitivePtr bcurvePrimPtr = ICurvePrimitive::CreateBsplineCurve (bcurvePtr);
         CheckPrimitive (*bcurvePrimPtr, s_doPartials);
         }
-    
+    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(2, 0, 0), DVec3d::From(0, 2, 0));
+
+    auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
+    CheckPrimitive(*cp0, false);
     }    
 
 
@@ -2287,4 +2290,68 @@ TEST(CurveVector, CloneOffsetCurvesXY)
     auto offsetCurve2 = curve->CloneOffsetCurvesXY(offset);//offset only curves
     Check::SaveTransformed(*offsetCurve2);
     Check::ClearGeometry("CurveVector.CloneOffsetCurvesXY");
+    }
+
+TEST(CurveVector, GeometricConstructions) 
+    {// Arc
+    DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 0, 0),
+                                                    DPoint3d::From(2, 1, 0),
+                                                    DPoint3d::From(1, 2, 0));
+    ICurvePrimitivePtr ellipsePrim = ICurvePrimitive::CreateArc(ellipN);
+    Check::SaveTransformed(*ellipsePrim);
+    Check::Shift(10, 0, 0);
+    
+    //Partial Curve
+    double a = 0.10;
+    double b = 0.20;
+    auto child = ICurvePrimitive::CreatePartialCurve ((ICurvePrimitive*)&ellipsePrim, a, b);
+    Check::SaveTransformed(*child);
+    Check::Shift(10, 0, 0);
+
+    //Bspline Curve
+    bvector<DPoint3d> poles;
+    poles.push_back (DPoint3d::From (1,2,0));
+    poles.push_back (DPoint3d::From (1,1,0));
+    poles.push_back (DPoint3d::From (0,0,0));
+    poles.push_back (DPoint3d::From (0,-1,0));
+    MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, 3, false, false);
+    ICurvePrimitivePtr bsplineCurve = ICurvePrimitive::CreateBsplineCurve(*curve);
+    
+    Check::SaveTransformed(*bsplineCurve);
+    Check::Shift(10, 0, 0);
+
+    //BsplineCurveFromSource
+    ICurvePrimitivePtr bsplineCurveFromSource = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*curve);
+    Check::SaveTransformed(*bsplineCurveFromSource);
+    Check::Shift(10, 0, 0);
+
+    DPoint3d akimaPoints [] =
+        {
+                {5,-5,0},
+                {5,-4,0},
+                {5,-3,0},
+                {5.9,0.1,0},    // Hm, where does this really go?
+                {7,2,0},
+                {8,3,0},
+                {9,4,0},
+        };
+
+    //AkimaCurve
+    ICurvePrimitivePtr akima0 = ICurvePrimitive::CreateAkimaCurve (akimaPoints, 7);
+    Check::SaveTransformed(*akima0);
+    Check::Shift(10, 0, 0);
+
+    //point string 
+    bvector<DPoint3d> points;
+    points.push_back (DPoint3d::From (0,0,0));
+    points.push_back (DPoint3d::From (10,0,0));
+    points.push_back (DPoint3d::From (5,1,0));
+
+    ICurvePrimitivePtr cp = ICurvePrimitive::CreatePointString (points);
+    Check::SaveTransformed(*cp);
+    Check::Shift(10, 0, 0);
+
+    
+
+    Check::ClearGeometry("CurveVector.GeometricConstructions");
     }
