@@ -128,6 +128,7 @@ private:
 
     bool _HasGraphics() const override;
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
+    void _Invalidate() override { BeAssert(false); }
     SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileCacheKey() const override {return GetChildFile();}

@@ -68,10 +68,10 @@ private:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
-    virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
-    virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
-    virtual double _GetMaximumSize() const override;
-
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
+    double _GetMaximumSize() const override;
+    void _Invalidate() override;
 public:
     RootCR GetPointCloudRoot() const { return static_cast<RootCR>(GetRoot()); }
 
