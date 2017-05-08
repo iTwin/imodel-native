@@ -11,9 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ISchemaValidationRule;
-struct SchemaValidationResult;
-
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
 //+===============+===============+===============+===============+===============+======
@@ -23,9 +20,6 @@ struct SchemaValidator final
         SchemaValidator();
         ~SchemaValidator();
 
-        static bool ValidateSchema(SchemaValidationResult&, std::vector<std::unique_ptr<ISchemaValidationRule>> const&, ECN::ECSchemaCR);
-        static void Log(IssueReporter const&, SchemaValidationResult const&);
-
     public:
         static bool ValidateSchemas(IssueReporter const&, bvector<ECN::ECSchemaCP> const&, bool doNotFailOnLegacyIssues);
     };
@@ -34,284 +28,80 @@ struct SchemaValidator final
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
 //+===============+===============+===============+===============+===============+======
-struct ISchemaValidationRule
+struct IClassValidationRule
     {
-    public:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      06/2014
-        //+===============+===============+===============+===============+===============+======
-        enum Type
-            {
-            ValidBaseClasses,
-            NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-            ValidRelationshipClass,
-            ValidPropertyName,
-            ValidNavigationProperty
-            };
-
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      06/2014
-        //+===============+===============+===============+===============+===============+======
-        struct IError
-            {
-            private:
-                Type m_ruleType;
-
-                virtual void _Log(IssueReporter const&) const = 0;
-
-            protected:
-                explicit IError(Type ruleType) : m_ruleType(ruleType) {}
-
-            public:
-                virtual ~IError() {}
-
-                void Log(IssueReporter const& issues) const { return _Log(issues); }
-                Type GetRuleType() const { return m_ruleType; }
-            };
     private:
-        Type m_type;
-
-        virtual bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return true; }
+        virtual bool _ValidateClass(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const = 0;
 
     protected:
-        explicit ISchemaValidationRule(Type type) : m_type(type) {}
-
-        Type GetType() const { return m_type; }
-    public:
-        virtual ~ISchemaValidationRule() {}
-
-        bool ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return _ValidateSchema(result, schema, ecClass); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      06/2014
-//+===============+===============+===============+===============+===============+======
-struct SchemaValidationResult final : NonCopyableClass
-    {
-    private:
-        std::map<const ISchemaValidationRule::Type, std::unique_ptr<ISchemaValidationRule::IError>> m_errors;
+        IClassValidationRule()  {}
 
     public:
-        SchemaValidationResult() {}
+        virtual ~IClassValidationRule() {}
 
-        ISchemaValidationRule::IError& AddError(std::unique_ptr<ISchemaValidationRule::IError> error);
-
-        ISchemaValidationRule::IError* operator[](ISchemaValidationRule::Type);
-
-        std::map<const ISchemaValidationRule::Type, std::unique_ptr<ISchemaValidationRule::IError>> const& GetErrors() const { return m_errors; }
+        bool ValidateClass(IssueReporter const& issues, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return _ValidateClass(issues, schema, ecClass); }
     };
-
 
 //**************************** Subclasses *********************************************
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2017
 //+===============+===============+===============+===============+===============+======
-struct ValidBaseClassesRule final : ISchemaValidationRule
+struct ValidBaseClassesRule final : IClassValidationRule
     {
     private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      02/2017
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
-            {
-            enum class Kind
-                {
-                None = 0,
-                MultiInheritance = 1,
-                AbstractClassHasNonAbstractBaseClass = 2
-                };
-
-            private:
-                std::map<ECN::ECSchemaCP, std::vector<std::pair<ECN::ECClassCP, Kind>>> m_violatingClasses;
-                bool m_doNotFailForLegacyIssues = false;
-
-                void _Log(IssueReporter const&) const override;
-
-            public:
-                explicit Error(bool doNotFailForLegacyIssues) : IError(Type::ValidBaseClasses), m_doNotFailForLegacyIssues(doNotFailForLegacyIssues) {}
-                ~Error() {}
-
-                void AddViolatingClass(ECN::ECClassCR ecClass, Kind kind) { m_violatingClasses[&ecClass.GetSchema()].push_back(std::make_pair(&ecClass, kind)); }
-            };
-
         bool m_doNotFailForLegacyIssues = false;
 
-        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR, ECN::ECClassCR) const override;
+        bool _ValidateClass(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const override;
 
     public:
-        explicit ValidBaseClassesRule(bool doNotFailForLegacyIssues) : ISchemaValidationRule(Type::ValidBaseClasses), m_doNotFailForLegacyIssues(doNotFailForLegacyIssues) {}
+        explicit ValidBaseClassesRule(bool doNotFailForLegacyIssues) : IClassValidationRule(), m_doNotFailForLegacyIssues(doNotFailForLegacyIssues) {}
         ~ValidBaseClassesRule() {}
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct ValidRelationshipRule final : ISchemaValidationRule
+struct ValidRelationshipRule final : IClassValidationRule
     {
     private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      07/2015
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
-            {
-            enum class Kind
-                {
-                None = 0,
-                HasAnyClassConstraint = 1,
-                HasRelationshipClassAsConstraint = 2,
-                HasIncompleteConstraintDefinition = 4,
-                HasAdditionalProperties = 8
-                };
-
-            private:
-                struct Inconsistency final
-                    {
-                    ECN::ECRelationshipClassCP m_relationshipClass;
-                    Kind m_kind;
-                    ECN::ECRelationshipClassCP m_relationshipClassAsConstraintClass;
-
-                    Inconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relationshipClassAsConstraintClass)
-                        : m_relationshipClass(&relClass), m_kind(kind), m_relationshipClassAsConstraintClass(relationshipClassAsConstraintClass)
-                        {
-                        BeAssert(kind != Kind::None);
-                        }
-                    };
-
-                std::map<ECN::ECSchemaCP, std::vector<Inconsistency>> m_inconsistencies;
-
-                void _Log(IssueReporter const&) const override;
-
-
-            public:
-                Error() : IError(Type::ValidRelationshipClass) {}
-                ~Error() {}
-
-                void AddInconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies[&relClass.GetSchema()].push_back(Inconsistency(relClass, kind, relClassAsConstraint)); }
-            };
-
-        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
-
-        bool ValidateConstraint(Error&, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
+        bool _ValidateClass(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const override;
+        bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
     public:
-        ValidRelationshipRule() : ISchemaValidationRule(Type::ValidRelationshipClass) {}
+        ValidRelationshipRule() : IClassValidationRule() {}
         ~ValidRelationshipRule() {}
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
-struct NoPropertiesOfSameTypeAsClassRule final : ISchemaValidationRule
+struct ValidPropertiesRule final : IClassValidationRule
     {
     private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      06/2014
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
+        struct NavigationPropertyValidationContext final : NonCopyableClass
             {
-            private:
-                std::map<ECN::ECClassCP, std::vector<ECN::ECPropertyCP>> m_invalidProperties;
+            IssueReporter const& m_issues;
+            ECN::ECClassCR m_ecClass;
+            bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> m_navPropsByRelAndDirection;
+            bool m_hasDuplicates = false;
 
-                void _Log(IssueReporter const&) const override;
-
-            public:
-                Error() : IError(Type::NoPropertiesOfSameTypeAsClass) {}
-                ~Error() {}
-
-                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties[&prop.GetClass()].push_back(&prop); }
+            NavigationPropertyValidationContext(IssueReporter const& issues, ECN::ECClassCR ecClass) : m_issues(issues), m_ecClass(ecClass) {}
+            bool HasNavigationProperties() const { return !m_navPropsByRelAndDirection.empty(); }
+            void LogIssues() const;
+            static ECN::ECRelationshipClassCR GetRootRelationship(ECN::ECRelationshipClassCR);
             };
 
-        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
+        bool _ValidateClass(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const override;
+
+        bool ValidatePropertyName(IssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
+        bool ValidatePropertyStructType(IssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
+        bool ValidateNavigationProperty(NavigationPropertyValidationContext&, ECN::ECPropertyCR) const;
+        bool ValidateInheritedNavigationProperties(NavigationPropertyValidationContext&) const;
 
     public:
-        NoPropertiesOfSameTypeAsClassRule() : ISchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass) {}
-        ~NoPropertiesOfSameTypeAsClassRule() {}
+        ValidPropertiesRule() : IClassValidationRule() {}
+        ~ValidPropertiesRule() {}
     };
 
 
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      03/2017
-//+===============+===============+===============+===============+===============+======
-struct ValidPropertyNameRule final : ISchemaValidationRule
-    {
-    private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      03/2017
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
-            {
-            enum class Kind
-                {
-                SystemPropertyNamingCollision
-                };
-
-            private:
-                struct Inconsistency final
-                    {
-                    ECN::ECPropertyCP m_prop = nullptr;
-                    Kind m_kind;
-
-                    Inconsistency(ECN::ECPropertyCR prop, Kind kind) : m_prop(&prop), m_kind(kind) {}
-                    };
-
-                std::map<ECN::ECClassCP, std::vector<Inconsistency>> m_inconsistencies;
-
-                void _Log(IssueReporter const&) const override;
-
-            public:
-                Error() : IError(Type::ValidPropertyName) {}
-                ~Error() {}
-
-                void AddInconsistency(ECN::ECPropertyCR prop, Kind kind) { m_inconsistencies[&prop.GetClass()].push_back(Inconsistency(prop, kind)); }
-            };
-
-        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
-
-    public:
-        ValidPropertyNameRule() : ISchemaValidationRule(Type::ValidPropertyName) {}
-        ~ValidPropertyNameRule() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      10/2016
-//+===============+===============+===============+===============+===============+======
-struct ValidNavigationPropertyRule final : ISchemaValidationRule
-    {
-    private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      10/2016
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
-            {
-            private:
-                bmap<ECN::ECClassCP, bvector<ECN::NavigationECPropertyCP>> m_multiplicityGreaterOneInconsistencies;
-                bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> const* m_multipleNavPropsWithSameRelHierarchyInconsistency = nullptr;
-
-                void _Log(IssueReporter const&) const override;
-
-            public:
-                Error() : IError(Type::ValidNavigationProperty) {}
-                ~Error() {}
-
-                void AddMultiplicityInconsistency(ECN::ECClassCR ecClass, ECN::NavigationECPropertyCR navProp) { m_multiplicityGreaterOneInconsistencies[&ecClass].push_back(&navProp); }
-                void AddMultipleNavPropsWithSameRelHierarchyInconsistency(bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> const& incons) 
-                    { 
-                    if (m_multipleNavPropsWithSameRelHierarchyInconsistency == nullptr)
-                        m_multipleNavPropsWithSameRelHierarchyInconsistency = &incons; 
-                    }
-            };
-
-
-        mutable bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> m_navPropsPerRelClass;
-
-        bool _ValidateSchema(SchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
-
-        Error& GetError(SchemaValidationResult&) const;
-
-        static ECN::ECRelationshipClassCR GetRootRelationship(ECN::ECRelationshipClassCR);
-
-    public:
-        ValidNavigationPropertyRule() : ISchemaValidationRule(Type::ValidNavigationProperty) {}
-        ~ValidNavigationPropertyRule() {}
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

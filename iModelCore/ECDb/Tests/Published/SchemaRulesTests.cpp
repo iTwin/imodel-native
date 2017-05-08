@@ -19,70 +19,70 @@ struct SchemaRulesTestFixture : DbMappingTestFixture
 TEST_F(SchemaRulesTestFixture, Casing)
     {
     std::vector<SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECEntityClass typeName=\"TestClass\" >"
-                 "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"TESTCLASS\" >"
-                 "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "</ECSchema>",
+        SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                      <ECEntityClass typeName="TestClass" >
+                        <ECProperty propertyName="TestProperty" typeName="string" />
+                      </ECEntityClass>
+                      <ECEntityClass typeName="TESTCLASS" >
+                     <ECProperty propertyName="Property" typeName="string" />
+                   </ECEntityClass>
+                 </ECSchema>)xml",
                  false, "Classes with names differing only by case."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                 "  <ECEntityClass typeName=\"TestClass\" >"
-                 "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-                 "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "</ECSchema>",
+        SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                 <ECEntityClass typeName="TestClass" >
+                     <ECProperty propertyName="TestProperty" typeName="string" />
+                     <ECProperty propertyName="TESTPROPERTY" typeName="string" />
+                   </ECEntityClass>
+                 </ECSchema>)xml",
                  false, "Properties only differing by case within a class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                 "  <ECEntityClass typeName=\"TestClass\" >"
-                 "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"SubClass\" >"
-                 "    <BaseClass>TestClass</BaseClass>"
-                 "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "</ECSchema>",
+        SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">"
+                 <ECEntityClass typeName="TestClass" >
+                     <ECProperty propertyName="TestProperty" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="SubClass">
+                     <BaseClass>TestClass</BaseClass>
+                     <ECProperty propertyName="TESTPROPERTY" typeName="string" />
+                   </ECEntityClass>"
+                 </ECSchema>)xml",
                  false, "Properties only differing by case in a sub and base class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                 "  <ECEntityClass typeName=\"TestClass\" >"
-                 "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"TestClass2\" >"
-                 "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "</ECSchema>",
+        SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">"
+                 <ECEntityClass typeName="TestClass" >
+                     <ECProperty propertyName="TestProperty" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="TestClass2" >
+                     <ECProperty propertyName="TESTPROPERTY" typeName="string" />
+                   </ECEntityClass>
+                 </ECSchema>)xml",
                  true, "Properties differing only by case in two unrelated classes."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                 "  <ECEntityClass typeName=\"TestClass\" >"
-                 "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"SubClass\" >"
-                 "    <BaseClass>TestClass</BaseClass>"
-                 "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"TESTCLASS\" >"
-                 "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"TESTClass\" >"
-                 "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"Foo\" >"
-                 "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "  <ECEntityClass typeName=\"FOO\" >"
-                 "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
-                 "    <ECProperty propertyName=\"PROPerty\" typeName=\"string\" />"
-                 "    <ECProperty propertyName=\"PROPERTY\" typeName=\"string\" />"
-                 "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
-                 "    <ECProperty propertyName=\"PROP2\" typeName=\"string\" />"
-                 "  </ECEntityClass>"
-                 "</ECSchema>",
+        SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">"
+                 <ECEntityClass typeName="TestClass" >
+                     <ECProperty propertyName="TestProperty" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="SubClass">
+                     <BaseClass>TestClass</BaseClass>
+                     <ECProperty propertyName="TESTPROPERTY" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="TESTCLASS" >
+                     <ECProperty propertyName="Property" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName=\"TESTClass\" >
+                     <ECProperty propertyName="Property" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName=\"Foo\" >
+                     <ECProperty propertyName="Property" typeName="string" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName=\"FOO\" >
+                     <ECProperty propertyName="Property" typeName="string" />
+                     <ECProperty propertyName="PROPerty" typeName="string" />
+                     <ECProperty propertyName="PROPERTY" typeName="string" />
+                     <ECProperty propertyName="Prop2" typeName="string" />
+                     <ECProperty propertyName="PROP2" typeName="string" />
+                   </ECEntityClass>
+                 </ECSchema>)xml",
                  false, "Class and properties only differing by case within a class.")
         };
 

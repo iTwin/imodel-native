@@ -478,23 +478,17 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
     std::vector<DbColumn const*> const* columns;
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     id = columns->front();
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropRelECClassId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     relClassId = columns->front();
 
     if (SUCCESS != propertyMap->SetMembers(*id, *relClassId, property.GetRelationshipClass()->GetId()))
-        {
         return nullptr;
-        }
 
     return propertyMap;
     }
