@@ -273,7 +273,7 @@ bool ValidPropertiesRule::ValidateNavigationProperty(NavigationPropertyValidatio
             ECRelationshipConstraintCR toConstraint = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
 
             ctx.m_issues.Report("Invalid navigation property in ECClass '%s': '%s' has a multiplicity of '%s' although the maximum supported multiplicity is 1.",
-                                ctx.m_ecClass, navProp->GetName().c_str(), toConstraint.GetMultiplicity().ToString().c_str());
+                                ctx.m_ecClass.GetFullName(), navProp->GetName().c_str(), toConstraint.GetMultiplicity().ToString().c_str());
             }
 
         return false;
