@@ -391,4 +391,133 @@ TEST(Bilinear,Hello)
                 }
             }
         }
-    }        
+    }
+
+void CheckBezierEvaluationOnCircle (bvector<double> &c, bvector<double> &s, bvector<double> &w)
+    {
+    bvector<double> testFractions {0.0, 1.0, 0.5, 1.0/3.0, 2.0/5.0};
+    int order = (int)c.size ();
+    for (auto f : testFractions)
+        {
+        double c1, s1, w1;
+        bsiBezier_evaluate (&c1, &c[0], order, 1, f);
+        bsiBezier_evaluate (&s1, &s[0], order, 1, f);
+        bsiBezier_evaluate (&w1, &w[0], order, 1, f);
+        Check::Near (w1 * w1, c1 * c1 + s1 * s1, "Bezier point is on circle");
+        }
+    }
+// Note args are passed by value (and modified internally, but not returned)
+// Input c,s,w for which c(u) * c(u) + s (u) * s(u) == w(u) * w(u), i.e (c/w)(s/w) is always on the unit circle.
+// Apply double angle trig identities to successively double the angle covered by the bezier.
+void CheckBezierCircleAngleDoubling (bvector<double> c, bvector<double> s, bvector<double> w, size_t maxOrderToDouble, int noisy)
+    {
+    bvector<double> cc, ss, ww, cs;
+    CheckBezierEvaluationOnCircle (c, s, w);
+    if (noisy > 0)
+        {
+        GEOMAPI_PRINTF("\n\n Bezier Circle base order %d\n         c             s           w     degrees  delta\n", (int)c.size ());
+        double degrees0 = 0.0;
+        for (size_t i = 0; i < c.size (); i++)
+            {
+            double degrees1 = Angle::RadiansToDegrees (atan2 (s[i], c[i]));
+            GEOMAPI_PRINTF ("( %23.17g   %23.17g )/  %23.17g   (%23.17g  %10.5f)\n", c[i], s[i], w[i], degrees1, degrees1 - degrees0);
+            degrees0 = degrees1;
+            }
+        }
+    // c,s,w are beziers for degree d circle polynomial, initially d=2;
+    // form (cc-ss), (2cs), and (ww) as degree 2*d.
+    for (;c.size () <= maxOrderToDouble;)
+        {
+        int orderA = (int)c.size ();
+        int orderB = orderA * 2 - 1;
+        cc.resize ((size_t)orderB);
+        ss.resize ((size_t)orderB);
+        ww.resize ((size_t)orderB);
+        cs.resize ((size_t)orderB);
+
+        Check::True (bsiBezier_univariateProduct
+            (
+            &cc[0], 0, 1,
+            &c[0], orderA, 0, 1,
+            &c[0], orderA, 0, 1
+            ));
+        Check::True (bsiBezier_univariateProduct
+            (
+            &ss[0], 0, 1,
+            &s[0], orderA, 0, 1,
+            &s[0], orderA, 0, 1
+            ));
+        Check::True (bsiBezier_univariateProduct
+            (
+            &ww[0], 0, 1,
+            &w[0], orderA, 0, 1,
+            &w[0], orderA, 0, 1
+            ));
+        Check::True (bsiBezier_univariateProduct
+            (
+            &cs[0], 0, 1,
+            &c[0], orderA, 0, 1,
+            &s[0], orderA, 0, 1
+            ));
+        if (noisy > 2)
+            {
+            GEOMAPI_PRINTF("\n         cc             ss           cs              ww\n");
+            for (size_t i = 0; i < (size_t)orderB; i++)
+                {
+                GEOMAPI_PRINTF (" %23.17g   %23.17g   %23.17g    %23.17g\n", cc[i], ss[i], cs[i], ww[i]);
+                }
+            }
+        
+        c.clear ();
+        s.clear ();
+        w.clear ();
+        if (noisy > 1)
+            GEOMAPI_PRINTF("\n Order %d Bezier Circle Poles (c,s,w)\n", orderB);
+        for (size_t i = 0; i < (size_t)orderB; i++)
+            {
+            c.push_back (cc[i] - ss[i]);
+            s.push_back (2.0 * cs[i]);
+            w.push_back (ww[i]);
+            if (noisy > 1)
+                GEOMAPI_PRINTF (" %23.17g   %23.17g   %23.17g\n", c[i], s[i], w[i]);
+            }
+        CheckBezierEvaluationOnCircle (c, s, w);
+        }
+    }
+
+// Test construction of a circle from a (weighted) bezier polynomial of various degrees and angle range.
+// Use double angle formulas to raise the angle coverage.
+TEST(Bezier,Circles)
+    {
+    static int s_noisyCircles = 0;
+    for (double baseDegrees : bvector<double> {180.0, 90.0, 45.0})
+        {
+        if (s_noisyCircles > 0)
+            GEOMAPI_PRINTF ("\n*** Bezier Polynomials.  Base Span Degrees %g\n", baseDegrees);
+        // bezier so (c/w) (s/w) is an exact circle -- c*c+s*s = w*w
+        Angle d0 = Angle::FromDegrees (0.0);
+        Angle d1 = Angle::FromDegrees (baseDegrees * 0.5);
+        Angle d2 = Angle::FromDegrees (baseDegrees);
+        // Quadratic Bezier for baseDegrees.
+        // first pole is on the circle at angle 0, weight 1
+        // last pole is on the circle at angle baseDegrees, weight 1
+        // direct c,s of middle pole is on the circle at angle baseDegrees/2, weight baseDegrees.Cos ()
+        bvector<double> c {d0.Cos (), d1.Cos (), d2.Cos ()};
+        bvector<double> s {d0.Sin (), d1.Sin (), d2.Sin ()};
+        bvector<double> w {1.0,d1.Cos (),1.0};
+        CheckBezierCircleAngleDoubling (c, s, w, 9, s_noisyCircles);
+        for (;c.size () < 6;)
+            {
+            // Raise the degree by 1.  First, last poles stay on the circle with weight 1.
+            int orderA = (int) c.size ();
+            c.resize (c.size () + 1);
+            s.resize (c.size () + 1);
+            w.resize (c.size () + 1);
+            int orderB = orderA + 1;
+            bsiBezier_raiseDegreeInPlace (&c[0], orderA, orderB, 1);
+            bsiBezier_raiseDegreeInPlace (&s[0], orderA, orderB, 1);
+            bsiBezier_raiseDegreeInPlace (&w[0], orderA, orderB, 1);
+            CheckBezierCircleAngleDoubling (c, s, w, 10, s_noisyCircles);
+            }
+        }
+    }
