@@ -110,11 +110,18 @@ public:
 struct DTMRayIntersection
     {
     DTMRayIntersection() { isOnMesh = true; hasNormal = false; rayFraction = 0; }
-    DPoint3d point; // intersection point
-    DVec3d normal;  // normal on point if exists
-    bool isOnMesh;  // is it on the mesh or on Node
-    bool hasNormal; // normal of the hit point
-    double rayFraction; // the distance from point to the Ray source
+    DPoint3d point;     // intersection point
+    DVec3d normal;      // normal on point if exists
+    bool isOnMesh;      // is it on the mesh or on Node
+    bool hasNormal;     // normal exists ?
+    double rayFraction; // the distance from point to the Ray source along Ray direction
+    };
+
+struct DTMIntersectionCompare {
+    DTMIntersectionCompare() {};
+    bool operator() (DTMRayIntersection pt1, DTMRayIntersection pt2) {
+        return (pt1.rayFraction < pt2.rayFraction);
+        }
     };
 
 /*=================================================================================**//**
