@@ -28,12 +28,12 @@ enum OperationType
     SAS_URI,
     LIST_CLUSTERS,
     CREATE_JOB,
-    ADD_JOB,
+    SUBMIT_JOB,
     DELETE_JOB,
     GET_JOBS,
     GET_JOB,
     //JOB_RESULT,
-    JOB_CANCEL,
+    CANCEL_JOB,
     last
     };
 
@@ -113,7 +113,6 @@ public:
     Utf8String                  m_token;
 
     int                         m_userId;
-    int                         m_jobCount;
 
     User(int id, Utf8String token);
     
@@ -128,7 +127,7 @@ public:
     CURL* GetProject();
     CURL* SASUri();
     CURL* ListClusters();
-    CURL* CreateJob();
+    CURL* CreateJob(Utf8String outputGuid);
     void  ValidateCreateJob(int activeUsers);
     CURL* SubmitJob();
     CURL* DeleteJob();
@@ -136,6 +135,7 @@ public:
     CURL* GetJobById();
     //CURL* GetJobResult();
     CURL* CancelJob();
+    void ValidateCancelJob(int activeUsers);
 
     CURL* PrepareRequest();
 
