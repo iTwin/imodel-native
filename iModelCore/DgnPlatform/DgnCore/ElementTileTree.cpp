@@ -228,7 +228,6 @@ constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we con
 constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 100;
-constexpr double s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 4.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
@@ -823,6 +822,7 @@ public:
 
     bool AnySkipped() const { return m_anySkipped; }
     Entries const& GetEntries() const { return m_entries; }
+    double ComputeLeafTolerance() const;
 };
 
 END_UNNAMED_NAMESPACE
@@ -955,7 +955,7 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_leafTolerance(s_minLeafTolerance), m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(m_is3d)
+    m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(m_is3d)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -1178,11 +1178,8 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::InitTolerance()
     {
-    double leafTolerance = GetElementRoot().GetLeafTolerance();
-    double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
-
-    m_isLeaf = tileTolerance <= leafTolerance;
-    m_tolerance = m_isLeaf ? leafTolerance : tileTolerance;
+    m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
+    m_isLeaf = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1572,6 +1569,26 @@ DRange3d Tile::GetDgnRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double ElementCollector::ComputeLeafTolerance() const
+    {
+    // This function is used when we decide to create a leaf node because the tile's range contains too few elements to be worth subdividing.
+    // Computes the tile's tolerance based on the range of the smallest element within the range.
+    double minSizeSq = 0.0;
+    for (auto iter = m_entries.rbegin(); iter != m_entries.rend(); ++iter)
+        {
+        if (0.0 < (minSizeSq = iter->first))
+            break;
+        }
+
+    if (0.0 >= minSizeSq)
+        return 0.001;
+
+    return sqrt(minSizeSq) / s_minToleranceRatio;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
@@ -1606,7 +1623,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
         // If no elements were skipped and only a small number of elements exist within this tile's range, make it a leaf tile.
         // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
         SetIsLeaf();
-        m_tolerance = root.GetLeafTolerance();
+        m_tolerance = collector.ComputeLeafTolerance();
         }
 
     if (collector.AnySkipped())

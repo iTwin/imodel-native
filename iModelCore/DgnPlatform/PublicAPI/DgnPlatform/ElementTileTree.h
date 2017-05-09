@@ -101,7 +101,6 @@ private:
 
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
-    double                          m_leafTolerance;
     mutable BeMutex                 m_mutex;
     mutable BeSQLite::BeDbMutex     m_dbMutex;
     mutable GeomPartMap             m_geomParts;
@@ -126,7 +125,6 @@ public:
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
     bool WantDebugRanges() const { return m_debugRanges; }
-    double GetLeafTolerance() const { return m_leafTolerance; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 
