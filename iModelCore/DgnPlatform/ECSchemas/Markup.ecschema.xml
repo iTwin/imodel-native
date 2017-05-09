@@ -34,7 +34,7 @@
 
     <ECEntityClass typeName="Redline">
         <BaseClass>bis:Document</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

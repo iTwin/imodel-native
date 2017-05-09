@@ -80,11 +80,6 @@
         <ECProperty propertyName="StatementTypes" typeName="AutoHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="BfoMapping" displayLabel="BFO Mapping" appliesTo="Any" modifier="Sealed" description="Specifies the mapping to the concept described by the Basic Formal Ontology (http://ifomis.uni-saarland.de/bfo/) or the Information Artifact Ontology (http://www.ontobee.org/ontology/IAO)">
-        <ECProperty propertyName="Entity" typeName="string" description="The entity from BFO or IAO that is the most direct mapping"/>
-        <ECProperty propertyName="Comment" typeName="string" description="Comment explaining why the mapping was established to the specified BFO or IAO entity"/>
-    </ECCustomAttributeClass>
-
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -105,6 +100,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
+        <!-- @see Element.CodeSpec ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
@@ -121,10 +117,6 @@
 
     <ECEntityClass typeName="Model" modifier="Abstract" description="A Model is a container for persisting a collection of related elements.">
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>None</Entity>
-                <Comment>In BIS, models are a way of partitioning (for performance reasons) an overall repository. BFO does not directly have this concept.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00">
                 <Restrictions>
                     <string>Clone</string><!-- It is never permitted to clone a model without its handler -->
@@ -134,17 +126,17 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
         </ECNavigationProperty>
-       <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
-            </ECCustomAttributes>
-         </ECProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -153,6 +145,11 @@
         <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -164,6 +161,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel2d" modifier="Abstract" displayLabel="2D Geometric Model" description="A container for persisting 2D geometric elements.">
         <BaseClass>GeometricModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="GlobalOrigin" typeName="point2d" displayLabel="Global Origin" description="The actual coordinates of (0,0) in Model coordinates. An offest applied to all Model coordinates."/>
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalModel2d" modifier="Abstract" displayLabel="2D Graphical Model" description="A container for persisting 2D graphical elements.">
@@ -266,7 +266,24 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECRelationshipClass typeName="ModelOwnsSubModel" strength="embedding" modifier="Sealed">
+        <!-- @see Model.ParentModel ECNavigationProperty -->
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyConstraint>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" roleLabel="owns sub" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Model"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
+        <!-- @see Element.Model ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the ModelId foreign key column in the bis_Element table -->
@@ -281,15 +298,16 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="IModellableElement" modifier="Abstract" displayLabel="Modellable Element" description="An interface which indicates that an Element can be broken down or described by a (sub) Model.  This interface is mutually exclusive with IParentElement.">
+    <ECEntityClass typeName="ISubModeledElement" modifier="Abstract" displayLabel="Modellable Element" description="An interface which indicates that an Element can be broken down or described by a (sub) Model.  This interface is mutually exclusive with IParentElement.">
         <ECCustomAttributes>
             <IsMixin xmlns="CoreCustomAttributes.01.00">
-                <!-- Only subclasses of bis:Element can implement the IModellableElement interface -->
+                <!-- Only subclasses of bis:Element can implement the ISubModeledElement interface -->
                 <AppliesToEntityClass>Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <!-- @see Model.ModeledElement ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
@@ -335,10 +353,6 @@
         <!-- NOTE: Only platform can directly subclass from Element. Everyone else should pick the most appropriate superclass. -->
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:entity</Entity>
-                <Comment>In BFO, everything descends from bfo:entity. In BIS, this generally maps to bis:Element although BIS has other top-level concepts such as bis:Model and bis:ElementAspect.</Comment>
-            </BfoMapping>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
@@ -408,7 +422,6 @@
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                     <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
                 </PropertyMap>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -421,7 +434,6 @@
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>True</IsNullable>
                     <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
                 </PropertyMap>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
@@ -473,10 +485,6 @@
     <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="Information Content Element is an abstract base class for modeling pure information entities. Only the core framework should directly subclass from Information Content Element. Domain and application developers should start with the most appropriate subclass of Information Content Element.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:information_content_entity</Entity>
-                <Comment>In IAO, an iao:information_content_entity only identifies information. In BIS, a bis:InformationContentElement not only identifies, but can also contain the encoded information.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
@@ -487,7 +495,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>32</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -498,7 +506,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>32</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -534,6 +542,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
+        <!-- @see TypeDefinitionElement.Recipe ECNavigationProperty -->
         <!-- Note: not configured as a foreign key because the RecipeDefinitionElement may be excluded in a filtered briefcase -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="TypeDefinitionElement" />
@@ -562,6 +571,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
+        <!-- @see GeometricElement2d.TypeDefinition ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -584,6 +594,7 @@
     </ECRelationshipClass>
     
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
+        <!-- @see GeometricElement3d.TypeDefinition ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -619,14 +630,14 @@
     </ECEntityClass>
     <ECEntityClass typeName="TemplateRecipe2d" displayLabel="2D Template Recipe" description="A recipe that uses a 2D template for creating new instances.">
         <BaseClass>RecipeDefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="TemplateRecipe3d" displayLabel="3D Template Recipe" description="A recipe that uses a 3D template for creating new instances.">
         <BaseClass>RecipeDefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -642,29 +653,29 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
             <Class class="Subject"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="InformationPartitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SubjectOwnsChildSubjects" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="Subject"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
             <Class class="Subject"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract" displayLabel="Information Partition" description="Information Partition is an abstract base class for elements that indicate that there is a new modeling perspective within the overall DgnDb information hierarchy. An Information Partition is always parented to a Subject and broken down by a Model.">
         <BaseClass>InformationContentElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -717,7 +728,7 @@
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -763,7 +774,7 @@
 
     <ECEntityClass typeName="RepositoryLink" modifier="Sealed" displayLabel="Repository Link" description="An information element that links to a repository.">
         <BaseClass>UrlLink</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -806,12 +817,9 @@
     <ECEntityClass typeName="Document" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:document</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -819,7 +827,7 @@
 
     <ECEntityClass typeName="Drawing">
         <BaseClass>Document</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -865,7 +873,7 @@
 
     <ECEntityClass typeName="Sheet">
         <BaseClass>Document</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -878,9 +886,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see Sheet.SheetTemplate ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="Sheet" />
         </Source>
@@ -890,9 +896,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see SheetTemplate.Border ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetTemplate" />
         </Source>
@@ -902,9 +906,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see SheetBorder.BorderTemplate ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetBorder" />
         </Source>
@@ -925,7 +927,7 @@
         <BaseClass>InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -942,13 +944,9 @@
         <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:independent_continuant</Entity>
-                <Comment>For BIS, bis:GeometricElement2d and bis:GeometricElement3d have a common bis:GeometricElement base class for source code optimization purposes. However, when mapped to BFO/IAO, bis:GeometricElement2d and bis:GeometricElement3d are in different branches of the hierarchy.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>32</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1018,9 +1016,6 @@
         <!-- 3D geometric element that is used to convey information within 3D graphical presentations. -->
         <BaseClass>GeometricElement3d</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:figure</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -1030,28 +1025,22 @@
     <ECEntityClass typeName="PhysicalElement" modifier="Abstract" displayLabel="Physical Element" description="A Physical Element is spatially located, has mass, and can be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:material_entity</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalPortion" modifier="Abstract" displayLabel="Physical Portion" description="A Physical Portion represents an arbitrary portion of a larger Physical Element that will be broken down in more detail in a separate (sub) Physical Model.">
         <BaseClass>PhysicalElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract" displayLabel="Spatial Location Element" description="A Spatial Location Element identifies a 'tracked' real world location but has no mass and cannot be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:immaterial_entity</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationPortion" modifier="Abstract" displayLabel="Spatial Location Portion" description="A Spatial Location Portion represents an arbitrary portion of a larger Spatial Location Element that will be broken down in more detail in a separate (sub) Spatial Location Model.">
         <BaseClass>SpatialLocationElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement" displayLabel="Volume Element" description="A Volume Element is a Spatial Location Element that is restricted to defining a volume.">
         <BaseClass>SpatialLocationElement</BaseClass>
@@ -1063,13 +1052,9 @@
         <!-- NOTE: only platform should directly subclass GeometricElement2d -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:information_content_entity</Entity>
-                <Comment>For BIS, bis:GeometricElement2d and bis:GeometricElement3d have a common bis:GeometricElement base class for source code optimization purposes. However, when mapped to BFO/IAO, bis:GeometricElement2d and bis:GeometricElement3d are in different branches of the hierarchy.</Comment>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1114,11 +1099,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement2d" modifier="Abstract" displayLabel="2D Graphical Element" description="Abstract base class for 2D Geometric Elements that are used to convey information within graphical presentations (like drawings).">
         <BaseClass>GeometricElement2d</BaseClass>
-        <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>iao:figure</Entity>
-            </BfoMapping>
-        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement2d" displayLabel="2D Annotation Element" description="2D element used to annotate drawings and sheets.">
         <BaseClass>GraphicalElement2d</BaseClass>
@@ -1153,10 +1133,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="TextAnnotation2d"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
@@ -1169,10 +1149,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="TextAnnotation3d"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
@@ -1228,10 +1208,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableHeader"/>
         </Target>
     </ECRelationshipClass>
@@ -1245,10 +1225,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableRow"/>
         </Target>
     </ECRelationshipClass>
@@ -1262,10 +1242,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableColumn"/>
         </Target>
     </ECRelationshipClass>
@@ -1294,10 +1274,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableCell"/>
         </Target>
     </ECRelationshipClass>
@@ -1311,10 +1291,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableMerge"/>
         </Target>
     </ECRelationshipClass>
@@ -1332,10 +1312,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableSymbology"/>
         </Target>
     </ECRelationshipClass>
@@ -1351,10 +1331,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="AnnotationTable"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="AnnotationTableEdgeRun"/>
         </Target>
     </ECRelationshipClass>
@@ -1416,12 +1396,8 @@
         <ECProperty propertyName="Scale" typeName="double" />
         <ECProperty propertyName="Clip" typeName="string" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="ViewIsAttached" strength="embedding" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
+    <ECRelationshipClass typeName="ViewIsAttached" strength="referencing" modifier="Sealed">
+        <!-- @see ViewAttachment.View ECNavigationProperty -->
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1430,7 +1406,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="IParentElement" modifier="Abstract" displayLabel="Parent Element" description="An interface that indicates that this Element is capable of being a parent (owning child Elements). This interface is mutually exclusive with IModellableElement.">
+    <ECEntityClass typeName="IParentElement" modifier="Abstract" displayLabel="Parent Element" description="An interface that indicates that this Element is capable of being a parent (owning child Elements). This interface is mutually exclusive with ISubModeledElement.">
         <ECCustomAttributes>
             <IsMixin xmlns="CoreCustomAttributes.01.00">
                 <!-- Only subclasses of bis:Element can implement the IParentElement interface -->
@@ -1439,6 +1415,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <!-- @see Element.Parent ECNavigationProperty -->
         <!-- WIP: Should be abstract? -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
@@ -1508,7 +1485,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1519,6 +1496,7 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <!-- @see ElementUniqueAspect.Element ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -1540,7 +1518,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1551,6 +1529,7 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+        <!-- @see ElementMultiAspect.Element ECNavigationProperty -->
         <ECCustomAttributes>
             <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -1601,21 +1580,22 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="ElementExternalKey"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+        <!-- Creates bis_ElementRefersToElements link table -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1629,6 +1609,7 @@
 
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing" modifier="None">
         <!-- WIP: Rename to ElementDriveElements? -->
+        <!-- Creates bis_ElementDrivesElement link table -->
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1638,7 +1619,7 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
@@ -1690,10 +1671,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="CategoryOwnsSubCategories" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
             <Class class="Category"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="SubCategory"/>
         </Target>
     </ECRelationshipClass>
@@ -1715,6 +1696,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <!-- @see GeometricElement2d.Category ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
@@ -1729,6 +1711,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <!-- @see GeometricElement3d.Category ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
@@ -1743,34 +1726,30 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="TrueColor" modifier="Sealed" displayLabel="True Color">
+    <ECEntityClass typeName="ColorBook" modifier="Sealed" displayLabel="Color Book">
+        <!-- Individual colors stored in JsonProperties -->
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Data" typeName="int">
-          <ECCustomAttributes>
-              <CustomHandledProperty>
-                  <StatementTypes>3</StatementTypes>
-              </CustomHandledProperty>
-          </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-
+    
     <ECEntityClass typeName="MaterialElement" modifier="Sealed" displayLabel="Material">
         <BaseClass>DefinitionElement</BaseClass>
         <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="PaletteName" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="MaterialElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
             <Class class="MaterialElement"/>
         </Target>
     </ECRelationshipClass>
@@ -1907,12 +1886,8 @@
         <ECProperty propertyName="Enabled" typeName="boolean" displayLabel="Is light turned on" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
+    <ECRelationshipClass typeName="BaseModelForView2d" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition2d.BaseModel ECNavigationProperty -->
         <Source multiplicity="(1..1)" roleLabel="is base model for" polymorphic="true">
             <Class class="GeometricModel2d"/>
         </Source>
@@ -1920,10 +1895,9 @@
             <Class class="ViewDefinition2d"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see ViewDefinition3d.ModelSelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1933,9 +1907,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see ViewDefinition.CategorySelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1945,9 +1917,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
+        <!-- @see ViewDefinition.DisplayStyle ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1977,6 +1947,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
+        <!-- Creates the bis_ModelSelectorRefersToModels link table -->
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
@@ -2125,9 +2096,6 @@
     <ECEntityClass typeName="RoleElement" modifier="Abstract" displayLabel="Role Element" description="A real world entity is modeled as a Role Element when a set of external circumstances define an important role (one that is worth tracking) that is not intrinsic to the entity playing the role. For example, a person can play the role of a teacher or a rock can play the role of a boundary marker.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <BfoMapping xmlns="BisCore.01.00">
-                <Entity>bfo:role</Entity>
-            </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
@@ -2173,24 +2141,12 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing" modifier="None">
-        <BaseClass>ElementRefersToElements</BaseClass>
-        <!-- WIP: Remove? -->
-        <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <Source multiplicity="(0..*)" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
-            <Class class="GeometryPart"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="DrawingGraphic"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
             <Class class="GeometricElement"/>
         </Target>
     </ECRelationshipClass>

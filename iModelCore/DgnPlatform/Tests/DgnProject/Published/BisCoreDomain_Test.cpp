@@ -95,7 +95,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_DefinitionElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([BaseModelId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -105,7 +104,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement2d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ViewId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -168,7 +166,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ModelId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([UserLabel]) WHERE ([UserLabel] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([CategoryId])");
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement3d) "]([CategoryId])");
 
         for (Utf8StringCR expectedSql : expectedSqlList)
@@ -220,6 +217,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
         {
         DgnModelPtr model = m_db->Models().GetModel(DgnModel::RepositoryModelId());
         ASSERT_TRUE(model.IsValid());
+        ASSERT_FALSE(model->IsTemplate());
         BeTest::SetFailOnAssert(false);
         DgnDbStatus status = model->Delete();
         BeTest::SetFailOnAssert(true);
@@ -230,6 +228,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
         {
         DgnModelPtr model = m_db->Models().GetModel(DgnModel::DictionaryId());
         ASSERT_TRUE(model.IsValid());
+        ASSERT_FALSE(model->IsTemplate());
         BeTest::SetFailOnAssert(false);
         DgnDbStatus status = model->Delete();
         BeTest::SetFailOnAssert(true);
@@ -254,10 +253,6 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
 
     // Validate CodeSpecs of RepositoryScope
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_NullCodeSpec)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialCategory)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TrueColor)->IsRepositoryScope());
 
     // Validate CodeSpecs of ModelScope
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationFrameStyle)->IsModelScope());
@@ -267,6 +262,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystem3d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystemSpatial)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ColorBook)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Drawing)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DrawingCategory)->IsModelScope());
@@ -274,13 +270,16 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GraphicalType2d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LineStyle)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LinkElement)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_PhysicalType)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Sheet)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialCategory)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialLocationType)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe2d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TemplateRecipe3d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TextAnnotationSeed)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ViewDefinition)->IsModelScope());
 
     // Validate CodeSpecs of ParentElementScope

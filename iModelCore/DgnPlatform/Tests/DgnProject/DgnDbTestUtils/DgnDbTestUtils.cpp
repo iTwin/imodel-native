@@ -271,7 +271,7 @@ DgnCategoryId DgnDbTestUtils::InsertSpatialCategory(DgnDbR db, Utf8CP categoryNa
     {
     MUST_HAVE_HOST(DgnCategoryId());
 
-    SpatialCategory category(db, categoryName, rank);
+    SpatialCategory category(db.GetDictionaryModel(), categoryName, rank);
     SpatialCategoryCPtr persistentCategory = category.Insert(appearance);
     EXPECT_TRUE(persistentCategory.IsValid());
 

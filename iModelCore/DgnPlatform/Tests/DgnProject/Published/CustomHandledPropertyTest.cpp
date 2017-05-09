@@ -913,7 +913,7 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
     DgnGeometryPartId existingPartId;
     if (true)
     {
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, DgnGeometryPart::CreateCode(GetDgnDb(), "GeomPart", "Test"));
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(m_db->GetDictionaryModel(), "Test-GeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));

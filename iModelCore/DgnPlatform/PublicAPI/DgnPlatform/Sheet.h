@@ -274,8 +274,10 @@ namespace Attachment
 
         bool _HasChildren() const override {return false;}
         ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loadss, Dgn::Render::SystemP renderSys) override {return nullptr;}
         void _DrawGraphics(TileTree::DrawArgsR args, int depth) const override;
+        void _GetGraphics(TileTree::DrawGraphicsR drawGraphics, int depth) const override;
+
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
         Tree& GetTree() const {return (Tree&) m_root;}
     };
@@ -288,7 +290,7 @@ namespace Attachment
         {
             Render::TexturePtr m_texture;
 
-            Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
+            Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
             BentleyStatus _LoadTile() override;
             folly::Future<BentleyStatus> _SaveToDb() override;
             folly::Future<BentleyStatus> _ReadFromDb() override;
@@ -298,7 +300,7 @@ namespace Attachment
         Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
         Tree& GetTree() const {return (Tree&) m_root;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileResource(*this), *this, loads);}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return new Loader(GetTree()._ConstructTileResource(*this), *this, loads, renderSys);}
     };
 
     DEFINE_REF_COUNTED_PTR(Tree)
@@ -346,9 +348,9 @@ namespace Handlers
     };
 
     //! The ModelHandler for Sheet::Model
-    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Model
+    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Geometric2d, DGNPLATFORM_EXPORT)
     };
 };
 

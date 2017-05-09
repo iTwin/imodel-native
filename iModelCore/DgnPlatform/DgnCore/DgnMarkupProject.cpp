@@ -164,7 +164,7 @@ static void createImageCategory(DefinitionModelR model)
 //---------------------------------------------------------------------------------------
 static void createRedlineCodeSpec(DgnDbR db)
     {
-    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline);
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline, CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         codeSpec->Insert();
     }
@@ -902,9 +902,10 @@ ViewControllerPtr RedlineViewDefinition::_SupplyController() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, DgnCodeCR code)
+RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, Utf8StringCR name)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+    DgnCode code = CreateCode(model, name);
     if (!code.IsValid())
         {
         BeAssert(false && "A code is required");

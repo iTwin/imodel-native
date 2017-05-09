@@ -93,9 +93,9 @@ DgnModelId DgnElement::GetSubModelId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
     {
-    bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
-    BeAssert(isModellable && "Only element ECClasses that implement bis:IModellableElement can have SubModels");
-    return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
+    bool isSubModeled = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ISubModeledElement);
+    BeAssert(isSubModeled && "Only ECClasses that implement bis:ISubModeledElement can have SubModels");
+    return isSubModeled ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3836,23 +3836,7 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::InsertGeomStream() const
     {
-    DgnDbStatus status = WriteGeomStream();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
-    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
-    DgnDbR db = GetDgnDb();
-    IdSet<DgnGeometryPartId> parts;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
-    for (DgnGeometryPartId const& partId : parts)
-        {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
-            status = DgnDbStatus::WriteError;
-        }
-#endif
-
-    return status;
+    return WriteGeomStream();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3860,60 +3844,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::UpdateGeomStream() const
     {
-    DgnDbStatus status = WriteGeomStream();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
-    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
-    DgnDbR db = GetDgnDb();
-    DgnElementId elementId = GetElementId();
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, elementId);
-
-    IdSet<DgnGeometryPartId> partsOld;
-    while (BE_SQLITE_ROW == statement->Step())
-        partsOld.insert(statement->GetValueId<DgnGeometryPartId>(0));
-
-    IdSet<DgnGeometryPartId> partsNew;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
-
-    if (partsOld.empty() && partsNew.empty())
-        return status;
-
-    bset<DgnGeometryPartId> partsToRemove;
-    std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
-
-    if (!partsToRemove.empty())
-        {
-        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", db.GetECCrudWriteToken());
-        if (!statement.IsValid())
-            return DgnDbStatus::BadRequest;
-
-        statement->BindId(1, elementId);
-
-        for (DgnGeometryPartId const& partId : partsToRemove)
-            {
-            statement->BindId(2, partId);
-            if (BE_SQLITE_DONE != statement->Step())
-                status = DgnDbStatus::BadRequest;
-            }
-        }
-
-    bset<DgnGeometryPartId> partsToAdd;
-    std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
-
-    for (DgnGeometryPartId const& partId : partsToAdd)
-        {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, elementId, partId))
-            status = DgnDbStatus::WriteError;
-        }
-#endif
-
-    return status;
+    return WriteGeomStream();
     }
 
 /*---------------------------------------------------------------------------------**//**

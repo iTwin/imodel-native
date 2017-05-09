@@ -139,13 +139,15 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId)
+static DbResult insertIntoDgnModel(DgnDbR db, DgnClassId classId, DgnElementId modeledElementId, DgnModelId parentModelId, bool isPrivate)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,IsPrivate) VALUES(?,?,?,?,1)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ParentModelId,ModeledElementId,ModeledElementRelECClassId,IsPrivate,IsTemplate) VALUES(?,?,?,?,?,?,0)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
-    stmt.BindId(3, modeledElementId);
-    stmt.BindId(4, db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    stmt.BindId(3, parentModelId);
+    stmt.BindId(4, modeledElementId);
+    stmt.BindId(5, db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    stmt.BindBoolean(6, isPrivate);
 
     DbResult result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -195,7 +197,7 @@ DbResult DgnDb::CreateDictionaryModel()
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
     BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, modeledElementId, classId);
+    return insertIntoDgnModel(*this, classId, modeledElementId, DgnModel::RepositoryModelId(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,7 +212,7 @@ DbResult DgnDb::CreateRealityDataSourcesModel()
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Link::GetHandler());
     BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, modeledElementId, classId);
+    return insertIntoDgnModel(*this, classId, modeledElementId, DgnModel::RepositoryModelId(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,7 +222,7 @@ DbResult DgnDb::CreateRepositoryModel()
     {
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
     BeAssert(DgnModel::RepositoryModelId().GetValue() == Elements().GetRootSubjectId().GetValue());
-    return insertIntoDgnModel(*this, Elements().GetRootSubjectId(), classId);
+    return insertIntoDgnModel(*this, classId, Elements().GetRootSubjectId(), DgnModelId(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**

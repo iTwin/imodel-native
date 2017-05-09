@@ -614,6 +614,7 @@ static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryPa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* NOTE: DgnDb0601 is the only version that ever created code-based ElementUris
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encodedCodeValue, DgnResourceURI::QueryParser& queryParser)
@@ -629,22 +630,15 @@ static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encod
         }
     auto codeSpecName = BeStringUtilities::UriDecode(encodedcodeSpecname.GetString().c_str());
 
-    DgnResourceURI::UriToken nskeyword, encodedns;
-    if (queryParser.ParseQueryParameter(nskeyword, encodedns, unused, true) != SUCCESS)
-        {
-        BeDataAssert(false && "bad Code URI");
-        return DgnElementId();
-        }
-    auto ns = BeStringUtilities::UriDecode(encodedns.GetString().c_str());
-
     auto codeSpecId = db.CodeSpecs().QueryCodeSpecId(codeSpecName.c_str());
     if (!codeSpecId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(CodeSpecId=? AND CodeScope=? AND CodeValue=?)");
+    // NOTE: The CodeNamespace component of the ElementUri is ignored (CodeNamespace --> CodeScope changed semantics)
+
+    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE CodeSpecId=? AND CodeValue=?");
     codestmt->BindId(1, codeSpecId);
-    codestmt->BindText(2, ns.c_str(), Statement::MakeCopy::No);
-    codestmt->BindText(3, codeValue.c_str(), Statement::MakeCopy::No);
+    codestmt->BindText(2, codeValue.c_str(), Statement::MakeCopy::No);
     if (BE_SQLITE_ROW == codestmt->Step())
         return codestmt->GetValueId<DgnElementId>(0);
 
@@ -935,31 +929,6 @@ void DgnResourceURI::Builder::SetEncodedFragment (Utf8CP newFragment)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus makeElementByCode(Utf8StringR uriStr, DgnElementCR el)
-    {
-    DgnCode code = el.GetCode();
-    if (!code.IsValid() || code.GetValue().empty())
-        return BSIERROR;
-
-    auto codeSpec = el.GetCodeSpec();
-    if (!codeSpec.IsValid())
-        return BSIERROR;
-
-    DgnResourceURI::Builder builder;
-    builder.AppendEncodedPath(RT_DgnDb);
-    builder.AppendQueryParameter("Code", BeStringUtilities::UriEncode(code.GetValueCP()));
-    builder.AppendAndOperator();
-    builder.AppendQueryParameter("A", BeStringUtilities::UriEncode(codeSpec->GetName().c_str()).c_str());
-    builder.AppendAndOperator();
-    builder.AppendQueryParameter("N", BeStringUtilities::UriEncode(code.GetScope().c_str()).c_str());
-
-    uriStr = builder.ToEncodedString();
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String getEcKeyPropertyName (ECN::ECClassCR ecClass, Utf8CP customAttributeName)
     {
     ECN::IECInstancePtr ca = ecClass.GetCustomAttribute (customAttributeName);
@@ -1067,10 +1036,9 @@ static BentleyStatus makeElementById (Utf8StringR uriStr, DgnElementId eid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnElements::CreateElementUri (Utf8StringR uriStr, DgnElementCR el, bool fallBackOnV8Id, bool fallBackOnDgnDbId) const
     {
-    // If the element has a primary ECInstance and if that instance has a business key or a guid, we normally prefer to base the URI on the instance
-    if (makeElementByCode(uriStr, el) == BSISUCCESS)
-        return BSISUCCESS;
+    // WIP: Add FederationGuid case!!!
 
+    // If the element has a primary ECInstance and if that instance has a business key or a guid, we normally prefer to base the URI on the instance
     if (makeElementByWellKnownECProperty(uriStr, el) == BSISUCCESS)
         return BSISUCCESS;
 

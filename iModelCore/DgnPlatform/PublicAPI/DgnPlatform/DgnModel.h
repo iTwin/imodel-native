@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -69,8 +69,9 @@ private:
 public:
     DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+    DGNPLATFORM_EXPORT DgnModelId GetParentModelId() const;
     DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-    DGNPLATFORM_EXPORT bool GetIsTemplate() const;
+    DGNPLATFORM_EXPORT bool IsTemplate() const;
     DGNPLATFORM_EXPORT bool IsPrivate() const;
 };
 
@@ -163,6 +164,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR m_dgndb;
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
+        DgnClassId m_modeledElementRelClassId;
         bool m_isPrivate;
         bool m_isTemplate = false;
 
@@ -178,6 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
+        void SetModeledElementRelClassId(DgnClassId classId) {m_modeledElementRelClassId = classId;} //!< Set the DgnClassId of the relationship of the DgnModel to the modeled element
         void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -218,6 +221,7 @@ protected:
     DgnDbR m_dgndb;
     DgnModelId m_modelId;
     DgnClassId m_classId;
+    DgnModelId m_parentModelId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
     BeMutex m_mutex;
@@ -372,7 +376,7 @@ protected:
 
     //! Return the copyright message to display if this model is drawn in a viewport
     //! @return a copyright message or nullptr
-    virtual Utf8CP _GetCopyrightMessage() const {return nullptr;}
+    virtual Utf8String _GetCopyrightMessage() const {return "";}
 
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
@@ -458,7 +462,7 @@ protected:
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
 public:
-    Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
+    Utf8String GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private
@@ -481,6 +485,9 @@ public:
 
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
+
+    //! Get the DgnModelId of the DgnModel above this one in the information hierarchy
+    DgnModelId GetParentModelId() const {return m_parentModelId;}
 
     //! Get the DgnElement that this DgnModel is describing/modeling
     DGNPLATFORM_EXPORT DgnElementCPtr GetModeledElement() const;
@@ -914,7 +921,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DEFINE_T_SUPER(GeometricModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel);
+    friend struct dgn_ModelHandler::Geometric2d;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
@@ -1250,10 +1258,16 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for DrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
+    //! The ModelHandler for GeometricModel2d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for DrawingModel
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel

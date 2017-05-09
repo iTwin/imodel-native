@@ -21,67 +21,66 @@ struct DgnElementTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-// Test will fail if the number of Element inserted during Db creating change and stats will need to be updated
 TEST_F(DgnElementTests, ResetStatistics)
     {
     SetupSeedProject();
 
-    //Inserts a model
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
-    EXPECT_TRUE(model.IsValid());
-    m_db->SaveChanges("changeSet1");
-
     DgnModelId modelId = model->GetModelId();
-    EXPECT_TRUE(modelId.IsValid());
+    m_db->SaveChanges("InsertPhysicalModel");
 
-    //Inserts 2 elements.
-    auto keyE1 = InsertElement(modelId);
-    DgnElementCPtr E1 = m_db->Elements().GetElement(keyE1->GetElementId());
-    EXPECT_TRUE(E1 != nullptr);
+    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ResetStatistics(); // clear statistics to prevent SetupSeedProject changes from breaking this test
 
-    auto keyE2 = InsertElement(modelId);
-    DgnElementCPtr E2 = m_db->Elements().GetElement(keyE2->GetElementId());
-    EXPECT_TRUE(E2 != nullptr);
+    DgnElementCPtr element1 = InsertElement(modelId);
+    DgnElementCPtr element2 = InsertElement(modelId);
+    EXPECT_TRUE(element1.IsValid());
+    EXPECT_TRUE(element2.IsValid());
 
-    //Deletes the first element.
-    DgnDbStatus status = E2->Delete();
-    EXPECT_EQ((DgnDbStatus) SUCCESS, status);
-    m_db->SaveChanges();
-
-    uint64_t memTarget = 0;
-    m_db->Memory().PurgeUntil(memTarget);
-
-    //Get stats of the element pool.
     DgnElements::Statistics stats = m_db->Elements().GetStatistics();
+    EXPECT_EQ(2, stats.m_newElements);
+    EXPECT_EQ(0, stats.m_unReferenced);
+    EXPECT_EQ(0, stats.m_reReferenced);
+    EXPECT_EQ(0, stats.m_purged);
 
-    uint32_t NewElements = stats.m_newElements;
-    EXPECT_EQ(5, NewElements);
+    DgnElementId elementId1 = element1->GetElementId();
+    element1 = nullptr;
+    stats = m_db->Elements().GetStatistics();
+    EXPECT_EQ(2, stats.m_newElements);
+    EXPECT_EQ(1, stats.m_unReferenced);
+    EXPECT_EQ(0, stats.m_reReferenced);
+    EXPECT_EQ(0, stats.m_purged);
 
-    uint32_t RefElements = stats.m_reReferenced;
-    EXPECT_EQ(1, RefElements);
+    element1 = m_db->Elements().GetElement(elementId1);
+    stats = m_db->Elements().GetStatistics();
+    EXPECT_EQ(2, stats.m_newElements);
+    EXPECT_EQ(1, stats.m_unReferenced);
+    EXPECT_EQ(1, stats.m_reReferenced);
+    EXPECT_EQ(0, stats.m_purged);
 
-    uint32_t UnrefElements = stats.m_unReferenced;
-    EXPECT_EQ(4, UnrefElements);
-
-    uint32_t PurgedElements = stats.m_purged;
-    EXPECT_EQ(4, PurgedElements);
+    EXPECT_EQ(DgnDbStatus::Success, element2->Delete());
+    m_db->SaveChanges("DeleteElement");
+    stats = m_db->Elements().GetStatistics();
+    EXPECT_EQ(2, stats.m_newElements);
+    EXPECT_EQ(1, stats.m_unReferenced);
+    EXPECT_EQ(1, stats.m_reReferenced);
+    EXPECT_EQ(1, stats.m_purged);
+    
+    element1 = nullptr;
+    element2 = nullptr;
+    m_db->Memory().PurgeUntil(0);
+    stats = m_db->Elements().GetStatistics();
+    EXPECT_EQ(2, stats.m_newElements);
+    EXPECT_EQ(2, stats.m_unReferenced);
+    EXPECT_EQ(1, stats.m_reReferenced);
+    EXPECT_EQ(2, stats.m_purged);
 
     m_db->Elements().ResetStatistics();
-
     stats = m_db->Elements().GetStatistics();
-
-    //Statistics after reset.
-    NewElements = stats.m_newElements;
-    EXPECT_EQ(0, NewElements);
-
-    PurgedElements = stats.m_purged;
-    EXPECT_EQ(0, PurgedElements);
-
-    RefElements = stats.m_reReferenced;
-    EXPECT_EQ(0, RefElements);
-
-    UnrefElements = stats.m_unReferenced;
-    EXPECT_EQ(0, UnrefElements);
+    EXPECT_EQ(0, stats.m_newElements);
+    EXPECT_EQ(0, stats.m_unReferenced);
+    EXPECT_EQ(0, stats.m_reReferenced);
+    EXPECT_EQ(0, stats.m_purged);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1657,7 +1656,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("date", ECN::ECValue(dateTime)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("utc", ECN::ECValue(dateTimeUtc)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("i", ECN::ECValue(1)));
-        ASSERT_EQ(SUCCESS, testProps.SetValueEC("l", ECN::ECValue(1000000000001ULL)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("l", ECN::ECValue((uint64_t)1000000000001)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("s", ECN::ECValue("StringVal")));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("p2d", ECN::ECValue(point2d)));
         ASSERT_EQ(SUCCESS, testProps.SetValueEC("p3d", ECN::ECValue(point3d)));

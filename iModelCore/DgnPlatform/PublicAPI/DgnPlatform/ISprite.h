@@ -2,16 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ISprite.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include    <Bentley/RefCounted.h>
-//__PUBLISH_SECTION_END__
-#include    <Bentley/BeIconUtilities.h>
-//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -40,15 +37,6 @@ typedef RefCountedPtr<ISprite> ISpritePtr;
 //=======================================================================================
 struct ISprite : IRefCounted
 {
-    //__PUBLISH_SECTION_END__
-    //! Create a sprite that accesses the specified ICO resource in the specified DLL.
-    //! @returns Pointer to new sprite object.
-    //! @param[in] rscId  The ID of the icon resource in the DLL
-    //! @param[in] hInstance Identifies the DLL from which the named BMP should be loaded or NULL for ustation.dll
-    DGNPLATFORM_EXPORT static ISpriteP CreateFromIconResource(int rscId, BeIconUtilities::IconSourceP hInstance);
-
-    //__PUBLISH_SECTION_START__
-
     //! Create an RGBA sprite from a buffer that contains a PNG image with alpha channel.
     //! @return the sprite definition or NULL if the PNG definition is not valid.
     DGNPLATFORM_EXPORT static ISpritePtr CreateFrom(Render::ImageSourceCR);

@@ -728,9 +728,9 @@ struct ElementUriTests : ::testing::Test
         return *m_codeSpec;
         }
 
-    DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
+    DgnCode CreateCode(DgnDbR db, Utf8CP elementCode)
         {
-        return GetTestCodeSpec(db).CreateCode(elementCode, ns);
+        return GetTestCodeSpec(db).CreateCode(elementCode);
         }
 
 };
@@ -772,13 +772,13 @@ TEST_F(ElementUriTests, Test1)
 
     DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
     DgnModelId mid = db->Models().QuerySubModelId(physicalPartitionCode);
-    DgnCategoryId catId = DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName));
+    DgnCategoryId catId = SpatialCategory::QueryCategoryId(db->GetDictionaryModel(), s_seedFileInfo.categoryName);
 
     DgnElementCPtr el;
     DgnElementCPtr elNoProps;
     if (true)
         {
-        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "TestNS", "E1"));
+        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "E1"));
         testel->SetTestElementProperty("foo");
         el = testel->Insert();
         ASSERT_TRUE(el.IsValid());

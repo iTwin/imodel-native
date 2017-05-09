@@ -223,7 +223,7 @@ $(CoreObjs)RangeIndex$(oext) :                      $(DgnCoreDir)RangeIndex.cpp 
 
 $(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 
-$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnPlatformAPISrc)ColorUtil.h $(DgnPlatformAPISrc)DgnTrueColor.h ${MultiCompileDepends}
+$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnPlatformAPISrc)ColorUtil.h $(DgnPlatformAPISrc)ColorBook.h ${MultiCompileDepends}
 
 $(CoreObjs)ViewController$(oext) :                  $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
@@ -354,6 +354,8 @@ $(CoreObjs)SpatialViewController$(oext) :           $(DgnCoreDir)SpatialViewCont
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
+
+$(CoreObjs)TileTreePublish$(oext) :                 $(DgnCoreDir)TileTreePublish.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 

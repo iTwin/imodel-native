@@ -1288,6 +1288,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     SetupSeedProject();
 
     DgnDbR db = *m_db;
+    DefinitionModelR dictionary = db.GetDictionaryModel();
     auto& txns = db.Txns();
 
     // Set up a dependency between two elements, and register a callback
@@ -1295,7 +1296,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
 
     Byte textureBytes[] = { 1, 2, 3 };
     ImageSource textureData(ImageSource::Format::Jpeg, ByteStream(textureBytes, 3));
-    DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData, 1,1));
+    DgnTexture texture(DgnTexture::CreateParams(dictionary, "Dependent", textureData, 1,1));
     EXPECT_TRUE(texture.Insert().IsValid());
     auto depId = texture.GetElementId();
     db.SaveChanges();

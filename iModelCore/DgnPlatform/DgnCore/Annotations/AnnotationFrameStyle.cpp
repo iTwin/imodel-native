@@ -138,23 +138,11 @@ void dgn_ElementHandler::AnnotationFrameStyleHandler::_RegisterPropertyAccessors
     params.RegisterPropertyAccessors(layout, PROP_Data,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
-            bvector<Byte> data;
-            if (SUCCESS != AnnotationFrameStylePersistence::EncodeAsFlatBuf(data, el, AnnotationFrameStylePersistence::FlatBufEncodeOptions::Default))
-                return DgnDbStatus::BadArg;
-            value.SetBinary(data.data(), data.size());
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             },
         [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsBinary())
-                return DgnDbStatus::BadArg;
-            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
-            size_t dataSize = 0;
-            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
-            if (SUCCESS != AnnotationFrameStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
-                return DgnDbStatus::BadArg;
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             });
     }
 

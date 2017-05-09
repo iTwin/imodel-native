@@ -41,22 +41,25 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DefinitionElement);
 public:
+    BE_PROP_NAME(Properties)
+    BE_PROP_NAME(Description)
+
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
     //! @ingroup GROUP_Appearance
     struct Appearance
     {
     private:
-        bool            m_invisible;    //!< Graphics on this SubCategory should not be visible
-        bool            m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
-        bool            m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
-        bool            m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
-        ColorDef        m_color;
-        uint32_t        m_weight;
-        DgnStyleId      m_style;
-        int32_t         m_displayPriority; // only valid for SubCategories in 2D models
-        DgnMaterialId   m_material;
-        double          m_transparency;
+        bool m_invisible;    //!< Graphics on this SubCategory should not be visible
+        bool m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
+        bool m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
+        bool m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
+        ColorDef m_color;
+        uint32_t m_weight;
+        DgnStyleId m_style;
+        int32_t m_displayPriority; // only valid for SubCategories in 2D models
+        DgnMaterialId m_material;
+        double m_transparency;
 
     public:
         void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
@@ -89,7 +92,7 @@ public:
         DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         void RelocateToDestinationDb(DgnImportContext&);
-    };// Appearance
+    };
 
     //! View-specific overrides of the appearance of a SubCategory
     //! @ingroup GROUP_DgnCategory
@@ -127,7 +130,7 @@ public:
         void ToJson(JsonValueR outValue) const;
         void FromJson(JsonValueCR inValue);
         void ApplyTo(Appearance&) const;
-    }; // Override
+    };
 
     //! Holds the data which describes a sub-category
     struct Data
@@ -152,13 +155,14 @@ public:
             : T_Super(params), m_data(appearance, descr) {}
 
         //! Construct parameters for a sub-category
-        //! @param[in]      db         The DgnDb in which the sub-category will reside
-        //! @param[in]      categoryId The ID of the category to which the sub-category belongs
-        //! @param[in]      name       The name of the sub-category. Must be unique within the containing category.
-        //! @param[in]      appearance Describes how the sub-category affects the symbology of elements.
-        //! @param[in]      descr      Optional description
+        //! @param[in] db The DgnDb in which the sub-category will reside
+        //! @param[in] categoryId The Id of the category to which the sub-category belongs
+        //! @param[in] name The name of the sub-category. Must be unique within the containing category.
+        //! @param[in] appearance Describes how the sub-category affects the symbology of elements.
+        //! @param[in] descr Optional description
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR name, Appearance const& appearance, Utf8StringCR descr="");
     };
+
 private:
     friend struct DgnCategory;
     friend struct dgn_ElementHandler::SubCategory;
@@ -221,8 +225,8 @@ public:
     DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Returns the number of sub-categories of a specific category, or the total number of sub-categories of all categories in the DgnDb.
-    //! @param[in]      db         The DgnDb in which to query
-    //! @param[in]      categoryId If valid, the count includes only sub-categories of the specified category.
+    //! @param[in]  db The DgnDb in which to query
+    //! @param[in]  categoryId If valid, the count includes only sub-categories of the specified category.
     //! @return The number of sub-categories.
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
 
@@ -251,10 +255,10 @@ public:
     //! @ingroup GROUP_DgnCategory
     enum class Rank
     {
-        System      = 0,    //!< This category is predefined by the system
-        Domain      = 1,    //!< This category is defined by a domain. Elements in this category may be unknown to system functionality.
-        Application = 2,    //!< This category is defined by an application. Elements in this category may be unknown to system and domain functionality.
-        User        = 3,    //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
+        System      = 0, //!< This category is predefined by the system
+        Domain      = 1, //!< This category is defined by a domain. Elements in this category may be unknown to system functionality.
+        Application = 2, //!< This category is defined by an application. Elements in this category may be unknown to system and domain functionality.
+        User        = 3, //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
     };
 
 protected:
@@ -281,6 +285,9 @@ protected:
     explicit DgnCategory(CreateParams const& params) : T_Super(params), m_rank(Rank::User), m_descr("") {}
 
 public:
+    BE_PROP_NAME(Description)
+    BE_PROP_NAME(Rank)
+
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetElementId().GetValue());} //!< Returns the ID of this category.
@@ -339,6 +346,9 @@ public:
     //! Create a DgnCode for a DrawingCategory given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, scope, name);}
 
+    //! Looks up the DgnCategoryId of a DrawingCategory by model and name
+    static DgnCategoryId QueryCategoryId(DefinitionModelCR model, Utf8StringCR name) {return T_Super::QueryCategoryId(model.GetDgnDb(), CreateCode(model, name));}
+
     //! Construct a new DrawingCategory
     DrawingCategory(DefinitionModelR model, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name)))
         {
@@ -381,13 +391,18 @@ protected:
     explicit SpatialCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a Code given a SpatialCategory name.
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace="");
+    //! Create a DgnCode for a SpatialCategory given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_SpatialCategory, scope, name);}
+
+    //! Looks up the DgnCategoryId of a SpatialCategory by model and name
+    static DgnCategoryId QueryCategoryId(DefinitionModelCR model, Utf8StringCR name) {return T_Super::QueryCategoryId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Construct a new SpatialCategory
-    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
-    //! Construct a new SpatialCategory
-    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
+    SpatialCategory(DefinitionModelR model, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name)))
+        {
+        m_rank = rank;
+        m_descr = descr;
+        }
 
     //! Inserts this SpatialCategory into the DgnDb and initializes its default sub-category with the specified appearance.
     //! @param[in] appearance The appearance associated with the default sub-category

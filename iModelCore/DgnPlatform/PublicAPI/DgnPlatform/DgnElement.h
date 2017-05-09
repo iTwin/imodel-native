@@ -3339,7 +3339,7 @@ public:
     //! @private
     DGNPLATFORM_EXPORT DgnElementCP FindLoadedElement(DgnElementId id) const;
 
-    //! Query the DgnModelId of the specified DgnElementId.
+    //! Query the DgnModelId of the model that contains the specified element.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! @private Allow Navigator to try to resolve URIs created in this version and in Graphite05 for things like issues and clashes.

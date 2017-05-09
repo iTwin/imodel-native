@@ -31,6 +31,7 @@
 #define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_CategorySelector          "CategorySelector"
 #define BIS_CLASS_CodeSpec                  "CodeSpec"
+#define BIS_CLASS_ColorBook                 "ColorBook"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
@@ -64,7 +65,6 @@
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
 #define BIS_CLASS_GroupInformationPartition "GroupInformationPartition"
-#define BIS_CLASS_IModellableElement        "IModellableElement"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
@@ -72,6 +72,8 @@
 #define BIS_CLASS_InformationRecordElement  "InformationRecordElement"
 #define BIS_CLASS_InformationRecordModel    "InformationRecordModel"
 #define BIS_CLASS_InformationRecordPartition "InformationRecordPartition"
+#define BIS_CLASS_InformationReferenceElement "InformationReferenceElement"
+#define BIS_CLASS_ISubModeledElement        "ISubModeledElement"
 #define BIS_CLASS_LightLocation             "LightLocation"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"
@@ -104,7 +106,6 @@
 #define BIS_CLASS_TemplateViewDefinition3d  "TemplateViewDefinition3d"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
-#define BIS_CLASS_TrueColor                 "TrueColor"
 #define BIS_CLASS_ViewDefinition            "ViewDefinition"
 #define BIS_CLASS_ViewDefinition2d          "ViewDefinition2d"
 #define BIS_CLASS_ViewDefinition3d          "ViewDefinition3d"
@@ -123,7 +124,6 @@
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
-#define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"
@@ -315,37 +315,6 @@ private:
     ~DgnModels() {}
 
 public:
-    //! An object that holds a row from the DgnModel table.
-    struct Model
-    {
-        friend struct DgnModels;
-
-    private:
-        DgnModelId m_id;
-        DgnClassId m_classId;
-        DgnElementId m_modeledElementId;
-        bool m_isPrivate = false;
-        bool m_isTemplate = false;
-
-    public:
-        Model() {}
-        Model(DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid) {}
-
-        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;}
-        void SetId(DgnModelId id) {m_id = id;}
-        void SetClassId(DgnClassId classId) {m_classId = classId;}
-        void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
-        void SetModelType(DgnClassId classId) {m_classId = classId;}
-        void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
-
-        bool IsPrivate() const {return m_isPrivate;}
-        DgnModelId GetId() const {return m_id;}
-        DgnClassId GetClassId() const {return m_classId;}
-        DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        bool IsTemplate() const {return m_isTemplate;}
-    }; // Model
-
-public:
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! The supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
@@ -371,9 +340,7 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-
-    //! Query for a DgnModelId by the DgnCode of the element that it is modeling
+    //! Query for a DgnModelId by the DgnCode of the element that is being modeled
     DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
     //! Make an iterator over models of the specified ECClass in this DgnDb.

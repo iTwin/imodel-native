@@ -200,9 +200,13 @@ TEST_F(CodeAdminTests, CodeAdmin)
         CodeScopeSpec repositoryScope = CodeScopeSpec::CreateRepositoryScope();
         CodeScopeSpec modelScope = CodeScopeSpec::CreateModelScope();
         CodeScopeSpec parentElementScope = CodeScopeSpec::CreateParentElementScope();
+        Utf8CP relationship = BIS_SCHEMA("ShouldBeRelationshipName"); // in production this would be a valid ECRelationshipClass name
+        CodeScopeSpec relatedElementScope = CodeScopeSpec::CreateRelatedElementScope(relationship);
         ASSERT_EQ(CodeScopeSpec::Type::Repository, repositoryScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::Model, modelScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::ParentElement, parentElementScope.GetType());
+        ASSERT_EQ(CodeScopeSpec::Type::RelatedElement, relatedElementScope.GetType());
+        ASSERT_STREQ(relationship, relatedElementScope.GetRelationship().c_str());
         }
     
     ECN::ECClassCP informationPartitionElementClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_InformationPartitionElement);
@@ -258,7 +262,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         TestElementPtr element = TestElement::Create(*m_db, physicalModel->GetModelId(), categoryId);
         ASSERT_TRUE(element.IsValid());
         element->SetPropertyValue("i", i);
-        element->SetPropertyValue("l", i*11LL);
+        element->SetPropertyValue("l", i*(int64_t)11LL);
         element->SetPropertyValue("s", Utf8PrintfString("String%" PRIi32, i).c_str());
         ASSERT_FALSE(element->GetCode().IsValid());
         ASSERT_EQ(DgnDbStatus::Success, element->GenerateCode());

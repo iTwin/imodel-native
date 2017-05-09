@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/DgnMaterial.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1380,9 +1379,9 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
     auto txnPos = db.Txns().GetCurrentTxnId();
-    DgnTrueColor color(DgnTrueColor::CreateParams(db, ColorDef(1,2,3), "la", "lala"));
-    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(color));
-    EXPECT_TRUE(color.Insert().IsValid());
+    CategorySelector element(db.GetDictionaryModel(), TEST_NAME);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(element));
+    EXPECT_TRUE(element.Insert().IsValid());
 
     // Cannot relinquish locks with uncommitted changes
     EXPECT_EQ(RepositoryStatus::PendingTransactions, db.BriefcaseManager().RelinquishLocks());
@@ -2284,8 +2283,10 @@ TEST_F (FastQueryTest, CacheCodes)
     DgnDbR dbA = *m_dbA,
            dbB = *m_dbB;
 
-    DgnCode code1 = DgnMaterial::CreateCode(dbA, "Code", "One"),
-            code2 = DgnMaterial::CreateCode(dbA, "Code", "Two");
+    DefinitionModelR dictionaryA = dbA.GetDictionaryModel();
+
+    DgnCode code1 = DgnMaterial::CreateCode(dictionaryA, "One"),
+            code2 = DgnMaterial::CreateCode(dictionaryA, "Two");
 
     // reserve codes
     DgnCodeSet codes;
@@ -2300,7 +2301,7 @@ TEST_F (FastQueryTest, CacheCodes)
     Request req(ResponseOptions::CodeState);
     ExpectResponsesEqual(req, dbB);
 
-    DgnCode code3 = DgnMaterial::CreateCode(dbA, "Code", "Three");
+    DgnCode code3 = DgnMaterial::CreateCode(dictionaryA, "Three");
     req.Reset();
     req.SetOptions(ResponseOptions::CodeState);
     req.Codes().insert(code1);  // unavailable
@@ -2375,7 +2376,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = SpatialCategory::CreateCode(db, "RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode(db.GetDictionaryModel(), "RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2426,11 +2427,6 @@ struct CodesManagerTest : RepositoryManagerTest
     void SetUp()
         {
         SetupMasterFile();
-        }
-
-    static DgnCode MakeCode(DgnDbR db, Utf8StringCR name, Utf8CP nameSpace = nullptr)
-        {
-        return nullptr != nameSpace ? DgnMaterial::CreateCode(db, nameSpace, name) : SpatialCategory::CreateCode(db, name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }
@@ -2560,6 +2556,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     {
     DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquishTest.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
+    DefinitionModelR dictionary = db.GetDictionaryModel();
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
     // Empty request
@@ -2567,7 +2564,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
 
     // Reserve single code
-    DgnCode code = MakeCode(db, "Palette", "Material");
+    DgnCode code = DgnMaterial::CreateCode(dictionary, "Material");
     req.insert(code);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);
@@ -2577,7 +2574,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     ExpectState(MakeAvailable(code), db);
 
     // Reserve 2 codes
-    DgnCode code2 = MakeCode(db, "Category");
+    DgnCode code2 = SpatialCategory::CreateCode(dictionary, "Category");
     req.insert(code2);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);

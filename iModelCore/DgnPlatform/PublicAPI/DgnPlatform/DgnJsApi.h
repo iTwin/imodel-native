@@ -996,7 +996,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectId(DgnCategory::QueryCategoryId(*db->m_db, SpatialCategory::CreateCode(*db->m_db, name)).GetValueUnchecked());
+        return new JsDgnObjectId(SpatialCategory::QueryCategoryId(db->m_db->GetDictionaryModel(), name).GetValueUnchecked());
         }
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {
