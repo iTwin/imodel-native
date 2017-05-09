@@ -1371,10 +1371,14 @@ void Tile::Invalidate(DirtyRangesCR dirty)
     if (dirty.empty())
         return;
 
-    // This tile needs to be regenerated
-    m_root.CancelTileLoad(*this);
-    SetNotLoaded();
-    _Invalidate();
+        // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
+    if (IsDisplayable())
+        {
+        // This tile needs to be regenerated
+        m_root.CancelTileLoad(*this);
+        SetNotLoaded();
+        _Invalidate();
+        }
 
     // Test children. Note that we are only partitioning the subset of damaged ranges which intersect the parent.
     auto children = _GetChildren(false);

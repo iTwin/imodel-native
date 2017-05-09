@@ -1021,7 +1021,13 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     {
+    // We want to generate the lowest-resolution tiles before any of their descendants, so that we always have *something* to draw
+    // However, if we generated the single root tile before any others, we'd have to process every element in the model and waste all our work threads.
+    // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
+    // Possible optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
+    // of tiles required.
     m_rootTile = Tile::Create(*this, range);
+    m_rootTile->SetIsReady();
     return true;
     }
 
@@ -1215,7 +1221,8 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
+    // The root tile is undisplayable (that's what returning 0.0 indicates)
+    return 0 == GetDepth() ? 0.0 : s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 //=======================================================================================
