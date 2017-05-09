@@ -449,6 +449,8 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 19 << 24), //!< Error acquiring schema lock
     BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing schemas
     BE_SQLITE_ERROR_SchemaDomainMismatch    = (BE_SQLITE_IOERR | 21 << 24), //!< The name of the schema doesn't match the name of the domain. 
+    BE_SQLITE_ERROR_MergeRevisionFailed     = (BE_SQLITE_IOERR | 22 << 24), //!< Error merging revision into the database
+    BE_SQLITE_ERROR_BuildTypeMismatch       = (BE_SQLITE_IOERR | 23 << 24), //!< The DgnDb was created or updated in a development build and cannot be opened in a certified/beta build.
 
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
