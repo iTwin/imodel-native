@@ -1006,16 +1006,15 @@ bool                         queryOnly
     Json::Value properties;
     DgnCode const* firstCode = codes.begin();
 
-
     properties[ServerSchema::Property::CodeSpecId]   = firstCode->GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::CodeScope]    = firstCode->GetScope();
+    properties[ServerSchema::Property::CodeScope]    = firstCode->GetScopeElementId().GetValue();
     properties[ServerSchema::Property::BriefcaseId]  = briefcaseId.GetValue();
     properties[ServerSchema::Property::State]        = DgnCodeStateToInt(state);
     properties[ServerSchema::Property::QueryOnly]    = queryOnly;
 
     properties[ServerSchema::Property::Values] = Json::arrayValue;
     int i = 0;
-    for (auto const& code : codes)
+    for (DgnCodeCR code : codes)
         {
         properties[ServerSchema::Property::Values][i++] = code.GetValue();
         }
@@ -1068,22 +1067,17 @@ Utf8String UriEncode(Utf8String input)
 Utf8String FormatCodeId
 (
 uint64_t                         codeSpecId,
-Utf8StringCR                     scope,
+uint64_t                         scopeElementId,
 Utf8StringCR                     value
 )
     {
     Utf8String idString;
 
-    Utf8String encodedScope(scope.c_str());
-    EncodeIdString(encodedScope);
-    encodedScope = UriEncode(encodedScope);
-
     Utf8String encodedValue(value.c_str());
     EncodeIdString(encodedValue);
     encodedValue = UriEncode(encodedValue);
     
-    idString.Sprintf("%d-%s-%s", codeSpecId, encodedScope.c_str(), encodedValue.c_str());
-
+    idString.Sprintf("%" PRIu64 "-%" PRIu64 "-%s", codeSpecId, scopeElementId, encodedValue.c_str());
     return idString;
     }
 
@@ -1093,14 +1087,13 @@ Utf8StringCR                     value
 Utf8String FormatCodeId
 (
 uint64_t                         codeSpecId,
-Utf8StringCR                     scope,
+uint64_t                         scopeElementId,
 Utf8StringCR                     value,
 BeBriefcaseId                    briefcaseId
 )
     {
     Utf8String idString;
-    idString.Sprintf("%s-%d", FormatCodeId(codeSpecId, scope, value).c_str(), briefcaseId.GetValue());
-
+    idString.Sprintf("%s-%d", FormatCodeId(codeSpecId, scopeElementId, value).c_str(), briefcaseId.GetValue());
     return idString;
     }
 
@@ -1134,7 +1127,7 @@ bmap<Utf8String, bvector<DgnCode>>* groupedCodes,
 DgnCode searchCode
 )
     {
-    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId().GetValue(), searchCode.GetScope(), "");
+    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId().GetValue(), searchCode.GetScopeElementId().GetValue(), "");
     auto it = groupedCodes->find(searchKey);
     if (it == groupedCodes->end())
         {
@@ -1323,9 +1316,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr == briefcaseId)
-        idString.Sprintf("%d-%llu", (int) lock.GetType(), lock.GetId().GetValue());
+        idString.Sprintf("%d-%" PRIu64, (int) lock.GetType(), lock.GetId().GetValue());
     else
-        idString.Sprintf("%d-%llu-%u", (int) lock.GetType(), lock.GetId().GetValue(), briefcaseId->GetValue());
+        idString.Sprintf("%d-%" PRIu64 "-%u", (int) lock.GetType(), lock.GetId().GetValue(), briefcaseId->GetValue());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Lock, idString);
     }
@@ -1335,15 +1328,15 @@ const BeBriefcaseId*  briefcaseId
 //---------------------------------------------------------------------------------------
 ObjectId GetCodeId
 (
-DgnCode code,
+DgnCodeCR code,
 const BeBriefcaseId*  briefcaseId
 )
     {
     Utf8String idString;
     if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScope(), code.GetValue(), *briefcaseId).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeElementId().GetValue(), code.GetValue(), *briefcaseId).c_str());
     else
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScope(), code.GetValue()).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeElementId().GetValue(), code.GetValue()).c_str());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Code, idString);
     }
