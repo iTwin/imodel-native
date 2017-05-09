@@ -1596,6 +1596,7 @@ struct TriMeshArgs
     FPoint3d const* m_points= nullptr;
     FPoint3d const* m_normals= nullptr;
     FPoint2d const* m_textureUV= nullptr;
+    uint8_t const* m_edgeFlags = nullptr;
     TexturePtr m_texture;
     int32_t m_flags = 0; // don't generate normals
     ColorIndex m_colors;
@@ -1639,6 +1640,52 @@ struct IndexedPolylineArgs
 };
 
 //=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct  MeshEdge
+    {
+    enum    Flags
+        {
+        Invisible =  1,
+        Visible    = 0,
+        };
+
+
+    uint32_t        m_indices[2];
+
+    MeshEdge() { }
+    MeshEdge(uint32_t index0, uint32_t index1);
+
+    bool operator < (MeshEdge const& rhs) const;
+    };
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct VisibleMeshEdgesArg
+{
+    bvector<MeshEdge>       m_edges;
+    bvector<FPoint3d>       m_points;
+    ColorIndex              m_colors;
+    FeatureIndex            m_features;
+
+}; 
+ 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct InvisibleMeshEdgesArg
+{
+    bvector<MeshEdge>           m_edges;
+    bvector<FPoint3d>           m_points;
+    bvector<FPoint3d>           m_normals0;
+    bvector<FPoint3d>           m_normals1;
+    ColorIndex                  m_colors;
+    FeatureIndex                m_features;
+};  
+
+
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     01/2017
 //=======================================================================================
 struct QuantizedPoint
@@ -1658,15 +1705,16 @@ struct QuantizedPoint
 //=======================================================================================
 struct PointCloudArgs
 {
-    QuantizedPoint const* m_points;
-    ByteCP m_colors;
-    DRange3d m_range;
-    int32_t m_numPoints;
+    QuantizedPoint const*   m_points;
+    ByteCP                  m_colors;
+    DRange3d                m_range;
+    int32_t                 m_numPoints;
 
     PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
     PointCloudArgs(DRange3dCR range, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
         : m_points(points), m_colors(colors), m_range(range), m_numPoints(numPoints) { }
 };
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
@@ -2152,6 +2200,12 @@ struct System
     //! Create an indexed polyline primitive
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
+    //! Create visible mesh edges primitive
+    virtual GraphicPtr _CreateVisibleEdges(VisibleMeshEdgesArgCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+
+    //! Create invisible mesh edges primitive  - these edges are displayed only if they become silhouettes.
+    virtual GraphicPtr _CreateInvisibleEdges(InvisibleMeshEdgesArgCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
@@ -2163,6 +2217,7 @@ struct System
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
+
 
     //! Return the maximum number of Features allowed within a Batch.
     virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;

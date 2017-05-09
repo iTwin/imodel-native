@@ -70,17 +70,14 @@ enum class NormalMode
 struct GeometryOptions
 {
     enum class SurfacesOnly { Yes, No };
-    enum class TwoSidedTriangles { Yes, No };
 
     NormalMode          m_normalMode;
     SurfacesOnly        m_surfaces;
-    TwoSidedTriangles   m_twoSidedTriangles;
 
-    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
-        : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
+    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No)
+        : m_normalMode(normals), m_surfaces(surfaces) { }
 
     bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
-    bool WantTwoSidedTriangles() const { return TwoSidedTriangles::Yes == m_twoSidedTriangles; }
 };
 
 //=======================================================================================
@@ -262,6 +259,7 @@ public:
     void AddInstance(MeshInstanceCR instance) { m_instances.push_back(instance); }
 };
 
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -269,18 +267,22 @@ struct Triangle
 {
     uint32_t    m_indices[3];
     bool        m_singleSided;
+    uint8_t     m_edgeFlags[3];
 
-    explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
-    Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
-    Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
+    explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetEdgeFlags(MeshEdge::Flags::Visible); }
+    Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); SetEdgeFlags(MeshEdge::Flags::Visible); }
+    Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); SetEdgeFlags(MeshEdge::Flags::Visible); }
 
     void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
+    void SetEdgeFlags(MeshEdge::Flags a, MeshEdge::Flags b, MeshEdge::Flags c)  { m_edgeFlags[0] = a; m_edgeFlags[1] = b; m_edgeFlags[2] = c; }
+    void SetEdgeFlags(MeshEdge::Flags a) { m_edgeFlags[0] = m_edgeFlags[1]; m_edgeFlags[2] = a; }
+    void SetEdgeFlags(bool const* visible) { m_edgeFlags[0] = visible[0] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; 
+                                             m_edgeFlags[1] = visible[1] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
+                                             m_edgeFlags[2] = visible[2] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; }
+    bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
 
-    bool IsDegenerate() const
-        {
-        return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2];
-        }                                   
+    bool IsDegenerate() const  { return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2]; }                                   
 };
 
 //=======================================================================================
@@ -308,6 +310,15 @@ struct Mesh : RefCountedBase
         Polyline,
         Point
     };
+
+    struct  InvisibleEdge : MeshEdge
+    {
+        FPoint3d            m_triNormals[2];
+
+        InvisibleEdge() { }
+        InvisibleEdge(MeshEdge const& edge, FPoint3d const& normal0, FPoint3d const& normal1) : MeshEdge(edge) { m_triNormals[0] = normal0; m_triNormals[1] = normal1; }
+    };
+
 private:
     struct Features
     {
@@ -322,16 +333,21 @@ private:
         void ToFeatureIndex(FeatureIndex& index) const;
     };
 
-    DisplayParamsCPtr       m_displayParams;
-    TriangleList            m_triangles;
-    PolylineList            m_polylines;
-    bvector<FPoint3d>       m_points;
-    bvector<FPoint3d>       m_normals;
-    bvector<FPoint2d>       m_uvParams;
-    ColorTable              m_colorTable;
-    bvector<uint16_t>       m_colors;
-    Features                m_features;
-    PrimitiveType           m_type;
+    DisplayParamsCPtr               m_displayParams;
+    TriangleList                    m_triangles;
+    PolylineList                    m_polylines;
+    bvector<FPoint3d>               m_points;
+    bvector<FPoint3d>               m_normals;
+    bvector<FPoint2d>               m_uvParams;
+    ColorTable                      m_colorTable;
+    bvector<uint16_t>               m_colors;
+    Features                        m_features;
+    PrimitiveType                   m_type;
+
+    // The edges are computed from the parameters above... If tiles were persisted these could be omitted and recalculated...
+    mutable bvector<MeshEdge>       m_visibleEdges;
+    mutable bvector<InvisibleEdge>  m_invisibleEdges;
+    mutable size_t                  m_edgesComputedCount = 0;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
 
@@ -341,23 +357,26 @@ private:
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
+    void InitEdges() const;
 public:
     static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) { return new Mesh(params, featureTable, type); }
 
-    DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
-    DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
-    DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
+    DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
+    DGNPLATFORM_EXPORT DVec3d       GetTriangleNormal(TriangleCR triangle) const;
+    DGNPLATFORM_EXPORT bool         HasNonPlanarNormals() const;
 
-    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
-    DisplayParamsCPtr GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
-    TriangleList const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
-    PolylineList const& Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
-    bvector<FPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
-    bvector<FPoint3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
-    bvector<FPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<uint16_t> const& Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
-    ColorTableCR GetColorTable() const { return m_colorTable; }
-    void ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
+    DisplayParamsCR                 GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
+    DisplayParamsCPtr               GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
+    TriangleList const&             Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
+    PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
+    bvector<FPoint3d> const&        Points() const { return m_points; } //!< Position vertex attribute array
+    bvector<FPoint3d> const&        Normals() const { return m_normals; } //!< Normal vertex attribute array
+    bvector<FPoint2d> const&        Params() const { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
+    ColorTableCR                    GetColorTable() const { return m_colorTable; }
+    void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
+    bvector<MeshEdge>const&         VisibleEdges() const { InitEdges(); return m_visibleEdges; }
+    bvector<InvisibleEdge>const&    InvisibleEdges() const { InitEdges(); return m_invisibleEdges; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -368,6 +387,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+
 };
 
 /*=================================================================================**//**
@@ -490,9 +510,9 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
@@ -704,7 +724,7 @@ struct MeshArgs : TriMeshArgs
     bvector<int32_t>                m_indices;
     bvector<uint32_t>               m_colorTable;
 
-    template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = 0 != src.size() ? src.data() : nullptr; }
+    template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = (0 != src.size() ? src.data() : nullptr); }
 
     template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
         {
@@ -716,6 +736,7 @@ struct MeshArgs : TriMeshArgs
     void Transform(TransformCR);
     bool Init(MeshCR mesh, Render::System const& system, DgnDbR db);
 };
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -755,6 +776,28 @@ struct PolylineArgs : IndexedPolylineArgs
     bool Init(MeshCR mesh);
     void Transform(TransformCR tf);
 };
+
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct RenderVisibleMeshEdgesArg : VisibleMeshEdgesArg
+{
+    bvector<uint32_t>               m_colorTable;
+
+    bool Init(MeshCR mesh);
+};
+
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct RenderInvisibleMeshEdgesArg : InvisibleMeshEdgesArg
+{
+    bool Init(MeshCR mesh);
+};
+
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17

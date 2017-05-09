@@ -839,3 +839,29 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshEdge::MeshEdge(uint32_t index0, uint32_t index1)
+    {
+    if (index0 < index1)
+        {
+        m_indices[0] = index0;
+        m_indices[1] = index1;
+        }
+    else
+        {
+        m_indices[0] = index1;
+        m_indices[1] = index0;
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshEdge::operator < (MeshEdge const& rhs) const
+    {
+    return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
+    }
+
