@@ -634,6 +634,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
         virtual StatusInt _SetResolution(float geometricResolution, float textureResolution) = 0;
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() = 0;
+        virtual IScalableMeshNodeEditPtr _EditParentNode() = 0;
 
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
@@ -647,6 +648,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT StatusInt SetResolution(float geometricResolution, float textureResolution);
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodeEditPtr> EditChildrenNodes();
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditParentNode();
     };
 
 

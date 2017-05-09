@@ -18,7 +18,8 @@ enum class SMFrom3MXStatus
     GCSError,				// Error related to GCS
     ScalableMeshSDKError,	// Error related to ScalableMeshSDK
     ReprojectionError,		// Error encountered in reprojection (most likely due to a 3D point out of bounds)
-    UnsupportedCase			// Special case not handled by the converter
+    SeveralLayersError,		// Special case not handled by the converter: 3MX with several layers
+    SeveralGeometriesError  // Special case not handled by the converter: node with several geometries
 };
 
 

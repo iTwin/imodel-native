@@ -1613,6 +1613,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual void _LoadHeader() const override;
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() override;
+        virtual IScalableMeshNodeEditPtr _EditParentNode() override;
 
     public:
         ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);

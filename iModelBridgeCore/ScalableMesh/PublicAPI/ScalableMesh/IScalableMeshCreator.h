@@ -179,8 +179,6 @@ public:
         BENTLEY_SM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                                                                     gcsPtr);
 
-        BENTLEY_SM_EXPORT  void                   SetBaseExtraFilesPath(const WString& path);
-
         BENTLEY_SM_EXPORT  IScalableMeshProgress* GetProgress();
 
 

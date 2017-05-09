@@ -3097,6 +3097,19 @@ template <class POINT> bvector<IScalableMeshNodeEditPtr> ScalableMeshNodeEdit<PO
     return children;
     }
 
+template <class POINT> IScalableMeshNodeEditPtr ScalableMeshNodeEdit<POINT>::_EditParentNode()
+    {
+    LOAD_NODE
+
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode == nullptr)
+        return nullptr;
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr = meshNode->GetParentNodePtr();
+    if (nodePtr == nullptr)
+        return nullptr;
+    return new ScalableMeshNodeEdit<POINT>(nodePtr);
+    }
+
 template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     {
     if (!nodePtr->IsLoaded())
