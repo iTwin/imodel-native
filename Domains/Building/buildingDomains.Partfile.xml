@@ -10,6 +10,7 @@
     
     <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
+        <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ArchitecturalPhysical$(libext)</Libs>
@@ -30,7 +31,7 @@
 
     
     <Part Name="BuildingCommon" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.mke" ApiNumber="B02">
-        <SubPart PartName="BuildignCommonPublicAPI"/>
+        <SubPart PartName="BuildingCommonPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingCommon$(libext)</Libs>
@@ -38,11 +39,32 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildignCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
+    <Part Name="BuildingCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BuildingCommon"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/BuildingCommon.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+
+
+    <Part Name="BuildingPhysical" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingPhysicalPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingPhysical$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingPhysical$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BuildingPhysical"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BuildingPhysical.ecschema.xml
             </Files>
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->

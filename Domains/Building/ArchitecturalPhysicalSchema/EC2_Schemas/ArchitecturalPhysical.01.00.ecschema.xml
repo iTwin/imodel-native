@@ -67,9 +67,11 @@
     </ECCustomAttributes>
     <ECClass typeName="ArchitecturalBaseElement" description="(From IFC) Class : IfcBuildingElement" displayLabel="Architectural Base Element" isDomainClass="False">
         <BaseClass>bis:PhysicalElement</BaseClass>
-    </ECClass>
-    <ECClass typeName="Beam" description="(From IFC) Class : IfcBeam" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="BuildingElementType" description="(From IFC) Class : IfcBuildingElementType" displayLabel="Building ElementType" isDomainClass="False">
         <BaseClass>bis:PhysicalType</BaseClass>
@@ -112,11 +114,8 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="BuildingElementComponent" description="(From IFC) Class : IfcBuildingElementComponent" displayLabel="Building Element Component" isDomainClass="False">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECClass>
     <ECClass typeName="BuildingElementPart" description="(From IFC) Class : IfcBuildingElementPart" displayLabel="Building Element Part" isDomainClass="True">
-        <BaseClass>BuildingElementComponent</BaseClass>
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECClass>
     <ECClass typeName="BuildingElementProxy" description="(From IFC) Class : IfcBuildingElementProxy" displayLabel="Building Element Proxy" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
@@ -167,7 +166,7 @@
     <ECClass typeName="BuildingTypeDefinitionModel" displayLabel="Building Type Definition Model" isDomainClass="True">
         <BaseClass>bis:DefinitionModel</BaseClass>
     </ECClass>
-    <ECClass typeName="Column" description="(From IFC) Class : IfcColumn" isDomainClass="True">
+    <ECClass typeName="Casework" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECClass>
     <ECClass typeName="ColumnType" description="(From IFC) Class : IfcColumnType" displayLabel="Column Type" isDomainClass="True">
@@ -753,42 +752,13 @@
         <ECProperty propertyName="ParameterTakesPrecedence" typeName="boolean" description="(From IFC)" displayLabel="Parameter Takes Precedence" />
         <ECProperty propertyName="Sizeable" typeName="boolean" description="(From IFC)" />
     </ECClass>
-    <ECClass typeName="Footing" description="(From IFC) Class : IfcFooting" isDomainClass="True">
+    <ECClass typeName="Escalator" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcFootingTypeEnum" displayLabel="Predefined Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>FOOTING_BEAM</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>PAD_FOOTING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>PILE_CAP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>STRIP_FOOTING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECClass>
-    <ECClass typeName="Member" description="(From IFC) Class : IfcMember" isDomainClass="True">
+    <ECClass typeName="Floor" isDomainClass="True">
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Furniture" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECClass>
     <ECClass typeName="MemberType" description="(From IFC) Class : IfcMemberType" displayLabel="Member Type" isDomainClass="True">
@@ -858,72 +828,6 @@
                 </StandardValues>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
-    <ECClass typeName="Pile" description="(From IFC) Class : IfcPile" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcPileTypeEnum" displayLabel="Predefined Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>COHESION</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>FRICTION</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>SUPPORT</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="ConstructionType" typeName="int" description="(From IFC) Enumeration : IfcPileConstructionEnum .OPTIONAL." displayLabel="Construction Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>CAST_IN_PLACE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>COMPOSITE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>PRECAST_CONCRETE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>PREFAB_STEEL</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="Plate" description="(From IFC) Class : IfcPlate" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECClass>
     <ECClass typeName="PlateType" description="(From IFC) Class : IfcPlateType" displayLabel="Plate Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>
@@ -1091,7 +995,7 @@
         </ECProperty>
     </ECClass>
     <ECClass typeName="ReinforcingElement" description="(From IFC) Class : IfcReinforcingElement" displayLabel="Reinforcing Element" isDomainClass="False">
-        <BaseClass>BuildingElementComponent</BaseClass>
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
         <ECProperty propertyName="SteelGrade" typeName="string" description="(From IFC) IfcLabel .OPTIONAL." displayLabel="Steel Grade" />
     </ECClass>
     <ECClass typeName="ReinforcingBar" description="(From IFC) Class : IfcReinforcingBar" displayLabel="Reinforcing Bar" isDomainClass="True">

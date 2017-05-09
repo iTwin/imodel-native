@@ -1,19 +1,19 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.mke $
+#     $Source: BuildingPhysicalSchema/BuildingPhysicalSchema.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(_MakeFilePath)ArchitecturalPhysicalSchema.mki
+%include $(_MakeFilePath)BuildingPhysicalSchema.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ArchitecturalPhysicalSchemaInternal.h $(appPublicApi)ArchitecturalPhysicalApi.h
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)BuildingPhysicalSchemaInternal.h $(appPublicApi)BuildingPhysicalApi.h
 
 always:
     !~@mkdir $(o)
@@ -21,7 +21,7 @@ always:
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
-PchCompiland        = $(appSrc)ArchitecturalPhysicalSchemaInternal.cpp
+PchCompiland        = $(appSrc)BuildingPhysicalSchemaInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(MultiCompileDepends)
@@ -31,7 +31,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(_MakeFilePath)ArchitecturalPhysicalSchema.mki
+CompileOptionsMki =$(_MakeFilePath)BuildingPhysicalSchema.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -43,9 +43,9 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)ArchitecturalPhysicalDomain$(oext) : $(_MakeFilePath)ArchitecturalPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)ArchitecturalPhysicalDomain.h
+$(o)BuildingPhysicalDomain$(oext) : $(_MakeFilePath)BuildingPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)BuildingPhysicalDomain.h
 
-$(o)Door$(oext) : $(_MakeFilePath)Door.cpp ${MultiCompileDepends} $(appPublicApi)Door.h
+$(o)BuildingPhysicalModel$(oext) : $(_MakeFilePath)BuildingPhysicalModel.cpp ${MultiCompileDepends} $(appPublicApi)BuildingPhysicalModel.h
 
 #$(o)Pose$(oext) : $(_MakeFilePath)Pose.cpp ${MultiCompileDepends} $(appPublicApi)Pose.h
 
@@ -64,7 +64,7 @@ $(o)Door$(oext) : $(_MakeFilePath)Door.cpp ${MultiCompileDepends} $(appPublicApi
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)ArchitecturalPhysicalSchemaInternal$(oext) 
+DLM_OBJECT_PCH              = $(o)BuildingPhysicalSchemaInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
@@ -82,8 +82,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
-
 
 
 %include $(sharedMki)linkLibrary.mki

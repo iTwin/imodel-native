@@ -1,3 +1,11 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ArchPhysCreater/ArchPhysCreater/ArchPhysCreater.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
 #pragma once
 #include "stdafx.h"      
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
@@ -31,13 +39,14 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         BentleyStatus PrintUsage(WCharCP exeName);
         WString GetArgValueW(WCharCP arg);
         BentleyStatus ParseCommandLine(int argc, WCharP argv[]);
+        BentleyStatus CreateBuilding( BuildingPhysical::BuildingPhysicalModelR, BuildingPhysical::BuildingTypeDefinitionModelR);
+
 
         Dgn::DgnDbPtr CreateDgnDb(BeFileNameCR);
 //        ToyTileGroupModelPtr CreateGroupModel(Dgn::DgnDbR);
 //        BentleyStatus CreateGroupElements(ToyTileGroupModelR);
 //        ToyTilePhysicalModelPtr CreatePhysicalModel(Dgn::DgnDbR);
         //  BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel(Dgn::DgnDbR db);
-//        BentleyStatus CreatePhysicalElements(BBPH::BuildingPhysicalModelR, BBPH::BuildingTypeDefinitionModelR);
 //        Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
         BentleyStatus DoCreate();
     };

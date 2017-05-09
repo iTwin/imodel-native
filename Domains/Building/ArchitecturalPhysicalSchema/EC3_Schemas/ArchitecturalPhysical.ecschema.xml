@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
@@ -74,14 +74,6 @@
         <ECEnumerator value="16" displayLabel="USERDEFINED"/>
         <ECEnumerator value="17" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
-    <ECEnumeration typeName="Footing_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="FOOTING_BEAM"/>
-        <ECEnumerator value="1" displayLabel="PAD_FOOTING"/>
-        <ECEnumerator value="2" displayLabel="PILE_CAP"/>
-        <ECEnumerator value="3" displayLabel="STRIP_FOOTING"/>
-        <ECEnumerator value="4" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="5" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
     <ECEnumeration typeName="MemberType_PredefinedType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="BRACE"/>
         <ECEnumerator value="1" displayLabel="CHORD"/>
@@ -97,21 +89,6 @@
         <ECEnumerator value="11" displayLabel="STUD"/>
         <ECEnumerator value="12" displayLabel="USERDEFINED"/>
         <ECEnumerator value="13" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Pile_ConstructionType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="CAST_IN_PLACE"/>
-        <ECEnumerator value="1" displayLabel="COMPOSITE"/>
-        <ECEnumerator value="2" displayLabel="PRECAST_CONCRETE"/>
-        <ECEnumerator value="3" displayLabel="PREFAB_STEEL"/>
-        <ECEnumerator value="4" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="5" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Pile_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="COHESION"/>
-        <ECEnumerator value="1" displayLabel="FRICTION"/>
-        <ECEnumerator value="2" displayLabel="SUPPORT"/>
-        <ECEnumerator value="3" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="4" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
     <ECEnumeration typeName="PlateType_PredefinedType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="CURTAIN_PANEL"/>
@@ -227,9 +204,9 @@
     </ECEnumeration>
     <ECEntityClass typeName="ArchitecturalBaseElement" description="(From IFC) Class : IfcBuildingElement" displayLabel="Architectural Base Element" modifier="Abstract">
         <BaseClass>bis:PhysicalElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="Beam" description="(From IFC) Class : IfcBeam">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="BuildingElementType" description="(From IFC) Class : IfcBuildingElementType" displayLabel="Building ElementType" modifier="Abstract">
         <BaseClass>bis:PhysicalType</BaseClass>
@@ -240,11 +217,8 @@
         <BaseClass>BuildingElementType</BaseClass>
         <ECProperty propertyName="PredefinedType" typeName="BeamType_PredefinedType" description="(From IFC) Enumeration : IfcBeamTypeEnum"/>
     </ECEntityClass>
-    <ECEntityClass typeName="BuildingElementComponent" description="(From IFC) Class : IfcBuildingElementComponent" displayLabel="Building Element Component" modifier="Abstract">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="BuildingElementPart" description="(From IFC) Class : IfcBuildingElementPart" displayLabel="Building Element Part">
-        <BaseClass>BuildingElementComponent</BaseClass>
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="BuildingElementProxy" description="(From IFC) Class : IfcBuildingElementProxy" displayLabel="Building Element Proxy">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
@@ -260,7 +234,7 @@
     <ECEntityClass typeName="BuildingTypeDefinitionModel" displayLabel="Building Type Definition Model">
         <BaseClass>bis:DefinitionModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Column" description="(From IFC) Class : IfcColumn">
+    <ECEntityClass typeName="Casework">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ColumnType" description="(From IFC) Class : IfcColumnType" displayLabel="Column Type">
@@ -447,24 +421,18 @@
         <ECProperty propertyName="ParameterTakesPrecedence" typeName="boolean" description="(From IFC)" displayLabel="Parameter Takes Precedence"/>
         <ECProperty propertyName="Sizeable" typeName="boolean" description="(From IFC)"/>
     </ECEntityClass>
-    <ECEntityClass typeName="Footing" description="(From IFC) Class : IfcFooting">
+    <ECEntityClass typeName="Escalator">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Footing_PredefinedType" description="(From IFC) Enumeration : IfcFootingTypeEnum" displayLabel="Predefined Type"/>
     </ECEntityClass>
-    <ECEntityClass typeName="Member" description="(From IFC) Class : IfcMember">
+    <ECEntityClass typeName="Floor">
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Furniture">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="MemberType" description="(From IFC) Class : IfcMemberType" displayLabel="Member Type">
         <BaseClass>BuildingElementType</BaseClass>
         <ECProperty propertyName="PredefinedType" typeName="MemberType_PredefinedType" description="(From IFC) Enumeration : IfcMemberTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Pile" description="(From IFC) Class : IfcPile">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Pile_PredefinedType" description="(From IFC) Enumeration : IfcPileTypeEnum" displayLabel="Predefined Type"/>
-        <ECProperty propertyName="ConstructionType" typeName="Pile_ConstructionType" description="(From IFC) Enumeration : IfcPileConstructionEnum .OPTIONAL." displayLabel="Construction Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Plate" description="(From IFC) Class : IfcPlate">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PlateType" description="(From IFC) Class : IfcPlateType" displayLabel="Plate Type">
         <BaseClass>BuildingElementType</BaseClass>
@@ -490,7 +458,7 @@
         <ECProperty propertyName="PredefinedType" typeName="RampFlightType_PredefinedType" description="(From IFC) Enumeration : IfcRampFlightTypeEnum" displayLabel="Predefined Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="ReinforcingElement" description="(From IFC) Class : IfcReinforcingElement" displayLabel="Reinforcing Element" modifier="Abstract">
-        <BaseClass>BuildingElementComponent</BaseClass>
+        <BaseClass>ArchitecturalBaseElement</BaseClass>
         <ECProperty propertyName="SteelGrade" typeName="string" description="(From IFC) IfcLabel .OPTIONAL." displayLabel="Steel Grade"/>
     </ECEntityClass>
     <ECEntityClass typeName="ReinforcingBar" description="(From IFC) Class : IfcReinforcingBar" displayLabel="Reinforcing Bar">

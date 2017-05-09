@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ArchitecturalPhysicalSchema/PublicAPI/ArchitecturalPhysical/ArchitecturalPhysicalApi.h $
+|     $Source: BuildingPhysicalSchema/PublicAPI/BuildingPhysical/BuildingPhysicalApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,6 +9,6 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "ArchitecturalPhysicalDefinitions.h"
-#include "ArchitecturalPhysicalDomain.h"
-#include "Door.h"
+#include "BuildingPhysicalDefinitions.h"
+#include "BuildingPhysicalDomain.h"
+#include "BuildingPhysicalModel.h"

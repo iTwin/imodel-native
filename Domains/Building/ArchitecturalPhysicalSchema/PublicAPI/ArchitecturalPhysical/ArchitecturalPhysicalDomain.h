@@ -23,12 +23,37 @@ protected:
     WCharCP _GetSchemaRelativePath() const override { return BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_PATH; }
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
     virtual void _OnDgnDbOpened(Dgn::DgnDbR) const override;
+    static void InsertDomainCodeSpecs(Dgn::DgnDbR db);
 
 public:
     ArchitecturalPhysicalDomain();
     ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::CodeSpecId QueryArchitecturalPhysicalCodeSpecId(Dgn::DgnDbCR dgndb);
-    ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
 };
+
+
+//=======================================================================================
+// @bsiclass                                    BentleySystems
+//=======================================================================================
+struct  ArchitecturalPhysicalCategory : NonCopyableClass
+    {
+    friend struct ArchitecturalPhysicalDomain;
+
+    private:
+        static void InsertDomainCategories(Dgn::DgnDbR);
+        static Dgn::DgnCategoryId InsertCategory(Dgn::DgnDbR, Utf8CP, Dgn::ColorDef const&);
+        static Dgn::DgnSubCategoryId InsertSubCategory(Dgn::DgnDbR, Dgn::DgnCategoryId, Utf8CP, Dgn::ColorDef const&);
+
+    public:
+        //! Get the DgnCategoryId to be used for Door Elements
+        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalDoorCategoryId(Dgn::DgnDbR);
+
+        //! Get the DgnSubCategoryId for a Door Panel
+        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnSubCategoryId QueryBuildingPhysicalDoorPanelSubCategoryId(Dgn::DgnDbR);
+
+        //! Get the DgnSubCategoryId for a Door frame
+        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnSubCategoryId QueryBuildingPhysicalDoorFrameSubCategoryId(Dgn::DgnDbR);
+    };
+
 
 END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
 

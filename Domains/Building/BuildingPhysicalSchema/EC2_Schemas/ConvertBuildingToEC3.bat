@@ -6,14 +6,15 @@ ECHO On
 
 set OPBIMClientSrc=D:\Builds\SourceTrees\opdgndb01-0\out\
 
-%OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i ArchitecturalPhysical.01.00.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
-REM %OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i BuildingCommon.01.00.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
+REM %OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i ArchitecturalPhysical.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
+%OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i BuildingPhysical.01.00.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
 REM %OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i IfcRevitDomain2x3.01.01.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
 
 cd ..\EC3_Schemas
 
-del ArchitecturalPhysical.ecschema.xml
-rename   ArchitecturalPhysical.01.00.00.ecschema.xml  ArchitecturalPhysical.ecschema.xml
+del BuildingPhysical.ecschema.xml
+rename   BuildingPhysical.01.00.00.ecschema.xml  BuildingPhysical.ecschema.xml
+
 
 
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ArchitecturalPhysicalSchema/PublicAPI/ArchitecturalPhysical/ArchitecturalPhysicalDefinitions.h $
+|     $Source: BuildingPhysicalSchema/PublicAPI/BuildingPhysical/BuildingPhysicalDefinitions.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,43 +16,41 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnModel.h>
 
-#ifdef __ARCHITECTURAL_PHYSICAL_BUILD__
-    #define ARCHITECTURAL_PHYSICAL_EXPORT EXPORT_ATTRIBUTE
+
+#ifdef __BUILDING_PHYSICAL_BUILD__
+#define BUILDING_PHYSICAL_EXPORT EXPORT_ATTRIBUTE
 #else
-    #define ARCHITECTURAL_PHYSICAL_EXPORT IMPORT_ATTRIBUTE
+#define BUILDING_PHYSICAL_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-/** @namespace BentleyApi::ARCHITECTURAL_PHYSICAL %ARCHITECTURAL_PHYSICAL data types */
-#define BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace ArchitecturalPhysical {
-#define END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE          } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_ARCHITECTURAL_PHYSICAL        using namespace BentleyApi::ArchitecturalPhysical;
+/** @namespace BentleyApi::BuildingPhysical %BUILDING_PHYSICAL data types */
+#define BEGIN_BENTLEY_BUILDING_PHYSICAL_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace BuildingPhysical {
+#define END_BENTLEY_BUILDING_PHYSICAL_NAMESPACE          } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_BUILDING_PHYSICAL        using namespace BentleyApi::BuildingPhysical;
 
-#define ARCHITECTURAL_PHYSICAL_TYPEDEFS(_structname_) \
-    BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
+#define BUILDING_PHYSICAL_TYPEDEFS(_structname_) \
+    BEGIN_BENTLEY_BUILDING_PHYSICAL_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) END_BENTLEY_BUILDING_PHYSICAL_NAMESPACE
 
-#define ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(_structname_) \
-    BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE struct _structname_; DEFINE_REF_COUNTED_PTR(_structname_) END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE 
+#define BUILDING_PHYSICAL_REFCOUNTED_TYPEDEFS(_structname_) \
+    BEGIN_BENTLEY_BUILDING_PHYSICAL_NAMESPACE struct _structname_; DEFINE_REF_COUNTED_PTR(_structname_) END_BENTLEY_BUILDING_PHYSICAL_NAMESPACE 
 
-#define PRIMARY_BASELINE_LABEL "__Primary"
 
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME                        "ArchitecturalPhysical"
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_PATH                        L"ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml"
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA(className)                  BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME "." className
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_CODE                        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME 
-#define BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY                          BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME
+#define BENTLEY_BUILDING_PHYSICAL_SCHEMA_NAME                        "BuildingPhysical"
+#define BENTLEY_BUILDING_PHYSICAL_SCHEMA_PATH                        L"ECSchemas/Domain/BuildingPhysical.ecschema.xml"
+#define BENTLEY_BUILDING_PHYSICAL_SCHEMA(className)                  BENTLEY_BUILDING_PHYSICAL_SCHEMA_NAME "." className
+#define BENTLEY_BUILDING_PHYSICAL_SCHEMA_CODE                        BENTLEY_BUILDING_PHYSICAL_SCHEMA_NAME 
+#define BENTLEY_BUILDING_PHYSICAL_AUTHORITY                          BENTLEY_BUILDING_PHYSICAL_SCHEMA_NAME
 
-//#define ARCHITECTURAL_PHYSICAL_SCHEMA(name)                               BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME "." name
+
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define AP_CLASS_Door                                       "Door"
-#define AP_CLASS_DoorType                                   "DoorType"
-#define AP_CLASS_Window                                     "Window"
-#define AP_CLASS_ArchitecturalBaseElement                   "ArchitecturalBaseElement"
+#define BP_CLASS_BuildingTypeDefinitionModel                                 "BuildingTypeDefinitionModel"
+#define BP_CLASS_BuildingPhysicalModel                                       "BuildingPhysicalModel"
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with PLANNING_SCHEMA macro for use in ECSql)
@@ -69,27 +67,16 @@
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
-#define ARCHITECTURAL_PHYSICAL_CATEGORY_Doors        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME " Doors"
-#define ARCHITECTURAL_PHYSICAL_CATEGORY_Walls        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME " Walls"
-#define ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame     "Frame"
-#define ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel     "Panel"
+//#define BP_CATEGORY_Planning                                "Planning"
 
-//-----------------------------------------------------------------------------------------
-// Authority names
-//-----------------------------------------------------------------------------------------
-//#define BP_AUTHORITY_Planning                               "Planning"
-
+//-----------------------------------------------------------------------------------------                           
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
-ARCHITECTURAL_PHYSICAL_TYPEDEFS(ArchitecturalBaseElement)
-ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(ArchitecturalBaseElement)
-ARCHITECTURAL_PHYSICAL_TYPEDEFS(Door)
-ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(Door)
-ARCHITECTURAL_PHYSICAL_TYPEDEFS(DoorType)
-ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(DoorType)
-ARCHITECTURAL_PHYSICAL_TYPEDEFS(Window)
-ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(Window)
+BUILDING_PHYSICAL_TYPEDEFS(BuildingPhysicalModel)
+BUILDING_PHYSICAL_REFCOUNTED_TYPEDEFS(BuildingPhysicalModel)
+BUILDING_PHYSICAL_TYPEDEFS(BuildingTypeDefinitionModel)
+BUILDING_PHYSICAL_REFCOUNTED_TYPEDEFS(BuildingTypeDefinitionModel)
 
 /*PLANNING_TYPEDEFS(Calendar)
 PLANNING_TYPEDEFS(Activity)
@@ -136,8 +123,8 @@ typedef BeSQLite::IdSet<ActivityId> ActivityIdSet;
 * Types related to the Planning domain
 * @ref PAGE_Planning
 */
+BEGIN_BENTLEY_BUILDING_PHYSICAL_NAMESPACE
 
-//END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
-
+END_BENTLEY_BUILDING_PHYSICAL_NAMESPACE
 
 

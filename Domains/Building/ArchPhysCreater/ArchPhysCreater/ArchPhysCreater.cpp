@@ -1,5 +1,10 @@
-// ArchPhysCreater.cpp : Defines the entry point for the console application.
-//
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ArchPhysCreater/ArchPhysCreater/ArchPhysCreater.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
 #include "ArchPhysCreater.h"
@@ -107,8 +112,8 @@ Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
     // Initialize parameters needed to create a DgnDb
     Dgn::CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting(m_overwriteExistingOutputFile);
-    createProjectParams.SetRootSubjectName("ToyTile Sample BIM");
-    createProjectParams.SetRootSubjectDescription("ToyTile sample BIM created by ToyTileCreator");
+    createProjectParams.SetRootSubjectName("Sample Building");
+    createProjectParams.SetRootSubjectDescription("Sample Building create by ArchCreater app");
 
     // Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
     BeSQLite::DbResult createStatus;
@@ -126,11 +131,13 @@ Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+
 BentleyStatus ArchPhysCreator::DoCreate()
     {
 
-    Dgn::DgnDomains::RegisterDomain( ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-  //  Dgn::DgnDomains::RegisterDomain( BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+    Dgn::DgnDomains::RegisterDomain( BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(),   Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+    Dgn::DgnDomains::RegisterDomain( BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(),                 Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+    Dgn::DgnDomains::RegisterDomain( BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(),             Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
@@ -143,20 +150,24 @@ BentleyStatus ArchPhysCreator::DoCreate()
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
 
-#ifdef NOTYET
 
-    BBPH::BuildingPhysicalModelPtr physicalModel = BBPH::BuildingPhysicalModel::Create(*partition);
+    
+    BuildingPhysical::BuildingPhysicalModelPtr physicalModel = BuildingPhysical::BuildingPhysicalModel::Create(*partition);
     if (!physicalModel.IsValid())
         return BentleyStatus::ERROR;
 
-    DefinitionPartitionCPtr defPartition = DefinitionPartition::CreateAndInsert(*rootSubject, "BuildingTypeDefinitionModel");
+    Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*rootSubject, "BuildingTypeDefinitionModel");
     if (!defPartition.IsValid())
         return BentleyStatus::ERROR;
 
     // Create a ToyTilePhysicalModel in memory
-    BBPH::BuildingTypeDefinitionModelPtr typeDefinitionModel = BBPH::BuildingTypeDefinitionModel::Create(*defPartition);
+    BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingPhysical::BuildingTypeDefinitionModel::Create(*defPartition);
     if (!typeDefinitionModel.IsValid())
         return BentleyStatus::ERROR;
+
+    CreateBuilding( *physicalModel, *typeDefinitionModel);
+
+#ifdef NOTYET
 
 
     //  BuildingTypeDefinitionModelPtr typeDefinitionModel = CreateBuildingTypeDefinitionModel(*db);
@@ -182,6 +193,27 @@ BentleyStatus ArchPhysCreator::DoCreate()
     if (!viewId.IsValid())
         return BentleyStatus::ERROR;
 #endif
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+
+BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
+    {
+
+    ArchitecturalPhysical::DoorPtr door = DoorTools::CreateDoor ( physicalModel );
+    GeometricTools::CreateDoorGeometry( door, physicalModel);
+
+    Dgn::DgnDbStatus status;
+
+    door->Insert( &status );
+
+    if ( Dgn::DgnDbStatus::Success != status )
+        return BentleyStatus::ERROR;
+
     return BentleyStatus::SUCCESS;
     }
 
