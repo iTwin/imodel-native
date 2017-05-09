@@ -229,7 +229,7 @@ constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 100;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
-constexpr double s_spatialRangeMultiplier = 4.0;
+constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
 /*---------------------------------------------------------------------------------**//**
@@ -444,6 +444,9 @@ public:
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
 };
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
+DEFINE_REF_COUNTED_PTR(TileBuilder);
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
@@ -466,7 +469,7 @@ public:
     void SetOutput(GeomPartR output) { BeAssert(m_output.IsNull()); m_output = &output; }
 };
 
-DEFINE_REF_COUNTED_PTR(TileBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileSubGraphic);
 DEFINE_REF_COUNTED_PTR(TileSubGraphic);
 
 //=======================================================================================
@@ -1813,7 +1816,10 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
     tf.Multiply(range, tileGeomPart->GetRange());
 
     DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
-    m_geometries.push_back(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
+
+    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
+    auto& parent = static_cast<TileBuilderR>(graphic);
+    parent.Add(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
