@@ -537,6 +537,7 @@ struct Strokes
     bool                m_disjoint;
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
+    Strokes(DisplayParamsCR displayParams, bool disjoint) : m_displayParams(&displayParams), m_disjoint(disjoint) { }
 
     void Transform(TransformCR transform);
 };

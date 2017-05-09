@@ -1245,9 +1245,10 @@ private:
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained);
 
-    void AddStrokes(GeometryR geom, double rangePixels);
-    void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels);
+    void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
+    Strokes ClipStrokes(StrokesCR strokes) const;
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1314,7 +1315,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
         m_maxGeometryCountExceeded = (++m_geometryCount > m_featureTable.GetMaxFeatures());
 
     AddPolyfaces(geom, rangePixels, isContained);
-    AddStrokes(geom, rangePixels);
+    AddStrokes(geom, rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1355,7 +1356,7 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, true);
             }
         }
     }
@@ -1431,30 +1432,88 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
+    {
+    // ###TODO: Modify the input in-place.
+    Strokes output(*input.m_displayParams, input.m_disjoint);
+    enum State { kInside, kOutside, kCrossedOutside };
+
+    for (bvector<DPoint3d> const& points : input.m_strokes)
+        {
+        if (points.size() <= 1)
+            continue;
+
+        DPoint3d prevPt = points.front();
+        State prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
+        if (kInside == prevState)
+            {
+            output.m_strokes.resize(1);
+            output.m_strokes.back().push_back(prevPt);
+            }
+
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool contained = m_tileRange.IsContained(nextPt);
+            State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
+            if (kOutside != nextState)
+                {
+                if (kOutside == prevState)
+                    {
+                    // back inside - start a new line string...
+                    BeAssert(kInside == nextState);
+                    output.m_strokes.resize(output.m_strokes.size()+1);
+                    output.m_strokes.back().push_back(prevPt);
+                    }
+
+                BeAssert(!output.m_strokes.empty());
+                output.m_strokes.back().push_back(nextPt);
+                }
+
+            prevState = nextState;
+            prevPt = nextPt;
+            }
+
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().size());
+        }
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels)
+void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
     auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never));
-    AddStrokes(strokes, geom, rangePixels);
+    AddStrokes(strokes, geom, rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels)
+void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained)
     {
     for (auto& stroke : strokes)
-        AddStrokes(stroke, geom, rangePixels);
+        AddStrokes(stroke, geom, rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels)
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
     {
     if (m_loadContext.WasAborted())
         return;
+
+    if (!isContained)
+        {
+        Strokes clippedStrokes = ClipStrokes(strokes);
+        AddStrokes(clippedStrokes, geom, rangePixels, true);
+        return;
+        }
 
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
@@ -1623,7 +1682,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
         // If no elements were skipped and only a small number of elements exist within this tile's range, make it a leaf tile.
         // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
         SetIsLeaf();
-        m_tolerance = collector.ComputeLeafTolerance();
+        m_tolerance = std::min(m_tolerance, collector.ComputeLeafTolerance());
         }
 
     if (collector.AnySkipped())
