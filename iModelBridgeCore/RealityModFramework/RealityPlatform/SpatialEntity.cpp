@@ -291,7 +291,7 @@ Utf8StringCR SpatialEntityMetadata::GetMetadataUrl() const { return m_metadataUr
 void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetDisplayStyle() const { return m_displayStyle; }
-void SpatialEntityMetadata::SetDisplayStyle(Utf8CP displayStyle) { m_displayStyle = displayStyle; }
+void SpatialEntityMetadata::SetDisplayStyle(Utf8CP displayStyle) { m_displayStyle = displayStyle; m_isEmpty = false;}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    11/2016
@@ -463,6 +463,7 @@ SpatialEntityServer::SpatialEntityServer()
     m_online = true;
     m_streamed = false;
     m_latency = 0.0;
+    m_meanReachabilityStats = 0;
     }
 
 //-------------------------------------------------------------------------------------
@@ -477,6 +478,7 @@ SpatialEntityServer::SpatialEntityServer(Utf8CP url, Utf8CP name)
     m_lastTimeOnline = DateTime::GetCurrentTimeUtc();
     m_latency = 0.0;
     m_streamed = false;
+    m_meanReachabilityStats = 0;
 
     if (!m_url.empty())
         {
