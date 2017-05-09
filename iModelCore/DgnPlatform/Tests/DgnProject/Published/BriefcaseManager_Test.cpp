@@ -220,7 +220,7 @@ struct LockLevelVirtualSet : LockSetVirtualSet
 
 #define TABLE_Codes "Codes"
 #define CODE_CodeSpec "CodeSpec"
-#define CODE_NameSpace "NameSpace"
+#define CODE_Scope "Scope"
 #define CODE_Value "Name"
 #define CODE_State "State"
 #define CODE_Revision "Revision"
@@ -268,12 +268,12 @@ DbResult RepositoryManager::CreateCodesTable()
     {
     return m_db.CreateTable(TABLE_Codes,
             CODE_CodeSpec " INTEGER,"
-            CODE_NameSpace " TEXT,"
+            CODE_Scope " INTEGER,"
             CODE_Value " TEXT,"
             CODE_State " INTEGER,"
             CODE_Revision " TEXT,"
             CODE_Briefcase " INTEGER,"
-            "PRIMARY KEY(" CODE_CodeSpec "," CODE_NameSpace "," CODE_Value ")");
+            "PRIMARY KEY(" CODE_CodeSpec "," CODE_Scope "," CODE_Value ")");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,13 +391,13 @@ void RepositoryManager::GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcI
     {
     // ###TODO: This should also include codes which became discarded or used in a revision not yet pulled by this briefcase...
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value " FROM " TABLE_Codes
+    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_Scope "," CODE_Value " FROM " TABLE_Codes
                        " WHERE " CODE_State " = 1 AND " CODE_Briefcase " != ?");
     bindBcId(stmt, 1, bcId);
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
         codes.insert(code);
         }
     }
@@ -679,7 +679,7 @@ RepositoryStatus RepositoryManager::ValidateRelease(DgnCodeInfoSet& discarded, S
 
         if (!stmt.IsColumnNull(5))
             {
-            DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+            DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
             DgnCodeInfo info(code);
             info.SetDiscarded(stmt.GetValueText(5));
             discarded.insert(info);
@@ -695,14 +695,13 @@ RepositoryStatus RepositoryManager::ValidateRelease(DgnCodeInfoSet& discarded, S
 void RepositoryManager::MarkDiscarded(DgnCodeInfoSet const& discarded)
     {
     Statement stmt;
-    stmt.Prepare(m_db, "INSERT INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_State "," CODE_Revision
-            ") VALUES (?,?,?,2,?)");
+    stmt.Prepare(m_db, "INSERT INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Revision ") VALUES (?,?,?,2,?)");
 
     for (auto const& info : discarded)
         {
         auto const& code = info.GetCode();
         stmt.BindId(1, code.GetCodeSpecId());
-        stmt.BindText(2, code.GetScope(), Statement::MakeCopy::No);
+        stmt.BindId(2, code.GetScopeElementId());
         stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         stmt.BindText(4, info.GetRevisionId(), Statement::MakeCopy::No);
 
@@ -725,7 +724,7 @@ struct VirtualCodeSet : VirtualSet
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
             return arg.GetCodeSpecId().GetValueUnchecked() == vals[0].GetValueUInt64()
-                && arg.GetScope().Equals(vals[1].GetValueText())
+                && arg.GetScopeElementId().GetValueUnchecked() == vals[1].GetValueUInt64()
                 && arg.GetValue().Equals(vals[2].GetValueText());
             });
         }
@@ -738,8 +737,8 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
     {
     VirtualCodeSet vset(req);
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_State "," CODE_Revision "," CODE_Briefcase
-                    "   FROM " TABLE_Codes " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value ")");
+    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Revision "," CODE_Briefcase
+                    "   FROM " TABLE_Codes " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_Scope "," CODE_Value ")");
 
     DgnCodeInfoSet discarded;
 
@@ -748,7 +747,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
     bool wantInfos = Options::CodeState == (opts & Options::CodeState);
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
         switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
             case CodeState::Reserved:
@@ -795,12 +794,11 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
 
     auto bcId = static_cast<int>(db.GetBriefcaseId().GetValue());
     Statement insert;
-    insert.Prepare(m_db, "INSERT OR REPLACE INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_State "," CODE_Briefcase "," CODE_Revision
-                        ") VALUES (?,?,?,1,?,?)");
+    insert.Prepare(m_db, "INSERT OR REPLACE INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Briefcase "," CODE_Revision ") VALUES (?,?,?,1,?,?)");
     for (auto const& code : req)
         {
         insert.BindId(1, code.GetCodeSpecId());
-        insert.BindText(2, code.GetScope(), Statement::MakeCopy::No);
+        insert.BindId(2, code.GetScopeElementId());
         insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         insert.BindInt(4, bcId);
         auto revIter = discarded.find(DgnCodeInfo(code));
@@ -812,7 +810,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
         }
     }
 
-#define SELECT_ValidateRelease "SELECT " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_Briefcase "," CODE_State "," CODE_Revision " FROM " TABLE_Codes
+#define SELECT_ValidateRelease "SELECT " CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_Briefcase "," CODE_State "," CODE_Revision " FROM " TABLE_Codes
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -820,7 +818,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
 RepositoryStatus RepositoryManager::ValidateRelease(DgnCodeInfoSet& discarded, DgnCodeSet const& req, DgnDbR db)
     {
     Statement stmt;
-    stmt.Prepare(m_db, SELECT_ValidateRelease " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value ")");
+    stmt.Prepare(m_db, SELECT_ValidateRelease " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_Scope "," CODE_Value ")");
     VirtualCodeSet vset(req);
     return ValidateRelease(discarded, stmt, db.GetBriefcaseId());
     }
@@ -837,7 +835,7 @@ RepositoryStatus RepositoryManager::_ReleaseCodes(DgnCodeSet const& req, DgnDbR 
 
     VirtualCodeSet vset(req);
     Statement stmt;
-    stmt.Prepare(m_db, "DELETE FROM " TABLE_Codes " WHERE " CODE_Briefcase "=? AND InVirtualSet(@vset, " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value ")");
+    stmt.Prepare(m_db, "DELETE FROM " TABLE_Codes " WHERE " CODE_Briefcase "=? AND InVirtualSet(@vset, " CODE_CodeSpec "," CODE_Scope "," CODE_Value ")");
     stmt.BindInt(1, static_cast<int>(db.GetBriefcaseId().GetValue()));
     stmt.BindVirtualSet(2, vset);
     stmt.Step();
@@ -887,12 +885,12 @@ RepositoryStatus RepositoryManager::_QueryCodeStates(DgnCodeInfoSet& infos, DgnC
 
     VirtualCodeSet vset(codes);
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_State "," CODE_Revision "," CODE_Briefcase
-                    "   FROM " TABLE_Codes " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value ")");
+    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Revision "," CODE_Briefcase
+                    "   FROM " TABLE_Codes " WHERE InVirtualSet(@vset, " CODE_CodeSpec "," CODE_Scope "," CODE_Value ")");
     stmt.BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
         DgnCodeInfo info(code);
         switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
@@ -932,11 +930,11 @@ RepositoryStatus RepositoryManager::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     {
     codes.clear();
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "   FROM " TABLE_Codes " WHERE " CODE_Briefcase " =?");
+    stmt.Prepare(m_db, "SELECT " CODE_CodeSpec "," CODE_Scope "," CODE_Value "   FROM " TABLE_Codes " WHERE " CODE_Briefcase " =?");
     stmt.BindInt(1, static_cast<int>(db.GetBriefcaseId().GetValue()));
     
     while (BE_SQLITE_ROW == stmt.Step())
-        codes.insert(DgnCode(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(2), stmt.GetValueText(1)));
+        codes.insert(DgnCode(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2)));
 
     return RepositoryStatus::Success;
     }
@@ -950,12 +948,11 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
         return;
 
     Statement stmt;
-    stmt.Prepare(m_db, "INSERT OR REPLACE INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_NameSpace "," CODE_Value "," CODE_State "," CODE_Revision
-            ") VALUES (?,?,?,?,?)");
-    for (auto const& code : codes)
+    stmt.Prepare(m_db, "INSERT OR REPLACE INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Revision ") VALUES (?,?,?,?,?)");
+    for (DgnCodeCR code : codes)
         {
         stmt.BindId(1, code.GetCodeSpecId());
-        stmt.BindText(2, code.GetScope(), Statement::MakeCopy::No);
+        stmt.BindId(2, code.GetScopeElementId());
         stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         stmt.BindInt(4, static_cast<int>(discarded ? CodeState::Discarded : CodeState::Used));
         stmt.BindText(5, revId, Statement::MakeCopy::No);
@@ -2825,4 +2822,3 @@ TEST_F(IndirectLocksTest, DeleteThenUse)
     EXPECT_TRUE(DeleteDisplayStyle(*m_dbB));
     EXPECT_FALSE(CreateView(*m_dbA));
     }
-

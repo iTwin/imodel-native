@@ -850,7 +850,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     EXPECT_EQ(element->GetCategoryId(), element->GetPropertyValueId<DgnCategoryId>("Category"));
     EXPECT_STREQ(element->GetUserLabel(), element->GetPropertyValueString("UserLabel").c_str());
     EXPECT_EQ(element->GetCode().GetCodeSpecId(), element->GetPropertyValueId<CodeSpecId>("CodeSpec"));
-    EXPECT_STREQ(element->GetCode().GetScope().c_str(), element->GetPropertyValueString("CodeScope").c_str());
+    EXPECT_EQ(element->GetCode().GetScopeElementId(), element->GetPropertyValueId<DgnElementId>("CodeScope"));
     EXPECT_STREQ(element->GetCode().GetValue().c_str(), element->GetPropertyValueString("CodeValue").c_str());
     }
 
@@ -1499,7 +1499,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));

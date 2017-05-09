@@ -134,7 +134,7 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
     Utf8PrintfString json(
         "{"
         "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : \"\","
+        "\"CodeScope\" : {\"id\" : \"16\"},"
         "\"CodeValue\" : \"Hub\","
         "\"Description\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"
@@ -165,7 +165,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"$ECInstanceId\" : \"502\","
         "\"$ECInstanceLabel\" : \"SpatialViewDefinition\","
         "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : \"ViewDefinition\","
+        "\"CodeScope\" : {\"id\" : \"16\"},"
         "\"CodeValue\" : \"Default - View 1\","
         "\"Description\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"

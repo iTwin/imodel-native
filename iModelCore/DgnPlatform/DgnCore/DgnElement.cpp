@@ -1062,7 +1062,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
-    statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId());
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
@@ -1458,7 +1458,8 @@ void DgnElement::CopyAppDataFrom(DgnElementCR source) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
-    m_codeSpecId = importer.RemapCodeSpecId(m_codeSpecId);
+    m_specId = importer.RemapCodeSpecId(m_specId);
+    m_scopeElementId = importer.FindElementId(m_scopeElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2383,23 +2384,23 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), value.ToString(), existingCode.GetScope());
+            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetScopeElementId(), value.ToString());
             return el.SetCode(newCode);
             });
 
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetUtf8CP(el.GetCode().GetScope().c_str());
+            value.SetNavigationInfo(el.GetCode().GetScopeElementId());
             return DgnDbStatus::Success;
             },
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsString())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetValue(), value.ToString());
+            DgnCode newCode(existingCode.GetCodeSpecId(), value.GetNavigationInfo().GetId<DgnElementId>(), existingCode.GetValue());
             return el.SetCode(newCode);
             });
         
@@ -2415,7 +2416,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetValue(), existingCode.GetScope());
+            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetScopeElementId(), existingCode.GetValue());
             return el.SetCode(newCode);
             });
         

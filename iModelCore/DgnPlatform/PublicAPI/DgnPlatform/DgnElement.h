@@ -3359,10 +3359,10 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCodeCR code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(CodeSpecId codeSpecId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(CodeSpecId codeSpecId, DgnElementId codeScopeElementId, Utf8StringCR codeValue) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, DgnElementId codeScopeElementId, Utf8StringCR codeValue) const;
 
     //! Get the total counts for the current state of the pool.
     DGNPLATFORM_EXPORT Totals const& GetTotals() const;

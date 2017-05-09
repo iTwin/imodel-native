@@ -48,8 +48,8 @@ protected:
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
 
-    static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetScope().c_str(), code.GetValueCP()); }
-    static void ExpectCode(DgnCode const& code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+    static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%" PRIu64 ":%s\n", code.GetScopeElementId().GetValue(), code.GetValueCP()); }
+    static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
     static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
         {
         EXPECT_EQ(exp.size(), actual.size());
@@ -57,7 +57,7 @@ protected:
             ExpectCode(code, actual);
         }
 
-    static void DumpCode(DgnCode const& code) { printf("    %s\n", CodeToString(code).c_str()); }
+    static void DumpCode(DgnCodeCR code) { printf("    %s\n", CodeToString(code).c_str()); }
     static void DumpCodes(DgnCodeSet const& codes, Utf8StringCR msg="Codes:")
         {
 #ifdef DUMP_CODES

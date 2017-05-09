@@ -159,10 +159,10 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnClassId classId, DgnElementId m
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
-    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
+    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName);
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope,CodeValue) VALUES(?,?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope.Id,CodeValue) VALUES(?,?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECCrudWriteToken()))
         {
@@ -175,7 +175,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(3, Elements().GetRootSubjectId());
     statement.BindId(4, Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
     statement.BindId(5, partitionCode.GetCodeSpecId());
-    statement.BindText(6, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(6, partitionCode.GetScopeElementId());
     statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
@@ -233,11 +233,11 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
     CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
-    DgnCode elementCode = DgnCode(codeSpecId, params.m_rootSubjectName, elementId);
+    DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope,CodeValue,Description) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope.Id,CodeValue,Description) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -246,7 +246,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     statement.BindId(1, elementId);
     statement.BindId(2, modelId);
     statement.BindId(3, elementCode.GetCodeSpecId());
-    statement.BindText(4, elementCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(4, elementCode.GetScopeElementId());
     statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
 
