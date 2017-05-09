@@ -506,14 +506,14 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
     {
     if (nullptr == entryId || !entryId->IsValid())
         {
-        graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
         return;
         }
 
     CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     primitive->SetId(newId.get());
 
-    graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+    graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -587,8 +587,8 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 }
 
             DgnViewportCP viewport = nullptr != stopTester ? stopTester->GetViewport() : nullptr;
-            if (!includeFaceIso || nullptr == viewport || !graphic.IsSimplifyGraphic())
-                return; // QVis handles cone silhouette display...
+            if (!includeFaceIso || nullptr == viewport)
+                return;
 
             Transform   worldToLocalTrans;
 
@@ -855,7 +855,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR
                 if (!curve.IsValid())
                     continue;
 
-                graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
             }
         }
@@ -926,7 +926,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
                 }
 
             curve->TransformInPlace(entity.GetEntityTransform());
-            graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+            graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
             }
 
         PK_MEMORY_free(edgeTags);
@@ -1556,38 +1556,7 @@ bool ViewContext::_WantLineStyles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions)
     {
-    if (!lsSymb.GetUseStroker())
-        return false;
-
-    if (builder.IsSimplifyGraphic())
-        {
-        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
-
-        return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
-        }
-
-#if defined(TODO_ELEMENT_TILE)
-    // ###TODO: This probably just goes away...
-    double pixelSize = builder.GetPixelSize();
-    double maxWidth = (0.0 != pixelSize ? lsSymb.GetStyleWidth() : 0.0);
-
-    if (0.0 != maxWidth)
-        {
-        double pixelThreshold = 5.0;
-
-        if ((maxWidth / pixelSize) < pixelThreshold)
-            {
-            builder.UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
-
-            return false; // Width not discernable...
-            }
-
-        builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
-        }
-#endif
-
-    return true; // Width discernable (or no width)...
+    return lsSymb.GetUseStroker() && builder.WantStrokeLineStyle(lsSymb, facetOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**

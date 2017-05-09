@@ -2648,7 +2648,7 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
     params.RegisterPropertyAccessors(layout, GEOM2_Rotation, 
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromDegrees(value.GetDouble())));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
@@ -3629,6 +3629,7 @@ void  GeometricElement::_OnDeleted() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_OnAppliedDelete() const 
     {
+    T_Super::_OnAppliedDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**

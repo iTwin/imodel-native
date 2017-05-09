@@ -890,11 +890,7 @@ GeomPart::GeomPart(DRange3dCR range, GeometryList const& geometries) : m_range (
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomPart::IsCurved() const
     {
-    for (auto& geometry : m_geometries)
-        if (geometry->IsCurved())
-            return true;
-
-    return false;
+    return m_geometries.ContainsCurves();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1252,7 +1248,7 @@ GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -1267,13 +1263,13 @@ bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range)
+bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range)
     {
     GeometryPtr geometry = Geometry::Create(geom, transform, range, GetElementId(), displayParams, isCurved, GetDgnDb());
     if (geometry.IsNull())
         return false;
 
-    m_geometries.push_back(geometry);
+    m_geometries.push_back(*geometry);
     return true;
     }
 
@@ -1308,60 +1304,54 @@ PolyfaceHeaderPtr cloneGeometry(PolyfaceQueryCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
 
     bool isCurved = curves.ContainsNonLinearPrimitive();
-    CurveVectorPtr clone = cloneGeometry(curves);
-    IGeometryPtr geom = IGeometry::Create(clone);
+    IGeometryPtr geom = IGeometry::Create(CurveVectorPtr(&curves));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform)
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
-    ISolidPrimitivePtr clone = cloneGeometry(primitive);
-    IGeometryPtr geom = IGeometry::Create(clone);
+    IGeometryPtr geom = IGeometry::Create(ISolidPrimitivePtr(&primitive));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform)
     {
-    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
-    clone->CopyFrom(surface);
-    IGeometryPtr geom = IGeometry::Create(clone);
-
-    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
+    bool isCurved = (surface.GetUOrder() > 2 || surface.GetVOrder() > 2);
+    IGeometryPtr geom = IGeometry::Create(MSBsplineSurfacePtr(&surface));
     return AddGeometry(*geom, isCurved, displayParams, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
-    PolyfaceHeaderPtr clone = cloneGeometry(polyface);
-    if (!clone->IsTriangulated() && SUCCESS != clone->Triangulate())
+    if (!polyface.IsTriangulated() && SUCCESS != polyface.Triangulate())
         {
         BeAssert(false && "Failed to triangulate...");
         return false;
         }
 
     if (m_haveTransform)
-        clone->Transform(Transform::FromProduct(m_transform, transform));
+        polyface.Transform(Transform::FromProduct(m_transform, transform));
     else if (!transform.IsIdentity())
-        clone->Transform(transform);
+        polyface.Transform(transform);
 
-    DRange3d range = clone->PointRange();
-    IGeometryPtr geom = IGeometry::Create(clone);
+    DRange3d range = polyface.PointRange();
+    IGeometryPtr geom = IGeometry::Create(PolyfaceHeaderPtr(&polyface));
     AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), range);
     return true;
     }
@@ -1369,22 +1359,20 @@ bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, Dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
-    IBRepEntityPtr clone = const_cast<IBRepEntityP>(&body);
-
-    DRange3d range = clone->GetEntityRange();
+    DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly)
         return true;
@@ -1392,21 +1380,20 @@ bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsCR
     static BeMutex s_tempFontMutex;
     BeMutexHolder lock(s_tempFontMutex);    // Temporary - until we resolve the font threading issues.
 
-    TextStringPtr clone = textString.Clone();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
 
-    DRange2d range2d = clone->GetRange();
+    DRange2d range2d = textString.GetRange();
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
-    Transform::FromProduct(tf, clone->ComputeTransform()).Multiply(range, range);
+    Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
-    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double tolerance) const
+MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double tolerance) const
     {
     MeshList meshes;
     if (m_geometries.empty())
@@ -1474,7 +1461,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryListBuilder::SaveToGraphicList(bvector<GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance) const
+void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance) const
     {
     MeshArgs        meshArgs;
     PolylineArgs    polylineArgs;
@@ -1883,7 +1870,7 @@ void PolylineArgs::Transform(TransformCR tf)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams)
+void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams)
     {
     m_graphicParams = gfParams;
     m_geometryParamsValid = nullptr != geomParams;
@@ -1955,16 +1942,16 @@ void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
+void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
-    _AddCurveVector(*curve, filled);
+    m_accum.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double priority)
+void GeometryListBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double priority)
     {
     double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
     if (0.0 == zDepth)
@@ -1982,7 +1969,7 @@ void PrimitiveBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
+void GeometryListBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
     if (filled && !isEllipse && !ellipse.IsFullEllipse())
@@ -1996,13 +1983,13 @@ void PrimitiveBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled
         curve->push_back(gapSegment);
         }
 
-    _AddCurveVector(*curve, filled);
+    m_accum.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, double priority)
+void GeometryListBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, double priority)
     {
     std::valarray<DPoint3d> pts3d(numPoints);
     copy2dTo3d(pts3d, points, priority);
@@ -2012,16 +1999,16 @@ void PrimitiveBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, double
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddLineString(int numPoints, DPoint3dCP points)
+void GeometryListBuilder::_AddLineString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
-    _AddCurveVector(*curve, false);
+    m_accum.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, double priority)
+void GeometryListBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, double priority)
     {
     std::valarray<DPoint3d> pts3d(numPoints);
     copy2dTo3d(pts3d, points, priority);
@@ -2031,32 +2018,48 @@ void PrimitiveBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, doubl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddPointString(int numPoints, DPoint3dCP points)
+void GeometryListBuilder::_AddPointString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
-    _AddCurveVector(*curve, false);
+    m_accum.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
+void GeometryListBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
     {
-    m_geomList.AddPolyface(meshDataIn, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    _AddPolyfaceR(*meshDataIn.Clone(), filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddPolyfaceR(PolyfaceHeaderR mesh, bool filled)
+    {
+    Add(mesh, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddBody(IBRepEntityCR entity)
+void GeometryListBuilder::_AddBody(IBRepEntityCR entity)
     {
-    m_geomList.AddBody(entity, GetDisplayParams(), GetLocalToWorldTransform());
+    _AddBodyR(const_cast<IBRepEntityR>(entity));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddBodyR(IBRepEntityR entity)
+    {
+    m_accum.Add(entity, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double priority)
+void GeometryListBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double priority)
     {
     std::valarray<DPoint3d> pts3d(numPoints);
     copy2dTo3d(numPoints, &pts3d[0], points, priority);
@@ -2066,15 +2069,25 @@ void PrimitiveBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool filled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTextString(TextStringCR text)
+void GeometryListBuilder::_AddTextString(TextStringCR text)
     {
-    m_geomList.AddTextString(text, GetDisplayParams(true), GetLocalToWorldTransform());
+    // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
+    _AddTextStringR(*text.Clone());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddTextStringR(TextStringR text)
+    {
+    // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
+    m_accum.Add(text, GetDisplayParams(true), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTextString2d(TextStringCR text, double priority)
+void GeometryListBuilder::_AddTextString2d(TextStringCR text, double priority)
     {
     double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
     if (0.0 == zDepth)
@@ -2087,16 +2100,36 @@ void PrimitiveBuilder::_AddTextString2d(TextStringCR text, double priority)
         auto origin = ts->GetOrigin();
         origin.z = zDepth;
         ts->SetOrigin(origin);
-        _AddTextString(*ts);
+        _AddTextStringR(*ts);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddTextStringR(text);
+        }
+    else
+        {
+        TextStringPtr ts = text.Clone();
+        auto origin = ts->GetOrigin();
+        origin.z = zDepth;
+        ts->SetOrigin(origin);
+        _AddTextStringR(*ts);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
+void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
-    if (1 == usageFlags) // represents thickened line...
+    if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int nPt = 0;
         auto tmpPts = reinterpret_cast<DPoint3dP>(_alloca((numPoints+1)*sizeof(DPoint3d)));
@@ -2122,7 +2155,7 @@ void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t us
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double priority)
+void GeometryListBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double priority)
     {
     std::valarray<DPoint3d> pts3d(numPoints);
     copy2dTo3d(pts3d, points, priority);
@@ -2132,23 +2165,39 @@ void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
+void GeometryListBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
     {
-    m_geomList.AddSolidPrimitive(primitive, GetDisplayParams(), GetLocalToWorldTransform());
+    _AddSolidPrimitiveR(*primitive.Clone());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddSolidPrimitiveR(ISolidPrimitiveR primitive)
+    {
+    m_accum.Add(primitive, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
+void GeometryListBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     {
-    m_geomList.AddCurveVector(curves, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
+    _AddCurveVectorR(*curves.Clone(), isFilled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
+    {
+    m_accum.Add(curves, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double priority)
+void GeometryListBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double priority)
     {
     double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
     if (0.0 == zDepth)
@@ -2159,23 +2208,51 @@ void PrimitiveBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, do
         {
         Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
         auto cv = curves.Clone(tf);
-        _AddCurveVector(*cv, isFilled);
+        _AddCurveVectorR(*cv, isFilled);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddCurveVectorR(*curves.Clone(), isFilled);
+        }
+    else
+        {
+        Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
+        auto cv = curves.Clone(tf);
+        m_accum.Add(*cv, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
+void GeometryListBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
-    _AddCurveVector(*cv, filled);
+    m_accum.Add(*cv, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddBSplineCurveR(RefCountedMSBsplineCurveR bcurve, bool filled)
+    {
+    MSBsplineCurvePtr pBcurve(&bcurve);
+    CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(pBcurve));
+    m_accum.Add(*cv, filled, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double priority)
+void GeometryListBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double priority)
     {
     double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
     if (0.0 == zDepth)
@@ -2184,29 +2261,57 @@ void PrimitiveBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, 
         }
     else
         {
-        MSBsplineCurve bs;
-        bs.CopyFrom(bcurve);
-        int nPoles = bs.GetNumPoles();
-        DPoint3d* poles = bs.GetPoleP();
+        MSBsplineCurvePtr bs = bcurve.CreateCopy();
+        int nPoles = bs->GetNumPoles();
+        DPoint3d* poles = bs->GetPoleP();
         for (int i = 0; i < nPoles; i++)
             poles[i].z = zDepth;
 
-        _AddBSplineCurve(bs, filled);
+        _AddBSplineCurveR(*bs, filled);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddBSplineCurve2dR(RefCountedMSBsplineCurveR bcurve, bool filled, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddBSplineCurveR(bcurve, filled);
+        }
+    else
+        {
+        int nPoles = bcurve.GetNumPoles();
+        DPoint3d* poles = bcurve.GetPoleP();
+        for (int i = 0; i < nPoles; i++)
+            poles[i].z = zDepth;
+
+        _AddBSplineCurveR(bcurve, filled);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
+void GeometryListBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
     {
-    m_geomList.AddSurface(surface, GetDisplayParams(), GetLocalToWorldTransform());
+    _AddBSplineSurface(*surface.Clone());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::_AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surf)
+    {
+    m_accum.Add(surf, GetDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
+void GeometryListBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
     {
     BeAssert("TODO");
     }
@@ -2239,45 +2344,61 @@ GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipV
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/16
+* @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr PrimitiveBuilder::_Finish()
+GraphicPtr GeometryListBuilder::_Finish()
     {
-    BeAssert(IsOpen());
-
-    GraphicPtr graphic;
-    if (IsOpen())
+    if (!IsOpen())
         {
-        m_isOpen = false;
-        if (!m_geomList.IsEmpty())
-            {
-            GeometryOptions options;
-            m_geomList.SaveToGraphicList(m_primitives, m_system, options);
-            }
-
-        switch (m_primitives.size())
-            {
-            case 1:
-                graphic = *m_primitives.begin();
-                m_primitives.clear();
-                break;
-            default:
-                // NB: We may have zero primitives. Callers aren't going to check for null return value. So return an empty graphic list.
-                // (See for example DrawGrid() - often produces empty Graphic and adds directly to world decorations)
-                graphic = m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
-                break;
-            }
+        BeAssert(false);
+        return nullptr;
         }
 
-    m_geomList.Clear();
+    GraphicPtr graphic = _FinishGraphic(m_accum);
+    BeAssert(graphic.IsValid()); // callers of Finish() assume they're getting back a non-null graphic...
+
+    m_isOpen = false;
+    m_accum.Clear();
+    return graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
+    {
+    if (!accum.IsEmpty())
+        {
+        GeometryOptions options;
+        accum.SaveToGraphicList(m_primitives, m_system, options);
+        }
+
+    if (1 != m_primitives.size())
+        return m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
+
+    GraphicPtr graphic = *m_primitives.begin();
+    m_primitives.clear();
     return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCR PrimitiveBuilder::GetDisplayParams(bool ignoreLighting) const
+DisplayParamsCR GeometryListBuilder::GetDisplayParams(bool ignoreLighting) const
     {
-    return m_geomList.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
+    return m_accum.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::ReInitialize(TransformCR localToWorld, TransformCR accumTf, DgnElementId elemId)
+    {
+    m_accum.ReInitialize(accumTf, elemId);
+    ActivateGraphicParams(GraphicParams(), nullptr);
+    m_createParams.m_placement = localToWorld;
+    m_isOpen = true;
+
+    _Reset();
     }
 

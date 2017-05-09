@@ -66,9 +66,9 @@ TEST_F(EcutilsTests, ConvertECValueToJson)
     ASSERT_EQ(obj.asDouble(),101.001);
   
     EcValue.Clear();
-    EcValue.SetLong(1000000000001ULL);
+    EcValue.SetLong((uint64_t)1000000000001);
     ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue));
-    ASSERT_EQ(obj.asUInt64(), 1000000000001ULL);
+    ASSERT_EQ(obj.asUInt64(), (uint64_t)1000000000001);
 
     EcValue.Clear();
     EcValue.SetInteger(100);
@@ -156,7 +156,7 @@ TEST_F(EcutilsTests, StoreECValueAsJson)
     ASSERT_EQ(obj["Value"], "101.001");
 
     EcValue.Clear();
-    EcValue.SetLong(1000000000001ULL);
+    EcValue.SetLong((uint64_t)1000000000001);
     ASSERT_EQ(DgnDbStatus::Success, ECUtils::ECUtils::StoreECValueAsJson(obj, EcValue));
     ASSERT_EQ(obj["Type"], "long");
     ASSERT_EQ(obj["Value"], "1000000000001");
@@ -208,7 +208,7 @@ TEST_F(EcutilsTests, ToJsonPropertiesFromECProperties)
     ECN::IECInstanceCR ecInstance1 = *ecInstance;
     ASSERT_EQ(BentleyStatus::BSIERROR, ECUtils::ToJsonPropertiesFromECProperties(obj, ecInstance1, "v,T"));
     ASSERT_EQ(ECN::ECObjectsStatus::Success,ecInstance->SetValue("i",ECN::ECValue(10)));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success,ecInstance->SetValue("l", ECN::ECValue(1000000000001ULL)));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success,ecInstance->SetValue("l", ECN::ECValue((uint64_t)1000000000001)));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("p2d", ECN::ECValue(DPoint2d::From( 8, 8))));
     ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ToJsonPropertiesFromECProperties(obj, ecInstance1, "i,l,p2d"));
     ASSERT_EQ(obj["i"], 10);

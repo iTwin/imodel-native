@@ -257,7 +257,7 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider,
         return;
         }
 
-    CreateCache(imageryProvider._GetCacheFileName(), MAX_DB_CACHE_SIZE);
+    CreateCache(imageryProvider._GetCacheFileName().c_str(), MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
@@ -340,12 +340,9 @@ void WebMercatorModel::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WebMercatorModel::_GetCopyrightMessage() const
+Utf8String WebMercatorModel::_GetCopyrightMessage() const
     {
-    if (m_provider.IsValid())
-        return m_provider->_GetCreditMessage();
-
-    return nullptr;
+    return m_provider.IsValid() ? m_provider->_GetCreditMessage() : "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -406,7 +403,7 @@ Utf8String MapBoxImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP MapBoxImageryProvider::_GetCreditMessage() const
+Utf8String MapBoxImageryProvider::_GetCreditMessage() const
     {
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
@@ -414,7 +411,7 @@ Utf8CP MapBoxImageryProvider::_GetCreditMessage() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP MapBoxImageryProvider::_GetCacheFileName() const
+Utf8String MapBoxImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -471,7 +468,7 @@ void MapBoxImageryProvider::_ToJson(Json::Value& value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP MapBoxImageryProvider::_GetCreditUrl() const
+Utf8String MapBoxImageryProvider::_GetCreditUrl() const
     {
     // NEEDSWORK_MapBox
     return nullptr;
@@ -524,7 +521,7 @@ Utf8String BingImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BingImageryProvider::_GetCreditMessage() const
+Utf8String BingImageryProvider::_GetCreditMessage() const
     {
     return "(c) Microsoft";
     }
@@ -532,7 +529,7 @@ Utf8CP BingImageryProvider::_GetCreditMessage() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BingImageryProvider::_GetCacheFileName() const
+Utf8String BingImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -571,7 +568,7 @@ void    BingImageryProvider::_ToJson(Json::Value& value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  BingImageryProvider::_GetCreditUrl() const
+Utf8String  BingImageryProvider::_GetCreditUrl() const
     {
     // NEEDSWORK_MapBox
     return nullptr;
@@ -728,7 +725,7 @@ Utf8String HereImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP HereImageryProvider::_GetCreditMessage() const
+Utf8String HereImageryProvider::_GetCreditMessage() const
     {
     return "(c) HERE";
     }
@@ -736,7 +733,7 @@ Utf8CP HereImageryProvider::_GetCreditMessage() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP HereImageryProvider::_GetCacheFileName() const
+Utf8String HereImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
@@ -792,7 +789,7 @@ void    HereImageryProvider::_ToJson(Json::Value& value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  HereImageryProvider::_GetCreditUrl() const
+Utf8String  HereImageryProvider::_GetCreditUrl() const
     {
     // NEEDSWORK_MapBox
     return nullptr;

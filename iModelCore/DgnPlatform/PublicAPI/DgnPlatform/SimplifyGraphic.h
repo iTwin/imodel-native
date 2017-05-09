@@ -38,8 +38,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
     DGNPLATFORM_EXPORT void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
     DGNPLATFORM_EXPORT void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override;
@@ -56,8 +56,9 @@ protected:
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
+    DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
 
-    bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}
     Render::GraphicPtr _Finish() override;
 
@@ -116,6 +117,9 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
+#if defined(WIP_TILETREE_PUBLISH)
+    DGNPLATFORM_EXPORT void ClipAndProcessTriMesh(TriMeshArgs const&);
+#endif
 
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
@@ -132,8 +136,6 @@ public:
     private:
         IGeometryProcessorR m_processor;
         ViewContextR m_context;
-
-        bool _IsSimplifyGraphic() const override { return true; }
     public:
         Base(DgnDbR db, IGeometryProcessorR processor, ViewContextR context)
             : Render::Graphic(db), m_processor(processor), m_context(context) { }
@@ -204,6 +206,9 @@ virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, Simplify
 virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+#if defined(WIP_TILETREE_PUBLISH)
+virtual UnhandledPreference _GetUnhandledPreference(Render::IGraphicBuilder::TriMeshArgs const&, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+#endif
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
@@ -219,6 +224,9 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false
 virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
 virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
+#if defined(WIP_TILETREE_PUBLISH)
+virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&) {return false; }
+#endif
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
@@ -228,6 +236,9 @@ virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVe
 virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+#if defined(WIP_TILETREE_PUBLISH)
+virtual bool _ProcessTriMeshClipped(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&, ClipVectorCR) {return false; }
+#endif
 
 //! Allow processor to output graphics to it's own process methods.
 //! @param[in] context The current view context.

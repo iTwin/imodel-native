@@ -824,7 +824,7 @@ bool GeometricPrimitive::IsWire() const
     switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
-            return true;
+            return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString != GetAsICurvePrimitive()->GetCurvePrimitiveType();
 
         case GeometryType::CurveVector:
             return GetAsCurveVector()->IsOpenPath();
@@ -3470,7 +3470,6 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
-    bool isSimplify = mainGraphic.IsSimplifyGraphic();
     bool geomParamsChanged = true;
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
@@ -3520,16 +3519,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
 
-                // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
-                // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
                 geomParams.Resolve(context);
                 subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
 
-                if (isSimplify)
-                    {
-                    currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
-                    geomParamsChanged = false;
-                    }
+                currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
+                geomParamsChanged = false;
 
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
@@ -3561,7 +3555,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3632,7 +3626,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3691,7 +3685,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 DEllipse3d  arc;
@@ -3745,7 +3739,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3790,11 +3784,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2dR(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, false);
+                currGraphic->AddCurveVectorR(*curvePtr, false);
                 break;
                 }
 
@@ -3803,7 +3797,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3837,11 +3831,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2dR(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
+                currGraphic->AddCurveVectorR(*curvePtr, curvePtr->IsAnyRegionType() && DrawHelper::IsFillVisible(context, geomParams));
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3854,7 +3848,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3872,7 +3866,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3881,7 +3875,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddSolidPrimitive(*solidPtr);
+                currGraphic->AddSolidPrimitiveR(*solidPtr);
                 break;
                 }
 
@@ -3890,7 +3884,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3899,7 +3893,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddBSplineSurface(*surfacePtr);
+                currGraphic->AddBSplineSurfaceR(*surfacePtr);
 
                 // NOTE: We no longer want to support the surface/control polygon visibility options.
                 //       Display of the control polygon is something that should be left to specific tools and modify handles.
@@ -3913,7 +3907,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
@@ -3938,7 +3932,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddBody(*entityPtr);
+                currGraphic->AddBodyR(*entityPtr);
                 break;
                 }
 #else
@@ -3952,7 +3946,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3967,7 +3961,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3976,7 +3970,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                currGraphic->AddCurveVector(*curvePtr, false);
+                currGraphic->AddCurveVectorR(*curvePtr, false);
                 break;
                 };
 #endif
@@ -3986,7 +3980,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 TextString  text;
@@ -4014,7 +4008,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
                 ImageGraphicPtr imagePtr;
@@ -4183,9 +4177,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
 
                 if (hit.GetViewport().Is3dView())
-                    graphic->AddCurveVector(*curve, false);
+                    graphic->AddCurveVectorR(*curve, false);
                 else
-                    graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
+                    graphic->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
 
                 return graphic->Finish();
                 }
@@ -4263,8 +4257,26 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
             return EntryType::GeometryPart;
 
         case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
+            }
+
         case GeometryStreamIO::OpCode::CurvePrimitive:
             return EntryType::CurvePrimitive;
 
@@ -4308,10 +4320,30 @@ bool GeometryCollection::Iterator::IsCurve() const
     switch (m_egOp.m_opCode)
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Open == ppfb->boundary());
+            }
+
         case GeometryStreamIO::OpCode::CurvePrimitive:
-            return true;
+            {
+            return true; // NOTE: Should never be a point string or closed bcurve...
+            }
 
         case GeometryStreamIO::OpCode::CurveVector:
             {
@@ -4332,8 +4364,31 @@ bool GeometryCollection::Iterator::IsSurface() const
     {
     switch (m_egOp.m_opCode)
         {
-        case GeometryStreamIO::OpCode::BsplineSurface:
-            return true;
+        case GeometryStreamIO::OpCode::PointPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::PointPrimitive2d:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::ArcPrimitive:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+
+            return (FB::BoundaryType_Closed == ppfb->boundary());
+            }
+
+        case GeometryStreamIO::OpCode::CurvePrimitive:
+            {
+            return false; // NOTE: Should never be a point string or closed bcurve...
+            }
 
         case GeometryStreamIO::OpCode::CurveVector:
             {
@@ -4354,6 +4409,11 @@ bool GeometryCollection::Iterator::IsSurface() const
             GeometricPrimitivePtr geom = GetGeometryPtr();
 
             return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+
+        case GeometryStreamIO::OpCode::BsplineSurface:
+            {
+            return true;
             }
 
 #if defined (BENTLEYCONFIG_PARASOLID)  

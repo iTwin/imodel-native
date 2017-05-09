@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/DgnTexture.h>
@@ -27,6 +28,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Strokes);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryCollection);
@@ -34,7 +36,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryListBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 
@@ -47,7 +49,6 @@ DEFINE_REF_COUNTED_PTR(GeomPart);
 
 typedef bvector<MeshInstance>       MeshInstanceList;
 typedef bvector<MeshPartPtr>        MeshPartList;
-typedef bvector<GeometryPtr>        GeometryList;
 typedef bvector<Triangle>           TriangleList;
 typedef bvector<Polyline>           PolylineList;
 typedef bvector<Polyface>           PolyfaceList;
@@ -55,6 +56,7 @@ typedef bvector<Strokes>            StrokesList;
 typedef bmap<double, PolyfaceList>  PolyfaceMap;
 
 //=======================================================================================
+//! Specifies under what circumstances a GeometryAccumulator should generate normals.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 enum class NormalMode
@@ -65,6 +67,7 @@ enum class NormalMode
 };
 
 //=======================================================================================
+//! Options for controlling how GeometryAccumulator generates geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct GeometryOptions
@@ -81,6 +84,7 @@ struct GeometryOptions
 };
 
 //=======================================================================================
+//! Describes the appearance of a Geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct DisplayParams : RefCountedBase
@@ -134,8 +138,8 @@ public:
 
     enum class ComparePurpose
     {
-        Merge,  // ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
-        Strict  // compares all members
+        Merge,  //!< ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
+        Strict  //!< compares all members
     };
 
     DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
@@ -143,6 +147,7 @@ public:
 };
 
 //=======================================================================================
+//! A cache of ref-counted pointers to DisplayParams objects.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct DisplayParamsCache
@@ -183,6 +188,7 @@ public:
 };
 
 //=======================================================================================
+//! A look-up table of unique colors. Each unique color is mapped to a sequential index.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct ColorTable
@@ -551,6 +557,7 @@ struct Strokes
     bool                m_disjoint;
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
+    Strokes(DisplayParamsCR displayParams, bool disjoint) : m_displayParams(&displayParams), m_disjoint(disjoint) { }
 
     void Transform(TransformCR transform);
 };
@@ -616,6 +623,35 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct GeometryList
+{
+    typedef bvector<GeometryPtr> List;
+private:
+    List    m_list;
+    bool    m_complete = true;
+    bool    m_curved = false;
+public:
+    bool IsComplete() const { return m_complete; }
+    bool ContainsCurves() const { return m_curved; }
+    void MarkIncomplete() { m_complete = false; }
+    void MarkCurved() { m_curved = true; }
+
+    typedef List::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    bool empty() const { return m_list.empty(); }
+    size_t size() const { return m_list.size(); }
+
+    void push_back(GeometryR geom) { m_list.push_back(&geom); m_curved = m_curved || geom.IsCurved(); }
+    void append(GeometryListR src) { m_list.insert(m_list.end(), src.m_list.begin(), src.m_list.end()); m_curved = m_curved || src.ContainsCurves(); }
+    void resize(size_t newSize) { m_list.resize(newSize); }
+    void clear() { m_list.clear(); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct GeomPart : RefCountedBase
@@ -650,16 +686,25 @@ struct GeometryCollection
 private:
     MeshList            m_meshes;
     MeshPartList        m_parts;
+    bool                m_isComplete = true;
+    bool                m_curved = false;
 public:
     MeshList& Meshes()              { return m_meshes; }
     MeshPartList& Parts()           { return m_parts; }
     bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+    bool IsComplete() const         { return m_isComplete; }
+    bool ContainsCurves() const     { return m_curved; }
+    void MarkIncomplete()           { m_isComplete = false; }
+    void MarkCurved()               { m_curved = true; }
 };
 
 //=======================================================================================
+//! Accumulates a list of Geometry objects from a set of high-level graphics primitives.
+//! The various Add() methods take ownership of the input object, which may later be
+//! modified.
 // @bsistruct                                                   Paul.Connelly   01/17
 //=======================================================================================
-struct GeometryListBuilder
+struct GeometryAccumulator
 {
 private:
     GeometryList                m_geometries;
@@ -673,18 +718,18 @@ private:
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
 public:
-    GeometryListBuilder(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryListBuilder(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+    GeometryAccumulator(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
 
-    void AddGeometry(GeometryR geom) { m_geometries.push_back(&geom); }
+    void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
-    DGNPLATFORM_EXPORT bool AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform);
 
     bool IsEmpty() const { return m_geometries.empty(); }
     void Clear() { m_geometries.clear(); }
@@ -704,7 +749,17 @@ public:
     //! Convert the geometry accumulated by this builder into a set of meshes.
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
+    //! Populate a list of Graphic objects from the accumulated Geometry objects.
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
+
+    //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
+    void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
+        {
+        Clear();
+        SetTransform(transform);
+        SetElementId(elemId);
+        m_surfacesOnly = surfacesOnly;
+        }
 };
 
 //=======================================================================================
@@ -800,24 +855,26 @@ struct RenderInvisibleMeshEdgesArg : InvisibleMeshEdgesArg
 
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
+//! Implements GraphicBuilder to accumulate high-level graphics primitives into a list
+//! of Render::Primitives::Geometry objects.
+// @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
-struct PrimitiveBuilder : GraphicBuilder
+struct GeometryListBuilder : GraphicBuilder
 {
-protected:
-    System&             m_system;
-    GeometryListBuilder m_geomList;
-    bvector<GraphicPtr> m_primitives;
+private:
+    GeometryAccumulator m_accum;
     GraphicParams       m_graphicParams;
     GeometryParams      m_geometryParams;
     bool                m_geometryParamsValid = false;
     bool                m_isOpen = true;
 
-    DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
-    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
-    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
-    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    bool _IsOpen() const final override { return m_isOpen; }
+    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() final override;
+protected:
+    explicit GeometryListBuilder(CreateParams const& params, DgnElementId elemId=DgnElementId(), TransformCR accumulatorTf=Transform::FromIdentity())
+        : GraphicBuilder(params), m_accum(params.m_dgndb) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
 
+    DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
     DGNPLATFORM_EXPORT void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override;
@@ -830,8 +887,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
     DGNPLATFORM_EXPORT void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
@@ -839,17 +896,53 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineCurve2d(MSBsplineCurveCR, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
-    DGNPLATFORM_EXPORT bool _IsOpen() const override { return m_isOpen; }
-    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
 
-    void AddTriMesh(TriMeshArgsCR args);
+    DGNPLATFORM_EXPORT void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddCurveVectorR(CurveVectorR curves, bool isFilled) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) override;
+    DGNPLATFORM_EXPORT void _AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) override;
+    DGNPLATFORM_EXPORT void _AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) override;
+    DGNPLATFORM_EXPORT void _AddBodyR(IBRepEntityR body) override;
+    DGNPLATFORM_EXPORT void _AddTextStringR(TextStringR text) override;
+    DGNPLATFORM_EXPORT void _AddTextString2dR(TextStringR text, double zDepth) override;
 
+    virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
+    virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
+
+    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
+public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
-    DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    DgnElementId GetElementId() const { return m_accum.GetElementId(); }
+    DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
+
+    //! Reset this builder for reuse.
+    DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());
+};
+
+//=======================================================================================
+//! General-purpose specialization of GeometryListBuilder which produces Graphic objects
+//! using a supplied Render::System.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PrimitiveBuilder : GeometryListBuilder
+{
+protected:
+    System&             m_system;
+    bvector<GraphicPtr> m_primitives;
+
+    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
+    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
+    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _Reset() override { m_primitives.clear(); }
+
+    void AddTriMesh(TriMeshArgsCR args);
 public:
-    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params)
-        : GraphicBuilder(params), m_system(system), m_geomList(params.m_dgndb) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(params), m_system(system) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

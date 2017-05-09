@@ -608,9 +608,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     // ###TODO_ELEMENT_TILE: It would be nice to be able to generate only the tiles we need for the current frustum.
     // However, if we don't generate parents before children, then when the viewing frustum changes we will have nothing to draw until more tiles load.
     // So for now we do similarly to 3mx: only process children after parent is ready.
-#if defined(TILETREE_SKIP_INTERMEDIATES)
     DgnDb::VerifyClientThread();
 
+#if defined(TILETREE_SKIP_INTERMEDIATES)
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
@@ -626,7 +626,8 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         bool substitutingChildren = false;
         if (IsReady())
             {
-            selected.push_back(this);
+            if (_HasGraphics())
+                selected.push_back(this);
             }
         else if (IsNotFound())
             {
@@ -652,7 +653,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                     else if (!arg->IsReady())
                         return false;
 
-                    selected.push_back(arg);
+                    if (arg->_HasGraphics())
+                        selected.push_back(arg);
+
                     return true;
                     });
 
@@ -666,7 +669,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                 m_childrenLastUsed = args.m_now;
                 substitutingChildren = true;
                 for (auto const& child : *children)
-                    if (!child->IsCulled(args))
+                    if (!child->IsCulled(args) && child->_HasGraphics())
                         selected.push_back(child);
                 }
             else
@@ -711,7 +714,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     if (IsReady())
         {
         // We can draw this tile in place of its children
-        selected.push_back(this);
+        if (_HasGraphics())
+            selected.push_back(this);
+
         return SelectParent::No;
         }
 
@@ -731,7 +736,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
     // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
-    auto children = (tooCoarse && ready) ? _GetChildren(true) : nullptr;
+    // The GetDepth() test below allows us to skip intermediate tiles, but never the root tile.
+    bool skipThisTile = tooCoarse && (ready || 0 != GetDepth());
+    auto children = skipThisTile ? _GetChildren(true) : nullptr;
     if (nullptr != children)
         {
         m_childrenLastUsed = args.m_now;
@@ -761,7 +768,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     if (ready)
         {
-        selected.push_back(this);
+        if (_HasGraphics())
+            selected.push_back(this);
+
         return SelectParent::No;
         }
 
@@ -825,6 +834,8 @@ void Root::DrawInView(RenderContextR context)
         BeAssert(false);
         return;
         }
+
+    InvalidateDamagedTiles();
 
     auto now = BeTimePoint::Now();
     DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
@@ -905,7 +916,7 @@ void Tile::Pick(PickArgsR args, int depth) const
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 
-    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
+    auto* children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
         for (auto const& child : *children)
@@ -1166,7 +1177,8 @@ void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
 void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     BeAssert(IsReady());
-    if (HasGraphics())
+    BeAssert(_HasGraphics()); // _SelectTiles() checks this - does not select tiles with no graphics.
+    if (_HasGraphics())
         args.m_graphics.Add(*m_graphic);
     }
 
@@ -1307,3 +1319,88 @@ bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
     memcpy(buf, start, size);
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DirtyRanges DirtyRanges::Intersect(DRange3dCR range) const
+    {
+    auto end = std::partition(m_begin, m_end, [&range](DRange3dCR arg) { return arg.IntersectsWith(range); });
+    return DirtyRanges(m_begin, end);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::MarkDamaged(DRange3dCR range)
+    {
+    Transform transformToTile;
+    transformToTile.InverseOf(GetLocation());
+    DRange3d tileRange;
+    transformToTile.Multiply(tileRange, range);
+
+    BeMutexHolder lock(m_cv.GetMutex());
+    m_damagedRanges.push_back(tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::InvalidateDamagedTiles()
+    {
+    DgnDb::VerifyClientThread();
+    BeAssert(m_rootTile.IsValid());
+
+    if (m_damagedRanges.empty() || m_rootTile.IsNull())
+        return;
+
+    DirtyRanges dirty(m_damagedRanges);
+    m_rootTile->Invalidate(dirty);
+
+    m_damagedRanges.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Invalidate(DirtyRangesCR dirty)
+    {
+    DgnDb::VerifyClientThread();
+
+    // NB: The caller has already filtered the ranges to include only those which intersect this tile's range.
+    if (dirty.empty())
+        return;
+
+    // This tile needs to be regenerated
+    m_root.CancelTileLoad(*this);
+    SetNotLoaded();
+    _Invalidate();
+
+    // Test children. Note that we are only partitioning the subset of damaged ranges which intersect the parent.
+    auto children = _GetChildren(false);
+    if (nullptr == children)
+        return;
+
+    for (auto const& child : *children)
+        {
+        DirtyRanges childDirty = dirty.Intersect(child->GetRange());
+        child->Invalidate(childDirty);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::CancelTileLoad(TileCR tile)
+    {
+    // ###TODO_ELEMENT_TILE: Bentley containers don't support 'transparent' comparators, meaning we can't compare a TileLoadStatePtr to a Tile even
+    // though the comparator can. We should fix that - but for now, instead, we're using std::set.
+    BeMutexHolder lock(m_cv.GetMutex());
+    auto iter = m_activeLoads.find(&tile);
+    if (iter != m_activeLoads.end())
+        {
+        (*iter)->SetCanceled();
+        m_activeLoads.erase(iter);
+        }
+    }
+

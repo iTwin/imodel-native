@@ -41,7 +41,6 @@ struct ViewFlags
 {
 private:
     RenderMode m_renderMode = RenderMode::Wireframe;
-    uint32_t m_text:1;             //!< Shows or hides text.
     uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
     uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
     uint32_t m_weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
@@ -79,7 +78,6 @@ public:
     BE_JSON_NAME(noMaterial);
     BE_JSON_NAME(noPattern);
     BE_JSON_NAME(noStyle);
-    BE_JSON_NAME(noText);
     BE_JSON_NAME(noTexture);
     BE_JSON_NAME(noTransp);
     BE_JSON_NAME(noWeight);
@@ -92,7 +90,6 @@ public:
 
     ViewFlags()
         {
-        m_text = 1;
         m_dimensions = 1;
         m_patterns = 1;
         m_weights = 1;
@@ -117,8 +114,6 @@ public:
         m_edgeMask = 0;
         }
 
-    bool ShowText() const {return m_text;}
-    void SetShowText(bool val) {m_text = val;}
     bool ShowDimensions() const {return m_dimensions;}
     void SetShowDimensions(bool val) {m_dimensions = val;}
     bool ShowPatterns() const {return m_patterns;}
@@ -217,7 +212,6 @@ public:
     //! Construct a ViewFlagsOverrides which overrides all flags to match the specified ViewFlags
     DGNPLATFORM_EXPORT explicit ViewFlagsOverrides(ViewFlags viewFlags);
 
-    void SetShowText(bool val) { m_values.SetShowText(val); SetPresent(kText); }
     void SetShowDimensions(bool val) { m_values.SetShowDimensions(val); SetPresent(kDimensions); }
     void SetShowPatterns(bool val) { m_values.SetShowPatterns(val); SetPresent(kPatterns); }
     void SetShowWeights(bool val) { m_values.SetShowWeights(val); SetPresent(kWeights); }
@@ -1286,16 +1280,12 @@ protected:
     DgnDbR      m_dgndb;
 
     virtual ~Graphic() {}
-    virtual bool _IsSimplifyGraphic() const {return false;}
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
     explicit Graphic(DgnDbR db) : m_dgndb(db) {}
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
-
-    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
-    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
 };
 
 //=======================================================================================
@@ -1316,9 +1306,9 @@ struct GraphicBuilder : RefCountedBase
         explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
     };
 
-protected:
-    friend struct GraphicBuilder;
+    enum class AsThickenedLine { No=0, Yes=1 };
 
+protected:
     CreateParams    m_createParams;
 
     GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
@@ -1334,8 +1324,8 @@ protected:
     virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
     virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
     virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
-    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
-    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) = 0;
     virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
     virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
     virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
@@ -1352,7 +1342,19 @@ protected:
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
-    virtual bool _IsSimplifyGraphic() const { return false; }
+    virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
+    virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
+
+    virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
+    virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
+    virtual void _AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVector(curves, isFilled); }
+    virtual void _AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2d(curves, isFilled, zDepth); }
+    virtual void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitive(primitive); }
+    virtual void _AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurface(surface); }
+    virtual void _AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyface(meshData, filled); }
+    virtual void _AddBodyR(IBRepEntityR body) { _AddBody(body); }
+    virtual void _AddTextStringR(TextStringR text) { _AddTextString(text); }
+    virtual void _AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2d(text, zDepth); }
 public:
     // NOTE: subToGraphic is provided to allow stroking in world coords...
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
@@ -1360,8 +1362,9 @@ public:
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
     DgnDbR GetDgnDb() const {return m_createParams.m_dgndb;}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
-    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
+    bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
+    bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
 
     bool IsOpen() const {return _IsOpen();}
 
@@ -1466,15 +1469,15 @@ public:
     //! Draw a filled triangle strip from 3D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) {_AddTriStrip(numPoints, points, asThickenedLine);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
     //! @param[in] zDepth Z depth value.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) {_AddTriStrip2d(numPoints, points, asThickenedLine, zDepth);}
 
     //! @private
     void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}
@@ -1538,6 +1541,21 @@ public:
         {
         ActivateGraphicParams(GraphicParams::FromBlankingFill(fillColor));
         }
+
+    // The following potentially take ownership of and/or modify the input graphic primitives.
+    // Callers should prefer these functions when they do not need to preserve the input primitives.
+    // Implementations should implement these functions if they would otherwise clone or take ownership of the input primitives.
+    // The default implementations forward to the corresponding function taking const primitives.
+    void AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurveR(curve, filled); }
+    void AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2dR(curve, filled, zDepth); }
+    void AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVectorR(curves, isFilled); }
+    void AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2dR(curves, isFilled, zDepth); }
+    void AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitiveR(primitive); }
+    void AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurfaceR(surface); }
+    void AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyfaceR(meshData, filled); }
+    void AddBodyR(IBRepEntityR body) { _AddBodyR(body); }
+    void AddTextStringR(TextStringR text) { _AddTextStringR(text); }
+    void AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2dR(text, zDepth); }
 };
 
 //=======================================================================================
@@ -2178,6 +2196,8 @@ struct System
     void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
     void NotPainting() {m_nowPainting = nullptr;}
 
+    virtual ~System() { }
+    
     //! Initialize the rendering system. Return a non-zero value in case of error.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 

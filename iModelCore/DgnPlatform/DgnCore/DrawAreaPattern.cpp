@@ -396,7 +396,7 @@ double          scale
         
         pointIndices.push_back(0);
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().AddPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyfaceR(*polyface, true);
 
         PatternHelper::PopBoundaryClipStencil(context, qvElem);
         }
@@ -421,7 +421,7 @@ double          scale
             }
 
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().AddPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyfaceR(*polyface, true);
         }
 
     return true;
@@ -439,7 +439,6 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
         return false;
 
     DgnViewportP     vp = context.GetViewport();
-    bool             isSimplify = graphic.IsSimplifyGraphic();
     bool             wasAborted = false;
     DPoint2d         patOrg;
     DPoint3d         tileCorners[8];
@@ -458,7 +457,7 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
             symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, 0.0); // NOTE: Don't supply net display priority, will be supplied by add calls...
             symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
-            if (isSimplify && vp)
+            if (vp)
                 {
                 Transform symbolToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), symbolTrans);
                 ElementAlignedBox3d range = symbol.GetBoundingBox();
@@ -953,14 +952,8 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
     if (nullptr == (pattern = params.GetPatternParams()))
         return;
 
-    if (builder.IsSimplifyGraphic())
-        {
-        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
-
-        if (!sGraphic->GetGeometryProcesor()._DoPatternStroke(*pattern, *sGraphic))
-            return;
-        }
+    if (!builder.WantStrokePattern(*pattern))
+        return;
 
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())

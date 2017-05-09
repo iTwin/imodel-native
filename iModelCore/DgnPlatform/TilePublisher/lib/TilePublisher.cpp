@@ -1769,7 +1769,11 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
         data.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
-
+        if (!m_texture->GetRepeat())
+            {
+            data.m_json["samplers"]["sampler_0"]["wrapS"] = GLTF_CLAMP_TO_EDGE;
+            data.m_json["samplers"]["sampler_0"]["wrapT"] = GLTF_CLAMP_TO_EDGE;
+            }
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
         TilePublisher::AppendProgramAttribute(program, "a_texc");
@@ -2899,7 +2903,7 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    if (tile.GetIsEmpty())
+    if (tile.GetIsEmpty() && tile.GetChildren().empty())
         {
         range = DRange3d::NullRange();
         return;
@@ -2978,7 +2982,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
-    if (!contentRange.IsNull())
+    if (!contentRange.IsNull() && !tile.GetIsEmpty())
         {
         root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, tile.GetFileExtension().c_str()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
@@ -3035,7 +3039,7 @@ TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
     {
-    if (TileGeneratorStatus::Success == status && nullptr != rootTile && !rootTile->GetIsEmpty())
+    if (TileGeneratorStatus::Success == status && nullptr != rootTile && (!rootTile->GetIsEmpty() || !rootTile->GetChildren().empty()))
         {
             {
             BeMutexHolder lock(m_mutex);

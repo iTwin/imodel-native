@@ -810,12 +810,17 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::AddToRangeIndex(DgnElementCR element)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom)
+        {
         m_rangeIndex->AddElement(*geom);
+        if (geom->HasGeometry() && m_root.IsValid())
+            m_root->MarkDamaged(geom->CalculateRange3d());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -823,12 +828,17 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
+        {
         m_rangeIndex->RemoveElement(element.GetElementId());
+        if (m_root.IsValid())
+            m_root->MarkDamaged(geom->CalculateRange3d());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -836,6 +846,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
@@ -850,12 +861,21 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
     AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
-    if (origBox.IsEqual(newBox)) // many changes don't affect range
-        return;
+    if (!origBox.IsEqual(newBox)) // many changes don't affect range
+        {
+        auto id = original.GetElementId();
+        m_rangeIndex->RemoveElement(id);
+        m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
+        }
 
-    auto id = original.GetElementId();
-    m_rangeIndex->RemoveElement(id);
-    m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
+    if (m_root.IsValid())
+        {
+        if (origGeom->HasGeometry())
+            m_root->MarkDamaged(origBox);
+
+        if (newGeom->HasGeometry())
+            m_root->MarkDamaged(newBox);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

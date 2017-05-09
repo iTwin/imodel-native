@@ -300,12 +300,13 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 
     _OutputGraphic(*graphic, &source);
 
+#if defined(NEEDSWORK_BRIEN)
     static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
     if (!s_drawRange)
         return SUCCESS;
 
     // Output element local range for debug display and locate...
-    if (graphic->IsSimplifyGraphic() && nullptr == GetIPickGeom())
+    if (nullptr == GetIPickGeom())
         return SUCCESS;
 
     Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(GraphicBuilder::CreateParams(source.GetSourceDgnDb(), (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
@@ -329,6 +330,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         }
 
     _OutputGraphic(*rangeGraphic->Finish(), &source);
+#endif
     return SUCCESS;
     }
 
@@ -342,9 +344,7 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     if (!partGeometry.IsValid())
         return;
 
-    bool isSimplify = graphic.IsSimplifyGraphic();
-
-    if (isSimplify && m_viewport)
+    if (m_viewport)
         {
         Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
         ElementAlignedBox3d range = partGeometry->GetBoundingBox();
@@ -355,7 +355,7 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
             return; // Part range doesn't overlap pick...
         }
 
-    BeAssert(isSimplify || nullptr != m_viewport);
+    BeAssert(nullptr != m_viewport);
 
     GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 

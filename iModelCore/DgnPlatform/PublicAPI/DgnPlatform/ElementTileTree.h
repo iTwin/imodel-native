@@ -101,7 +101,6 @@ private:
 
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
-    double                          m_leafTolerance;
     mutable BeMutex                 m_mutex;
     mutable BeSQLite::BeDbMutex     m_dbMutex;
     mutable GeomPartMap             m_geomParts;
@@ -126,7 +125,6 @@ public:
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
     bool WantDebugRanges() const { return m_debugRanges; }
-    double GetLeafTolerance() const { return m_leafTolerance; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 
@@ -145,18 +143,21 @@ public:
 struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
+
 private:
     double          m_tolerance;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
+    void InitTolerance();
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
+    void _Invalidate() override;
 
-    Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryOptionsCR options, Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-    Render::Primitives::GeometryList CollectGeometry(double tolerance, bool surfacesOnly, LoadContextCR context);
-    Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, Render::Primitives::GeometryOptionsCR, LoadContextCR context) const;
+    Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
+    Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
+    Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
@@ -169,7 +170,7 @@ public:
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
-    Render::Primitives::GeometryCollection GenerateGeometry(Render::Primitives::GeometryOptionsCR options, LoadContextCR context);
+    Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
