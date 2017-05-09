@@ -1700,7 +1700,7 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) c
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR deletedClass)
     {
-    if (!IsMajorChangeAllowedForSchema(deletedClass.GetSchema().GetId()))
+    if (!IsMajorChangeAllowedForSchema(deletedClass.GetSchema().GetId()) && m_importOptions != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Update failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change which requires the 'Read' version number of the ECSchema to be incremented.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -1797,7 +1797,8 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
 BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
     {
     ECSqlStatement stmt;
-    if (stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s", deletedClass.GetECSqlName().c_str()).GetUtf8CP()) != ECSqlStatus::Success)
+    ECCrudWriteToken const* writeToken = m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
+    if (stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s", deletedClass.GetECSqlName().c_str()).GetUtf8CP(), writeToken) != ECSqlStatus::Success)
         {
         Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -1830,7 +1831,7 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersi
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
-    if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()))
+    if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_importOptions != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECProperty '%s.%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
                                   deletedProperty.GetClass().GetSchema().GetFullSchemaName().c_str(), deletedProperty.GetClass().GetName().c_str(), deletedProperty.GetName().c_str());
@@ -1848,7 +1849,8 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
         {
         ECSqlStatement setToNullStmt;
         const Utf8CP msg = "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null";
-        if (setToNullStmt.Prepare(m_ecdb, SqlPrintfString("UPDATE %s SET [%s] = ?", classMap->GetClass().GetECSqlName().c_str(), deletedProperty.GetName().c_str()).GetUtf8CP()) != ECSqlStatus::Success)
+        ECCrudWriteToken const* writeToken = m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
+        if (setToNullStmt.Prepare(m_ecdb, SqlPrintfString("UPDATE %s SET [%s] = ?", classMap->GetClass().GetECSqlName().c_str(), deletedProperty.GetName().c_str()).GetUtf8CP(), writeToken) != ECSqlStatus::Success)
             {
             Issues().Report(msg, deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
             return ERROR;

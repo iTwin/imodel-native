@@ -20,6 +20,7 @@ struct SchemaWriter final : NonCopyableClass
         ECDbCR m_ecdb;
         CustomAttributeValidator m_customAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
+        SchemaManager::SchemaImportOptions m_importOptions;
 
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
@@ -69,7 +70,7 @@ struct SchemaWriter final : NonCopyableClass
         IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
     public:
-        explicit SchemaWriter(ECDbCR ecdb) : m_ecdb(ecdb)
+        explicit SchemaWriter(ECDbCR ecdb, SchemaManager::SchemaImportOptions importOptions) : m_ecdb(ecdb), m_importOptions(importOptions)
             {
             m_customAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
             m_customAttributeValidator.Reject("ECDbMap:*");
