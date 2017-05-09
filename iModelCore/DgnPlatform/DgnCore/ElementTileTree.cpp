@@ -1436,8 +1436,9 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     {
-    // ###TODO: Modify the input in-place.
+    // Might be more efficient to modify input in-place.
     Strokes output(*input.m_displayParams, input.m_disjoint);
+    output.m_strokes.reserve(input.m_strokes.size());
     enum State { kInside, kOutside, kCrossedOutside };
 
     for (bvector<DPoint3d> const& points : input.m_strokes)
@@ -1515,7 +1516,10 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
         return;
         }
 
-    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
+    if (strokes.m_strokes.empty())
+        return; // avoid potentially creating the builder below...
+
+    // NB: The strokes are shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
     MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
@@ -1632,6 +1636,10 @@ DRange3d Tile::GetDgnRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ElementCollector::ComputeLeafTolerance() const
     {
+#if defined(TODO_ELEMENT_TILE)
+    // This uses minimum zoom. It is far too small to use in the general case, and overkill for any geometry not modeled on tiny scales.
+    return DgnUnits::OneMillimeter() / s_minToleranceRatio;
+#else
     // This function is used when we decide to create a leaf node because the tile's range contains too few elements to be worth subdividing.
     // Computes the tile's tolerance based on the range of the smallest element within the range.
     double minSizeSq = 0.0;
@@ -1645,6 +1653,7 @@ double ElementCollector::ComputeLeafTolerance() const
         return 0.001;
 
     return sqrt(minSizeSq) / s_minToleranceRatio;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
