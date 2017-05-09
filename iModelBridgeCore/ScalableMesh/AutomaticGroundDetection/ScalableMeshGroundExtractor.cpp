@@ -337,7 +337,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_GENERATE_TEXTURE;
     m_createProgress.ProgressStepIndex() = 1;
     m_createProgress.Progress() = 0.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
         
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
@@ -421,7 +423,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
 
     m_createProgress.Progress() = 1.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
 
     if (m_createProgress.IsCanceled()) return status;
 
@@ -439,10 +443,14 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         terrainCreator->EditSources().Add(coverageBreaklineSource);                               
         }
 
-    m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
+    
     status = terrainCreator->Create(true, true);
     terrainCreator->SaveToFile();
-    m_groundPreviewer->UpdateProgress(nullptr);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(nullptr);
     terrainCreator = nullptr;
 
 
@@ -541,7 +549,10 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;
     m_createProgress.ProgressStepIndex() = 0;
     m_createProgress.Progress() = 0.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
     if (m_createProgress.IsCanceled()) return SUCCESS;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
@@ -574,7 +585,10 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     m_createProgress.Progress() = 1.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
     if (m_createProgress.IsCanceled()) return status;
     assert(status == SUCCESS);
 
