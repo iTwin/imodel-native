@@ -74,7 +74,7 @@ void DgnDb::Destroy()
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
     m_revisionManager.reset(nullptr);
-    m_ecsqlCache.Empty();
+    ClearECSqlCache();
     if (m_briefcaseManager.IsValid())
         {
         m_briefcaseManager->OnDgnDbDestroyed();
@@ -115,11 +115,8 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened(params)))
         return rc;
 
-    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened(((DgnDb::OpenParams const&) params).IsSchemaUpgradeEnabled())))
+    if (BE_SQLITE_OK != (rc = Domains().InitializeSchemas(((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions())))
         return rc;
-
-    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
-        return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
     m_geoLocation.Load();
@@ -149,6 +146,15 @@ DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
         return result;
 
     return ResetElementIdSequence(newBriefcaseId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+void DgnDb::_OnAfterSchemaImport() const
+    {
+    ClearECSqlCache();
+    Elements().ClearECCaches();
     }
 
 //--------------------------------------------------------------------------------------

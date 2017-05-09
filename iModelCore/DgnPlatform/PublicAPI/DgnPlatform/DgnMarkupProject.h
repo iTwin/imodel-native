@@ -92,7 +92,6 @@ struct MarkupDomain : Dgn::DgnDomain
 
     private:
         WCharCP _GetSchemaRelativePath() const override { return MARKUP_SCHEMA_PATH; }
-        void _OnDgnDbOpened(DgnDbR) const override;
         void _OnSchemaImported(DgnDbR) const override;
     public:
         MarkupDomain();

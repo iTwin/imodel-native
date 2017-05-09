@@ -154,6 +154,7 @@ struct RevisionManager : NonCopyableClass
 friend struct TxnManager;
 friend struct RevisionChangesFileReader;
 friend struct ApplyRevisionChangeSet;
+friend struct DgnDomains;
 
 private:
     DgnDbR m_dgndb;
@@ -178,7 +179,8 @@ private:
     RevisionStatus DeleteCurrentRevisionEndTxnId();
 
     DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
-    
+    RevisionStatus DoMergeRevision(DgnRevisionCR revision);
+
     static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 public:
     //! Constructor

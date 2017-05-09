@@ -179,13 +179,6 @@ void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, OrthographicViewDefinition& redlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView)

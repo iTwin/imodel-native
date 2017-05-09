@@ -3314,6 +3314,9 @@ private:
 
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
+    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
+    void ClearECCaches();
+
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3325,9 +3328,6 @@ public:
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     
-    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    DGNPLATFORM_EXPORT void ClearUpdaterCache();
-
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private

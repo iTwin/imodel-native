@@ -893,9 +893,7 @@ void DgnElements::Destroy()
     {
     BeMutexHolder _v_v(m_mutex);
     m_tree->Destroy();
-    m_stmts.Empty();
-    m_classInfos.clear();
-    ClearUpdaterCache();
+    ClearECCaches();
     }
 
 /*---------------------------------------------------------------------------------**//**

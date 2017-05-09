@@ -280,7 +280,8 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    BisCoreDomain::GetDomain().SetCreateParams(params); // Used by BisCoreDomain::_OnSchemaImported(), and passed to DgnDb::SetupNewDgnDb()
+    BisCoreDomain::GetDomain().SetCreateParams(params); 
+        // BisCoreDomain is the only domain that requires the create params. They are passed through BisCoreDomain::_OnSchemaImported() -> DgnDb::OnBisCoreSchemaImported()
 
     DbResult result = Domains().ImportSchemas();
     if (BE_SQLITE_OK != result)
@@ -316,9 +317,9 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
 //---------------------------------------------------------------------------------------
 // Called from BisCoreDomain::_OnSchemaImported to setup a newly created DgnDb
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
+// @bsimethod                                Ramanujam.Raman                  02/17
 //---------------------------------------------------------------------------------------
-void DgnDb::SetupNewDgnDb(CreateDgnDbParams const& params)
+void DgnDb::OnBisCoreSchemaImported(CreateDgnDbParams const& params)
     {
     // Every DgnDb has a few built-in CodeSpec for element codes
     CreateCodeSpecs();
@@ -411,7 +412,7 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     SaveDgnDbProfileVersion();
     SaveCreationDate();
 
-    Domains().OnDbOpened(false);
+    Domains().OnDbOpened();
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
@@ -534,14 +535,14 @@ DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
 DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
-    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false && "One or more schemas are incompatible.");
         return result;
         }
 
-    return DgnDomains::DoImportSchemas(*this, schemasToImport, false /*=isImportingFromV8*/);
+    return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -550,14 +551,14 @@ DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
 DbResult DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
-    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, true /*=isImportingFromV8*/);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false && "One or more schemas are incompatible.");
         return result;
         }
 
-    return DgnDomains::DoImportSchemas(*this, schemasToImport, true /*=isImportingFromV8*/);
+    return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,3 +592,4 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
 
     return BE_SQLITE_OK;
     }
+

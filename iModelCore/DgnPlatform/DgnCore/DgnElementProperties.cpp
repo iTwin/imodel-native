@@ -923,8 +923,10 @@ void DgnElements::AutoHandledPropertyUpdaterCache::_GetPropertiesToBind(bvector<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ClearUpdaterCache()
+void DgnElements::ClearECCaches()
     {
+    m_stmts.Empty();
+    m_classInfos.clear();
     m_updaterCache.Clear();
     }
 

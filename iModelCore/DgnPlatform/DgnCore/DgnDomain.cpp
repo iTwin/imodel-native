@@ -186,29 +186,13 @@ DbResult DgnDomain::ValidateSchema(ECSchemaCR schema, DgnDbCR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
+SchemaUpgradeOptions::AllowedDomainUpgrades SchemaUpgradeOptions::GetAllowedDomainUpgrades() const
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+    if (m_allowedDomainUpgrades != SchemaUpgradeOptions::AllowedDomainUpgrades::UseDefaults)
+        return m_allowedDomainUpgrades;
 
-    ECSchemaPtr schema = ReadSchema(*schemaContext);
-    if (!schema.IsValid())
-        return BE_SQLITE_ERROR_SchemaReadFailed;
-
-    DbResult result = ValidateSchema(*schema, dgndb);
-    if (result != BE_SQLITE_ERROR_SchemaNotFound && result != BE_SQLITE_ERROR_SchemaUpgradeRequired)
-        return result;
-
-    bvector<ECSchemaCP> schemasToImport;
-    schemasToImport.push_back(schema.get());
-
-    result = DgnDomains::DoImportSchemas(dgndb, schemasToImport, false /*=isImportingFromV8*/);
-    if (BE_SQLITE_OK != result)
-        return result;
-
-    dgndb.Domains().SyncWithSchemas();
-    CallOnSchemaImported(dgndb);
-    return BE_SQLITE_OK;
+    DevelopmentPhase appPhase = T_HOST.GetDevelopmentPhase();
+    return (appPhase == DevelopmentPhase::Development) ? SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso : SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,6 +263,17 @@ void DgnDomains::SyncWithSchemas()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDomains::DeleteHandlers()
+    {
+    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Handler);
+    DbResult result = stmt.Step();
+    BeAssert(result == BE_SQLITE_DONE);
+    UNUSED_VARIABLE(result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Before you can register a Handler, of its superclass Handler must be registered.
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -335,26 +330,12 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
+* @bsimethod                                Ramanujam.Raman                    04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDomains::OnDbOpened(bool isSchemaUpgradeEnabled)
+void DgnDomains::OnDbOpened()
     {
-    SetEnableSchemaUpgrade(isSchemaUpgradeEnabled);
-
-    DbResult result = ValidateSchemas();
-
-    if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && IsSchemaUpgradeEnabled())
-        result = BE_SQLITE_OK;
-
-    if (result != BE_SQLITE_OK)
-        return result;
-        
-    SyncWithSchemas();
-
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
-
-    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,6 +345,179 @@ void DgnDomains::OnDbClose()
     {
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbClose(m_dgndb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+DbResult DgnDomains::ValidateSchemas()
+    {
+    return DoValidateSchemas(nullptr, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
+    ECSchemaPtr schema = ReadSchema(*schemaContext);
+    if (!schema.IsValid())
+        return BE_SQLITE_ERROR_SchemaReadFailed;
+
+    DbResult result = ValidateSchema(*schema, dgndb);
+    if (result != BE_SQLITE_ERROR_SchemaNotFound)
+        {
+        BeAssert((result != BE_SQLITE_ERROR_SchemaUpgradeRequired) && "Upgrading of individual domains should be done only when the DgnDb is opened. See SchemaUpgradeOptions in DgnDb::OpenParams");
+        return result;
+        }
+
+    bvector<ECSchemaPtr> schemasToImport;
+    schemasToImport.push_back(schema);
+
+    bvector<DgnDomainP> domainsToImport;
+    domainsToImport.push_back(this);
+
+    return dgndb.Domains().DoImportSchemas(schemasToImport, domainsToImport);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                 04/17
+//---------------------------------------------------------------------------------------
+DbResult DgnDomains::ImportSchemas()
+    {
+    TxnManagerR txnMgr = m_dgndb.Txns();
+    if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
+        {
+        BeAssert(false && "Cannot re-import schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+        return BE_SQLITE_ERROR;
+        }
+
+    bvector<ECSchemaPtr> schemasToImport;
+    bvector<DgnDomainP> domainsToImport;
+
+    DbResult result = DoValidateSchemas(&schemasToImport, &domainsToImport);
+    if (result != BE_SQLITE_ERROR_SchemaUpgradeRequired)
+        return result;
+
+    return DoImportSchemas(schemasToImport, domainsToImport);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                 04/17
+//---------------------------------------------------------------------------------------
+DbResult DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport)
+    {
+    BeAssert(!schemasToImport.empty());
+    bvector<ECSchemaCP> importSchemas;
+    for (auto& schema : schemasToImport)
+        importSchemas.push_back(schema.get());
+
+    DbResult result = DoImportSchemas(importSchemas, SchemaManager::SchemaImportOptions::None);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    SyncWithSchemas();
+
+    for (DgnDomainP domain : domainsToImport)
+        domain->_OnSchemaImported(m_dgndb);
+
+    SaveDevelopmentPhase();
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::UpgradeSchemas()
+    {
+    bvector<ECSchemaPtr> schemasToImport;
+    bvector<DgnDomainP> domainsToImport;
+    DbResult result = DoValidateSchemas(&schemasToImport, &domainsToImport);
+
+    BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired && m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
+
+    bvector<ECSchemaCP> importSchemas;
+    for (auto& schema : schemasToImport)
+        importSchemas.push_back(schema.get());
+
+    SchemaUpgradeOptions::AllowedDomainUpgrades allowedUpgrades = m_schemaUpgradeOptions.GetAllowedDomainUpgrades();
+    
+    if (m_dgndb.IsBriefcase())
+        m_dgndb.Txns().EnableTracking(true); // Ensure all changes are captured in the txn table for creating revisions
+
+    SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
+    result = DoImportSchemas(importSchemas, importOptions);
+    if (BE_SQLITE_OK != result)
+        {
+        if (m_dgndb.IsBriefcase())
+            m_dgndb.Txns().EndTracking();
+
+        return result;
+        }
+        
+    if (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso)
+        DeleteHandlers(); // Since ClassId-s can change, recreate the Handler-ClassId associations
+
+    SyncWithSchemas();
+
+    for (DgnDomainCP domain : m_domains)
+        {
+        if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
+            continue;
+        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains
+        }
+        
+    for (DgnDomainP domain : domainsToImport)
+        {
+        domain->_OnSchemaImported(m_dgndb);
+        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains.
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions)
+    {
+    m_schemaUpgradeOptions = schemaUpgradeOptions;
+
+    DbResult result = ValidateSchemas();
+
+    if (result != BE_SQLITE_OK && !(result == BE_SQLITE_ERROR_SchemaUpgradeRequired && m_schemaUpgradeOptions.AreDomainUpgradesAllowed()))
+        return result;
+
+    if (result == BE_SQLITE_OK)
+        {
+        SyncWithSchemas();
+        OnDbOpened();
+        }
+    else
+        {
+        BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
+        result = UpgradeSchemas();
+        if (BE_SQLITE_OK != result)
+            return result;
+        }
+
+    result = m_dgndb.Txns().InitializeTableHandlers(); // Ensure Txn-related temp tables are created. This calls SaveChanges. Needed before any revision can be merged
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Ensure DgnDb is closed properly before opening it up again");
+        return result;
+        }
+
+    DgnRevisionCP revision = m_schemaUpgradeOptions.GetUpgradeRevision();
+    if (revision == nullptr)
+        return BE_SQLITE_OK;
+
+    RevisionStatus status = m_dgndb.Revisions().DoMergeRevision(*revision);
+    return (status == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR_MergeRevisionFailed;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -476,7 +630,7 @@ DbResult DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonl
     ECSchemaCP bimSchema = db.Schemas().GetSchema(appSchemaKey.GetName().c_str(), false);
     if (!bimSchema)
         {
-        LOG.warningv("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
+        LOG.tracev("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
         return BE_SQLITE_ERROR_SchemaNotFound;
         }
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
@@ -498,7 +652,7 @@ DbResult DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonl
 
     if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
         {
-        LOG.warningv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         }
 
@@ -516,9 +670,10 @@ DbResult DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-// static
-DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& importSchemas, bool isImportingFromV8)
+DbResult DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchemas, SchemaManager::SchemaImportOptions importOptions)
     {
+    DgnDbR dgndb = GetDgnDb();
+
     if (dgndb.IsReadonly())
         {
         BeAssert(false && "Cannot import schemas into a Readonly Db");
@@ -540,8 +695,8 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
         for (ECSchemaCP schema : importSchemas)
             LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
         }
-    
-    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, isImportingFromV8 ? SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues : SchemaManager::SchemaImportOptions::None, dgndb.GetSchemaImportToken()))
+
+    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken()))
         {
         DbResult result = dgndb.AbandonChanges();
         BeAssert(result == BE_SQLITE_OK);
@@ -550,43 +705,6 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
         }
 
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DbResult DgnDomains::ValidateSchemas()
-    {
-    return DoValidateSchemas(nullptr, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DbResult DgnDomains::ImportSchemas()
-    {
-    bvector<ECSchemaPtr> schemasToImport;
-    bvector<DgnDomainP> domainsToImport;
-
-    DbResult result = DoValidateSchemas(&schemasToImport, &domainsToImport);
-    if (result != BE_SQLITE_ERROR_SchemaUpgradeRequired)
-        return result;
-
-    BeAssert(!schemasToImport.empty());
-    bvector<ECSchemaCP> importSchemas;
-    for (auto& schema : schemasToImport)
-        importSchemas.push_back(schema.get());
-
-    result = DoImportSchemas(m_dgndb, importSchemas, false /*=isImportingFromV8*/);
-    if (BE_SQLITE_OK != result)
-        return result;
-
-    SyncWithSchemas();
-
-    for (DgnDomainP domain : domainsToImport)
-        domain->CallOnSchemaImported(m_dgndb);
-
-    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,7 +806,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
     DgnClassId classId = m_dgndb.Schemas().GetClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    BeAssert((classId.IsValid() || IsSchemaUpgradeEnabled()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
+    BeAssert((classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
     return classId;
     }
 
@@ -760,7 +878,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     bool shouldHaveHandler = GetHandlerInfo(&restrictions, id, handler);
     if (!shouldHaveHandler)
         {
-        BeAssert(IsSchemaUpgradeEnabled() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
+        BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
 
 #if !defined (NDEBUG)
         LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
@@ -782,6 +900,35 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
 
     m_handlers.Insert(id, &handler);
     return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+// static 
+Utf8CP DgnDomains::ConvertDevelopmentPhaseToString(DevelopmentPhase devPhase)
+    {
+    switch (devPhase)
+        {
+        case DevelopmentPhase::Certified:
+            return "Certified";
+        case DevelopmentPhase::Beta:
+            return "Beta";
+        case DevelopmentPhase::Development:
+            return "Development";
+        default:
+            BeAssert(false && "Unknown DevelopmentPhase");
+            return "";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DgnDomains::SaveDevelopmentPhase()
+    {
+    Utf8String devPhaseStr(ConvertDevelopmentPhaseToString(T_HOST.GetDevelopmentPhase()));
+    return m_dgndb.SavePropertyString(DgnProjectProperty::LastSchemaUpgradeInPhase(), devPhaseStr);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1051,9 +1051,23 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    05/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot merge a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::MergeSchemaChangesOnOpen;
+        }
+
+    return DoMergeRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 

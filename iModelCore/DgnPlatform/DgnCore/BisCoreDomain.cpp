@@ -224,5 +224,5 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 void BisCoreDomain::_OnSchemaImported(DgnDbR db) const
     {
     BeAssert(m_createParams != nullptr && "SetCreateParams() before importing the BisCoreDomain");
-    db.SetupNewDgnDb(*m_createParams);
+    db.OnBisCoreSchemaImported(*m_createParams);
     }
