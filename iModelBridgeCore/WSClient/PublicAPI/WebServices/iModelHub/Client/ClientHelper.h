@@ -93,6 +93,9 @@ public:
     //! @param wsgBentleyConnectRepository The WSG Bentley Connect repository to query.
     //! @return the project ID if the lookup succeeded or the empty string if not
     IMODELHUBCLIENT_EXPORT Utf8String QueryProjectId(WebServices::WSError* wserrorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectGlobal());
+
+    //! Get user information stored in identity token
+    IMODELHUBCLIENT_EXPORT ConnectSignInManager::UserInfo GetUserInfo() { return m_signinMgr->GetUserInfo(); }
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
