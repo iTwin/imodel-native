@@ -209,7 +209,7 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdChanged(BeSQLite::BeBriefcaseId newBriefcaseId) override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    void _OnAfterSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
+    void _OnAfterSchemaImport() const override {ClearECSqlCache(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
@@ -367,6 +367,9 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
     //! Gets a cached and prepared ECSqlStatement that can be used to modify the Db. This should be used only for aspects.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, BeSQLite::EC::ECCrudWriteToken const*) const;
+    
+    //! @private
+    void ClearECSqlCache() const {m_ecsqlCache.Empty(); }
 
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();

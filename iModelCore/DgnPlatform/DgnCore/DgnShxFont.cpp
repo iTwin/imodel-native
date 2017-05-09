@@ -370,7 +370,7 @@ void ShapeConverter::DecodeFractionArc(int& currentCode, CharCP pCodes)
         {
         startOffsetDeg = (((iStartOffset * 45) / 256) + (iStartingOctant * 45));
         startOffset = Angle::DegreesToRadians(startOffsetDeg);
-        endOffsetDeg = (((iEndOffset * 45.0) / 256.0) + ((0 == iEndOffset) ? iEndOctant : ((iStartingOctant + abs(iSweep) - 1)) * 45.0));
+        endOffsetDeg = (((iEndOffset * 45.0) / 256.0) + (((0 == iEndOffset) ? iEndOctant : (iStartingOctant + abs(iSweep) - 1)) * 45.0));
         endOffset = Angle::DegreesToRadians(endOffsetDeg);
         }
     else

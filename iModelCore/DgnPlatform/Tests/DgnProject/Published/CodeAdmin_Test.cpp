@@ -262,7 +262,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         TestElementPtr element = TestElement::Create(*m_db, physicalModel->GetModelId(), categoryId);
         ASSERT_TRUE(element.IsValid());
         element->SetPropertyValue("i", i);
-        element->SetPropertyValue("l", i*11LL);
+        element->SetPropertyValue("l", i*(int64_t)11LL);
         element->SetPropertyValue("s", Utf8PrintfString("String%" PRIi32, i).c_str());
         ASSERT_FALSE(element->GetCode().IsValid());
         ASSERT_EQ(DgnDbStatus::Success, element->GenerateCode());

@@ -32,7 +32,7 @@ CompatibilityTest2.ModifyPreservedBim
 DgnECNavigatorTest.GetElementInfo
 
 #TFS 665028
-GetSetCustomHandledProprty.Annotation
+# GetSetCustomHandledProprty.Annotation
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # bim0200, x86, NDEBUG
@@ -49,5 +49,3 @@ TransactionManagerTests.TestRelationshipLinkTableTracking
 # Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
 DgnElementTests.NavigationPropertyOnTargetDelete
 
-# Carole
-CreateFromInstanceTests.FullyCreateBim
