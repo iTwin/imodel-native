@@ -155,7 +155,7 @@ int bcdtmDrainageList_copyPointListToTptrListDtmObject
        goto errexit ;
       } 
     pnt = *startPointP = pointList[0] ;
-    for( int n = 1 ; n < pointList.size(); ++n )
+    for( int n = 1 ; n < (int)pointList.size(); ++n )
       {
        npnt = pointList[n] ;
    
@@ -230,7 +230,7 @@ int bcdtmDrainageList_copyPointListToSptrListDtmObject
       } 
       
     pnt = *startPointP = pointList[0] ;
-    for( int n = 1 ; n < pointList.size(); ++n )
+    for( int n = 1 ; n < (int)pointList.size(); ++n )
       {
        npnt = pointList[n] ;
    

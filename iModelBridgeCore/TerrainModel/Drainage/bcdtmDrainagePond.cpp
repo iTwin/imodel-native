@@ -8069,7 +8069,7 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
         for (zsp = zeroSlopePolygons.begin(); zsp < zeroSlopePolygons.end(); ++zsp)
             {
        double elevation = 0.0;
-            for (int n = 0; n < zsp->pointList.size(); ++n)
+            for (int n = 0; n < (int)zsp->pointList.size(); ++n)
                 {
                 if (n == 0) elevation = pointAddrP(dtmP, zsp->pointList[n])->z;
                 else if (pointAddrP(dtmP, zsp->pointList[n])->z != elevation)
@@ -8085,7 +8085,7 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
         if (dbg) bcdtmWrite_message(0, 0, 0, "**** Checking For Zero Slope Triangles On Zero Slope Polygons");
         for (zsp = zeroSlopePolygons.begin(); zsp < zeroSlopePolygons.end(); ++zsp)
             {
-            for (int n = 0; n < zsp->pointList.size() - 1; ++n)
+            for (int n = 0; n < (int)zsp->pointList.size() - 1; ++n)
                 {
                 sp = zsp->pointList[n];
                 np = zsp->pointList[n + 1];
@@ -8460,7 +8460,7 @@ int bcdtmDrainage_indexAllPointsAtZeroSlopeElevationDtmObject
     // Mark Zero Slope Polygon Booundary
 
     zsp = zspBegin + zeroSlopePolygon;
-    for (int n = 0; n < zsp->pointList.size() - 1; ++n)
+    for (int n = 0; n < (int)zsp->pointList.size() - 1; ++n)
         {
         pnt = zsp->pointList[n];
         if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Marking Point %6ld ** %12.5lf %12.5lf %10.4lf", pnt, pointAddrP(dtmP, pnt)->x, pointAddrP(dtmP, pnt)->y, pointAddrP(dtmP, pnt)->z);
@@ -8668,7 +8668,7 @@ int bcdtmDrainage_writeZeroSlopePolygonPointsDtmObject
 
     bcdtmWrite_message(0, 0, 0, "**** Zero Slope Polygon %8ld ** direction = %2ld priorPoint = %8ld exitPoint  = %8ld nextPoint  = %8ld", zeroSlopePolygon, zsp->direction, zsp->priorPoint, zsp->exitPoint, zsp->nextPoint);
     bcdtmWrite_message(0, 0, 0, "**** Number Of Points For Zero Slope Polygon %8ld = %8ld", zeroSlopePolygon, zsp->pointList.size());
-    for (int n = 0; n < zsp->pointList.size(); ++n)
+    for (int n = 0; n < (int)zsp->pointList.size(); ++n)
         {
         pnt = zsp->pointList[n];
         bcdtmWrite_message(0, 0, 0, "Point[%8ld] = %8ld ** %12.5lf %12.5lf %10.4lf", n, pnt, pointAddrP(dtmP, pnt)->x, pointAddrP(dtmP, pnt)->y, pointAddrP(dtmP, pnt)->z);
