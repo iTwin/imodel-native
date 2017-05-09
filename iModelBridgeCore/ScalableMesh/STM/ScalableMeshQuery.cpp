@@ -1628,14 +1628,6 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return minParam < DBL_MAX;
     }
 
-struct DTMIntersectionCompare {
-    DTMIntersectionCompare(const DPoint3d& _s) { source = _s; }
-    bool operator() (DTMRayIntersection pt1, DTMRayIntersection pt2) {
-        return ( pt1.rayFraction < pt2.rayFraction );
-        }
-    DPoint3d source;
-    };
-
 bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DRay3d& ray) const
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
@@ -1667,17 +1659,18 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
             rayInter.point = projectedPt;
             rayInter.rayFraction = param;
 
-            DVec3d normal = DVec3d::FromCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
+            DVec3d normal = DVec3d::FromNormalizedCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
             rayInter.normal = normal;
             rayInter.hasNormal = true;
 
             hits.push_back(rayInter);
-            minParam = param;
+            if (param<minParam)
+                minParam = param;
             }
         }
 
     // Sort
-    DTMIntersectionCompare Comparator(ray.origin);
+    DTMIntersectionCompare Comparator;
     std::sort(hits.begin(), hits.end(), Comparator);
     
     // filter the intersections

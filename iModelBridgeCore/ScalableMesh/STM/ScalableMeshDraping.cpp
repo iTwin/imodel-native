@@ -706,20 +706,22 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
             BcDTMPtr dtmP = node->GetBcDTM();
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(AllHits, newDirection, transformedPt))
                 {
-                for (auto hit : AllHits)
-                    m_transform.Multiply(hit.point);
                 ret = true;
-                break;
                 }
             }
         else if (IntersectRay3D(AllHits, newDirection, transformedPt, node))
             {
-            for (auto hit : AllHits)
-                m_transform.Multiply(hit.point);
-            ret = true;
-            break;
+            ret = true; // we have at least one
             }
         }
+
+    // transform and sort the hits
+    for (auto hit : AllHits)
+        m_transform.Multiply(hit.point);
+
+    // Sort by fraction
+    DTMIntersectionCompare Comparator;
+    std::sort(AllHits.begin(), AllHits.end(), Comparator);
 
     if (ret && !m_regionRestrictions.empty())
         {
