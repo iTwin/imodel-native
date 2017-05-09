@@ -32,7 +32,7 @@ TEST(BCS,SpringModelA)
         DPoint3d::From (0,0)
         };
     double ay = 100.0;
-    for (bool doProjection : bvector<bool> {false, true})
+    for (bool doProjection : bvector<bool> {/*false, */true})
         {
         SaveAndRestoreCheckTransform shifter (0, ay, 0);
 
