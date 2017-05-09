@@ -18,6 +18,9 @@ TEST_F(BulkBisDomainCrudTestFixture, Test)
     {
     BeFileName bisSchemaFolder;
     BeFileName domainSchemaFolder = GetDomainSchemaFolder(bisSchemaFolder);
+    if (!domainSchemaFolder.DoesPathExist())
+        return; 
+
     ASSERT_EQ(SUCCESS, SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder)) << domainSchemaFolder.GetNameUtf8().c_str();
 
     BeFileName testDataJsonFile;
