@@ -17,6 +17,16 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //*****************************************************************************************
 // BulkCrudTestFixture
 //*****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      05/2017
+//---------------------------------------------------------------------------------------
+void BulkCrudTestFixture::AssertInsert(TestDataInfo& info, BeFileNameCR testDataJsonFile)
+    {
+
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
@@ -33,10 +43,12 @@ BentleyStatus BulkCrudTestFixture::CreateTestData(ECDbCR ecdb, BeFileNameCR test
 
     srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
 
-    //select all non-abstract entity classes and create test data for them
-    ECSqlStatement classesStmt;
-    if (ECSqlStatus::Success == classesStmt.Prepare(ecdb,
-                                                    R"sql(SELECT Id FROM meta.ECClassDef WHERE Type=0 AND Modifier<>1)sql"))
+    //select all non-abstract entity classes that are mapped, but not mapped to ExistingTable
+    //and create test data for them (We could use ECSQL against Meta schema, but class map is not exposed there
+    Statement classesStmt;
+    if (BE_SQLITE_OK != classesStmt.Prepare(ecdb,
+                                                    R"sql(SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id=cm.ClassId AND
+                                 c.Type=0 AND c.Modifier<>1 AND cm.MapStrategy NOT IN (0,3))sql"))
         return ERROR;
 
 
@@ -107,7 +119,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePairs(ECDbCR ecdb, rapidjson::
     {
     for (ECPropertyCP prop : properties)
         {
-        if (IsNullableProperty(*prop))
+        if (ignoreNullableProps && IsNullableProperty(*prop))
             continue;
 
         if (SUCCESS != AssignPropValuePair(ecdb, json, *prop, ignoreNullableProps, jsonAllocator))
@@ -123,6 +135,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePairs(ECDbCR ecdb, rapidjson::
 //static
 BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::Value& json, ECPropertyCR prop, bool ignoreNullableMemberProps, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
     {
+    BeAssert(json.IsObject());
     rapidjson::GenericStringRef<Utf8Char> memberName(prop.GetName().c_str(), (rapidjson::SizeType) prop.GetName().size());
     //Caution: return value is struct again, not the inserted member
     json.AddMember(memberName, rapidjson::Value().Move(), jsonAllocator);
@@ -148,6 +161,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
 
     if (prop.GetIsStruct())
         {
+        valueJson.SetObject();
         ECClassCR structType = prop.GetAsStructProperty()->GetType();
         return AssignPropValuePairs(ecdb, valueJson, structType.GetProperties(), ignoreNullableMemberProps, jsonAllocator);
         }
@@ -231,7 +245,7 @@ BentleyStatus BulkCrudTestFixture::AssignPrimitiveValue(rapidjson::Value& json, 
             Byte blob[128];
             for (size_t i = 0; i < 128; i++)
                 {
-                blob[i] = (Byte) (rand());
+                blob[i] = (Byte) (rand() & 0xFF);
                 }
 
             return ECRapidJsonUtilities::BinaryToJson(json, blob, sizeof(blob), jsonAllocator);
@@ -315,6 +329,25 @@ bool BulkCrudTestFixture::IsNullableProperty(ECN::ECPropertyCR prop)
     propMapCA->GetValue(isNullableVal, "IsNullable");
     return isNullableVal.IsNull() || isNullableVal.GetBoolean();
     }
+
+//*****************************************************************************************
+// BulkCrudTestFixture::TestDataInfo
+//*****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      05/2017
+//---------------------------------------------------------------------------------------
+void BulkCrudTestFixture::TestDataInfo::ReadTestData(BeFileNameCR testDataJsonFile)
+    {
+    ASSERT_TRUE(testDataJsonFile.DoesPathExist()) << testDataJsonFile.GetNameUtf8().c_str();
+    BeFileStatus stat;
+    BeTextFilePtr file = BeTextFile::Open(stat, testDataJsonFile.GetName(), TextFileOpenType::Read, TextFileOptions::NewLinesToSpace);
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Opening " << testDataJsonFile.GetNameUtf8().c_str();
+    WString fileContent;
+    ASSERT_EQ(TextFileReadStatus::Success, file->GetLine(fileContent)) << testDataJsonFile.GetNameUtf8().c_str();
+    ASSERT_FALSE(m_testDataJson.Parse<0>(Utf8String(fileContent).c_str()).HasParseError()) << testDataJsonFile.GetNameUtf8().c_str();
+    }
+
 
 //*****************************************************************************************
 // BulkBisDomainCrudTestFixture
