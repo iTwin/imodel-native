@@ -67,21 +67,34 @@
         </Bindings>
     </Part>
     
+    <Part Name="LoadTestBase" BentleyBuildMakeFile="RealityAdmin\LoadTesters\LoadTestBase.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="BentleyDesktopClient-Api"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)LoadTestBase$(stlibext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)LoadTestBase$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
+        <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="RDSLoadTest" BentleyBuildMakeFile="RealityAdmin\RDSLoadTester\RDSLoadTest.mke">
+    <Part Name="RDSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\RDSLoadTester\RDSLoadTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="BentleyDesktopClient-Api"/>
+        <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/RDSLoadTest.exe</Assemblies>
         </Bindings>
@@ -92,6 +105,7 @@
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="BentleyDesktopClient-Api"/>
+        <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/3CSLoadTest.exe</Assemblies>
         </Bindings>

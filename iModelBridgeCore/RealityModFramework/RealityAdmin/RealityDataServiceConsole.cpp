@@ -527,7 +527,7 @@ void RealityDataConsole::List()
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node, nodeResponse);
 
     if(nodeResponse.body.ContainsI("not listable"))
-        DisplayInfo("This entity is not listable/n", DisplayOption::Error);
+        DisplayInfo("This entity is not listable\n", DisplayOption::Error);
     else
         {
         for (NavNode node : m_serverNodes)

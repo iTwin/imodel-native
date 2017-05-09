@@ -667,8 +667,7 @@ CURL* User::SubmitJob()
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/submit", m_jobId));
     m_correspondance.req.type = POST;
-    //m_correspondance.req.payload = Utf8PrintfString("{\"id\":\"%s\", \"jobId\":\"%s\"", m_id, m_jobId);
-
+    
     m_submitted = true;
 
     return PrepareRequest();
