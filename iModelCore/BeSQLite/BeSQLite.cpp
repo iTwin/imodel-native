@@ -2013,9 +2013,9 @@ DbResult Db::DeleteBriefcaseLocalValue(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isTempTableOrIndex(Utf8CP tableName)
+bool isMainTableOrIndex(Utf8CP tableName)
     {
-    return 0 == BeStringUtilities::Strnicmp(tableName, "temp.", 5);
+    return (nullptr == ::strchr(tableName, '.') || 0 == BeStringUtilities::Strnicmp(tableName, "main.", 5));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2030,7 +2030,7 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
         return result;
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
-    if (tracker && !isTempTableOrIndex(tableName))
+    if (tracker && isMainTableOrIndex(tableName))
         result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
@@ -2042,7 +2042,7 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
 DbResult Db::DropTable(Utf8CP tableName) const
     {
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
-    if (tracker && tracker->IsTracking() && !isTempTableOrIndex(tableName))
+    if (tracker && tracker->IsTracking() && isMainTableOrIndex(tableName))
         {
         BeAssert(false && "Cannot make arbitrary schema changes when changes are being tracked");
         return BE_SQLITE_ERROR;
@@ -2065,7 +2065,7 @@ DbResult Db::AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP column
         return result;
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
-    if (tracker && !isTempTableOrIndex(tableName))
+    if (tracker && isMainTableOrIndex(tableName))
         result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
@@ -2086,7 +2086,7 @@ DbResult Db::CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8
         return result;
 
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
-    if (tracker && !isTempTableOrIndex(indexName))
+    if (tracker && isMainTableOrIndex(indexName))
         result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
 
     return result;
@@ -2151,7 +2151,7 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 DbResult Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
     {
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
-    if (tracker && tracker->IsTracking() && !isTempTableOrIndex(tableName))
+    if (tracker && tracker->IsTracking() && isMainTableOrIndex(tableName))
         {
         BeAssert(false && "Cannot make arbitrary schema changes when changes are being tracked");
         return BE_SQLITE_ERROR;
