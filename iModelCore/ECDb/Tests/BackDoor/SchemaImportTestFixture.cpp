@@ -221,7 +221,7 @@ void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName,
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
@@ -232,7 +232,7 @@ bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECD
         parameterIx++;
         stratInfo.m_tphInfo.m_sharedColumnsMode = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::TablePerHierarchyInfo::ShareColumnsMode::No : (MapStrategyInfo::TablePerHierarchyInfo::ShareColumnsMode) stmt->GetValueInt(parameterIx);
         parameterIx++;
-        stratInfo.m_tphInfo.m_sharedColumnCount = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
+        stratInfo.m_tphInfo.m_maxSharedColumnsBeforeOverflow = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
         parameterIx++;
         stratInfo.m_tphInfo.m_joinedTableInfo = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::JoinedTableInfo::None : (MapStrategyInfo::JoinedTableInfo) stmt->GetValueInt(parameterIx);
         return true;

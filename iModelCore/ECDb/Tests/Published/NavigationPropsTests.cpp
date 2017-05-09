@@ -160,7 +160,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
                                         <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns="ECDbMap.02.00">
-                                        <SharedColumnCount>10</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="string" />
@@ -234,7 +234,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
         ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Model";
         if (colInfo.m_propAccessString.EqualsIAscii("Model.Id"))
             {
-            ASSERT_STREQ("sc4", colInfo.m_columnName.c_str()) << "Element.Model.Id";
+            ASSERT_STREQ("ps5", colInfo.m_columnName.c_str()) << "Element.Model.Id";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Model.Id";
             }
         else if (colInfo.m_propAccessString.EqualsIAscii("Model.RelECClassId"))
@@ -254,12 +254,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
         ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Parent";
         if (colInfo.m_propAccessString.EqualsIAscii("Parent.Id"))
             {
-            ASSERT_STREQ("sc2", colInfo.m_columnName.c_str()) << "Element.Parent.Id";
+            ASSERT_STREQ("ps3", colInfo.m_columnName.c_str()) << "Element.Parent.Id";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.Id";
             }
         else if (colInfo.m_propAccessString.EqualsIAscii("Parent.RelECClassId"))
             {
-            ASSERT_STREQ("sc3", colInfo.m_columnName.c_str()) << "Element.Parent.RelECClassId";
+            ASSERT_STREQ("ps4", colInfo.m_columnName.c_str()) << "Element.Parent.RelECClassId";
             ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.RelECClassId";
             }
         else
@@ -1765,79 +1765,78 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     {
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport_joinedtable.ecdb",
-                           SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                      "<ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
-                                      "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                      "    <ECEntityClass typeName='DgnCategory'>"
-                                      "        <ECProperty propertyName='Name' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='IGeometrySource' modifier='Abstract'>"
-                                      "      <ECCustomAttributes>"
-                                      "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                      "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-                                      "          </IsMixin>"
-                                      "      </ECCustomAttributes>"
-                                      "        <ECProperty propertyName='Geometry' typeName='binary' />"
-                                      "        <ECNavigationProperty propertyName='Category' relationshipName='GeometryIsInsCategory' direction='Forward' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='IGeometrySource3d' modifier='Abstract'>"
-                                      "      <ECCustomAttributes>"
-                                      "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                      "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-                                      "          </IsMixin>"
-                                      "      </ECCustomAttributes>"
-                                      "       <BaseClass>IGeometrySource</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                      "     <ECCustomAttributes>"
-                                      "         <ClassMap xmlns='ECDbMap.02.00'>"
-                                      "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                      "         </ClassMap>"
-                                      "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                      "     </ECCustomAttributes>"
-                                      "      <ECProperty propertyName='Code' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='SpatialElement' modifier='Abstract'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "       <BaseClass>IGeometrySource3d</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='AnnotationElement'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "       <BaseClass>IGeometrySource3d</BaseClass>"
-                                      "       <ECProperty propertyName='Text' typeName='string' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='PhysicalElement'>"
-                                      "     <ECCustomAttributes>"
-                                      "         <ShareColumns xmlns='ECDbMap.02.00'>"
-                                      "              <SharedColumnCount>4</SharedColumnCount>"
-                                      "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                      "         </ShareColumns>"
-                                      "     </ECCustomAttributes>"
-                                      "       <BaseClass>SpatialElement</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='FooElement'>"
-                                      "       <BaseClass>PhysicalElement</BaseClass>"
-                                      "        <ECProperty propertyName='Diameter' typeName='double' />"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='SystemElement' modifier='Abstract'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "    <ECEntityClass typeName='DictionaryElement'>"
-                                      "       <BaseClass>Element</BaseClass>"
-                                      "    </ECEntityClass>"
-                                      "   <ECRelationshipClass typeName='GeometryIsInsCategory' strength='Referencing' modifier='Sealed'>"
-                                      "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='GeometrySource'>"
-                                      "          <Class class ='IGeometrySource' />"
-                                      "      </Source>"
-                                      "      <Target multiplicity='(1..1)' polymorphic='False' roleLabel='Category'>"
-                                      "          <Class class ='DgnCategory' />"
-                                      "      </Target>"
-                                      "   </ECRelationshipClass>"
-                                      "</ECSchema>"), 0);
-
+                           SchemaItem(
+                               R"xml(<?xml version='1.0' encoding='utf-8'?>
+                                <ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                                    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
+                                    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+                                    <ECEntityClass typeName='DgnCategory'>
+                                        <ECProperty propertyName='Name' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='IGeometrySource' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                                                <AppliesToEntityClass>Element</AppliesToEntityClass>
+                                            </IsMixin>
+                                        </ECCustomAttributes>
+                                        <ECProperty propertyName='Geometry' typeName='binary' />
+                                        <ECNavigationProperty propertyName='Category' relationshipName='GeometryIsInsCategory' direction='Forward' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='IGeometrySource3d' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                                                <AppliesToEntityClass>Element</AppliesToEntityClass>
+                                            </IsMixin>
+                                        </ECCustomAttributes>
+                                        <BaseClass>IGeometrySource</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='Element' modifier='Abstract'>
+                                        <ECCustomAttributes>
+                                            <ClassMap xmlns='ECDbMap.02.00'>
+                                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                                            </ClassMap>
+                                            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>
+                                        </ECCustomAttributes>
+                                        <ECProperty propertyName='Code' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='SpatialElement' modifier='Abstract'>
+                                        <BaseClass>Element</BaseClass>
+                                        <BaseClass>IGeometrySource3d</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='AnnotationElement'>
+                                        <BaseClass>Element</BaseClass>
+                                        <BaseClass>IGeometrySource3d</BaseClass>
+                                        <ECProperty propertyName='Text' typeName='string' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='PhysicalElement'>
+                                        <ECCustomAttributes>
+                                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                            </ShareColumns>
+                                        </ECCustomAttributes>
+                                        <BaseClass>SpatialElement</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='FooElement'>
+                                        <BaseClass>PhysicalElement</BaseClass>
+                                        <ECProperty propertyName='Diameter' typeName='double' />
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='SystemElement' modifier='Abstract'>
+                                        <BaseClass>Element</BaseClass>
+                                    </ECEntityClass>
+                                    <ECEntityClass typeName='DictionaryElement'>
+                                        <BaseClass>Element</BaseClass>
+                                    </ECEntityClass>
+                                    <ECRelationshipClass typeName='GeometryIsInsCategory' strength='Referencing' modifier='Sealed'>
+                                        <Source multiplicity='(0..*)' polymorphic='True' roleLabel='GeometrySource'>
+                                            <Class class ='IGeometrySource' />
+                                        </Source>
+                                        <Target multiplicity='(1..1)' polymorphic='False' roleLabel='Category'>
+                                            <Class class ='DgnCategory' />
+                                        </Target>
+                                    </ECRelationshipClass>
+                                </ECSchema>)xml"), 0);
     ASSERT_TRUE(ecdb.IsDbOpen());
-
     ECInstanceKey catKey;
     {
     ECSqlStatement stmt;
@@ -1906,48 +1905,96 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     
     //UPDATE Category.Id
     {
+    auto verifyCategoryId = [] (ECDbCR ecdb, ECInstanceId expectedCatId)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.FooElement"));
+        int rowCount = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            rowCount++;
+            ASSERT_FALSE(stmt.IsValueNull(0));
+            ASSERT_EQ(expectedCatId.GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+            }
+
+        ASSERT_GT(rowCount, 0);
+        stmt.Finalize();
+
+        //select via base class
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.IGeometrySource"));
+        rowCount = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            rowCount++;
+            ASSERT_FALSE(stmt.IsValueNull(0));
+            ASSERT_EQ(expectedCatId.GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+            }
+
+        ASSERT_GT(rowCount, 0);
+        stmt.Finalize();
+        };
+
+    int modifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - modifiedRowCountBefore) << "Non-polymorphic update against mixin should be no-op";
     stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.IGeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
+
 
     //UPDATE via classes that is mapped to a single joined table, is expected to work
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.SpatialElement SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.AnnotationElement SET Category.Id=? WHERE Category.Id IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    }
-
-    //Verify via SELECT
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.FooElement"));
-    int rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        rowCount++;
-        ASSERT_FALSE(stmt.IsValueNull(0));
-        ASSERT_EQ(catKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-        }
-
-    ASSERT_GT(rowCount, 0);
     stmt.Finalize();
+    verifyCategoryId(ecdb, catKey.GetInstanceId());
 
-    //select via base class
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category.Id FROM np.IGeometrySource"));
-    rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
+    auto getCount = [] (ECDbCR ecdb, Utf8CP className, Utf8CP whereClause = nullptr)
         {
-        rowCount++;
-        ASSERT_FALSE(stmt.IsValueNull(0));
-        ASSERT_EQ(catKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-        }
+        Utf8String ecsql("SELECT count(*) FROM ");
+        ecsql.append(className);
+        if (whereClause != nullptr)
+            ecsql.append(" WHERE ").append(whereClause);
 
-    ASSERT_GT(rowCount, 0);
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()) || BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    int rowCountBefore = getCount(ecdb, "np.IGeometrySource");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY np.IGeometrySource"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
+    ASSERT_EQ(0, rowCountBefore - getCount(ecdb, "np.IGeometrySource")) << "Non-polymorphic delete against mixin should be no-op";
+
+    rowCountBefore = getCount(ecdb, "np.IGeometrySource");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY np.IGeometrySource WHERE Category.Id IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(0, rowCountBefore - getCount(ecdb, "np.IGeometrySource")) << "Non-polymorphic delete against mixin should be no-op";
+
+    rowCountBefore = getCount(ecdb, "np.IGeometrySource", "Category.Id IS NOT NULL");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM np.IGeometrySource WHERE Category.Id IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(1, rowCountBefore - getCount(ecdb, "np.IGeometrySource", "Category.Id IS NOT NULL"));
+
+    ecdb.AbandonChanges();
     }
     }
 

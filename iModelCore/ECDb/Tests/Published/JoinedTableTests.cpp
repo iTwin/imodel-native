@@ -621,6 +621,229 @@ TEST_F(JoinedTableTestFixture, Update)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableTestFixture, ECSqlInsertAffectingOneTableOnly)
+    {
+    SetupECDb("ECSqlUpdateOptimization.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>"
+               <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub" modifier="Sealed">
+                <BaseClass>Base</BaseClass>
+               <ECProperty propertyName="SubNo" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    auto assertRow = [] (ECDbCR ecdb, ECInstanceKey const& key, std::pair<int const*, int const*> const& expectedValues)
+        {
+        Statement stmt;
+        //primary table
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ECClassId,Code FROM ts_Base WHERE Id=?"));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(key.GetClassId().GetValue(), stmt.GetValueUInt64(0)) << "ECClassId";
+        if (expectedValues.first == nullptr)
+            ASSERT_TRUE(stmt.IsColumnNull(1)) << "Code is expected to be NULL";
+        else
+            ASSERT_EQ(*expectedValues.first, stmt.GetValueInt(1)) << "Code";
+        stmt.Finalize();
+
+        //joined table
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ECClassId,SubNo FROM ts_Sub WHERE BaseId=?"));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(key.GetClassId().GetValue(), stmt.GetValueUInt64(0)) << "ECClassId";
+        if (expectedValues.second == nullptr)
+            ASSERT_TRUE(stmt.IsColumnNull(1)) << "SubNo is expected to be NULL";
+        else
+            ASSERT_EQ(*expectedValues.second, stmt.GetValueInt(1)) << "SubNo";
+        };
+
+    const int expectedCode = 100;
+    const int expectedSubNo = 200;
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(Code,SubNo) VALUES(?,?)"));
+
+    //don't insert any values
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    assertRow(GetECDb(), key, {nullptr, nullptr});
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    //insert first value only
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1,expectedCode));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    assertRow(GetECDb(), key, {&expectedCode, nullptr});
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    //insert second value only
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, expectedSubNo));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    assertRow(GetECDb(), key, {nullptr, &expectedSubNo});
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    //insert both values
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, expectedCode));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, expectedSubNo));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    assertRow(GetECDb(), key, {&expectedCode, &expectedSubNo});
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableTestFixture, ECSqlUpdateOptimization)
+    {
+    SetupECDb("ECSqlUpdateOptimization.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>"
+               <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub" modifier="Sealed">
+                <BaseClass>Base</BaseClass>
+               <ECProperty propertyName="SubNo" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(Code,SubNo) VALUES(100,200)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto assertNativeSql = [] (Utf8CP expected, ECSqlStatement const& stmt)
+        {
+        bvector<Utf8String> expectedSqls, actualSqls;
+        BeStringUtilities::Split(expected, ";", expectedSqls);
+        BeStringUtilities::Split(stmt.GetNativeSql(), ";", actualSqls);
+        ASSERT_EQ(expectedSqls.size(), actualSqls.size()) << stmt.GetECSql();
+        std::sort(expectedSqls.begin(), expectedSqls.end());
+        std::sort(actualSqls.begin(), actualSqls.end());
+        for (size_t i = 0; i < expectedSqls.size(); i++)
+            {
+            ASSERT_STREQ(expectedSqls[i].c_str(), actualSqls[i].c_str()) << stmt.GetECSql();
+            }
+        };
+
+    ECClassId subClassId = GetECDb().Schemas().GetClassId("TestSchema", "Sub");
+    ASSERT_TRUE(subClassId.IsValid());
+    Utf8String subClassIdStr = subClassId.ToString();
+
+    //Set prop in first table
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE Code=100"));
+    Utf8String expectedSql;
+    expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [Code]=100 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+                        subClassIdStr.c_str());
+    assertNativeSql(expectedSql.c_str(), stmt);
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE SubNo=200"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id])", stmt);
+    stmt.Finalize();
+
+    //now without classid filter
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [Code]=100", stmt);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id])", stmt);
+    stmt.Finalize();
+
+    //Set prop in second table
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200"));
+    expectedSql.Sprintf("UPDATE [ts_Sub] SET [SubNo]=300 WHERE [SubNo]=200 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+                        subClassIdStr.c_str());
+    assertNativeSql(expectedSql.c_str(), stmt);
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE Code=100"));
+    assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
+    stmt.Finalize();
+
+    //now without classid filter
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE [SubNo]=200", stmt);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
+    stmt.Finalize();
+
+    //Set prop in both tables
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);"
+                    "UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
+    stmt.Finalize();
+
+    //now without classid filter
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
+    stmt.Finalize();
+
+    //Set prop in both tables, but filter by ECInstanceId
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=?"));
+    expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [Id]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s));"
+                        "UPDATE [ts_Sub] SET [SubNo]=300 WHERE [BaseId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+                        subClassIdStr.c_str(), subClassIdStr.c_str());
+    assertNativeSql(expectedSql.c_str(), stmt);
+    stmt.Finalize();
+
+    //now without classid filter
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [Id]=:_ecdb_ecsqlparam_ix1_col1;UPDATE [ts_Sub] SET [SubNo]=300 WHERE [BaseId]=:_ecdb_ecsqlparam_ix1_col1", stmt);
+    stmt.Finalize();
+
+    //Set prop in both tables, but filter by ECClassId
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=?"));
+    expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s));"
+                        "UPDATE [ts_Sub] SET [SubNo]=300 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+                        subClassIdStr.c_str(), subClassIdStr.c_str());
+    assertNativeSql(expectedSql.c_str(), stmt);
+    stmt.Finalize();
+
+    //now without classid filter
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=? ECSQLOPTIONS NoECClassIdFilter"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1;UPDATE [ts_Sub] SET [SubNo]=300 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1", stmt);
+    stmt.Finalize();
+
+    //Set prop in both tables, but filter by ECInstanceId and a regular prop
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? OR Code=?"));
+    assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);"
+                    "UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         1/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
@@ -635,7 +858,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -862,7 +1085,7 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
 
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
     ASSERT_TRUE(gooClassId.IsValid());
-    //Only properties in joined table accessed should not uncessary add join to base table.
+    //Only properties in joined table accessed should not unnecessarily add join to base table.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter"), ECSqlStatus::Success);
@@ -879,7 +1102,7 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     Utf8String expectedSql;
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
-                        gooClassId.ToString().c_str());
+    gooClassId.ToString().c_str());
     ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     }
     {
@@ -896,29 +1119,25 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1)", stmt.GetNativeSql());
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql());
     }
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1)", stmt.GetNativeSql());
+    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND [A]=:a_col1", stmt.GetNativeSql());
     }
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
-
-    Utf8String expectedSql;
-    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
-                        gooClassId.ToString().c_str());
-    ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql()) << stmt.GetECSql();
     }
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
-    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND [A]=:a_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
     }

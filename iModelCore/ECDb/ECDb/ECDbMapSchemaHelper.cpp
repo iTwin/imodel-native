@@ -44,12 +44,9 @@ struct CustomAttributeReader final
 //static
 IECInstanceCP CustomAttributeReader::Read(IECCustomAttributeContainer const& caContainer, Utf8CP customAttributeSchemaName, Utf8CP customAttributeName)
     {
-    for (IECInstancePtr const& ca : caContainer.GetCustomAttributes(false))
-        {
-        ECClassCR caClass = ca->GetClass();
-        if (caClass.GetName().Equals(customAttributeName) && caClass.GetSchema().GetName().Equals(customAttributeSchemaName))
-            return ca.get();
-        }
+    IECInstancePtr ca = caContainer.GetCustomAttributeLocal(customAttributeSchemaName, customAttributeName);
+    if (ca != nullptr)
+        return ca.get();
 
     return nullptr;
     }
@@ -532,24 +529,24 @@ BentleyStatus ShareColumns::TryGetApplyToSubclassesOnly(Nullable<bool>& applyToS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ShareColumns::TryGetSharedColumnCount(Nullable<uint32_t>& sharedColumnCount) const
+BentleyStatus ShareColumns::TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32_t>& maxSharedColumnsBeforeOverflow) const
     {
     if (m_ca == nullptr)
         return ERROR;
     Nullable<int> intVal;
-    if (SUCCESS != CustomAttributeReader::TryGetIntegerValue(intVal, *m_ca, "SharedColumnCount"))
+    if (SUCCESS != CustomAttributeReader::TryGetIntegerValue(intVal, *m_ca, "MaxSharedColumnsBeforeOverflow"))
         return ERROR;
 
     if (intVal.IsNull())
         {
-        sharedColumnCount = Nullable<uint32_t>();
+        maxSharedColumnsBeforeOverflow = Nullable<uint32_t>();
         return SUCCESS;
         }
 
     if (intVal.Value() < 0)
         return ERROR;
 
-    sharedColumnCount = Nullable<uint32_t>((uint32_t) intVal.Value());
+    maxSharedColumnsBeforeOverflow = Nullable<uint32_t>((uint32_t) intVal.Value());
     return SUCCESS;
     }
 

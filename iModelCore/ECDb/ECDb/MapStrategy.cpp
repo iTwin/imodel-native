@@ -70,7 +70,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             }
 
         m_shareColumnsMode = ShareColumnsMode::Yes;
-        m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
+        m_maxSharedColumnsBeforeOverflow = baseMapStrategy->GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
         return SUCCESS;
         }
 
@@ -88,10 +88,9 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         else
             m_shareColumnsMode = ShareColumnsMode::Yes;
 
-        Nullable<uint32_t> m_sharedColumnCount;
-        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCount(m_sharedColumnCount))
+        if (SUCCESS != shareColumnsCA.TryGetMaxSharedColumnsBeforeOverflow(m_maxSharedColumnsBeforeOverflow))
             {
-            issues.Report("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'SharedColumnCount'. Either provide a non-negative value or omit the property.",
+            issues.Report("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.",
                                   ecClass.GetFullName());
             return ERROR;
             }

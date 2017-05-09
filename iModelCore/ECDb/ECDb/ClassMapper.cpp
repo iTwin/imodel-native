@@ -43,6 +43,10 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
         return nullptr;
         }
 
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext)
+        if (m_classMap.GetColumnFactory().BeginSharedColumnBlock(property.GetName().c_str()) != SUCCESS)
+            return nullptr;
+
     if (auto typedProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsPrimitiveArrayProperty())
@@ -62,6 +66,10 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     if (propertyMap == nullptr)
         return nullptr;
 
+    if (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext)
+        if (m_classMap.GetColumnFactory().EndSharedColumnBlock() != SUCCESS)
+            return nullptr;
+
     if (m_classMap.GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         {
         BeAssert(false && "Failed to insert property map");
@@ -77,7 +85,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecInstanceIdColumns;
-    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     if (ecInstanceIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -102,7 +110,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
 BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecClassIdColumns;
-    DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* ecClassIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECClassId);
     if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -470,23 +478,17 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
     std::vector<DbColumn const*> const* columns;
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     id = columns->front();
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropRelECClassId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     relClassId = columns->front();
 
     if (SUCCESS != propertyMap->SetMembers(*id, *relClassId, property.GetRelationshipClass()->GetId()))
-        {
         return nullptr;
-        }
 
     return propertyMap;
     }
@@ -580,16 +582,16 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
-    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-
-    if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
-        {
-        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        }
+    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap);
+    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap);
 
     if (idProp == nullptr || relECClassIdProp == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (idProp->GetTable().GetId() !=relECClassIdProp->GetTable().GetId())
         {
         BeAssert(false);
         return ERROR;

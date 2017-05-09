@@ -205,6 +205,12 @@
     <ClCompile Include="Published\ECDbMetaSchemaECSqlTestFixture.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\BulkCrudTests.cpp">
+      <Filter>Published\BulkCrudTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BulkCrudTestFixture.cpp">
+      <Filter>Published\BulkCrudTestFramework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
@@ -276,6 +282,9 @@
     <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h">
       <Filter>Performance</Filter>
     </ClInclude>
+    <ClInclude Include="Published\BulkCrudTestFixture.h">
+      <Filter>Published\BulkCrudTestFramework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Intermediate Files">
@@ -298,6 +307,9 @@
     </Filter>
     <Filter Include="Published\ECSqlPrepareTestFramework\Datasets">
       <UniqueIdentifier>{f364ac37-147d-4c5d-a6df-8f9a0270b4da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\BulkCrudTestFramework">
+      <UniqueIdentifier>{8ccb7510-ee23-4d90-b069-d1300030aad5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

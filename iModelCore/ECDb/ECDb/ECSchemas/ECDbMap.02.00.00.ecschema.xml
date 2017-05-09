@@ -11,7 +11,7 @@
     <ECCustomAttributeClass typeName="JoinedTablePerDirectSubclass" description="Maps subclasses and their children to a joined table. Can only be applied to classes in a hierarchy using MapStrategy TablePerHierarchy." modifier="Sealed" appliesTo="EntityClass"/>
     <ECCustomAttributeClass typeName="ShareColumns" description="Allows to share columns amongst ECProperties. Can only be applied to MapStrategy TablePerHierarchy" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECProperty propertyName="ApplyToSubclassesOnly" typeName="boolean" description="False (Default):Columns are shared for the properties of the ECClass to which this CA is applied and all its subclasses. True: Columns are not shared for this ECClass but for all of its subclasses."/>
-        <ECProperty propertyName="SharedColumnCount" typeName="int" description="Number of shared columns to use before using an overflow table (optional). If not specified, ECDb will create as many shared columns until the table has 63 columns."/>
+        <ECProperty propertyName="MaxSharedColumnsBeforeOverflow" typeName="int" description="Maximum number of shared columns to use before using an overflow table (optional). If not specified, ECDb will create as many shared columns until the table has 63 columns."/>
     </ECCustomAttributeClass>
     <ECCustomAttributeClass typeName="DbIndexList" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECStructArrayProperty propertyName="Indexes" typeName="DbIndex" description="List of indexes on properties of this class. It can be use to improve query performance or to add unique constraint." minOccurs="1" maxOccurs="unbounded"/>

@@ -29,7 +29,7 @@ struct LightweightCache final: NonCopyableClass
             };
         struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-        typedef bmap < DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
+        typedef bmap<DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:
@@ -47,7 +47,7 @@ struct LightweightCache final: NonCopyableClass
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
-
+        
     public:
         explicit LightweightCache(ECDb const&);
         ~LightweightCache() {}
@@ -99,7 +99,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription final: NonCopyableClass
+struct StorageDescription final : NonCopyableClass
     {
     private:
         ECN::ECClassId m_classId;
@@ -121,10 +121,6 @@ struct StorageDescription final: NonCopyableClass
 
         std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
-        //! Returns nullptr, if more than one non-virtual partitions exist.
-        //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.
-        //! If has a single non-virtual partition returns that.
-        Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
         Partition const* GetVerticalPartition(DbTable const&) const;
         Partition const* GetHorizontalPartition(DbTable const&) const;
@@ -135,9 +131,6 @@ struct StorageDescription final: NonCopyableClass
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
-        //Uses ec_cache_ClassHiearchy instead of creating ORed or ANDed ECClassId clauses
-        //This is mainly used for SELECT/UPDATE/DELETE but not indexes which does not support subquery
-        BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

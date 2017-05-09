@@ -158,7 +158,7 @@ BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, S
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* schemaImportToken) const
     {
-    PERFLOG_START("ECDb", "ECSchema import");
+    PERFLOG_START("ECDb", "Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     SchemaImportContext ctx(options);
     const BentleyStatus stat = DoImportSchemas(ctx, schemas, schemaImportToken);

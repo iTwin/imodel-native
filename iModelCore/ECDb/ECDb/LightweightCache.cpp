@@ -205,16 +205,34 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         return itor->second;
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
+    ECClassId mixInId;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement( 
+            "SELECT [CA].[ContainerId] "
+            "FROM   " TABLE_Class " C "
+            "       INNER JOIN " TABLE_CustomAttribute " CA ON [CA].[ClassId] = [C].[Id] "
+            "       INNER JOIN " TABLE_Schema " S ON [S].[Id] = [C].[SchemaId] AND [C].[Name] = 'IsMixin' AND [S].[Name] = 'CoreCustomAttributes' "
+            "WHERE  [CA].[ContainerId] = ? ");
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
+    bool isMixin = (stmt->Step() == BE_SQLITE_ROW);
+    if (isMixin)
+        stmt = m_ecdb.GetCachedStatement(
+            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+            "WHERE ch.BaseClassId=?1 ");
+    else
+        stmt = m_ecdb.GetCachedStatement(
+            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+            "WHERE ch.BaseClassId=?1 AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow);
 
+    BeAssert(stmt != nullptr);
+    stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
@@ -322,64 +340,6 @@ Partition const* StorageDescription::GetPartition(DbTable const& table) const
 
 
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    10 / 2015
-//------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
-    {
-    if (table.GetPersistenceType() != PersistenceType::Physical)
-        return SUCCESS; //table is virtual -> noop
-
-    Partition const* partition = GetHorizontalPartition(table);
-    if (partition == nullptr)
-        {
-        if (!GetVerticalPartitions().empty())
-            {
-            partition = GetVerticalPartition(table);
-            }
-
-        if (partition == nullptr)
-            {
-            BeAssert(false && "Should always find a partition for the given table");
-            return ERROR;
-            }
-        }
-
-    Utf8String classIdColSql;
-    if (fullyQualifyColumnName)
-        {
-        classIdColSql.append("[");
-        if (tableAlias)
-            classIdColSql.append(tableAlias);
-        else
-            classIdColSql.append(table.GetName());
-
-        classIdColSql.append("].");
-        }
-
-    classIdColSql.append(classIdColumn.GetName());
-    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-    m_classId.ToString(classIdStr);
-
-    if (!polymorphic)
-        {
-        //if partition's table is only used by a single class, no filter needed     
-        if (partition->IsSharedTable())
-            {
-            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
-            }
-
-        return SUCCESS;
-        }
-
-    if ( partition->NeedsECClassIdFilter())
-        {
-        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
-        }
-   
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
 //static
@@ -446,23 +406,6 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     return storageDescription;
     }
 
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    10 / 2015
-//------------------------------------------------------------------------------------------
-Partition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
-    {
-    if (!polymorphic || !HasNonVirtualPartitions())
-        return &GetRootHorizontalPartition();
-
-    if (HierarchyMapsToMultipleTables())
-        return nullptr; //no single partition available
-
-    size_t ix = m_nonVirtualHorizontalPartitionIndices[0];
-    BeAssert(ix < m_horizontalPartitions.size());
-
-    return &m_horizontalPartitions[ix];
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015

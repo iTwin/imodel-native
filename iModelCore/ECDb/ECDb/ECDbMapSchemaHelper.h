@@ -170,11 +170,10 @@ struct ShareColumns final
         //! @return ECOBJECTSTATUS_Success if ApplyToSubclassesOnly was set or unset in the ShareColumns custom attribute, ERROR otherwise
         BentleyStatus TryGetApplyToSubclassesOnly(Nullable<bool>& applyToSubclassesOnly) const;
 
-        //! Tries to get the value of the SharedColumnCount property from the ShareColumns custom attribute.
-        //! The SharedColumnCount includes the overflow column.
-        //! @param[out] sharedColumnCount Number of shared columns to use. IsNull() is true, if the SharedColumnCount property wasn't set.
-        //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, ERROR otherwise
-        BentleyStatus TryGetSharedColumnCount(Nullable<uint32_t>& sharedColumnCount) const;
+        //! Tries to get the value of the MaxSharedColumnsBeforeOverflow property from the ShareColumns custom attribute.
+        //! @param[out] maxSharedColumnsBeforeOverflow Maximum number of shared columns to use before creating an overflow table. IsNull() is true, if the MaxSharedColumnsBeforeOverflow property wasn't set.
+        //! @return ECOBJECTSTATUS_Success if MaxSharedColumnsBeforeOverflow was set or unset in the ShareColumns custom attribute, ERROR otherwise
+        BentleyStatus TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32_t>& maxSharedColumnsBeforeOverflow) const;
     };
 
 //=======================================================================================    

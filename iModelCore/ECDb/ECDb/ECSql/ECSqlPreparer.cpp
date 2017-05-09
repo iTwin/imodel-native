@@ -63,12 +63,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         }
 
     nativeSql = context.GetNativeSql();
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    ECSqlParameterMap& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    return parameterMap.RemapForJoinTable(context);
-#else
     return ECSqlStatus::Success;
-#endif
     }
 
 //************** ECSqlExpPreparer *******************************
@@ -488,17 +483,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     ClassMap const& classMap = exp.GetInfo().GetMap();
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    if (!ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
-        {
-        Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
-        if (!policy.IsSupported())
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
-            return ECSqlStatus::InvalidECSql;
-            }
-        }
-#endif
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
@@ -515,48 +499,48 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     DbTable const* table = nullptr;
-    if (currentScopeECSqlType == ECSqlType::Insert)
+    switch (currentScopeECSqlType)
         {
-        //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
-        BeAssert(!exp.IsPolymorphic());
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-        SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
-        table = &preparedStmt.GetContextTable();
-#else
-        table = &classMap.GetJoinedTable();
-#endif
-        }
-    else
-        {
-        if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
+            case ECSqlType::Insert:
             {
-            if (currentScopeECSqlType == ECSqlType::Update)
-                {
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-                SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
-                table = &preparedStmt.GetContextTable();
-#else
-                table = &classMap.GetJoinedTable();
-#endif
-                }
-            else if (currentScopeECSqlType == ECSqlType::Delete)
-                table = &classMap.GetPrimaryTable();
+            BeAssert(!exp.IsPolymorphic());
+            SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+            table = &preparedStmt.GetContextTable();
+            break;
             }
-        else
+
+            case ECSqlType::Update:
             {
-            StorageDescription const& desc = classMap.GetStorageDescription();
-            if (exp.IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
+            if (classMap.GetUpdatableViewInfo().HasView())
                 {
-                BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 NativeSqlBuilder nativeSqlSnippet;
-                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewName().c_str());
+                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
                 nativeSqlSnippets.push_back(nativeSqlSnippet);
                 return ECSqlStatus::Success;
                 }
 
-            Partition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
-            table = &partition->GetTable();
+            SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
+            table = &preparedStmt.GetContextTable();
+            break;
             }
+
+            case ECSqlType::Delete:
+            {
+            if (classMap.GetUpdatableViewInfo().HasView())
+                {
+                NativeSqlBuilder nativeSqlSnippet;
+                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
+                nativeSqlSnippets.push_back(nativeSqlSnippet);
+                return ECSqlStatus::Success;
+                }
+
+            table = &classMap.GetPrimaryTable();
+            break;
+            }
+
+            default:
+                BeAssert(false);
+                return ECSqlStatus::Error;
         }
 
     BeAssert(table != nullptr);
@@ -933,7 +917,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
     return ECSqlStatus::Success;
     }
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -971,43 +954,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     return ECSqlStatus::Success;
     }
 
-#else
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const& exp)
-    {
-    BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
-    
-    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    ECSqlBinder* binder = nullptr;
-    const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, exp.GetParameterName());
-    if (!binderAlreadyExists)
-        {
-        binder = ecsqlParameterMap.AddBinder(ctx, exp);
-        if (binder == nullptr)
-            return ECSqlStatus::Error;
-        }
-
-    for (Utf8StringCR sqlParamName : binder->GetMappedSqlParameterNames())
-        {
-        NativeSqlBuilder parameterBuilder;
-        if (exp.HasParentheses())
-            parameterBuilder.AppendParenLeft();
-
-        parameterBuilder.Append(sqlParamName.c_str());
-
-        if (exp.HasParentheses())
-            parameterBuilder.AppendParenRight();
-
-        nativeSqlSnippets.push_back(parameterBuilder);
-        }
-
-    return ECSqlStatus::Success;
-    }
-#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1633,6 +1579,54 @@ ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet
     {
     nativeSqlSnippet.Append("WHERE ");
     return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp.GetSearchConditionExp());
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const& exp)
+    {
+    ClassMap const& classMap = exp.GetInfo().GetMap();
+    DbTable const& contextTable = classMap.GetPrimaryTable();
+    DbColumn const& classIdColumn = contextTable.GetECClassIdColumn();
+
+    //if no class id column exists and the SQL is not against an updatable view (which always has a class id col) -> no system where clause
+    if (classIdColumn.GetPersistenceType() == PersistenceType::Virtual && !classMap.GetUpdatableViewInfo().HasView())
+        return ECSqlStatus::Success;
+
+    StorageDescription const& desc = classMap.GetStorageDescription();
+    Partition const* partition = desc.GetHorizontalPartition(contextTable);
+    if (partition == nullptr)
+        {
+        if (!desc.GetVerticalPartitions().empty())
+            partition = desc.GetVerticalPartition(contextTable);
+
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ECSqlStatus::Error;
+            }
+        }
+
+    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    classMap.GetClass().GetId().ToString(classIdStr);
+
+    Utf8String classIdColSql(classIdColumn.GetName());
+
+    if (!exp.IsPolymorphic())
+        {
+        if (classMap.GetUpdatableViewInfo().HasView() || partition->IsSharedTable())
+            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+
+        return ECSqlStatus::Success;
+        }
+
+    if (partition->NeedsECClassIdFilter())
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
+
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

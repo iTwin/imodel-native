@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     if (tableType == DbTable::Type::Existing)
         {
@@ -57,13 +57,13 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, Persi
 
     DbTableId tableId;
     m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
-    return CreateTable(tableId, finalName, tableType, persType, exclusiveRootClassId, primaryTable);
+    return CreateTable(tableId, finalName, tableType, persType, exclusiveRootClassId, parentTable);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     if (name.empty() || !tableId.IsValid())
         {
@@ -71,7 +71,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, persType, tableType, exclusiveRootClassId, primaryTable)));
+    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, persType, tableType, exclusiveRootClassId, parentTable)));
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -86,7 +86,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::SynchronizeExistingTables()
     {
-    SyncTableCache();
+    UpdateTableCache();
 
     bvector<DbTable const*> tables;
     for (bpair<Utf8String, DbTableId> const& tableKey : GetExistingTableMap())
@@ -163,7 +163,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 //---------------------------------------------------------------------------------------
 bool DbSchema::IsTableNameInUse(Utf8StringCR tableName) const
     {
-    SyncTableCache();
+    UpdateTableCache();
     return m_tableMapByName.find(tableName) != m_tableMapByName.end();
     }
 
@@ -173,7 +173,7 @@ bool DbSchema::IsTableNameInUse(Utf8StringCR tableName) const
 //---------------------------------------------------------------------------------------
 DbTable const* DbSchema::FindTable(Utf8CP name) const
     {
-    SyncTableCache();
+    UpdateTableCache();
     auto itor = m_tableMapByName.find(name);
     if (itor != m_tableMapByName.end())
         {
@@ -198,7 +198,7 @@ DbTable const* DbSchema::FindTable(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 DbTable const* DbSchema::FindTable(DbTableId id) const
     {
-    SyncTableCache();
+    UpdateTableCache();
     auto itor = m_tableMapById.find(id);
     if (itor != m_tableMapById.end())
         {
@@ -213,7 +213,7 @@ DbTable const* DbSchema::FindTable(DbTableId id) const
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::FindTableP(Utf8CP name) const
     {
-    SyncTableCache();
+    UpdateTableCache();
     auto itor = m_tableMapByName.find(name);
     if (itor != m_tableMapByName.end())
         {
@@ -409,23 +409,102 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
     for (DbTable const* table : GetCachedTables())
         {
         // This would be null in case a table is not loaded yet and if its not loaded then we do not need to update it
-        if (table != nullptr)
+        if (table == nullptr)
+            continue;
+
+        if (SUCCESS != table->GetLinkNode().Validate())
+            return ERROR;
+
+        auto itor = persistedTableMap.find(table->GetName());
+        if (itor == persistedTableMap.end())
             {
-            auto itor = persistedTableMap.find(table->GetName());
-            if (itor == persistedTableMap.end())
-                {
-                if (InsertTable(*table) != SUCCESS)
-                    return ERROR;
-                }
-            else
-                {
-                if (UpdateTable(*table) != SUCCESS)
-                    return ERROR;
-                }
+            if (InsertTable(*table) != SUCCESS)
+                return ERROR;
+            }
+        else
+            {
+            if (UpdateTable(*table) != SUCCESS)
+                return ERROR;
             }
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        04/2017
+//---------------------------------------------------------------------------------------
+DbTable* DbSchema::CreateJoinedTable(DbTable const& primaryTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId)
+    {
+    if (primaryTable.GetType() != DbTable::Type::Primary)
+        {
+        BeAssert(false && "Base table must be primary or joined table");
+        return nullptr;
+        }
+
+    if (primaryTable.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Base table must not be virtual");
+        return nullptr;
+        }
+
+    if (primaryTable.GetLinkNode().GetChildren().size() == 1 && primaryTable.GetLinkNode().GetChildren()[0]->GetType() == DbTable::Type::Overflow)
+        {
+        BeAssert(false && "Base table have overflow derive table. Derive table can only be of one type");
+        return nullptr;
+        }
+
+    if (SUCCESS != primaryTable.GetLinkNode().Validate())
+        return nullptr;
+
+    return CreateTable(joinedTableName, DbTable::Type::Joined, PersistenceType::Physical, exclusiveRootClassId, &primaryTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        04/2017
+//---------------------------------------------------------------------------------------
+DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
+    {
+    if (!(baseTable.GetType() == DbTable::Type::Primary ||
+          baseTable.GetType() == DbTable::Type::Joined))
+        {
+        BeAssert(false && "Base table must be primary or joined table");
+        return nullptr;
+        }
+
+    if (baseTable.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Base table must not be virtual");
+        return nullptr;
+        }
+
+    if (!baseTable.GetLinkNode().GetChildren().empty())
+        {
+        BeAssert(false && "Base table must not have any secondary table at this time");
+        return nullptr;
+        }
+
+    if (SUCCESS != baseTable.GetLinkNode().Validate())
+        return nullptr;
+
+    Utf8String name = baseTable.GetName();
+    name.append("_Overflow");
+    DbTable* table = CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    if (!table)
+        return nullptr;
+    DbColumn const* pk = baseTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* cl = baseTable.FindFirst(DbColumn::Kind::ECClassId);
+    
+    DbColumn * npk = table->CreateColumn(pk->GetName(), pk->GetType(), DbColumn::Kind::ECInstanceId, pk->GetPersistenceType());
+    DbColumn * ncl = table->CreateColumn(cl->GetName(), cl->GetType(), DbColumn::Kind::ECClassId, pk->GetPersistenceType());
+    ncl->GetConstraintsR().SetNotNullConstraint();
+
+    table->CreatePrimaryKeyConstraint({npk});
+    table->CreateForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
+    Nullable<Utf8String> indexName("ix_");
+    indexName.ValueR().append(table->GetName()).append("_ecclassid");
+    CreateIndex(*table, indexName, false, {ncl}, false, false, ECClassId());
+    return table;
     }
 
 //---------------------------------------------------------------------------------------
@@ -494,9 +573,9 @@ bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchema::GetPersistedColumnMap(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-void DbSchema::SyncTableCache() const
+void DbSchema::UpdateTableCache() const
     {
-    if (m_syncTableCacheNames)
+    if (m_isTableCacheUpToDate)
         return;
 
     for (bpair<Utf8String, DbTableId> const& tableKey : GetPersistedTableMap())
@@ -508,7 +587,7 @@ void DbSchema::SyncTableCache() const
             }
         }
 
-    m_syncTableCacheNames = true;
+    m_isTableCacheUpToDate = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -522,7 +601,7 @@ void DbSchema::Reset() const
     m_indexesLoaded = false;
     m_indexes.clear();
     m_usedIndexNames.clear();
-    m_syncTableCacheNames = false;
+    m_isTableCacheUpToDate = false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -531,18 +610,25 @@ void DbSchema::Reset() const
 std::vector<DbTable const*> DbSchema::GetCachedTables() const
     {
     std::vector<DbTable const*> cachedTables;
+    std::vector<DbTable const*> cachedTablesJoined;
+    std::vector<DbTable const*> cachedTablesOverflow;
+
     for (auto const& tableKey : m_tableMapByName)
         {
         if (tableKey.second != nullptr)
             {
             if (tableKey.second->GetType() == DbTable::Type::Joined)
-                cachedTables.push_back(tableKey.second.get());
+                cachedTablesJoined.push_back(tableKey.second.get());
+            else if (tableKey.second->GetType() == DbTable::Type::Overflow)
+                cachedTablesOverflow.push_back(tableKey.second.get());
             else
                 cachedTables.insert(cachedTables.begin(), tableKey.second.get());
             }
         }
 
-    return cachedTables;
+    cachedTables.insert(end(cachedTables), begin(cachedTablesJoined), end(cachedTablesJoined));
+    cachedTables.insert(end(cachedTables), begin(cachedTablesOverflow), end(cachedTablesOverflow));
+        return cachedTables;
     }
 
 //---------------------------------------------------------------------------------------
@@ -567,9 +653,9 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
     if (table.HasExclusiveRootECClass())
         stmt->BindId(5, table.GetExclusiveRootECClassId());
 
-    DbTable const* parentTable = table.GetParentOfJoinedTable();
-    if (parentTable != nullptr)
-        stmt->BindId(6, parentTable->GetId());
+    DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
+    if (parentNode != nullptr)
+        stmt->BindId(6, parentNode->GetTable().GetId());
 
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -619,9 +705,9 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
     stmt->BindText(1, table.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(table.GetType()));
     stmt->BindBoolean(3, table.GetPersistenceType() == PersistenceType::Virtual);
-    DbTable const* parentTable = table.GetParentOfJoinedTable();
-    if (parentTable != nullptr)
-        stmt->BindId(4, parentTable->GetId());
+    DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
+    if (parentNode != nullptr)
+        stmt->BindId(4, parentNode->GetTable().GetId());
     else
         stmt->BindNull(4);
 
@@ -902,7 +988,7 @@ BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::LoadColumns(DbTable& table) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM ec_Column WHERE TableId=? ORDER BY Ordinal");
     if (stmt == nullptr)
         return ERROR;
 
@@ -920,7 +1006,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
-    int sharedColumnCount = 0;
+    uint32_t sharedColumnCount = 0;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);
@@ -974,7 +1060,8 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
             return SUCCESS;
         }
 
-    table.InitializeSharedColumnNameGenerator(sharedColumnCount);
+    if (table.GetType() != DbTable::Type::Existing)
+        table.InitializeSharedColumnNameGenerator(sharedColumnCount);
 
     return SUCCESS;
     }
@@ -984,7 +1071,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     {
     tableP = nullptr;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT t.Id, t.Type, t.IsVirtual, t.ExclusiveRootClassId, parentT.Name FROM ec_Table t LEFT JOIN ec_Table parentT ON t.ParentTableId = parentT.Id WHERE t.Name = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Type, IsVirtual, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -999,14 +1086,13 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     if (!stmt->IsColumnNull(3))
         exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
 
-    Utf8CP parentTableName = stmt->GetValueText(4);
-
     DbTable const* parentTable = nullptr;
-    if (!Utf8String::IsNullOrEmpty(parentTableName))
+    if (!stmt->IsColumnNull(4))
         {
-        parentTable = FindTable(parentTableName);
-        BeAssert(parentTable != nullptr && "Failed to find parent table of joined table");
-        BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
+        BeAssert((DbTable::Type::Joined == tableType || DbTable::Type::Overflow == tableType) && "Expecting joined or overflow table if parent table id is not null");
+        DbTableId parentTableId = stmt->GetValueId<DbTableId>(4);
+        parentTable = FindTable(parentTableId);
+        BeAssert(parentTable != nullptr && "Failed to find parent table");
         }
 
     DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, exclusiveRootClassId, parentTable);
@@ -1030,6 +1116,7 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     tableP = table;
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1041,16 +1128,17 @@ DbSchema::EntityType DbSchema::GetEntityType(ECDbCR ecdb, Utf8CP name)
     stmt->BindText(1, name, Statement::MakeCopy::No);
     if (stmt->Step() == BE_SQLITE_ROW)
         {
-        if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "table") == 0)
+        Utf8CP entityType = stmt->GetValueText(0);
+        if (BeStringUtilities::StricmpAscii(entityType, "table") == 0)
             return EntityType::Table;
 
-        if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "view") == 0)
+        if (BeStringUtilities::StricmpAscii(entityType, "view") == 0)
             return EntityType::View;
 
-        if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "index") == 0)
+        if (BeStringUtilities::StricmpAscii(entityType, "index") == 0)
             return EntityType::Index;
 
-        if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "trigger") == 0)
+        if (BeStringUtilities::StricmpAscii(entityType, "trigger") == 0)
             return EntityType::Trigger;
         }
 
@@ -1082,17 +1170,15 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable)
-    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
+    m_linkNode(*this, parentTable)
     {
-    BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
-        (tableType != Type::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for Type::Joined and must be null for any other DbTable::Type.");
+    if (tableType != Type::Existing)
+        m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(tableType));
 
-    if (tableType == Type::Joined && parentOfJoinedTable != nullptr)
-        const_cast<DbTable*>(parentOfJoinedTable)->m_joinedTables.push_back(this);
+    BeAssert(m_linkNode.Validate() == SUCCESS);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
@@ -1165,6 +1251,12 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateTrigger(Utf8CP triggerName, DbTrigger::Type type, Utf8CP condition, Utf8CP body)
     {
+    if (!IsOwnedByECDb())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     if (m_triggers.find(triggerName) == m_triggers.end())
         {
         std::unique_ptr<DbTrigger> trigger = std::unique_ptr<DbTrigger>(new DbTrigger(triggerName, *this, type, condition, body));
@@ -1237,14 +1329,10 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         return nullptr;
         }
 
-    PersistenceType resolvePersistenceType = persistenceType;
-    if (GetPersistenceType() == PersistenceType::Virtual)
-        resolvePersistenceType = PersistenceType::Virtual;
-
     if (!id.IsValid())
         m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 
-    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
+    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, persistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
@@ -1342,35 +1430,37 @@ DbColumn* DbTable::FindColumnP(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, PersistenceType persistenceType) const
+const std::vector<DbColumn const*> DbTable::FindAll(PersistenceType persistenceType) const
     {
+    std::vector<DbColumn const*> columns;
     for (DbColumn const* column : m_orderedColumns)
         {
         if (column->GetPersistenceType() == persistenceType)
             columns.push_back(column);
         }
 
-    return columns.empty() ? ERROR : SUCCESS;
+    return columns;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, DbColumn::Kind kind) const
+const  std::vector<DbColumn const*> DbTable::FindAll(DbColumn::Kind kind) const
     {
+    std::vector<DbColumn const*> columns;
     for (DbColumn const* column : m_orderedColumns)
         {
         if (Enum::Intersects(column->GetKind(), kind))
             columns.push_back(column);
         }
 
-    return columns.empty() ? ERROR : SUCCESS;
+    return columns;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbColumn const* DbTable::GetFilteredColumnFirst(DbColumn::Kind kind) const
+DbColumn const* DbTable::FindFirst(DbColumn::Kind kind) const
     {
     for (DbColumn const* column : m_orderedColumns)
         {
@@ -1389,6 +1479,146 @@ bool DbTable::IsNullTable() const
     return this == m_dbSchema.GetNullTable();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2017
+//---------------------------------------------------------------------------------------
+Utf8CP DbTable::GetSharedColumnNamePrefix(Type tableType)
+    {
+    switch (tableType)
+        {
+            case Type::Primary:
+                return "ps";
+
+            case Type::Joined:
+                return "js";
+
+            case Type::Overflow:
+                return "os";
+
+            default:
+                BeAssert(false && "Must not be called for this table type");
+                return nullptr;
+        }
+    }
+
+//****************************************************************************************
+//DbTable::LinkNode
+//****************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    05/2017
+//---------------------------------------------------------------------------------------
+DbTable::LinkNode::LinkNode(DbTable const& table, DbTable const* parent) : m_table(table)
+    {
+    if (parent != nullptr)
+        {
+        m_parent = &parent->GetLinkNode();
+        const_cast<LinkNode*>(m_parent)->m_children.push_back(this);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    05/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus DbTable::LinkNode::Validate() const
+    {
+    switch (GetType())
+        {
+            case Type::Primary:
+            {
+            if (m_parent != nullptr)
+                {
+                BeAssert(false && "Primary table must not have a parent table node");
+                return ERROR;
+                }
+
+            if (!m_children.empty())
+                {
+                Type type = m_children[0]->GetType();
+                for (size_t i = 1; i < m_children.size(); i++)
+                    {
+                    if (m_children[i]->GetType() != type)
+                        {
+                        BeAssert(false && "All sibling tables must be of the same type");
+                        return ERROR;
+                        }
+                    }
+                }
+            break;
+            }
+            case Type::Existing:
+            {
+            if (m_parent != nullptr || !m_children.empty())
+                {
+                BeAssert(false && "'Existing' table must neither have parent nor child table nodes");
+                return ERROR;
+                }
+
+            break;
+            }
+
+            case Type::Joined:
+            {
+            if (m_parent == nullptr || m_parent->GetType() != Type::Primary)
+                {
+                BeAssert(false && "Joined table must have a parent table and it must be of type 'Primary'");
+                return ERROR;
+                }
+
+            if (!m_children.empty())
+                {
+                if (m_children.size() > 1 || m_children[0]->GetType() != Type::Overflow)
+                    {
+                    BeAssert(false && "Joined table can only have a single child table at most and it must be an overflow table");
+                    return ERROR;
+                    }
+                }
+
+            break;
+            }
+
+            case Type::Overflow:
+            {
+            if (m_parent == nullptr)
+                {
+                BeAssert(false && "Overflow table must have a parent table");
+                return ERROR;
+                }
+
+            if (!m_children.empty())
+                {
+                BeAssert(false && "Overflow table must not have child tables");
+                return ERROR;
+                }
+
+            break;
+            }
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    if (m_table.GetPersistenceType() == PersistenceType::Virtual && (!m_children.empty() || m_parent != nullptr))
+        {
+        BeAssert(false && "Virtual table must neither have parent of child table nodes");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    05/2017
+//---------------------------------------------------------------------------------------
+DbTable::LinkNode const* DbTable::LinkNode::FindOverflowTable() const
+    {
+    BeAssert(GetType() != Type::Overflow);
+    if (m_children.empty())
+        return nullptr;
+
+    LinkNode const* nextNode = m_children[0];
+    return nextNode->GetType() == Type::Overflow ? nextNode : nullptr;
+    }
 
 //****************************************************************************************
 //DbTable::EditHandle

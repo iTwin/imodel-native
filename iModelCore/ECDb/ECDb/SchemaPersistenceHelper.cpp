@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <Formatting/FormattingApi.h>
+#include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 

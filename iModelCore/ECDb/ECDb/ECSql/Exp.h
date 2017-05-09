@@ -292,7 +292,7 @@ struct Exp : NonCopyableClass
     private:
         Type m_type;
         Exp* m_parent = nullptr;
-        mutable Exp::Collection m_children;
+        mutable Exp::Collection m_derivedTables;
         bool m_isComplete = false;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
@@ -306,18 +306,18 @@ struct Exp : NonCopyableClass
         void SetIsComplete() { m_isComplete = true; }
 
         template <typename TExp>
-        TExp const* GetChild(size_t index) const { return m_children.Get<TExp>(index); }
+        TExp const* GetChild(size_t index) const { return m_derivedTables.Get<TExp>(index); }
 
         template <typename TExp>
         TExp* GetChildP(size_t index) const
             {
-            Exp* child = m_children[index];
+            Exp* child = m_derivedTables[index];
             BeAssert(child == nullptr || dynamic_cast<TExp*> (child) != nullptr);
             return static_cast<TExp*> (child);
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
-        //Collection& GetChildrenR() const { return m_children; }
+        //Collection& GetChildrenR() const { return m_derivedTables; }
         void FindRecursive(std::vector<Exp const*>& expList, Type ofType) const;
         void FindInDirectDecendents(std::vector<Exp const*>& expList, Type ofType) const;
 
@@ -342,9 +342,9 @@ struct Exp : NonCopyableClass
         Type GetType() const { return m_type; }
         bool IsParameterExp() const { return GetType() == Type::Parameter; }
         Exp const* GetParent() const { return m_parent; }
-        Collection const& GetChildren() const { return m_children; }
-        Collection& GetChildrenR() { return m_children; }
-        size_t GetChildrenCount() const { return m_children.size(); }
+        Collection const& GetChildren() const { return m_derivedTables; }
+        Collection& GetChildrenR() { return m_derivedTables; }
+        size_t GetChildrenCount() const { return m_derivedTables.size(); }
 
         //! Converts this expression into an ECSQL snippet.
         //! The child expressions are considered in this conversion.

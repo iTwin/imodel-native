@@ -14,7 +14,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -355,7 +354,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
                              <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
                         <ShareColumns xmlns='ECDbMap.02.00'>
-                              <SharedColumnCount>100</SharedColumnCount>
+                              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>
                         </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="I" typeName="int" />
@@ -3863,7 +3862,7 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
@@ -4833,7 +4832,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
         "           <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "           </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
@@ -4850,11 +4849,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[sc2],[sc3],[sc4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
-#else
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[Id],ECClassId) VALUES (1.1,:_ecdb_sqlparam_ix1_col1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseId],ECClassId) VALUES (:_ecdb_sqlparam_ix1_col1,:_ecdb_sqlparam_ix1_col2,:_ecdb_sqlparam_ix1_col3,:_ecdb_sqlparam_id_col1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
-#endif
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[js2],[js3],[js4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
@@ -4884,7 +4879,7 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>5</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -5033,7 +5028,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -5292,7 +5287,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_TRUE(key.IsValid());
     model3dKeys.push_back(key);
     }
-
+    ecdb.SaveChanges();
     {
     //Select models via mixin
     ECSqlStatement stmt;
@@ -5357,19 +5352,38 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_EQ(2, rowCount) << stmt.GetECSql();
     }
 
-    //UPDATE Mixin
+    //UPDATE Mixin non-polymorphically (-> noop)
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    //UPDATE Mixin polymorphically
     {
     const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    //Updates against mixins don't work yet. Once fixed this line should be uncommented.
-    //ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    //DELETE Mixin non-polymorphically (-> noop)
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.IIsGeometricModel WHERE Is2d=False"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    //the ECSQL deletes 2 models which results in 4 rows deleted (2 in primary and 2 in joined table)
     ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
     stmt.Finalize();
     }
 
-    //DELETE Mixin
+    //DELETE Mixin polymorphically
     {
     const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;

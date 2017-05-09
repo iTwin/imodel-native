@@ -16,18 +16,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindNull()
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            const ECSqlStatus es = eh->BindNull();
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindNull(GetSqlParameterIndex());
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull");
@@ -44,18 +32,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBoolean(bool value)
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindBoolean(value);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindInt(GetSqlParameterIndex(), value ? 1 : 0);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBoolean");
@@ -72,18 +48,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBlob(const void* value, int binarySize, I
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindBlob(value, binarySize, makeCopy);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindBlob(GetSqlParameterIndex(), value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBlob");
@@ -100,18 +64,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindZeroBlob(int blobSize)
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindZeroBlob(blobSize);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindZeroBlob(GetSqlParameterIndex(), blobSize);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindZeroBlob");
@@ -150,18 +102,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info
         return ECSqlStatus::Error;
         }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            auto es = eh->BindDateTime(julianDay, metadata);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindDouble(GetSqlParameterIndex(), julianDay);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDateTime");
@@ -179,19 +119,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDouble(double value)
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindDouble(value);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
-
     const DbResult sqliteStat = GetSqliteStatement().BindDouble(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDouble");
@@ -207,19 +134,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt(int value)
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Integer);
     if (!stat.IsSuccess())
         return stat;
-
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindInt(value);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
 
     const DbResult sqliteStat = GetSqliteStatement().BindInt(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
@@ -237,18 +151,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt64(int64_t value)
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            const ECSqlStatus es = eh->BindInt64(value);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
@@ -265,18 +167,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
     if (!stat.IsSuccess())
         return stat;
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindText(value, makeCopy, byteCount);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");

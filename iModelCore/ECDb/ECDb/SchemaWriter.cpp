@@ -1373,12 +1373,21 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 
     if (classChange.GetClassModifier().IsValid())
         {
+        Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
         ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
+        if (oldValue == ECClassModifier::Abstract)
+            {
+            Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier from 'Abstract' to another value is not supported",
+                            oldClass.GetFullName());
+
+            return ERROR;
+            }
+
         if (newValue == ECClassModifier::Sealed)
             {
             if (!newClass.GetDerivedClasses().empty())
                 {
-                Issues().Report("ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Sealed only acceptable if class has no derived classes",
+                Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier to 'Sealed' is only valid if the class does not have derived classes.",
                                           oldClass.GetFullName());
 
                 return ERROR;
@@ -1386,7 +1395,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
             }
         else if (newValue == ECClassModifier::Abstract)
             {
-            Issues().Report("ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract is not supported",
+            Issues().Report("ECSchema Update failed. ECClass %s: Changing the ECClassModifier to 'Abstract' is not supported.",
                                       oldClass.GetFullName());
 
             return ERROR;
@@ -1567,7 +1576,6 @@ BentleyStatus SchemaWriter::UpdateProperties(ECPropertyChanges& propertyChanges,
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    
     if (!referenceChanges.IsValid())
         return SUCCESS;
 
@@ -1685,7 +1693,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceCh
 //+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT NULL FROM ec_RelationshipConstraintClass WHERE ClassId = ? LIMIT 1");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT NULL FROM ec_RelationshipConstraintClass WHERE ClassId=? LIMIT 1");
     if (stmt == nullptr)
         {
         BeAssert(false && "SQL_SCHEMA_CHANGED");
@@ -1693,8 +1701,9 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) c
         }
 
     stmt->BindId(1, deletedClass.GetId());
-    return stmt->Step() == BE_SQLITE_ROW;
+    return BE_SQLITE_ROW == stmt->Step();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1757,7 +1766,7 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
             return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id=?");
     stmt->BindId(1, deletedClass.GetId());
     if (stmt->Step() != BE_SQLITE_DONE)
         {
@@ -1796,16 +1805,17 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
     {
+    Utf8String ecsql("DELETE FROM ");
+    ecsql.append(deletedClass.GetECSqlName());
     ECSqlStatement stmt;
-    ECCrudWriteToken const* writeToken = m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
-    if (stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s", deletedClass.GetECSqlName().c_str()).GetUtf8CP(), writeToken) != ECSqlStatus::Success)
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken()))
         {
         Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
 
-    if (stmt.Step() != BE_SQLITE_DONE)
+    if (BE_SQLITE_DONE != stmt.Step())
         {
         Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -1821,9 +1831,13 @@ BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
 BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type)
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=?");
-    stmt->BindId(1, id);
-    stmt->BindInt(2, Enum::ToInt(type));
-    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    if (stmt == nullptr ||
+        BE_SQLITE_OK != stmt->BindId(1, id) ||
+        BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(type)) ||
+        BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1831,41 +1845,21 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersi
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
+    ECClassCR ecClass = deletedProperty.GetClass();
+
     if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_importOptions != SchemaManager::SchemaImportOptions::Poisoning)
         {
-        Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECProperty '%s.%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
-                                  deletedProperty.GetClass().GetSchema().GetFullSchemaName().c_str(), deletedProperty.GetClass().GetName().c_str(), deletedProperty.GetName().c_str());
+        Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECProperty '%s.%s' means a major schema change, but the schema's MajorVersion is not incremented. Bump up the major version and try again.",
+                        ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
         return ERROR;
         }
 
-    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(deletedProperty.GetClass());
+    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
     if (classMap == nullptr)
         {
         BeAssert(false && "Failed to find classMap");
         return ERROR;
         }
-
-    auto setPropertyToNull = [&] ()
-        {
-        ECSqlStatement setToNullStmt;
-        const Utf8CP msg = "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null";
-        ECCrudWriteToken const* writeToken = m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
-        if (setToNullStmt.Prepare(m_ecdb, SqlPrintfString("UPDATE %s SET [%s] = ?", classMap->GetClass().GetECSqlName().c_str(), deletedProperty.GetName().c_str()).GetUtf8CP(), writeToken) != ECSqlStatus::Success)
-            {
-            Issues().Report(msg, deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
-            return ERROR;
-            }
-
-        setToNullStmt.BindNull(1);
-        if (setToNullStmt.Step() != BE_SQLITE_DONE)
-            {
-            Issues().Report(msg, deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
-            return ERROR;
-            }
-
-        return SUCCESS;
-        };
-
 
     bool sharedColumnFound = false;
     for (Partition const& partition : classMap->GetStorageDescription().GetHorizontalPartitions())
@@ -1879,23 +1873,23 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
         ClassMapCP partitionRootClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*rootClass);
         if (partitionRootClassMap == nullptr)
             {
-            BeAssert(false && "Failed to find classMap");
+            BeAssert(false && "Failed to find class map");
             return ERROR;
             }
 
         PropertyMap const* propertyMap = partitionRootClassMap->GetPropertyMaps().Find(deletedProperty.GetName().c_str());
         if (propertyMap == nullptr)
             {
-            BeAssert(false && "Failed to find propertymap");
+            BeAssert(false && "Failed to find property map");
             return ERROR;
             }
 
-        //Reject overriden property
+        //Reject overridden property
         if (propertyMap->GetProperty().GetBaseProperty() != nullptr)
             {
             //Fail we do not want to delete a sql column right now
-            Issues().Report("ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported as its overriden",
-                                      deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+            Issues().Report("ECSchema Update failed. ECClass %s: Deleting an overridden ECProperty '%s' from an ECClass is not supported.",
+                                      ecClass.GetFullName(), deletedProperty.GetName().c_str());
             return ERROR;
             }
 
@@ -1915,21 +1909,22 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
                 }
 
             //For virtual column delete column from ec_Column.
-            if (column->GetPersistenceType() == PersistenceType::Virtual)
+            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetPersistenceType() == PersistenceType::Virtual)
                 {
-                CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id = ?");
-                stmt->BindId(1, column->GetId());
-                if (stmt->Step() != BE_SQLITE_DONE)
+                CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id=?");
+                if (stmt == nullptr ||
+                    BE_SQLITE_OK != stmt->BindId(1, column->GetId()) ||
+                    BE_SQLITE_DONE != stmt->Step())
                     {
-                    BeAssert(false && "Failed to delete DbColumn");
+                    BeAssert(false && "Failed to delete row from ec_Column");
                     return ERROR;
                     }
                 }
             else
                 {
                 //Fail we do not want to delete a sql column right now
-                Issues().Report("ECSchema Update failed. ECClass %s: Deleting ECProperty '%s' from an ECClass is not supported as it is not mapped to a shared column.",
-                                          deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+                Issues().Report("ECSchema Update failed. ECClass %s: Deleting ECProperty '%s' from an ECClass which is not mapped to a shared column is not supported.",
+                                ecClass.GetFullName(), deletedProperty.GetName().c_str());
                 return ERROR;
                 }
             }
@@ -1937,14 +1932,22 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
     
     if (sharedColumnFound)
         {
-        if (setPropertyToNull() != SUCCESS)
+        Utf8String ecsql;
+        ecsql.Sprintf("UPDATE %s SET [%s]=NULL", ecClass.GetECSqlName().c_str(), deletedProperty.GetName().c_str());
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken()) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            Issues().Report("ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null", ecClass.GetFullName(), deletedProperty.GetName().c_str());
             return ERROR;
+            }
         }
 
     //Delete ECProperty entry make sure ec_Column is already deleted or set to null
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Property WHERE ec_Property.Id = ?");
-    stmt->BindId(1, deletedProperty.GetId());
-    if (stmt->Step() != BE_SQLITE_DONE)
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Property WHERE Id=?");
+    if (stmt == nullptr ||
+        BE_SQLITE_OK != stmt->BindId(1, deletedProperty.GetId()) ||
+        BE_SQLITE_DONE != stmt->Step())
         {
         BeAssert(false && "Failed to delete ecproperty");
         return ERROR;

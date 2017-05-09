@@ -40,12 +40,11 @@ struct ClassMapColumnFactory final : NonCopyableClass
         //Find list of columns with access string that cannot be used by current classmap
         struct UsedColumnFinder final
             {
-            typedef std::map<Utf8String, DbColumn const*> ColumnMap;
             private:
                 std::set<ClassMap const*> m_deepestClassMapped;//Set of deepest classmap in traversed hierarchy.
                 std::set<ECN::ECEntityClassCP> m_mixins; //Set of identitifed mixin during traversing class hierarchy
                 std::set<ECN::ECClassCP> m_primaryHierarchy; //Set of classes that is part of pirmary hierarchy that is already traversed.
-                std::set<RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
+                std::map<ECN::ECClassId,RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
                 std::map<ECN::ECEntityClassCP, ClassMap const*> m_mixinImpls; // Final list of mixIn classes implementation
                 std::set<DbTable const*> m_contextMapTableSet; //fast cache for context class tables
                 ClassMap const& m_classMap; //Context Class for which to find used columns
@@ -58,20 +57,39 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 ClassMap const* ResolveMixin(ECN::ECClassCR);
                 void ResolveBaseMixin(ECN::ECClassCR currentClass);
                 BentleyStatus TraverseClassHierarchy(ECN::ECClassCR, ClassMap const*);
-                BentleyStatus FindRelationshipEndTableMaps();
-                BentleyStatus Execute(ColumnMap&);
-                BentleyStatus QueryRelevantMixIns();
+                BentleyStatus FindRelationshipEndTableMaps(ECN::ECClassId classId);
+                BentleyStatus Execute(bmap<Utf8String, DbColumn const*>&);
+                BentleyStatus QueryRelevantMixins();
             public:
-                static BentleyStatus Find(ColumnMap&, ClassMap const&);
+                static BentleyStatus Find(bmap<Utf8String, DbColumn const*>&, ClassMap const&);
             };
 
+        struct ColumnReservationInfo final
+            {
+            private:
+                int m_createdColumnCount = 0;
+                int m_reusedColumnCount = 0;
+                DbTable* m_overflowTable = nullptr;
+            public:
+                ColumnReservationInfo(int reusedColumn, int createdColumns) : m_createdColumnCount(createdColumns), m_reusedColumnCount(reusedColumn) {}
+                explicit ColumnReservationInfo(DbTable& overflowTable) : m_overflowTable(&overflowTable) {}
+                ~ColumnReservationInfo() {}
+
+                DbTable* GetOverflowTable() const { return m_overflowTable; }
+                void AllocateNew() { BeAssert(m_createdColumnCount > 0);  m_createdColumnCount--; }
+                void AllocateExisting() { BeAssert(m_reusedColumnCount > 0); m_reusedColumnCount--; }
+
+                static int MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
+            };
 
         ClassMap const& m_classMap;
+        bool m_usesSharedColumnStrategy = false;
+        Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
         mutable std::set<DbColumn const*> m_usedColumnSet;
-        bool m_usesSharedColumnStrategy;
         mutable std::vector<ClassMap const*> m_compoundFilter;
-                
+        mutable std::unique_ptr<ColumnReservationInfo> m_columnReservationInfo;
+
         void Initialize() const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
@@ -90,16 +108,24 @@ struct ClassMapColumnFactory final : NonCopyableClass
         void RemoveCompoundFilter() const;
 
         DbTable& GetTable() const;
+        DbTable* GetOverflowTable() const;
         ECDbCR GetECDb() const;
 
+        //! This method determine how many available columns is present in current table.
+        //! It presume current table GetTable() is either JoinedTable or PrimaryTable.
+        BentleyStatus TryGetAvailableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const;
+
     public:
-        explicit ClassMapColumnFactory(ClassMap const& classMap);
+        explicit ClassMapColumnFactory(ClassMap const&);
+
         //This function either creates a column or grabs an existing column
+        bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
+        BentleyStatus BeginSharedColumnBlock(Utf8CP propertyName, bset<ClassMap const*> const* additionalFilter=nullptr, int requiredColumn=0) const;
+        BentleyStatus EndSharedColumnBlock() const;
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
+
         void Debug() const;
-        //! Estimate Maximum number of columns required.
-        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
     };
 
 
