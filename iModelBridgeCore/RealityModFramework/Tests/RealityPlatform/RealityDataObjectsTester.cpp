@@ -10,6 +10,7 @@
 
 
 #include <Bentley/BeTest.h>
+#include <Bentley/BeTextFile.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
@@ -23,7 +24,18 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 class RealityDataObjectTestFixture : public testing::Test
     {
     public:
-    
+            WCharCP GetDirectory()
+            {
+            WChar exePath[MAX_PATH];
+            GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+            WString exeDir = exePath;
+            size_t pos = exeDir.find_last_of(L"/\\");
+            exeDir = exeDir.substr(0, pos + 1);
+
+            BeFileName testPath(exeDir);
+            return testPath;
+            }
     };
 
 //-------------------------------------------------------------------------------------
@@ -119,6 +131,10 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
     EXPECT_TRUE(myRange.low.y == 45.8);
     EXPECT_TRUE(myRange.high.y == 46.8);
 
+    EXPECT_STREQ(mySpatialEntity->GetFootprintString().c_str(), "{\\\"points\\\":[[12.500000,45.800000],[12.500000,46.800000],[13.500000,46.800000],[13.500000,45.800000],[12.500000,45.800000]], \\\"coordinate_system\\\":\\\"4326\\\"}");
+
+    mySpatialEntity->SetFootprintString("{\\\"points\\\":[0,0],[1,0],[1,1],[0,1],[0,0]], \\\"coordinate_system\\\":\\\"4326\\\"}");
+    EXPECT_STREQ(mySpatialEntity->GetFootprintString().c_str(),"{\\\"points\\\":[0,0],[1,0],[1,1],[0,1],[0,0]], \\\"coordinate_system\\\":\\\"4326\\\"}");
 
     EXPECT_TRUE(mySpatialEntity->GetDataSourceCount() == 0);
 
@@ -149,6 +165,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataBasicTest)
 
     ASSERT_TRUE(mySpatialEntityMetadata->IsEmpty());
 
+    EXPECT_STREQ(mySpatialEntityMetadata->GetId().c_str(), "");
     EXPECT_STREQ(mySpatialEntityMetadata->GetProvenance().c_str(), "");
     EXPECT_STREQ(mySpatialEntityMetadata->GetLineage().c_str(), "");
     EXPECT_STREQ(mySpatialEntityMetadata->GetDescription().c_str(), "");
@@ -158,6 +175,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataBasicTest)
     EXPECT_STREQ(mySpatialEntityMetadata->GetKeywords().c_str(), "");
     EXPECT_STREQ(mySpatialEntityMetadata->GetFormat().c_str(), "");
     EXPECT_STREQ(mySpatialEntityMetadata->GetMetadataUrl().c_str(), "");
+    EXPECT_STREQ(mySpatialEntityMetadata->GetDisplayStyle().c_str(), "");
 
     // Set
     ASSERT_TRUE(mySpatialEntityMetadata->IsEmpty());
@@ -189,7 +207,90 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataBasicTest)
     mySpatialEntityMetadata->SetMetadataUrl("http:\\\\somewhere.com\\metadata.xml");
     EXPECT_STREQ(mySpatialEntityMetadata->GetMetadataUrl().c_str(), "http:\\\\somewhere.com\\metadata.xml");
 
+    mySpatialEntityMetadata->SetId("MyID");
+    EXPECT_STREQ(mySpatialEntityMetadata->GetId().c_str(), "MyID");
+    
+    mySpatialEntityMetadata->SetDisplayStyle("MyDisplayStyle");
+    EXPECT_STREQ(mySpatialEntityMetadata->GetDisplayStyle().c_str(), "MyDisplayStyle");
+    }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                       Remi.Charbonneau                            05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataCreateFromMetadataCR)
+    {
+    SpatialEntityMetadataPtr mySpatialEntityMetadata = SpatialEntityMetadata::Create();
+    mySpatialEntityMetadata->SetProvenance("ProvenanceText");
+    mySpatialEntityMetadata->SetLineage("LineageText");
+    mySpatialEntityMetadata->SetDescription("DescriptionText");
+    mySpatialEntityMetadata->SetContactInfo("ContactInfoText");
+    mySpatialEntityMetadata->SetLegal("LegalText");
+    mySpatialEntityMetadata->SetTermsOfUse("TermsOfUseText");
+    mySpatialEntityMetadata->SetKeywords("Keyword1;Keyword2;Keyword3");
+    mySpatialEntityMetadata->SetFormat("FGDC");
+    mySpatialEntityMetadata->SetMetadataUrl("http:\\\\somewhere.com\\metadata.xml");
+    mySpatialEntityMetadata->SetId("MyID");
+    mySpatialEntityMetadata->SetDisplayStyle("MyDisplayStyle");
+
+    SpatialEntityMetadataPtr secondSpatialEntityMetadata = SpatialEntityMetadata::CreateFromMetadata(*mySpatialEntityMetadata);
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetProvenance().c_str(), "ProvenanceText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetLineage().c_str(), "LineageText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetDescription().c_str(), "DescriptionText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetContactInfo().c_str(), "ContactInfoText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetLegal().c_str(), "LegalText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetTermsOfUse().c_str(), "TermsOfUseText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetKeywords().c_str(), "Keyword1;Keyword2;Keyword3");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetFormat().c_str(), "FGDC");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetMetadataUrl().c_str(), "http:\\\\somewhere.com\\metadata.xml");
+    //ID is the only value not copied from the seed
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetId().c_str(), "");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetDisplayStyle().c_str(), "MyDisplayStyle");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                       Remi.Charbonneau                            05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataCreateFromFile)
+    {
+    SpatialEntityMetadataPtr mySpatialEntityMetadata = SpatialEntityMetadata::Create();
+    mySpatialEntityMetadata->SetProvenance("ProvenanceText");
+    mySpatialEntityMetadata->SetLineage("LineageText");
+    mySpatialEntityMetadata->SetDescription("DescriptionText");
+    mySpatialEntityMetadata->SetContactInfo("ContactInfoText");
+    mySpatialEntityMetadata->SetLegal("LegalText");
+    mySpatialEntityMetadata->SetTermsOfUse("TermsOfUseText");
+    mySpatialEntityMetadata->SetKeywords("Keyword1;Keyword2;Keyword3");
+    mySpatialEntityMetadata->SetFormat("FGDC");
+    mySpatialEntityMetadata->SetMetadataUrl("http:\\\\somewhere.com\\metadata.xml");
+    mySpatialEntityMetadata->SetId("MyID");
+    mySpatialEntityMetadata->SetDisplayStyle("MyDisplayStyle");
+
+    // Create XML Files
+    WString fileName(GetDirectory());
+    fileName.append(L"xmlTestfile.xml");
+    BeFileStatus status;
+    BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+    tempFile->PutLine(L"<xml><root><entitee /></root></xml>",false);
+    tempFile->Close();
+
+    Utf8String fileName2(fileName);
+
+    SpatialEntityMetadataPtr secondSpatialEntityMetadata = SpatialEntityMetadata::CreateFromFile(fileName2.c_str(), *mySpatialEntityMetadata);
+
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetProvenance().c_str(), "xmlTestfile.xml");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetLineage().c_str(), "LineageText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetDescription().c_str(), "DescriptionText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetContactInfo().c_str(), "ContactInfoText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetLegal().c_str(), "LegalText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetTermsOfUse().c_str(), "TermsOfUseText");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetKeywords().c_str(), "Keyword1;Keyword2;Keyword3");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetFormat().c_str(), "xml");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetMetadataUrl().c_str(), "http:\\\\somewhere.com\\metadata.xml");
+    //ID is the only value not copied from the seed
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetId().c_str(), "");
+    EXPECT_STREQ(secondSpatialEntityMetadata->GetDisplayStyle().c_str(), "MyDisplayStyle");
+
+    BeFileName::BeDeleteFile(fileName.c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -308,6 +409,12 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerBasicTest)
     EXPECT_TRUE(!mySpatialEntityServer->IsStreamed());
     EXPECT_STREQ(mySpatialEntityServer->GetLoginKey().c_str(), "");
     EXPECT_STREQ(mySpatialEntityServer->GetLoginMethod().c_str(), "");
+    EXPECT_STREQ(mySpatialEntityServer->GetRegistrationPage().c_str(), "");
+    EXPECT_STREQ(mySpatialEntityServer->GetOrganisationPage().c_str(), "");
+    EXPECT_TRUE(mySpatialEntityServer->GetMeanReachabilityStats() == 0);
+    EXPECT_STREQ(mySpatialEntityServer->GetFees().c_str(), "");
+    EXPECT_STREQ(mySpatialEntityServer->GetAccessConstraints().c_str(), "");
+
 
     // Set tests
     mySpatialEntityServer->SetProtocol("http");
@@ -328,8 +435,8 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerBasicTest)
     mySpatialEntityServer->SetLegal("Copyright of OneWMS Server 2016: Data can be accessed freely. See details as http:\\\\wms.server.com\\copyright.html");
     EXPECT_STREQ(mySpatialEntityServer->GetLegal().c_str(), "Copyright of OneWMS Server 2016: Data can be accessed freely. See details as http:\\\\wms.server.com\\copyright.html");
 
-    mySpatialEntityServer->SetOnline(true);
-    EXPECT_TRUE(mySpatialEntityServer->IsOnline());
+    mySpatialEntityServer->SetOnline(false);
+    EXPECT_FALSE(mySpatialEntityServer->IsOnline());
 
     mySpatialEntityServer->SetLastCheck(DateTime(2017,02,17));
     EXPECT_TRUE(mySpatialEntityServer->GetLastCheck() == DateTime(2017,02,17));
@@ -351,8 +458,59 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerBasicTest)
 
     mySpatialEntityServer->SetLoginMethod("CUSTOM");
     EXPECT_STREQ(mySpatialEntityServer->GetLoginMethod().c_str(), "CUSTOM");
+
+    mySpatialEntityServer->SetRegistrationPage("http:\\\\wwww.example.com");
+    EXPECT_STREQ(mySpatialEntityServer->GetRegistrationPage().c_str(), "http:\\\\wwww.example.com");
+
+    mySpatialEntityServer->SetOrganisationPage("http:\\\\wwww.example.com/organisation.html");
+    EXPECT_STREQ(mySpatialEntityServer->GetOrganisationPage().c_str(), "http:\\\\wwww.example.com/organisation.html");
+
+    mySpatialEntityServer->SetFees("somefees");
+    EXPECT_STREQ(mySpatialEntityServer->GetFees().c_str(), "somefees");
+
+    mySpatialEntityServer->SetAccessConstraints("constraints");
+    EXPECT_STREQ(mySpatialEntityServer->GetAccessConstraints().c_str(), "constraints");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityServerCreateFromURLAndName)
+    {
+
+    SpatialEntityServerPtr mySpatialEntityServer = SpatialEntityServer::Create("http://www.example.com/myurl.html", "MyServerName");
+
+    ASSERT_TRUE(mySpatialEntityServer.IsValid());
+    ASSERT_TRUE(!mySpatialEntityServer.IsNull());
+
+    ASSERT_STREQ(mySpatialEntityServer->GetUrl().c_str(), "http://www.example.com/myurl.html");
+    ASSERT_STREQ(mySpatialEntityServer->GetName().c_str(), "MyServerName");
+    ASSERT_TRUE(mySpatialEntityServer->IsOnline());
+    ASSERT_FALSE(mySpatialEntityServer->IsStreamed());
+    ASSERT_STREQ(mySpatialEntityServer->GetProtocol().c_str() , "http");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityServerCreateFromURLOnly)
+    {
+    auto date = DateTime::GetCurrentTimeUtc();
+    SpatialEntityServerPtr mySpatialEntityServer = SpatialEntityServer::Create("http://www.example.com");
+
+    ASSERT_TRUE(mySpatialEntityServer.IsValid());
+    ASSERT_TRUE(!mySpatialEntityServer.IsNull());
+
+    ASSERT_STREQ(mySpatialEntityServer->GetUrl().c_str(), "http://www.example.com");
+    ASSERT_STREQ(mySpatialEntityServer->GetName().c_str(), "www.example.com");
+    ASSERT_TRUE(mySpatialEntityServer->IsOnline());
+    ASSERT_FALSE(mySpatialEntityServer->IsStreamed());
+    ASSERT_STREQ(mySpatialEntityServer->GetProtocol().c_str(), "http");
+    ASSERT_TRUE(DateTime::Compare(mySpatialEntityServer->GetLastCheck(), date) == DateTime::CompareResult::LaterThan ||
+        DateTime::Compare(mySpatialEntityServer->GetLastCheck(), date) == DateTime::CompareResult::Equals);
+    ASSERT_TRUE(DateTime::Compare(mySpatialEntityServer->GetLastTimeOnline(), date) == DateTime::CompareResult::LaterThan ||
+        DateTime::Compare(mySpatialEntityServer->GetLastTimeOnline(), date) == DateTime::CompareResult::Equals);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
@@ -506,7 +664,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(myRealityData->IsListable());
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
 
-    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetUltimateId().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetUltimateSite().c_str(), "");
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "");
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
@@ -560,6 +720,12 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(myRange.high.y == 46.8);
 
 
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 12.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 45.800000000}]}");
+
+    myRealityData->SetFootprintString("{\"Coordinates\": [{\"Long\": 0.00000000, \"Lat\": 0.00000000},{\"Long\": 1.000000000, \"Lat\": 0.000000000},{\"Long\": 1.000000000, \"Lat\": 1.00000000},{\"Long\": 0.00000000, \"Lat\": 1.000000000},{\"Long\": 0.000000000, \"Lat\": 0.00000000}]}");
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 0.00000000, \"Lat\": 0.00000000},{\"Long\": 1.000000000, \"Lat\": 0.000000000},{\"Long\": 1.000000000, \"Lat\": 1.00000000},{\"Long\": 0.00000000, \"Lat\": 1.000000000},{\"Long\": 0.000000000, \"Lat\": 0.00000000}]}");
+
+
 
     myRealityData->SetEnterpriseId("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf"); 
     EXPECT_STREQ(myRealityData->GetEnterpriseId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
@@ -578,9 +744,14 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
 
-    myRealityData->SetMetadataURL("http:\\www.bidon.com\\AgoodURL.html"); 
-    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
+    myRealityData->SetMetadataUrl("http:\\www.bidon.com\\AgoodURL.html"); 
+    EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
+    myRealityData->SetUltimateId("uId");
+    EXPECT_STREQ(myRealityData->GetUltimateId().c_str(), "uId");
+
+    myRealityData->SetUltimateSite("http:\\www.bidon.com\\AgoodURL.html");
+    EXPECT_STREQ(myRealityData->GetUltimateSite().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
     myRealityData->SetCopyright("Owned by Pinocchio"); 
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "Owned by Pinocchio");
@@ -588,11 +759,43 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetTermsOfUse("Use with permisison of Tinkerbell"); 
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "Use with permisison of Tinkerbell");
 
-    // myRealityData->SetModifiedTimestamp(DateTime::GetCurrentTime()); 
-    // EXPECT_TRUE(!myRealityData->GetModifiedTimestamp().IsValid()); // Time not set should be invalid
+    myRealityData->SetModifiedDateTime(DateTime(2017, 02, 27));
+    EXPECT_TRUE(myRealityData->GetModifiedDateTime().IsValid());
+    EXPECT_TRUE(myRealityData->GetModifiedDateTime() == DateTime(2017, 02, 27));
 
     myRealityData->SetGroup("MyGroup1"); 
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "MyGroup1");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataCustomCreate)
+    {
+    bvector<GeoPoint2d> myFootprint;
+    myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
+    myFootprint.push_back(GeoPoint2d::From(12.5, 46.8));
+    myFootprint.push_back(GeoPoint2d::From(13.5, 46.8));
+    myFootprint.push_back(GeoPoint2d::From(13.5, 45.8));
+    myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
+
+    RealityDataPtr myRealityData = RealityData::Create("Identifier", DateTime(2017, 05, 8), "13.4x15.4", myFootprint, "MyName", "4578");
+    EXPECT_STREQ(myRealityData->GetIdentifier().c_str(), "Identifier");
+    EXPECT_TRUE(myRealityData->GetCreationDateTime() == DateTime(2017, 05, 8));
+    EXPECT_STREQ(myRealityData->GetResolution().c_str(), "13.4x15.4");
+    EXPECT_NEAR(myRealityData->GetResolutionValue(), 14.36, 0.01);
+
+    DRange2d myRange = myRealityData->GetFootprintExtent();
+    EXPECT_TRUE(myRange.low.x == 12.5);
+    EXPECT_TRUE(myRange.high.x == 13.5);
+    EXPECT_TRUE(myRange.low.y == 45.8);
+    EXPECT_TRUE(myRange.high.y == 46.8);
+
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 12.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 45.800000000}]}");
+
+    EXPECT_STREQ(myRealityData->GetName().c_str(), "MyName");
+
+    // Coordinate system is unused and we can't test it's value after being set in the constructor.
     }
 
 //-------------------------------------------------------------------------------------
@@ -647,7 +850,21 @@ TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
     }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         02/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipGetSet)
+    {
+    RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create();
+    ASSERT_STREQ(myRelationShip->GetProjectId().c_str(), "");
+    ASSERT_STREQ(myRelationShip->GetRealityDataId().c_str(), "");
 
+    myRelationShip->SetProjectId("73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    ASSERT_STREQ(myRelationShip->GetProjectId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+
+    myRelationShip->SetRealityDataId("8411d048-78ec-495a-b263-cad44dba7a17");
+    ASSERT_STREQ(myRelationShip->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
@@ -709,10 +926,88 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/");
     EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file");
     EXPECT_STREQ(myDocument->GetRealityDataId().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_STREQ(myDocument->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx");
     EXPECT_STREQ(myDocument->GetContentType().c_str(), "3mx");
     EXPECT_TRUE(myDocument->GetSize() == 1399);
 
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetStringId)
+    {
+    RealityDataDocumentPtr myDocument = RealityDataDocument::Create();
+    myDocument->SetId("MyID");
+    EXPECT_STREQ(myDocument->GetId().c_str(), "MyID");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetIdFromFolderName)
+    {
+    RealityDataDocumentPtr myDocument = RealityDataDocument::Create();
+    myDocument->SetId("43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene", "Production_Helsinki_3MX_ok.3mx");
+    EXPECT_STREQ(myDocument->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene~2FProduction_Helsinki_3MX_ok.3mx");
+    EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene");
+    EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetIdFromDataFolder)
+{
+    Utf8CP jsonString = "{"
+                          "\"instances\": [" 
+                            "{"
+                            "\"instanceId\": \"14812\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataDocument\","
+                            "\"properties\" : {"
+                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
+                                  "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx\","
+                                  "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
+                                  "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"ContentType\" : \"3mx\","
+                                  "\"Size\" : \"1399\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "},"
+                            "{"
+                            "\"instanceId\": \"14813\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataDocument\","
+                            "\"properties\" : {"
+                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"Name\" : \"Marseille.3mx\","
+                                  "\"Id\" : \"TBD\","
+                                  "\"FolderId\" : \"\","
+                                  "\"AccessUrl\" : \"?????\","
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"ContentType\" : \"3mx\","
+                                  "\"Size\" : \"\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "}"
+                       " ]"
+                     " }";
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+    const Json::Value instance = root["instances"][0];
+
+    RealityDataFolderPtr datafolder = RealityDataFolder::Create(instance);
+    RealityDataDocumentPtr myDocument = RealityDataDocument::Create();
+    myDocument->SetId("43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene", "Production_Helsinki_3MX_ok.3mx");
+    EXPECT_STREQ(myDocument->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene~2FProduction_Helsinki_3MX_ok.3mx");
+    EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene");
+    EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
@@ -754,4 +1049,84 @@ TEST_F(RealityDataObjectTestFixture, RealityDataFolderBasicTest)
     EXPECT_STREQ(myFolder->GetParentId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/");
     EXPECT_STREQ(myFolder->GetRealityDataId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10");
 
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromString)
+    {
+
+    Utf8CP jsonString = "{"
+        "\"instances\": ["
+        "{"
+        "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
+        "\"schemaName\": \"S3MX\","
+        "\"className\": \"Folder\","
+        "\"properties\": {"
+        "\"Name\": \"Scene\","
+        "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
+        "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
+        "},"
+        "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
+        "}"
+        "]"
+        "}";
+
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+
+    // Instances must be a root node.
+    ASSERT_TRUE(root.isMember("instances"));
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    ASSERT_TRUE(instance.isMember("properties"));
+
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
+    
+    myFolder->SetId("43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(myFolder->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromFolderIdAndName)
+    {
+
+    Utf8CP jsonString = "{"
+        "\"instances\": ["
+        "{"
+        "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
+        "\"schemaName\": \"S3MX\","
+        "\"className\": \"Folder\","
+        "\"properties\": {"
+        "\"Name\": \"Scene\","
+        "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
+        "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
+        "},"
+        "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
+        "}"
+        "]"
+        "}";
+
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+
+    // Instances must be a root node.
+    ASSERT_TRUE(root.isMember("instances"));
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    ASSERT_TRUE(instance.isMember("properties"));
+
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
+
+    myFolder->SetId("43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(myFolder->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
     }

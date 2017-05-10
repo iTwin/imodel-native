@@ -31,7 +31,7 @@ StatusInt RealityConversionTools::JsonToObjectBase(Utf8CP data, Json::Value& jso
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Donald.Morissette                       3/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB)
+StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject)
     {
     Json::Value root(Json::objectValue);
     if(JsonToObjectBase(data, root) == ERROR)
@@ -44,11 +44,17 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pN
 
     const Json::Value properties = instance["properties"];
 
-    if (pNbRealityData != nullptr && properties.isMember("NumberOfRealityData") && !properties["NumberOfRealityData"].isNull())
-        *pNbRealityData = properties["NumberOfRealityData"].asInt64();
+    if (properties.isMember("NumberOfRealityData") && !properties["NumberOfRealityData"].isNull())
+        statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
 
-    if (pTotalSizeKB != nullptr && properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
-        *pTotalSizeKB = properties["TotalSize"].asInt64();
+    if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
+        statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
+
+    if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
+        statObject.SetUltimateId(properties["UltimateId"].asString().c_str());
+
+    if (properties.isMember("UltimateSite") && !properties["UltimateSite"].isNull())
+        statObject.SetUltimateSite(properties["UltimateSite"].asString().c_str());
 
     return SUCCESS;
     }
@@ -278,9 +284,17 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
         data->SetThumbnailDocument(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
 
-    // MetadataURL
-    if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
-        data->SetMetadataURL(Utf8CP(properties["MetadataURL"].asString().c_str()));
+    // MetadataUrl
+    if (properties.isMember("MetadataUrl") && !properties["MetadataUrl"].isNull())
+        data->SetMetadataUrl(Utf8CP(properties["MetadataUrl"].asString().c_str()));
+
+    // UltimateId
+    if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
+        data->SetUltimateId(Utf8CP(properties["UltimateId"].asString().c_str()));
+
+    // UltimateSite
+    if (properties.isMember("UltimateSite") && !properties["UltimateSite"].isNull())
+        data->SetUltimateSite(Utf8CP(properties["UltimateSite"].asString().c_str()));
 
     // Copyright
     if (properties.isMember("Copyright") && !properties["Copyright"].isNull())
@@ -391,8 +405,14 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeUnsetProps || (realityData.GetThumbnailDocument().size() != 0))
         properties.push_back(RealityDataField::ThumbnailDocument);
 
-    if (includeUnsetProps || (realityData.GetMetadataURL().size() != 0))
-        properties.push_back(RealityDataField::MetadataURL);
+    if (includeUnsetProps || (realityData.GetMetadataUrl().size() != 0))
+        properties.push_back(RealityDataField::MetadataUrl);
+
+    if (includeUnsetProps || (realityData.GetUltimateId().size() != 0))
+        properties.push_back(RealityDataField::UltimateId);
+
+    if (includeUnsetProps || (realityData.GetUltimateSite().size() != 0))
+        properties.push_back(RealityDataField::UltimateSite);
 
     if (includeUnsetProps || (realityData.GetCopyright().size() != 0))
         properties.push_back(RealityDataField::Copyright);
@@ -503,9 +523,19 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append(realityData.GetThumbnailDocument());
             propertyString.append("\"");
             break;
-        case RealityDataField::MetadataURL:
-            propertyString.append("\"MetadataURL\" : \"");
-            propertyString.append(realityData.GetMetadataURL());
+        case RealityDataField::MetadataUrl:
+            propertyString.append("\"MetadataUrl\" : \"");
+            propertyString.append(realityData.GetMetadataUrl());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::UltimateId:
+            propertyString.append("\"UltimateId\" : \"");
+            propertyString.append(realityData.GetUltimateId());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::UltimateSite:
+            propertyString.append("\"UltimateSite\" : \"");
+            propertyString.append(realityData.GetUltimateSite());
             propertyString.append("\"");
             break;
         case RealityDataField::Copyright:

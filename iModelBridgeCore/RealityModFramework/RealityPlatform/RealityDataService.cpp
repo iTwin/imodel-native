@@ -697,8 +697,8 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::ThumbnailDocument:
         order.append("ThumbnailDocument");
         break;
-    case RealityDataField::MetadataURL:
-        order.append("MetadataURL");
+    case RealityDataField::MetadataUrl:
+        order.append("MetadataUrl");
         break;
     case RealityDataField::Copyright:
         order.append("Copyright");
@@ -1276,7 +1276,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Streamed, "Streamed");
     m.Insert(RealityDataField::Footprint, "Footprint");
     m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
-    m.Insert(RealityDataField::MetadataURL, "MetadataURL");
+    m.Insert(RealityDataField::MetadataUrl, "MetadataUrl");
     m.Insert(RealityDataField::Copyright, "Copyright");
     m.Insert(RealityDataField::TermsOfUse, "TermsOfUse");
     m.Insert(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
@@ -2003,7 +2003,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RawServerResponse& rawResponse)
+void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2016,7 +2016,7 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
     if (rawResponse.status != RequestStatus::OK)
         s_errorCallback("RealityDataEnterpriseStatRequest failed with response", rawResponse);
 
-    RealityConversionTools::JsonToEnterpriseStat(rawResponse.body.c_str(), pNbRealityData, pTotalSizeKB);
+    RealityConversionTools::JsonToEnterpriseStat(rawResponse.body.c_str(), statObject);
     }
     
 //=====================================================================================

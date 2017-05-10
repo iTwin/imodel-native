@@ -95,7 +95,7 @@ RealityDataServicePerformanceTests::RealityDataServicePerformanceTests()
     m_newRealityData->SetThumbnailDocument("Thumnail.jpg");
     m_newRealityData->SetRootDocument("root.test");
     m_newRealityData->SetListable(true);
-    m_newRealityData->SetMetadataURL("metadata.xml");
+    m_newRealityData->SetMetadataUrl("metadata.xml");
 //    m_newRealityData->SetCopyright("belongs to every one");
 //    m_newRealityData->SetTermsOfUse("use wisely");
     m_newRealityData->SetGroup("TestGroup-185a9dbe-d9ed-4c87-9289-57beb3c94a1a");
@@ -675,7 +675,7 @@ StatusInt RealityDataServicePerformanceTests::DownloadTest(timeStats& theTimeSta
 StatusInt RealityDataServicePerformanceTests::UpdateTest(timeStats& theTimeStats)
     {
     // Modify the reality data
-    m_newRealityData->SetMetadataURL("");
+    m_newRealityData->SetMetadataUrl("");
     m_newRealityData->SetGroup("TestGroup-1");
     m_newRealityData->SetDescription("No text anymore");
 
@@ -1072,8 +1072,7 @@ StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest(timeStats& theT
     {
     RawServerResponse response;
     RealityDataEnterpriseStatRequest ptt("");
-    uint64_t NbRealityData;
-    uint64_t TotalSizeKB;
+    RealityDataEnterpriseStat stat;
 
     int64_t startTime;
     int64_t endTime;
@@ -1082,7 +1081,7 @@ StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest(timeStats& theT
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(ptt, &NbRealityData, &TotalSizeKB, response);
+    RealityDataService::Request(ptt, stat, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
