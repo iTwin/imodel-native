@@ -460,6 +460,9 @@ public:
     //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() const {return !m_reversedTxn.empty();}
 
+    //! Returns true if there are uncommitted OR committed changes.
+    bool HasLocalChanges() const {return HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid();}
+
     //! Reverse (undo) the most recent operation(s).
     //! @param[in] numOperations the number of operations to reverse. If this is greater than 1, the entire set of operations will
     //! be reinstated together when/if ReinstateTxn is called.

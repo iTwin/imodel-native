@@ -739,7 +739,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
     RevisionStatus status = RevisionStatus::Success;
     UndoChangeSet indirectChanges;
-    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
+    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local data changes
         {
         /*
          * We propagate changes (run dependency rules) ONLY if there are local changes.

@@ -1333,7 +1333,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
-    if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
+    if (txnMgr.HasLocalChanges())
         {
         BeAssert(false && "Cannot reverse revisions if there are local changes.");
         return RevisionStatus::HasLocalChanges;

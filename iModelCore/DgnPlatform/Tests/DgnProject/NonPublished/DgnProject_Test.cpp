@@ -615,6 +615,10 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
     ASSERT_TRUE(schema.IsValid());
 
+    // Flush any local changes before importing schemas
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
+
     ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
 
     ASSERT_TRUE(m_db->TableExists("sdde_ArchStoreyWithElements"));
@@ -992,6 +996,10 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ECN::ECSchemaPtr schema = nullptr;
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
+
+    // Flush any local changes before importing schemas
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
 
     ASSERT_EQ(BE_SQLITE_OK, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());

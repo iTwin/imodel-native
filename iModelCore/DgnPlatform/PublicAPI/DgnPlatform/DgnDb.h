@@ -235,13 +235,15 @@ public:
     //! file system. It is not legal to open a DgnDb over a network share.
     //! @param[in] openParams Parameters for opening the database file
     //! @return a reference counted pointer to the opened DgnDb. Its IsValid() method will be false if the open failed for any reason.
-    //! @note If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
+    //! @remarks
+    //! <ul>
+    //! <li> If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
-    //! @note A DgnDb can have an expiration date. See Db::IsExpired
-    //! @note The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
+    //! <li> A DgnDb can have an expiration date. See Db::IsExpired
+    //! <li> The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
     //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
     //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to upgrade (or import) the schemas in the DgnDb. 
-    //! This is done by opening the DgnDb by setting the option to enable schema import (@see DgnDb::OpenParams). 
+    //! This is done by opening the DgnDb with setting the option request upgrade of domain schemas (@see DgnDb::OpenParams). 
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
     //! ----------------------------------------------------------------------------------------------
@@ -259,6 +261,9 @@ public:
     //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
     //! ----------------------------------------------------------------------------------------------
     //! </pre>
+    //! <li> If the domain schemas are setup to be upgraded, any previously committed local changes that haven't been pushed up to the server 
+    //! will cause an error. These need to be flushed out by creating a revision. See @RevisionManager. 
+    //! </ul>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
@@ -288,9 +293,14 @@ public:
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 
-    //! @remarks Only used for cases where the schemas are NOT paired with a domain.
-    //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
-    //! import. If an error happens during the import, the new transaction is abandoned in the call. 
+    //! @remarks 
+    //! <ul>
+    //! <li> Only used for cases where the schemas are NOT paired with a domain.
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
+    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by creating 
+    //! a revision. See @RevisionManager. 
+    //! </ul>
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
     //! Inserts a new non-Navigation ECRelationship. 
@@ -406,7 +416,17 @@ public:
     //! @private
     BeSQLite::EC::SchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
 
-    //! @private internal use only (v8 importer)
+    //! @private internal use only (V8 converter)
+    //! Imports v8 EC Schemas into the DgnDb
+    //! @param[in] schemas Schemas to be imported. 
+    //! @remarks 
+    //! <ul>
+    //! <li> Only used by the V8 converter for V8 legacy schemas
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
+    //! <li> It's recommended that there aren't any local changes (committed or uncommitted) before this call. These 
+    //! can be flushed out by creating a revision. See @RevisionManager. 
+    //! </ul>
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
     //! Utility method to get the next id in a sequence
