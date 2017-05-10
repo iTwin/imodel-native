@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Node style override rule implementation. This rule is used to override default node style.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StyleOverride : public CustomizationRule
+struct EXPORT_VTABLE_ATTRIBUTE StyleOverride : public CustomizationRule
     {
     private:
         Utf8String m_foreColor;
