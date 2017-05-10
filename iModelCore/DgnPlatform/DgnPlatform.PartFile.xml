@@ -63,8 +63,7 @@
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
-        <SubPart PartName="nodejs-Winx86"       PartFile="nodejs"       Repository="Thirdparty-nodejs" />
-        <SubPart PartName="nodejs-Macx64"       PartFile="nodejs"       Repository="Thirdparty-nodejs" />
+        <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
 
         <!--
