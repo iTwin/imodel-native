@@ -960,22 +960,29 @@ TEST(Vu,CreateDelauneySkew)
 
 TEST(Vu,CreateDelauneyCircle)
     {
-    auto ellipse0 = DEllipse3d::From (0,0,0,    10,0,0,  0,10,0,   0, Angle::TwoPi ());
-    // put points on a circle. This is inherently bad for delauney !!!
-    for (size_t numPoints : bvector<size_t> { 5,7,11,16,32})
+    double r = 10.0;
+    auto ellipse0 = DEllipse3d::From (0,0,0,    r,0,0,  0,r,0,   0, Angle::TwoPi ());
+    double delta = 10.0 * r;
+
+    // put points on a circle or ellipse.   (The circle. This is inherently bad for delauney !!!)
+    for (double eccentricity : bvector<double> {0.0, 0.001, 0.010, 0.10, 1.0})
         {
-        bvector<DPoint3d> points;
-        AddPoints (points, ellipse0, numPoints);
-        auto range = DRange3d::From (points);
-        double delta = 3.0 * range.XLength () + 5.0;
-        SaveAndRestoreCheckTransform shifter (delta,0,0);
-        Check::SaveTransformed (points);
-        Check::Shift (0,delta,0);
-        PolyfaceHeaderPtr delauney, voronoi;
-        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+        SaveAndRestoreCheckTransform shifter (0.0, 2.5 * delta,0);
+        for (size_t numPoints : bvector<size_t> { 5,7,11,16,32})
             {
-            Check::SaveTransformed (*delauney);
-            Check::SaveTransformed (*voronoi);
+            auto ellipse = ellipse0;
+            ellipse.vector90.Scale (1.0 + eccentricity);
+            bvector<DPoint3d> points;
+            AddPoints (points, ellipse, numPoints);
+            auto range = DRange3d::From (points);
+            SaveAndRestoreCheckTransform shifter (delta,0,0);
+            Check::SaveTransformedMarkers (points, 0.2);
+            PolyfaceHeaderPtr delauney, voronoi;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+                {
+                Check::SaveTransformed (*delauney);
+                Check::SaveTransformed (*voronoi);
+                }
             }
         }
     Check::ClearGeometry ("Vu.CreateDelauneyCircle");
