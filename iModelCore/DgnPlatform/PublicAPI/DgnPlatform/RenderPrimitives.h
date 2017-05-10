@@ -393,6 +393,8 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db);
+
 
 };
 
@@ -788,7 +790,6 @@ struct MeshArgs : TriMeshArgs
         }
 
     void Clear();
-    void Transform(TransformCR);
     bool Init(MeshCR mesh, Render::System const& system, DgnDbR db);
 };
 
@@ -829,14 +830,13 @@ struct PolylineArgs : IndexedPolylineArgs
 
     void Reset();
     bool Init(MeshCR mesh);
-    void Transform(TransformCR tf);
 };
 
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     04/2017
+// @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderVisibleMeshEdgesArg : VisibleMeshEdgesArg
+struct RenderVisibleMeshEdgesArgs : VisibleMeshEdgesArgs
 {
     bvector<uint32_t>               m_colorTable;
 
@@ -845,14 +845,24 @@ struct RenderVisibleMeshEdgesArg : VisibleMeshEdgesArg
 
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     04/2017
+// @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderInvisibleMeshEdgesArg : InvisibleMeshEdgesArg
+struct RenderInvisibleMeshEdgesArgs : InvisibleMeshEdgesArgs
 {
     bool Init(MeshCR mesh);
 };
 
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct GetMeshGraphicsArgs
+{
+    PolylineArgs                    m_polylineArgs;
+    MeshArgs                        m_meshArgs;
+    RenderVisibleMeshEdgesArgs      m_visibleEdgesArgs;
+    RenderInvisibleMeshEdgesArgs    m_invisibleEdgesArgs;
+};
 
 //=======================================================================================
 //! Implements GraphicBuilder to accumulate high-level graphics primitives into a list

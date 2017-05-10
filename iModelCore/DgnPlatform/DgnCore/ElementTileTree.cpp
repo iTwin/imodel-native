@@ -884,58 +884,11 @@ BentleyStatus Loader::_LoadTile()
             tile.SetIsLeaf();
         }
 
-    PolylineArgs polylineArgs;
-    MeshArgs meshArgs;
-    bvector<Render::GraphicPtr> graphics;
-    auto& geometryMeshes = geometry.Meshes();
-    for (auto const& mesh : geometryMeshes)
-        {
-        bool haveMesh = !mesh->Triangles().empty();
-        bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-        if (!haveMesh && !havePolyline)
-            continue;
+    GetMeshGraphicsArgs             args;
+    bvector<Render::GraphicPtr>     graphics;
 
-        Render::GraphicPtr thisGraphic;
-        static bool s_doEdges = false;      // TBD - Hook up to view setting...
-
-        if (haveMesh)
-            {
-            if (s_doEdges)
-                {
-                RenderVisibleMeshEdgesArg     visibleMeshEdgesArgs;
-                RenderInvisibleMeshEdgesArg   invisibleMeshEdgesArgs;
-
-                if (visibleMeshEdgesArgs.Init(*mesh))
-                    {
-                    auto    visibleEdgeGraphic = system._CreateVisibleEdges(visibleMeshEdgesArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
-                    
-                    if (visibleEdgeGraphic.IsValid()) 
-                        graphics.push_back(visibleEdgeGraphic);
-                    }
-                if (invisibleMeshEdgesArgs.Init(*mesh))
-                    {
-                    auto    invisibleEdgeGraphic = system._CreateInvisibleEdges(invisibleMeshEdgesArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
-                    
-                    if (invisibleEdgeGraphic.IsValid()) 
-                        graphics.push_back(invisibleEdgeGraphic);
-                    }
-                }
-            else
-                {
-                if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
-                    thisGraphic = system._CreateTriMesh(meshArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
-                }
-            }
-        else
-            {
-            BeAssert(havePolyline);
-            if (polylineArgs.Init(*mesh))
-                thisGraphic = system._CreateIndexedPolylines(polylineArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
-            }
-
-        if (thisGraphic.IsValid())
-            graphics.push_back(thisGraphic);
-        }
+    for (auto const& mesh : geometry.Meshes())
+        mesh->GetGraphics (graphics, system, args, root.GetDgnDb());
 
     if (!graphics.empty())
         {
@@ -968,7 +921,7 @@ BentleyStatus Loader::_LoadTile()
             }
 
         if (graphic.IsValid())
-            tile.SetGraphic(*system._CreateBatch(*graphic, std::move(geometryMeshes.m_features)));
+            tile.SetGraphic(*system._CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
         }
 
     tile.SetIsReady();

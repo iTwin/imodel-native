@@ -461,16 +461,18 @@ void Mesh::InitEdges() const
         {
         bool        m_visible;
         uint32_t    m_faceCount;
+        uint32_t    m_edgeIndices[2];
         uint32_t    m_faceIndices[2];
 
         EdgeInfo () { }
-        EdgeInfo(bool visible, uint32_t faceIndex) : m_visible(0), m_faceCount(1) { m_faceIndices[0] = faceIndex; }
+        EdgeInfo(bool visible, uint32_t faceIndex, uint32_t edgeIndex0, uint32_t edgeIndex1) : m_visible(visible), m_faceCount(1) { m_faceIndices[0] = faceIndex; m_edgeIndices[0] = edgeIndex0; m_edgeIndices[1] = edgeIndex1; }
 
-        void AddFace(bool invisible, uint32_t faceIndex)
+        void AddFace(bool visible, uint32_t faceIndex)
             {
+            BeAssert (visible == m_visible);
             if (m_faceCount < 2)
                 {
-                m_visible |= !invisible;
+                m_visible |= visible;
                 m_faceIndices[m_faceCount++] = faceIndex;
                 }
             else
@@ -489,9 +491,9 @@ void Mesh::InitEdges() const
         auto const&   triangle = m_triangles.at(triangleIndex);
         for (size_t j=0; j<3; j++)
             {
-            MeshEdge        edgeIndices(pointMap.GetIndex(m_points.at(triangle.m_indices[j])), 
-                                        pointMap.GetIndex(m_points.at(triangle.m_indices[(j+1)%3])));
-            EdgeInfo        edgeInfo(triangleIndex, triangle.GetEdgeVisible(j));
+            EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
+            MeshEdge        edgeIndices(pointMap.GetIndex(m_points.at(edgeInfo.m_edgeIndices[0])),
+                                        pointMap.GetIndex(m_points.at(edgeInfo.m_edgeIndices[1])));
 
             auto            insertPair = edgeMap.Insert(edgeIndices, edgeInfo);
 
@@ -500,16 +502,53 @@ void Mesh::InitEdges() const
             }
 
         triangleNormals.push_back(toFPoint3d(Mesh::GetTriangleNormal(triangle)));
-
         }
     
 
     for (auto& edge : edgeMap)
         {
+        MeshEdge        thisEdge(edge.second.m_edgeIndices[0], edge.second.m_edgeIndices[1]);
+
         if (edge.second.m_visible || edge.second.m_faceCount < 2)       // Always make sheet edges visible...Is this OK?
-            m_visibleEdges.push_back(edge.first);
+            m_visibleEdges.push_back(thisEdge);
         else
-            m_invisibleEdges.push_back(InvisibleEdge(edge.first, triangleNormals.at(edge.second.m_faceIndices[0]), triangleNormals.at(edge.second.m_faceIndices[1])));
+            m_invisibleEdges.push_back(InvisibleEdge(thisEdge, triangleNormals.at(edge.second.m_faceIndices[0]), triangleNormals.at(edge.second.m_faceIndices[1])));
+        }
+    }
+
+     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db)
+    {
+    bool haveMesh = !Triangles().empty();
+    bool havePolyline = !haveMesh && !Polylines().empty();
+
+    if (!haveMesh && !havePolyline)
+        return;                                                                   
+
+    Render::GraphicPtr thisGraphic;
+
+    if (haveMesh)
+        {
+        if (args.m_meshArgs.Init(*this, system, db) &&
+            (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            graphics.push_back (thisGraphic);
+
+        if (args.m_visibleEdgesArgs.Init(*this) &&
+            (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            graphics.push_back(thisGraphic);
+
+        if (args.m_invisibleEdgesArgs.Init(*this) &&
+            (thisGraphic = system._CreateInvisibleEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            graphics.push_back(thisGraphic);
+        }
+    else
+        {
+        if (args.m_polylineArgs.Init(*this) &&
+            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            graphics.push_back(thisGraphic);
         }
     }
 
@@ -1459,61 +1498,15 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
+* @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance) const
     {
-    MeshArgs        meshArgs;
-    PolylineArgs    polylineArgs;
+    MeshList                meshes = ToMeshes(options, tolerance);
+    GetMeshGraphicsArgs     args;
 
-    MeshList meshes = ToMeshes(options, tolerance);
     for (auto const& mesh : meshes)
-        {
-        bool haveMesh = !mesh->Triangles().empty();
-        bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-        if (!haveMesh && !havePolyline)
-            continue;
-
-        Render::GraphicPtr graphic;
-        if (havePolyline)
-            {
-            if (polylineArgs.Init(*mesh))
-                graphic = system._CreateIndexedPolylines(polylineArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
-            }
-        else
-            {
-            static bool s_doEdges = false;      // WIP.
-
-            if (s_doEdges)  
-                {
-                RenderVisibleMeshEdgesArg     visibleMeshEdgesArgs;
-                RenderInvisibleMeshEdgesArg   invisibleMeshEdgesArgs;
-
-                if (visibleMeshEdgesArgs.Init(*mesh))
-                    {
-                    auto    visibleEdgeGraphic = system._CreateVisibleEdges(visibleMeshEdgesArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
-                    
-                    if (visibleEdgeGraphic.IsValid()) 
-                        graphics.push_back(visibleEdgeGraphic);
-                    }
-                if (invisibleMeshEdgesArgs.Init(*mesh))
-                    {
-                    auto    invisibleEdgeGraphic = system._CreateInvisibleEdges(invisibleMeshEdgesArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
-                    
-                    if (invisibleEdgeGraphic.IsValid()) 
-                        graphics.push_back(invisibleEdgeGraphic);
-                    }
-                }
-            else
-                {
-                if (meshArgs.Init(*mesh, system, m_dgndb))
-                   graphic = system._CreateTriMesh(meshArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
-                }
-            }
-
-        if (graphic.IsValid())
-            graphics.push_back(graphic);
-        }
+        mesh->GetGraphics (graphics, system, args, m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1749,38 +1742,11 @@ void MeshArgs::Clear()
     m_features.Reset();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeshArgs::Transform(TransformCR tf)
-    {
-    for (int32_t i = 0; i < m_numPoints; i++)
-        {
-        FPoint3d& fpt = const_cast<FPoint3d&>(m_points[i]);
-        DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-        tf.Multiply(dpt);
-        fpt.x = dpt.x;
-        fpt.y = dpt.y;
-        fpt.z = dpt.z;
-
-        if (nullptr != m_normals)
-            {
-            FPoint3d& fnm = const_cast<FPoint3d&>(m_normals[i]);
-            dpt = DPoint3d::FromXYZ(fnm.x, fnm.y, fnm.z);
-            tf.MultiplyMatrixOnly(dpt);
-            fnm.x = dpt.x;
-            fnm.y = dpt.y;
-            fnm.z = dpt.z;
-            }
-        }
-    }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderVisibleMeshEdgesArg::Init(MeshCR mesh)
+bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
     {
     if (mesh.VisibleEdges().empty())
         return false;
@@ -1799,7 +1765,7 @@ bool  RenderVisibleMeshEdgesArg::Init(MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderInvisibleMeshEdgesArg::Init(MeshCR mesh)
+bool  RenderInvisibleMeshEdgesArgs::Init(MeshCR mesh)
     {
     return false;       // WIP.
     }
@@ -1849,22 +1815,6 @@ bool PolylineArgs::Init(MeshCR mesh)
         }
 
     return IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PolylineArgs::Transform(TransformCR tf)
-    {
-    for (uint32_t i = 0; i < m_numPoints; i++)
-        {
-        FPoint3d fpt = m_points[i];
-        DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-        tf.Multiply(dpt);
-        fpt.x = dpt.x;
-        fpt.y = dpt.y;
-        fpt.z = dpt.z;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
