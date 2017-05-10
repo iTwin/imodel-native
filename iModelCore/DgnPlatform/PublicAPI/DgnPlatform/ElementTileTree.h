@@ -154,8 +154,15 @@ struct Tile : TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
 private:
+    struct DebugGraphics
+    {
+        Render::GraphicPtr  m_graphic;
+        Root::DebugOptions  m_options = Root::DebugOptions::None;
+    };
+
     double                      m_tolerance;
     mutable ElementAlignedBox3d m_contentRange;
+    mutable DebugGraphics       m_debugGraphics;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
     void InitTolerance();
@@ -170,7 +177,7 @@ private:
     Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
-    Render::GraphicPtr GetDebugGraphics() const;
+    Render::GraphicPtr GetDebugGraphics(Root::DebugOptions options) const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }

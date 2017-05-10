@@ -1184,21 +1184,21 @@ Root::DebugOptions Root::GetDebugOptions() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr Tile::GetDebugGraphics() const
+GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     {
     if (!_HasGraphics())
         return nullptr;
+    else if (m_debugGraphics.m_options == options)
+        return m_debugGraphics.m_graphic;
 
-    using DebugOptions = Root::DebugOptions;
+    m_debugGraphics.m_options = options;
 
-    auto const& root = GetElementRoot();
-    bool wantRange = DebugOptions::None != (DebugOptions::ShowBoundingVolume & root.GetDebugOptions());
-    bool wantContentRange = DebugOptions::None != (DebugOptions::ShowContentVolume & root.GetDebugOptions());
+    bool wantRange = Root::DebugOptions::None != (Root::DebugOptions::ShowBoundingVolume & options);
+    bool wantContentRange = Root::DebugOptions::None != (Root::DebugOptions::ShowContentVolume & options);
     if (!wantRange && !wantContentRange)
-        return nullptr;
+        return (m_debugGraphics.m_graphic = nullptr);
 
-    // ###TODO: It is expensive to regenerate this for every tile every frame...cache the Graphic and invalidate it when debug options change.
-    GraphicBuilderPtr gf = root.GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)
@@ -1220,7 +1220,8 @@ GraphicPtr Tile::GetDebugGraphics() const
         gf->AddRangeBox(_GetContentRange());
         }
 
-    return gf->Finish();
+    m_debugGraphics.m_graphic = gf->Finish();
+    return m_debugGraphics.m_graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1229,7 +1230,7 @@ GraphicPtr Tile::GetDebugGraphics() const
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     T_Super::_DrawGraphics(args);
-    auto debugGraphic = GetDebugGraphics();
+    auto debugGraphic = GetDebugGraphics(GetElementRoot().GetDebugOptions());
     if (debugGraphic.IsValid())
         args.m_graphics.Add(*debugGraphic);
     }
