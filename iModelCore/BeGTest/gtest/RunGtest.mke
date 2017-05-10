@@ -2,7 +2,7 @@
 #
 #     $Source: gtest/RunGtest.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -38,6 +38,14 @@ always:
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
+
+%ifdef BENTLEY_NO_RUN_GTEST
+    always:
+        >$(LogDir)test.log
+        tests were not run
+        <
+        ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+%endif
 
 %if defined (winNT) 
     
