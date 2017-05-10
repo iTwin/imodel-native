@@ -676,12 +676,12 @@ static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const&
 static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
     {
     DbDupValue codeSpecId = GetValueFromChangeOrDb(columnIter, "CodeSpec.Id", stage);
-    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope", stage);
+    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
     DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
 
     DgnCode code;
     if (codeSpecId.IsValid() && scope.IsValid() && value.IsValid())
-        code.From(codeSpecId.GetValueId<CodeSpecId>(), value.GetValueText(), scope.GetValueText());
+        code.From(codeSpecId.GetValueId<CodeSpecId>(), scope.GetValueId<DgnElementId>(), value.GetValueText());
 
     return code;
     }

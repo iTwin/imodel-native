@@ -179,26 +179,23 @@ struct ModelIterator;
 struct DgnCode
 {
 private:
-    CodeSpecId m_codeSpecId;
+    CodeSpecId m_specId;
+    DgnElementId m_scopeElementId;
     Utf8String m_value;
-    Utf8String m_scope;
 
 public:
-    //! Constructs an invalid code
+    //! Constructs an invalid DgnCode
     DgnCode() {}
 
-    //! Constructor
-    DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope) : m_codeSpecId(codeSpecId), m_value(value), m_scope(scope) {}
-
-    //! Construct a code with the specified Id as its scope
-    DGNPLATFORM_EXPORT DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, BeInt64Id scopeId);
+    //! Construct a DgnCode from the specified parameters
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scopeElementId(scopeElementId), m_value(value) {};
 
     //! Determine whether this DgnCode is valid.
-    bool IsValid() const {return m_codeSpecId.IsValid();}
+    bool IsValid() const {return m_specId.IsValid();}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
-    bool IsEmpty() const {return m_codeSpecId.IsValid() && m_value.empty();}
+    bool IsEmpty() const {return m_specId.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
-    bool operator==(DgnCode const& other) const {return m_codeSpecId==other.m_codeSpecId && m_value==other.m_value && m_scope==other.m_scope;}
+    bool operator==(DgnCode const& other) const {return m_specId==other.m_specId && m_value==other.m_value && m_scopeElementId==other.m_scopeElementId;}
     //! Determine if two DgnCodes are not equivalent
     bool operator!=(DgnCode const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
@@ -206,15 +203,17 @@ public:
 
     //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
+    //! Get the value for this DgnCode
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
     //! Get the scope for this DgnCode
-    Utf8StringCR GetScope() const {return m_scope;}
+    DgnElementId GetScopeElementId() const {return m_scopeElementId;}
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
-    CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
+    CodeSpecId GetCodeSpecId() const {return m_specId;}
     void RelocateToDestinationDb(DgnImportContext&);
 
     //! Re-initialize to the specified values.
-    void From(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope);
+    //! @private
+    void From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
@@ -230,8 +229,8 @@ public:
     public:
         CodeSpecId GetCodeSpecId() const {return m_statement->GetValueId<CodeSpecId>(0);}
         Utf8CP GetValue() const {return m_statement->GetValueText(1);}
-        Utf8CP GetScope() const {return m_statement->GetValueText(2);}
-        DgnCode GetCode() const {return DgnCode(GetCodeSpecId(), GetValue(), GetScope());}
+        DgnElementId GetScopeElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
+        DgnCode GetCode() const {return DgnCode(GetCodeSpecId(), GetScopeElementId(), GetValue());}
     };
 
     struct Iterator : ECSqlStatementIterator<Entry>

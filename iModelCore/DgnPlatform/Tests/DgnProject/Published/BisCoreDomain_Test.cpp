@@ -44,7 +44,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedColumnNames.push_back("ECClassId");
         expectedColumnNames.push_back("FederationGuid");
         expectedColumnNames.push_back("CodeSpecId");
-        expectedColumnNames.push_back("CodeScope");
+        expectedColumnNames.push_back("CodeScopeId");
         expectedColumnNames.push_back("CodeValue");
         expectedColumnNames.push_back("ModelId");
         expectedColumnNames.push_back("ParentId");
@@ -80,11 +80,12 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[FederationGuid] BLOB UNIQUE,"));
         ASSERT_TRUE(ddl.Contains("[CodeSpecId] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[CodeScope] TEXT NOT NULL COLLATE NOCASE,"));
+        ASSERT_TRUE(ddl.Contains("[CodeScopeId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[CodeValue] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
         ASSERT_FALSE(ddl.Contains("PRIMARY KEY([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CodeSpecId]) REFERENCES [" BIS_TABLE(BIS_CLASS_CodeSpec) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CodeScopeId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])")); // Element API does the "cascade delete"
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
@@ -135,7 +136,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeSpecId], [CodeScope], [CodeValue])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeSpecId], [CodeScopeId], [CodeValue])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {

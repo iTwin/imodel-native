@@ -646,6 +646,11 @@ DgnCloneContext::DgnCloneContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
+    // Pre-populate the remap table with "fixed" element IDs
+    AddElementId(source.Elements().GetRootSubjectId(), dest.Elements().GetRootSubjectId());
+    AddElementId(source.Elements().GetDictionaryPartitionId(), dest.Elements().GetDictionaryPartitionId());
+    AddElementId(source.Elements().GetRealityDataSourcesPartitionId(), dest.Elements().GetRealityDataSourcesPartitionId());
+
     ComputeGcsAdjustment();
     }
 

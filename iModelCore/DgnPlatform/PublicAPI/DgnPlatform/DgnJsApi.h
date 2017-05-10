@@ -297,13 +297,13 @@ struct JsDgnCode : RefCountedBaseWithCreate
     bool IsValid() const {return m_code.IsValid();}
 
     Utf8String GetValue() const {return m_code.GetValue();}
-    Utf8String GetScope() const {return m_code.GetScope();}
+    JsDgnObjectIdP GetScope() const {return new JsDgnObjectId(m_code.GetScopeElementId().GetValueUnchecked());}
     JsDgnObjectIdP GetCodeSpecId() {return new JsDgnObjectId(m_code.GetCodeSpecId().GetValueUnchecked());}
 
     static JsDgnCode* FromJson(JsDgnDbP, Utf8StringCR json);
 
     STUB_OUT_SET_METHOD(Value,Utf8String)
-    STUB_OUT_SET_METHOD(Scope,Utf8String)
+    STUB_OUT_SET_METHOD(Scope,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(CodeSpecId,JsDgnObjectIdP)
 };
 

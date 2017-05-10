@@ -99,7 +99,7 @@
         <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="JSON string containing scope and fragment specifications to generate and validate code values"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="CodeSpecSpecifiesCode" strength="referencing" modifier="Sealed">
         <!-- @see Element.CodeSpec ECNavigationProperty -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
@@ -107,10 +107,26 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="determines codes for" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="specified code for" polymorphic="true">
             <Class class="CodeSpec"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="code is determined by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="code is specified by" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ElementScopesCode" strength="referencing" modifier="Sealed">
+        <!-- @see Element.CodeScope ECNavigationProperty -->
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <!-- Creates the CodeScopeId foreign key column in the bis_Element table -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyConstraint>
+        </ECCustomAttributes>
+        <Source multiplicity="(1..1)" roleLabel="scopes code for" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="code is scoped by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
@@ -371,7 +387,7 @@
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>CodeSpec.Id</string>
-                            <string>CodeScope</string>
+                            <string>CodeScope.Id</string>
                             <string>CodeValue</string>
                         </Properties>
                     </DbIndex>
@@ -409,7 +425,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="CodeSpec" displayLabel="Code Specification" relationshipName="CodeSpecDeterminesElementCode" direction="Backward" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope, and the Code value must be unique.">
+        <ECNavigationProperty propertyName="CodeSpec" displayLabel="Code Specification" relationshipName="CodeSpecSpecifiesCode" direction="Backward" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope Element, and the Code value must be unique.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -417,18 +433,14 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="CodeScope" typeName="string" displayLabel="Code Scope" description="Code Scope identifies the element/name that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique.">
+        <ECNavigationProperty propertyName="CodeScope" displayLabel="Code Scope" relationshipName="ElementScopesCode" direction="Backward"  description="Code Scope identifies the element that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique.">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
             </ECCustomAttributes>
-        </ECProperty>
+        </ECNavigationProperty>
         <ECProperty propertyName="CodeValue" typeName="string" displayLabel="Code" description="Code is the formal name (business key) for an element. The combination of Code Specification, Code Scope, and the Code value must be unique.">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">

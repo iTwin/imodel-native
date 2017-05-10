@@ -160,7 +160,7 @@ TEST_F(MaterialTest, ParentChildClone)
 
     // Importing a child imports its parent. Importing a parent does not import its children.
     DgnImportContext importer(GetDgnDb(), *db2);
-    DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, db2->GetDictionaryModel(), importer);
+    DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, dictionary2, importer);
     ASSERT_TRUE(clonedGrandchild.IsValid());
 
     ExpectParent(dictionary2, "GrandchildA", "ChildA");

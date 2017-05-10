@@ -106,7 +106,7 @@ DgnCode TestCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpec
 
     Utf8String codeValue(sequenceMask);
     codeValue.ReplaceAll("*", sequenceNumberString.c_str());
-    return DgnCode(codeSpec.GetCodeSpecId(), codeValue, codeSpec.GetScopeElementId(element));
+    return DgnCode(codeSpec.GetCodeSpecId(), codeSpec.GetScopeElementId(element), codeValue);
     }
 
 //---------------------------------------------------------------------------------------

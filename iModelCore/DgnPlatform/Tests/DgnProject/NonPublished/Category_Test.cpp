@@ -52,7 +52,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetScope(), other.GetCode().GetScope());
+            EXPECT_EQ(subcat->GetCode().GetScopeElementId(), other.GetCode().GetScopeElementId());
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }

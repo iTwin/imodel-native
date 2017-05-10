@@ -335,6 +335,7 @@ DgnElementId CodeSpec::GetScopeElementId(DgnElementCR element) const
         case CodeScopeSpec::Type::ParentElement:    
             return element.GetParentId();                     
 
+        case CodeScopeSpec::Type::RelatedElement: // WIP: evaulate relationship
         default:
             BeAssert(false);                                            
             return DgnElementId();
@@ -403,7 +404,7 @@ DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value)
 DgnCode CodeSpec::CreateCode(Utf8StringCR value) const
     {
     BeAssert(IsRepositoryScope());
-    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), value, GetDgnDb().Elements().GetRootSubjectId()) : DgnCode();
+    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), GetDgnDb().Elements().GetRootSubjectId(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,8 +414,7 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8Str
     {
     CodeSpecCPtr codeSpec = scopeModel.GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid() && codeSpec->IsModelScope());
-    DgnElementCPtr scopeElement = scopeModel.GetModeledElement();
-    return codeSpec.IsValid() && scopeElement.IsValid() ? codeSpec->CreateCode(*scopeElement, value) : DgnCode();
+    return codeSpec.IsValid() ? codeSpec->CreateCode(scopeModel, value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,7 +433,7 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
 DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
     {
     BeAssert(scopeModel.GetModelId().IsValid() && IsModelScope());
-    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), value, scopeModel.GetModelId()) : DgnCode();
+    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeModel.GetModeledElementId(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,7 +442,7 @@ DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
     {
     BeAssert(scopeElement.GetElementId().IsValid());
-    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), value, scopeElement.GetElementId()) : DgnCode();
+    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,27 +450,17 @@ DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty()
     {
-    return DgnCode(CodeSpec::GetNullCodeSpecId(), "", "");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode::DgnCode(CodeSpecId id, Utf8StringCR value, BeInt64Id scopeId) : m_codeSpecId(id), m_value(value)
-    {
-    Utf8Char buf[0x11] = { 0 };
-    BeStringUtilities::FormatUInt64(buf, _countof(buf), scopeId.GetValue(), HexFormatOptions());
-    m_scope.assign(buf);
+    return DgnCode(CodeSpec::GetNullCodeSpecId(), DgnElementId((uint64_t)1LL), ""); // codeScope=RootSubject, codeValue=null
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::From(CodeSpecId id, Utf8StringCR value, Utf8StringCR scope)
+void DgnCode::From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
     {
-    m_codeSpecId = id;
+    m_specId = specId;
+    m_scopeElementId = scopeElementId;
     m_value = value;
-    m_scope = scope;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,11 +471,10 @@ bool DgnCode::operator<(DgnCode const& rhs) const
     if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
         return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();
 
-    int cmp = GetValue().CompareTo(rhs.GetValue());
-    if (0 != cmp)
-        return cmp < 0;
+    if (GetScopeElementId().GetValueUnchecked() != rhs.GetScopeElementId().GetValueUnchecked())
+        return GetScopeElementId().GetValueUnchecked() < rhs.GetScopeElementId().GetValueUnchecked();
 
-    return GetScope().CompareTo(rhs.GetScope()) < 0;
+    return GetValue().CompareTo(rhs.GetValue()) < 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,11 +486,8 @@ DgnDbStatus CodeSpec::ValidateCode(DgnElementCR element) const
     if (!code.IsValid())
         return DgnDbStatus::InvalidName;
 
-    if (IsModelScope() || IsParentElementScope())
-        {
-        if (code.GetValue().empty() || code.GetScope().empty())
-            return DgnDbStatus::InvalidName;
-        }
+    if (!IsRepositoryScope() && code.GetValue().empty())
+        return DgnDbStatus::InvalidName;
 
     BeAssert(code.GetCodeSpecId() == GetCodeSpecId());
     if (code.GetCodeSpecId() != GetCodeSpecId())
@@ -515,7 +501,7 @@ DgnDbStatus CodeSpec::ValidateCode(DgnElementCR element) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP DgnCode::Iterator::Options::GetECSql() const
     {
-#define SELECT_CODE_COLUMNS_FROM "SELECT CodeSpec.Id,CodeValue,CodeScope,ECInstanceId FROM "
+#define SELECT_CODE_COLUMNS_FROM "SELECT CodeSpec.Id,CodeValue,CodeScope.Id,ECInstanceId FROM "
 #define SELECT_ELEMENT_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Element)
 #define EXCLUDE_EMPTY_CODES " WHERE CodeValue IS NOT NULL"
 
