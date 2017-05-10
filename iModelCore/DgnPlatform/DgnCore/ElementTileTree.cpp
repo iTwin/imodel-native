@@ -899,10 +899,35 @@ BentleyStatus Loader::_LoadTile()
             continue;
 
         Render::GraphicPtr thisGraphic;
+        static bool s_doEdges = false;      // TBD - Hook up to view setting...
+
         if (haveMesh)
             {
-            if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
-                thisGraphic = system._CreateTriMesh(meshArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
+            if (s_doEdges)
+                {
+                RenderVisibleMeshEdgesArg     visibleMeshEdgesArgs;
+                RenderInvisibleMeshEdgesArg   invisibleMeshEdgesArgs;
+
+                if (visibleMeshEdgesArgs.Init(*mesh))
+                    {
+                    auto    visibleEdgeGraphic = system._CreateVisibleEdges(visibleMeshEdgesArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
+                    
+                    if (visibleEdgeGraphic.IsValid()) 
+                        graphics.push_back(visibleEdgeGraphic);
+                    }
+                if (invisibleMeshEdgesArgs.Init(*mesh))
+                    {
+                    auto    invisibleEdgeGraphic = system._CreateInvisibleEdges(invisibleMeshEdgesArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
+                    
+                    if (invisibleEdgeGraphic.IsValid()) 
+                        graphics.push_back(invisibleEdgeGraphic);
+                    }
+                }
+            else
+                {
+                if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
+                    thisGraphic = system._CreateTriMesh(meshArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
+                }
             }
         else
             {
@@ -1428,7 +1453,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
             }
         }
 

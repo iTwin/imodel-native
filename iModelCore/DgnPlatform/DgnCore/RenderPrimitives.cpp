@@ -426,6 +426,94 @@ bool Mesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::InitEdges() const
+    {
+    if (m_edgesComputedCount == m_points.size())
+        return;     // Already calculated;
+
+    m_edgesComputedCount = m_points.size();
+
+    struct  PointComparator 
+        {
+        bool operator()(FPoint3d const& lhs, FPoint3d const& rhs) const
+            {
+            COMPARE_VALUES(lhs.x, rhs.x);
+            COMPARE_VALUES(lhs.y, rhs.y);
+            return lhs.z < rhs.z; 
+            }
+        };
+
+    struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
+        {
+        uint32_t    m_next = 0;
+
+        uint32_t GetIndex(FPoint3d point)
+            {
+            auto insertPair = Insert(point, m_next);
+            return insertPair.second ? m_next++ : insertPair.first->second;
+            }
+        };
+
+
+    struct  EdgeInfo
+        {
+        bool        m_visible;
+        uint32_t    m_faceCount;
+        uint32_t    m_faceIndices[2];
+
+        EdgeInfo () { }
+        EdgeInfo(bool visible, uint32_t faceIndex) : m_visible(0), m_faceCount(1) { m_faceIndices[0] = faceIndex; }
+
+        void AddFace(bool invisible, uint32_t faceIndex)
+            {
+            if (m_faceCount < 2)
+                {
+                m_visible |= !invisible;
+                m_faceIndices[m_faceCount++] = faceIndex;
+                }
+            else
+                {
+                BeAssert (false && "NonManifold mesh");
+                }
+            }
+        };
+    
+    PointMap                    pointMap;
+    bmap<MeshEdge, EdgeInfo>    edgeMap;
+    bvector<FPoint3d>           triangleNormals(m_triangles.size());
+
+    for (uint32_t triangleIndex = 0; triangleIndex < m_triangles.size(); triangleIndex++)
+        {
+        auto const&   triangle = m_triangles.at(triangleIndex);
+        for (size_t j=0; j<3; j++)
+            {
+            MeshEdge        edgeIndices(pointMap.GetIndex(m_points.at(triangle.m_indices[j])), 
+                                        pointMap.GetIndex(m_points.at(triangle.m_indices[(j+1)%3])));
+            EdgeInfo        edgeInfo(triangleIndex, triangle.GetEdgeVisible(j));
+
+            auto            insertPair = edgeMap.Insert(edgeIndices, edgeInfo);
+
+            if (!insertPair.second)
+                insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
+            }
+
+        triangleNormals.push_back(toFPoint3d(Mesh::GetTriangleNormal(triangle)));
+
+        }
+    
+
+    for (auto& edge : edgeMap)
+        {
+        if (edge.second.m_visible || edge.second.m_faceCount < 2)       // Always make sheet edges visible...Is this OK?
+            m_visibleEdges.push_back(edge.first);
+        else
+            m_invisibleEdges.push_back(InvisibleEdge(edge.first, triangleNormals.at(edge.second.m_faceIndices[0]), triangleNormals.at(edge.second.m_faceIndices[1])));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, bvector<FPoint3d> const& vertices)
@@ -707,7 +795,7 @@ bool MeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -724,6 +812,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     Triangle            newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>   params = visitor.Param();
 
+    newTriangle.SetEdgeFlags(visitor.GetVisibleCP());
     if (includeParams && !params.empty() && (m_material || GetMaterial(materialId, dgnDb)))
         {
         auto const&         patternMap = m_material->GetPatternMap();
@@ -748,24 +837,6 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
 
     AddTriangle(newTriangle);
-
-    if (visitor.GetTwoSided() && duplicateTwoSidedTriangles)
-        {
-        Triangle dupTriangle(false);
-
-        for (size_t i = 0; i < 3; i++)
-            {
-            size_t reverseIndex = 2 - i;
-            DVec3d reverseNormal;
-            if (haveNormals)
-                reverseNormal.Negate(visitor.Normal()[reverseIndex]);
-
-            VertexKey vertex(points[reverseIndex], haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params[reverseIndex], feature, fillColor);
-            dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
-            }
-
-        AddTriangle(dupTriangle);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -787,10 +858,10 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, feature, false, twoSidedTriangles, includeParams, fillColor);
+        AddTriangle(*visitor, materialId, dgnDb, feature, false, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1355,7 +1426,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetFeature(), false, options.WantTwoSidedTriangles(), hasTexture, fillColor);
+                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
             }
 
         if (!options.WantSurfacesOnly())
@@ -1392,8 +1463,8 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance) const
     {
-    MeshArgs meshArgs;
-    PolylineArgs polylineArgs;
+    MeshArgs        meshArgs;
+    PolylineArgs    polylineArgs;
 
     MeshList meshes = ToMeshes(options, tolerance);
     for (auto const& mesh : meshes)
@@ -1409,9 +1480,35 @@ void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Rende
             if (polylineArgs.Init(*mesh))
                 graphic = system._CreateIndexedPolylines(polylineArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
             }
-        else if (meshArgs.Init(*mesh, system, m_dgndb))
+        else
             {
-            graphic = system._CreateTriMesh(meshArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
+            static bool s_doEdges = false;      // WIP.
+
+            if (s_doEdges)  
+                {
+                RenderVisibleMeshEdgesArg     visibleMeshEdgesArgs;
+                RenderInvisibleMeshEdgesArg   invisibleMeshEdgesArgs;
+
+                if (visibleMeshEdgesArgs.Init(*mesh))
+                    {
+                    auto    visibleEdgeGraphic = system._CreateVisibleEdges(visibleMeshEdgesArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
+                    
+                    if (visibleEdgeGraphic.IsValid()) 
+                        graphics.push_back(visibleEdgeGraphic);
+                    }
+                if (invisibleMeshEdgesArgs.Init(*mesh))
+                    {
+                    auto    invisibleEdgeGraphic = system._CreateInvisibleEdges(invisibleMeshEdgesArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
+                    
+                    if (invisibleEdgeGraphic.IsValid()) 
+                        graphics.push_back(invisibleEdgeGraphic);
+                    }
+                }
+            else
+                {
+                if (meshArgs.Init(*mesh, system, m_dgndb))
+                   graphic = system._CreateTriMesh(meshArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
+                }
             }
 
         if (graphic.IsValid())
@@ -1676,6 +1773,35 @@ void MeshArgs::Transform(TransformCR tf)
             fnm.z = dpt.z;
             }
         }
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  RenderVisibleMeshEdgesArg::Init(MeshCR mesh)
+    {
+    if (mesh.VisibleEdges().empty())
+        return false;
+
+
+    m_points = mesh.Points();
+    m_edges = mesh.VisibleEdges();
+    
+
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    mesh.ToFeatureIndex(m_features);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  RenderInvisibleMeshEdgesArg::Init(MeshCR mesh)
+    {
+    return false;       // WIP.
     }
 
 /*---------------------------------------------------------------------------------**//**
