@@ -13,11 +13,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG)
 #define ELEMENT_TILE_DEBUG_RANGE false
-#else
-#define ELEMENT_TILE_DEBUG_RANGE true
-#endif
 
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
