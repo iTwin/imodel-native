@@ -1680,19 +1680,20 @@ struct  MeshEdge
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct VisibleMeshEdgesArg
+struct VisibleMeshEdgesArgs
 {
     bvector<MeshEdge>       m_edges;
     bvector<FPoint3d>       m_points;
     ColorIndex              m_colors;
     FeatureIndex            m_features;
 
+
 }; 
  
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct InvisibleMeshEdgesArg
+struct InvisibleMeshEdgesArgs
 {
     bvector<MeshEdge>           m_edges;
     bvector<FPoint3d>           m_points;
@@ -2222,10 +2223,10 @@ struct System
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create visible mesh edges primitive
-    virtual GraphicPtr _CreateVisibleEdges(VisibleMeshEdgesArgCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateVisibleEdges(VisibleMeshEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create invisible mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateInvisibleEdges(InvisibleMeshEdgesArgCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateInvisibleEdges(InvisibleMeshEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
