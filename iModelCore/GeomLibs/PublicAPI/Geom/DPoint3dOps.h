@@ -2021,6 +2021,28 @@ void Add (ValidatedDRay3d const &ray, double f, ICurvePrimitive* curve)
         }
     }
 
+//! Add data in respective arrays.  Return false if insertion index is invalid for any array.
+bool Insert (size_t i, DPoint3dCR xyz, double f, DVec3dCR vectorU, ICurvePrimitive* curve)
+    {
+    bool ok = true;
+    if (i <= m_xyz.size ())
+        m_xyz.insert (m_xyz.begin () + i, xyz);
+    else
+        ok = false;
+    if (i <= m_xyz.size ())
+        m_f.insert (m_f.begin () + i, f);
+    else
+        ok = false;
+    if (i <= m_vectorU.size ())
+        m_vectorU.insert (m_vectorU.begin () + i, vectorU);
+    else
+        ok = false;
+    if (i <= m_curve.size ())
+        m_curve.insert (m_curve.begin () + i, curve);
+    else
+        ok = false;
+    return ok;
+    }
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

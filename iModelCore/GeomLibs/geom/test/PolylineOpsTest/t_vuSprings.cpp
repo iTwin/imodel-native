@@ -1120,7 +1120,7 @@ TEST(Voronoi,Hyperbolas6)
     double a = 10.0;
     bvector<DSegment3d> segments;
     // In a smooth triangulation, expect 6 points around each central point
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < radiusOuter.size (); i++)
         {
         double theta = i * Angle::DegreesToRadians (60.0);
         xyzOuter.push_back (DPoint3d::From (a * cos (theta), a * sin (theta)));
