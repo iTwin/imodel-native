@@ -21,12 +21,14 @@ TEST_F(BulkBisDomainCrudTestFixture, Test)
     if (!domainSchemaFolder.DoesPathExist())
         return; 
 
-    ASSERT_EQ(SUCCESS, SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder)) << domainSchemaFolder.GetNameUtf8().c_str();
+    SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder);
+    if (m_failed)
+        return;
 
-    BeFileName testDataJsonFile;
-    BeTest::GetHost().GetOutputRoot(testDataJsonFile);
-    testDataJsonFile.AppendToPath(L"bulkcrud_domainschemas_data.json");
-    ASSERT_EQ(SUCCESS, CreateTestData(GetECDb(), testDataJsonFile)) << domainSchemaFolder.GetNameUtf8().c_str();
+    TestDataset testDataset;
+    ASSERT_EQ(SUCCESS, testDataset.Populate(GetECDb())) << domainSchemaFolder.GetNameUtf8().c_str();
+
+    AssertInsert(testDataset);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

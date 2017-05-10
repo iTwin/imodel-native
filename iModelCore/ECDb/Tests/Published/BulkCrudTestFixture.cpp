@@ -21,27 +21,69 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-void BulkCrudTestFixture::AssertInsert(TestDataInfo& info, BeFileNameCR testDataJsonFile)
+void BulkCrudTestFixture::AssertInsert(TestDataset& testData)
     {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testData.GetDb(), "SELECT rowid, ClassId, propvalues FROM data")) << testData.GetDb().GetLastError().c_str();
 
+    Statement updateGenIdStmt;
+    ASSERT_EQ(BE_SQLITE_OK, updateGenIdStmt.Prepare(testData.GetDb(), "UPDATE data SET generatedecinstanceid=? WHERE rowid=?")) << testData.GetDb().GetLastError().c_str();
+
+    std::map<ECClassId, std::unique_ptr<JsonInserter>> inserterCache;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        const int64_t rowid = stmt.GetValueInt64(0);
+        const ECClassId classId = stmt.GetValueId<ECClassId>(1);
+        
+        JsonInserter* inserter = nullptr;
+        auto it = inserterCache.find(classId);
+        if (it != inserterCache.end())
+            inserter = it->second.get();
+        else
+            {
+            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
+            ASSERT_TRUE(ecClass != nullptr);
+            std::unique_ptr<JsonInserter> inserterPtr(new JsonInserter(GetECDb(), *ecClass, nullptr));
+            inserter = inserterPtr.get();
+            inserterCache[classId] = std::move(inserterPtr);
+            }
+
+        ASSERT_TRUE(inserter->IsValid()) << "Failed to get inserter for ECClass " << classId.ToString().c_str();
+
+        rapidjson::Document propValuesJson(rapidjson::kObjectType);
+        if (!stmt.IsColumnNull(2))
+            ASSERT_EQ(SUCCESS, testData.ParseJson(propValuesJson, stmt.GetValueText(2))) << "Row id: " << rowid;
+
+        ASSERT_TRUE(propValuesJson.IsObject());
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_OK, inserter->Insert(key, propValuesJson)) << "Row id: " << rowid;
+
+        ASSERT_EQ(BE_SQLITE_OK, updateGenIdStmt.BindId(1, key.GetInstanceId())) << "Update data with generated ECInstanceId for row id: " << rowid << " " << testData.GetDb().GetLastError().c_str();
+        ASSERT_EQ(BE_SQLITE_OK, updateGenIdStmt.BindInt64(2, rowid)) << "Update data with generated ECInstanceId for row id: " << rowid << " " << testData.GetDb().GetLastError().c_str();
+        ASSERT_EQ(BE_SQLITE_DONE, updateGenIdStmt.Step()) << "Update data with generated ECInstanceId for row id: " << rowid << " " << testData.GetDb().GetLastError().c_str();
+        ASSERT_EQ(1, testData.GetDb().GetModifiedRowCount()) << "Update data with generated ECInstanceId for row id: " << rowid << " " << testData.GetDb().GetLastError().c_str();
+        updateGenIdStmt.Reset();
+        updateGenIdStmt.ClearBindings();
+        }
     }
 
+//*****************************************************************************************
+// BulkCrudTestFixture::TestDataset
+//*****************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-//static
-BentleyStatus BulkCrudTestFixture::CreateTestData(ECDbCR ecdb, BeFileNameCR testDataJsonFile)
+BentleyStatus BulkCrudTestFixture::TestDataset::Populate(ECDbCR ecdb)
     {
     if (!ecdb.IsDbOpen())
         return ERROR;
 
     const size_t instanceCountPerClass = 2;
-
-    rapidjson::Document dataJson(rapidjson::kArrayType);
-    rapidjson::MemoryPoolAllocator<>& jsonAllocator = dataJson.GetAllocator();
-
     srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+
+    if (SUCCESS != Setup(ecdb))
+        return ERROR;
 
     //select all non-abstract entity classes that are mapped, but not mapped to ExistingTable
     //and create test data for them (We could use ECSQL against Meta schema, but class map is not exposed there
@@ -63,10 +105,10 @@ BentleyStatus BulkCrudTestFixture::CreateTestData(ECDbCR ecdb, BeFileNameCR test
 
         for (size_t i = 0; i < instanceCountPerClass; i++)
             {
-            if (SUCCESS != CreateTestInstance(ecdb, dataJson, *ecClass, false, jsonAllocator))
+            if (SUCCESS != InsertTestInstance(ecdb, *ecClass, false))
                 return ERROR;
 
-            if (SUCCESS != CreateTestInstance(ecdb, dataJson, *ecClass, true, jsonAllocator))
+            if (SUCCESS != InsertTestInstance(ecdb, *ecClass, true))
                 return ERROR;
             }
         }
@@ -96,33 +138,63 @@ BentleyStatus BulkCrudTestFixture::CreateTestData(ECDbCR ecdb, BeFileNameCR test
     relsStmt.Finalize();
     */
 
-    BeFileStatus stat = BeFileStatus::Success;
-    BeTextFilePtr dataJsonFile = BeTextFile::Open(stat, testDataJsonFile, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    if (BeFileStatus::Success != stat)
-        {
-        BeAssert(false && "Could not create data json output file");
-        return ERROR;
-        }
-
-
-    rapidjson::StringBuffer jsonStrBuf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
-    dataJson.Accept(writer);
-    return TextFileWriteStatus::Success == dataJsonFile->PutLine(WString(jsonStrBuf.GetString(), BentleyCharEncoding::Utf8).c_str(), false) ? SUCCESS : ERROR;
+    return BE_SQLITE_OK == m_dataDb.SaveChanges() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkCrudTestFixture::AssignPropValuePairs(ECDbCR ecdb, rapidjson::Value& json, ECPropertyIterableCR properties, bool ignoreNullableProps, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
+BentleyStatus BulkCrudTestFixture::TestDataset::ParseJson(rapidjson::Document& json, Utf8CP jsonStr)
+    {
+    if (json.Parse<0>(jsonStr).HasParseError())
+        {
+        BeAssert(false && "Could not parse JSON string.");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      05/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus BulkCrudTestFixture::TestDataset::InsertTestInstance(ECDbCR ecdb, ECN::ECClassCR ecClass, bool ignoreNullableProps)
+    {
+    rapidjson::Document propValues(rapidjson::kObjectType);
+    if (SUCCESS != GeneratePropValuePairs(ecdb, propValues, ecClass.GetProperties(), ignoreNullableProps, propValues.GetAllocator()))
+        return ERROR;
+
+    CachedStatementPtr stmt = m_dataDb.GetCachedStatement("INSERT INTO data(classid,propvalues) VALUES(?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, ecClass.GetId());
+    rapidjson::StringBuffer jsonStrBuf;
+    if (!propValues.GetObject().ObjectEmpty())
+        {
+        rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
+        propValues.Accept(writer);
+        if (BE_SQLITE_OK != stmt->BindText(2, jsonStrBuf.GetString(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      05/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePropValuePairs(ECDbCR ecdb, rapidjson::Value& json, ECPropertyIterableCR properties, bool ignoreNullableProps, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
     {
     for (ECPropertyCP prop : properties)
         {
         if (ignoreNullableProps && IsNullableProperty(*prop))
             continue;
 
-        if (SUCCESS != AssignPropValuePair(ecdb, json, *prop, ignoreNullableProps, jsonAllocator))
+        if (SUCCESS != GeneratePropValuePair(ecdb, json, *prop, ignoreNullableProps, jsonAllocator))
             return ERROR;
         }
 
@@ -133,7 +205,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePairs(ECDbCR ecdb, rapidjson::
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::Value& json, ECPropertyCR prop, bool ignoreNullableMemberProps, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
+BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePropValuePair(ECDbCR ecdb, rapidjson::Value& json, ECPropertyCR prop, bool ignoreNullableMemberProps, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
     {
     BeAssert(json.IsObject());
     rapidjson::GenericStringRef<Utf8Char> memberName(prop.GetName().c_str(), (rapidjson::SizeType) prop.GetName().size());
@@ -141,7 +213,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
     json.AddMember(memberName, rapidjson::Value().Move(), jsonAllocator);
     rapidjson::Value& valueJson = json[memberName.s];
     if (prop.GetIsPrimitive())
-        return AssignPrimitiveValue(valueJson, prop.GetAsPrimitiveProperty()->GetType(), jsonAllocator);
+        return GeneratePrimitiveValue(valueJson, prop.GetAsPrimitiveProperty()->GetType(), jsonAllocator);
 
     if (prop.GetIsPrimitiveArray())
         {
@@ -152,7 +224,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
             {
             valueJson.PushBack(rapidjson::Value().Move(), jsonAllocator);
             rapidjson::Value& newArrayElementJson = valueJson[(rapidjson::SizeType) i];
-            if (SUCCESS != AssignPrimitiveValue(newArrayElementJson, arrayType, jsonAllocator))
+            if (SUCCESS != GeneratePrimitiveValue(newArrayElementJson, arrayType, jsonAllocator))
                 return ERROR;
             }
 
@@ -163,7 +235,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
         {
         valueJson.SetObject();
         ECClassCR structType = prop.GetAsStructProperty()->GetType();
-        return AssignPropValuePairs(ecdb, valueJson, structType.GetProperties(), ignoreNullableMemberProps, jsonAllocator);
+        return GeneratePropValuePairs(ecdb, valueJson, structType.GetProperties(), ignoreNullableMemberProps, jsonAllocator);
         }
 
     if (prop.GetIsStructArray())
@@ -175,7 +247,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
             {
             valueJson.PushBack(rapidjson::Value().Move(), jsonAllocator);
             rapidjson::Value& newArrayElementJson = valueJson[(rapidjson::SizeType) i];
-            if (SUCCESS != AssignPropValuePairs(ecdb, newArrayElementJson, structType.GetProperties(), ignoreNullableMemberProps, jsonAllocator))
+            if (SUCCESS != GeneratePropValuePairs(ecdb, newArrayElementJson, structType.GetProperties(), ignoreNullableMemberProps, jsonAllocator))
                 return ERROR;
             }
 
@@ -236,7 +308,7 @@ BentleyStatus BulkCrudTestFixture::AssignPropValuePair(ECDbCR ecdb, rapidjson::V
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkCrudTestFixture::AssignPrimitiveValue(rapidjson::Value& json, ECN::PrimitiveType primType, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
+BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePrimitiveValue(rapidjson::Value& json, ECN::PrimitiveType primType, rapidjson::MemoryPoolAllocator<>& jsonAllocator)
     {
     switch (primType)
         {
@@ -258,11 +330,8 @@ BentleyStatus BulkCrudTestFixture::AssignPrimitiveValue(rapidjson::Value& json, 
             case PRIMITIVETYPE_DateTime:
             {
             DateTime dt = DateTime::GetCurrentTimeUtc();
-            double jd = 0.0;
-            if (SUCCESS != dt.ToJulianDay(jd))
-                return ERROR;
-
-            json.SetDouble(jd);
+            Utf8String dtStr = dt.ToString();
+            json.SetString(dtStr.c_str(), (rapidjson::SizeType) dtStr.size(), jsonAllocator);
             return SUCCESS;
             }
 
@@ -311,7 +380,7 @@ BentleyStatus BulkCrudTestFixture::AssignPrimitiveValue(rapidjson::Value& json, 
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-bool BulkCrudTestFixture::IsNullableProperty(ECN::ECPropertyCR prop)
+bool BulkCrudTestFixture::TestDataset::IsNullableProperty(ECN::ECPropertyCR prop)
     {
     if (prop.GetIsNavigation())
         {
@@ -330,22 +399,36 @@ bool BulkCrudTestFixture::IsNullableProperty(ECN::ECPropertyCR prop)
     return isNullableVal.IsNull() || isNullableVal.GetBoolean();
     }
 
-//*****************************************************************************************
-// BulkCrudTestFixture::TestDataInfo
-//*****************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-void BulkCrudTestFixture::TestDataInfo::ReadTestData(BeFileNameCR testDataJsonFile)
+BentleyStatus BulkCrudTestFixture::TestDataset::Setup(ECDbCR testECDb)
     {
-    ASSERT_TRUE(testDataJsonFile.DoesPathExist()) << testDataJsonFile.GetNameUtf8().c_str();
-    BeFileStatus stat;
-    BeTextFilePtr file = BeTextFile::Open(stat, testDataJsonFile.GetName(), TextFileOpenType::Read, TextFileOptions::NewLinesToSpace);
-    ASSERT_EQ(BeFileStatus::Success, stat) << "Opening " << testDataJsonFile.GetNameUtf8().c_str();
-    WString fileContent;
-    ASSERT_EQ(TextFileReadStatus::Success, file->GetLine(fileContent)) << testDataJsonFile.GetNameUtf8().c_str();
-    ASSERT_FALSE(m_testDataJson.Parse<0>(Utf8String(fileContent).c_str()).HasParseError()) << testDataJsonFile.GetNameUtf8().c_str();
+    BeFileName dataDbPath(testECDb.GetDbFileName());
+    dataDbPath.AppendExtension(L"testdata.db");
+    if (dataDbPath.DoesPathExist())
+        {
+        if (BeFileNameStatus::Success != dataDbPath.BeDeleteFile())
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != m_dataDb.CreateNewDb(dataDbPath))
+        {
+        BeAssert(false && "Failed to create test data SQLite DB.");
+        return ERROR;
+        }
+
+    if (BE_SQLITE_OK != m_dataDb.ExecuteSql(
+        R"sql(
+            CREATE TABLE data(classid INTEGER NOT NULL, generatedecinstanceid INTEGER, propvalues TEXT);
+            CREATE INDEX ix_data_generatedecinstanceid ON data(generatedecinstanceid);
+            )sql"))
+        {
+        BeAssert(false && "Failed to create data table.");
+        return ERROR;
+        }
+
+    return BE_SQLITE_OK == m_dataDb.SaveChanges() ? SUCCESS : ERROR;
     }
 
 
@@ -356,37 +439,42 @@ void BulkCrudTestFixture::TestDataInfo::ReadTestData(BeFileNameCR testDataJsonFi
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
+void BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
     {
+    if (m_failed)
+        return;
+
+    m_failed = true;
+
     ECDbCR ecdb = SetupECDb(fileName);
-    if (!ecdb.IsDbOpen())
-        return ERROR;
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     //BIS ECSchema needs this table to pre-exist
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"))
-        return ERROR;
-
-    return ImportSchemasFromFolder(bisSchemaFolder);
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)")) << ecdb.GetLastError().c_str();
+    m_failed = false;
+    ImportSchemasFromFolder(bisSchemaFolder);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
+void BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
     {
-    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
-        return ERROR;
-
-    return ImportSchemasFromFolder(domainSchemaFolder);
+    CreateFakeBimFile(fileName, bisSchemaFolder);
+    ImportSchemasFromFolder(domainSchemaFolder);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
+void BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
     {
+    if (m_failed)
+        return;
+
+    m_failed = true;
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ctx->AddSchemaPath(schemaFolder);
@@ -394,23 +482,20 @@ BentleyStatus BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName c
     bvector<BeFileName> schemaPaths;
     BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, schemaFolder, L"*.ecschema.xml", false);
 
-    if (schemaPaths.empty())
-        return ERROR;
+    ASSERT_FALSE(schemaPaths.empty());
 
     for (BeFileName const& schemaXml : schemaPaths)
         {
         ECN::ECSchemaPtr ecSchema = nullptr;
         const SchemaReadStatus stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXml.GetName(), *ctx);
         //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
-        if (ECN::SchemaReadStatus::Success != stat && ECN::SchemaReadStatus::DuplicateSchema != stat)
-            return ERROR;
+        ASSERT_TRUE(SchemaReadStatus::Success == stat || SchemaReadStatus::DuplicateSchema == stat) << "Deserializing " << schemaXml.GetNameUtf8().c_str();
         }
 
-    if (SUCCESS != GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas()))
-        return ERROR;
-
+    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << schemaFolder.GetNameUtf8().c_str();
     GetECDb().ClearECDbCache();
-    return GetECDb().SaveChanges() == BE_SQLITE_OK ? SUCCESS : ERROR;
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges()) << GetECDb().GetDbFileName();
+    m_failed = false;
     }
 
 //---------------------------------------------------------------------------------------

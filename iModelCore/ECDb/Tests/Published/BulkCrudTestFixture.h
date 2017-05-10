@@ -16,35 +16,34 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct BulkCrudTestFixture : public ECDbTestFixture
     {
     protected:
-        struct TestDataInfo
+        //! Represents test instances on which the tests will operate
+        //! the test instances are persisted into a plain SQLite file where the prop value pairs of an instance
+        //! are stored in a JSON format understood by the JsonInserter
+        struct TestDataset
             {
-            rapidjson::Document m_testDataJson;
-            bmap<ECInstanceId, size_t> m_instanceIdJsonIndexMap;
-            bmap<size_t, ECInstanceId> m_jsonIndexInstanceIdMap;
+            private:
+                Db m_dataDb;
 
-            void ReadTestData(BeFileNameCR testDataJsonFile);
+                BentleyStatus Setup(ECDbCR);
 
-            void AddInstanceIdMapping(ECInstanceId id, size_t jsonArrayIx)
-                {
-                m_instanceIdJsonIndexMap[id] = jsonArrayIx;
-                m_jsonIndexInstanceIdMap[jsonArrayIx] = id;
-                }
+                BentleyStatus InsertTestInstance(ECDbCR, ECN::ECClassCR, bool ignoreNullableProps);
+                static BentleyStatus GeneratePropValuePairs(ECDbCR, rapidjson::Value& json, ECN::ECPropertyIterableCR, bool ignoreNullableProps, rapidjson::MemoryPoolAllocator<>&);
+                static BentleyStatus GeneratePropValuePair(ECDbCR, rapidjson::Value&, ECN::ECPropertyCR prop, bool ignoreNullableMemberProps, rapidjson::MemoryPoolAllocator<>&);
+                static BentleyStatus GeneratePrimitiveValue(rapidjson::Value&, ECN::PrimitiveType, rapidjson::MemoryPoolAllocator<>&);
+
+                static bool IsNullableProperty(ECN::ECPropertyCR);
+
+            public:
+                TestDataset() {}
+
+                BentleyStatus Populate(ECDbCR);
+
+                Db& GetDb() { return m_dataDb; }
+
+                static BentleyStatus ParseJson(rapidjson::Document& json, Utf8CP jsonStr);
             };
 
-        void AssertInsert(TestDataInfo& info, BeFileNameCR testDataJsonFile);
-
-        static BentleyStatus CreateTestData(ECDbCR, BeFileNameCR testDataJsonFile);
-        static BentleyStatus CreateTestInstance(ECDbCR ecdb, rapidjson::Value& json, ECN::ECClassCR ecClass, bool ignoreNullableProps, rapidjson::MemoryPoolAllocator<>& allocator) 
-            {
-            json.PushBack(rapidjson::Value(rapidjson::kObjectType).Move(), allocator);
-            rapidjson::Value& newArrayElementJson = json[json.GetArray().Size() - 1];
-            return AssignPropValuePairs(ecdb, newArrayElementJson, ecClass.GetProperties(), ignoreNullableProps, allocator);
-            }
-        static BentleyStatus AssignPropValuePairs(ECDbCR, rapidjson::Value& json, ECN::ECPropertyIterableCR, bool ignoreNullableProps, rapidjson::MemoryPoolAllocator<>&);
-        static BentleyStatus AssignPropValuePair(ECDbCR, rapidjson::Value&, ECN::ECPropertyCR prop, bool ignoreNullableMemberProps, rapidjson::MemoryPoolAllocator<>&);
-        static BentleyStatus AssignPrimitiveValue(rapidjson::Value&, ECN::PrimitiveType, rapidjson::MemoryPoolAllocator<>&);
-
-        static bool IsNullableProperty(ECN::ECPropertyCR);
+        void AssertInsert(TestDataset&);
     };
 
 //---------------------------------------------------------------------------------------
@@ -52,12 +51,14 @@ struct BulkCrudTestFixture : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct BulkBisDomainCrudTestFixture : public BulkCrudTestFixture
     {
+    protected:
+        bool m_failed = false;
     private:
-        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
-        BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
+        void CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
+        void ImportSchemasFromFolder(BeFileName const& schemaFolder);
 
     protected:
-        BentleyStatus SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder);
+        void SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder);
         static BeFileName GetDomainSchemaFolder(BeFileName& bisSchemaFolder);
     };
 END_ECDBUNITTESTS_NAMESPACE
