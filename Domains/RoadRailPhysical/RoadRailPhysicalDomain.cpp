@@ -63,16 +63,16 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createPhysicalPartition(DgnDbR db)
+DgnDbStatus createPhysicalPartition(SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto physicalPartitionPtr = PhysicalPartition::Create(*db.Elements().GetRootSubject(), "Physical");
+    auto physicalPartitionPtr = PhysicalPartition::Create(subject, "Physical");
     if (physicalPartitionPtr->Insert(&status).IsNull())
         return status;
 
     auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
-    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(physicalModelHandlerR),
+    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(subject.GetDgnDb(), subject.GetDgnDb().Domains().GetClassId(physicalModelHandlerR),
         physicalPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = physicalModelPtr->Insert()))
@@ -84,15 +84,15 @@ DgnDbStatus createPhysicalPartition(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createCrossSectionsPartition(DgnDbR db)
+DgnDbStatus createCrossSectionsPartition(SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto crossSectionsPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), "CrossSections");
+    auto crossSectionsPartitionPtr = DefinitionPartition::Create(subject, "CrossSections");
     if (crossSectionsPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    auto crossSectionDefModelPtr = CrossSectionDefinitionModel::Create(CrossSectionDefinitionModel::CreateParams(db, crossSectionsPartitionPtr->GetElementId()));
+    auto crossSectionDefModelPtr = CrossSectionDefinitionModel::Create(CrossSectionDefinitionModel::CreateParams(subject.GetDgnDb(), crossSectionsPartitionPtr->GetElementId()));
     if (DgnDbStatus::Success != (status = crossSectionDefModelPtr->Insert()))
         return status;
 
@@ -100,7 +100,7 @@ DgnDbStatus createCrossSectionsPartition(DgnDbR db)
     if (travelwayDefPortionPtr->Insert(&status).IsNull())
         return status;
 
-    auto travelwayDefModelPtr = TravelwayDefinitionModel::Create(TravelwayDefinitionModel::CreateParams(db, travelwayDefPortionPtr->GetElementId()));
+    auto travelwayDefModelPtr = TravelwayDefinitionModel::Create(TravelwayDefinitionModel::CreateParams(subject.GetDgnDb(), travelwayDefPortionPtr->GetElementId()));
     if (DgnDbStatus::Success != (status = travelwayDefModelPtr->Insert()))
         return status;
 
@@ -108,7 +108,7 @@ DgnDbStatus createCrossSectionsPartition(DgnDbR db)
     if (endCondDefPortionPtr->Insert(&status).IsNull())
         return status;
 
-    auto endCondDefModelPtr = EndConditionDefinitionModel::Create(EndConditionDefinitionModel::CreateParams(db, endCondDefPortionPtr->GetElementId()));
+    auto endCondDefModelPtr = EndConditionDefinitionModel::Create(EndConditionDefinitionModel::CreateParams(subject.GetDgnDb(), endCondDefPortionPtr->GetElementId()));
     if (DgnDbStatus::Success != (status = endCondDefModelPtr->Insert()))
         return status;
 
@@ -150,16 +150,16 @@ DgnDbStatus createRoadDesignSpeedModelHierarchy(RoadwayStandardsModelCR roadwayS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRoadwayStandardsPartition(DgnDbR db)
+DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), "Roadway Standards");
+    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, "Roadway Standards");
     if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
         return status;
 
     auto& roadwayStandardsModelHandlerR = RoadwayStandardsModelHandler::GetHandler();
-    auto roadwayStandardsModelPtr = roadwayStandardsModelHandlerR.Create(DgnModel::CreateParams(db, RoadwayStandardsModel::QueryClassId(db),
+    auto roadwayStandardsModelPtr = roadwayStandardsModelHandlerR.Create(DgnModel::CreateParams(subject.GetDgnDb(), RoadwayStandardsModel::QueryClassId(subject.GetDgnDb()),
         roadwayStandardsPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
@@ -179,19 +179,18 @@ DgnDbStatus createRoadwayStandardsPartition(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
+DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
     {
     DgnDbStatus status;
 
-    RoadRailCategoryModel::SetUp(db);
+    if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
 
-    if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(db)))
         return status;
 
-    if (DgnDbStatus::Success != (status = createCrossSectionsPartition(db)))
+    if (DgnDbStatus::Success != (status = createCrossSectionsPartition(subject)))
         return status;
 
-    if (DgnDbStatus::Success != (status = createPhysicalPartition(db)))
+    if (DgnDbStatus::Success != (status = createPhysicalPartition(subject)))
         return status;
 
     return status;
@@ -202,7 +201,11 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    SetUpModelHierarchy(dgndb);
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());    
+    if (DgnDbStatus::Success != status)
+        {
+        BeAssert(false);
+        }
 
     auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway);
     BeAssert(codeSpecPtr.IsValid());
