@@ -318,9 +318,9 @@ typedef RefCountedPtr<IGeometry> IGeometryPtr;
 //=======================================================================================
 template<typename T> struct ZeroInit
 {
-    ZeroInit()                           { std::memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit const&)            { std::memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit&&)                 { std::memset(this, 0, sizeof(T)); }
+    ZeroInit()                           { memset(this, 0, sizeof(T)); }
+    ZeroInit(ZeroInit const&)            { memset(this, 0, sizeof(T)); }
+    ZeroInit(ZeroInit&&)                 { memset(this, 0, sizeof(T)); }
     ZeroInit& operator=(ZeroInit const&) = default;
     ZeroInit& operator=(ZeroInit&&)      = default;
 };

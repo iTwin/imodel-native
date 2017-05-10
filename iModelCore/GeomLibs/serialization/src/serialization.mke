@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #     $Source: serialization/src/serialization.mke $
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
@@ -41,12 +41,6 @@ PchExtraOptions + -DCOMPILE_PLATFORM_GEOMETRY=1
 %endif
 PchCompiland    = $(_MakeFilePath)serializationPCH.cpp
 PchOutputDir    = $(o)
-%if defined (winNT) && defined (BUILD_TOOLSET)
-    %if $(BUILD_TOOLSET) == "LINUX_GCC"
-        # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
-        GCC_NO_PRE_COMPILED_HEADER = 1
-    %endif
-%endif
 
 %include $(SharedMki)PreCompileHeader.mki
 

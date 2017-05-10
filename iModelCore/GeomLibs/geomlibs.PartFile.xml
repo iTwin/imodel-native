@@ -12,7 +12,7 @@
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="GeomDlls" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI/geomlibs" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedApi/geomlibs" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
@@ -190,7 +190,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 	
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeomLibs-Gtest/GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeomLibs-Gtest/GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeomLibs-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
