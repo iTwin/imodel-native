@@ -102,6 +102,8 @@ private:
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
     static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR ecValue, RapidJsonValueCR jsonValue, ECN::PrimitiveType primitiveType);
 
+    static void LogJsonParseError(RapidJsonValueCR, ECN::ECClassCR, Utf8StringCR propAccessString);
+
 public:
     //! Return an Int64 value from a RapidJsonValueCR that may be a number or a string.
     //! @param[in] json the source RapidJsonValueCR
