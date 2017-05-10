@@ -696,8 +696,6 @@ void RealityData::SetGroup(Utf8CP group) { m_group = group; }
 Utf8StringCR RealityData::GetThumbnailDocument() const { return m_thumbnailDocument; }
 void RealityData::SetThumbnailDocument(Utf8CP thumbnailDocument) { m_thumbnailDocument = thumbnailDocument; }
 
-
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
@@ -721,8 +719,14 @@ void RealityData::SetContainerName(Utf8CP containerName) { m_containerName = con
 Utf8StringCR RealityData::GetRootDocument() const { return m_rootDocument; }
 void RealityData::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
 
-Utf8StringCR RealityData::GetMetadataURL() const { return m_metadataURL; }
-void RealityData::SetMetadataURL(Utf8CP metadataURL) { m_metadataURL = metadataURL; }
+Utf8StringCR RealityData::GetMetadataUrl() const { return m_metadataUrl; }
+void RealityData::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; }
+
+Utf8StringCR RealityData::GetUltimateId() const { return m_ultimateId; }
+void RealityData::SetUltimateId(Utf8CP ultimateId) { m_ultimateId = ultimateId; }
+
+Utf8StringCR RealityData::GetUltimateSite() const { return m_ultimateSite; }
+void RealityData::SetUltimateSite(Utf8CP ultimateSite) { m_ultimateSite = ultimateSite; }
 
 Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
 void RealityData::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
@@ -754,3 +758,17 @@ RealityData::RealityData()
     m_listable = true;
     m_totalSize = 0;
     }
+
+RealityDataEnterpriseStat::RealityDataEnterpriseStat(): m_totalSizeKB(0), m_nbRealityData(0){}
+
+uint64_t RealityDataEnterpriseStat::GetTotalSizeKB() const { return m_totalSizeKB; }
+void RealityDataEnterpriseStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+
+uint64_t RealityDataEnterpriseStat::GetNbRealityData() const { return m_nbRealityData; }
+void RealityDataEnterpriseStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
+
+Utf8StringCR RealityDataEnterpriseStat::GetUltimateId() const { return m_ultimateId; }
+void RealityDataEnterpriseStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId = ultimateId; }
+
+Utf8StringCR RealityDataEnterpriseStat::GetUltimateSite() const { return m_ultimateSite; }
+void RealityDataEnterpriseStat::SetUltimateSite(Utf8CP ultimateSite) { m_ultimateSite = ultimateSite; }

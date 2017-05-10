@@ -351,7 +351,9 @@ enum class RealityDataField
     Streamed,
     Footprint,
     ThumbnailDocument,
-    MetadataURL,
+    MetadataUrl,
+    UltimateId,
+    UltimateSite,
     Copyright,
     TermsOfUse,
     ResolutionInMeters,
@@ -372,7 +374,7 @@ enum class RealityDataField
 //! entity except the actual data which is stored in the.
 //=====================================================================================
 struct RealityData : public RealityDataBase
-{
+    {
 public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create();
@@ -435,10 +437,17 @@ public:
 
     //! Get/Set
     //! A reference to a metadata object. This object can be used by many spatial entities.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataURL() const;
-    REALITYDATAPLATFORM_EXPORT void SetMetadataURL(Utf8CP metadataURL);
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
+    REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
 
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
 
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateSite() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateSite(Utf8CP ultimateSite);
+    
     //! A text indicating the copyright to the data or a URL to a web page containing 
     //! information. The text can be a mix of text and URL. 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCopyright() const;
@@ -469,7 +478,9 @@ protected:
     Utf8String m_enterpriseId;
     Utf8String m_containerName;
     Utf8String m_rootDocument;
-    Utf8String m_metadataURL;
+    Utf8String m_metadataUrl;
+    Utf8String m_ultimateId;
+    Utf8String m_ultimateSite;
     Utf8String m_copyright;
     Utf8String m_termsOfUse;
 
@@ -479,7 +490,37 @@ protected:
     Utf8String m_group;
     uint64_t m_totalSize;
 
-    }; 
+    };
+
+struct RealityDataEnterpriseStat
+    {
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat();
+
+    //! The last modified time
+    REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
+    REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
+
+    //! The last modified time
+    REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+
+    //! The last modified time
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
+
+    //! Get/Set
+    //! The id of the enterprise the data belongs to
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateSite() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateSite(Utf8CP ultimateSite);
+
+protected:
+    uint64_t m_nbRealityData;
+    uint64_t m_totalSizeKB;
+    Utf8String m_ultimateId;
+    Utf8String m_ultimateSite;
+    };
    
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

@@ -330,12 +330,12 @@ void ShowUsage()
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User() :
-    m_currentOperation(0), m_handshake(AzureHandshake())
+    m_currentOperation(0)
     {}
 
 User::User(int id, Stats* stats) :
-    m_currentOperation(0), m_handshake(AzureHandshake()),
-    m_userId(id), m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
+    m_currentOperation(0), m_userId(id), 
+    m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
     {}
 
 void User::DoNext(UserManager* owner)

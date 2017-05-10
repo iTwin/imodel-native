@@ -170,7 +170,7 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("Streamed");
     m_realityDataProperties.push_back("Footprint");
     m_realityDataProperties.push_back("ThumbnailDocument");
-    m_realityDataProperties.push_back("MetadataURL");
+    m_realityDataProperties.push_back("MetadataUrl");
     m_realityDataProperties.push_back("Copyright");
     m_realityDataProperties.push_back("TermsOfUse");
     m_realityDataProperties.push_back("ResolutionInMeters");
@@ -697,13 +697,14 @@ void RealityDataConsole::EnterpriseStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
-    uint64_t NbRealityData;
-    uint64_t TotalSizeKB;
-    RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, rawResponse);
+    RealityDataEnterpriseStat stat;
+    RealityDataService::Request(*ptt, stat, rawResponse);
 
     DisplayInfo("Enterprise statistics: \n");
-    DisplayInfo(Utf8PrintfString("   NbRealityData: %lu\n", NbRealityData));
-    DisplayInfo(Utf8PrintfString("   TotalSize(KB): %lu\n\n", TotalSizeKB));
+    DisplayInfo(Utf8PrintfString("   NbRealityData: %lu\n", stat.GetNbRealityData()));
+    DisplayInfo(Utf8PrintfString("   TotalSize(KB): %lu\n\n", stat.GetTotalSizeKB()));
+    DisplayInfo(Utf8PrintfString("   UltimateId   : %s\n", stat.GetUltimateId().c_str()));
+    DisplayInfo(Utf8PrintfString("   UltimateSite : %s\n\n", stat.GetUltimateSite().c_str()));
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
@@ -918,7 +919,9 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Streamed           : %s\n", entity->IsStreamed() ? "true" : "false"));
         DisplayInfo(Utf8PrintfString(" Footprint          : %s\n", entity->GetFootprintString()));
         DisplayInfo(Utf8PrintfString(" ThumbnailDocument  : %s\n", entity->GetThumbnailDocument()));
-        DisplayInfo(Utf8PrintfString(" MetadataURL        : %s\n", entity->GetMetadataURL()));
+        DisplayInfo(Utf8PrintfString(" MetadataUrl        : %s\n", entity->GetMetadataUrl()));
+        DisplayInfo(Utf8PrintfString(" UltimateId         : %s\n", entity->GetUltimateId()));
+        DisplayInfo(Utf8PrintfString(" UltimateSite       : %s\n", entity->GetUltimateSite()));
         DisplayInfo(Utf8PrintfString(" Copyright          : %s\n", entity->GetCopyright()));
         DisplayInfo(Utf8PrintfString(" TermsOfUse         : %s\n", entity->GetTermsOfUse()));
         DisplayInfo(Utf8PrintfString(" AccuracyInMeters   : %s\n", entity->GetAccuracy()));

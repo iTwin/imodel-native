@@ -8,6 +8,8 @@
 #pragma once
 
 //__BENTLEY_INTERNAL_ONLY__
+#include <queue>
+
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/RealityDataService.h>
 #include <Bentley/Bentley.h>
@@ -86,7 +88,6 @@ public:
     Utf8String                  m_id;
     bool                        m_linked;
     FullInfo                    m_correspondance;
-    AzureHandshake              m_handshake;
     BeFile                      m_file;
     BeFileName                  m_fileName;
 
@@ -96,7 +97,7 @@ public:
     REALITYDATAPLATFORM_EXPORT User();
     REALITYDATAPLATFORM_EXPORT User(int id, Stats* stats);
 
-    REALITYDATAPLATFORM_EXPORT void DoNext(UserManager* owner);
+    REALITYDATAPLATFORM_EXPORT virtual void DoNext(UserManager* owner);
     REALITYDATAPLATFORM_EXPORT virtual void DoNextBody(UserManager* owner) = 0;
     REALITYDATAPLATFORM_EXPORT virtual void ValidatePrevious(int activeUsers) = 0;
     REALITYDATAPLATFORM_EXPORT virtual void WrapUp(UserManager* owner) = 0;
