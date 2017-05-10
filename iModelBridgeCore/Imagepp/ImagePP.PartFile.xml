@@ -152,7 +152,7 @@
             
     <Part Name="ImagePP-Dev">
         <!--NEEDSWORK: 'ImagePP-Tested' must build before 'ImagePP' create imagepp.lib and add it to the buildContext 
-            since it will be inconditionnaly added to the link cmd by buildGTest.mke -->
+            since it will be inconditionnaly added to the link cmd by buildGtest.mke -->
         <SubPart PartName= "ImagePP-Tested" />
         <SubPart PartName= "ImagePP" />        
         <SubProduct ProductName="ImageppApps" PartFile="ImageppApps" Repository="ImageppApps" />
@@ -230,7 +230,7 @@
     </Product>    
     
     <!--&&MM need one per test(UnitTests-NonPublished and UnitTests-FileFormat) Define a gtest program to run the tests -->
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="ImagePP-Tests"/>
          <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -245,7 +245,7 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ImagePP-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
