@@ -1432,12 +1432,10 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
             {
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
-            openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+            openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
             DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
             ASSERT_EQ(BE_SQLITE_OK, openStatus);
             ASSERT_TRUE(db.IsValid());
-            ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
-            ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
             db->CloseDb();
             }
 

@@ -362,9 +362,6 @@ public:
     //! Gets a cached and prepared ECSqlStatement that can be used to modify the Db. This should be used only for aspects.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, BeSQLite::EC::ECCrudWriteToken const*) const;
     
-    //! @private
-    void ClearECSqlCache() const {m_ecsqlCache.Empty(); }
-
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
