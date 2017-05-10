@@ -2,7 +2,7 @@
 #
 #     $Source: folly.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -15,7 +15,7 @@ FollyDir = $(SrcRoot)libsrc/facebook/folly/
 
 cDefs +% -D__BE_FOLLY_DLL__
 
-$(BuildContext)VendorAPI/folly : $(_MakeFilePath)VendorAPI/folly
+$(BuildContext)VendorAPI/folly : $(_MakeFilePath)VendorApi/folly
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)Delivery/folly-notice.txt : $(_MakeFilePath)folly/LICENSE

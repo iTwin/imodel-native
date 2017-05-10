@@ -30,8 +30,12 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/BeThreadLocalStorage.h>
 
-#if defined(ANDROID)
+#if defined(__linux__)
     #define FOLLY_HAVE_CLOCK_GETTIME 1
+#endif
+
+#ifdef __clang__
+    #define FOLLY_HAVE_MEMRCHR 1
 #endif
 
 #define DCHECK_GT(a,b)
