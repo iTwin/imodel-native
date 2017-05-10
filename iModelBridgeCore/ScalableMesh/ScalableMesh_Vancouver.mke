@@ -324,7 +324,7 @@ $(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtiliti
 
 $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h ${MultiCompileDepends}
 
-#$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
+$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
 
 $(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
 
