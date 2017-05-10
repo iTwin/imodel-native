@@ -2579,7 +2579,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                DPoint3d point = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                m_tileData.m_pointData[i] = DPoint3d::From(point.x, -point.z, point.y);
                 if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
 
