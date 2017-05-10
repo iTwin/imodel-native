@@ -953,7 +953,7 @@ BentleyStatus Loader::_LoadTile()
 
             Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
             rangeGraphic->ActivateGraphicParams(gfParams);
-            rangeGraphic->AddRangeBox(tile._GetContentRange());
+            rangeGraphic->AddRangeBox(tile.GetRange());
             graphics.push_back(rangeGraphic->Finish());
             }
 
@@ -1222,6 +1222,7 @@ void Tile::InitTolerance()
 void Tile::_Invalidate()
     {
     m_graphic = nullptr;
+    m_contentRange = ElementAlignedBox3d();
     InitTolerance();
     }
 

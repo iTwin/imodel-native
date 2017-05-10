@@ -185,6 +185,8 @@ protected:
 
     //! Mark this tile as invalidated, e.g. because its contents have been modified.
     virtual void _Invalidate() = 0;
+
+    bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -254,13 +256,16 @@ public:
     //! Populates a list of tiles to draw. Returns SelectParent::Yes to substitute this tile's parent in its place.
     DGNPLATFORM_EXPORT virtual SelectParent _SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
 
-    //! Returns true if this tile is entirely outside of the viewing frustum or clipping planes
-    bool IsCulled(DrawArgsCR args) const;
+    //! Returns true if this tile's entire bounding volume is entirely outside of the viewing frustum or clipping planes
+    bool IsRegionCulled(DrawArgsCR args) const { return IsCulled(GetRange(), args); }
+    //! Returns true if the visible contents of this tile are entirely outside of the viewing frustum or clipping planes
+    bool IsContentCulled(DrawArgsCR args) const { return IsCulled(_GetContentRange(), args); }
 
     void Invalidate(DirtyRangesCR dirty);
 
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
     virtual ElementAlignedBox3d const& _GetContentRange() const {return m_range;}
+    bool HasContentRange() const;
 };
 
 /*=================================================================================**//**
