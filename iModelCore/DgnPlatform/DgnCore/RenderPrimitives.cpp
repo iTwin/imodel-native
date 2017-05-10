@@ -307,7 +307,7 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsCR toFind)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr DisplayParams::QueryTexture(DgnDbR db) const
     {
-    BeAssert(IsTextured::Maybe == m_isTextured);
+    BeAssert(IsTextured::No != m_isTextured);
 
     DgnMaterialCPtr material = DgnMaterial::Get(db, GetMaterialId());
     if (material.IsNull())

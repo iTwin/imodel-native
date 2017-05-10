@@ -648,7 +648,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                 size_t initialSize = selected.size();
                 allChildrenReady = std::accumulate(children->begin(), children->end(), true, [&args, &selected](bool init, TilePtr const& arg)
                     {
-                    if (!init || arg->IsCulled(args))
+                    if (!init || arg->IsContentCulled(args))
                         return init;
                     else if (!arg->IsReady())
                         return false;
@@ -669,7 +669,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
                 m_childrenLastUsed = args.m_now;
                 substitutingChildren = true;
                 for (auto const& child : *children)
-                    if (!child->IsCulled(args) && child->_HasGraphics())
+                    if (child->_HasGraphics() && !child->IsContentCulled(args))
                         selected.push_back(child);
                 }
             else
@@ -779,15 +779,24 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::HasContentRange() const
+    {
+    auto const& contentRange = _GetContentRange();
+    return &contentRange != &m_range && !contentRange.IsEqual(m_range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::IsCulled(DrawArgsCR args) const
+bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     {
     if (!IsDisplayable())
         return false;
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-    Frustum box(m_range);
+    Frustum box(range);
     bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
@@ -802,7 +811,7 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     if (!IsDisplayable())
         return Visibility::TooCoarse;
 
-    if (IsCulled(args))
+    if (IsRegionCulled(args))
         return Visibility::OutsideFrustum;
 
 #if !defined(NDEBUG)
@@ -810,8 +819,14 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
         return GetDepth() == s_forcedDepth ? Visibility::Visible : Visibility::TooCoarse;
 #endif
 
+    bool hasContentRange = HasContentRange();
     if (!_HasChildren())
+        {
+        if (hasContentRange && IsContentCulled(args))
+            return Visibility::OutsideFrustum;
+
         return Visibility::Visible; // it's a leaf node
+        }
 
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
@@ -820,8 +835,11 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
     if (pixelSize > _GetMaximumSize() * args.GetTileSizeModifier())
         return Visibility::TooCoarse;
-    else
-        return Visibility::Visible;
+
+    if (hasContentRange && IsContentCulled(args))
+        return Visibility::OutsideFrustum;
+
+    return Visibility::Visible;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -854,7 +872,7 @@ void Root::DrawInView(RenderContextR context)
 
     for (auto const& selectedTile : selectedTiles)
         {
-        BeAssert(!selectedTile->IsCulled(args));
+        BeAssert(!selectedTile->IsRegionCulled(args));
         selectedTile->_DrawGraphics(args);
 
 #if defined(DEBUG_TILE_DEPTHS)
@@ -1371,10 +1389,14 @@ void Tile::Invalidate(DirtyRangesCR dirty)
     if (dirty.empty())
         return;
 
-    // This tile needs to be regenerated
-    m_root.CancelTileLoad(*this);
-    SetNotLoaded();
-    _Invalidate();
+        // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
+    if (IsDisplayable())
+        {
+        // This tile needs to be regenerated
+        m_root.CancelTileLoad(*this);
+        SetNotLoaded();
+        _Invalidate();
+        }
 
     // Test children. Note that we are only partitioning the subset of damaged ranges which intersect the parent.
     auto children = _GetChildren(false);

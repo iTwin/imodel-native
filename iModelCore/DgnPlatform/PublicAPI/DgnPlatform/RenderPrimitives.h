@@ -928,6 +928,7 @@ public:
     DgnElementId GetElementId() const { return m_accum.GetElementId(); }
     DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
+    void Add(GeometryR geom) { m_accum.AddGeometry(geom); }
 
     //! Reset this builder for reuse.
     DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());

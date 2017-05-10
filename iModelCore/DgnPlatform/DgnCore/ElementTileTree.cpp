@@ -13,12 +13,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(NDEBUG)
-#define ELEMENT_TILE_DEBUG_RANGE false
-#else
-#define ELEMENT_TILE_DEBUG_RANGE true
-#endif
-
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
@@ -229,8 +223,10 @@ constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize;
 constexpr uint32_t s_minElementsPerTile = 100;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
-constexpr double s_spatialRangeMultiplier = 4.0;
+constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
+
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
@@ -444,6 +440,9 @@ public:
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
 };
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
+DEFINE_REF_COUNTED_PTR(TileBuilder);
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
@@ -466,7 +465,7 @@ public:
     void SetOutput(GeomPartR output) { BeAssert(m_output.IsNull()); m_output = &output; }
 };
 
-DEFINE_REF_COUNTED_PTR(TileBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileSubGraphic);
 DEFINE_REF_COUNTED_PTR(TileSubGraphic);
 
 //=======================================================================================
@@ -892,21 +891,6 @@ BentleyStatus Loader::_LoadTile()
 
     if (!graphics.empty())
         {
-        if (root.WantDebugRanges())
-            {
-            ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
-            GraphicParams gfParams;
-            gfParams.SetLineColor(color);
-            gfParams.SetFillColor(ColorDef::Green());
-            gfParams.SetWidth(0);
-            gfParams.SetLinePixels(tile.IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
-
-            Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
-            rangeGraphic->ActivateGraphicParams(gfParams);
-            rangeGraphic->AddRangeBox(tile.GetRange());
-            graphics.push_back(rangeGraphic->Finish());
-            }
-
         GraphicPtr graphic;
         switch (graphics.size())
             {
@@ -931,9 +915,8 @@ BentleyStatus Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
-    : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(m_is3d)
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
+    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()), m_cacheGeometry(m_is3d)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -996,7 +979,13 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     {
+    // We want to generate the lowest-resolution tiles before any of their descendants, so that we always have *something* to draw
+    // However, if we generated the single root tile before any others, we'd have to process every element in the model and waste all our work threads.
+    // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
+    // Possible optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
+    // of tiles required.
     m_rootTile = Tile::Create(*this, range);
+    m_rootTile->SetIsReady();
     return true;
     }
 
@@ -1138,6 +1127,68 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::DebugOptions Root::GetDebugOptions() const
+    {
+    return m_debugOptions | s_globalDebugOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
+    {
+    if (!_HasGraphics())
+        return nullptr;
+    else if (m_debugGraphics.m_options == options)
+        return m_debugGraphics.m_graphic;
+
+    m_debugGraphics.m_options = options;
+
+    bool wantRange = Root::DebugOptions::None != (Root::DebugOptions::ShowBoundingVolume & options);
+    bool wantContentRange = Root::DebugOptions::None != (Root::DebugOptions::ShowContentVolume & options);
+    if (!wantRange && !wantContentRange)
+        return (m_debugGraphics.m_graphic = nullptr);
+
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(GetElementRoot().GetDgnDb()));
+    GraphicParams params;
+    params.SetWidth(0);
+    if (wantRange)
+        {
+        ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
+        params.SetLineColor(color);
+        params.SetFillColor(color);
+        params.SetLinePixels(IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
+        gf->ActivateGraphicParams(params);
+        gf->AddRangeBox(GetRange());
+        }
+
+    if (wantContentRange)
+        {
+        params.SetLineColor(ColorDef::DarkRed());
+        params.SetFillColor(ColorDef::DarkRed());
+        params.SetLinePixels(GraphicParams::LinePixels::Solid);
+        gf->ActivateGraphicParams(params);
+        gf->AddRangeBox(_GetContentRange());
+        }
+
+    m_debugGraphics.m_graphic = gf->Finish();
+    return m_debugGraphics.m_graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
+    {
+    T_Super::_DrawGraphics(args);
+    auto debugGraphic = GetDebugGraphics(GetElementRoot().GetDebugOptions());
+    if (debugGraphic.IsValid())
+        args.m_graphics.Add(*debugGraphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
@@ -1166,6 +1217,7 @@ void Tile::InitTolerance()
 void Tile::_Invalidate()
     {
     m_graphic = nullptr;
+    m_contentRange = ElementAlignedBox3d();
     InitTolerance();
     }
 
@@ -1190,7 +1242,8 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
+    // The root tile is undisplayable (that's what returning 0.0 indicates)
+    return 0 == GetDepth() ? 0.0 : s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 //=======================================================================================
@@ -1211,6 +1264,7 @@ private:
     LoadContextCR   m_loadContext;
     size_t          m_geometryCount = 0;
     FeatureTable    m_featureTable;
+    DRange3d        m_contentRange = DRange3d::NullRange();
     bool            m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
@@ -1237,6 +1291,8 @@ public:
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes();
+    // Return a tight bounding volume
+    DRange3dCR GetContentRange() const { return m_contentRange; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1397,6 +1453,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
             builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
+            m_contentRange.Extend(visitor->Point());
             }
         }
 
@@ -1505,7 +1562,10 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& strokePoints : strokes.m_strokes)
+        {
+        m_contentRange.Extend(strokePoints);
         builder.AddPolyline(strokePoints, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1530,7 +1590,15 @@ MeshList Tile::GenerateMeshes(GeometryList const& geometries, bool doRangeTest, 
     GeometryOptions options;
     MeshGenerator generator(*this, options, loadContext);
     generator.AddMeshes(geometries, doRangeTest);
-    return loadContext.WasAborted() ? MeshList() : generator.GetMeshes();
+    
+    MeshList meshes;
+    if (!loadContext.WasAborted())
+        {
+        meshes = generator.GetMeshes();
+        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
+        }
+
+    return meshes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1592,6 +1660,7 @@ Render::Primitives::GeometryCollection Tile::CreateGeometryCollection(GeometryLi
     if (!context.WasAborted())
         {
         collection.Meshes() = generator.GetMeshes();
+        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
         if (!geometries.IsComplete())
             collection.MarkIncomplete();
         }
@@ -1791,7 +1860,10 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
     tf.Multiply(range, tileGeomPart->GetRange());
 
     DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
-    m_geometries.push_back(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
+
+    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
+    auto& parent = static_cast<TileBuilderR>(graphic);
+    parent.Add(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
