@@ -40,6 +40,7 @@
     <ClCompile Include="..\Drainage\bcdtmDrainageTrace.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp" />
     <ClCompile Include="..\Drainage\drainage.cpp" />
+    <ClCompile Include="..\Drainage\NewTrace.cpp" />
     <ClCompile Include="2d\bcdtm3DModel.cpp" />
     <ClCompile Include="2d\bcdtmBtree.cpp" />
     <ClCompile Include="2d\bcdtmCheck.cpp" />
@@ -220,7 +221,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -N0  re HeaderFiles Core</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -N0  re TerrainModel:HeaderFiles TerrainModel:Core</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakeCleanCommandLine>bb -N0 re TerrainModel:HeaderFiles Core -c</NMakeCleanCommandLine>
