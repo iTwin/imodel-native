@@ -481,7 +481,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_ancestor = -1;
             }
 
-        template<class EXTENT> size_t AddNode(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader)
+        template<class EXTENT> size_t AddNode(SMIndexNodeHeader<EXTENT>& pi_NodeHeader)
             {
             return GetStrategy<EXTENT>()->AddNodeToGroup(pi_NodeHeader, this);
             }
@@ -949,21 +949,26 @@ class SMGroupingStrategy
         void             Apply                      (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         SMNodeGroup::Ptr GetNextGroup               (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         void             ApplyPostProcess           (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        void             ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
-        size_t           AddNodeToGroup             (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
+        void             ApplyPostChildNodeProcess  (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        size_t           AddNodeToGroup             (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         void             AddGroup                   (SMNodeGroup* pi_pNodeGroup);
         void             SetOldMasterHeader         (SMIndexMasterHeader<EXTENT>& oldMasterHeader);
         void             SaveAllOpenGroups          () const;
         void             SaveMasterHeader           (const WString pi_pOutputDirPath) const;
         void             SaveNodeGroup              (SMNodeGroup::Ptr pi_Group) const;
+        void             SetSourceAndDestinationGCS(const GeoCoordinates::BaseGCSCPtr source, const GeoCoordinates::BaseGCSCPtr destination)
+            {
+            m_sourceGCS = source;
+            m_destinationGCS = destination;
+            }
 
     protected:
 
         virtual void                _Apply                      (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
         virtual SMNodeGroup::Ptr    _GetNextGroup               (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup) = 0;
         virtual void                _ApplyPostProcess           (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup) = 0;
-        virtual void                _ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup) = 0;
-        virtual size_t              _AddNodeToGroup             (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
+        virtual void                _ApplyPostChildNodeProcess  (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup) = 0;
+        virtual size_t              _AddNodeToGroup             (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
         virtual void                _AddGroup                   (SMNodeGroup* pi_pNodeGroup) = 0;
         virtual void                _SaveMasterHeader           (const WString pi_pOutputDirPath) const = 0;
         virtual void                _SaveNodeGroup              (SMNodeGroup::Ptr pi_Group) const = 0;
@@ -973,6 +978,8 @@ class SMGroupingStrategy
         std::map<uint32_t, SMNodeGroup::Ptr> m_OpenGroups;
         SMIndexMasterHeader<EXTENT> m_oldMasterHeader;
         SMNodeGroupMasterHeader m_GroupMasterHeader;
+        GeoCoordinates::BaseGCSCPtr m_sourceGCS;
+        GeoCoordinates::BaseGCSCPtr m_destinationGCS;
     };
 
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
@@ -1016,7 +1023,7 @@ void SMGroupingStrategy<EXTENT>::AddGroup(SMNodeGroup* pi_pNodeGroup)
     }
 
 template<class EXTENT>
-size_t SMGroupingStrategy<EXTENT>::AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
+size_t SMGroupingStrategy<EXTENT>::AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
     {
     return this->_AddNodeToGroup(pi_NodeHeader, pi_Group);
     }
@@ -1034,7 +1041,7 @@ void SMGroupingStrategy<EXTENT>::ApplyPostProcess(const SMIndexNodeHeader<EXTENT
     }
 
 template<class EXTENT>
-void SMGroupingStrategy<EXTENT>::ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMGroupingStrategy<EXTENT>::ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
     this->_ApplyPostChildNodeProcess(pi_NodeHeader, childIndex, pi_pParentGroup, pi_pChildGroup);
     }
@@ -1062,9 +1069,9 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
 
         virtual void                _Apply(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
-        virtual size_t              _AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
+        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        virtual void                _ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
@@ -1092,7 +1099,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     }
 
 template<class EXTENT>
-size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
+size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
     {
     // Fetch node header data
     size_t headerSize = 0;
@@ -1145,7 +1152,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostProcess(const SMIndexNodeHeade
     }
 
 template<class EXTENT>
-void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
 
     }
@@ -1202,9 +1209,9 @@ class SMCesium3DTileStrategy : public SMGroupingStrategy<EXTENT>
     protected:
         virtual void                _Apply(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
-        virtual size_t              _AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
+        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        virtual void                _ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
@@ -1225,8 +1232,43 @@ void SMCesium3DTileStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     }
 
 template<class EXTENT>
-size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
+size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group)
     {
+    if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
+        {
+        auto reprojectExtentHelper = [this](DPoint3d& low, DPoint3d& high)
+            {
+            auto reprojectPointHelper = [this](DPoint3d& point)
+                {
+                GeoPoint inLatLong, outLatLong;
+                if (m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
+                    assert(false); // Error in reprojection
+                if (m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
+                    assert(false); // Error in reprojection
+                if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
+                    assert(false); // Error in reprojection
+                };
+            bvector<DPoint3d> corners =
+                { low,
+                  DPoint3d::From(high.x, low.y,  low.z),
+                  DPoint3d::From(high.x, high.y, low.z),
+                  DPoint3d::From(low.x,  high.y, low.z),
+                  DPoint3d::From(low.x,  low.y,  high.z),
+                  DPoint3d::From(high.x, low.y,  high.z),
+                  high,
+                  DPoint3d::From(low.x, high.y, high.z)
+                };
+            for (auto& point : corners) reprojectPointHelper(point);
+            DRange3d newExtent = DRange3d::From(corners);
+            low = newExtent.low;
+            high = newExtent.high;
+            };
+        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent.low, pi_NodeHeader.m_nodeExtent.high);
+        if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+            {
+            reprojectExtentHelper(pi_NodeHeader.m_contentExtent.low, pi_NodeHeader.m_contentExtent.high);
+            }
+        }
     Json::Value nodeTile;
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
@@ -1257,7 +1299,7 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostProcess(const SMIndexNodeHeader<E
     }
 
 template<class EXTENT>
-void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
     if (pi_pChildGroup != pi_pParentGroup)
         {

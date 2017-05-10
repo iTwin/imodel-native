@@ -44,6 +44,8 @@ class SMSQLiteSisterFile
 
         void SaveSisterFiles();
 
+		void Compact();
+
         bool IsProjectFilesPathSet();
 
     };
