@@ -34,51 +34,62 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CONNECTENV;IMSOFF</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bentley.Discovery.Buddi.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
       <HintPath>packages\Bentley.Discovery.Buddi.Client.11.0.0.20\lib\net45\Bentley.Discovery.Buddi.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Bentley.EC.AbstractUI3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
-      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.Persistence3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.PluginBuilder3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.Presentation3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.ECObjects3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECObjects3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECObjects3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECObjects3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.ECSystem3">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECSystem3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECSystem3.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECSystem3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.Exceptions">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
-      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.General.1.0">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.General.1.0.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.General.1.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.logging-2.0, Version=2.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.logging-2.0.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.logging-2.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.logging.log4net-2.0">
       <HintPath>..\..\LastKnownGood\Winx64\LoggingSDK\Delivery\Bentley.logging.log4net-2.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.Platform">
-      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.SelectServer.SaaS.Client, Version=2017.2.17.2, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
       <HintPath>packages\Bentley.SelectServer.SaaS.Client.2017.2.17.2\lib\net45\Bentley.SelectServer.SaaS.Client.dll</HintPath>
@@ -105,7 +116,7 @@
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="RealityServicesNet">
-      <HintPath>..\..\..\out\Winx64\build\RealityModFramework\RealityServicesNet\RealityServicesNet.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\build\RealityModFramework\RealityServicesNet\RealityServicesNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
