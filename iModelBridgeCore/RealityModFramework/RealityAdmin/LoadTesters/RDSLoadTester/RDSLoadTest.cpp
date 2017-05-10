@@ -173,9 +173,9 @@ void RDSStats::WriteToFileBody(int userCount, Utf8String path, std::ofstream& fi
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-RDSUser::RDSUser(): User(){}
+RDSUser::RDSUser(): User(), m_handshake(AzureHandshake()) {}
 
-RDSUser::RDSUser(int id, Stats* stats) : User(id, stats) {}
+RDSUser::RDSUser(int id, Stats* stats) : User(id, stats), m_handshake(AzureHandshake()) {}
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017

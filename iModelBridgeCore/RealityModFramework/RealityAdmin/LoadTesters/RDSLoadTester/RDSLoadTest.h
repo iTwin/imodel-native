@@ -45,6 +45,8 @@ struct RDSStats : public Stats
 struct RDSUser : public User
     {
 public:
+    AzureHandshake              m_handshake;
+
     RDSUser();
     RDSUser(int id, Stats* stats);
     

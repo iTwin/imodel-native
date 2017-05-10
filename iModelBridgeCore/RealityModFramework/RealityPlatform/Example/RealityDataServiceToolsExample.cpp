@@ -431,13 +431,14 @@ int main(int argc, char* argv[])
         {
         RawServerResponse statResponse = RawServerResponse();
         RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
-        uint64_t NbRealityData;
-        uint64_t TotalSizeKB;
-        RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, statResponse);
+        RealityDataEnterpriseStat stat;
+        RealityDataService::Request(*ptt, stat, statResponse);
 
         std::cout << "Enterprise statistics: " << std::endl;
-        std::cout << "   NbRealityData: " << NbRealityData << std::endl;
-        std::cout << "   TotalSize(KB): " << TotalSizeKB << std::endl;
+        std::cout << "   NbRealityData: %lu\n" << stat.GetNbRealityData() << std::endl;
+        std::cout << "   TotalSize(KB): %lu\n\n" << stat.GetTotalSizeKB() << std::endl;
+        std::cout << "   UltimateId   : %s\n" << stat.GetUltimateId().c_str() << std::endl;
+        std::cout << "   UltimateSite : %s\n\n" << stat.GetUltimateSite().c_str() << std::endl;
         }
         
 

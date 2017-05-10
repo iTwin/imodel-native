@@ -664,7 +664,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(myRealityData->IsListable());
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
 
-    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetUltimateId().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetUltimateSite().c_str(), "");
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "");
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
@@ -742,9 +744,14 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
 
-    myRealityData->SetMetadataURL("http:\\www.bidon.com\\AgoodURL.html"); 
-    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
+    myRealityData->SetMetadataUrl("http:\\www.bidon.com\\AgoodURL.html"); 
+    EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
+    myRealityData->SetUltimateId("uId");
+    EXPECT_STREQ(myRealityData->GetUltimateId().c_str(), "uId");
+
+    myRealityData->SetUltimateSite("http:\\www.bidon.com\\AgoodURL.html");
+    EXPECT_STREQ(myRealityData->GetUltimateSite().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
     myRealityData->SetCopyright("Owned by Pinocchio"); 
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "Owned by Pinocchio");
