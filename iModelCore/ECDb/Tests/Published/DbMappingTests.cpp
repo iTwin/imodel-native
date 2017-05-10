@@ -8419,12 +8419,13 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
     GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
+TEST_F(DbMappingTestFixture, OverflowingStructColumns)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("OverflowPartiallyMapStructToOverFlow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -8568,7 +8569,184 @@ TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, StructsWithOverflowAndJoinedTables)
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "StructsWithOverflowAndJoinedTables.ecdb");
+    ASSERT_FALSE(asserted);
 
+    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name"});
+    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1"});
+    AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowAndJoinedTableCombinations)
+    {
+            {
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, SchemaItem(
+                R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECProperty propertyName="CodeNamespace" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations_1.ecdb");
+            ASSERT_FALSE(asserted);
+            ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+            AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","ps1","ps2","ps3"});
+            AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3","js4","js5","js6","js7"});
+            ASSERT_FALSE(ecdb.TableExists("ts_GeometricElement_Overflow"));
+            ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
+            }
+
+            {
+            //overflow table should start at the same time as joined table
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, SchemaItem(
+                R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECProperty propertyName="CodeNamespace" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations_2.ecdb");
+            ASSERT_FALSE(asserted);
+            ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+            AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","ps1","ps2","ps3"});
+            AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId"});
+            AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6","os7"});
+            }
+
+            {
+            //overflow table starts before joined table
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, SchemaItem(
+                R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECProperty propertyName="CodeNamespace" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations_3.ecdb");
+            ASSERT_FALSE(asserted);
+            ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+            AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","ps1","ps2",});
+            AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId"});
+            AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6","os7"});
+            }
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13

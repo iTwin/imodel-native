@@ -103,6 +103,24 @@ bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle               05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertColumnNames(ECDbCR ecdb, Utf8CP tableName, std::vector<Utf8String> const& expectedColumnNames, Utf8CP scenario)
+    {
+    bvector<Utf8String> actualColNames;
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, tableName)) << tableName << " Scenario: " << scenario;
+    ASSERT_EQ(expectedColumnNames.size(), actualColNames.size()) << tableName << " Scenario: " << scenario;
+    std::sort(actualColNames.begin(), actualColNames.end());
+
+    std::vector<Utf8String> expectedColNamesSorted {expectedColumnNames};
+    std::sort(expectedColNamesSorted.begin(), expectedColNamesSorted.end());
+    for (size_t i = 0; i < expectedColNamesSorted.size(); i++)
+        {
+        ASSERT_STRCASEEQ(expectedColNamesSorted[0].c_str(), actualColNames[0].c_str()) << tableName << " Scenario: " << scenario;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
@@ -116,6 +134,7 @@ void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pa
         ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
         }
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15

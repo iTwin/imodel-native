@@ -49,7 +49,8 @@ protected:
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereClause = nullptr);
     void AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName = nullptr);
     void AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyDdl);
-    void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario);
+    void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario = nullptr);
+    void AssertColumnNames(ECDbCR ecdb, Utf8CP tableName, std::vector<Utf8String> const& columnNames, Utf8CP scenario = nullptr);
 
     //!logs the issues if there are any
     static bool HasDataCorruptingMappingIssues(ECDbCR);
