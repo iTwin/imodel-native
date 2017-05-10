@@ -1670,7 +1670,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
 
     DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {   
-    TerrainModel::BcDTMP dtm(_GetBcDTM());
+    BcDTMP dtm(_GetBcDTM());
 
     if (dtm == nullptr)
         {
@@ -2971,9 +2971,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             computedTransform = Transform::FromProduct(approxTransform, computedTransform);
             }
         }
-    globalOrigin.scale(-1.0);
-    Transform translation = Transform::From(globalOrigin);
-    computedTransform = Transform::FromProduct(translation, computedTransform);
 
     return _SetReprojection(targetCS, computedTransform);
     }
