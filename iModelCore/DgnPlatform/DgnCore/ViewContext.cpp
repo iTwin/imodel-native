@@ -443,7 +443,11 @@ StatusInt ViewContext::_VisitHit(HitDetailCR hit)
         return SUCCESS;
         }
 
+#if defined(TODO_ELEMENT_TILE_FLASH)
     return VisitGeometry(*source);
+#else
+    return SUCCESS;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

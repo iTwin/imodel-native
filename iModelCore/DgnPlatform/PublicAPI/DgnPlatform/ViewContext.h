@@ -445,6 +445,7 @@ public:
     //! Set context to state used to flash elements.
     void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+    void SetFlashed(DgnElementId elemId) { m_decorations.m_flashedElem = elemId; }
 };  
 
 END_BENTLEY_DGN_NAMESPACE

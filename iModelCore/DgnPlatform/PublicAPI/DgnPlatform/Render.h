@@ -1797,6 +1797,7 @@ struct Decorations
     DecorationListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     DecorationListPtr m_worldOverlay;   // drawn in overlay mode, world units
     DecorationListPtr m_viewOverlay;    // drawn in overlay mode, view units
+    DgnElementId      m_flashedElem;
 };
 
 //=======================================================================================
