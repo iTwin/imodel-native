@@ -73,6 +73,12 @@ struct Root : TileTree::OctTree::Root
 {
     DEFINE_T_SUPER(TileTree::OctTree::Root);
 
+    enum class DebugOptions
+    {
+        None = 0,
+        ShowBoundingVolume = 1 << 0,
+        ShowContentVolume = 1 << 1,
+    };
 private:
     struct SolidPrimitivePartMap
     {
@@ -107,7 +113,7 @@ private:
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
     mutable GeomListMap             m_geomLists;
     bool                            m_is3d;
-    bool                            m_debugRanges;
+    DebugOptions                    m_debugOptions = DebugOptions::None;
     bool                            m_cacheGeometry;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
@@ -124,7 +130,8 @@ public:
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
-    bool WantDebugRanges() const { return m_debugRanges; }
+    DebugOptions GetDebugOptions() const;
+    void SetDebugOptions(DebugOptions opts) { m_debugOptions = opts; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 
@@ -136,6 +143,8 @@ public:
     void AddCachedGeometry(Render::Primitives::GeometryList&& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
     bool WantCacheGeometry(double rangeDiagonalSquared) const;
 };
+
+ENUM_IS_FLAGS(Root::DebugOptions);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -155,11 +164,13 @@ private:
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
     Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
     Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
+    Render::GraphicPtr GetDebugGraphics() const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }

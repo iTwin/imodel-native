@@ -13,8 +13,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#define ELEMENT_TILE_DEBUG_RANGE false
-
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
@@ -227,6 +225,8 @@ constexpr uint32_t s_minElementsPerTile = 100;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
+
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
@@ -938,21 +938,6 @@ BentleyStatus Loader::_LoadTile()
 
     if (!graphics.empty())
         {
-        if (root.WantDebugRanges())
-            {
-            ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
-            GraphicParams gfParams;
-            gfParams.SetLineColor(color);
-            gfParams.SetFillColor(ColorDef::Green());
-            gfParams.SetWidth(0);
-            gfParams.SetLinePixels(tile.IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
-
-            Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
-            rangeGraphic->ActivateGraphicParams(gfParams);
-            rangeGraphic->AddRangeBox(tile.GetRange());
-            graphics.push_back(rangeGraphic->Finish());
-            }
-
         GraphicPtr graphic;
         switch (graphics.size())
             {
@@ -977,9 +962,8 @@ BentleyStatus Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
-    : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_is3d(model.Is3dModel()), m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(m_is3d)
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
+    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()), m_cacheGeometry(m_is3d)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -1187,6 +1171,67 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
         geometry.append(iter->second);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::DebugOptions Root::GetDebugOptions() const
+    {
+    return m_debugOptions | s_globalDebugOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr Tile::GetDebugGraphics() const
+    {
+    if (!_HasGraphics())
+        return nullptr;
+
+    using DebugOptions = Root::DebugOptions;
+
+    auto const& root = GetElementRoot();
+    bool wantRange = DebugOptions::None != (DebugOptions::ShowBoundingVolume & root.GetDebugOptions());
+    bool wantContentRange = DebugOptions::None != (DebugOptions::ShowContentVolume & root.GetDebugOptions());
+    if (!wantRange && !wantContentRange)
+        return nullptr;
+
+    // ###TODO: It is expensive to regenerate this for every tile every frame...cache the Graphic and invalidate it when debug options change.
+    GraphicBuilderPtr gf = root.GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
+    GraphicParams params;
+    params.SetWidth(0);
+    if (wantRange)
+        {
+        ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
+        params.SetLineColor(color);
+        params.SetFillColor(color);
+        params.SetLinePixels(IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
+        gf->ActivateGraphicParams(params);
+        gf->AddRangeBox(GetRange());
+        }
+
+    if (wantContentRange)
+        {
+        params.SetLineColor(ColorDef::DarkRed());
+        params.SetFillColor(ColorDef::DarkRed());
+        params.SetLinePixels(GraphicParams::LinePixels::Solid);
+        gf->ActivateGraphicParams(params);
+        gf->AddRangeBox(_GetContentRange());
+        }
+
+    return gf->Finish();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
+    {
+    T_Super::_DrawGraphics(args);
+    auto debugGraphic = GetDebugGraphics();
+    if (debugGraphic.IsValid())
+        args.m_graphics.Add(*debugGraphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
