@@ -81,7 +81,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         //virtual BentleyStatus _GetMeshPartUnderClipMask(bvector<DPoint3d>& vertices,
         //                                 bvector<int32_t>&  verticeIndexes,
         //                                 BentleyApi::Dgn::DgnElementId&      clippedConceptualElementId) = 0;
-        virtual BentleyStatus _ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) = 0;
+        virtual BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) = 0;
         virtual BentleyStatus _ReloadAllClipMasks() = 0;
         virtual BentleyStatus _StartClipMaskBulkInsert() = 0;
         virtual BentleyStatus _StopClipMaskBulkInsert() = 0;
@@ -107,7 +107,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         //                                                                bvector<int32_t>&  verticeIndexes,
         //                                                                BentleyApi::Dgn::DgnElementId&      clippedConceptualElementId);
 
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew);
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew);
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReloadAllClipMasks();
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StartClipMaskBulkInsert();

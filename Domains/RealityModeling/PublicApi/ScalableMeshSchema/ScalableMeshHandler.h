@@ -193,7 +193,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
-        virtual BentleyStatus _ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
+        virtual BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
         virtual BentleyStatus _ReloadAllClipMasks() override;
         virtual BentleyStatus _StartClipMaskBulkInsert() override;
         virtual BentleyStatus _StopClipMaskBulkInsert() override;
@@ -298,7 +298,11 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void QueueAddTerrainRegions(uint64_t id, const bvector<DPoint3d>& boundary);
 
-		SCALABLEMESH_SCHEMA_EXPORT void ActivateTerrainRegion(BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel);
+		SCALABLEMESH_SCHEMA_EXPORT void ActivateTerrainRegion(const BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel);
+
+		SCALABLEMESH_SCHEMA_EXPORT void UnlinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId);
+
+		SCALABLEMESH_SCHEMA_EXPORT void LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const BentleyApi::Dgn::DgnCode& blanketCode);
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 

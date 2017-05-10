@@ -90,7 +90,7 @@ BentleyStatus ScalableMeshModel::_QueryTexture(ITextureTileId const& tileId, ITe
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
+BentleyStatus ScalableMeshModel::_ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
     {
      if (!IsTerrain())
         return SUCCESS;
@@ -2132,7 +2132,7 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     return model.get();    
     }
 
-void ScalableMeshModel::ActivateTerrainRegion(BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel)
+void ScalableMeshModel::ActivateTerrainRegion(const BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel)
 {
 	if(terrainModel->GetScalableMesh() == nullptr)
 		terrainModel->OpenFile(terrainModel->GetPath(), GetDgnDb());
@@ -2141,6 +2141,44 @@ void ScalableMeshModel::ActivateTerrainRegion(BentleyApi::Dgn::DgnElementId& id,
 	terrainModel->GetScalableMesh()->SetInvertClip(true);
 	terrainModel->ActivateClip(id.GetValue(), ClipMode::Clip);
 }
+
+void ScalableMeshModel::UnlinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId)
+    {
+	RemoveRegion(blanketId.GetValue());
+
+	if (nullptr != GetScalableMesh())
+		GetScalableMesh()->DeleteCoverage(blanketId.GetValue());
+
+    DeactivateClip(blanketId.GetValue());
+	ReloadClipMask(blanketId, true);
+    }
+
+void ScalableMeshModel::LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const BentleyApi::Dgn::DgnCode& blanketCode)
+    {
+	if (nullptr != GetScalableMesh())
+	    {
+		GetScalableMesh()->CreateCoverage(region, blanketId.GetValue(), blanketCode.GetValueCP());
+	    }
+
+	ActivateClip(blanketId.GetValue());
+	ReloadClipMask(blanketId, true);
+
+	ScalableMeshSchema::ScalableMeshModelP terrainModelP = dynamic_cast<ScalableMeshSchema::ScalableMeshModelP>(GetDgnDb().Models().FindModel(modelId).get());
+	if (terrainModelP == nullptr)
+	{
+		terrainModelP = dynamic_cast<ScalableMeshSchema::ScalableMeshModelP>(GetDgnDb().Models().GetModel(modelId).get());
+	}
+	ScalableMeshModelP regionModelP = nullptr;
+
+	FindTerrainRegion(blanketId.GetValue(), regionModelP);
+	if (regionModelP == nullptr)
+		{
+		AddTerrainRegion(blanketId.GetValue(), terrainModelP, region);
+		}
+	    
+	ActivateTerrainRegion(blanketId, terrainModelP);
+    }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  03/2016
