@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Script" nameSpacePrefix="script" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="Script" alias="script" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
 
-    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
 
     <ECEntityClass typeName="ScriptLibraryModel" displayLabel="A collection of scripts">
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00"/>
-      </ECCustomAttributes>
-      <BaseClass>bis:DefinitionModel</BaseClass>
-      <ECProperty propertyName="SourceUrl" displayLabel="Identifies the BIM that this library of scripts was copied from." typeName="string"/>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECProperty propertyName="SourceUrl" displayLabel="Identifies the BIM that this library of scripts was copied from." typeName="string"/>
     </ECEntityClass>
 
-  <ECCustomAttributeClass typeName="ScriptSignature" description="The signature of the script." appliesTo="EntityClass">
-      <ECProperty propertyName="ReturnType" typeName="string"/>
-      <ECProperty propertyName="Arguments" typeName="string"/>
+    <ECCustomAttributeClass typeName="ScriptSignature" description="The signature of the script." appliesTo="EntityClass">
+        <ECProperty propertyName="ReturnType" typeName="string"/>
+        <ECProperty propertyName="Arguments" typeName="string"/>
     </ECCustomAttributeClass>
 
     <ECEnumeration typeName="EcmaScriptVersions" description="ECMAScript Versions" backingTypeName="string" isStrict="true">
@@ -34,54 +34,54 @@
         <ECProperty propertyName="EntryPoint" displayLabel="The function in the script that is to be called when the script is executed." typeName="string"/>
     </ECEntityClass>
 
-  <ECEntityClass typeName="PopulateModelList" description="Scripts that populate a set of DgnModelIds.">
-    <BaseClass>Script</BaseClass>
-    <ECCustomAttributes>
-      <ScriptSignature>
-        <ReturnType>void</ReturnType>
-        <Arguments>DgnObjectIdSet[out],DgnDb,Viewport</Arguments>
-      </ScriptSignature>
-    </ECCustomAttributes>
-  </ECEntityClass>
+    <ECEntityClass typeName="PopulateModelList" description="Scripts that populate a set of DgnModelIds.">
+        <BaseClass>Script</BaseClass>
+        <ECCustomAttributes>
+            <ScriptSignature>
+                <ReturnType>void</ReturnType>
+                <Arguments>DgnObjectIdSet[out],DgnDb,Viewport</Arguments>
+            </ScriptSignature>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
-  <ECEntityClass typeName="FilterModels" description="Scripts that accept or reject models.">
-    <BaseClass>Script</BaseClass>
-    <ECCustomAttributes>
-      <ScriptSignature>
-        <ReturnType>boolean</ReturnType>
-        <Arguments>DgnModel</Arguments>
-      </ScriptSignature>
-    </ECCustomAttributes>
-  </ECEntityClass>
+    <ECEntityClass typeName="FilterModels" description="Scripts that accept or reject models.">
+        <BaseClass>Script</BaseClass>
+        <ECCustomAttributes>
+            <ScriptSignature>
+                <ReturnType>boolean</ReturnType>
+                <Arguments>DgnModel</Arguments>
+            </ScriptSignature>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
-  <ECEntityClass typeName="PopulateElementList" description="Scripts that populate a set of DgnElementIds.">
-    <BaseClass>Script</BaseClass>
-    <ECCustomAttributes>
-      <ScriptSignature>
-        <ReturnType>void</ReturnType>
-        <Arguments>DgnObjectIdSet[out],DgnDb,Viewport</Arguments>
-      </ScriptSignature>
-    </ECCustomAttributes>
-  </ECEntityClass>
+    <ECEntityClass typeName="PopulateElementList" description="Scripts that populate a set of DgnElementIds.">
+        <BaseClass>Script</BaseClass>
+        <ECCustomAttributes>
+            <ScriptSignature>
+                <ReturnType>void</ReturnType>
+                <Arguments>DgnObjectIdSet[out],DgnDb,Viewport</Arguments>
+            </ScriptSignature>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
-  <ECEntityClass typeName="FilterElement" description="Scripts that accept or reject elements.">
-    <BaseClass>Script</BaseClass>
-    <ECCustomAttributes>
-      <ScriptSignature>
-        <ReturnType>boolean</ReturnType>
-        <Arguments>DgnElement</Arguments>
-      </ScriptSignature>
-    </ECCustomAttributes>
-  </ECEntityClass>
+    <ECEntityClass typeName="FilterElement" description="Scripts that accept or reject elements.">
+        <BaseClass>Script</BaseClass>
+        <ECCustomAttributes>
+            <ScriptSignature>
+                <ReturnType>boolean</ReturnType>
+                <Arguments>DgnElement</Arguments>
+            </ScriptSignature>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
-  <!-- Associate a script with an element. The script may update the element, or it may just check the element. -->
-  <ECRelationshipClass typeName="ScriptAppliesToElement" strength="referencing">
-    <Source cardinality="(0,N)" polymorphic="true">
-      <Class class="Script"/>
-    </Source>
-    <Target cardinality="(0,N)" polymorphic="true">
-      <Class class="bis:Element"/>
-    </Target>
-  </ECRelationshipClass>
+    <!-- Associate a script with an element. The script may update the element, or it may just check the element. -->
+    <ECRelationshipClass typeName="ScriptAppliesToElement" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="applies to" polymorphic="true">
+            <Class class="Script"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
 
 </ECSchema>
