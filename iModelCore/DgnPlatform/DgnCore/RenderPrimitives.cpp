@@ -469,7 +469,7 @@ void Mesh::InitEdges() const
 
         void AddFace(bool visible, uint32_t faceIndex)
             {
-            BeAssert (visible == m_visible);
+//            BeAssert (visible == m_visible);
             if (m_faceCount < 2)
                 {
                 m_visible |= visible;
@@ -477,7 +477,7 @@ void Mesh::InitEdges() const
                 }
             else
                 {
-                BeAssert (false && "NonManifold mesh");
+ //               BeAssert (false && "NonManifold mesh");
                 }
             }
         };
