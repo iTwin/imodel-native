@@ -36,7 +36,7 @@
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedApi/ECObjects" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
@@ -166,7 +166,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECObjects-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -180,7 +180,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECObjects-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -276,7 +276,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="PerformanceGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="PerformanceGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECObjects-PerformanceTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -290,7 +290,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunPerformanceGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunPerformanceGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECObjects-PerformanceGtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
