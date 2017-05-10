@@ -953,7 +953,7 @@ BentleyStatus Loader::_LoadTile()
 
             Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
             rangeGraphic->ActivateGraphicParams(gfParams);
-            rangeGraphic->AddRangeBox(tile.GetRange());
+            rangeGraphic->AddRangeBox(tile._GetContentRange());
             graphics.push_back(rangeGraphic->Finish());
             }
 
@@ -1268,6 +1268,7 @@ private:
     LoadContextCR   m_loadContext;
     size_t          m_geometryCount = 0;
     FeatureTable    m_featureTable;
+    DRange3d        m_contentRange = DRange3d::NullRange();
     bool            m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
@@ -1294,6 +1295,8 @@ public:
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes();
+    // Return a tight bounding volume
+    DRange3dCR GetContentRange() const { return m_contentRange; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1454,6 +1457,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
             builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
+            m_contentRange.Extend(visitor->Point());
             }
         }
 
@@ -1562,7 +1566,10 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& strokePoints : strokes.m_strokes)
+        {
+        m_contentRange.Extend(strokePoints);
         builder.AddPolyline(strokePoints, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1587,7 +1594,15 @@ MeshList Tile::GenerateMeshes(GeometryList const& geometries, bool doRangeTest, 
     GeometryOptions options;
     MeshGenerator generator(*this, options, loadContext);
     generator.AddMeshes(geometries, doRangeTest);
-    return loadContext.WasAborted() ? MeshList() : generator.GetMeshes();
+    
+    MeshList meshes;
+    if (!loadContext.WasAborted())
+        {
+        meshes = generator.GetMeshes();
+        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
+        }
+
+    return meshes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1649,6 +1664,7 @@ Render::Primitives::GeometryCollection Tile::CreateGeometryCollection(GeometryLi
     if (!context.WasAborted())
         {
         collection.Meshes() = generator.GetMeshes();
+        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
         if (!geometries.IsComplete())
             collection.MarkIncomplete();
         }

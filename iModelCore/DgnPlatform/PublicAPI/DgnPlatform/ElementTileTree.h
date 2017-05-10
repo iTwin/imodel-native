@@ -145,7 +145,8 @@ struct Tile : TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
 private:
-    double          m_tolerance;
+    double                      m_tolerance;
+    mutable ElementAlignedBox3d m_contentRange;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
     void InitTolerance();
@@ -166,6 +167,7 @@ public:
     double GetTolerance() const { return m_tolerance; }
     DRange3d GetDgnRange() const;
     DRange3d GetTileRange() const { return GetRange(); }
+    ElementAlignedBox3d const& _GetContentRange() const override { return m_contentRange.IsNull() ? GetRange() : m_contentRange; }
 
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }

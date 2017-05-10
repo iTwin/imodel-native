@@ -258,6 +258,9 @@ public:
     bool IsCulled(DrawArgsCR args) const;
 
     void Invalidate(DirtyRangesCR dirty);
+
+    //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
+    virtual ElementAlignedBox3d const& _GetContentRange() const {return m_range;}
 };
 
 /*=================================================================================**//**
