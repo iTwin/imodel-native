@@ -77,7 +77,10 @@ struct TraceFeature : RefCountedBase
         bool m_finished = false;
         DTMStatusInt m_errorStatus = DTM_SUCCESS;
         WString m_errorMessage;
-        bvector<TraceFeaturePtr> m_sourceFeatures;
+
+        TraceFeature* m_parent;
+        bvector<TraceFeaturePtr> m_children;
+        bool m_isHidden = false;
 
         TraceFeature(DrainageTracer& tracer) : m_tracer(tracer)
             {
@@ -104,13 +107,23 @@ struct TraceFeature : RefCountedBase
             {
             return m_finished || m_errorStatus != DTM_SUCCESS;
             }
-        bvector<TraceFeaturePtr>& GetSourceFeatures()
+        bool IsHidden() const
             {
-            return m_sourceFeatures;
+            return m_isHidden;
             }
+
 
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) abstract;
         virtual void DoCallback(DTMFeatureCallback loadFunction, void* args) abstract;
+
+        void HideChildren()
+            {
+            m_isHidden = true;
+            for (auto child : m_children)
+                {
+                child->HideChildren();
+                }
+            }
     };
 
 //----------------------------------------------------------------------------------------*
@@ -282,10 +295,14 @@ struct TracePond : public TraceFeature
         double m_depth;
         DPoint3d m_pt;
 
-        TracePond(DrainageTracer& tracer, DPoint3d pt) : TraceFeature(tracer), m_pt(pt)
+        TracePond(DrainageTracer& tracer, DPoint3dCR pt) : TraceFeature(tracer), m_pt(pt)
             { }
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) abstract;
     public:
+        DPoint3dCR GetLowPoint() const
+            {
+            return m_pt;
+            }
         const bvector<DPoint3d>& GetPoints() const
             {
             return m_points;
@@ -315,7 +332,7 @@ struct TracePondLowPoint : public TracePond
     {
     private:
         long m_ptNum;
-        TracePondLowPoint(DrainageTracer& tracer, long ptNum, DPoint3d pt) : TracePond(tracer, pt), m_ptNum(ptNum)
+        TracePondLowPoint(DrainageTracer& tracer, long ptNum, DPoint3dCR pt) : TracePond(tracer, pt), m_ptNum(ptNum)
             {
 
             }
@@ -323,7 +340,7 @@ struct TracePondLowPoint : public TracePond
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
     public:
 
-        static TracePondPtr Create(DrainageTracer& tracer, long ptNum, DPoint3d pt)
+        static TracePondPtr Create(DrainageTracer& tracer, long ptNum, DPoint3dCR pt)
             {
             return new TracePondLowPoint(tracer, ptNum, pt);
             }
@@ -336,14 +353,24 @@ struct TracePondEdge: public TracePond
     {
     private:
         long m_ptNum1, m_ptNum2;
+        bvector<bvector<DPoint3d>> m_sumpLines;
 
-        TracePondEdge(DrainageTracer& tracer, long ptNum1, long ptNum2, DPoint3d pt) : TracePond(tracer, pt), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
-            { }
+        TracePondEdge(DrainageTracer& tracer, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, pt), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
+            {}
     protected:
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
-    public:
 
-        static TracePondEdgePtr Create(DrainageTracer& tracer, long ptNum, long ptNum2, DPoint3d pt)
+    public:
+        virtual void DoCallback(DTMFeatureCallback loadFunction, void* args) override
+            {
+            if (!m_points.empty())
+            __super::DoCallback(loadFunction, args);
+
+            for (auto&& sump : m_sumpLines)
+                loadFunction(DTMFeatureType::DescentTrace, 0, 0, sump.data(), (long)sump.size(), args);
+            }
+
+        static TracePondEdgePtr Create(DrainageTracer& tracer, long ptNum, long ptNum2, DPoint3dCR pt)
             {
             return new TracePondEdge(tracer, ptNum, ptNum2, pt);
             }
@@ -357,14 +384,14 @@ struct TracePondTriangle : public TracePond
     private:
         long m_ptNum, m_ptNum2, m_ptNum3;
 
-        TracePondTriangle(DrainageTracer& tracer, long ptNum1, long ptNum2, long ptNum3, DPoint3d pt) : TracePond(tracer, pt), m_ptNum(ptNum1), m_ptNum2(ptNum2), m_ptNum3(ptNum3)
+        TracePondTriangle(DrainageTracer& tracer, long ptNum1, long ptNum2, long ptNum3, DPoint3dCR pt) : TracePond(tracer, pt), m_ptNum(ptNum1), m_ptNum2(ptNum2), m_ptNum3(ptNum3)
             {
             }
     protected:
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
     public:
 
-        static TracePondPtr Create(DrainageTracer& tracer, long ptNum, long ptNum2, long ptNum3, DPoint3d pt)
+        static TracePondPtr Create(DrainageTracer& tracer, long ptNum, long ptNum2, long ptNum3, DPoint3dCR pt)
             {
             return new TracePondTriangle(tracer, ptNum, ptNum2, ptNum3, pt);
             }
@@ -377,16 +404,17 @@ struct TracePondFromPondExit: public TracePond
     {
     private:
         TracePondExit& m_pondExit;
+        DPoint3d m_exitPt;
 
-        TracePondFromPondExit(DrainageTracer& tracer, TracePondExit& pondExit, DPoint3d pt) : TracePond(tracer, pt), m_pondExit(pondExit)
+        TracePondFromPondExit(DrainageTracer& tracer, TracePondExit& pondExit, DPoint3dCR lowPt, DPoint3dCR exitPt) : TracePond(tracer, lowPt), m_pondExit(pondExit), m_exitPt(exitPt)
             { }
     protected:
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
     public:
 
-        static TracePondFromPondExitPtr Create(DrainageTracer& tracer, TracePondExit& pondExit, DPoint3d pt)
+        static TracePondFromPondExitPtr Create(DrainageTracer& tracer, TracePondExit& pondExit, DPoint3dCR lowPt, DPoint3dCR exitPt)
             {
-            return new TracePondFromPondExit(tracer, pondExit, pt);
+            return new TracePondFromPondExit(tracer, pondExit, lowPt, exitPt);
             }
     };
 
@@ -494,7 +522,8 @@ struct DrainageTracer
             {
             for (const auto& feature : m_features)
                 {
-                feature->DoCallback(loadFunction, userArg);
+                if (!feature->IsHidden())
+                    feature->DoCallback(loadFunction, userArg);
                 }
             }
         void ProcessFeatures()
@@ -609,7 +638,9 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
 
     if (pointType == 1) /// OnPoint
         {
-        newFeatures.push_back(TraceOnPoint::Create(m_tracer, trgPnt1, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z)));
+        auto child = TraceOnPoint::Create(m_tracer, trgPnt1, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+        newFeatures.push_back(child);
+        m_children.push_back(child);
         return;
         }
 
@@ -620,7 +651,8 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         {
         if (pointAddrP(dtmP, trgPnt1)->z == pointAddrP(dtmP, trgPnt2)->z && pointAddrP(dtmP, trgPnt1)->z == pointAddrP(dtmP, trgPnt3)->z)
             {
-            newFeatures.push_back(TracePondTriangle::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z)));
+            auto child = TracePondTriangle::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+            newFeatures.push_back(child);
             return;
             }
         }
@@ -637,20 +669,31 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         {
         if (bcdtmMath_pointSideOfDtmObject(dtmP, trgPnt1, trgPnt2, trgPnt3) < 0)
             std::swap(trgPnt2, trgPnt3);
-        newFeatures.push_back(TraceInTriangle::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z)));
+        auto child = TraceInTriangle::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+
         }
     else if (trgPnt2 != dtmP->nullPnt && trgPnt3 == dtmP->nullPnt)
         {
         trgPnt3 = bcdtmList_nextAntDtmObject(dtmP, trgPnt1, trgPnt2);
         if (trgPnt3 < 0) { SetError(); return; }
         if (pointAddrP(dtmP, trgPnt3)->z < z && bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
-            newFeatures.push_back(TraceOnEdge::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z)));
+            {
+            auto child = TraceOnEdge::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+            newFeatures.push_back(child);
+            m_children.push_back(child);
+            }
 
         std::swap(trgPnt1, trgPnt2);
         trgPnt3 = bcdtmList_nextAntDtmObject(dtmP, trgPnt1, trgPnt2);
         if (trgPnt3 < 0) { SetError(); return; }
         if (pointAddrP(dtmP, trgPnt3)->z < z && bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
-            newFeatures.push_back(TraceOnEdge::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z)));
+            {
+            auto child = TraceOnEdge::Create(m_tracer, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+            newFeatures.push_back(child);
+            m_children.push_back(child);
+            }
         }
     }
 
@@ -679,7 +722,11 @@ void TraceInTriangle::Process(bvector<TraceFeaturePtr>& newFeatures)
     m_points.push_back(nextPt);
     m_finished = true;
     if (nextPnt3 != dtmP->nullPnt)  // Check this doesn't flow off the edge of triangulation.
-        newFeatures.push_back(TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, angle));
+        {
+        auto child = TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, angle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        }
     }
 
 //----------------------------------------------------------------------------------------*
@@ -711,7 +758,9 @@ void TraceOnEdge::ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures)
         if (nextPnt3 == dtmP->nullPnt)  // This flows of the triangulation?
             {
             m_finished = true;
-            newFeatures.push_back(TraceOnPoint::Create(m_tracer, pnt1, nextPt, lastAngle));
+            auto child = TraceOnPoint::Create(m_tracer, pnt1, nextPt, lastAngle);
+            newFeatures.push_back(child);
+            m_children.push_back(child);
             return;
             }
         long hullPoint = 0;
@@ -736,7 +785,9 @@ void TraceOnEdge::ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures)
         {
         //if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond Over Zero Slope Triangle");
         //if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, pnt1, pnt3, pnt2, nullptr, 0, 0, exitPointP, priorPointP, nextPointP, nullptr)) goto errexit;
-        newFeatures.push_back(TracePondTriangle::Create(m_tracer, pnt1, pnt2, pnt3, m_pt));
+        auto child = TracePondTriangle::Create(m_tracer, pnt1, pnt2, pnt3, m_pt);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
         m_finished = true;
         }
     }
@@ -752,9 +803,17 @@ void TraceOnEdge::ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures)
     long prevPnt = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2);
 
     if (pointAddrP(dtmP, prevPnt)->z == m_pt.z)
-        newFeatures.push_back(TracePondTriangle::Create(m_tracer, pnt1, pnt2, pnt3, *pointAddrP(dtmP, pnt1)));
+        {
+        auto child = TracePondTriangle::Create(m_tracer, pnt1, pnt2, pnt3, *pointAddrP(dtmP, pnt1));
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        }
     else
-        newFeatures.push_back(TracePondEdge::Create(m_tracer, pnt1, pnt2, *pointAddrP(dtmP, pnt1)));
+        {
+        auto child = TracePondEdge::Create(m_tracer, pnt1, pnt2, *pointAddrP(dtmP, pnt1));
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        }
     m_finished = true;
     }
 
@@ -764,7 +823,7 @@ void TraceOnEdge::ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures)
 void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     {
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-    long nextPnt1, nextPnt2 = dtmP->nullPnt, nextPnt3;
+    long nextPnt1, nextPnt2 = dtmP->nullPnt, nextPnt3 = dtmP->nullPnt;
     DPoint3d nextPt;
     if (pnt3 == dtmP->nullPnt)
         {
@@ -820,7 +879,9 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
 
         lastAngle = bcdtmMath_getAngle(pointAddrP(dtmP, pnt1)->x, pointAddrP(dtmP, pnt1)->y, nextPt.x, nextPt.y);
 
-        newFeatures.push_back(TraceOnPoint::Create(m_tracer, pnt2, nextPt, lastAngle));
+        auto child = TraceOnPoint::Create(m_tracer, pnt2, nextPt, lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
         return;
         }
 
@@ -897,7 +958,18 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     if (pnt2 == dtmP->nullPnt)
         {
         m_finished = true;
-        newFeatures.push_back(TraceOnPoint::Create(m_tracer, nextPnt1, nextPt, lastAngle));
+        auto child = TraceOnPoint::Create(m_tracer, nextPnt1, nextPt, lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        return;
+        }
+    if (pnt3 == dtmP->nullPnt)
+        {
+        m_finished = true;
+        if ((nextPnt3 = bcdtmList_nextAntDtmObject(dtmP, nextPnt1, nextPnt2)) < 0) { SetError(); return; }
+        auto child = TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
         return;
         }
     m_pt = nextPt;
@@ -1009,7 +1081,9 @@ void TraceOnPoint::ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long des
                 nextPnt1 = descentPnt1;
                 nextPnt2 = descentPnt2;
                 if ((nextPnt3 = bcdtmList_nextAntDtmObject(dtmP, descentPnt1, descentPnt2)) < 0) { SetError(); return; }
-                newFeatures.push_back(TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, m_lastAngle));
+                auto child = TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, m_lastAngle);
+                newFeatures.push_back(child);
+                m_children.push_back(child);
                 return;
                 }
             }
@@ -1021,6 +1095,7 @@ void TraceOnPoint::ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long des
     auto pond = TracePondEdge::Create(m_tracer, descentPnt1, descentPnt2, m_pt);
     m_tracer.AddPond(*pond);
     newFeatures.push_back(pond);
+    m_children.push_back(pond);
     }
 
 //----------------------------------------------------------------------------------------*
@@ -1063,6 +1138,7 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         auto pond = TracePondLowPoint::Create(m_tracer, m_ptNum, m_pt);
         m_tracer.AddPond(*pond);
         newFeatures.push_back(pond);
+        m_children.push_back(pond);
         return;
 
         }
@@ -1070,7 +1146,9 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         {
         if (slope == 0) // ZeroSlope
             {
-            newFeatures.push_back(TracePondEdge::Create(m_tracer, m_ptNum, pnt1, m_pt));
+            auto child = TracePondEdge::Create(m_tracer, m_ptNum, pnt1, m_pt);
+            newFeatures.push_back(child);
+            m_children.push_back(child);
             //long pnt3 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
             //newFeatures.push_back(TraceOnEdge::Create(m_tracer, pnt1, pnt2, pnt3, *pointAddrP(dtmP, pnt1)));
             m_finished = true;
@@ -1098,7 +1176,9 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             return;
             }
         long pnt3 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
-        newFeatures.push_back(TraceOnEdge::Create(m_tracer, pnt1, pnt2, pnt3, m_pt, m_lastAngle));
+        auto child = TraceOnEdge::Create(m_tracer, pnt1, pnt2, pnt3, m_pt, m_lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
         return;
         }
     else
@@ -1175,33 +1255,60 @@ int bcdtmDrainage_determinePondAboutExitPointDtmObject
     if (dbg) bcdtmWrite_message(0, 0, 0, "Placing Tptr Polygon About Low Point");
     if (bcdtmList_insertTptrPolygonAroundPointDtmObject(dtmP, lowPoint, &startPoint)) goto errexit;
 
-    //double ptZ = pointAddrP(dtmP, lowPoint)->z;
-    //bool expanded = true;
-    //while (expanded)
-    //    {
-    //    expanded = false;
-    //    for(long sp = -1; sp != startPoint;)
-    //        {
-    //        if (sp == -1)
-    //            sp = startPoint;
-    //        long np = nodeAddrP(dtmP, sp)->tPtr;
-    //        long outerPt = bcdtmList_nextClkDtmObject(dtmP, sp, np);
-    //        if (nodeAddrP(dtmP, np)->tPtr == outerPt)
-    //            {
-    //            nodeAddrP(dtmP, np)->tPtr = dtmP->nullPnt;
-    //            nodeAddrP(dtmP, sp)->tPtr = outerPt;
-    //            continue;
-    //            }
-    //        if (pointAddrP(dtmP, outerPt)->z < ptZ && nodeAddrP(dtmP, outerPt)->tPtr == dtmP->nullPnt)
-    //            {
-    //            nodeAddrP(dtmP, sp)->tPtr = outerPt;
-    //            nodeAddrP(dtmP, outerPt)->tPtr = np;
-    //            expanded = true;
-    //            continue;
-    //            }
-    //        sp = np;
-    //        }
-    //    }
+    // Find all points on the polygon that are lower than the exitPoint and add the points around it.
+    double ptZ = pointAddrP(dtmP, lowPoint)->z;
+    bool expanded = true;
+    while (expanded)
+        {
+        expanded = false;
+        for(long sp = -1; sp != startPoint;)
+            {
+            if (sp == -1)
+                sp = startPoint;
+            long np = nodeAddrP(dtmP, sp)->tPtr;
+
+            if (nodeAddrP(dtmP, sp)->hPtr == dtmP->nullPnt && nodeAddrP(dtmP, np)->hPtr == dtmP->nullPnt)
+                {
+                if (pointAddrP(dtmP, np)->z <= ptZ)
+                    {
+                    long outerPt = bcdtmList_nextClkDtmObject(dtmP, sp, np);
+                    if (outerPt == -99)
+                        goto errexit;
+
+                    if (nodeAddrP(dtmP, outerPt)->tPtr == dtmP->nullPnt)
+                        {
+                        nodeAddrP(dtmP, sp)->tPtr = outerPt;
+                        nodeAddrP(dtmP, outerPt)->tPtr = np;
+                        np = outerPt;
+                        expanded = true;
+                        //continue;
+                        }
+                    else if (nodeAddrP(dtmP, outerPt)->tPtr == nodeAddrP(dtmP, np)->tPtr)
+                        {
+                        nodeAddrP(dtmP, sp)->tPtr = outerPt;
+                        nodeAddrP(dtmP, np)->tPtr = dtmP->nullPnt;
+                        if (np == startPoint)
+                            startPoint = outerPt;
+                        np = outerPt;
+                        expanded = true;
+                        }
+                    }
+                }
+            sp = np;
+            }
+        }
+
+    {
+    long sp = startPoint;
+    do
+        {
+        long np = nodeAddrP(dtmP, sp)->tPtr;
+
+        if (!bcdtmList_testLineDtmObject(dtmP, sp, np))
+            np = np;
+        sp = np;
+        } while (sp != startPoint);
+    }
     /*
     ** Expand Pond Boundary To Exit Point
     */
@@ -1412,24 +1519,40 @@ void TracePondEdge::GetExitInfo(bvector<PondExitInfo>& exits)
     }
 */
 
-    if (bcdtmDrainage_determinePondAboutZeroSlopeSumpLineDtmObject(dtmP, nullptr, nullptr, nullptr, m_ptNum1, m_ptNum2, false, false, &exitPoint, &priorPoint, &nextPoint, &sumpLines.ptr, &sumpLines.num, &polygon.ptr, nullptr, &area)) { SetError(); return; }
+    if (bcdtmDrainage_determinePondAboutZeroSlopeSumpLineDtmObject(dtmP, nullptr, nullptr, nullptr, m_ptNum1, m_ptNum2, false, true, &exitPoint, &priorPoint, &nextPoint, &sumpLines.ptr, &sumpLines.num, &polygon.ptr, nullptr, &area)) { SetError(); return; }
     if (polygon.ptr != nullptr)
         {
         m_points.insert(m_points.end(), &polygon.ptr->polyPtsP[0], &polygon.ptr->polyPtsP[polygon.ptr->numPolyPts]);
         m_points.push_back(polygon.ptr->polyPtsP[0]);
         }
+    else if (sumpLines.ptr != nullptr)
+        {
+        // Add Sumplines.
+        bvector<DPoint3d> pts;
+        long prevPtNum = -1;
+        DTM_SUMP_LINES* sumpLine = sumpLines.ptr;
+        for (int i = 0; i < sumpLines.num; i++, sumpLine++)
+            {
+            if (prevPtNum == sumpLine->sP2)
+                std::swap(sumpLine->sP1, sumpLine->sP2);
+
+            if (prevPtNum != sumpLine->sP1)
+                {
+                if (!pts.empty())
+                    {
+                    m_sumpLines.push_back(pts);
+                    pts.clear();
+                    }
+                pts.push_back(*pointAddrP(dtmP, sumpLine->sP1));
+                }
+            prevPtNum = sumpLine->sP2;
+            pts.push_back(*pointAddrP(dtmP, prevPtNum));
+            }
+        if (!pts.empty())
+            m_sumpLines.push_back(pts);
+        }
 
     exits.push_back(PondExitInfo(exitPoint, priorPoint, nextPoint));
-    }
-
-//----------------------------------------------------------------------------------------*
-// @bsimethod                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-int GetBoundary(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)
-    {
-    bvector<DPoint3d>& retArray = *(bvector<DPoint3d>*)(userArg);
-    retArray.insert(retArray.end(), &points[0], &points[numPoints]);
-    return DTM_SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------*
@@ -1458,9 +1581,6 @@ void TracePondTriangle::GetExitInfo(bvector<PondExitInfo>& exits)
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondFromPondExit::GetExitInfo(bvector<PondExitInfo>& exits)
     {
-    SetErrorNotImplemented(L"Exit From PondExit");
-    return;
-    // This is temporary code.
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
     long hullPoint;
     long exitPoint, priorPoint, nextPoint;
@@ -1507,7 +1627,7 @@ void TracePondFromPondExit::GetExitInfo(bvector<PondExitInfo>& exits)
             }
         }
     // Check if the exit point is higher.
-    double dz = pointAddrP(dtmP, exitPoint)->z - m_pt.z;
+    double dz = pointAddrP(dtmP, exitPoint)->z - m_exitPt.z;
     if (m_tracer.AscentTrace())
         dz = -dz;
     if (dz <= 0)
@@ -1542,6 +1662,16 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
         {
         m_exitPoints.push_back(exitInfo.exitPoint);
 
+        DPoint3d exitPt = *pointAddrP(dtmP, exitInfo.exitPoint);
+
+        //              Check If Exit Point Pond Can Be Processed
+        m_depth = fabs(exitPt.z - m_pt.z);
+        if (m_depth > m_tracer.m_falseLowDepth)
+            {
+            // Finished in a real pond/hill.
+            return;
+            }
+
         TracePondExit* existingPondExit = m_tracer.FindPondExit(exitInfo.exitPoint);
 
         if (existingPondExit != nullptr)
@@ -1556,16 +1686,6 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
             return;
             }
 
-        DPoint3d exitPt = *pointAddrP(dtmP, exitInfo.exitPoint);
-
-        //              Check If Exit Point Pond Can Be Processed
-        m_depth = fabs(exitPt.z - m_pt.z);
-        if (m_depth > m_tracer.m_falseLowDepth)
-            {
-            // Finished in a real pond/hill.
-            return;
-            }
-
         // Check if Pond exit is back to the original pond exit.
 
         auto pondExit = TracePondExit::Create(m_tracer, exitInfo.exitPoint, exitInfo.priorPoint, exitInfo.nextPoint, exitPt);
@@ -1573,6 +1693,7 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
         pondExit->AddPond(*this);
         m_tracer.AddPondExit(*pondExit);
         newFeatures.push_back(pondExit);
+        m_children.push_back(pondExit);
         }
     }
 
@@ -1585,7 +1706,20 @@ void TracePondExit::ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures)
         return;
 
     m_hasProcessedDeadPond = true;
-    newFeatures.push_back(TracePondFromPondExit::Create(m_tracer, *this, m_exitPt));
+
+    for (auto&& pond : m_ponds)
+        pond->HideChildren();
+
+    DPoint3d lowPt = m_exitPt;
+    for (auto&& pond : m_ponds)
+        {
+        if (pond->GetLowPoint().z < lowPt.z)
+            lowPt = pond->GetLowPoint();
+        }
+
+    auto child = TracePondFromPondExit::Create(m_tracer, *this, lowPt, m_exitPt);
+    newFeatures.push_back(child);
+    m_children.push_back(child);
     }
 
 //----------------------------------------------------------------------------------------*
@@ -1624,9 +1758,17 @@ void TracePondExit::Process(bvector<TraceFeaturePtr>& newFeatures)
     // Set Parameters For Next Maximum Descent Trace
     double lastAngle = bcdtmMath_getAngle(m_exitPt.x, m_exitPt.y, nextPt.x, nextPt.y);
     if (nextPnt2 == dtmP->nullPnt)  // Point
-        newFeatures.push_back(TraceOnPoint::Create(m_tracer, nextPnt1, nextPt, lastAngle));
+        {
+        auto child = TraceOnPoint::Create(m_tracer, nextPnt1, nextPt, lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        }
     else
-        newFeatures.push_back(TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, lastAngle));
+        {
+        auto child = TraceOnEdge::Create(m_tracer, nextPnt1, nextPnt2, nextPnt3, nextPt, lastAngle);
+        newFeatures.push_back(child);
+        m_children.push_back(child);
+        }
 
     m_numExitFlows++;
     }
@@ -1709,6 +1851,8 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
     //startX = 773373.93307517446;
     //startY = 1785709.0749221439;
     //startX = 773230; startY = 1784950;
+    //startX = 290513.48747999995;
+    //startY = 6242144.7302313335;
     if (falseLowDepth < 0)
         bcdtmDrainage_traceMaximumDescentDtmObjectOld(dtmP, drainageTablesP, loadFunctionP, -falseLowDepth, startX, startY, userP);
     else
