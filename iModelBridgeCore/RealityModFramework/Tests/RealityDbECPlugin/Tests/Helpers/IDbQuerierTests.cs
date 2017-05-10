@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Bentley.EC.Persistence;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
@@ -13,7 +11,7 @@ using IndexECPlugin.Tests.Common;
 using NUnit.Framework;
 using Rhino.Mocks;
 
-namespace IndexECPlugin.Tests.Tests
+namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class SqlQueryHelpersTests
