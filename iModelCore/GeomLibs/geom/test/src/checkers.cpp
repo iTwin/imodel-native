@@ -1523,10 +1523,7 @@ void Check::ClearGeometry (char const *name)
         path.AppendExtension (L"dgnjs");
 
         BeFile file;
-        if (
-              BeFileStatus::Success == file.Create (path.c_str ())
-           //&& BeFileStatus::Success == file.Open (path.c_str (), BeFileAccess::Write)
-           )
+        if (BeFileStatus::Success == file.Create (path.c_str (), true))
             {
             uint32_t bytesWritten = 0;
             Utf8String string;
