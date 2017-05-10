@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Bentley.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,8 +23,13 @@
         #define BENTLEY_CPLUSPLUS 201103L
     #elif defined (__clang__)
         #define CLANG_VERSION (__clang_major__ * 1000 + __clang_minor__ * 10)
-        #if (CLANG_VERSION < 4010 && !defined (__EMSCRIPTEN__) && !defined(ANDROID))
-            #error upgrade to XCode version 4.5
+        #if __cplusplus < 201103L
+            #error upgrade clang
+        #endif
+        #if defined (__APPLE__)
+            #if (CLANG_VERSION < 4010)
+                #error upgrade to XCode version 4.5
+            #endif
         #endif
         #define BENTLEY_CPLUSPLUS 201103L
     #else

@@ -16,10 +16,6 @@
 #include "BeAssert.h"
 #include "BentleyAllocator.h"
 
-#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
-#include <cstring>
-#endif
-
 #define __W_CONST(name) L##name
 #define UTF8_TO_WCONST(name) __W_CONST(name)
 

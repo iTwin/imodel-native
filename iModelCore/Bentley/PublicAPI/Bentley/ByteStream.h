@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ByteStream.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,7 @@
 #include "BeAssert.h"
 #include <utility>
 #include <string.h>
+#include <stdlib.h> // on *nix, the declarations for free and realloc are in stdlib.h
 
 BEGIN_BENTLEY_NAMESPACE
 
