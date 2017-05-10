@@ -35,8 +35,8 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="FollyShim" ExcludePlatforms="Linux*">
-        <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/>
+    <Part Name="FollyShim">
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
     </Part>
 
     <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="B02">
@@ -243,7 +243,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpTest -dTEST_COLLECTION_PRODUCT=BeHttp-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpTest -dTEST_COLLECTION_PRODUCT=BeHttp-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubProduct ProductName="BeHttp-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -257,7 +257,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeHttp-Gtest/BeHttpTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeHttp-Gtest/BeHttpTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="BeHttp-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
       <Bindings>
@@ -355,7 +355,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Integration-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x64">
+    <Part Name="Integration-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x64">
         <SubProduct ProductName="BeHttp-IntegrationTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
