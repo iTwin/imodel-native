@@ -1525,7 +1525,7 @@ void Check::ClearGeometry (char const *name)
         BeFile file;
         if (
               BeFileStatus::Success == file.Create (path.c_str ())
-           && BeFileStatus::Success == file.Open (path.c_str (), BeFileAccess::Write)
+           //&& BeFileStatus::Success == file.Open (path.c_str (), BeFileAccess::Write)
            )
             {
             uint32_t bytesWritten = 0;
