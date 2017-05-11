@@ -233,6 +233,10 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
+    
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     CloseDb();
 
     DbResult result = BE_SQLITE_OK;
@@ -355,6 +359,10 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
      */
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
+
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     SaveDb();
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -364,6 +372,10 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
     SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
+
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     SaveDb();
 
     BackupTestFile();

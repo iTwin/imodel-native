@@ -536,6 +536,12 @@ DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
+    if (Txns().HasLocalChanges())
+        {
+        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+        return BE_SQLITE_ERROR;
+        }
+
     bvector<ECN::ECSchemaCP> schemasToImport;
     DbResult result = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
     if (result != BE_SQLITE_OK)

@@ -388,10 +388,9 @@ DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 DbResult DgnDomains::ImportSchemas()
     {
-    TxnManagerR txnMgr = m_dgndb.Txns();
-    if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
+    if (m_dgndb.Txns().HasLocalChanges())
         {
-        BeAssert(false && "Cannot re-import schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
         return BE_SQLITE_ERROR;
         }
 
@@ -434,6 +433,12 @@ DbResult DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::UpgradeSchemas()
     {
+    if (m_dgndb.Txns().HasLocalChanges())
+        {
+        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+        return BE_SQLITE_ERROR;
+        }
+
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
     DbResult result = DoValidateSchemas(&schemasToImport, &domainsToImport);
@@ -452,13 +457,8 @@ DbResult DgnDomains::UpgradeSchemas()
     SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
     result = DoImportSchemas(importSchemas, importOptions);
     if (BE_SQLITE_OK != result)
-        {
-        if (m_dgndb.IsBriefcase())
-            m_dgndb.Txns().EndTracking();
-
         return result;
-        }
-        
+
     if (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso)
         DeleteHandlers(); // Since ClassId-s can change, recreate the Handler-ClassId associations
 

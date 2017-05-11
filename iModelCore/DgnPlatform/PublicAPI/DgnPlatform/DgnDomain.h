@@ -408,8 +408,17 @@ public:
     void SetRequired(Required isRequired) { m_isRequired = isRequired; }
 
     //! Imports (or upgrades) the schema of this domain into the supplied DgnDb.
-    //! @remarks Use DgnDomains::ImportSchemas() to import or upgrade all domain schemas and
+    //! @remarks 
+    //! <ul>
+    //! <li> Use DgnDomains::ImportSchemas() to import or upgrade all domain schemas and
     //! their references. 
+    //! <li> Only used for cases where the schemas of an optional domain are to be imported in. In all other cases 
+    //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
+    //! <li> It's recommended that there aren't any local changes (committed or uncommitted) before this call. These 
+    //! can be flushed out by creating a revision. See @ref RevisionManager.
+    //! </ul>
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb. 
