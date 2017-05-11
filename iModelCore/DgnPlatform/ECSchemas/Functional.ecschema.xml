@@ -91,7 +91,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing" modifier="None">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:DrawingGraphicRepresentsElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:DrawingGraphic"/>
         </Source>

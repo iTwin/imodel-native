@@ -2158,13 +2158,13 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsElement" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="DrawingGraphic"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
-            <Class class="GeometricElement"/>
+            <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
 
