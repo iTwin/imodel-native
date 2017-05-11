@@ -56,13 +56,8 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
-
-
-#ifndef VANCOUVER_API
 #include "ScalableMeshGroup.h"
-#endif
 
-#include "ScalableMeshMesher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -2646,29 +2641,21 @@ template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetGroup()
 
 template <class POINT> void ScalableMesh<POINT>::_AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted, const DPoint3d* region, size_t nOfPtsInRegion)
     {
-#ifndef VANCOUVER_API
     if (!m_groupP.IsValid())
         {
         m_groupP = ScalableMeshGroup::Create();
         }
     
     dynamic_cast<ScalableMeshGroup*>(m_groupP.get())->AddMember(sMesh, isRegionRestricted, region, nOfPtsInRegion);
-#else
-    assert(!"Make this compile in Vanvouver");
-#endif
     }
 
 
 template <class POINT> void ScalableMesh<POINT>::_RemoveFromGroup(IScalableMeshPtr& sMesh)
     {
-#ifndef VANCOUVER_API
     if (m_groupP.IsValid())
         {
         dynamic_cast<ScalableMeshGroup*>(m_groupP.get())->RemoveMember(sMesh);
         }
-#else
-    assert(!"Make this compile in Vanvouver");
-#endif
     }
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
