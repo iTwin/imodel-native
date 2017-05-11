@@ -319,15 +319,15 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 2/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue)
+BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, IECSchemaRemapperCP remapper)
     {
-    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "");
+    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "", remapper);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString)
+BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECSchemaRemapperCP remapper)
     {
     if (!jsonValue.isObject())
         return ERROR;
@@ -343,14 +343,17 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
         if (*memberName == '$')
             continue;
 
-        ECPropertyP ecProperty = currentClass.GetPropertyP(memberName);
+        Utf8String remappedMemberName(memberName);
+        if (nullptr != remapper)
+            remapper->ResolvePropertyName(remappedMemberName, currentClass);
+        ECPropertyP ecProperty = currentClass.GetPropertyP(remappedMemberName.c_str());
         if (!EXPECTED_CONDITION(ecProperty != nullptr))
             {
             status = ERROR;
             continue;
             }
 
-        Utf8String accessString = (currentAccessString[0] == 0) ? memberName : currentAccessString + "." + memberName;
+        Utf8String accessString = (currentAccessString[0] == 0) ? remappedMemberName.c_str() : currentAccessString + "." + remappedMemberName.c_str();
         if (ecProperty->GetIsPrimitive())
             {
             ECValue ecValue;
@@ -369,7 +372,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
         else if (ecProperty->GetIsStruct())
             {
             StructECPropertyCP structProperty = ecProperty->GetAsStructProperty();
-            if (SUCCESS != ECInstanceFromJson(instance, childJsonValue, structProperty->GetType(), accessString))
+            if (SUCCESS != ECInstanceFromJson(instance, childJsonValue, structProperty->GetType(), accessString, remapper))
                 status = ERROR;
             continue;
             }
