@@ -118,18 +118,39 @@ protected:
         MapStrategyInfo(Strategy strat, TablePerHierarchyInfo const& tphInfo) : m_strategy(strat), m_tphInfo(tphInfo) {}
         };
 
+    struct PropertyAccessString final
+        {
+        Utf8String m_schemaNameOrAlias;
+        Utf8String m_className;
+        Utf8String m_propAccessString;
+
+        PropertyAccessString(Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propAccessString) : m_schemaNameOrAlias(schemaNameOrAlias), m_className(className), m_propAccessString(propAccessString) {}
+        Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s.%s", m_schemaNameOrAlias.c_str(), m_className.c_str(), m_propAccessString.c_str()); return str; }
+        };
+
     struct ColumnInfo final
         {
-        Utf8String m_propAccessString;
         Utf8String m_tableName;
         Utf8String m_columnName;
-        bool m_isVirtual;
+        bool m_isVirtual = false;
+
+        ColumnInfo(Utf8CP tableName, Utf8CP columnName) : ColumnInfo(tableName, columnName, false) {}
+        ColumnInfo(Utf8CP tableName, Utf8CP columnName, bool isVirtual) : m_tableName(tableName), m_columnName(columnName), m_isVirtual(isVirtual) {}
+
+        bool operator==(ColumnInfo const& rhs) const { return m_tableName.EqualsIAscii(rhs.m_tableName) && m_columnName.EqualsIAscii(rhs.m_columnName) && m_isVirtual == rhs.m_isVirtual; }
+        bool operator!=(ColumnInfo const& rhs) const { return !(*this == rhs); }
+
+        Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s (IsVirtual: %s)", m_tableName.c_str(), m_columnName.c_str(), m_isVirtual ? "true" : "false"); return str; }
         };
 
     bool TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const;
-    bool TryGetColumnInfo(std::vector<ColumnInfo>&, ECDbCR ecdb, ECN::ECPropertyCR) const;
+    bool TryGetColumnInfo(std::vector<ColumnInfo>&, ECDbCR ecdb, PropertyAccessString const&) const;
+    bool TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& colInfosByAccessString, ECDbCR ecdb, PropertyAccessString const&) const;
+    
+    void AssertPropertyMapping(ECDbCR, PropertyAccessString const&, std::vector<ColumnInfo> const& expectedColumnInfos) const;
+    void AssertPropertyMapping(ECDbCR, PropertyAccessString const&, std::map<Utf8String, ColumnInfo> const& expectedColumnInfosByAccessString) const;
 
-public:
+    public:
     DbMappingTestFixture () : SchemaImportTestFixture() {}
 
     virtual ~DbMappingTestFixture() {}

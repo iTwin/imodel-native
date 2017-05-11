@@ -20,5 +20,3 @@ SchemaUpdateTestFixture.UpdateECDbMapCA_DbIndexChanges
 SchemaUpdateTestFixture.RemoveKindOfQuantityFromECProperty
 SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 
-#TFS 698307
-DbMappingTestFixture.OverflowAndJoinedTableCombinations
