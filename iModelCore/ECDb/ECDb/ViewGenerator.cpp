@@ -75,10 +75,7 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
         {
         Utf8CP updatableViewSQL = stmt.GetValueText(0);
         if (ecdb.ExecuteSql(updatableViewSQL) != BE_SQLITE_OK)
-            {
-            BeAssert(false && "Failed to drop updatable view");
             return ERROR;
-            }
         }
 
     return SUCCESS;
@@ -208,10 +205,7 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
         {
         Utf8CP classViewSQL = stmt.GetValueText(0);
         if (ecdb.ExecuteSql(classViewSQL) != BE_SQLITE_OK)
-            {
-            BeAssert(false && "Failed to drop ECClass view");
             return ERROR;
-            }
         }
 
     return SUCCESS;

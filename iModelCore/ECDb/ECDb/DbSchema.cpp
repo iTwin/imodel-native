@@ -993,7 +993,7 @@ BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::LoadColumns(DbTable& table) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM ec_Column WHERE TableId=? ORDER BY Ordinal");
     if (stmt == nullptr)
         return ERROR;
 
@@ -1011,7 +1011,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
-    int sharedColumnCount = 0;
+    uint32_t sharedColumnCount = 0;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);

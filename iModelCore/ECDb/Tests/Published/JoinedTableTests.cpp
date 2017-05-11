@@ -318,47 +318,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on single direct subclass and SharedColumnsForSubclasses on Root",
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='A' typeName='long'/>"
-        "        <ECProperty propertyName='B' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' >"
-        "        <BaseClass>Foo</BaseClass>"
-        "        <ECProperty propertyName='C' typeName='long'/>"
-        "        <ECProperty propertyName='D' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Boo' >"
-        "        <ECCustomAttributes>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Foo</BaseClass>"
-        "        <ECProperty propertyName='E' typeName='long'/>"
-        "        <ECProperty propertyName='F' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Roo' >"
-        "        <BaseClass>Boo</BaseClass>"
-        "        <ECProperty propertyName='G' typeName='long'/>"
-        "        <ECProperty propertyName='H' typeName='string'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>"));
-
-    testSchemas.push_back(SchemaItem(
         "JoinedTablePerDirectSubclass on both subclasses",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
@@ -400,7 +359,7 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on both subclasses and shared columns",
+        "JoinedTablePerDirectSubclass and ShareColumns on both subclasses",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -410,9 +369,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "            <ClassMap xmlns='ECDbMap.02.00'>"
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='A' typeName='long'/>"
         "        <ECProperty propertyName='B' typeName='string'/>"
@@ -420,6 +376,9 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "   <ECEntityClass typeName='Goo' >"
         "        <ECCustomAttributes>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='C' typeName='long'/>"
@@ -428,6 +387,9 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "   <ECEntityClass typeName='Boo' >"
         "        <ECCustomAttributes>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='E' typeName='long'/>"
@@ -858,7 +820,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"

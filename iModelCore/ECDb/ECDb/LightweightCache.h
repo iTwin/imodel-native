@@ -29,7 +29,7 @@ struct LightweightCache final: NonCopyableClass
             };
         struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-        typedef bmap < DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
+        typedef bmap<DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:

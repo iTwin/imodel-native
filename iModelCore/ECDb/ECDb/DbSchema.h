@@ -57,7 +57,7 @@ struct PropertyPathId final : BeInt64Id
 struct DbSchemaNameGenerator final
     {
 private:
-    int m_lastId = 0;
+    uint32_t m_lastId = 0;
     Utf8String m_format;
 
 public:
@@ -68,11 +68,11 @@ public:
         { 
         BeAssert(!Utf8String::IsNullOrEmpty(namePrefix));
         if (!Utf8String::IsNullOrEmpty(namePrefix))
-            m_format.assign(namePrefix).append("%d");
+            m_format.assign(namePrefix).append("%" PRIu32);
         }
     ~DbSchemaNameGenerator() {}
 
-    void Initialize(int lastId) { BeAssert(IsValid()); m_lastId = lastId; }
+    void Initialize(uint32_t lastId) { BeAssert(IsValid()); m_lastId = lastId; }
     void Generate(Utf8StringR generatedName) { BeAssert(IsValid()); m_lastId++; generatedName.Sprintf(m_format.c_str(), m_lastId); }
 
     bool IsValid() const { return !m_format.empty(); }
@@ -422,7 +422,7 @@ public:
     DbTable(DbTableId id, Utf8StringCR name, DbSchema&, PersistenceType, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
-    void InitializeSharedColumnNameGenerator(int existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
+    void InitializeSharedColumnNameGenerator(uint32_t existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
     DbTableId GetId() const { return m_id; }
     void SetId(DbTableId id) { m_id = id; }
     Utf8StringCR GetName() const { return m_name; }

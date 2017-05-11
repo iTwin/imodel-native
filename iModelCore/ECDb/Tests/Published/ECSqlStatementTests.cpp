@@ -354,7 +354,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
                              <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
                         <ShareColumns xmlns='ECDbMap.02.00'>
-                              <SharedColumnCount>100</SharedColumnCount>
+                              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>
                         </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="I" typeName="int" />
@@ -3862,7 +3862,7 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
@@ -4832,7 +4832,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
         "           <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "           </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
@@ -4879,7 +4879,7 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>5</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -5028,7 +5028,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />

@@ -111,7 +111,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
-        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
+        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpgradeSupportedFeatures).
         //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
         //! they should be obtained as needed through the SchemaManager API.
         //! @remarks ECDb always persists ECSchemas in their invariant culture. That means localization ECSchemas are ignored
@@ -127,11 +127,11 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! If the option is not set, nullptr can be passed for @p token.
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-        //! @see @ref ECDbECSchemaImportAndUpdate
+        //! @see @ref ECDbECSchemaImportAndUpgrade
         ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-        //only for legacy support which cannot yet follow the strict bim rules
+        //only for legacy support which cannot yet follow the strict BIS rules
         ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions, SchemaImportToken const* token = nullptr) const;
 #endif
 

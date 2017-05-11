@@ -319,7 +319,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
     if (schemaPrepareContext.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
         return ERROR;
 
-    SchemaWriter schemaWriter(m_ecdb);
+    SchemaWriter schemaWriter(m_ecdb, context.GetOptions());
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {

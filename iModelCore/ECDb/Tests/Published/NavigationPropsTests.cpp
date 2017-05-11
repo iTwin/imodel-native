@@ -148,7 +148,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     {
     ECDbCR ecdb = SetupECDb("relecclassidandsharedcolumns.ecdb",
-               SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                             <ECEntityClass typeName="Model">
@@ -160,7 +160,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
                                         <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns="ECDbMap.02.00">
-                                        <SharedColumnCount>10</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="string" />
@@ -219,53 +219,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
     }
 
-    ECClassCP elementClass = ecdb.Schemas().GetClass("TestSchema", "Element");
-    ASSERT_TRUE(elementClass != nullptr);
-    ECPropertyCP modelProp = elementClass->GetPropertyP("Model");
-    ASSERT_TRUE(modelProp != nullptr);
-    ECPropertyCP parentProp = elementClass->GetPropertyP("Parent");
-    ASSERT_TRUE(parentProp != nullptr);
-
-    std::vector<ColumnInfo> colInfos;
-    ASSERT_TRUE(TryGetColumnInfo(colInfos, ecdb, *modelProp));
-    ASSERT_EQ(2, (int) colInfos.size()) << "Element.Model";
-    for (ColumnInfo const& colInfo : colInfos)
-        {
-        ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Model";
-        if (colInfo.m_propAccessString.EqualsIAscii("Model.Id"))
-            {
-            ASSERT_STREQ("ps5", colInfo.m_columnName.c_str()) << "Element.Model.Id";
-            ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Model.Id";
-            }
-        else if (colInfo.m_propAccessString.EqualsIAscii("Model.RelECClassId"))
-            {
-            ASSERT_STREQ("ModelRelECClassId", colInfo.m_columnName.c_str()) << "Element.Model.RelECClassId";
-            ASSERT_TRUE(colInfo.m_isVirtual) << "Element.Model.RelECClassId";
-            }
-        else
-            FAIL() << "TryGetColumnInfo for Element.Model returned unexpected result. Invalid prop access string: " << colInfo.m_propAccessString.c_str();
-        }
-
-    colInfos.clear();
-    ASSERT_TRUE(TryGetColumnInfo(colInfos, ecdb, *parentProp));
-    ASSERT_EQ(2, (int) colInfos.size()) << "Element.Parent";
-    for (ColumnInfo const& colInfo : colInfos)
-        {
-        ASSERT_STREQ("ts_Element", colInfo.m_tableName.c_str()) << "Element.Parent";
-        if (colInfo.m_propAccessString.EqualsIAscii("Parent.Id"))
-            {
-            ASSERT_STREQ("ps3", colInfo.m_columnName.c_str()) << "Element.Parent.Id";
-            ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.Id";
-            }
-        else if (colInfo.m_propAccessString.EqualsIAscii("Parent.RelECClassId"))
-            {
-            ASSERT_STREQ("ps4", colInfo.m_columnName.c_str()) << "Element.Parent.RelECClassId";
-            ASSERT_FALSE(colInfo.m_isVirtual) << "Element.Parent.RelECClassId";
-            }
-        else
-            FAIL() << "TryGetColumnInfo for Element.Parent returned unexpected result. Invalid prop access string: " << colInfo.m_propAccessString.c_str();
-        }
-
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Model"), 
+        std::map<Utf8String, ColumnInfo>{{"Model.Id", ColumnInfo("ts_Element","ps5")}, 
+         {"Model.RelECClassId", ColumnInfo("ts_Element","ModelRelECClassId",true)}});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Parent"),
+                          std::map<Utf8String, ColumnInfo>{{"Parent.Id", ColumnInfo("ts_Element","ps3")},
+                                    {"Parent.RelECClassId", ColumnInfo("ts_Element","ps4")}});
     }
 
 //---------------------------------------------------------------------------------------
@@ -1811,7 +1770,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
                                     <ECEntityClass typeName='PhysicalElement'>
                                         <ECCustomAttributes>
                                             <ShareColumns xmlns='ECDbMap.02.00'>
-                                                <SharedColumnCount>4</SharedColumnCount>
+                                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
                                                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                                             </ShareColumns>
                                         </ECCustomAttributes>

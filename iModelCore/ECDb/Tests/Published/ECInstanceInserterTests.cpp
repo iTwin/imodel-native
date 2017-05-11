@@ -393,7 +393,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(generatedKey, testInstance)) << testScenario << ": Inserting instance without instance id is expected to succeed if auto generation is enabled";
         assertInsert(testInstance, generatedKey.GetInstanceId());
 
-        ECInstanceId userProvidedId(generatedKey.GetInstanceId().GetValue() + 1111LL);
+        ECInstanceId userProvidedId((uint64_t)(generatedKey.GetInstanceId().GetValue() + 1111LL));
 
         ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, true, &userProvidedId)) << testScenario << ": When passing autogenerateECInstanceId=true user provided id must not be passed";
 
@@ -413,7 +413,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         assertInsert(testInstance, userProvidedKey.GetInstanceId());
 
         //now set a valid instance id in test instance
-        userProvidedId = ECInstanceId(userProvidedId.GetValue() + 100LL);
+        userProvidedId = ECInstanceId((uint64_t)(userProvidedId.GetValue() + 100LL));
         Utf8Char instanceIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
         userProvidedId.ToString(instanceIdStr);
         testInstance.SetInstanceId(instanceIdStr);

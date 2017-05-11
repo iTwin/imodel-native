@@ -36,6 +36,8 @@
     <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp" />
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
+    <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
+    <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
@@ -92,6 +94,7 @@
     <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
+    <ClInclude Include="Published\BulkCrudTestFixture.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClInclude Include="Published\ECSqlAsserter.h" />
     <ClInclude Include="Published\ECSqlDeleteTestDataset.h" />
