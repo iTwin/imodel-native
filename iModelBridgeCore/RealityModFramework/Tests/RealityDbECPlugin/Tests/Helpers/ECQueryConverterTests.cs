@@ -1,24 +1,20 @@
 ﻿#define BBOXQUERY
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
-using Bentley.ECObjects.XML;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.Helpers;
+using IndexECPlugin.Tests.Common;
+using NUnit.Framework;
 //using Microsoft.Data.Schema.ScriptDom;
 //using Microsoft.Data.Schema.ScriptDom.Sql;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Data;
-using IndexECPlugin.Tests.Common;
 
 
-namespace IndexECPlugin.Tests
+namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class ECQueryConverterTests

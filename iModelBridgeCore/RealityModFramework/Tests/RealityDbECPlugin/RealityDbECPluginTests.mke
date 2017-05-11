@@ -79,20 +79,21 @@ ASSEMBLY_STRONGNAME = 1
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
-			$(baseDir)Tests/IDbQuerierTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
-            $(baseDir)Tests/InstanceCacheManagerTests.cs \
-            $(baseDir)Tests/InstanceComplementTests.cs \
-            $(baseDir)Tests/InstanceOverriderTests.cs \
-            $(baseDir)Tests/USGSDataExtractorsTests.cs \
-            $(baseDir)Tests/ECQueryConverterTests.cs \
-            $(baseDir)Tests/MimicTableWriterTests.cs \
-            $(baseDir)Tests/MimicTableAccessorTests.cs \
-            $(baseDir)Tests/PackagerTests.cs \
-			$(baseDir)Tests/SqlQueryProviderTests.cs \
-			$(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
-			$(baseDir)Tests/USGSDataFetcherTests.cs
+            $(baseDir)Tests/SqlQueryProviderTests.cs \
+            $(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
+            $(baseDir)Tests/USGSDataExtractorsTests.cs\
+            $(baseDir)Tests/USGSDataFetcherTests.cs \
+            $(baseDir)Tests/Helpers/ECQueryConverterTests.cs \
+            $(baseDir)Tests/Helpers/ECToSQLMapTests.cs \
+            $(baseDir)Tests/Helpers/IDbQuerierTests.cs \
+            $(baseDir)Tests/Helpers/InstanceCacheManagerTests.cs \
+            $(baseDir)Tests/Helpers/InstanceComplementTests.cs \
+            $(baseDir)Tests/Helpers/InstanceOverriderTests.cs \
+            $(baseDir)Tests/Helpers/MimicTableWriterTests.cs \
+            $(baseDir)Tests/Helpers/MimicTableAccessorTests.cs \
+            $(baseDir)Tests/Helpers/PackagerTests.cs            
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx

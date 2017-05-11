@@ -520,7 +520,6 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         case RealityDataField::Footprint:
             propertyString.append("\"Footprint\" : ");
             propertyString.append(realityData.GetFootprintString());
-            propertyString.append("\"");
             break;
         case RealityDataField::ThumbnailDocument:
             propertyString.append("\"ThumbnailDocument\" : \"");
