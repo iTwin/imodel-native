@@ -1381,8 +1381,27 @@ static bvector<IGeometryPtr> s_cache;
 static Transform s_transform = Transform::FromIdentity ();
 void Check::SaveTransformed(IGeometryPtr const &data)
     {
-    s_cache.push_back (data->Clone ());
-    s_cache.back ()->TryTransformInPlace (s_transform);
+    static double s_maxCoordinate = 1.0e12;
+    DRange3d range;
+    if (!data.IsValid ())
+        Check::True (false, "SaveTransformed null pointer");
+    else if (!data->TryGetRange (range))
+        {
+        Check::True (false, "SaveTransformed TryGetRange failed");
+        }
+    else if (range.IsNull ())
+        {
+        Check::True (false, "SaveTransformed null range");
+        }
+    else if (range.MaxAbs () > s_maxCoordinate)
+        {
+        Check::True (false, "SaveTransformed huge range");
+        }
+    else
+        {
+        s_cache.push_back (data->Clone ());
+        s_cache.back ()->TryTransformInPlace (s_transform);
+        }
     }
 
 void Check::SaveTransformed(bvector<IGeometryPtr> const &data)
@@ -1523,10 +1542,7 @@ void Check::ClearGeometry (char const *name)
         path.AppendExtension (L"dgnjs");
 
         BeFile file;
-        if (
-              BeFileStatus::Success == file.Create (path.c_str ())
-           && BeFileStatus::Success == file.Open (path.c_str (), BeFileAccess::Write)
-           )
+        if (BeFileStatus::Success == file.Create (path.c_str (), true))
             {
             uint32_t bytesWritten = 0;
             Utf8String string;

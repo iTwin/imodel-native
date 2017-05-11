@@ -812,6 +812,33 @@ bool EvaluateRToRD (double fraction, double &f, double &dfdu) override
 
 
 };
+
+void InsertProjectionPoints (DPoint3dDoubleUVCurveArrays &strokes, DPoint3dCR spacePoint)
+    {
+    for (size_t i = 0; i + 1 < strokes.m_xyz.size (); i++)    // Note -- use index, not iterator -- the array can grow during the processing.
+        {
+        if (strokes.m_curve [i] == strokes.m_curve [i+1])
+            {
+            DRay3d ray = DRay3d::FromOriginAndTarget  (strokes.m_xyz[i], strokes.m_xyz[i+1]);
+            double strokeFraction, curveFraction;
+            DPoint3d xyz;
+            if (ray.ProjectPointBounded (xyz, strokeFraction, spacePoint))
+                {
+                DVec3d vector = DVec3d::FromInterpolate (strokes.m_vectorU[i], strokeFraction, strokes.m_vectorU[i+1]);
+                curveFraction = DoubleOps::Interpolate (strokes.m_f[i], strokeFraction, strokes.m_f[i+1]);
+                strokes.Insert (i+1, xyz, curveFraction, vector, strokes.m_curve[i]);
+                i++;
+                }
+            }
+        }
+    }
+
+void InsertProjectionPoints (bvector< DPoint3dDoubleUVCurveArrays> &allStrokes, DPoint3dCR spacePoint)
+    {
+    for (auto &strokes : allStrokes)
+        InsertProjectionPoints (strokes, spacePoint);
+    }
+
 void CurveCurve::ConstructArcs_PointTangentCurveTangent
 (
 bvector<FilletDetail> &arcs,
@@ -823,6 +850,7 @@ CurveVectorCR curves
     arcs.clear ();
     bvector< DPoint3dDoubleUVCurveArrays> strokes;
     curves.AddStrokePoints (strokes);        // default curve stroking.
+    InsertProjectionPoints (strokes, pointA);
     for (auto &path : strokes)
         ConstructArcs_Add_PointTangentCurveTangent (arcs, pointA, tangentA, path);
     }
@@ -838,6 +866,7 @@ ICurvePrimitiveCR curve
     arcs.clear ();
     DPoint3dDoubleUVCurveArrays strokes;
     auto options = IFacetOptions::CreateForCurves ();
+    InsertProjectionPoints (strokes, pointA);
     curve.AddStrokes (strokes, *options);        // default curve stroking.
     ConstructArcs_Add_PointTangentCurveTangent (arcs, pointA, tangentA, strokes);
     }
