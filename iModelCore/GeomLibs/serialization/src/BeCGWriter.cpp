@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/BeCGWriter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1394,9 +1394,9 @@ void BeCGWriter::Write(bvector<IGeometryPtr> const &geometry)
     {
     WriteSetElementStart ("Group");
     WriteArrayElementStart ("ListOfMember", "Member");
-    for (auto &g : geometry)
+    for (size_t i = 0; i < geometry.size (); i++)
         {
-        Write (*g);
+        Write (*geometry[i]);
         }
     WriteArrayElementEnd ("ListOfMember", "Member");
     WriteSetElementEnd ("Group");

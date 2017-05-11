@@ -2249,3 +2249,39 @@ TEST(CurvePrimitive,ConstructArcs_PointTangentCurveTangent)
     }
 
 
+TEST(CurveVector,ConstructArcs_PointTangentCurveTangent_Sandy)
+    {
+    char const * cvJson =
+        "{\"DgnCurveVector\":"
+        "{\"Member\":["
+        "{\"LineSegment\":{\"endPoint\":[302202.34846006555,255412.64833109025,0.0],\"startPoint\":[302312.87741261825,255330.46328081773,0.0]}},"
+        "{\"CircularArc\":{\"placement\":{\"origin\":[302145.36392289313,255336.01102072198,0.0],\"vectorX\":[-0.13772806853932984,0.99047007987946101,0.0],\"vectorZ\":[0.0,0.0,-1.0]},\"radius\":95.501386467645830,\"startAngle\":44.549464581921455,\"sweepAngle\":-44.549464581921455}},"
+        "{\"LineSegment\":{\"endPoint\":[302110.71335630986,255427.61301123278,0.0],\"startPoint\":[302132.21070139209,255430.60228660519,0.0]}}],"
+        "\"boundaryType\":1}"
+        "}";
+    bvector<IGeometryPtr> cvGeometry;
+    BentleyGeometryJson::TryJsonStringToGeometry (cvJson, cvGeometry);
+    Check::SaveTransformed (cvGeometry);
+
+    auto cv = cvGeometry[0]->GetAsCurveVector ();
+    int numShift = 20;
+    double totalLengthShiftFraction = 1.5;
+    if (Check::True (cv.IsValid (), "Valid CurveVector from Json data"))
+        {
+        double a = cv->FastLength ();
+        auto pointA = DPoint3d::From (302312.39839566144, 255343.65445345294, 0);
+        auto tangentA = DVec3d::From (-0.10008298498874627, -0.99497909330585543, 0);
+        auto shiftVector = DVec3d::FromXYAngleAndMagnitude (Angle::DegreesToRadians (120.0), totalLengthShiftFraction * a / numShift);
+        for (size_t i = 0; i < numShift; i++)
+            {
+            DPoint3d pointB = pointA + (double)i * shiftVector;
+            Check::SaveTransformed (
+                bvector<DPoint3d> {pointB, pointB + tangentA * 0.25 * shiftVector.Magnitude ()});
+            bvector<CurveCurve::FilletDetail> arcs;
+            CurveCurve::ConstructArcs_PointTangentCurveTangent (arcs, pointB, tangentA, *cv);
+                for (auto detail : arcs)
+                    Check::SaveTransformed (detail.arc);
+            }
+        }
+    Check::ClearGeometry ("CurveVector.ConstructArcs_PointTangentCurveTangent_Sandy");
+    }
