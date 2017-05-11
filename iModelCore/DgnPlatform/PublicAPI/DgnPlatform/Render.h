@@ -1896,6 +1896,7 @@ struct Plan
     double m_fraction;
     ColorDef m_bgColor;
     ColorDef m_monoColor;
+    ColorDef m_hiliteColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
