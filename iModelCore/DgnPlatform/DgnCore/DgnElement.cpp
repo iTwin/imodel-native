@@ -308,9 +308,9 @@ Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
+DgnElementCPtr DrawingGraphic::GetRepresentedElement() const
     {
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_GraphicDerivedFromElement) " WHERE SourceECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_DrawingGraphicRepresentsElement) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -326,7 +326,7 @@ DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const 
     {
-    auto source = GetDerivedFromElement();
+    DgnElementCPtr source = GetRepresentedElement();
     return source.IsValid() ? source->GetInfoString(delimiter) : T_Super::_GetInfoString(delimiter);
     }
 

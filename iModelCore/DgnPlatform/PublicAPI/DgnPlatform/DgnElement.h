@@ -2505,7 +2505,8 @@ public:
     //! Create an instance of a DrawingGraphic by specifying the model and category
     DGNPLATFORM_EXPORT static DrawingGraphicPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId);
 
-    DGNPLATFORM_EXPORT DgnElementCPtr GetDerivedFromElement() const;
+    //! Return the element that this DrawingGraphic represents (if it represents another element)
+    DGNPLATFORM_EXPORT DgnElementCPtr GetRepresentedElement() const;
 };
 
 //=======================================================================================

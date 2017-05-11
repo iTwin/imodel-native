@@ -117,6 +117,7 @@
 //-----------------------------------------------------------------------------------------
 #define BIS_REL_BaseModelForView2d                  "BaseModelForView2d"
 #define BIS_REL_CategoryOwnsSubCategories           "CategoryOwnsSubCategories"
+#define BIS_REL_DrawingGraphicRepresentsElement     "DrawingGraphicRepresentsElement"
 #define BIS_REL_ElementDrivesElement                "ElementDrivesElement"
 #define BIS_REL_ElementGroupsMembers                "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements            "ElementOwnsChildElements"
@@ -124,7 +125,6 @@
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
-#define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"
 #define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
