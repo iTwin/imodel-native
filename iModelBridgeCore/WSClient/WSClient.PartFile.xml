@@ -783,7 +783,7 @@
         <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="BeCurl"                      PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <SubPart PartName="BeJavaScript"                PartFile="BePortableUi"     Repository="BePortableUi"/>
-        <SubPart PartName="LoggingManagedInterop"       PartFile="LoggingSdk"       Repository="LoggingSdk"/>
+        <SubPart PartName="LoggingManagedInterop"       PartFile="LoggingSDK"       Repository="LoggingSDK"/>
     </Part>
 
 </BuildContext>
