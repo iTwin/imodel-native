@@ -1608,17 +1608,17 @@ struct FeatureIndex
 //=======================================================================================
 struct TriMeshArgs
 {
-    int32_t m_numIndices = 0;
-    int32_t const* m_vertIndex = nullptr;
-    int32_t m_numPoints = 0;
+    int32_t         m_numIndices = 0;
+    int32_t const*  m_vertIndex = nullptr;
+    int32_t         m_numPoints = 0;
     FPoint3d const* m_points= nullptr;
     FPoint3d const* m_normals= nullptr;
     FPoint2d const* m_textureUV= nullptr;
-    uint8_t const* m_edgeFlags = nullptr;
-    TexturePtr m_texture;
-    int32_t m_flags = 0; // don't generate normals
-    ColorIndex m_colors;
-    FeatureIndex m_features;
+    uint8_t const*  m_edgeFlags = nullptr;
+    TexturePtr      m_texture;
+    int32_t         m_flags = 0; // don't generate normals
+    ColorIndex      m_colors;
+    FeatureIndex    m_features;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -1641,13 +1641,13 @@ struct IndexedPolylineArgs
         DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
     };
 
-    FPoint3d const* m_points = nullptr;
-    Polyline const* m_lines = nullptr;
-    uint32_t        m_numPoints = 0;
-    uint32_t        m_numLines = 0;
-    ColorIndex      m_colors;
-    FeatureIndex    m_features;
-    bool            m_disjoint = false;
+    FPoint3d const*     m_points = nullptr;
+    Polyline const*     m_lines = nullptr;
+    uint32_t            m_numPoints = 0;
+    uint32_t            m_numLines = 0;
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    bool                m_disjoint = false;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
@@ -1669,7 +1669,7 @@ struct  MeshEdge
         };
 
 
-    uint32_t        m_indices[2];
+    uint32_t                m_indices[2];
 
     MeshEdge() { }
     MeshEdge(uint32_t index0, uint32_t index1);
@@ -1682,10 +1682,12 @@ struct  MeshEdge
 //=======================================================================================
 struct VisibleMeshEdgesArgs
 {
-    bvector<MeshEdge>       m_edges;
-    bvector<FPoint3d>       m_points;
-    ColorIndex              m_colors;
-    FeatureIndex            m_features;
+    MeshEdgeCP                  m_edges;
+    uint32_t                    m_numEdges;
+    FPoint3d const*             m_points;
+    uint32_t                    m_numPoints;
+    ColorIndex                  m_colors;
+    FeatureIndex                m_features;
 
 
 }; 
@@ -1693,14 +1695,11 @@ struct VisibleMeshEdgesArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct InvisibleMeshEdgesArgs
+struct InvisibleMeshEdgesArgs   : VisibleMeshEdgesArgs
 {
-    bvector<MeshEdge>           m_edges;
-    bvector<FPoint3d>           m_points;
-    bvector<FPoint3d>           m_normals0;
-    bvector<FPoint3d>           m_normals1;
-    ColorIndex                  m_colors;
-    FeatureIndex                m_features;
+    // two normals per edge - define the triangle normals for silhouette calculation.
+    FPoint3d const*             m_normals0;
+    FPoint3d const*             m_normals1;
 };  
 
 
@@ -1709,9 +1708,9 @@ struct InvisibleMeshEdgesArgs
 //=======================================================================================
 struct QuantizedPoint
 {
-    uint16_t        m_x;
-    uint16_t        m_y;
-    uint16_t        m_z;
+    uint16_t                    m_x;
+    uint16_t                    m_y;
+    uint16_t                    m_z;
 
     QuantizedPoint() { };
     DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
@@ -1724,10 +1723,10 @@ struct QuantizedPoint
 //=======================================================================================
 struct PointCloudArgs
 {
-    QuantizedPoint const*   m_points;
-    ByteCP                  m_colors;
-    DRange3d                m_range;
-    int32_t                 m_numPoints;
+    QuantizedPoint const*       m_points;
+    ByteCP                      m_colors;
+    DRange3d                    m_range;
+    int32_t                     m_numPoints;
 
     PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
     PointCloudArgs(DRange3dCR range, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)

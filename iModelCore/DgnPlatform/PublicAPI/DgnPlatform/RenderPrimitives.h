@@ -317,13 +317,6 @@ struct Mesh : RefCountedBase
         Point
     };
 
-    struct  InvisibleEdge : MeshEdge
-    {
-        FPoint3d            m_triNormals[2];
-
-        InvisibleEdge() { }
-        InvisibleEdge(MeshEdge const& edge, FPoint3d const& normal0, FPoint3d const& normal1) : MeshEdge(edge) { m_triNormals[0] = normal0; m_triNormals[1] = normal1; }
-    };
 
 private:
     struct Features
@@ -352,7 +345,9 @@ private:
 
     // The edges are computed from the parameters above... If tiles were persisted these could be omitted and recalculated...
     mutable bvector<MeshEdge>       m_visibleEdges;
-    mutable bvector<InvisibleEdge>  m_invisibleEdges;
+    mutable bvector<MeshEdge>       m_invisibleEdges;
+    mutable bvector<FPoint3d>       m_invisibleEdgeNormals0;
+    mutable bvector<FPoint3d>       m_invisibleEdgeNormals1;
     mutable size_t                  m_edgesComputedCount = 0;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
@@ -382,7 +377,9 @@ public:
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
     bvector<MeshEdge>const&         VisibleEdges() const { InitEdges(); return m_visibleEdges; }
-    bvector<InvisibleEdge>const&    InvisibleEdges() const { InitEdges(); return m_invisibleEdges; }
+    bvector<MeshEdge>const&         InvisibleEdges() const { InitEdges(); return m_invisibleEdges; }
+    bvector<FPoint3d>const&         InvisibleEdgeNormals0() const { InitEdges(); return m_invisibleEdgeNormals0; }
+    bvector<FPoint3d>const&         InvisibleEdgeNormals1() const { InitEdges(); return m_invisibleEdgeNormals1; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -849,6 +846,8 @@ struct RenderVisibleMeshEdgesArgs : VisibleMeshEdgesArgs
 //=======================================================================================
 struct RenderInvisibleMeshEdgesArgs : InvisibleMeshEdgesArgs
 {
+    bvector<uint32_t>               m_colorTable;
+
     bool Init(MeshCR mesh);
 };
 

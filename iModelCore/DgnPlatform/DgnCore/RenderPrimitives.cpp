@@ -469,15 +469,10 @@ void Mesh::InitEdges() const
 
         void AddFace(bool visible, uint32_t faceIndex)
             {
-//            BeAssert (visible == m_visible);
             if (m_faceCount < 2)
                 {
                 m_visible |= visible;
                 m_faceIndices[m_faceCount++] = faceIndex;
-                }
-            else
-                {
- //               BeAssert (false && "NonManifold mesh");
                 }
             }
         };
@@ -509,10 +504,20 @@ void Mesh::InitEdges() const
         {
         MeshEdge        thisEdge(edge.second.m_edgeIndices[0], edge.second.m_edgeIndices[1]);
 
-        if (edge.second.m_visible || edge.second.m_faceCount < 2)       // Always make sheet edges visible...Is this OK?
+        if (edge.second.m_visible)    
+            {
             m_visibleEdges.push_back(thisEdge);
+            }
         else
-            m_invisibleEdges.push_back(InvisibleEdge(thisEdge, triangleNormals.at(edge.second.m_faceIndices[0]), triangleNormals.at(edge.second.m_faceIndices[1])));
+            {
+            if (2 == edge.second.m_faceCount)
+                {
+                // Potential silhouettes.
+                m_invisibleEdges.push_back(thisEdge);
+                m_invisibleEdgeNormals0.push_back(triangleNormals.at(edge.second.m_faceIndices[0]));
+                m_invisibleEdgeNormals1.push_back(triangleNormals.at(edge.second.m_faceIndices[1]));
+                }
+            }
         }
     }
 
@@ -540,9 +545,11 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
 
+#ifdef NOTNOW
         if (args.m_invisibleEdgesArgs.Init(*this) &&
             (thisGraphic = system._CreateInvisibleEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
+#endif
         }
     else
         {
@@ -1751,11 +1758,11 @@ bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
     if (mesh.VisibleEdges().empty())
         return false;
 
-
-    m_points = mesh.Points();
-    m_edges = mesh.VisibleEdges();
+    m_points = mesh.Points().data();
+    m_numPoints = mesh.Points().size();
+    m_edges = mesh.VisibleEdges().data();
+    m_numEdges = mesh.VisibleEdges().size();
     
-
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
 
@@ -1767,7 +1774,21 @@ bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  RenderInvisibleMeshEdgesArgs::Init(MeshCR mesh)
     {
-    return false;       // WIP.
+    if (mesh.VisibleEdges().empty())
+        return false;
+
+    m_points = mesh.Points().data();
+    m_numPoints = mesh.Points().size();
+    
+    m_edges = mesh.InvisibleEdges().data();
+    m_numEdges = mesh.InvisibleEdges().size();
+    m_normals0 = mesh.InvisibleEdgeNormals0().data();
+    m_normals1 = mesh.InvisibleEdgeNormals1().data();
+
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    mesh.ToFeatureIndex(m_features);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
