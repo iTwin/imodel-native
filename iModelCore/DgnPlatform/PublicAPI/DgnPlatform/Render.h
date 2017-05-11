@@ -1695,7 +1695,7 @@ struct VisibleMeshEdgesArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct InvisibleMeshEdgesArgs   : VisibleMeshEdgesArgs
+struct SilhouetteEdgesArgs   : VisibleMeshEdgesArgs
 {
     // two normals per edge - define the triangle normals for silhouette calculation.
     FPoint3d const*             m_normals0;
@@ -2225,7 +2225,7 @@ struct System
     virtual GraphicPtr _CreateVisibleEdges(VisibleMeshEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create invisible mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateInvisibleEdges(InvisibleMeshEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateInvisibleEdges(SilhouetteEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;

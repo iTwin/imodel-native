@@ -844,7 +844,7 @@ struct RenderVisibleMeshEdgesArgs : VisibleMeshEdgesArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderInvisibleMeshEdgesArgs : InvisibleMeshEdgesArgs
+struct RenderSilhouetteEdgesArgs : SilhouetteEdgesArgs
 {
     bvector<uint32_t>               m_colorTable;
 
@@ -860,7 +860,7 @@ struct GetMeshGraphicsArgs
     PolylineArgs                    m_polylineArgs;
     MeshArgs                        m_meshArgs;
     RenderVisibleMeshEdgesArgs      m_visibleEdgesArgs;
-    RenderInvisibleMeshEdgesArgs    m_invisibleEdgesArgs;
+    RenderSilhouetteEdgesArgs    m_invisibleEdgesArgs;
 };
 
 //=======================================================================================
