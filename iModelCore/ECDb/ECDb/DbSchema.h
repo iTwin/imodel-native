@@ -434,7 +434,7 @@ public:
     ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
     
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
-    DbColumn* CreateSharedColumn(DbColumn::Type);
+    DbColumn* CreateSharedColumn();
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
 

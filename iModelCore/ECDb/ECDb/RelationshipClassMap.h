@@ -27,7 +27,6 @@ struct RelationshipConstraintMap : NonCopyableClass
 
     public:
         RelationshipConstraintMap(ECDb const&, ECN::ECClassId relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
-
         ConstraintECInstanceIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
         void SetECInstanceIdPropMap(ConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
@@ -94,6 +93,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
+        mutable std::unique_ptr<Utf8String>  m_idAccessstring;
+        mutable std::unique_ptr<Utf8String>  m_relClassIdAccessstring;
 
         //======================================================================================
         // @bsiclass                                                     Affan.Khan      01/2015
@@ -103,7 +104,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             private:
                 RelationshipClassEndTableMap const& m_relMap;
                 RelationshipMappingInfo const& m_relInfo;
-                bmap<DbTable const*, bset<ClassMapCP>> m_constraintClassMaps;
+                std::map<DbTable const*, std::unique_ptr<EndTableRelationshipColumnResolutionScope>> m_scopes;
                 bset<ClassMapCP> m_sharedBlock;
                 void Initialize();
 
@@ -221,6 +222,20 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
+        Utf8CP GetAcccessStringForId() const
+            {
+            if (m_idAccessstring == nullptr)
+                m_idAccessstring = std::unique_ptr<Utf8String>(new Utf8String(GetClass().GetFullName() + Utf8String(".Id")));
+
+            return m_idAccessstring->c_str();
+            }
+        Utf8CP GetAcccessStringForRelClassId() const
+            {
+            if (m_relClassIdAccessstring == nullptr)
+                m_relClassIdAccessstring = std::unique_ptr<Utf8String>(new Utf8String(GetClass().GetFullName() + Utf8String(".RelClassId")));
+
+            return m_relClassIdAccessstring->c_str();
+            }
 
         ConstraintECInstanceIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;

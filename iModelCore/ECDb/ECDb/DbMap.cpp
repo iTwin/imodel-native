@@ -311,9 +311,6 @@ BentleyStatus DbMap::DoMapSchemas() const
 
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
-        for (auto const& c : m_classMapDictionary)
-            c.second->DeleteColumnFactory();
-
         if (ClassMappingStatus::Error == MapClass(*rootRelationshipClass))
             return ERROR;
         }

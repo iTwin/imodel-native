@@ -74,6 +74,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         const_iterator begin() const { return m_directDecendentList.begin(); }
         const_iterator end() const { return m_directDecendentList.end(); }
         bool empty() const { return m_directDecendentList.empty(); }
+        size_t size() const {return m_directDecendentList.size(); }
     };
 
 //=======================================================================================

@@ -160,6 +160,7 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     {
+    ImportColumnResolutionScope columnResolutionScope(*this);
     ClassMappingStatus stat = MapProperties(ctx);
     if (stat != ClassMappingStatus::Success)
         return stat;
@@ -616,8 +617,7 @@ BentleyStatus ClassMap::Update()
     {
     if (!m_failedToLoadProperties.empty())
         {
-        GetColumnFactory(true);
-        //GetColumnFactory().Update(true);
+        UpdateColumnResolutionScope columnResolutionScope(*this);
         for (ECPropertyCP property : m_failedToLoadProperties)
             {
             PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
@@ -876,12 +876,10 @@ BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapColumnFactory const& ClassMap::GetColumnFactory(bool refresh) const
+ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     {
     if (m_columnFactory == nullptr)
         m_columnFactory = std::make_unique<ClassMapColumnFactory>(*this);
-    else if (refresh)
-        m_columnFactory->Refresh();
 
     return *m_columnFactory;
     }

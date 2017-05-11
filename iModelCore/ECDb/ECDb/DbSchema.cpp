@@ -489,9 +489,14 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
 
     Utf8String name = baseTable.GetName();
     name.append("_Overflow");
-    DbTable* table = CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    DbTable* table = FindTableP(name.c_str());
+    if (table != nullptr)
+        return table;
+
+    table = CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
     if (!table)
         return nullptr;
+
     DbColumn const* pk = baseTable.FindFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* cl = baseTable.FindFirst(DbColumn::Kind::ECClassId);
     
@@ -1393,14 +1398,12 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2016
 //---------------------------------------------------------------------------------------
-DbColumn* DbTable::CreateSharedColumn(DbColumn::Type colType)
+DbColumn* DbTable::CreateSharedColumn()
     {
     Utf8String generatedName;
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
-
     return CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical);
-
     }
 
 //---------------------------------------------------------------------------------------

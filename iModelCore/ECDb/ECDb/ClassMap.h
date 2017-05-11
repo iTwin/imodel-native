@@ -72,8 +72,6 @@ typedef RefCountedPtr<ClassMap> ClassMapPtr;
 typedef ClassMap const& ClassMapCR;
 typedef ClassMap const* ClassMapCP;
 
-
-
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
@@ -192,9 +190,15 @@ struct ClassMap : RefCountedBase
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         Type GetType() const { return m_type; }
-        ClassMapColumnFactory const& GetColumnFactory(bool refresh = false) const;
+        ClassMapColumnFactory const& GetColumnFactory() const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        
+        bool IsMixin() const
+            {
+            if (ECN::ECEntityClassCP e = GetClass().GetEntityClassCP()) 
+                return e->IsEntityClass();
+
+            return false;
+            }
         DbTable& GetPrimaryTable() const 
             { 
             DbTable* nulltable = nullptr;
@@ -270,7 +274,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update();
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
-        void DeleteColumnFactory() const { m_columnFactory = nullptr; }
+        //void DeleteColumnFactory() const { m_columnFactory = nullptr; }
         //! Rules:
         //! If MapStrategy != TPH: NotInherited
         //! Else: Clone

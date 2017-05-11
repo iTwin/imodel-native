@@ -3801,7 +3801,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
     ASSERT_FALSE(asserted);
     m_ecdb.SaveChanges();
     
-    geometricElement3dOverflowExpectedColCount+=2;
+    geometricElement3dOverflowExpectedColCount+=1;
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));

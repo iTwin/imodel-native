@@ -1531,7 +1531,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
 
         //Verifying values
         assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1IdECClassIdjs1");
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3_Overflow", 7, 2, "C1IdECClassIdos1os2os3os4os5");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3_Overflow", 5, 2, "C1IdECClassIdos1os2os3");
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
