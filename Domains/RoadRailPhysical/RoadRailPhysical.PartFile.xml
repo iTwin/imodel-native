@@ -5,7 +5,6 @@
     <Part Name="RoadRailPhysical" BentleyBuildMakeFile="RoadRailPhysical.mke">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="RoadRailAlignment"  PartFile="RoadRailAlignment"  Repository="DgnDomains-RoadRailAlignment" />
-        <SubPart PartName="Costing"  PartFile="Costing"  Repository="DgnDomains-Costing" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)RoadRailPhysical$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)RoadRailPhysical$(shlibext)</Assemblies>
