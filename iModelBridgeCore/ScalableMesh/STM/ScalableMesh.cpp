@@ -57,7 +57,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
-
+#include "ScalableMeshMesher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
