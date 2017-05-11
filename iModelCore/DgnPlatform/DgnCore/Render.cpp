@@ -280,6 +280,7 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
+    m_hiliteColor = vp.GetHiliteColor();
 
     auto& controller = vp.GetViewControllerR();
     m_activeVolume = controller.GetActiveVolume();
@@ -612,9 +613,6 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
     {
     DgnDb::VerifyClientThread();
 
-    if (m_alwaysDrawnExclusive)
-        return; // no point in worrying about the rest...
-
     ViewFlags vf = view.GetViewFlags();
     m_constructions = vf.ShowConstructions();
     m_dimensions = vf.ShowDimensions();
@@ -657,11 +655,8 @@ void ViewController::_AddFeatureOverrides(FeatureSymbologyOverrides& overrides) 
     if (nullptr == vp)
         return;
 
-    ColorDef hiliteColor = vp->AdjustColorForContrast(vp->GetHiliteColor(), vp->GetBackgroundColor());
-    FeatureSymbologyOverrides::Appearance hilite;
-    hilite.SetRgb(hiliteColor);
     for (auto const& hiliteId : GetDgnDb().Elements().GetSelectionSet())
-        overrides.OverrideElement(hiliteId, hilite);
+        overrides.m_hilited.insert(hiliteId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -697,6 +692,9 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
 
     if (m_flags.m_weight && !app.m_flags.m_weight)
         app.SetWeight(GetWeight());
+
+    if (m_hilited)
+        app.m_hilited = true;
 
     return app;
     }
@@ -747,6 +745,9 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         haveElemOverrides = m_elementOverrides.end() != elemIter;
         if (haveElemOverrides)
             app = elemIter->second;
+
+        if (m_hilited.end() != m_hilited.find(elemId))
+            app.m_hilited = true;
         }
 
     auto subcatId = feat.GetSubCategoryId();

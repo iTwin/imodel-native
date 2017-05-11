@@ -1895,6 +1895,7 @@ struct Plan
     double m_fraction;
     ColorDef m_bgColor;
     ColorDef m_monoColor;
+    ColorDef m_hiliteColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
@@ -2029,8 +2030,11 @@ struct FeatureSymbologyOverrides
     struct Appearance
     {
     private:
+        friend struct FeatureSymbologyOverrides;
+
         ColorDef        m_color;
         uint32_t        m_weight;
+        bool            m_hilited;
         struct
             {
             uint32_t        m_rgb:1;
@@ -2039,7 +2043,7 @@ struct FeatureSymbologyOverrides
             }           m_flags;
     public:
         Appearance() { Init(); }
-        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0; }
+        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0; m_hilited=false; }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
         //! Override transparency
@@ -2068,6 +2072,8 @@ struct FeatureSymbologyOverrides
         double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
         //! Get the line weight override
         uint32_t GetWeight() const { return m_weight; }
+        //! Returns whether the feature is highlighted
+        bool IsHilited() const { return m_hilited; }
 
         //! Returns true if any aspect of symbology is overridden.
         bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
@@ -2084,6 +2090,7 @@ struct FeatureSymbologyOverrides
 
     DgnElementIdSet                     m_alwaysDrawn;
     DgnElementIdSet                     m_neverDrawn;
+    DgnElementIdSet                     m_hilited;
     bmap<DgnElementId, Appearance>      m_elementOverrides; // for any element for which at least one aspect of symbology is overridden
     DgnSubCategoryIdSet                 m_visibleSubCategories;
     bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
