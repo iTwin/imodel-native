@@ -893,7 +893,7 @@ PolyfaceHeaderPtr CreateStationVoronoi ()
         if (!visited.IsSetAtNode (vertexSeed) && IsStationNode (vertexSeed))
             {
             vertexSeed->SetMaskAroundVertex (visited.Mask ());
-            DPoint3d xyz0 = vertexSeed->GetXYZ ();
+            //DPoint3d xyz0 = vertexSeed->GetXYZ ();
             planes.clear ();
             outsidePlanes.clear ();
             ValidatedDVec3d exteriorVectorA;
