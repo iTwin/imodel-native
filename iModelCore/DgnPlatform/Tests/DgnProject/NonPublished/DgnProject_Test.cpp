@@ -589,7 +589,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    return (BE_SQLITE_OK == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
+    return (SchemaStatus::Success == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1001,6 +1001,6 @@ TEST_F(ImportTests, SimpleSchemaImport)
     m_db->Revisions().StartCreateRevision();
     m_db->Revisions().FinishCreateRevision();
 
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }

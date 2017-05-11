@@ -154,7 +154,7 @@ struct RevisionManager : NonCopyableClass
 friend struct TxnManager;
 friend struct RevisionChangesFileReader;
 friend struct ApplyRevisionChangeSet;
-friend struct DgnDomains;
+friend struct DgnDb;
 
 private:
     DgnDbR m_dgndb;

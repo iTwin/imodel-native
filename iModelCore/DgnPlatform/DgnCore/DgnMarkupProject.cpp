@@ -533,7 +533,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
-    if (BE_SQLITE_OK != MarkupDomain::GetDomain().ImportSchema(*this))
+    if (SchemaStatus::Success != MarkupDomain::GetDomain().ImportSchema(*this))
         return BE_SQLITE_ERROR;
 
     SaveSettings();

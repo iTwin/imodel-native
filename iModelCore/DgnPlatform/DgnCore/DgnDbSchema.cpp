@@ -285,11 +285,11 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     BisCoreDomain::GetDomain().SetCreateParams(params); 
         // BisCoreDomain is the only domain that requires the create params. They are passed through BisCoreDomain::_OnSchemaImported() -> DgnDb::OnBisCoreSchemaImported()
 
-    DbResult result = Domains().ImportSchemas();
-    if (BE_SQLITE_OK != result)
+    SchemaStatus status = Domains().ImportSchemas();
+    if (SchemaStatus::Success != status)
         {
         BeAssert(false);
-        return result;
+        return SchemaStatusToDbResult(status, false /*=isUpgrade*/);
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
@@ -311,7 +311,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    result = DgnSearchableText::CreateTable(*this);
+    DbResult result = DgnSearchableText::CreateTable(*this);
     BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");
 
     return result;
@@ -534,20 +534,20 @@ DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
     if (Txns().HasLocalChanges())
         {
         BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
-        return BE_SQLITE_ERROR;
+        return SchemaStatus::DbHasLocalChanges;
         }
 
     bvector<ECN::ECSchemaCP> schemasToImport;
-    DbResult result = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
-    if (result != BE_SQLITE_OK)
+    SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
+    if (status != SchemaStatus::Success)
         {
         BeAssert(false && "One or more schemas are incompatible.");
-        return result;
+        return status;
         }
 
     return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
@@ -556,14 +556,14 @@ DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
+SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
-    DbResult result = PickSchemasToImport(schemasToImport, schemas, true /*=isImportingFromV8*/);
-    if (result != BE_SQLITE_OK)
+    SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, true /*=isImportingFromV8*/);
+    if (status != SchemaStatus::Success)
         {
         BeAssert(false && "One or more schemas are incompatible.");
-        return result;
+        return status;
         }
 
     return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
@@ -572,32 +572,30 @@ DbResult DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
+SchemaStatus DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
     {
     importSchemas.clear();
 
     for (ECSchemaCP appSchema : schemas)
         {
-        DbResult result = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+        SchemaStatus status = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
 
-        if (result == BE_SQLITE_OK)
-            {
-            if (isImportingFromV8)
-                {
-                LOG.infov("Application schema %s was found in the BIM, but re-imported since it's a legacy schema (with unreliable versions)", appSchema->GetFullSchemaName().c_str());
-                importSchemas.push_back(appSchema);
-                }
+        if (status == SchemaStatus::Success)
             continue;
+
+        if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld)
+            return status;
+
+        if (status == SchemaStatus::SchemaUpgradeRequired && isImportingFromV8)
+            {
+            BeAssert(false && "Cannot upgrade when importing legacy schemas");
+            return status;
             }
 
-        if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
-            return result;
-
-        BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
-
+        BeAssert(status == SchemaStatus::SchemaNotFound);
         importSchemas.push_back(appSchema);
         }
 
-    return BE_SQLITE_OK;
+    return SchemaStatus::Success;
     }
 

@@ -454,8 +454,8 @@ TEST_F(DgnScriptTest, CRUD)
 TEST_F(DgnScriptTest, ScriptElementCRUD)
     {
     SetupSeedProject();
-    DbResult result = ScriptDomain::GetDomain().ImportSchema(*m_db);
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    SchemaStatus schemaStatus = ScriptDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(SchemaStatus::Success, schemaStatus);
     m_db->SaveChanges();
 
     DgnDbStatus status;
