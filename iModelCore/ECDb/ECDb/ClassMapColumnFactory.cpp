@@ -323,8 +323,6 @@ ClassMap const* ColumnMapContext::FindMixinImplementation(ECDbCR ecdb, ECN::ECCl
 //-----------------------------------------------------------------------------------------
 BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& classMap, Filter filter, ClassMap const* base)
     {
-    if (classMap.GetClass().GetName() == "SubObject123")
-        printf("");
     if (filter == Filter::InheritedAndLocal)
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
