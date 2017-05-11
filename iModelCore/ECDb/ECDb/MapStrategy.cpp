@@ -48,6 +48,13 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
     if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseMapStrategy, ecClass, issues))
         return ERROR;
 
+    if (m_joinedTableInfo == JoinedTableInfo::ParentOfJoinedTable && m_shareColumnsMode != ShareColumnsMode::No)
+        {
+        issues.Report("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.",
+                      ecClass.GetFullName());
+        return ERROR;
+        }
+
     m_isValid = true;
     return SUCCESS;
     }
