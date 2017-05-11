@@ -1426,6 +1426,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+        <!-- Creates the bis_ElementGroupsMembers link table -->
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
                 <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
@@ -1564,6 +1565,7 @@
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
         <!-- Creates bis_ElementRefersToElements link table -->
         <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.2.0"/>
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
@@ -1921,6 +1923,9 @@
 
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <!-- Creates the bis_ModelSelectorRefersToModels link table -->
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
