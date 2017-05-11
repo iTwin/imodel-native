@@ -34,7 +34,7 @@
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>
 
-    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="B02">
+    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="B02" OnlyPlatforms="x64">
         <Bindings>
             <Assemblies>Delivery\Bentley.logging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
