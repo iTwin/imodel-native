@@ -974,7 +974,7 @@ TEST(Vu,CreateDelauneyCircle)
             ellipse.vector90.Scale (1.0 + eccentricity);
             bvector<DPoint3d> points;
             AddPoints (points, ellipse, numPoints);
-            auto range = DRange3d::From (points);
+            //auto range = DRange3d::From (points);
             SaveAndRestoreCheckTransform shifter (delta,0,0);
             Check::SaveTransformedMarkers (points, 0.2);
             PolyfaceHeaderPtr delauney, voronoi;
