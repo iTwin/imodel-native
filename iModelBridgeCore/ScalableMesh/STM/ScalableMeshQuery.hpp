@@ -1954,10 +1954,10 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
 
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
-    if (clipsToShow.empty()) return true;
+    if (clipsToShow.empty() || m_node->GetNbPoints() == 0) return true;
 
     assert(IsLoaded() == true);
-
+    
     bvector<uint64_t> appliedClips;
     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
         {
@@ -3095,6 +3095,19 @@ template <class POINT> bvector<IScalableMeshNodeEditPtr> ScalableMeshNodeEdit<PO
         }
 
     return children;
+    }
+
+template <class POINT> IScalableMeshNodeEditPtr ScalableMeshNodeEdit<POINT>::_EditParentNode()
+    {
+    LOAD_NODE
+
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode == nullptr)
+        return nullptr;
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr = meshNode->GetParentNodePtr();
+    if (nodePtr == nullptr)
+        return nullptr;
+    return new ScalableMeshNodeEdit<POINT>(nodePtr);
     }
 
 template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)

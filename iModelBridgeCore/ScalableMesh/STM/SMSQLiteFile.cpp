@@ -212,7 +212,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);
-        
+
         if (result == BE_SQLITE_OK)
         {
             UpdateDatabase();
@@ -1629,3 +1629,11 @@ bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
     return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
 }
 
+void SMSQLiteFile::Compact()
+{
+	m_database->SaveChanges();
+	Savepoint* savepoint = m_database->GetSavepoint(0);
+	savepoint->Commit(nullptr);
+	m_database->TryExecuteSql("VACUUM");
+	savepoint->Begin();
+}

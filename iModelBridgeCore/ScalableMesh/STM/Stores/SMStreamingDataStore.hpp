@@ -13,9 +13,7 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
-#ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
-#endif
 #include <CloudDataSource\DataSourceAccount.h>
 #include <CloudDataSource\DataSourceAccountWSG.h>
 #include <CloudDataSource\DataSourceBuffered.h>
@@ -828,7 +826,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile)
     {
-#ifndef VANCOUVER_API
     // compute node tolerance (for the geometric error)
     // Different attempts to compute the Cesium 3D tiles "geometric error" value:
     //DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
@@ -866,9 +863,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     SMStreamingStore<EXTENT>::SerializeHeaderToJSON(header, blockID, smHeader);
 
     tile["SMHeader"] = smHeader;
-#else
-    assert(!"Not implemented");
-#endif
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
@@ -1136,6 +1130,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
     {
     __super::SaveSisterFiles();
     }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
+{
+	__super::Compact();
+}
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
     {
@@ -2579,7 +2578,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                DPoint3d point = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                m_tileData.m_pointData[i] = DPoint3d::From(point.x, -point.z, point.y);
                 if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
 

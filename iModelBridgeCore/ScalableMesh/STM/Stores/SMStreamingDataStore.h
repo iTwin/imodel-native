@@ -14,6 +14,7 @@
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
+#include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_wsg;
@@ -207,6 +208,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
         virtual void SaveProjectFiles() override;
+
+		virtual void CompactProjectFiles() override;
 
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 

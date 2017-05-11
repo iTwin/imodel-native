@@ -38,6 +38,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual void SaveProjectFiles() override;
 
+		virtual void CompactProjectFiles() override;
+
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
         
         virtual void CancelPreloadData() override;

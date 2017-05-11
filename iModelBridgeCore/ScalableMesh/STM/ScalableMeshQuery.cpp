@@ -990,7 +990,11 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
     volatile double maxParam = -DBL_MAX;
     volatile bool canContinue = true;
-#pragma omp parallel for firstprivate(use2d)
+
+    // disable static analyzer warning : Code analysis ignores OpenMP constructs; analyzing single-threaded code.
+    #pragma warning (push)
+    #pragma warning (disable: 6993)
+    #pragma omp parallel for firstprivate(use2d)
     for (int i = 0; i < m_nbFaceIndexes; i += 3)
         {
         if (canContinue)
@@ -1034,6 +1038,8 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
             }
         //if (maxParam > -DBL_MAX) return true;
         }
+    #pragma warning (pop)
+
     if (maxParam > -DBL_MAX) return true;
     return false;
     }
@@ -1558,10 +1564,10 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     name.append(std::to_wstring(indices.size()).c_str());
     name.append(L".bcdtm");
     bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
-
-    std::cout << " Writing to " << std::to_string(indices.size())<<std::endl;
-    assert(status == SUCCESS);
 #endif
+
+    assert(status == SUCCESS);
+
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
@@ -1628,14 +1634,6 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return minParam < DBL_MAX;
     }
 
-struct DTMIntersectionCompare {
-    DTMIntersectionCompare(const DPoint3d& _s) { source = _s; }
-    bool operator() (DTMRayIntersection pt1, DTMRayIntersection pt2) {
-        return ( pt1.rayFraction < pt2.rayFraction );
-        }
-    DPoint3d source;
-    };
-
 bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DRay3d& ray) const
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
@@ -1667,17 +1665,18 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
             rayInter.point = projectedPt;
             rayInter.rayFraction = param;
 
-            DVec3d normal = DVec3d::FromCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
+            DVec3d normal = DVec3d::FromNormalizedCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
             rayInter.normal = normal;
             rayInter.hasNormal = true;
 
             hits.push_back(rayInter);
-            minParam = param;
+            if (param<minParam)
+                minParam = param;
             }
         }
 
     // Sort
-    DTMIntersectionCompare Comparator(ray.origin);
+    DTMIntersectionCompare Comparator;
     std::sort(hits.begin(), hits.end(), Comparator);
     
     // filter the intersections
@@ -2198,8 +2197,9 @@ void ScalableMeshMesh::RemoveDuplicates()
 	m_points = new DPoint3d[newPoints.size()];
 	m_faceIndexes = new int32_t[newIndices.size()];
 
+    m_nbFaceIndexes = newIndices.size();
 	memcpy(m_points, newPoints.data(), m_nbPoints * sizeof(DPoint3d));
-	memcpy(m_faceIndexes, newIndices.data(), m_nbFaceIndexes * sizeof(int32_t));
+	memcpy(m_faceIndexes, newIndices.data(), newIndices.size() * sizeof(int32_t));
 
 }
 
@@ -2631,6 +2631,11 @@ IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
     return _EditChildrenNodes();
+    }
+
+IScalableMeshNodeEditPtr  IScalableMeshNodeEdit::EditParentNode()
+    {
+    return _EditParentNode();
     }
 
 DRange3d  IScalableMeshNode::GetNodeExtent() const
