@@ -50,6 +50,9 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataE
     if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
         statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
 
+    if (properties.isMember("OrganizationId") && !properties["OrganizationId"].isNull())
+        statObject.SetOrganizationId(properties["OrganizationId"].asString().c_str());
+
     if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
         statObject.SetUltimateId(properties["UltimateId"].asString().c_str());
 
@@ -238,9 +241,9 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     if (properties.isMember("Id") && !properties["Id"].isNull())
         data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
 
-    // Enterprise
-    if (properties.isMember("EnterpriseId") && !properties["EnterpriseId"].isNull())
-        data->SetEnterpriseId(Utf8CP(properties["EnterpriseId"].asString().c_str()));
+    // Organization
+    if (properties.isMember("OrganizationId") && !properties["OrganizationId"].isNull())
+        data->SetOrganizationId(Utf8CP(properties["OrganizationId"].asString().c_str()));
 
     // Container Name
     if (properties.isMember("ContainerName") && !properties["ContainerName"].isNull())
@@ -369,8 +372,8 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeUnsetProps || (realityData.GetIdentifier().size() != 0))
         properties.push_back(RealityDataField::Id);
 
-    if (includeROProps && (includeUnsetProps || (realityData.GetEnterpriseId().size() != 0)))
-        properties.push_back(RealityDataField::EnterpriseId);
+    if (includeROProps && (includeUnsetProps || (realityData.GetOrganizationId().size() != 0)))
+        properties.push_back(RealityDataField::OrganizationId);
 
     if (includeROProps && (includeUnsetProps || (realityData.GetContainerName().size() != 0)))
         properties.push_back(RealityDataField::ContainerName);
@@ -465,9 +468,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append(realityData.GetIdentifier());
             propertyString.append("\"");
             break;
-        case RealityDataField::EnterpriseId:
-            propertyString.append("\"Enterprise\" : \"");
-            propertyString.append(realityData.GetEnterpriseId());
+        case RealityDataField::OrganizationId:
+            propertyString.append("\"OrganizationId\" : \"");
+            propertyString.append(realityData.GetOrganizationId());
             propertyString.append("\"");
             break;
         case RealityDataField::ContainerName:

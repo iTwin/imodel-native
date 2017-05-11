@@ -661,8 +661,8 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::Id:
         order.append("Id");
         break;
-    case RealityDataField::EnterpriseId:
-        order.append("EnterpriseId");
+    case RealityDataField::OrganizationId:
+        order.append("OrganizationId");
         break;
     case RealityDataField::ContainerName:
         order.append("ContainerName");
@@ -773,10 +773,10 @@ void RealityDataPagedRequest::EncodeId() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append("/RealityData?$filter=EnterpriseId+eq+'");
+    m_httpRequestString.append("/RealityData?$filter=OrganizationId+eq+'");
 
     if(m_encodedId.length() == 0)
         {
@@ -1264,7 +1264,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     {
     bmap<RealityDataField, Utf8String> m = bmap<RealityDataField, Utf8String>();
     m.Insert(RealityDataField::Id, "Id");
-    m.Insert(RealityDataField::EnterpriseId, "EnterpriseId");
+    m.Insert(RealityDataField::OrganizationId, "OrganizationId");
     m.Insert(RealityDataField::ContainerName, "ContainerName");
     m.Insert(RealityDataField::Name, "Name");
     m.Insert(RealityDataField::Dataset, "Dataset");
@@ -2211,7 +2211,7 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByOrganizationPagedRequest& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (!RealityDataService::AreParametersSet())
@@ -2223,7 +2223,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
     rawResponse = PagedBasicRequest(static_cast<const RealityDataPagedRequest*>(&request));
 
     if (rawResponse.status != RequestStatus::OK)
-        s_errorCallback("RealityDataListByEnterprisePagedRequest failed with response", rawResponse);
+        s_errorCallback("RealityDataListByOrganizationPagedRequest failed with response", rawResponse);
     else
         {
         RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);

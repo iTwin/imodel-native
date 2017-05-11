@@ -157,7 +157,7 @@ RealityDataConsole::RealityDataConsole() :
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
-    m_realityDataProperties.push_back("EnterpriseId");
+    m_realityDataProperties.push_back("OrganizationId");
     //m_realityDataProperties.push_back("ContainerName");
     m_realityDataProperties.push_back("Name");
     m_realityDataProperties.push_back("Dataset");
@@ -544,7 +544,7 @@ void RealityDataConsole::List()
 
 void RealityDataConsole::ListRoots()
     {
-    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
+    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
 
     bvector<RDSFilter> properties = bvector<RDSFilter>();
     if (m_nameFilter.length() > 0)
@@ -556,28 +556,28 @@ void RealityDataConsole::ListRoots()
     if (m_ownerFilter.length() > 0)
         properties.push_back(RealityDataFilterCreator::FilterByOwner(m_ownerFilter));
     if (properties.size() > 0)
-        enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+        organizationReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
 
     if (m_queryFilter.length() > 0)
-        enterpriseReq.SetQuery(m_queryFilter);
+        organizationReq.SetQuery(m_queryFilter);
 
     if (m_projectFilter.length() > 0)
-        enterpriseReq.SetProject(m_projectFilter);
+        organizationReq.SetProject(m_projectFilter);
 
-    RawServerResponse enterpriseResponse = RawServerResponse();
-    enterpriseResponse.status = RequestStatus::OK;
-    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    RawServerResponse organizationResponse = RawServerResponse();
+    organizationResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> organizationVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while (enterpriseResponse.status == RequestStatus::OK)
+    while (organizationResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
-        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
-        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        partialVec = RealityDataService::Request(organizationReq, organizationResponse);
+        organizationVec.insert(organizationVec.end(), partialVec.begin(), partialVec.end());
         }
     bvector<Utf8String> nodes = bvector<Utf8String>();
 
     Utf8String schema = RealityDataService::GetSchemaName();
-    for (RealityDataPtr rData : enterpriseVec)
+    for (RealityDataPtr rData : organizationVec)
         {
         nodes.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
@@ -701,10 +701,11 @@ void RealityDataConsole::EnterpriseStat()
     RealityDataService::Request(*ptt, stat, rawResponse);
 
     DisplayInfo("Enterprise statistics: \n");
-    DisplayInfo(Utf8PrintfString("   NbRealityData: %lu\n", stat.GetNbRealityData()));
-    DisplayInfo(Utf8PrintfString("   TotalSize(KB): %lu\n\n", stat.GetTotalSizeKB()));
-    DisplayInfo(Utf8PrintfString("   UltimateId   : %s\n", stat.GetUltimateId().c_str()));
-    DisplayInfo(Utf8PrintfString("   UltimateSite : %s\n\n", stat.GetUltimateSite().c_str()));
+    DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", stat.GetNbRealityData()));
+    DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", stat.GetTotalSizeKB()));
+    DisplayInfo(Utf8PrintfString("   OrganizationId: %s\n", stat.GetOrganizationId().c_str()));
+    DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", stat.GetUltimateId().c_str()));
+    DisplayInfo(Utf8PrintfString("   UltimateSite  : %s\n\n", stat.GetUltimateSite().c_str()));
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
@@ -906,7 +907,7 @@ void RealityDataConsole::Details()
             }
 
         DisplayInfo(Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
-        DisplayInfo(Utf8PrintfString(" EnterpriseId       : %s\n", entity->GetEnterpriseId()));
+        DisplayInfo(Utf8PrintfString(" OrganizationId     : %s\n", entity->GetOrganizationId()));
         DisplayInfo(Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
         DisplayInfo(Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
         DisplayInfo(Utf8PrintfString(" Dataset            : %s\n", entity->GetDataset()));
