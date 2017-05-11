@@ -13,9 +13,7 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
-#ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
-#endif
 #include <CloudDataSource\DataSourceAccount.h>
 #include <CloudDataSource\DataSourceAccountWSG.h>
 #include <CloudDataSource\DataSourceBuffered.h>
@@ -828,7 +826,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile)
     {
-#ifndef VANCOUVER_API
     // compute node tolerance (for the geometric error)
     // Different attempts to compute the Cesium 3D tiles "geometric error" value:
     //DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
@@ -866,9 +863,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     SMStreamingStore<EXTENT>::SerializeHeaderToJSON(header, blockID, smHeader);
 
     tile["SMHeader"] = smHeader;
-#else
-    assert(!"Not implemented");
-#endif
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)

@@ -457,7 +457,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
     static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore, sourceGCS, destinationGCS](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
-#ifndef VANCOUVER_API
+//#ifndef VANCOUVER_API
             // Gather all data in one place
             double t = clock();
             node->GetPointsPtr();
@@ -498,9 +498,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
         //}
         node = nullptr;
-#else
-        assert(false && "Make this compile on Vancouver!");
-#endif
+//#else
+//        assert(false && "Make this compile on Vancouver!");
+//#endif
         }, 7));
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void

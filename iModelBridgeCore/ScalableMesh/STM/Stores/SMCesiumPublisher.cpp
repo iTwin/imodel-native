@@ -8,7 +8,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& tranform, bvector<Byte>& outData)
     {
     size_t siblingIndex = 0;
-    BentleyApi::Dgn::TileNodeP parent = nullptr;
+    TileNodeP parent = nullptr;
     TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), tranform/*Transform::FromIdentity()*/, siblingIndex, parent);
     auto meshes = tileNode->GenerateMeshes();
     if (!meshes.empty())
@@ -23,7 +23,7 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
 void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
     {
     size_t siblingIndex = 0;
-    BentleyApi::Dgn::TileNodeP parent = nullptr;
+    TileNodeP parent = nullptr;
     TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent);
     auto meshes = tileNode->GenerateMeshes();
     if (!meshes.empty())

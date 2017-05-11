@@ -49,7 +49,11 @@ uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifndef VANCOUVER_API
 void BatchIdMap::ToJson(Json::Value& value, DgnDbP db) const
+#else
+void BatchIdMap::ToJson(Json::Value& value) const
+#endif
     {
     switch (m_source)
         {
@@ -66,42 +70,43 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbP db) const
             }
         case TileSource::Element:
             {
-            if (db)
-                {
-                //// ###TODO: Assumes 3d-only...
-                //// There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-                //static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                //    "WHERE e.Id=? AND g.ElementId=e.Id";
-                //
-                //BeSQLite::Statement stmt;
-                //stmt.Prepare(db, s_sql);
-                //
-                //Json::Value elementIds(Json::arrayValue);
-                //Json::Value modelIds(Json::arrayValue);
-                //Json::Value categoryIds(Json::arrayValue);
-                //
-                //for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-                //    {
-                //    elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-                //    DgnModelId modelId;
-                //    DgnCategoryId categoryId;
-                //
-                //    stmt.BindId(1, *elemIter);
-                //    if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-                //        {
-                //        modelId = stmt.GetValueId<DgnModelId>(0);
-                //        categoryId = stmt.GetValueId<DgnCategoryId>(1);
-                //        }
-                //
-                //    modelIds.append(modelId.ToString());
-                //    categoryIds.append(categoryId.ToString());
-                //    stmt.Reset();
-                //    }
-                //
-                //value["element"] = elementIds;
-                //value["model"] = modelIds;
-                //value["category"] = categoryIds;
-                }
+        assert(false); // not implemented;
+            //if (db)
+            //    {
+            //    //// ###TODO: Assumes 3d-only...
+            //    //// There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
+            //    //static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+            //    //    "WHERE e.Id=? AND g.ElementId=e.Id";
+            //    //
+            //    //BeSQLite::Statement stmt;
+            //    //stmt.Prepare(db, s_sql);
+            //    //
+            //    //Json::Value elementIds(Json::arrayValue);
+            //    //Json::Value modelIds(Json::arrayValue);
+            //    //Json::Value categoryIds(Json::arrayValue);
+            //    //
+            //    //for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+            //    //    {
+            //    //    elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+            //    //    DgnModelId modelId;
+            //    //    DgnCategoryId categoryId;
+            //    //
+            //    //    stmt.BindId(1, *elemIter);
+            //    //    if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+            //    //        {
+            //    //        modelId = stmt.GetValueId<DgnModelId>(0);
+            //    //        categoryId = stmt.GetValueId<DgnCategoryId>(1);
+            //    //        }
+            //    //
+            //    //    modelIds.append(modelId.ToString());
+            //    //    categoryIds.append(categoryId.ToString());
+            //    //    stmt.Reset();
+            //    //    }
+            //    //
+            //    //value["element"] = elementIds;
+            //    //value["model"] = modelIds;
+            //    //value["category"] = categoryIds;
+            //    }
             }
         }
     }
@@ -223,132 +228,136 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     memcpy(m_binaryData.data() + binaryDataSize, bufferData.data(), bufferDataSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilePublisher::Publish()
-    {
-    if (m_meshes.empty())
-        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Paul.Connelly   08/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//PublisherContext::Status TilePublisher::Publish()
+//    {
+//    if (m_meshes.empty())
+//        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+//
+//    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
+//    
+//    // .b3dm file
+//    Json::Value sceneJson(Json::objectValue);
+//
+//    ProcessMeshes(sceneJson);
+//
+//    Utf8String sceneStr = Json::FastWriter().write(sceneJson);
+//
+//    Json::Value batchTableJson(Json::objectValue);
+//#ifndef VANCOUVER_API
+//    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+//#else
+//    m_batchIds.ToJson(batchTableJson);
+//#endif
+//    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
+//    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+//
+//    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
+//
+//    // GLTF header = 5 32-bit values
+//    static const size_t s_gltfHeaderSize = 20;
+//    //static const char s_gltfMagic[] = "glTF";
+//    //static const uint32_t s_gltfVersion = 1;
+//    //static const uint32_t s_gltfSceneFormat = 0;
+//    uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
+//    uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
+//
+//    // B3DM header = 6 32-bit values
+//    // Header immediately followed by batch table json
+//    static const size_t s_b3dmHeaderSize = 24;
+//    //static const char s_b3dmMagic[] = "b3dm";
+//    //static const uint32_t s_b3dmVersion = 1;
+//    uint32_t b3dmNumBatches = m_batchIds.Count();
+//    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
+//
+//    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
+//    AppendUInt32(s_b3dmVersion);
+//    AppendUInt32(b3dmLength);
+//    AppendUInt32(batchTableStrLen);
+//    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+//    AppendUInt32(b3dmNumBatches);
+//    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
+//
+//    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
+//    AppendUInt32(s_gltfVersion);
+//    AppendUInt32(gltfLength);
+//    AppendUInt32(sceneStrLength);
+//    AppendUInt32(s_gltfSceneFormat);
+//
+//    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
+//    if (!m_binaryData.empty())
+//        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
+//
+//    std::fclose(m_outputFile);
+//    m_outputFile = NULL;
+//
+//    return PublisherContext::Status::Success;
+//    }
 
-    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
-    
-    // .b3dm file
-    Json::Value sceneJson(Json::objectValue);
-
-    ProcessMeshes(sceneJson);
-
-    Utf8String sceneStr = Json::FastWriter().write(sceneJson);
-
-    Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
-    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
-    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-
-    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
-
-    // GLTF header = 5 32-bit values
-    static const size_t s_gltfHeaderSize = 20;
-    static const char s_gltfMagic[] = "glTF";
-    static const uint32_t s_gltfVersion = 1;
-    static const uint32_t s_gltfSceneFormat = 0;
-    uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
-    uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
-
-    // B3DM header = 6 32-bit values
-    // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 24;
-    static const char s_b3dmMagic[] = "b3dm";
-    static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmNumBatches = m_batchIds.Count();
-    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
-
-    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_b3dmVersion);
-    AppendUInt32(b3dmLength);
-    AppendUInt32(batchTableStrLen);
-    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
-    AppendUInt32(b3dmNumBatches);
-    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
-
-    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_gltfVersion);
-    AppendUInt32(gltfLength);
-    AppendUInt32(sceneStrLength);
-    AppendUInt32(s_gltfSceneFormat);
-
-    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
-    if (!m_binaryData.empty())
-        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
-
-    std::fclose(m_outputFile);
-    m_outputFile = NULL;
-
-    return PublisherContext::Status::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, Utf8StringR sceneStr)
-    {
-
-    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.IsValid() ? m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str() : m_context->GetRootName().c_str(), nullptr);
-    
-    // .b3dm file
-    Json::Value sceneJson(Json::objectValue);
-
-    m_meshes.push_back(TileMeshPtr(&mesh));
-    ProcessMeshes(sceneJson);
-
-    sceneStr = Json::FastWriter().write(sceneJson);
-
-    Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
-    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
-    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-
-    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
-
-    // GLTF header = 5 32-bit values
-    static const size_t s_gltfHeaderSize = 20;
-    static const char s_gltfMagic[] = "glTF";
-    static const uint32_t s_gltfVersion = 1;
-    static const uint32_t s_gltfSceneFormat = 0;
-    uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
-    uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
-
-    // B3DM header = 6 32-bit values
-    // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 24;
-    static const char s_b3dmMagic[] = "b3dm";
-    static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmNumBatches = m_batchIds.Count();
-    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
-
-    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_b3dmVersion);
-    AppendUInt32(b3dmLength);
-    AppendUInt32(batchTableStrLen);
-    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
-    AppendUInt32(b3dmNumBatches);
-    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
-
-    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_gltfVersion);
-    AppendUInt32(gltfLength);
-    AppendUInt32(sceneStrLength);
-    AppendUInt32(s_gltfSceneFormat);
-
-    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
-    if (!m_binaryData.empty())
-        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
-
-    std::fclose(m_outputFile);
-    m_outputFile = NULL;
-
-    return PublisherContext::Status::Success;
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Paul.Connelly   08/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, Utf8StringR sceneStr)
+//    {
+//
+//    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.IsValid() ? m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str() : m_context->GetRootName().c_str(), nullptr);
+//    
+//    // .b3dm file
+//    Json::Value sceneJson(Json::objectValue);
+//
+//    m_meshes.push_back(TileMeshPtr(&mesh));
+//    ProcessMeshes(sceneJson);
+//
+//    sceneStr = Json::FastWriter().write(sceneJson);
+//
+//    Json::Value batchTableJson(Json::objectValue);
+//    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+//    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
+//    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+//
+//    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
+//
+//    // GLTF header = 5 32-bit values
+//    static const size_t s_gltfHeaderSize = 20;
+//    static const char s_gltfMagic[] = "glTF";
+//    static const uint32_t s_gltfVersion = 1;
+//    static const uint32_t s_gltfSceneFormat = 0;
+//    uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
+//    uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
+//
+//    // B3DM header = 6 32-bit values
+//    // Header immediately followed by batch table json
+//    static const size_t s_b3dmHeaderSize = 24;
+//    static const char s_b3dmMagic[] = "b3dm";
+//    static const uint32_t s_b3dmVersion = 1;
+//    uint32_t b3dmNumBatches = m_batchIds.Count();
+//    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
+//
+//    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
+//    AppendUInt32(s_b3dmVersion);
+//    AppendUInt32(b3dmLength);
+//    AppendUInt32(batchTableStrLen);
+//    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+//    AppendUInt32(b3dmNumBatches);
+//    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
+//
+//    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
+//    AppendUInt32(s_gltfVersion);
+//    AppendUInt32(gltfLength);
+//    AppendUInt32(sceneStrLength);
+//    AppendUInt32(s_gltfSceneFormat);
+//
+//    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
+//    if (!m_binaryData.empty())
+//        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
+//
+//    std::fclose(m_outputFile);
+//    m_outputFile = NULL;
+//
+//    return PublisherContext::Status::Success;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -365,24 +374,28 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
     Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+    #ifndef VANCOUVER_API
+        m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+    #else
+        m_batchIds.ToJson(batchTableJson);
+    #endif
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t batchTableBinarySize = 0;
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
-    static const char s_gltfMagic[] = "glTF";
-    static const uint32_t s_gltfVersion = 1;
-    static const uint32_t s_gltfSceneFormat = 0;
+    //static const char s_gltfMagic[] = "glTF";
+    //static const uint32_t s_gltfVersion = 1;
+    //static const uint32_t s_gltfSceneFormat = 0;
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
     // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
     static const size_t s_b3dmHeaderSize = 24;
-    static const char s_b3dmMagic[] = "b3dm";
-    static const uint32_t s_b3dmVersion = 1;
+    //static const char s_b3dmMagic[] = "b3dm";
+    //static const uint32_t s_b3dmVersion = 1;
     uint32_t b3dmNumBatches = /*m_batchIds.Count()*/0;
     uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
 
@@ -444,7 +457,7 @@ void TilePublisher::ProcessMeshes(Json::Value& val)
         AddMesh(val, *m_meshes[i], i);
         publishedRange.Extend (m_meshes[i]->GetRange());
         }
-    if (m_tile.IsValid())
+    if (m_tile != nullptr)
         m_tile->SetPublishedRange(publishedRange);
     }
 
@@ -1144,26 +1157,26 @@ PublisherContext::PublisherContext(/*ViewControllerR view,*/ BeFileNameCR output
     m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::Setup()
-    {
-    // Ensure directories exist and are writable
-    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
-        return Status::CantWriteToBaseDirectory;
-
-    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
-    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
-        return Status::CantCreateSubDirectory;
-    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
-        return Status::CantCreateSubDirectory;
-
-    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
-        return Status::CantCreateSubDirectory;
-
-    return Status::Success;
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Paul.Connelly   08/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//PublisherContext::Status PublisherContext::Setup()
+//    {
+//    // Ensure directories exist and are writable
+//    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
+//        return Status::CantWriteToBaseDirectory;
+//
+//    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
+//    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
+//        return Status::CantCreateSubDirectory;
+//    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
+//        return Status::CantCreateSubDirectory;
+//
+//    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
+//        return Status::CantCreateSubDirectory;
+//
+//    return Status::Success;
+//    }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Paul.Connelly   08/16
