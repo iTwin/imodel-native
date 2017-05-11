@@ -330,8 +330,8 @@ void WSGURL::SetSchema(Utf8String schema) { m_schema = schema; }
 WSGURL::WSGInterface WSGURL::GetInterface() const { return m_interface; }
 void WSGURL::SetInterface(WSGInterface _interface) { m_interface = _interface; }
 
-Utf8StringCR WSGURL::GetClassName() const { return m_className; }
-void WSGURL::SetClassName(Utf8String className) { m_className = className; }
+Utf8StringCR WSGURL::GetECClassName() const { return m_className; }
+void WSGURL::SetECClassName(Utf8String className) { m_className = className; }
 
 Utf8StringCR WSGURL::GetId() const { return m_id; }
 void WSGURL::SetId(Utf8String id) { m_id = id; }

@@ -80,7 +80,7 @@ public:
     REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 protected:
     // Default constructor
-    GeoCoordinationServiceRequest() { m_validRequestString = false; }
+    REALITYDATAPLATFORM_EXPORT GeoCoordinationServiceRequest() { m_validRequestString = false; }
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
     };
@@ -126,7 +126,7 @@ enum class GeoCoordinationField
 //! This class inherits from the general request class but adds additional 
 //! control for paging.
 //! Default page size is 25 with, of course a start index of 0
-//! To advance to next/previous page simply call AdvancePage() or RewingPage()
+//! To advance to next/previous page simply call AdvancePage() or RewindPage()
 //=====================================================================================
 struct GeoCoordinationServicePagedRequest : public WSGPagedRequest
     {

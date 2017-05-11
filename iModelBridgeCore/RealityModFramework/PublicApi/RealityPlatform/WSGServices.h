@@ -150,7 +150,7 @@ public:
 
     //! The class name. 
     //! Note that the method does not validate the class is part of the schema.
-    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetClassName() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetECClassName() const;
 
     //! The id of the object requested. If the request does not require
     //! an identifier then this field should remain empty
@@ -227,7 +227,7 @@ protected:
     void SetServerName(Utf8String serverName);
     void SetPluginName(Utf8String pluginName);
     void SetVersion(Utf8String version);
-    void SetClassName(Utf8String className);
+    void SetECClassName(Utf8String className);
     void SetSchema(Utf8String schema);
     void SetInterface(WSGInterface _interface);
     void SetRepoId(Utf8String repoId);
@@ -510,19 +510,18 @@ protected:
 //=====================================================================================
 struct WSGRequest : public CurlConstructor
     {
-private:
+protected:
     static WSGRequest* s_instance;
-
-    void _PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const;
+    virtual void _PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();
-    WSGRequest();
+    REALITYDATAPLATFORM_EXPORT WSGRequest();
 
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string. If a FILE is provided, the result will be written to a file
-    REALITYDATAPLATFORM_EXPORT void PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT void PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer = true, BeFile* file = nullptr) const;
+    REALITYDATAPLATFORM_EXPORT virtual void PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT virtual void PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer = true, BeFile* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT virtual CURL* PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer = true, BeFile* file = nullptr) const;
     };
 
 
