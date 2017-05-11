@@ -114,7 +114,7 @@
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
     @li @subpage ECDbTransactions
-    @li @subpage ECDbECSchemaImportAndUpdate
+    @li @subpage ECDbECSchemaImportAndUpgrade
     @li @subpage ECDbECSchemaRules
     @li @subpage ECDbRelationshipRules
     @li @subpage ECDbRelationshipInheritanceRules
@@ -180,11 +180,11 @@
     */
 
     /**
-    @page ECDbECSchemaImportAndUpdate ECSchema Import and Update
+    @page ECDbECSchemaImportAndUpgrade ECSchema Import and Upgrade
     
     @ref BentleyApi::BeSQLite::EC::SchemaManager::ImportSchemas "SchemaManager::ImportSchemas" is the key API to
     - @b import new @ref BentleyApi::ECN::ECSchema "ECSchemas" into an @ref ECDbFile "ECDb file"
-    - @b update @ref BentleyApi::ECN::ECSchema "ECSchemas" which already exist in an @ref ECDbFile "ECDb file" with a newer version of them.
+    - @b upgrade @ref BentleyApi::ECN::ECSchema "ECSchemas" which already exist in an @ref ECDbFile "ECDb file" with a newer version of them.
     %ECDb computes the changes between the newer and existing schema version and applies the changes to the %ECDb file
     
     See also @ref ECDbECSchemaRules
@@ -193,10 +193,10 @@
     should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
     does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
       
-    @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
+    @section ECDbECSchemaUpgradeSupportedFeatures ECSchema Upgrade Supported Features
     
     @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
-    the major version of the ECSchema must be increased in this case. Otherwise the ECSchema update will fail.
+    the major version of the ECSchema must be increased in this case. Otherwise the ECSchema upgrade will fail.
 
     ### ECSchema
     - @b Modify 
@@ -205,7 +205,7 @@
         - @ref BentleyApi::ECN::ECSchema::GetAlias "Alias"
         - @b Version (@ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor").
             - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead" is not allowed though as read version changes cannot be performed through
-            an ECSchema update.
+            an ECSchema upgrade.
     - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references"
         - @b Add, @b delete, @b modify
     - @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses"
