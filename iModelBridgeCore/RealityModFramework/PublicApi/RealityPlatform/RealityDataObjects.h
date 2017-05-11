@@ -339,7 +339,7 @@ protected:
 enum class RealityDataField
     {
     Id,
-    EnterpriseId,
+    OrganizationId,
     ContainerName,
     Name,
     Dataset,
@@ -411,9 +411,9 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetModifiedDateTime(DateTime modifiedDate);
 
     //! Get/Set
-    //! The id of the enterprise the data belongs to
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetEnterpriseId() const;
-    REALITYDATAPLATFORM_EXPORT void SetEnterpriseId(Utf8CP enterpriseId);
+    //! The id of the organisation the data belongs to
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOrganizationId() const;
+    REALITYDATAPLATFORM_EXPORT void SetOrganizationId(Utf8CP organizationId);
 
     //! [RDS Specific] The name of the RDS container containing the data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
@@ -475,7 +475,7 @@ protected:
 
     Utf8String m_thumbnailDocument;
 
-    Utf8String m_enterpriseId;
+    Utf8String m_organizationId;
     Utf8String m_containerName;
     Utf8String m_rootDocument;
     Utf8String m_metadataUrl;
@@ -498,26 +498,30 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat();
 
-    //! The last modified time
+    //! number of entries belonging to the organisation
     REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
     REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
 
-    //! The last modified time
+    //! total size of the organisations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
 
-    //! The last modified time
+    //! UltimateId 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOrganizationId() const;
+    REALITYDATAPLATFORM_EXPORT void SetOrganizationId(Utf8CP organizationId);
+
+    //! UltimateId 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
     REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
 
-    //! Get/Set
-    //! The id of the enterprise the data belongs to
+    //! UltimateSite
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateSite() const;
     REALITYDATAPLATFORM_EXPORT void SetUltimateSite(Utf8CP ultimateSite);
 
 protected:
     uint64_t m_nbRealityData;
     uint64_t m_totalSizeKB;
+    Utf8String m_organizationId;
     Utf8String m_ultimateId;
     Utf8String m_ultimateSite;
     };

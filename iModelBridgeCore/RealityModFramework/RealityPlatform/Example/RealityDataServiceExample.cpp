@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     Utf8String projectId = "1";
     Utf8String folderId = "43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FJ~3A~2F";
     Utf8String documentId = "43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FJ~3A~2F_Data_Tests~2F_RDS_Performance~2FTest_2~2FMosaic~2F916_16.itiff";
-    Utf8String enterpriseId = "5e41126f-6875-400f-9f75-4492c99ee544";
+    Utf8String organizationId = "5e41126f-6875-400f-9f75-4492c99ee544";
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
     std::cout << RealityDataService::GetServerName() << std::endl;
@@ -161,17 +161,17 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving spatial entities with filter" << std::endl;
 
-    RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    RawServerResponse enterpriseResponse = RawServerResponse();
-    bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse);
+    RealityDataListByOrganizationPagedRequest* organizationReq = new RealityDataListByOrganizationPagedRequest(organizationId);
+    RawServerResponse organizationResponse = RawServerResponse();
+    bvector<RealityDataPtr> organizationVec = RealityDataService::Request(*organizationReq, organizationResponse);
 
-    if (enterpriseResponse.status != RequestStatus::BADREQ)
+    if (organizationResponse.status != RequestStatus::BADREQ)
         {
-        std::cout << "Number of spatial entities found for enterprise" << enterpriseId << " :" << std::endl;
-        std::cout << enterpriseVec.size() << std::endl;
+        std::cout << "Number of spatial entities found for organization" << organizationId << " :" << std::endl;
+        std::cout << organizationVec.size() << std::endl;
         }
     else
-        std::cout << "error retrieving spatial entities with enterprise id" << std::endl;
+        std::cout << "error retrieving spatial entities with organization id" << std::endl;
 
 
     RealityDataProjectRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataProjectRelationshipByProjectIdPagedRequest(projectId);

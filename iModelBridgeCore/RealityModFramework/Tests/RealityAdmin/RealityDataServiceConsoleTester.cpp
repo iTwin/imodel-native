@@ -88,7 +88,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, ConnectivityTest)
     directory.append(L"ConnectivityTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "perf-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
         "n\n"
         "quit\n";
     Utf8String consoleOutput;
@@ -112,7 +112,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
     directory.append(L"HelpTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "perf-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
                         "n\n"
                         "8\n"
                         "help\n"
@@ -157,7 +157,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
     directory.append(L"StatTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "perf-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
         "n\n"
         "8\n"
         "stat\n"
@@ -168,6 +168,9 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
 
     ASSERT_TRUE(consoleOutput.ContainsI("NbRealityData"));
     ASSERT_TRUE(consoleOutput.ContainsI("TotalSize"));
+    ASSERT_TRUE(consoleOutput.ContainsI("OrganizationId"));
+    ASSERT_TRUE(consoleOutput.ContainsI("UltimateId"));
+    ASSERT_TRUE(consoleOutput.ContainsI("UltimateSite"));
 
     ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
     }
@@ -238,7 +241,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
 
     Utf8String id = "945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780";
 
-    Utf8String commandString = "perf-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
                                 "n\n"
                                 "8\n"
                                 "upload\n";
@@ -305,8 +308,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")); //changeprops
     ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")); //FileAccess
     ASSERT_TRUE(consoleOutput.ContainsI("?sv=")); //AzureAddress
-    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
-    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
+    //ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
+    //ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
     Utf8String outRoot = dummyRoot.GetNameUtf8();
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot))));
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot))));//Download
