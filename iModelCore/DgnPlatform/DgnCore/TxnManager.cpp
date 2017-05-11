@@ -1007,6 +1007,8 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
 
     if (containsSchemaChanges)
         {
+        m_dgndb.ClearECSqlCache();
+        m_dgndb.Elements().ClearUpdaterCache();
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
         m_dgndb.Domains().SyncWithSchemas();

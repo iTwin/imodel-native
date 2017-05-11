@@ -51,3 +51,7 @@ DgnElementTests.NavigationPropertyOnTargetDelete
 
 #TFS 697010
 CompatibilityTests.ModifyBaseline       #crashing with repeat
+
+PerformanceElementsTests.ElementsInsertStrategies   #it was a disable test
+DgnChangeSummaryTestFixture.CreateSampleDataSet     #it was a disable test
+DgnChangeSummaryTestFixture.ValidateChangeSummaries  #it was a disable test
