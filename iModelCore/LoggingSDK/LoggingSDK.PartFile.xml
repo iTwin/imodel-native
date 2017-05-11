@@ -55,7 +55,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="B02" ExcludePlatforms="WinRT*">
+    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="B02" OnlyPlatforms="x64">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
