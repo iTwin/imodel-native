@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileIterator_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -59,7 +59,7 @@ static void createFiles(BeFileNameCR root)
 //---------------------------------------------------------------------------------------
 TEST (BeFileListIterator, Test_Recursive)
     {
-    sleep(10);
+    //sleep(10);
 
     BeFileName root;
     BeTest::GetHost().GetOutputRoot(root);
