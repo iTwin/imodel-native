@@ -626,6 +626,7 @@ struct RealityDataRelationshipDelete : public RealityDataUrl
     {
         REALITYDATAPLATFORM_EXPORT RealityDataRelationshipDelete(Utf8String realityDataId, Utf8String projectId);
     protected:
+        Utf8String m_projectId;
         REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
@@ -719,6 +720,12 @@ struct RealityDataServiceTransfer : public CurlConstructor
 
     //! Validates that files have been found in the paths provided by the user
     REALITYDATAPLATFORM_EXPORT bool IsValidTransfer() { return m_filesToTransfer.size() > 0; }
+
+    //! Returns files being uploaded
+    REALITYDATAPLATFORM_EXPORT size_t GetFileCount() { return m_filesToTransfer.size(); }
+
+    //! Returns full size of upload
+    REALITYDATAPLATFORM_EXPORT uint64_t GetFullTransferSize() { return m_fullTransferSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
