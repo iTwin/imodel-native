@@ -873,6 +873,8 @@ bool DgnFontDataSession::Start()
 //---------------------------------------------------------------------------------------
 void DgnFontDataSession::Stop()
     {
+    BeMutexHolder lock(s_fontDataSessionMutex);
+
     if (m_isValid)
         m_data->_ReleaseDataRef();
     
