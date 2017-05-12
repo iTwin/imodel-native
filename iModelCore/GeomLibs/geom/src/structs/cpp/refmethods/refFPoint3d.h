@@ -8,147 +8,6 @@
 // refFPoint3d.h is #include'd into refDPoint3d.cpp (for template sharing) -- do NOT include PCH.
 BEGIN_BENTLEY_NAMESPACE
 
-#ifdef bsiDPoint3d_extras
-/* VBSUB(Point3dDistanceSquared) */
-/* CSVFUNC(distanceSquared) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the points
-@group "FPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquared
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist, zdist;
-
-    xdist = (pPoint2->x - pPoint1->x);
-    ydist = (pPoint2->y - pPoint1->y);
-    zdist = (pPoint2->z - pPoint1->z);
-
-    return (xdist*xdist + ydist*ydist + zdist*zdist);
-    }
-
-/* VBSUB(Point3dDistanceSquaredXY) */
-/* CSVFUNC(distanceSquaredXY) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points, using only the xy parts.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the XY projections of the two points (i.e. any z difference is ignored)
-@group "FPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquaredXY
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist;
-
-    xdist = pPoint2->x - pPoint1->x;
-    ydist = pPoint2->y - pPoint1->y;
-
-    return (xdist*xdist + ydist*ydist);
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Sets all components of a point or vector to zero.
- @param pPoint <= zeroed point or vector
-@group "FPoint3d Initialization"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPoint3d_zero
-
-
-(
-DPoint3dP pPoint
-)
-    {
-    pPoint->x = 0.0;
-    pPoint->y = 0.0;
-    pPoint->z = 0.0;
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Sets the x,y, and z components of a point
- @param pPoint <= initialized point or vector
- @param ax => x component
- @param ay => y component
- @param az => z component
-@group "FPoint3d Initialization"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPoint3d_setXYZ
-
-
-(
-DPoint3dP pPoint,
-double       ax,
-double       ay,
-double       az
-)
-    {
-    pPoint->x = ax;
-    pPoint->y = ay;
-    pPoint->z = az;
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Finds the largest absolute value among the components of a point or vector.
- @param pVector => point or vector
- @return largest absolute value among point coordinates
-@group "FPoint3d Queries"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_maxAbs
-
-
-(
-DPoint3dCP pVector
-)
-    {
-    double maxVal = fabs (pVector->x);
-
-    if (fabs (pVector->y) > maxVal)
-        maxVal = fabs (pVector->y);
-
-    if (fabs (pVector->z) > maxVal)
-        maxVal = fabs (pVector->z);
-
-    return maxVal;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Computes the magnitude of a vector.
-* @instance pVector => The vector
-* @return The length of the vector
-* @bsihdr                                                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_magnitude
-(
-DPoint3dCP pVector
-)
-    {
-    return  sqrt ( pVector->x*pVector->x
-                 + pVector->y*pVector->y
-                 + pVector->z*pVector->z);
-    }
-
-#endif
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -2155,7 +2014,7 @@ int        n
 //! return product of transform times point given as components
 //! @param [in] transform affine transform.
 //! @param [in] point point to transform.
-FPoint3d FPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 TransformCR transform,
 double x,
@@ -2186,7 +2045,7 @@ double z
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-FPoint3d FPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 FPoint3dCR  origin,
 RotMatrixCR matrix,
@@ -2214,7 +2073,7 @@ double z
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-FPoint3d FPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 FPoint3dCR  origin,
 RotMatrixCR matrix,
@@ -2447,7 +2306,7 @@ FPoint3d FPoint3d::FromInterpolateBilinear (FPoint3dCR data00, FPoint3dCR data10
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-FPoint3d FPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 TransformCR transform,
 FPoint3dCR point
@@ -2474,7 +2333,7 @@ FPoint3dCR point
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-FPoint3d FPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 TransformCR transform,
 DPoint3dCR point

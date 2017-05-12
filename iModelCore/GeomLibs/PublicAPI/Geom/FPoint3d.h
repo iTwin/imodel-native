@@ -29,6 +29,7 @@ float y;
 float z;
 private:
 // private members expected to be inlined
+// Downcasts to float appear only in (a) these inline methods and (b) SetComponent.
     static FPoint3d from (double xx, double yy, double zz)
         {
         FPoint3d xyz;
@@ -385,12 +386,6 @@ void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2
 //!
 void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2, double scale2, DVec3dCR vector3, double scale3);
 
-//!
-//! @description Returns the cross (vector) cross product of two vectors.
-//! @param [in] point1 The first vector
-//! @param [in] point2 The second vector
-//!
-void CrossProduct (FPoint3dCR point1, FPoint3dCR point2);
 
 //!
 //! @description Returns the (vector) cross product of two vectors.
@@ -401,197 +396,6 @@ void CrossProduct (FPoint3dCR point1, FPoint3dCR point2);
 //!
 void CrossProductToPoints (FPoint3dCR origin, FPoint3dCR target1, FPoint3dCR target2);
 
-//!
-//! @description Return the (scalar) cross product of the xy parts of two vectors.
-//! @param [in] point2 The second vector
-//! @return The 2d cross product.
-//!
-double CrossProductXY (FPoint3dCR point2) const;
-
-//!
-//! @description Compute the normalized cross product of two vectors
-//! and return the length of the unnormalized cross product.
-//!
-//! @param [in] point1 The first vector
-//! @param [in] point2 The second vector
-//! @return The length of the original (prenormalization) cross product vector
-//!
-double NormalizedCrossProduct (FPoint3dCR point1, FPoint3dCR point2);
-
-//!
-//! @description Computes the cross product of the two parameter vectors and scales it to a given
-//! length.  The scaled vector is stored as the product vector, and the length of the original
-//! cross product vector is returned.
-//!
-//! @param [in] point1 The first vector
-//! @param [in] point2 The second vector
-//! @param [in] productLength The Desired length
-//! @return The length of original vector.
-//!
-double SizedCrossProduct (FPoint3dCR point1, FPoint3dCR point2, double productLength);
-
-//!
-//! @description Computes the cross product of two vectors and scales it to the
-//! geometric mean of the lengths of the two vectors.  This is useful
-//! because it has the direction of the cross product (i.e. normal to the plane
-//! of the two vectors) and a size in between the two vectors.
-//!
-//! @param [in] point1 The first vector
-//! @param [in] point2 The second vector
-//! @return The length of original vector.
-//!
-double GeometricMeanCrossProduct (FPoint3dCR point1, FPoint3dCR point2);
-
-//!
-//! @description Returns the (scalar) dot product of two vectors.
-//! @param [in] point2 The second vector
-//! @return The dot product of the two vectors
-//!
-double DotProduct (FPoint3dCR point2) const;
-
-//!
-//! @description Returns the (scalar) dot product of xy parts of two vectors.
-//! @param [in] point2 The second vector
-//! @return The dot product of the xy parts of the two vectors
-//!
-double DotProductXY (FPoint3dCR point2) const;
-
-//!
-//! @description Computes the dot product of one vector given as a point structure and another given as
-//! xyz components.
-//! @param [in] ax The x component of second vector.
-//! @param [in] ay The y component of second vector.
-//! @param [in] az The z component of second vector.
-//! @return The dot product of the vector with a vector with the given components
-//!
-double DotProduct (double ax, double ay, double az) const;
-
-
-//!
-//! @description Computes a unit vector  in the direction of the difference of the points
-//! or vectors (Second parameter vector is subtracted from the first parameter vector,
-//! exactly as in the subtract function.)
-//!
-//! @param [in] target The target point.
-//! @param [in] origin The origin point.
-//! @return The length of original difference vector.
-//!
-double NormalizedDifference (FPoint3dCR target, FPoint3dCR origin);
-
-//!
-//! @description Returns the angle between two vectors.  This angle is between 0 and
-//! pi.  Rotating the first vector by this angle around the cross product
-//! between the vectors aligns it with the second vector.
-//!
-//! @param [in] point2 The second vector
-//! @return The angle between the vectors.
-//!
-double AngleTo (FPoint3dCR point2) const;
-
-//!
-//! @description Computes the (signed) angle from xy axis to the vector, using only xy parts.
-//!
-double AngleXY () const;
-//!
-//! @description Returns the angle between two vectors, choosing the smaller
-//!   of the two possible angles when both the vectors and their negations are considered.
-//!    This angle is between 0 and pi/2.
-//!
-//! @param [in] point2 The second vector
-//! @return The angle between the vectors.
-//!
-double SmallerUnorientedAngleTo (FPoint3dCR point2) const;
-
-//!
-//! @description Test a vector is "between" point0 and point1.
-//! If the vectors are coplanar and point0 is neither parallel nor antiparallel
-//! to point1, betweenness has the expected meaning: there are two angles between
-//! point0 and point1; one is less than 180; the test vector is tested to
-//! see if it is in the smaller angle.
-//! If the vectors are not coplanar, the test is based on the projection of
-//! the test vector into the plane of the other two vectors.
-//!
-//! Zero testing is untoleranced, and is biased to all parallel conditions "false".
-//! That is, if any pair of the input vectors is parallel or antiparallel,
-//! the mathematical answer is false.  Floating point tolerances
-//! will cause "nearby" cases to be unpredictable.  It is assumed that if
-//! the caller considers the "parallel" cases important they will be
-//! checked explicitly.
-//!
-//! @param [in] point0 The first boundary vector.
-//! @param [in] point1 The second boundary vector.
-//! @return true if the test vector is within the angle.
-//!
-bool IsVectorInSmallerSector (FPoint3dCR point0, FPoint3dCR point1) const;
-
-//!
-//! @description Test if the test vector vector is "between" point0 and point1, with CCW direction
-//! resolved by an up vector.  The cross product of point0 and point1 is
-//! considered the positive plane normal if its dot product with the up vector
-//! is positive.
-//!
-//! @param [in] point0 The boundary vector.
-//! @param [in] point1 The boundary vector.
-//! @param [in] upVector The out of plane vector.
-//! @return true if test vector is within the angle.
-//!
-bool IsVectorInCCWSector (FPoint3dCR point0, FPoint3dCR point1, FPoint3dCR upVector) const;
-
-//!
-//! @description Returns the angle from Vector1 to Vector2 using only xy parts.
-//!  This angle is between -pi and +pi.
-//!
-//! @param [in] point2 The second vector
-//! @return The angle between vectors.
-//!
-double AngleToXY (FPoint3dCR point2) const;
-
-//!
-//! @description Returns the angle between two vectors, considering both
-//!   the vectors and their negations and choosing the smaller.
-//!   This angle is between 0 and pi/2.
-//!
-//! @param [in] point2 The second vector
-//! @return The angle between vectors.
-//!
-double SmallerUnorientedAngleToXY (FPoint3dCR point2) const;
-
-//!
-//! @description Rotate vector around the z axis, return as calling instance.
-//! @param [in] vector vector to rotate.
-//! @param [in] theta The rotation angle.
-//!
-void RotateXY (FPoint3dCR vector, double theta);
-
-//!
-//! @description Rotate the calling instance around the z axis.
-//! @param [in] theta The rotation angle.
-//!
-void RotateXY (double theta);
-
-//!
-//! @description Computes the signed from one vector to another, in the plane
-//!       of the two vectors.   Initial computation using only the two vectors
-//!       yields two possible angles depending on which side of the plane of the
-//!       vectors is viewed.  To choose which side to view, go on the side whose
-//!       normal has a positive dot product with the orientation vector.
-//! This angle can be between -pi and +pi.
-//!
-//! @param [in] point2 The second vector
-//! @param [in] orientationVector The vector used to determine orientation.
-//! @return The signed angle
-//!
-double SignedAngleTo (FPoint3dCR point2, FPoint3dCR orientationVector) const;
-
-//!
-//! @description Computes the signed angle between the projection of two vectors
-//!       onto a plane with given normal.
-//!
-//! @param [in] point2 The second vector
-//! @param [in] planeNormal The plane normal vector
-//! @return The angle in plane
-//!
-double PlanarAngleTo (FPoint3dCR point2, FPoint3dCR planeNormal) const;
 
 //!
 //! @description Scale each point by the other's weight and subtract, i.e. form
@@ -632,101 +436,10 @@ double MagnitudeXY () const;
 double MagnitudeSquaredXY () const;
 
 //!
-//! @description Compute a unit vector perpendicular to the xy parts of given vector.
-//! @param [in] vector The source vector
-//! @return true if the input vector has nonzero length
-//!
-bool UnitPerpendicularXY (FPoint3dCR vector);
-
-//!
 //! @description Computes the magnitude of a vector.
 //! @return The length of the vector
 //!
 double Magnitude () const;
-
-//!
-//! @description Multiplies a vector by a scale factor.
-//! @param [in] vector The vector to be scaled.
-//! @param [in] scale The scale factor.
-//!
-void Scale (FPoint3dCR vector, double scale);
-
-//!
-//! @description Multiplies a vector (in place) by a scale factor.
-//! @param [in] scale The scale
-//!
-void Scale (double scale);
-
-//!
-//! @description Computes a negated (opposite) vector.
-//!
-//! @param [in] vector The vector to be negated.
-//!
-void Negate (FPoint3dCR vector);
-
-//!
-//! @description Negate a vector in place.
-//!
-//!
-void Negate ();
-
-//!
-//! @description Normalizes (scales) a vector to length 1.
-//! If the input vector length is 0, the output vector is a zero vector
-//! and the returned length is 0.
-//!
-//! @param [in] vector The vector to be normalized.
-//! @return The length prior to normalization
-//!
-double Normalize (FPoint3dCR vector);
-
-//!
-//! @description Scales a vector to specified length.
-//! If the input vector length is 0, the output vector is a zero vector
-//! and the returned length is 0.
-//!
-//! @param [in] vector The original vector.
-//! @param [in] length The requested length.
-//! @return The length prior to scaling.
-//!
-double ScaleToLength (FPoint3dCR vector, double length);
-
-//!
-//! @description Scales a vector to a specified length, and returns
-//! the prior length.
-//! If the input vector length is 0, the output vector is a zero vector
-//! and the returned length is 0.
-//!
-//! @param [in] length The requested length
-//! @return The length prior to scaling.
-//!
-double ScaleToLength (double length);
-
-//!
-//! @description Replaces a vector by a unit vector in the same direction, and returns
-//! the original length.
-//! If the input vector length is 0, the output vector is a zero vector
-//! and the returned length is 0.
-//!
-//! @return The length prior to normalization
-//!
-double Normalize ();
-
-//!
-//! @description Tests if two vectors are parallel.
-//!
-//! @param [in] point2 The second vector
-//! @return true if the vectors are parallel within default tolerance
-//!
-bool IsParallelTo (FPoint3dCR point2) const;
-
-//!
-//! @description Tests if two vectors are perpendicular.
-//!
-//! @param [in] point2 The second vector
-//! @return true if vectors are perpendicular within default tolerance
-//!
-bool IsPerpendicularTo (FPoint3dCR point2) const;
 
 //!
 //! @description Try to divide each component of a vector by a scalar.  If the denominator
@@ -737,46 +450,6 @@ bool IsPerpendicularTo (FPoint3dCR point2) const;
 //! @return true if division is numerically safe.
 //!
 bool SafeDivide (FPoint3dCR vector, double denominator);
-
-//!
-//! @description Computes the triple product of three vectors.
-//! The following are equivalent definitions of the triple product of three
-//! vectors V1, V2, and V3:
-//!
-//! <UL>
-//! <LI> (V1 cross V2) dot V3
-//! <LI> V1 dot (V2 cross V3)
-//! <LI>The determinant of the 3x3 matrix with the three vectors as its
-//!               columns.
-//! <LI>The determinant of the 3x3 matrix with the three vectors as its
-//!               rows.
-//! <LI>The (signed)volume of the parallelepiped whose 4 vertices are at the
-//!               origin and at the ends of the 3 vectors placed at the
-//!               origin.
-//! </UL>
-//!
-//! @param [in] point2 The second vector.
-//! @param [in] point3 The third vector.
-//! @return The triple product
-//!
-double TripleProduct (FPoint3dCR point2, FPoint3dCR point3) const;
-
-//!
-//! @description Subtract two points or vectors, and return the result in
-//!           place of the first.
-//!
-//! @param [in] point2 The vector to subtract.
-//!
-void Subtract (FPoint3dCR point2);
-
-//!
-//! @description Subtract coordinates of two vectors or points. (Compute Point1 - Point2)
-//!
-//! @param [in] point1 The first point
-//! @param [in] point2 The second (subtracted) point.
-//!
-void DifferenceOf (FPoint3dCR point1, FPoint3dCR point2);
-
 
 //! Componentwise linear combination.
 //! @remark Becasue point is base class for vector, this may be used for linear combinations of vectors.
@@ -806,42 +479,22 @@ void SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2, FPoint3d
 //!
 void SumOf (FPoint3dCR point1, FPoint3dCR point2);
 
-//!
-//! @description Multiply each point in an array by its corresponding scale factor.
-//! @param [out] pDest destination array.
-//! @param [in] pSource source array.
-//! @param [in] pScales scale factors
-//! @param [in] n number of points.
-//!
-static void MultiplyArrayByScales (FPoint3dP pDest, FPoint3dCP pSource, double *pScales, int n);
-
-
-//!
-//! @description Divide each point in an array by its corresponding scale factor.
-//!    Leave any point with near zero weight unchanged.
-//! @param [out] pDest destination array.
-//! @param [in] pSource source array.
-//! @param [in] pScales scale factors
-//! @param [in] n number of points.
-//!
-static void DivideArrayByScales (FPoint3dP pDest, FPoint3dCP pSource, double *pScales, int n);
-
 //! return product of transform times point given as components.
 //! @param [in] transform affine transform.
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-static FPoint3d FromProduct (TransformCR transform, double x, double y, double z);
+static FPoint3d FromMultiply (TransformCR transform, double x, double y, double z);
 
 //! return product of transform times point
 //! @param [in] transform affine transform.
 //! @param [in] point point to transform.
-static FPoint3d FromProduct (TransformCR transform, FPoint3dCR point);
+static FPoint3d FromMultiply (TransformCR transform, FPoint3dCR point);
 
 //! return product of transform times point
 //! @param [in] transform affine transform.
 //! @param [in] point point to transform.
-static FPoint3d FromProduct (TransformCR transform, DPoint3dCR point);
+static FPoint3d FromMultiply (TransformCR transform, DPoint3dCR point);
 
 //! interpolate between points.
 //! @param [in] pointA start point
@@ -944,13 +597,13 @@ static FPoint3d FromSumOf (FPoint3dCR point0, double scale0, FPoint3dCR point1, 
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-static FPoint3d FromProduct (FPoint3dCR point, RotMatrixCR matrix, double x, double y, double z);
+static FPoint3d FromMultiply (FPoint3dCR point, RotMatrixCR matrix, double x, double y, double z);
 
 //! Return {point + matrix * vector}
 //! @param [in] point base point
 //! @param [in] matrix 
 //! @param [in] vector vector part
-static FPoint3d FromProduct (FPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
+static FPoint3d FromMultiply (FPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
 
 //! Return (if possible) the intesection of xy perpendiculars from fractional points on rays from a basePoint.  Returned point has z from basePoint
 static ValidatedFPoint3d FromIntersectPerpendicularsXY
