@@ -11,17 +11,20 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct StorageDescription;
 
+//======================================================================================
+// @bsiclass                                                 Affan.Khan         09/2014
+//======================================================================================
 struct LightweightCache final: NonCopyableClass
     {
     public:
-        enum class RelationshipEnd : int
+        enum class RelationshipEnd
             {
-            None = 0,
             Source = 1,
             Target = 2,
             Both = Source | Target
             };
-        enum class RelationshipType : int
+
+        enum class RelationshipType
             {
             Link = 0,
             Source = (int) MapStrategy::ForeignKeyRelationshipInSourceTable,
@@ -57,7 +60,8 @@ struct LightweightCache final: NonCopyableClass
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
         //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
-        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintId) const;
+
 
         //For a end table relationship class map, the storage description provides horizontal partitions
         //For the end table's constraint classes - not for the relationship itself.

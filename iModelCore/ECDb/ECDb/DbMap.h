@@ -24,8 +24,9 @@ struct DbMap final : NonCopyableClass
         DbSchema m_dbSchema;
         mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
         mutable LightweightCache m_lightweightCache;
-        mutable SchemaImportContext* m_schemaImportContext;
+        mutable SchemaImportContext* m_schemaImportContext = nullptr;
 
+        BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
         ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
         BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
         BentleyStatus DoMapSchemas() const;
@@ -36,34 +37,28 @@ struct DbMap final : NonCopyableClass
         BentleyStatus PurgeOrphanTables() const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
-        std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
-        static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
+        static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
         static BentleyStatus ValidateDbMappings(ECDb const&, bool failOnError);
 
     public:
-        explicit DbMap(ECDbCR ecdb);
+        explicit DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_lightweightCache(ecdb) {}
         ~DbMap() {}
         void ClearCache() const;
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
-        BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
 
-        std::vector<ECN::ECClassCP> GetFlattenListOfClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-        std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
+        BentleyStatus MapSchemas(SchemaImportContext&) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-        BentleyStatus MapSchemas(SchemaImportContext&) const;
+        std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
 
-        bool IsImportingSchema() const;
-        SchemaImportContext* GetSchemaImportContext() const;
-        bool AssertIfIsNotImportingSchema() const;
+        SchemaImportContext* GetSchemaImportContext() const { BeAssert(m_schemaImportContext != nullptr && "May only call this during schema import"); return m_schemaImportContext; }
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
-        IssueReporter const& Issues() const;
-
+        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
     };
 
 //=======================================================================================

@@ -671,13 +671,34 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     {
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    std::vector<ECClass const*> sourceClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
-    std::vector<ECClass const*> targetClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetTarget());
-    if (ContainsClassWithNotMappedStrategy(sourceClasses) || ContainsClassWithNotMappedStrategy(targetClasses))
+
+    std::vector<ECClass const*> sourceClasses, targetClasses;
+    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(relClass->GetId()))
         {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
-        m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return ClassMappingStatus::Success;
+        const LightweightCache::RelationshipEnd end = kvPair.second;
+        ECClassCP constraintClass = m_ecdb.Schemas().GetClass(kvPair.first);
+        if (constraintClass == nullptr)
+            {
+            BeAssert(false);
+            return ClassMappingStatus::Error;
+            }
+
+        ClassMap const* constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
+        BeAssert(constraintClassMap != nullptr);
+        if (constraintClassMap == nullptr || constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+            {
+            LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
+            m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
+            return ClassMappingStatus::Success;
+            }
+
+        if (Enum::Contains(end, LightweightCache::RelationshipEnd::Source))
+            sourceClasses.push_back(constraintClass);
+        else
+            {
+            BeAssert(Enum::Contains(end, LightweightCache::RelationshipEnd::Target));
+            targetClasses.push_back(constraintClass);
+            }
         }
 
     BeAssert(GetDbMap().GetSchemaImportContext() != nullptr);
@@ -888,21 +909,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                05/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipMappingInfo::ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const
-    {
-    for (ECClassCP ecClass : classes)
-        {
-        ClassMap const* classMap = GetDbMap().GetClassMap(*ecClass);
-        BeAssert(classMap != nullptr);
-        if (classMap == nullptr || classMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-            return true;
-        }
-
-    return false;
-    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                12/2016

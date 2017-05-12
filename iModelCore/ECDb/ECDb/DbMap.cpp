@@ -11,132 +11,120 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbMap::DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(ecdb) {}
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-SchemaImportContext* DbMap::GetSchemaImportContext() const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
-    if (AssertIfIsNotImportingSchema())
+    if (m_schemaImportContext == nullptr)
+        {
+        ClassMapLoadContext ctx;
+        ClassMapPtr classMap = nullptr;
+        if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
+            {
+            BeAssert(false && "Error during TryGetClassMap");
+            return nullptr;
+            }
+
+        if (classMap == nullptr)
+            return nullptr;
+
+        if (SUCCESS != ctx.Postprocess(*this))
+            return nullptr;
+
+        return classMap.get();
+        }
+
+    ClassMapPtr classMap = nullptr;
+    if (SUCCESS != TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
         return nullptr;
 
-    return m_schemaImportContext;
+    return classMap.get();
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool DbMap::IsImportingSchema() const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
-    return m_schemaImportContext != nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2016
-//---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus DbMap::PurgeOrphanTables() const
-    {
-    //skip ExistingTable and NotMapped
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
-                                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
-                                     "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
-                                     "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                                     "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-                                     "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
-                                     "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
+    //we must use this method here and cannot just see whether ecClass has already an id
+    //because the ecClass object can come from an ECSchema deserialized from disk, hence
+    //not having the id set, and already imported in the ECSchema. In that case
+    //ECDb does not set the ids on the ECClass objects
+    if (!m_ecdb.Schemas().GetReader().GetClassId(ecClass).IsValid())
         {
-        BeAssert(false && "ECDb profile changed");
+        BeAssert(false && "ECClass must have an ECClassId when mapping to the ECDb.");
         return ERROR;
         }
 
-    std::vector<Utf8String> nonVirtualTables;
-    std::vector<Utf8String> virtualTables;
-    while (stmt.Step() == BE_SQLITE_ROW)
+    classMap = DoGetClassMap(ecClass);
+    if (classMap != nullptr)
+        return SUCCESS;
+
+    //lazy loading the class map implemented with const-casting the actual loading so that the 
+    //get method itself can remain const (logically const)
+    return TryLoadClassMap(classMap, ctx, ecClass);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan         08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassMapPtr DbMap::DoGetClassMap(ECClassCR ecClass) const
+    {
+    auto it = m_classMapDictionary.find(ecClass.GetId());
+    if (m_classMapDictionary.end() == it)
+        return nullptr;
+    else
+        return it->second;
+    }
+
+
+//---------------------------------------------------------------------------------------
+//* @bsimethod                                 Affan.Khan                           07 / 2012
+//---------------------------------------------------------------------------------------
+BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
+    {
+    classMap = nullptr;
+
+    DbClassMapLoadContext classMapLoadContext;
+    if (DbClassMapLoadContext::Load(classMapLoadContext, ctx, GetECDb(), ecClass) != SUCCESS)
         {
-        if (stmt.GetValueBoolean(1))
-            virtualTables.push_back(stmt.GetValueText(0));
+        //Failed to find classmap
+        return SUCCESS;
+        }
+
+    MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
+    ClassMapPtr classMapTmp = nullptr;
+    if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
+        classMapTmp = ClassMapFactory::CreateForLoading<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+    else
+        {
+        ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
+        if (ecRelationshipClass != nullptr)
+            {
+            if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+            else
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+            }
         else
-            nonVirtualTables.push_back(stmt.GetValueText(0));
+            classMapTmp = ClassMapFactory::CreateForLoading<ClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
         }
 
-    if (nonVirtualTables.empty() && virtualTables.empty())
-        return SUCCESS;
-
-    stmt.Finalize();
-
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
+    if (ClassMappingStatus::Error == AddClassMap(classMapTmp))
         {
-        BeAssert(false && "ECDb profile changed");
+        BeAssert(false);
         return ERROR;
         }
 
-    for (Utf8StringCR name : virtualTables)
+    if (SUCCESS != classMapTmp->Load(ctx, classMapLoadContext))
         {
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
-            return ERROR;
-            }
-        }
-
-    if (nonVirtualTables.empty())
-        return SUCCESS;
-
-    if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
-        {
-        Utf8String tableNames;
-        bool isFirstTable = true;
-        for (Utf8StringCR tableName : nonVirtualTables)
-            {
-            if (!isFirstTable)
-                tableNames.append(",");
-
-            tableNames.append(tableName);
-            isFirstTable = false;
-            }
-
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(
-            "Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
+        BeAssert(false);
         return ERROR;
         }
 
-    for (Utf8StringCR name : nonVirtualTables)
-        {
-        if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
-            {
-            BeAssert(false && "failed to drop a table");
-            return ERROR;
-            }
-
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
-            return ERROR;
-            }
-        }
-
+    classMap = classMapTmp;
     return SUCCESS;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool DbMap::AssertIfIsNotImportingSchema() const
-    {
-    BeAssert(IsImportingSchema() && "ECDb is in currently in schema import mode. Which was not expected");
-    return !IsImportingSchema();
     }
 
 //---------------------------------------------------------------------------------------
@@ -195,24 +183,7 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx) const
     return stat;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         03/2016
-//---------------------------------------------------------------------------------------
-std::vector<ECClassCP> DbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const
-    {
-    //!This does not work due to navigation properties
-    std::vector<ECClassCP> baseClasses;
-    for (ECClassCP baseClass : ecclass.GetBaseClasses())
-        {
-        ClassMapCP baseClassMap = GetClassMap(*baseClass);
-        if (baseClassMap == nullptr)
-            {
-            baseClasses.push_back(baseClass);
-            }
-        }
 
-    return baseClasses;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         03/2016
 //---------------------------------------------------------------------------------------
@@ -258,8 +229,11 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::DoMapSchemas() const
     {
-    if (AssertIfIsNotImportingSchema())
+    if (m_schemaImportContext == nullptr)
+        {
+        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
         return ERROR;
+        }
 
     // Identify root classes/relationship-classes
     SchemaCompareContext& ctx = GetSchemaImportContext()->GetECSchemaCompareContext();
@@ -327,61 +301,17 @@ BentleyStatus DbMap::DoMapSchemas() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-//* @bsimethod                                 Affan.Khan                           07 / 2012
-//---------------------------------------------------------------------------------------
- BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
-    {
-    classMap = nullptr;
-
-    DbClassMapLoadContext classMapLoadContext;
-    if (DbClassMapLoadContext::Load(classMapLoadContext, ctx, GetECDb(), ecClass) != SUCCESS)
-        {
-        //Failed to find classmap
-        return SUCCESS;
-        }
-
-    MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
-    ClassMapPtr classMapTmp = nullptr;
-    if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-        classMapTmp = ClassMapFactory::CreateForLoading<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
-    else
-        {
-        ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
-        if (ecRelationshipClass != nullptr)
-            {
-            if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
-            else
-                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
-            }
-        else
-            classMapTmp = ClassMapFactory::CreateForLoading<ClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
-        }
-
-    if (ClassMappingStatus::Error == AddClassMap(classMapTmp))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (SUCCESS != classMapTmp->Load(ctx, classMapLoadContext))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    classMap = classMapTmp;
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
  ClassMappingStatus DbMap::MapClass(ECClassCR ecClass) const
      {
-     if (AssertIfIsNotImportingSchema())
+     if (m_schemaImportContext == nullptr)
+         {
+         BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
          return ClassMappingStatus::Error;
+         }
 
      ClassMapPtr existingClassMap = nullptr;
      if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
@@ -467,81 +397,17 @@ ClassMappingStatus DbMap::AddClassMap(ClassMapPtr& classMap) const
     return ClassMappingStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
-    {
-    if (m_schemaImportContext == nullptr)
-        {
-        ClassMapLoadContext ctx;
-        ClassMapPtr classMap = nullptr;
-        if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
-            {
-            BeAssert(false && "Error during TryGetClassMap");
-            return nullptr;
-            }
-
-        if (classMap == nullptr)
-            return nullptr;
-
-        if (SUCCESS != ctx.Postprocess(*this))
-            return nullptr;
-
-        return classMap.get();
-        }
-
-    ClassMapPtr classMap = nullptr;
-    if (SUCCESS != TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
-        return nullptr;
-
-    return classMap.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
-    {
-    //we must use this method here and cannot just see whether ecClass has already an id
-    //because the ecClass object can come from an ECSchema deserialized from disk, hence
-    //not having the id set, and already imported in the ECSchema. In that case
-    //ECDb does not set the ids on the ECClass objects
-    if (!m_ecdb.Schemas().GetReader().GetClassId(ecClass).IsValid())
-        {
-        BeAssert(false && "ECClass must have an ECClassId when mapping to the ECDb.");
-        return ERROR;
-        }
-    
-    classMap = DoGetClassMap(ecClass);
-    if (classMap != nullptr)
-        return SUCCESS;
-
-    //lazy loading the class map implemented with const-casting the actual loading so that the 
-    //get method itself can remain const (logically const)
-    return TryLoadClassMap(classMap, ctx, ecClass);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan         08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassMapPtr DbMap::DoGetClassMap(ECClassCR ecClass) const
-    {
-    auto it = m_classMapDictionary.find(ecClass.GetId());
-    if (m_classMapDictionary.end() == it)
-        return nullptr;
-    else
-        return it->second;
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2011
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
     {
-    if (AssertIfIsNotImportingSchema())
+    if (m_schemaImportContext == nullptr)
+        {
+        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
         return ERROR;
+        }
 
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
@@ -586,8 +452,11 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
     {
-    if (AssertIfIsNotImportingSchema())
+    if (m_schemaImportContext == nullptr)
+        {
+        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
         return ERROR;
+        }
 
     std::vector<DbIndex const*> indexes;
     for (std::unique_ptr<DbIndex> const& indexPtr : m_dbSchema.GetIndexes())
@@ -694,31 +563,98 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
     return m_dbSchema.CreateOrUpdateIndexes();
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<ECClassCP> DbMap::GetFlattenListOfClassesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      05/2016
+//---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus DbMap::PurgeOrphanTables() const
     {
-    std::vector<ECClassCP> constraintClasses;
-    LightweightCache::RelationshipEnd endOfInterest = &relationshipEnd.GetRelationshipClass().GetSource() == &relationshipEnd ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-    for (auto const& constraintKey : GetLightweightCache().GetConstraintClassesForRelationshipClass(relationshipEnd.GetRelationshipClass().GetId()))
+    //skip ExistingTable and NotMapped
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
+                                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                                     "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
+                                     "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                                     "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                                     "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                                     "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
         {
-        if (Enum::Contains(endOfInterest, constraintKey.second))
-            {
-            ECClassCP constrantClass = GetECDb().Schemas().GetClass(constraintKey.first);
-            if (constrantClass == nullptr)
-                {
-                BeAssert(false && "Failed to read ECClass");
-                constraintClasses.clear();
-                return constraintClasses;
-                }
+        BeAssert(false && "ECDb profile changed");
+        return ERROR;
+        }
 
-            constraintClasses.push_back(constrantClass);
+    std::vector<Utf8String> nonVirtualTables;
+    std::vector<Utf8String> virtualTables;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (stmt.GetValueBoolean(1))
+            virtualTables.push_back(stmt.GetValueText(0));
+        else
+            nonVirtualTables.push_back(stmt.GetValueText(0));
+        }
+
+    if (nonVirtualTables.empty() && virtualTables.empty())
+        return SUCCESS;
+
+    stmt.Finalize();
+
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
+        {
+        BeAssert(false && "ECDb profile changed");
+        return ERROR;
+        }
+
+    for (Utf8StringCR name : virtualTables)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindText(1, name, Statement::MakeCopy::No);
+        if (stmt.Step() != BE_SQLITE_DONE)
+            {
+            BeAssert(false && "constraint violation");
+            return ERROR;
             }
         }
 
-    return constraintClasses;
+    if (nonVirtualTables.empty())
+        return SUCCESS;
+
+    if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
+        {
+        Utf8String tableNames;
+        bool isFirstTable = true;
+        for (Utf8StringCR tableName : nonVirtualTables)
+            {
+            if (!isFirstTable)
+                tableNames.append(",");
+
+            tableNames.append(tableName);
+            isFirstTable = false;
+            }
+
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(
+            "Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
+        return ERROR;
+        }
+
+    for (Utf8StringCR name : nonVirtualTables)
+        {
+        if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
+            {
+            BeAssert(false && "failed to drop a table");
+            return ERROR;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindText(1, name, Statement::MakeCopy::No);
+        if (stmt.Step() != BE_SQLITE_DONE)
+            {
+            BeAssert(false && "constraint violation");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -918,11 +854,6 @@ void DbMap::ClearCache() const
     m_dbSchema.Reset();
     m_lightweightCache.Reset();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                      06/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-IssueReporter const& DbMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

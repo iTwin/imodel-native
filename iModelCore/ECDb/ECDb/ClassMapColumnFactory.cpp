@@ -751,7 +751,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableMaps(ECN::ECClassId classId)
     {
-    for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(classId))
+    for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClassesForConstraintClass(classId))
         {
         if (m_endTableRelationship.find(relKey.first) != m_endTableRelationship.end())
             continue;
