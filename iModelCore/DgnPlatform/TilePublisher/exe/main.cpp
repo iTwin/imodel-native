@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
-
 |
 |     $Source: TilePublisher/exe/main.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <TilePublisher/CesiumPublisher.h>
@@ -329,7 +328,7 @@ struct Host : DgnPlatformLib::Host
 {
 private:
     void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
-    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());

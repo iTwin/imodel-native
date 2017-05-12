@@ -73,7 +73,7 @@ public:
 // A progress meter for command-line applications.
 // @bsiclass                                                    Sam.Wilson  07/14
 //=======================================================================================
-struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
+struct EXPORT_VTABLE_ATTRIBUTE PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
 {
     DEFINE_T_SUPER(DgnProgressMeter)
 

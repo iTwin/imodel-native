@@ -51,7 +51,7 @@ public:
 //! @see IRepositoryManager
 // @bsistruct                                                    Paul.Connelly   01/16
 /*=====================================================================================*/
-struct IBriefcaseManager : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IBriefcaseManager : RefCountedBase
 {
 public:
     //! Enumerates the types of resources managed by a briefcase

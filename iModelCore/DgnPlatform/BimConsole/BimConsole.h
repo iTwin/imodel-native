@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
-
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include "Command.h"
 
 USING_NAMESPACE_BENTLEY
@@ -174,7 +173,7 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
 
         void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
-        IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
+        IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin; }
         BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
         void Setup();
