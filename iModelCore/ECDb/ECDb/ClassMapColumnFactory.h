@@ -35,8 +35,8 @@ struct ColumnMaps
         Utf8CP Copy(Utf8CP);
 
     public:
-        ColumnMaps(){}
-        ~ColumnMaps(){}
+        ColumnMaps() {}
+        ~ColumnMaps() {}
         bool IsNew(Utf8CP accessString) const { return m_newMappedColumns.find(accessString) != m_newMappedColumns.end(); }
         bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
         bset< Utf8CP, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
@@ -63,18 +63,26 @@ struct ColumnMapContext
         {
         InheritedAndLocal = 1,
         DerivedAndLocal = 2,
-        InheritedAndDerivedAndLocal = 3
+        Full = 3
         };
     private:
+        enum class RelationshpFilter
+            {
+            Direct,
+            All
+            };
+
         static BentleyStatus QueryLocalColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryInheritedColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryDerivedColumnMaps(ColumnMaps&, ClassMap const&);
-        static BentleyStatus QueryDirectEndTableRelationshipMaps(ColumnMaps&, ClassMap const&);
+        static BentleyStatus QueryEndTableRelationshipMaps(ColumnMaps&, ClassMap const&, RelationshpFilter);
         static BentleyStatus QueryMixinColumnMaps(ColumnMaps&, ClassMap const&, std::vector<ECN::ECClassCP> const*);
         static BentleyStatus FindMixins(std::vector<ECN::ECClassCP>&, ECDbCR, ECN::ECClassId);
         static ClassMap const*  FindMixinImplementation(ECDbCR, ECN::ECClassCR, DbTableId, ECN::ECClassId);
+        static void AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId);
+
         ColumnMapContext();
-        static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter, ClassMap const* base );
+        static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter, ClassMap const* base);
 
     public:
         static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter);
@@ -88,7 +96,7 @@ struct ColumnMapContext
 struct ClassMapColumnFactory : NonCopyableClass
     {
     public:
-        struct ColumnResolutionScope 
+        struct ColumnResolutionScope
             {
             private:
                 ColumnMaps m_columnMaps;
@@ -103,7 +111,7 @@ struct ClassMapColumnFactory : NonCopyableClass
                 ColumnResolutionScope(ClassMap const& classMap);
                 ~ColumnResolutionScope();
             };
-        struct SharedColumnReservation:NonCopyableClass
+        struct SharedColumnReservation :NonCopyableClass
             {
             private:
                 ClassMapColumnFactory const& m_allocator;
@@ -131,7 +139,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         DbColumn* RegisterColumnMap(Utf8CP accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
         DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8CP) const;
-        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&,Utf8CP) const;
+        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8CP) const;
         static int MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
     public:
@@ -154,7 +162,7 @@ struct ImportColumnResolutionScope : ClassMapColumnFactory::ColumnResolutionScop
 
     public:
         ImportColumnResolutionScope(ClassMap const& classMap)
-        : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+            : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
 
     };
 
@@ -168,7 +176,7 @@ struct UpdateColumnResolutionScope : public  ClassMapColumnFactory::ColumnResolu
 
     public:
         UpdateColumnResolutionScope(ClassMap const& classMap)
-            :ClassMapColumnFactory::ColumnResolutionScope(classMap){}
+            :ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
     };
 
 //======================================================================================

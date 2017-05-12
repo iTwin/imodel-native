@@ -107,7 +107,7 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
- BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps,ClassMap const& contextClassMap)
+BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, ClassMap const& contextClassMap)
     {
     ECDbCR ecdb = contextClassMap.GetDbMap().GetECDb();
     ECDerivedClassesList const& derivedClasses = ecdb.Schemas().GetDerivedClasses(contextClassMap.GetClass());
@@ -130,48 +130,63 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
     return SUCCESS;
     }
 
- //------------------------------------------------------------------------------------------
- //@bsimethod                                                    Affan.Khan       05 / 2017
- //-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryDirectEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap)
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+void ColumnMapContext::AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId)
     {
     std::vector<DbTable*> const& tables = classMap.GetTables();
     ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    LightweightCache const& lwc = ecdb.Schemas().GetDbMap().GetLightweightCache();
-    //This should include relationship that the mixin have added to current class
-    for (ECN::ECClassId constraintClassId : lwc.GetDirectRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
+    ECClassCP relClass = ecdb.Schemas().GetClass(relationshipClassId);
+    BeAssert(relClass != nullptr);
+    ClassMap const* relMap = ecdb.Schemas().GetDbMap().GetClassMap(*relClass);
+    if (relMap == nullptr || relMap->GetTables().empty())
+        return;
+
+    if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
+        return;
+
+    RelationshipClassEndTableMap const& endTableMap = relMap->GetAs<RelationshipClassEndTableMap>();
+    RelationshipConstraintMap const& persistedEnd = endTableMap.GetConstraintMap(endTableMap.GetReferencedEnd());
+    const SingleColumnDataPropertyMap* id = nullptr;
+    const SingleColumnDataPropertyMap* relClassId = nullptr;
+    for (DbTable const* table : tables)
         {
-        ECClassCP relClass = ecdb.Schemas().GetClass(constraintClassId);
-        BeAssert(relClass != nullptr);
-        ClassMap const* relMap = ecdb.Schemas().GetDbMap().GetClassMap(*relClass);
-        if (relMap == nullptr || relMap->GetTables().empty())
-            continue;
+        if (id == nullptr)
+            id = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*table);
 
-        if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
-            continue;
+        if (relClassId == nullptr)
+            relClassId = relMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*table);
 
-        RelationshipClassEndTableMap const& endTableMap = relMap->GetAs<RelationshipClassEndTableMap>();
-        RelationshipConstraintMap const& persistedEnd = endTableMap.GetConstraintMap(endTableMap.GetReferencedEnd());
-        const SingleColumnDataPropertyMap* id = nullptr;
-        const SingleColumnDataPropertyMap* relClassId = nullptr;
-        for (DbTable const* table : tables)
-            {
-            if (id == nullptr)
-                id = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*table);
-
-            if (relClassId == nullptr)
-                relClassId = relMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*table);
-
-            if (id != nullptr && relClassId != nullptr)
-                break;
-            }
-
-        if (relClassId != nullptr || id != nullptr)
-            {
-            columnMaps.Insert(endTableMap.GetAcccessStringForId(), id->GetColumn());
-            columnMaps.Insert(endTableMap.GetAcccessStringForRelClassId(), relClassId->GetColumn());
-            }
+        if (id != nullptr && relClassId != nullptr)
+            break;
         }
+
+    if (relClassId != nullptr || id != nullptr)
+        {
+        columnMaps.Insert(endTableMap.GetAcccessStringForId(), id->GetColumn());
+        columnMaps.Insert(endTableMap.GetAcccessStringForRelClassId(), relClassId->GetColumn());
+        }
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+BentleyStatus ColumnMapContext::QueryEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap, RelationshpFilter filter)
+    {
+    LightweightCache const& lwc = classMap.GetDbMap().GetECDb().Schemas().GetDbMap().GetLightweightCache();
+    //This should include relationship that the mixin have added to current class
+    if (filter == RelationshpFilter::Direct)
+        {
+        for (ECN::ECClassId relClassId : lwc.GetDirectRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
+            AppendRelationshipColumnMaps(columnMaps, classMap, relClassId);
+        }
+    else
+        {
+        for (auto const& entry : lwc.GetRelationshipClassesForConstraintClass(classMap.GetClass().GetId()))
+            AppendRelationshipColumnMaps(columnMaps, classMap, entry.first);
+        }
+
     return SUCCESS;
     }
 
@@ -327,12 +342,12 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
-        
+
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
             return ERROR;
 
         //Following is need for multisession import where base class already persisted.
-        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
             return ERROR;
 
         if (base == nullptr)
@@ -351,26 +366,29 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
             return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
         }
 
-    if (filter == Filter::InheritedAndDerivedAndLocal)
+    if (filter == Filter::Full)
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().size();
-        if (unmapped > 0)
+        if (base == nullptr)
             {
-            if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
-                return ERROR;
+            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().size();
+            if (unmapped > 0)
+                {
+                if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
+                    return ERROR;
+                }
             }
 
-        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
             return ERROR;
 
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
@@ -386,7 +404,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& classMap,Filter filter)
+BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& classMap, Filter filter)
     {
     StopWatch stopwatch(true);
     BentleyStatus r = Query(columnMaps, classMap, filter, nullptr);
@@ -394,7 +412,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
     LOG.debugv("ColumnMapContext::Query(%s) (%.4f seconds).", classMap.GetClass().GetFullName(), stopwatch.GetElapsedSeconds());
     return r;
     }
-    
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
@@ -807,8 +825,8 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
         if (!m_primaryOrJoinedTable->IsOwnedByECDb() || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
-                                            avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
-                                            avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
+                                                         avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
+                                                         avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
             {
             return true;
             }
@@ -836,7 +854,7 @@ ClassMapColumnFactory::ColumnResolutionScope::ColumnResolutionScope(ClassMap con
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps() 
+ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
     {
     if (!m_init)
         {
@@ -873,18 +891,18 @@ ClassMapColumnFactory::ColumnResolutionScope::~ColumnResolutionScope()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-  void ImportColumnResolutionScope::Fill(ColumnMaps& columnMaps, ClassMap const& classMap)
-     {
-     ColumnMapContext::Query(columnMaps, classMap, ColumnMapContext::Filter::InheritedAndLocal);
-     }
+void ImportColumnResolutionScope::Fill(ColumnMaps& columnMaps, ClassMap const& classMap)
+    {
+    ColumnMapContext::Query(columnMaps, classMap, ColumnMapContext::Filter::InheritedAndLocal);
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-  void UpdateColumnResolutionScope::Fill(ColumnMaps& columnMaps, ClassMap const& classMap)
-      {
-      ColumnMapContext::Query(columnMaps, classMap, ColumnMapContext::Filter::InheritedAndDerivedAndLocal);
-      }
+void UpdateColumnResolutionScope::Fill(ColumnMaps& columnMaps, ClassMap const& classMap)
+    {
+    ColumnMapContext::Query(columnMaps, classMap, ColumnMapContext::Filter::Full);
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
@@ -892,6 +910,6 @@ ClassMapColumnFactory::ColumnResolutionScope::~ColumnResolutionScope()
 void EndTableRelationshipColumnResolutionScope::Fill(ColumnMaps& columnMaps, ClassMap const& classMap)
     {
     for (ClassMapCP classMap : m_releventMaps)
-        ColumnMapContext::Query(columnMaps, *classMap, ColumnMapContext::Filter::InheritedAndDerivedAndLocal);
+        ColumnMapContext::Query(columnMaps, *classMap, ColumnMapContext::Filter::Full);
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
