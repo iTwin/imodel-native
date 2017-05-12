@@ -72,6 +72,12 @@ typedef RefCountedPtr<ClassMap> ClassMapPtr;
 typedef ClassMap const& ClassMapCR;
 typedef ClassMap const* ClassMapCP;
 
+enum ObjectState
+    {
+    Persisted, //loaded from disk
+    Modified, // loaded from disk but modified
+    New //new object not yet persisted to disk
+    };
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
@@ -151,7 +157,7 @@ struct ClassMap : RefCountedBase
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
-
+        ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 
@@ -181,7 +187,7 @@ struct ClassMap : RefCountedBase
 
     public:
         virtual ~ClassMap() {}
-
+        ObjectState GetState() const { return m_state; }
         template<typename TClassMap>
         TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
          PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
@@ -218,13 +224,6 @@ struct ClassMap : RefCountedBase
 
         DbTable& GetJoinedOrPrimaryTable() const 
             {
-            //if (GetType() == Type::RelationshipEndTable)
-            //    {
-            //    DbTable* nulltable = nullptr;
-            //    BeAssert(false);
-            //    return *nulltable;
-            //    }
-
             for (DbTable* table : GetTables())
                 {
                 if (table->GetType() == DbTable::Type::Joined)

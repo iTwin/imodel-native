@@ -338,6 +338,12 @@ ClassMap const* ColumnMapContext::FindMixinImplementation(ECDbCR ecdb, ECN::ECCl
 //-----------------------------------------------------------------------------------------
 BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& classMap, Filter filter, ClassMap const* base)
     {
+    //Following is need for multisession import where base class already persisted.
+    RelationshpFilter relationshipFilter = RelationshpFilter::All;
+    bool isNewClass = classMap.GetState() == ObjectState::New;
+    if (!isNewClass)
+        relationshipFilter = RelationshpFilter::Direct;
+
     if (filter == Filter::InheritedAndLocal)
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -346,8 +352,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
             return ERROR;
 
-        //Following is need for multisession import where base class already persisted.
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
             return ERROR;
 
         if (base == nullptr)
@@ -366,7 +371,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
             return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -388,7 +393,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
                 }
             }
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, RelationshpFilter::All) != SUCCESS)
+        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
             return ERROR;
 
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
@@ -406,10 +411,12 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 //-----------------------------------------------------------------------------------------
 BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& classMap, Filter filter)
     {
+    static double fullTime;
     StopWatch stopwatch(true);
     BentleyStatus r = Query(columnMaps, classMap, filter, nullptr);
     stopwatch.Stop();
-    LOG.debugv("ColumnMapContext::Query(%s) (%.4f seconds).", classMap.GetClass().GetFullName(), stopwatch.GetElapsedSeconds());
+    fullTime += stopwatch.GetElapsedSeconds();
+    LOG.debugv("ColumnMapContext::Query(%s) (%.4f seconds). [total=%.4f]", classMap.GetClass().GetFullName(), stopwatch.GetElapsedSeconds(), fullTime);
     return r;
     }
 

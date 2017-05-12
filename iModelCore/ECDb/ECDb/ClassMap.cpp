@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
@@ -29,7 +29,7 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_updatableViewInfo(updatableViewInfo), m_propertyMaps(*this)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_updatableViewInfo(updatableViewInfo), m_propertyMaps(*this), m_state(ObjectState::New)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
@@ -471,6 +471,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
         }
 
     ctx.EndSaving(*this);
+    m_state = ObjectState::Persisted;
     return SUCCESS;
     }
 
@@ -479,6 +480,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
+    m_state = ObjectState::Persisted;
     std::set<DbTable*> primaryTables;
     std::set<DbTable*> joinedTables;
     std::set<DbTable*> overflowTables;
@@ -617,6 +619,9 @@ BentleyStatus ClassMap::Update()
     {
     if (!m_failedToLoadProperties.empty())
         {
+        BeAssert(m_state == ObjectState::Persisted);
+        m_state = ObjectState::Modified;
+
         UpdateColumnResolutionScope columnResolutionScope(*this);
         for (ECPropertyCP property : m_failedToLoadProperties)
             {

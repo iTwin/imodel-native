@@ -779,6 +779,9 @@ BentleyStatus DbMap::SaveDbSchema() const
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMap& classMap = *kvPair.second;
+        if (classMap.GetState() == ObjectState::Persisted)
+            continue;
+
         if (SUCCESS != classMap.Save(*m_schemaImportContext, ctx))
             {
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
