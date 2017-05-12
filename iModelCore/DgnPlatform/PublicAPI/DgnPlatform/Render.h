@@ -1680,7 +1680,7 @@ struct  MeshEdge
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct VisibleMeshEdgesArgs
+struct MeshEdgeArgs
 {
     MeshEdgeCP                  m_edges;
     uint32_t                    m_numEdges;
@@ -1695,7 +1695,7 @@ struct VisibleMeshEdgesArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct SilhouetteEdgesArgs   : VisibleMeshEdgesArgs
+struct SilhouetteEdgeArgs   : MeshEdgeArgs
 {
     // two normals per edge - define the triangle normals for silhouette calculation.
     FPoint3d const*             m_normals0;
@@ -2229,10 +2229,10 @@ struct System
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create visible mesh edges primitive
-    virtual GraphicPtr _CreateVisibleEdges(VisibleMeshEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create invisible mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateInvisibleEdges(SilhouetteEdgesArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateInvisibleEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;

@@ -1766,7 +1766,7 @@ void MeshArgs::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
+bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
     {
     if (mesh.VisibleEdges().empty())
         return false;
@@ -1785,7 +1785,7 @@ bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderSilhouetteEdgesArgs::Init(MeshCR mesh)
+bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
     {
     if (mesh.InvisibleEdges().empty())
         return false;
