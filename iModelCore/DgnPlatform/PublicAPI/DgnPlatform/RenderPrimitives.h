@@ -39,6 +39,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshEdges);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(MeshPart);
@@ -46,6 +47,7 @@ DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
+DEFINE_REF_COUNTED_PTR(MeshEdges);
 
 typedef bvector<MeshInstance>       MeshInstanceList;
 typedef bvector<MeshPartPtr>        MeshPartList;
@@ -306,6 +308,23 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct MeshEdges : RefCountedBase
+{
+    bvector<MeshEdge>           m_visible;
+    bvector<FPoint3d>           m_visiblePoints;
+    bvector<uint16_t>           m_visibleColors;
+    bvector<MeshEdge>           m_silhouette;
+    bvector<FPoint3d>           m_silhouettePoints;
+    bvector<uint16_t>           m_silhouetteColors;
+    bvector<FPoint3d>           m_silhouetteNormals0;
+    bvector<FPoint3d>           m_silhouetteNormals1;
+
+    MeshEdges(MeshCR mesh);
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Mesh : RefCountedBase
@@ -316,7 +335,6 @@ struct Mesh : RefCountedBase
         Polyline,
         Point
     };
-
 
 private:
     struct Features
@@ -332,6 +350,7 @@ private:
         void ToFeatureIndex(FeatureIndex& index) const;
     };
 
+
     DisplayParamsCPtr               m_displayParams;
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
@@ -342,13 +361,9 @@ private:
     bvector<uint16_t>               m_colors;
     Features                        m_features;
     PrimitiveType                   m_type;
+    mutable MeshEdgesPtr            m_edges;
 
     // The edges are computed from the parameters above... If tiles were persisted these could be omitted and recalculated...
-    mutable bvector<MeshEdge>       m_visibleEdges;
-    mutable bvector<MeshEdge>       m_invisibleEdges;
-    mutable bvector<FPoint3d>       m_invisibleEdgeNormals0;
-    mutable bvector<FPoint3d>       m_invisibleEdgeNormals1;
-    mutable size_t                  m_edgesComputedCount = 0;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
 
@@ -358,7 +373,6 @@ private:
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
-    void InitEdges() const;
 public:
     static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) { return new Mesh(params, featureTable, type); }
 
@@ -376,10 +390,7 @@ public:
     bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
-    bvector<MeshEdge>const&         VisibleEdges() const { InitEdges(); return m_visibleEdges; }
-    bvector<MeshEdge>const&         InvisibleEdges() const { InitEdges(); return m_invisibleEdges; }
-    bvector<FPoint3d>const&         InvisibleEdgeNormals0() const { InitEdges(); return m_invisibleEdgeNormals0; }
-    bvector<FPoint3d>const&         InvisibleEdgeNormals1() const { InitEdges(); return m_invisibleEdgeNormals1; }
+    MeshEdgesPtr                    GetEdges() const;
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -835,6 +846,7 @@ struct PolylineArgs : IndexedPolylineArgs
 //=======================================================================================
 struct RenderMeshEdgeArgs : MeshEdgeArgs
 {
+    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
     bool Init(MeshCR mesh);
@@ -846,6 +858,7 @@ struct RenderMeshEdgeArgs : MeshEdgeArgs
 //=======================================================================================
 struct RenderSilhouetteEdgeArgs : SilhouetteEdgeArgs
 {
+    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
     bool Init(MeshCR mesh);
@@ -859,8 +872,8 @@ struct GetMeshGraphicsArgs
 {
     PolylineArgs                    m_polylineArgs;
     MeshArgs                        m_meshArgs;
-    RenderMeshEdgeArgs      m_visibleEdgesArgs;
-    RenderSilhouetteEdgeArgs       m_invisibleEdgesArgs;
+    RenderMeshEdgeArgs              m_visibleEdgesArgs;
+    RenderSilhouetteEdgeArgs        m_invisibleEdgesArgs;
 };
 
 //=======================================================================================

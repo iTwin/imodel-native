@@ -437,13 +437,8 @@ bool Mesh::HasNonPlanarNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::InitEdges() const
+MeshEdges::MeshEdges(MeshCR mesh)
     {
-    if (m_edgesComputedCount == m_points.size())
-        return;     // Already calculated;
-
-    m_edgesComputedCount = m_points.size();
-
     struct  PointComparator 
         {
         bool operator()(FPoint3d const& lhs, FPoint3d const& rhs) const
@@ -456,12 +451,15 @@ void Mesh::InitEdges() const
 
     struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
         {
-        uint32_t    m_next = 0;
+        bvector <FPoint3d>  m_points;
 
         uint32_t GetIndex(FPoint3d point)
             {
-            auto insertPair = Insert(point, m_next);
-            return insertPair.second ? m_next++ : insertPair.first->second;
+            auto insertPair = Insert(point, (uint32_t) m_points.size());
+            if (insertPair.second)
+                m_points.push_back(point);
+
+            return insertPair.first->second;
             }
         };
 
@@ -470,8 +468,8 @@ void Mesh::InitEdges() const
         {
         bool        m_visible;
         uint32_t    m_faceCount;
-        uint32_t    m_edgeIndices[2];
         uint32_t    m_faceIndices[2];
+        uint32_t    m_edgeIndices[2];
 
         EdgeInfo () { }
         EdgeInfo(bool visible, uint32_t faceIndex, uint32_t edgeIndex0, uint32_t edgeIndex1) : m_visible(visible), m_faceCount(1) { m_faceIndices[0] = faceIndex; m_edgeIndices[0] = edgeIndex0; m_edgeIndices[1] = edgeIndex1; }
@@ -488,16 +486,18 @@ void Mesh::InitEdges() const
     
     PointMap                    pointMap;
     bmap<MeshEdge, EdgeInfo>    edgeMap;
-    bvector<FPoint3d>           triangleNormals(m_triangles.size());
+    TriangleList const&         triangles = mesh.Triangles();
+    bvector<FPoint3d>           triangleNormals(triangles.size());
+    bvector<FPoint3d> const&    points = mesh.Points();
 
-    for (uint32_t triangleIndex = 0; triangleIndex < m_triangles.size(); triangleIndex++)
+    for (uint32_t triangleIndex = 0; triangleIndex < triangles.size(); triangleIndex++)
         {
-        auto const&   triangle = m_triangles.at(triangleIndex);
+        auto const&   triangle = triangles.at(triangleIndex);
         for (size_t j=0; j<3; j++)
             {
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
-            MeshEdge        edgeIndices(pointMap.GetIndex(m_points.at(edgeInfo.m_edgeIndices[0])),
-                                        pointMap.GetIndex(m_points.at(edgeInfo.m_edgeIndices[1])));
+            MeshEdge        edgeIndices(pointMap.GetIndex(points.at(edgeInfo.m_edgeIndices[0])),
+                                        pointMap.GetIndex(points.at(edgeInfo.m_edgeIndices[1])));
 
             auto            insertPair = edgeMap.Insert(edgeIndices, edgeInfo);
 
@@ -505,17 +505,21 @@ void Mesh::InitEdges() const
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
             }
 
-        triangleNormals.push_back(toFPoint3d(Mesh::GetTriangleNormal(triangle)));
+        triangleNormals[triangleIndex] = toFPoint3d(mesh.GetTriangleNormal(triangle));
         }
     
 
     for (auto& edge : edgeMap)
         {
-        MeshEdge        thisEdge(edge.second.m_edgeIndices[0], edge.second.m_edgeIndices[1]);
-
         if (edge.second.m_visible)    
             {
-            m_visibleEdges.push_back(thisEdge);
+            m_visible.push_back(MeshEdge(m_visiblePoints.size(), m_visiblePoints.size()+1));
+            for (size_t i=0; i<2; i++)
+                {
+                m_visiblePoints.push_back(pointMap.m_points[edge.first.m_indices[i]]);
+                if (!mesh.Colors().empty())
+                    m_visibleColors.push_back(mesh.Colors().at(edge.second.m_edgeIndices[i]));
+                }
             }
         else
             {
@@ -527,13 +531,30 @@ void Mesh::InitEdges() const
                 if (!fromFPoint3d(normal0).IsParallelTo(fromFPoint3d(normal1)))      // TBD.  Switch to doing in floats when FPoint3d API available.
                     {
                     // Potential silhouettes.
-                    m_invisibleEdges.push_back(thisEdge);
-                    m_invisibleEdgeNormals0.push_back(normal0);
-                    m_invisibleEdgeNormals1.push_back(normal1);
+                    m_silhouette.push_back(MeshEdge(m_silhouettePoints.size(), m_silhouettePoints.size()+1));
+                    m_silhouetteNormals0.push_back(normal0);
+                    m_silhouetteNormals1.push_back(normal1);
+                    for (size_t i=0; i<2; i++)
+                        {
+                        m_silhouettePoints.push_back(pointMap.m_points[edge.first.m_indices[i]]);
+                        if (!mesh.Colors().empty())
+                            m_silhouetteColors.push_back(mesh.Colors().at(edge.second.m_edgeIndices[i]));
+                        }
                     }
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshEdgesPtr    Mesh::GetEdges() const
+    {
+    if (!m_edges.IsValid())
+        m_edges = new MeshEdges(*this);;
+
+    return m_edges;
     }
 
      
@@ -1762,22 +1783,25 @@ void MeshArgs::Clear()
     m_features.Reset();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
     {
-    if (mesh.VisibleEdges().empty())
+    m_meshEdges = mesh.GetEdges();
+
+    if (m_meshEdges->m_visible.empty())
         return false;
 
-    m_points = mesh.Points().data();
-    m_numPoints = mesh.Points().size();
-    m_edges = mesh.VisibleEdges().data();
-    m_numEdges = mesh.VisibleEdges().size();
+    m_points    = m_meshEdges->m_visiblePoints.data();
+    m_numPoints = m_meshEdges->m_visiblePoints.size();
+    m_edges     = m_meshEdges->m_visible.data();
+    m_numEdges  = m_meshEdges->m_visible.size();
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, m_meshEdges->m_visibleColors);
     
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+#ifdef WIP
     mesh.ToFeatureIndex(m_features);
+#endif
 
     return true;
     }
@@ -1787,19 +1811,22 @@ bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
     {
-    if (mesh.InvisibleEdges().empty())
+    m_meshEdges = mesh.GetEdges();
+
+    if (m_meshEdges->m_silhouette.empty())
         return false;
 
-    m_points = mesh.Points().data();
-    m_numPoints = mesh.Points().size();
-    
-    m_edges = mesh.InvisibleEdges().data();
-    m_numEdges = mesh.InvisibleEdges().size();
-    m_normals0 = mesh.InvisibleEdgeNormals0().data();
-    m_normals1 = mesh.InvisibleEdgeNormals1().data();
+    m_points    = m_meshEdges->m_silhouettePoints.data();
+    m_normals0  = m_meshEdges->m_silhouetteNormals0.data();
+    m_normals1  = m_meshEdges->m_silhouetteNormals1.data();
+    m_numPoints = m_meshEdges->m_silhouettePoints.size();
+    m_edges     = m_meshEdges->m_silhouette.data();
+    m_numEdges  = m_meshEdges->m_silhouette.size();
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, m_meshEdges->m_silhouetteColors);
 
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+#ifdef WIP
     mesh.ToFeatureIndex(m_features);
+#endif
 
     return true;
     }
