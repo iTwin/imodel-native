@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+﻿/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECSchemaConverter.cpp $
 |
@@ -294,6 +294,21 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                 5/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource)
+    {
+    // Do not set role label if the role label is already defined.
+    if (constraint.IsRoleLabelDefinedLocally() || !constraint.GetRelationshipClass().HasBaseClasses())
+        return;
+
+    // Set the role label from the (root) base class's role label
+    ECRelationshipClassP baseRelationshipClass = constraint.GetRelationshipClass().GetBaseClasses()[0]->GetRelationshipClassP();
+    Utf8CP baseLabel = isSource ? baseRelationshipClass->GetSource().GetInvariantRoleLabel().c_str() : baseRelationshipClass->GetTarget().GetInvariantRoleLabel().c_str();
+    constraint.SetRoleLabel(baseLabel);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
@@ -304,14 +319,13 @@ void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
         if (ecClass->IsRelationshipClass())
             {
             ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-
             ECRelationshipConstraintR source = relClass->GetSource();
             ProcessCustomAttributeInstance(source.GetCustomAttributes(false), source, "ECRelationshipConstraint:" + source.GetRoleLabel());
-
             ECRelationshipConstraintR target = relClass->GetTarget();
-            ProcessCustomAttributeInstance(target.GetCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());
-            }
-        
+            ProcessCustomAttributeInstance(target.GetCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());          
+            ProcessRelationshipConstraint(source, true);
+            ProcessRelationshipConstraint(target, false);
+            }        
         }
     }
 
