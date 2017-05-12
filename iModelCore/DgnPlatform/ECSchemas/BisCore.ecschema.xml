@@ -57,7 +57,7 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="JSON string containing scope and fragment specifications to generate and validate code values"/>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" description="JSON string containing scope and fragment specifications to generate and validate code values"/>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CodeSpecSpecifiesCode" strength="referencing" modifier="Sealed">
