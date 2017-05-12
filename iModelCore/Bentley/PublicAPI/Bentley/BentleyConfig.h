@@ -71,6 +71,7 @@
 
 #elif defined (__linux)
 
+    #define BENTLEYCONFIG_OS_LINUX
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_FAKE_QV
