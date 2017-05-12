@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Geom/dpoint3d.h $
+|     $Source: PublicAPI/Geom/FPoint3d.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,8 +9,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#ifndef dpoint3d_H_
-#define dpoint3d_H_
+#ifndef FPoint3d_H_
+#define FPoint3d_H_
 
 BEGIN_BENTLEY_NAMESPACE
 /**
@@ -18,56 +18,77 @@ BEGIN_BENTLEY_NAMESPACE
 
 @ingroup GROUP_Geometry
 */
-struct GEOMDLLIMPEXP DPoint3d
+struct GEOMDLLIMPEXP FPoint3d
 {
+public:
 //! x coordinate
-double x;
+float x;
 //! y coordinate
-double y;
+float y;
 //! z coordinate
-double z;
+float z;
+private:
+// private members expected to be inlined
+    static FPoint3d from (double xx, double yy, double zz)
+        {
+        FPoint3d xyz;
+        xyz.x = (float)xx;
+        xyz.y = (float)yy;
+        xyz.z = (float)zz;
+        return xyz;
+        }
+    void init (double xx, double yy, double zz)
+        {
+        x = (float)xx;
+        y = (float)yy;
+        z = (float)zz;
+        }
+// private members expected to be inlined
+    static FPoint3d from (DPoint3dCR in)
+        {
+        FPoint3d xyz;
+        xyz.x = (float)in.x;
+        xyz.y = (float)in.y;
+        xyz.z = (float)in.z;
+        return xyz;
+        }
 
+
+public:
 #ifdef __cplusplus
 //BEGIN_FROM_METHODS
 
-//! Return a DPoint3d with given xyz.
-static DPoint3d From (double x, double y, double z = 0.0);
-//! Return a DPoint3d with given xy, z = 0;
-static DPoint3d From (DPoint2dCR xy);
-//! Return a DPoint3d with given xyz
-static DPoint3d From (FPoint3dCR xyz);
+//! Return a FPoint3d with given xyz.
+static FPoint3d From (double x, double y, double z = 0.0);
 
-//! Return a DPoint3d with given 2d point and z
-static DPoint3d From (DPoint2dCR xy, double z);
+//! Return a FPoint3d with given 2d point and z
+static FPoint3d From (DPoint2dCR xy, double z);
 
-//! Return a DPoint3d from xy parts of given point, with z from optional parameter. (And z of the input point is ignored)
-static DPoint3d FromXY (DPoint3dCR xy, double z = 0.0);
-
-//! Return a DPoint3d with xyz = 0.
-static DPoint3d FromZero();
-//! Return a DPoint3d with xyz = 1.
-static DPoint3d FromOne();
+//! Return a FPoint3d from DPoint3d
+static FPoint3d From (DPoint3dCR xyz);
 
 
-//! @description Simple initialization from 3 coordinates.
-//! @remark This is method is deprecated.   The preferred method is From(x,y,z)
-//! @param [in] x x cooordinate.
-//! @param [in] y y coordinate.
-//! @param [in] z z coordinate.
-static DPoint3d FromXYZ (double x, double y, double z);
+//! Return a FPoint3d from xy parts of given point, with z from optional parameter. (And z of the input point is ignored)
+static FPoint3d FromXY (FPoint3dCR xy, double z = 0.0);
+
+//! Return a FPoint3d from xy parts of given point, with z from optional parameter. (And z of the input point is ignored)
+static FPoint3d FromXY (DPoint3dCR xy, double z = 0.0);
+
+//! Return a FPoint3d with xyz = 0.
+static FPoint3d FromZero();
+//! Return a FPoint3d with xyz = 1.
+static FPoint3d FromOne();
+
 
 //! @description Simple initialization from base point and shifts
-static DPoint3d FromShift
+static FPoint3d FromShift
 (
-DPoint3dCR xyz0,    //!< [in] reference point
+FPoint3dCR xyz0,    //!< [in] reference point
 double dx = 0.0,    //!< [in] shift to apply to x direction
 double dy = 0.0,    //!< [in] shift to apply to y direction
 double dz = 0.0     //!< [in] shift to apply to z direction
 );
 
-//! @description Simple initialization from 3 coordinates in array.
-//! @param [in] pXyz x, y, z components
-static DPoint3d FromArray (const double *pXyz);
 //END_FROM_METHODS
 
 /*__PUBLISH_SECTION_END__*/
@@ -76,25 +97,25 @@ static DPoint3d FromArray (const double *pXyz);
 
 //! Swap contents of instance, other.
 //! @param [in,out] other second point.
-void Swap (DPoint3dR other);
+void Swap (FPoint3dR other);
 
 //! @description Returns the (scalar) cross product of the xy parts of two vectors.
 //!   The vectors are computed from the Origin to target1 and target2.
 //! @param [in] target1 The target point for the first vector.
 //! @param [in] target2 The target point for the second vector.
-double CrossProductToPointsXY (DPoint3dCR target1, DPoint3dCR target2) const;
+double CrossProductToPointsXY (FPoint3dCR target1, FPoint3dCR target2) const;
 
 //! @description Returns the (scalar) dot product of two vectors.
 //!   The vectors are computed from the Origin to target1 and target2.
 //! @param [in] target1 The target point for the first vector.
 //! @param [in] target2 The target point for the second vector.
-double DotProductToPoints (DPoint3dCR target1, DPoint3dCR target2) const;
+double DotProductToPoints (FPoint3dCR target1, FPoint3dCR target2) const;
 
 //! @description Returns the (scalar) dot product of xy parts of two vectors.
 //!   The vectors are computed from the BasePoint to target1 and target2.
 //! @param [in] target1 The target point for the first vector.
 //! @param [in] target2 The target point for the second vector.
-double DotProductToPointsXY (DPoint3dCR target1, DPoint3dCR target2) const;
+double DotProductToPointsXY (FPoint3dCR target1, FPoint3dCR target2) const;
 
 //!
 //! @description Returns the (scalar) dot product of a two vectors.
@@ -105,7 +126,7 @@ double DotProductToPointsXY (DPoint3dCR target1, DPoint3dCR target2) const;
 //! @param [in] origin  The start (orign) point of the first vector of the cross product.
 //! @param [in] vector  The second
 //!
-double DotDifference (DPoint3dCR origin, DVec3dCR vector) const;
+double DotDifference (FPoint3dCR origin, DVec3dCR vector) const;
 
 //!
 //! @description Computes the triple product of vectors from a base point three target points.
@@ -114,7 +135,7 @@ double DotDifference (DPoint3dCR origin, DVec3dCR vector) const;
 //! @param [in] target3 The target point for the third vector.
 //! @return The triple product
 //!
-double TripleProductToPoints (DPoint3dCR target1, DPoint3dCR target2, DPoint3dCR target3) const;
+double TripleProductToPoints (FPoint3dCR target1, FPoint3dCR target2, FPoint3dCR target3) const;
 
 //!
 //! @description Sets all components of a point or vector to zero.
@@ -128,7 +149,7 @@ void One ();
 
 //!
 //! @description Copies doubles from a 3 component array to the x,y, and z components
-//! of a DPoint3d
+//! of a FPoint3d
 //!
 //! @param [in] pXyz x, y, z components
 //!
@@ -138,9 +159,10 @@ void InitFromArray (const double *pXyz);
 //!
 //! @description Copy from a 2d point setting z to zero.
 //!
-//! @param [in] source source point
+//! @param [in] source source point for xy values
+//! @param [in] z z value
 //!
-void Init (DPoint2dCR source);
+void Init (DPoint2dCR source, double z = 0.0);
 
 
 //!
@@ -150,19 +172,10 @@ void Init (DPoint2dCR source);
 //! @param [in] ay The y component.
 //! @param [in] az The z component.
 //!
-void Init (double ax, double ay, double az);
+void Init (double ax, double ay, double az = 0.0);
 
 //!
-//! @description Sets the x, and y components of a point. Sets z to zero.
-//!
-//! @param [in] ax The x component.
-//! @param [in] ax The x component.
-//! @param [in] ay The y component
-//!
-void Init (double ax, double ay);
-
-//!
-//! @description Sets the x,y, and z components of a DPoint3d structure from the
+//! @description Sets the x,y, and z components of a FPoint3d structure from the
 //! corresponding parts of a DPoint4d.  Weight part of DPoint4d is not used.
 //!
 //! @param [in] hPoint The homogeneous point
@@ -205,7 +218,7 @@ void GetComponents (double &xCoord, double &yCoord, double &zCoord) const;
 //!               0.0 is the start of the segment, 1.0 is the end, 0.5 is midpoint.
 //! @param [in] point1 The point corresponding to fractionParameter of 1.
 //!
-void Interpolate (DPoint3dCR point0, double fractionParameter, DPoint3dCR point1);
+void Interpolate (FPoint3dCR point0, double fractionParameter, FPoint3dCR point1);
 
 //!
 //! @description Form vectors from the origin to the test point and the two boundary vectors.
@@ -215,7 +228,7 @@ void Interpolate (DPoint3dCR point0, double fractionParameter, DPoint3dCR point1
 //! @param [in] target2 The second target point.
 //! @return true if the test point is within the angle.
 //!
-bool IsPointInSmallerSector (DPoint3dCR origin, DPoint3dCR target1, DPoint3dCR target2) const;
+bool IsPointInSmallerSector (FPoint3dCR origin, FPoint3dCR target1, FPoint3dCR target2) const;
 
 //!
 //! @description Test if a point is within the counter-clockwise sector defined by
@@ -227,7 +240,7 @@ bool IsPointInSmallerSector (DPoint3dCR origin, DPoint3dCR target1, DPoint3dCR t
 //! @param [in] upVector vector towards eye to resolve direction.
 //! @return true if the test point is within the angle.
 //!
-bool IsPointInCCWector (DPoint3dCR origin, DPoint3dCR target0, DPoint3dCR target1, DVec3dCR upVector) const;
+bool IsPointInCCWector (FPoint3dCR origin, FPoint3dCR target0, FPoint3dCR target1, DVec3dCR upVector) const;
 
 //!
 //! @description Computes the (cartesian) distance between two points
@@ -235,7 +248,7 @@ bool IsPointInCCWector (DPoint3dCR origin, DPoint3dCR target0, DPoint3dCR target
 //! @param [in] point2 The second point
 //! @return The distance between points.
 //!
-double Distance (DPoint3dCR point2) const;
+double Distance (FPoint3dCR point2) const;
 
 //!
 //! @description Computes the squared distance between two points.
@@ -243,7 +256,7 @@ double Distance (DPoint3dCR point2) const;
 //! @param [in] point2 The second point.
 //! @return The squared distance between the points.
 //!
-double DistanceSquared (DPoint3dCR point2) const;
+double DistanceSquared (FPoint3dCR point2) const;
 
 //!
 //! @description Computes the squared distance between two points, using only the
@@ -253,7 +266,7 @@ double DistanceSquared (DPoint3dCR point2) const;
 //! @return The squared distance between the XY projections of the two points.
 //!               (i.e. any z difference is ignored)
 //!
-double DistanceSquaredXY (DPoint3dCR point2) const;
+double DistanceSquaredXY (FPoint3dCR point2) const;
 
 //!
 //! @description Computes the distance between two points, using
@@ -263,7 +276,7 @@ double DistanceSquaredXY (DPoint3dCR point2) const;
 //! @return The distance between the XY projections of the two points.
 //!               (i.e. any z difference is ignored)
 //!
-double DistanceXY (DPoint3dCR point2) const;
+double DistanceXY (FPoint3dCR point2) const;
 
 //! @description Computes the distance between two points, using
 //!   only x and y components, optionally applying a transform into view space.
@@ -272,7 +285,7 @@ double DistanceXY (DPoint3dCR point2) const;
 //! @param [in] matrix optional transform
 //! @param [out] distance computed distance.
 //! @return true if both points normalized properly after the transform.
-bool DistanceXY (DPoint3dCR otherPoint, DMatrix4dCP matrix, double &distance) const;
+bool DistanceXY (FPoint3dCR otherPoint, DMatrix4dCP matrix, double &distance) const;
 
 //! @description Finds the largest absolute value among the components of a point or vector.
 //! @return The largest absolute value among point coordinates.
@@ -280,7 +293,7 @@ double MaxAbs () const;
 
 //! @description Finds the largest absolute coordinate difference between two points.
 //! @return The largest absolute value among point coordinates.
-double MaxDiff (DPoint3dCR other) const;
+double MaxDiff (FPoint3dCR other) const;
 
 //! @description Finds the smallest absolute value among the components of a point or vector.
 //! @return The smallest absolute value among point coordinates.
@@ -301,7 +314,7 @@ DRange1d ComponentRange () const;
 //! @param [in] point2 The second point or vector
 //! @return true if the points are identical.
 //!
-bool IsEqual (DPoint3dCR point2) const;
+bool IsEqual (FPoint3dCR point2) const;
 
 //!
 //! @description Test if the x, y, and z components of two points or vectors are
@@ -313,27 +326,8 @@ bool IsEqual (DPoint3dCR point2) const;
 //! @param [in] tolerance The tolerance.
 //! @return true if all components are within given tolerance of each other.
 //!
-bool IsEqual (DPoint3dCR point2, double tolerance) const;
+bool IsEqual (FPoint3dCR point2, double tolerance) const;
 
-//!
-//! @description  Computes the coordinates of point under the translation
-//! and scaling that puts 000 at cube>low and 111 at cube>high.
-//!
-//! @param [in] point Point whose NPC coordinates are to be computed
-//! @param [in] cube Cube whose corners map to 000 and 111
-//!
-void NpcCoordinatesOf (DPoint3dCR point, DRange3dCR cube);
-
-//!
-//! @return true if the point has coordinates which indicate it is
-//!   a disconnect (separator) ponit.
-//!
-bool IsDisconnect () const;
-
-//!
-//! Initialize a point with all coordinates as the disconnect value.
-//!
-void InitDisconnect ();
 
 //!
 //! @description Initialize a point by copying x,y,z from a vector.
@@ -347,7 +341,7 @@ void Init (DVec3dCR vector);
 //! @param [in] base  The the first point or vector
 //! @param [in] vector  The second point or vector
 //!
-void Subtract (DPoint3dCR base, DVec3dCR vector);
+void Subtract (FPoint3dCR base, DVec3dCR vector);
 
 //!
 //! @description Adds a vector to a pointer or vector, returns the result in place.
@@ -357,7 +351,7 @@ void Subtract (DPoint3dCR base, DVec3dCR vector);
 void Add (DVec3dCR vector);
 
 //! Add translation to all points.
-static void AddToArray (DPoint3dP points, int n, DPoint3dCR delta);
+static void AddToArray (FPoint3dP points, int n, FPoint3dCR delta);
 //!
 //! @description Adds an origin and a scaled vector.
 //!
@@ -365,7 +359,7 @@ static void AddToArray (DPoint3dP points, int n, DPoint3dCR delta);
 //! @param [in] vector  The vector to be added.
 //! @param [in] scale  The scale factor.
 //!
-void SumOf (DPoint3dCR origin, DVec3dCR vector, double scale);
+void SumOf (FPoint3dCR origin, DVec3dCR vector, double scale);
 
 //!
 //! @description Adds an origin and two scaled vectors.
@@ -376,7 +370,7 @@ void SumOf (DPoint3dCR origin, DVec3dCR vector, double scale);
 //! @param [in] point2  The second direction vector
 //! @param [in] scale2  The second scale factor
 //!
-void SumOf (DPoint3dCR origin, DVec3dCR point1, double scale1, DVec3dCR point2, double scale2);
+void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2, double scale2);
 
 //!
 //! @description Adds an origin and three scaled vectors.
@@ -389,14 +383,14 @@ void SumOf (DPoint3dCR origin, DVec3dCR point1, double scale1, DVec3dCR point2, 
 //! @param [in] point3  The third direction vector
 //! @param [in] scale3  The third scale factor
 //!
-void SumOf (DPoint3dCR origin, DVec3dCR point1, double scale1, DVec3dCR point2, double scale2, DVec3dCR point3, double scale3);
+void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2, double scale2, DVec3dCR vector3, double scale3);
 
 //!
 //! @description Returns the cross (vector) cross product of two vectors.
 //! @param [in] point1 The first vector
 //! @param [in] point2 The second vector
 //!
-void CrossProduct (DPoint3dCR point1, DPoint3dCR point2);
+void CrossProduct (FPoint3dCR point1, FPoint3dCR point2);
 
 //!
 //! @description Returns the (vector) cross product of two vectors.
@@ -405,14 +399,14 @@ void CrossProduct (DPoint3dCR point1, DPoint3dCR point2);
 //! @param [in] target1 The target point for the first vector.
 //! @param [in] target2 The target point for the second vector.
 //!
-void CrossProductToPoints (DPoint3dCR origin, DPoint3dCR target1, DPoint3dCR target2);
+void CrossProductToPoints (FPoint3dCR origin, FPoint3dCR target1, FPoint3dCR target2);
 
 //!
 //! @description Return the (scalar) cross product of the xy parts of two vectors.
 //! @param [in] point2 The second vector
 //! @return The 2d cross product.
 //!
-double CrossProductXY (DPoint3dCR point2) const;
+double CrossProductXY (FPoint3dCR point2) const;
 
 //!
 //! @description Compute the normalized cross product of two vectors
@@ -422,7 +416,7 @@ double CrossProductXY (DPoint3dCR point2) const;
 //! @param [in] point2 The second vector
 //! @return The length of the original (prenormalization) cross product vector
 //!
-double NormalizedCrossProduct (DPoint3dCR point1, DPoint3dCR point2);
+double NormalizedCrossProduct (FPoint3dCR point1, FPoint3dCR point2);
 
 //!
 //! @description Computes the cross product of the two parameter vectors and scales it to a given
@@ -434,7 +428,7 @@ double NormalizedCrossProduct (DPoint3dCR point1, DPoint3dCR point2);
 //! @param [in] productLength The Desired length
 //! @return The length of original vector.
 //!
-double SizedCrossProduct (DPoint3dCR point1, DPoint3dCR point2, double productLength);
+double SizedCrossProduct (FPoint3dCR point1, FPoint3dCR point2, double productLength);
 
 //!
 //! @description Computes the cross product of two vectors and scales it to the
@@ -446,21 +440,21 @@ double SizedCrossProduct (DPoint3dCR point1, DPoint3dCR point2, double productLe
 //! @param [in] point2 The second vector
 //! @return The length of original vector.
 //!
-double GeometricMeanCrossProduct (DPoint3dCR point1, DPoint3dCR point2);
+double GeometricMeanCrossProduct (FPoint3dCR point1, FPoint3dCR point2);
 
 //!
 //! @description Returns the (scalar) dot product of two vectors.
 //! @param [in] point2 The second vector
 //! @return The dot product of the two vectors
 //!
-double DotProduct (DPoint3dCR point2) const;
+double DotProduct (FPoint3dCR point2) const;
 
 //!
 //! @description Returns the (scalar) dot product of xy parts of two vectors.
 //! @param [in] point2 The second vector
 //! @return The dot product of the xy parts of the two vectors
 //!
-double DotProductXY (DPoint3dCR point2) const;
+double DotProductXY (FPoint3dCR point2) const;
 
 //!
 //! @description Computes the dot product of one vector given as a point structure and another given as
@@ -482,7 +476,7 @@ double DotProduct (double ax, double ay, double az) const;
 //! @param [in] origin The origin point.
 //! @return The length of original difference vector.
 //!
-double NormalizedDifference (DPoint3dCR target, DPoint3dCR origin);
+double NormalizedDifference (FPoint3dCR target, FPoint3dCR origin);
 
 //!
 //! @description Returns the angle between two vectors.  This angle is between 0 and
@@ -492,7 +486,7 @@ double NormalizedDifference (DPoint3dCR target, DPoint3dCR origin);
 //! @param [in] point2 The second vector
 //! @return The angle between the vectors.
 //!
-double AngleTo (DPoint3dCR point2) const;
+double AngleTo (FPoint3dCR point2) const;
 
 //!
 //! @description Computes the (signed) angle from xy axis to the vector, using only xy parts.
@@ -506,7 +500,7 @@ double AngleXY () const;
 //! @param [in] point2 The second vector
 //! @return The angle between the vectors.
 //!
-double SmallerUnorientedAngleTo (DPoint3dCR point2) const;
+double SmallerUnorientedAngleTo (FPoint3dCR point2) const;
 
 //!
 //! @description Test a vector is "between" point0 and point1.
@@ -528,7 +522,7 @@ double SmallerUnorientedAngleTo (DPoint3dCR point2) const;
 //! @param [in] point1 The second boundary vector.
 //! @return true if the test vector is within the angle.
 //!
-bool IsVectorInSmallerSector (DPoint3dCR point0, DPoint3dCR point1) const;
+bool IsVectorInSmallerSector (FPoint3dCR point0, FPoint3dCR point1) const;
 
 //!
 //! @description Test if the test vector vector is "between" point0 and point1, with CCW direction
@@ -541,7 +535,7 @@ bool IsVectorInSmallerSector (DPoint3dCR point0, DPoint3dCR point1) const;
 //! @param [in] upVector The out of plane vector.
 //! @return true if test vector is within the angle.
 //!
-bool IsVectorInCCWSector (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR upVector) const;
+bool IsVectorInCCWSector (FPoint3dCR point0, FPoint3dCR point1, FPoint3dCR upVector) const;
 
 //!
 //! @description Returns the angle from Vector1 to Vector2 using only xy parts.
@@ -550,7 +544,7 @@ bool IsVectorInCCWSector (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR upVec
 //! @param [in] point2 The second vector
 //! @return The angle between vectors.
 //!
-double AngleToXY (DPoint3dCR point2) const;
+double AngleToXY (FPoint3dCR point2) const;
 
 //!
 //! @description Returns the angle between two vectors, considering both
@@ -560,14 +554,14 @@ double AngleToXY (DPoint3dCR point2) const;
 //! @param [in] point2 The second vector
 //! @return The angle between vectors.
 //!
-double SmallerUnorientedAngleToXY (DPoint3dCR point2) const;
+double SmallerUnorientedAngleToXY (FPoint3dCR point2) const;
 
 //!
 //! @description Rotate vector around the z axis, return as calling instance.
 //! @param [in] vector vector to rotate.
 //! @param [in] theta The rotation angle.
 //!
-void RotateXY (DPoint3dCR vector, double theta);
+void RotateXY (FPoint3dCR vector, double theta);
 
 //!
 //! @description Rotate the calling instance around the z axis.
@@ -587,7 +581,7 @@ void RotateXY (double theta);
 //! @param [in] orientationVector The vector used to determine orientation.
 //! @return The signed angle
 //!
-double SignedAngleTo (DPoint3dCR point2, DPoint3dCR orientationVector) const;
+double SignedAngleTo (FPoint3dCR point2, FPoint3dCR orientationVector) const;
 
 //!
 //! @description Computes the signed angle between the projection of two vectors
@@ -597,7 +591,7 @@ double SignedAngleTo (DPoint3dCR point2, DPoint3dCR orientationVector) const;
 //! @param [in] planeNormal The plane normal vector
 //! @return The angle in plane
 //!
-double PlanarAngleTo (DPoint3dCR point2, DPoint3dCR planeNormal) const;
+double PlanarAngleTo (FPoint3dCR point2, FPoint3dCR planeNormal) const;
 
 //!
 //! @description Scale each point by the other's weight and subtract, i.e. form
@@ -642,7 +636,7 @@ double MagnitudeSquaredXY () const;
 //! @param [in] vector The source vector
 //! @return true if the input vector has nonzero length
 //!
-bool UnitPerpendicularXY (DPoint3dCR vector);
+bool UnitPerpendicularXY (FPoint3dCR vector);
 
 //!
 //! @description Computes the magnitude of a vector.
@@ -655,7 +649,7 @@ double Magnitude () const;
 //! @param [in] vector The vector to be scaled.
 //! @param [in] scale The scale factor.
 //!
-void Scale (DPoint3dCR vector, double scale);
+void Scale (FPoint3dCR vector, double scale);
 
 //!
 //! @description Multiplies a vector (in place) by a scale factor.
@@ -668,7 +662,7 @@ void Scale (double scale);
 //!
 //! @param [in] vector The vector to be negated.
 //!
-void Negate (DPoint3dCR vector);
+void Negate (FPoint3dCR vector);
 
 //!
 //! @description Negate a vector in place.
@@ -684,7 +678,7 @@ void Negate ();
 //! @param [in] vector The vector to be normalized.
 //! @return The length prior to normalization
 //!
-double Normalize (DPoint3dCR vector);
+double Normalize (FPoint3dCR vector);
 
 //!
 //! @description Scales a vector to specified length.
@@ -695,7 +689,7 @@ double Normalize (DPoint3dCR vector);
 //! @param [in] length The requested length.
 //! @return The length prior to scaling.
 //!
-double ScaleToLength (DPoint3dCR vector, double length);
+double ScaleToLength (FPoint3dCR vector, double length);
 
 //!
 //! @description Scales a vector to a specified length, and returns
@@ -724,7 +718,7 @@ double Normalize ();
 //! @param [in] point2 The second vector
 //! @return true if the vectors are parallel within default tolerance
 //!
-bool IsParallelTo (DPoint3dCR point2) const;
+bool IsParallelTo (FPoint3dCR point2) const;
 
 //!
 //! @description Tests if two vectors are perpendicular.
@@ -732,7 +726,7 @@ bool IsParallelTo (DPoint3dCR point2) const;
 //! @param [in] point2 The second vector
 //! @return true if vectors are perpendicular within default tolerance
 //!
-bool IsPerpendicularTo (DPoint3dCR point2) const;
+bool IsPerpendicularTo (FPoint3dCR point2) const;
 
 //!
 //! @description Try to divide each component of a vector by a scalar.  If the denominator
@@ -742,7 +736,7 @@ bool IsPerpendicularTo (DPoint3dCR point2) const;
 //! @param [in] denominator The divisor.
 //! @return true if division is numerically safe.
 //!
-bool SafeDivide (DPoint3dCR vector, double denominator);
+bool SafeDivide (FPoint3dCR vector, double denominator);
 
 //!
 //! @description Computes the triple product of three vectors.
@@ -765,7 +759,7 @@ bool SafeDivide (DPoint3dCR vector, double denominator);
 //! @param [in] point3 The third vector.
 //! @return The triple product
 //!
-double TripleProduct (DPoint3dCR point2, DPoint3dCR point3) const;
+double TripleProduct (FPoint3dCR point2, FPoint3dCR point3) const;
 
 //!
 //! @description Subtract two points or vectors, and return the result in
@@ -773,7 +767,7 @@ double TripleProduct (DPoint3dCR point2, DPoint3dCR point3) const;
 //!
 //! @param [in] point2 The vector to subtract.
 //!
-void Subtract (DPoint3dCR point2);
+void Subtract (FPoint3dCR point2);
 
 //!
 //! @description Subtract coordinates of two vectors or points. (Compute Point1 - Point2)
@@ -781,40 +775,8 @@ void Subtract (DPoint3dCR point2);
 //! @param [in] point1 The first point
 //! @param [in] point2 The second (subtracted) point.
 //!
-void DifferenceOf (DPoint3dCR point1, DPoint3dCR point2);
+void DifferenceOf (FPoint3dCR point1, FPoint3dCR point2);
 
-//!
-//! @description Adds an origin and a scaled vector.
-//!
-//! @param [in] origin Origin for the sum.
-//! @param [in] vector The vector to be added.
-//! @param [in] scale The scale factor.
-//!
-void SumOf (DPoint3dCR origin, DPoint3dCR vector, double scale);
-
-//!
-//! @description Adds an origin and two scaled vectors.
-//!
-//! @param [in] origin The origin.
-//! @param [in] point1 The first direction vector
-//! @param [in] scale1 The first scale factor
-//! @param [in] point2 The second direction vector
-//! @param [in] scale2 The second scale factor
-//!
-void SumOf (DPoint3dCR origin, DPoint3dCR point1, double scale1, DPoint3dCR point2, double scale2);
-
-//!
-//! @description Adds an origin and three scaled vectors.
-//!
-//! @param [in] origin The origin.
-//! @param [in] point1 The first direction vector
-//! @param [in] scale1 The first scale factor
-//! @param [in] point2 The second direction vector
-//! @param [in] scale2 The second scale factor
-//! @param [in] point3 The third direction vector
-//! @param [in] scale3 The third scale factor
-//!
-void SumOf (DPoint3dCR origin, DPoint3dCR point1, double scale1, DPoint3dCR point2, double scale2, DPoint3dCR point3, double scale3);
 
 //! Componentwise linear combination.
 //! @remark Becasue point is base class for vector, this may be used for linear combinations of vectors.
@@ -823,7 +785,7 @@ void SumOf (DPoint3dCR origin, DPoint3dCR point1, double scale1, DPoint3dCR poin
 //! @param [in] point2 second point
 //! @param [in] a2 scale for second point.
 
-void SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2);
+void SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2);
 
 //! Componentwise linear combination.
 //! @remark Becasue point is base class for vector, this may be used for linear combinations of vectors.
@@ -833,15 +795,8 @@ void SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2);
 //! @param [in] a2 scale for second point.
 //! @param [in] point3 third point
 //! @param [in] a3 scale for third point.
-void SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2, DPoint3dCR point3, double a3);
+void SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2, FPoint3dCR point3, double a3);
 
-
-//!
-//! @description Adds a vector to a pointer or vector, returns the result in place.
-//!
-//! @param [in] vector The vector to add.
-//!
-void Add (DPoint3dCR vector);
 
 //!
 //! @description Compute the sum of two points or vectors.
@@ -849,7 +804,7 @@ void Add (DPoint3dCR vector);
 //! @param [in] point1 The the first point or vector
 //! @param [in] point2 The second point or vector
 //!
-void SumOf (DPoint3dCR point1, DPoint3dCR point2);
+void SumOf (FPoint3dCR point1, FPoint3dCR point2);
 
 //!
 //! @description Multiply each point in an array by its corresponding scale factor.
@@ -858,7 +813,7 @@ void SumOf (DPoint3dCR point1, DPoint3dCR point2);
 //! @param [in] pScales scale factors
 //! @param [in] n number of points.
 //!
-static void MultiplyArrayByScales (DPoint3dP pDest, DPoint3dCP pSource, double *pScales, int n);
+static void MultiplyArrayByScales (FPoint3dP pDest, FPoint3dCP pSource, double *pScales, int n);
 
 
 //!
@@ -869,51 +824,56 @@ static void MultiplyArrayByScales (DPoint3dP pDest, DPoint3dCP pSource, double *
 //! @param [in] pScales scale factors
 //! @param [in] n number of points.
 //!
-static void DivideArrayByScales (DPoint3dP pDest, DPoint3dCP pSource, double *pScales, int n);
+static void DivideArrayByScales (FPoint3dP pDest, FPoint3dCP pSource, double *pScales, int n);
 
 //! return product of transform times point given as components.
 //! @param [in] transform affine transform.
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-static DPoint3d FromProduct (TransformCR transform, double x, double y, double z);
+static FPoint3d FromProduct (TransformCR transform, double x, double y, double z);
 
 //! return product of transform times point
 //! @param [in] transform affine transform.
 //! @param [in] point point to transform.
-static DPoint3d FromProduct (TransformCR transform, DPoint3dCR point);
+static FPoint3d FromProduct (TransformCR transform, FPoint3dCR point);
+
+//! return product of transform times point
+//! @param [in] transform affine transform.
+//! @param [in] point point to transform.
+static FPoint3d FromProduct (TransformCR transform, DPoint3dCR point);
 
 //! interpolate between points.
 //! @param [in] pointA start point
 //! @param [in] fraction fractional parameter
 //! @param [in] pointB end point
-static DPoint3d FromInterpolate (DPoint3dCR pointA, double fraction, DPoint3dCR pointB);
+static FPoint3d FromInterpolate (FPoint3dCR pointA, double fraction, FPoint3dCR pointB);
 
 //! interpolate between points.  Then add a shift in the xy plane by a fraction of the XY projection perpendicular
 //! @param [in] pointA start point
 //! @param [in] fraction fractional parameter along the line from A to B
 //! @param [in] pointB end point
 //! @param [in] fractionXYPerp fractional parameter applied to vector that is the XY parts of (B-A), rotated CCW in plane.
-static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerp);
+static FPoint3d FromInterpolateAndPerpendicularXY (FPoint3dCR pointA, double fraction, FPoint3dCR pointB, double fractionXYPerp);
 
 
 //! return the centroid for points with specified weights
-static DPoint3d FromWeightedAverage
+static FPoint3d FromWeightedAverage
 (
-DPoint3dCR pointA,  //!< [in] first point
+FPoint3dCR pointA,  //!< [in] first point
 double weightA,     //!< [in] weight of first point.
-DPoint3dCR pointB,  //!< [in] second point
+FPoint3dCR pointB,  //!< [in] second point
 double weightB      //!< [in] weight of second point
 );
 
 //! return the centroid for points with specified weights
-static DPoint3d FromWeightedAverage
+static FPoint3d FromWeightedAverage
 (
-DPoint3dCR pointA,  //!< [in] first point
+FPoint3dCR pointA,  //!< [in] first point
 double weightA,     //!< [in] weight of first point.
-DPoint3dCR pointB,  //!< [in] second point
+FPoint3dCR pointB,  //!< [in] second point
 double weightB,     //!< [in] weight of second point.
-DPoint3dCR pointC,  //!< [in] third point
+FPoint3dCR pointC,  //!< [in] third point
 double weightC      //!< [in] weight of third point
 );
 
@@ -925,18 +885,18 @@ double weightC      //!< [in] weight of third point
 //! @param [in] point11 point at (1,1)
 //! @param [in] u interpolation fraction for edges (point00,point10) and (point01,point11)
 //! @param [in] v interpolation fraction for edges (point00,point10) and (point10,point11)
-static DPoint3d FromInterpolateBilinear (DPoint3dCR point00, DPoint3dCR point10, DPoint3dCR point01, DPoint3dCR point11, double u, double v);
+static FPoint3d FromInterpolateBilinear (FPoint3dCR point00, FPoint3dCR point10, FPoint3dCR point01, FPoint3dCR point11, double u, double v);
 
 //! Add a point and a vector.
 //! @param [in] origin start point
 //! @param [in] vector vector add
-static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR vector);
+static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector);
 
 //! Add scaled vector from origin.
 //! @param [in] origin start point
 //! @param [in] vector vector to scale.
 //! @param [in] scaleFactor multiplier.
-static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR vector, double scaleFactor);
+static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector, double scaleFactor);
 
 //! Add scaled vectors from an origin.
 //! @param [in] origin start point
@@ -944,7 +904,7 @@ static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR vector, double scaleFac
 //! @param [in] scaleFactor0 multiplier.
 //! @param [in] point1 vector to scale.
 //! @param [in] scaleFactor1 multiplier.
-static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR point0, double scaleFactor0, DPoint3dCR point1, double scaleFactor1);
+static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1);
 
 //! Add scaled vectors from origin.
 //! @param [in] origin start point
@@ -954,19 +914,19 @@ static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR point0, double scaleFac
 //! @param [in] scaleFactor1 multiplier.
 //! @param [in] point2 vector to scale.
 //! @param [in] scaleFactor2 multiplier.
-static DPoint3d FromSumOf (DPoint3dCR origin, DPoint3dCR point0, double scaleFactor0, DPoint3dCR point1, double scaleFactor1, DPoint3dCR point2, double scaleFactor2);
+static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1, DVec3dCR vector2, double scaleFactor2);
 
-//! @description Returns a scalar multiple of a DPoint3d
+//! @description Returns a scalar multiple of a FPoint3d
 //! @param [in] point input point
 //! @param [in] scale scale factor
-static DPoint3d FromScale (DPoint3d point, double scale);
+static FPoint3d FromScale (FPoint3d point, double scale);
 
 //! @description Returns a linear combination of points
 //! @param [in] point0 first point
 //! @param [in] scale0  first scale
 //! @param [in] point1 second point
 //! @param [in] scale1 second scale
-static DPoint3d FromSumOf (DPoint3dCR point0, double scale0, DPoint3dCR point1, double scale1);
+static FPoint3d FromSumOf (FPoint3dCR point0, double scale0, FPoint3dCR point1, double scale1);
 
 //! @description Returns a linear combination of points
 //! @param [in] point0 first point
@@ -975,7 +935,7 @@ static DPoint3d FromSumOf (DPoint3dCR point0, double scale0, DPoint3dCR point1, 
 //! @param [in] scale1 second scale
 //! @param [in] point2 third point
 //! @param [in] scale2 third scale
-static DPoint3d FromSumOf (DPoint3dCR point0, double scale0, DPoint3dCR point1, double scale1, DPoint3dCR point2, double scale2);
+static FPoint3d FromSumOf (FPoint3dCR point0, double scale0, FPoint3dCR point1, double scale1, FPoint3dCR point2, double scale2);
 
 
 //! Return {point + matrix * (x,y,z)}
@@ -984,21 +944,21 @@ static DPoint3d FromSumOf (DPoint3dCR point0, double scale0, DPoint3dCR point1, 
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, double x, double y, double z);
+static FPoint3d FromProduct (FPoint3dCR point, RotMatrixCR matrix, double x, double y, double z);
 
 //! Return {point + matrix * vector}
 //! @param [in] point base point
 //! @param [in] matrix 
 //! @param [in] vector vector part
-static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
+static FPoint3d FromProduct (FPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
 
 //! Return (if possible) the intesection of xy perpendiculars from fractional points on rays from a basePoint.  Returned point has z from basePoint
-static ValidatedDPoint3d FromIntersectPerpendicularsXY
+static ValidatedFPoint3d FromIntersectPerpendicularsXY
 (
-DPoint3dCR basePoint,   //!< [in] common point of rays
-DPoint3dCR targetA,     //!< [in] target point of first ray.
+FPoint3dCR basePoint,   //!< [in] common point of rays
+FPoint3dCR targetA,     //!< [in] target point of first ray.
 double fractionA,       //!< [in] fractional position for perpendicular to first ray
-DPoint3dCR targetB,     //!< [in] target point of second ray
+FPoint3dCR targetB,     //!< [in] target point of second ray
 double fractionB        //!< [in] fractional position for perpenedicular to second ray
 );
 
@@ -1006,35 +966,35 @@ double fractionB        //!< [in] fractional position for perpenedicular to seco
 //! Uses library "small angle" as both absolute and relative tolerance.
 //! points are equal if squared distance between is less than
 //!   (squared abstol) plus (squared relTol) * sum of cmponent squares
-//! @param [in] dataB second DPoint3d
+//! @param [in] dataB second FPoint3d
 //! @return true if within tolerance.
-bool AlmostEqual (DPoint3d const & dataB) const;
+bool AlmostEqual (FPoint3d const & dataB) const;
 
 //! test if two points are equal.
 //! Uses library "small angle" as both absolute and relative tolerance.
 //! points are equal if squared distance between is less than
 //!   (squared abstol) plus (squared relTol) * sum of cmponent squares
-//! @param [in] dataB second DPoint3d
+//! @param [in] dataB second FPoint3d
 //! @return true if within tolerance.
-bool AlmostEqualXY (DPoint3d const & dataB) const;
+bool AlmostEqualXY (FPoint3d const & dataB) const;
 
 //! test if two points are equal.
 //! Uses library "small angle" as both absolute and relative tolerance.
 //! points are equal if squared distance between is less than
 //!   (squared abstol) plus (squared relTol) * sum of cmponent squares
-//! @param [in] dataB second DPoint3d
+//! @param [in] dataB second FPoint3d
 //! @param [in] abstol absolute tolerance.  If 0, use defaults.
 //! @return true if within tolerance.
-bool AlmostEqual (DPoint3d const & dataB, double abstol) const;
+bool AlmostEqual (FPoint3d const & dataB, double abstol) const;
 
 //! test if two points are equal.
 //! Uses library "small angle" as both absolute and relative tolerance.
 //! points are equal if squared distance between is less than
 //!   (squared abstol) plus (squared relTol) * sum of cmponent squares
-//! @param [in] dataB second DPoint3d
+//! @param [in] dataB second FPoint3d
 //! @param [in] abstol absolute tolerance.  If 0, use defaults.
 //! @return true if within tolerance.
-bool AlmostEqualXY (DPoint3d const & dataB, double abstol) const;
+bool AlmostEqualXY (FPoint3d const & dataB, double abstol) const;
 
 
 
@@ -1044,13 +1004,13 @@ bool AlmostEqualXY (DPoint3d const & dataB, double abstol) const;
 //! @param [in] left first array.
 //! @param [in] right first vector.
 //! @param [in] tolerance optional tolerance.  If 0, use defaults from AlmostEqual
-static bool AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> const &right, double tolerance = 0.0);
+static bool AlmostEqual (bvector<FPoint3d> const &left, bvector<FPoint3d> const &right, double tolerance = 0.0);
 
 //! apply AlmostEqualXY test to corresponding points
 //! @param [in] left first array.
 //! @param [in] right first vector.
 //! @param [in] tolerance optional tolerance.  If 0, use defaults from AlmostEqualXY
-static bool AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> const &right, double tolerance = 0.0);
+static bool AlmostEqualXY (bvector<FPoint3d> const &left, bvector<FPoint3d> const &right, double tolerance = 0.0);
 
 
 #endif // __cplusplus
@@ -1059,7 +1019,7 @@ static bool AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> cons
 
 END_BENTLEY_NAMESPACE
 
-#endif // dpoint3d_H_
+#endif // FPoint3d_H_
 
 /*__PUBLISH_SECTION_END__*/
 

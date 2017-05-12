@@ -118,6 +118,24 @@ DPoint3dCR end
     return vector;
     }
 
+/*-----------------------------------------------------------------*//**
+* @description Returns a DVec3d between start and end.
+* @param [in] start start point
+* @param [in] end   end point
++----------------------------------------------------------------------*/
+DVec3d DVec3d::FromStartEnd
+(
+FPoint3dCR start,
+FPoint3dCR end
+)
+    {
+    DVec3d vector;
+    vector.x = end.x - start.x;
+    vector.y = end.y - start.y;
+    vector.z = end.z - start.z;
+    return vector;
+    }
+
 
 
 /*-----------------------------------------------------------------*//**
@@ -2422,6 +2440,25 @@ DPoint3dCR base
     this->z = target.z - base.z;
     }
 
+/*-----------------------------------------------------------------*//**
+* @description Subtract coordinates of two points. (Compute Point1 - Point2)
+*
+* @param [in] target The target point
+* @param [in] base The base point
+* @bsimethod                            EarlinLutz      03/03
++----------------------------------------------------------------------*/
+void DVec3d::DifferenceOf
+(
+
+FPoint3dCR target,
+FPoint3dCR base
+
+)
+    {
+    this->x = target.x - base.x;
+    this->y = target.y - base.y;
+    this->z = target.z - base.z;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Computes the (cartesian) distance between two vectors
@@ -2863,3 +2900,5 @@ bool DVec3d::ProjectToPlane (DVec3dCR vectorU, DVec3dCR vectorV, DPoint2dR uv) c
 
 
 END_BENTLEY_NAMESPACE
+
+

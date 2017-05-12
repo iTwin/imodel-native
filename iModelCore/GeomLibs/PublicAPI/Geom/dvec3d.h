@@ -174,6 +174,12 @@ void Init (DPoint3dCR point);
 //! @param [in] end   end point
 static DVec3d FromStartEnd (DPoint3dCR start, DPoint3dCR end);
 
+//! @description Returns the unnormalized (full length) DVec3d between start and end.
+//! @param [in] start start point
+//! @param [in] end   end point
+static DVec3d FromStartEnd (FPoint3dCR start, FPoint3dCR end);
+
+
 //! @description Returns the unnormalized (full length) DVec3d from the frame origin to the target point.
 //! @param [in] start start point
 //! @param [in] target   end point
@@ -284,6 +290,11 @@ void DifferenceOf  (DVec3dCR vector1, DVec3dCR vector2);
 //! @param [in] target The target point
 //! @param [in] base The base point
 void DifferenceOf  (DPoint3dCR target, DPoint3dCR base);
+
+//! @description Subtract coordinates of two points. (Compute Point1 - Point2)
+//! @param [in] target The target point
+//! @param [in] base The base point
+void DifferenceOf  (FPoint3dCR target, FPoint3dCR base);
 
 //! @description Subtract two vectors, and return the result in place of the first.
 //! @param [in] vector2 The vector to subtract.
