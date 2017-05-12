@@ -33,8 +33,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 
-
-
 struct FactorPower
     {
 private:
@@ -74,8 +72,6 @@ public:
     UNITS_EXPORT Utf8String ToText();
     UNITS_EXPORT Utf8String DebugText();
     };
-
-
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
@@ -397,7 +393,6 @@ struct FormatUnitGroup
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     };
 
-
 struct StdFormatSet
     {
 private:
@@ -463,7 +458,6 @@ struct NumericTriad
         UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
         UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero = false);
     };
-
 
 struct QuantityTriadSpec : NumericTriad
     {
@@ -574,54 +568,54 @@ public:
     };
 
 //QuantityFraction
-struct QuantityFraction 
-    {
-private:
-    NumSequenceTraits m_traits;
-    double m_dval;    // collected value
-    int m_ival;
-    int m_startIndx;  // indicates the location of the first char in the numeric sequence (after skipping blanks)
-    int m_len;        // the length of the inspected numeric sequence
-    Utf8String m_uomName;
-    BEU::UnitCP m_unit;
-    FormatProblemDetail m_problem;
-    void Init()
-        {
-        m_traits = NumSequenceTraits::None;
-        m_dval = 0.0;
-        m_ival = 0;
-        m_startIndx = -1;
-        m_len = 0;
-        m_uomName = "";
-        m_unit = nullptr;
-        m_problem = FormatProblemDetail();
-        }
-
-public:
-    QuantityFraction() { Init();  }
-    UNITS_EXPORT void SetSigned(bool use);
-    bool IsSigned() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Signed)) != 0); }
-    UNITS_EXPORT void SetDecPoint(bool use);
-    bool HasDecPoint() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::DecPoint)) != 0); }
-    UNITS_EXPORT void SetExponent(bool use);
-    bool HasExponent() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Exponent)) != 0); }
-    UNITS_EXPORT void SetUom(bool use);
-    bool HasUom() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Uom)) != 0); }
-    Utf8String SetUomName(Utf8String name) { return m_uomName = name; }
-    Utf8String GetUomName() { return m_uomName; }
-    BEU::UnitCP GetUnit() { return BEU::UnitRegistry::Instance().LookupUnit(m_uomName.c_str()); }
-    UNITS_EXPORT void Detect(Utf8CP txt);
-    bool IsProblem() { return m_problem.IsProblem(); }
-    FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
-    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
-    double GetRealValue() { return m_dval; }
-    int GetIntValue() { return m_ival; }
-    int GetStartIndex() { return m_startIndx; }
-    int GetLength() { return m_len; }
-    int GetNextindex() { return m_startIndx + m_len; }
-
-    };
+//struct QuantityFraction 
+//    {
+//private:
+//    NumSequenceTraits m_traits;
+//    double m_dval;    // collected value
+//    int m_ival;
+//    int m_startIndx;  // indicates the location of the first char in the numeric sequence (after skipping blanks)
+//    int m_len;        // the length of the inspected numeric sequence
+//    Utf8String m_uomName;
+//    BEU::UnitCP m_unit;
+//    FormatProblemDetail m_problem;
+//    void Init()
+//        {
+//        m_traits = NumSequenceTraits::None;
+//        m_dval = 0.0;
+//        m_ival = 0;
+//        m_startIndx = -1;
+//        m_len = 0;
+//        m_uomName = "";
+//        m_unit = nullptr;
+//        m_problem = FormatProblemDetail();
+//        }
+//
+//public:
+//    QuantityFraction() { Init();  }
+//    UNITS_EXPORT void SetSigned(bool use);
+//    bool IsSigned() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Signed)) != 0); }
+//    UNITS_EXPORT void SetDecPoint(bool use);
+//    bool HasDecPoint() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::DecPoint)) != 0); }
+//    UNITS_EXPORT void SetExponent(bool use);
+//    bool HasExponent() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Exponent)) != 0); }
+//    UNITS_EXPORT void SetUom(bool use);
+//    bool HasUom() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Uom)) != 0); }
+//    Utf8String SetUomName(Utf8String name) { return m_uomName = name; }
+//    Utf8String GetUomName() { return m_uomName; }
+//    BEU::UnitCP GetUnit() { return BEU::UnitRegistry::Instance().LookupUnit(m_uomName.c_str()); }
+//    UNITS_EXPORT void Detect(Utf8CP txt);
+//    bool IsProblem() { return m_problem.IsProblem(); }
+//    FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+//    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+//    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+//    double GetRealValue() { return m_dval; }
+//    int GetIntValue() { return m_ival; }
+//    int GetStartIndex() { return m_startIndx; }
+//    int GetLength() { return m_len; }
+//    int GetNextindex() { return m_startIndx + m_len; }
+//
+//    };
 
 /*
 !!!!!!!!!This section will be removed as soon as the correction for KOQ will be completed 

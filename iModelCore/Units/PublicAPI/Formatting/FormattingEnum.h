@@ -23,23 +23,25 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 enum class ParameterCode
     {
-    FormatName = 50,
-    NoSign = 101,
-    OnlyNegative = 102,
-    SignAlways = 103,
-    NegativeParenths = 104,
+    FormatName = 50,   
+    NoSign = 101,            // no sign will prepend the number even if it is negative (like absolute value)
+    OnlyNegative = 102,      // sign is added only for negative numbers
+    SignAlways = 103,        // +23.0 - explicit sign even for positive numbers
+    NegativeParenths = 104,  // present a negative number as (243.45)  rather than -243.45 
     Decimal = 151,
     Fractional = 152,
     Scientific = 153,
     ScientificNorm = 154,
     Binary = 155,
-    DefaultZeroes = 201,
-    LeadingZeroes = 202,
-    TrailingZeroes = 203,
-    KeepSingleZero = 204,
-    KeepDecimalPoint = 205,
-    ExponentZero = 206,
-    ZeroEmpty = 207,    // formatter will return the empy string if the result is 0
+    DefaultZeroes = 201,     // a combination of default "zero settings"
+    LeadingZeroes = 202,     // 00243.5  rather than 243.5 
+    TrailingZeroes = 203,    // 243.000 rather than 243.0 if precision is 3
+    KeepSingleZero = 204,    // 243.0 rather than 243 or 243.
+    KeepDecimalPoint = 205,  // 243.  if an insignifcant zero after point is not preserved - rather than 243
+    ExponentZero = 206,      // e05 instead of e5
+    ZeroEmpty = 207,         // formatter will return the empy string if the result is 0
+    FractionDash = 210,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
+    UseFractSymbol = 211,    // indicates that a limited set of fractional values can be presented by a single glyph
     DecPrec0 = 300,
     DecPrec1 = 301,
     DecPrec2 = 302,
@@ -152,7 +154,9 @@ enum class FormatTraits : int
     ExponentZero = 0x10,
     ZeroEmpty = 0x20,
     Use1000Separator = 0x40,
-    ApplyRounding = 0x80
+    ApplyRounding = 0x80,
+    FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
+    UseFractSymbol = 0x200     // indicates that a limited set of fractional values can be presented by a single glyph
     };
 
 enum class NumSequenceTraits
@@ -238,7 +242,11 @@ enum class FormatProblemCode
     FUS_InvalidSyntax = 20151,
     NFS_InvalidSpecName = 20161,
     NFS_DuplicateSpecName = 20162,
-    DIV_UnknownDivider = 25001
+    DIV_UnknownDivider = 25001,
+    NA_InvalidSign = 25101,             // Numeric Accumulator problems
+    NA_InvalidPoint = 25102,
+    NA_InvalidExponent = 25103,
+    NA_InvalidSyntax = 25104
     };
 
 enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
@@ -274,6 +282,32 @@ enum class FormatSpecType
     Composite = 2      // a composite spec is also defined (numeric spec is implied)
     };
 
+enum class AccumulatorState
+    {
+    Init = 0,
+    Integer = 1,
+    Fraction = 2,
+    Exponent = 3,
+    Complete = 4,
+    Failure = 5,
+    RejectedSymbol = 10
+    };
+
+enum class CursorSectionState
+    {
+    Success = 0,
+    Complete = 1,
+    Failure = 2,
+    RejectedSymbol = 10,
+    Undefined = 20
+    };
+
+enum class CursorSectionType
+    {
+    Undefined = 0,
+    Word = 1,
+    Numeric = 2
+    };
 
 struct FormatProblemDetail
     {
@@ -334,6 +368,8 @@ struct Utils
     UNITS_EXPORT static Utf8CP HexByte(Utf8Char c, Utf8P buf, size_t bufLen);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
+    UNITS_EXPORT static size_t NumberOfUtf8Bytes(size_t code);
+    UNITS_EXPORT static Utf8String AccumulatorStateName(AccumulatorState state);
     //#endif
     };
 
@@ -417,10 +453,11 @@ struct FormatConstant
         static const Utf8CP EmptyString() { return ""; }
         static const Utf8CP BlankString() { return " "; }
         static const Utf8Char EndOfLine() { return '\0'; }
-        static const Utf8Char DigitSymbol() { return '0'; }
+        static const Utf8Char NumberSymbol() { return '0'; }
         static const Utf8Char SpaceSymbol() { return 's'; }
-        static const Utf8Char LetterSymbol() { return 'a'; }
+        static const Utf8Char WordSymbol() { return 'a'; }
         static const Utf8Char SignSymbol() { return '-'; }
+        static const Utf8Char UOMLink() { return '_'; }
         static const Utf8Char FractionSymbol() { return 'r'; }
         static const Utf8CP FailedOperation() { return "Operation failed"; }
         static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
@@ -436,17 +473,29 @@ struct FormatConstant
         static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
         static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
         static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
-        static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits
+        static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits 
         static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
+        static const size_t UTF_2ByteSelector() { return  0x1F; }  // 00011111
+        static const size_t UTF_3ByteSelector() { return  0xF; }   // 00001111
+        static const size_t UTF_4ByteSelector() { return  0x7; }   // 00000111
+        static const size_t UTF_5ByteSelector() { return  0x3; }   // 00000011
+        static const size_t UTF_6ByteSelector() { return  0x1; }   // 00000001
         static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
         static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
         static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
+        static const unsigned char UTF_NonASCIIMark() { return  0x80; }    // 10000000 - indicator of non ASCII symbol
+        static const unsigned char UTF_MultiByteMask() { return  0x40; }    // 01000000 - indicator of the first byte
         static const unsigned char UTF_UpperBitShift() { return  6; }
+        static const unsigned char ASCIImask() { return  0x7F; }
+        static const bool IsASCII(size_t symbol) { return (symbol <= ASCIImask()); }
+        static const Utf8Char ASCIIcode(size_t symbol) { return (Utf8Char)(symbol & ASCIImask()); }
+        static const int DigitValue(Utf8Char dig) { return (int)(dig - '0'); }
         static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
         UNITS_EXPORT static const bool IsLittleEndian();
         UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
         static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
         UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
+        UNITS_EXPORT static size_t ExtractTrailingBits(unsigned char c, size_t shift);
         UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
         static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
         static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }

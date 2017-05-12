@@ -58,7 +58,7 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     m_text = utf8Text;
     Rewind();
     //m_unicodeConst = new UnicodeConstant();
-    m_totalScanLength = (nullptr == utf8Text) ? 0 : strlen(utf8Text);
+    m_totalScanLength = Utils::TextLength(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
     m_dividers = FormattingDividers(div);
@@ -300,6 +300,77 @@ size_t FormattingScannerCursor::GetNextSymbol()
     return m_uniCode;
     }
 
+size_t FormattingScannerCursor::HeadBitCount(unsigned char c)
+    {
+    size_t count = 0;
+    unsigned char  mask = FormatConstant::UTF_NonASCIIMark();
+    if ((c & mask) == 0)
+      return 1;
+    while ((c & mask) != 0 && count < 7)
+        {
+        count++;
+        mask >>= 1;
+        }
+
+    return count;
+    }
+
+
+size_t FormattingScannerCursor::GetNextReversed()
+    {
+    m_status = ScannerCursorStatus::Success;
+    m_lastScannedCount = 0;
+    m_uniCode = 0;
+    m_effectiveBytes = 1;
+    m_isASCII = true;
+    Utf8Char c = GetPrecedingByte();
+    m_lastScannedCount = 1;
+
+    if (IsAscii(c))
+        {
+        m_lastScannedCount = 1;
+        return m_uniCode = (size_t)c;
+        }
+
+    size_t shift = 0;
+    while (IsTrailing(c) && shift < 31)
+        {
+        m_uniCode |= FormatConstant::ExtractTrailingBits(c, shift);
+        shift += FormatConstant::UTF_UpperBitShift();
+        c = GetPrecedingByte();
+        m_lastScannedCount++;
+        }
+    // now byte must be a header of the Utf8 sequence
+    size_t bitCount = HeadBitCount(c);
+    if (m_lastScannedCount < 2 || bitCount != m_lastScannedCount) // corrupted Utf8 sequence
+        m_status = ScannerCursorStatus::IncompleteSequence;
+    else  // adding the header byte
+        {
+        size_t hBits = 0;
+        switch (bitCount)
+            {
+            case 2:
+                hBits = c & FormatConstant::UTF_2ByteSelector();
+                break;
+            case 3:
+                hBits = c & ~FormatConstant::UTF_3ByteSelector();
+                break;
+            case 4:
+                hBits = c & ~FormatConstant::UTF_4ByteSelector();
+                break;
+            case 5:
+                hBits = c & ~FormatConstant::UTF_5ByteSelector();
+                break;
+            case 6:
+                hBits = c & ~FormatConstant::UTF_6ByteSelector();
+                break;
+            }
+        hBits <<= shift;
+        m_uniCode |= hBits;
+        }
+    return m_uniCode;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -335,14 +406,14 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
         {
         if (m_lastScannedCount == 1)
             {
-            char cc = c & 0x7F;
+            Utf8Char cc = FormatConstant::ASCIIcode(c);
             if (isspace(cc))
                 m_traits.AppendSignature(FormatConstant::SpaceSymbol());
             else if (isdigit(cc))
-                m_traits.AppendSignature(FormatConstant::DigitSymbol());
+                m_traits.AppendSignature(FormatConstant::NumberSymbol());
             else if (cc == '+' || cc == '-')
                 m_traits.AppendSignature(FormatConstant::SignSymbol());
-            else if (cc == '.' || cc == ',' || cc == '/')
+            else if (cc == '.' || cc == ',' || cc == '/' || cc == '_')
                 m_traits.AppendSignature(cc);
             else
                 m_traits.AppendSignature(symb[1]); // symb[m_lastScannedCount & 0x7];
@@ -354,7 +425,7 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
             if(FormatConstant::IsFractionSymbol(c))
                 m_traits.AppendPattern(FormatConstant::FractionSymbol());
             else
-                m_traits.AppendPattern(FormatConstant::LetterSymbol());
+                m_traits.AppendPattern(FormatConstant::WordSymbol());
             }
         c = GetNextSymbol();
         }
@@ -365,13 +436,74 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
     return m_traits.GetSignature();
     }
 
+size_t FormattingScannerCursor::SetSections()
+    {
+    return 0;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+Utf8CP FormattingScannerCursor::GetReversedSignature(bool refresh, bool compress)
+    {
+    if (!refresh)
+        return m_traits.GetSignature();
+
+    if (!m_traits.Reset(m_totalScanLength))
+        return FormatConstant::AllocError();
+
+    size_t savePos = m_cursorPosition;
+    Utf8CP symb = "xabcdefg";
+    m_cursorPosition = m_totalScanLength;
+    size_t c = GetNextReversed();
+    if (m_status != ScannerCursorStatus::Success)
+        return "!!Error!!";
+    while (c != 0)
+        {
+        if (m_lastScannedCount == 1)
+            {
+            Utf8Char cc = FormatConstant::ASCIIcode(c);
+            if (isspace(cc))
+                m_traits.AppendSignature(FormatConstant::SpaceSymbol());
+            else if (isdigit(cc))
+                m_traits.AppendSignature(FormatConstant::NumberSymbol());
+            else if (cc == '+' || cc == '-')
+                m_traits.AppendSignature(FormatConstant::SignSymbol());
+            else if (cc == '.' || cc == ',' || cc == '/' || cc == '_')
+                m_traits.AppendSignature(cc);
+            else
+                m_traits.AppendSignature(symb[1]); // symb[m_lastScannedCount & 0x7];
+            m_traits.AppendPattern();
+            }
+        else
+            {
+            m_traits.AppendSignature(symb[m_lastScannedCount & 0x7]);
+            if (FormatConstant::IsFractionSymbol(c))
+                m_traits.AppendPattern(FormatConstant::FractionSymbol());
+            else
+                m_traits.AppendPattern(FormatConstant::WordSymbol());
+            }
+        c = GetNextReversed();
+        }
+    if (compress)
+        {
+        m_traits.CompressPattern();
+        }
+    m_cursorPosition = savePos;
+    return m_traits.GetSignature();
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385)
+PUSH_MSVC_IGNORE(6386)
 Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     {
     Utf8CP sig = GetSignature(true, true);
-    size_t sigLen = Utils::IsNameNullOrEmpty(sig) ? 0 : strlen(sig);
+    size_t sigLen = Utils::TextLength(sig);
     Utf8String str;
 
     if (sigLen > 0)
@@ -386,7 +518,7 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
                 {
                 Utf8P buf = (Utf8P)alloca(m_totalScanLength + 2);
                 bool notSpace = true;
-                for (size_t i = start, j = start, k = 0; i <= end && j < m_totalScanLength; i++)
+                for (size_t i = start, j = start, k = 0; i <= end && j < m_totalScanLength && k < m_totalScanLength; i++)
                     {
                     switch (sig[i])
                         {
@@ -421,6 +553,7 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
                 {
                 Rewind();
                 m_text = str;
+                m_totalScanLength = strlen(m_text.c_str());
                 }
             }//start < sigLen
 
@@ -428,7 +561,8 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
 
     return str;
     }
-
+POP_MSVC_IGNORE
+POP_MSVC_IGNORE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -567,6 +701,13 @@ bool FormattingSignature::Reset(size_t reserve)
             m_pattern = nullptr;
             }    
         }
+    else 
+        {
+        if(nullptr != m_signature)
+            m_signature[0] = FormatConstant::EndOfLine();
+        if(nullptr != m_pattern)
+            m_pattern[0] = FormatConstant::EndOfLine();
+        }
     m_segCount = 0;
     m_sigIndx = 0;
     m_patIndx = 0;
@@ -622,13 +763,13 @@ size_t FormattingSignature::DetectUOMPattern(size_t ind)
     size_t i = 0;
     memset(buf, 0, sizeof(buf));
     Utf8Char c = GetPatternChar(ind);
-    if (c == FormatConstant::DigitSymbol())
+    if (c == FormatConstant::NumberSymbol())
         {
         while (i < 10)
             {
             buf[i++] = c;
             c = GetPatternChar(ind + i);
-            if (c == FormatConstant::DigitSymbol() || c == FormatConstant::EndOfLine())
+            if (c == FormatConstant::NumberSymbol() || c == FormatConstant::EndOfLine())
                 break;
             }
         if (strcmp(buf, "0sas") == 0 || strcmp(buf, "0as") == 0 || strcmp(buf, "0sa") == 0)
@@ -643,13 +784,13 @@ size_t FormattingSignature::DetectFractPattern(size_t ind)
     size_t i = 0;
     memset(buf, 0, sizeof(buf));
     Utf8Char c = GetPatternChar(ind);
-    if (c == FormatConstant::DigitSymbol())
+    if (c == FormatConstant::NumberSymbol())
         {
         while (i < 10)
             {
             buf[i++] = c;
             c = GetPatternChar(ind + i);
-            if (c == FormatConstant::DigitSymbol() || c == FormatConstant::EndOfLine())
+            if (c == FormatConstant::NumberSymbol() || c == FormatConstant::EndOfLine())
                 break;
             }
         if (strcmp(buf, "0sas") == 0 || strcmp(buf, "0as") == 0 || strcmp(buf, "0sa") == 0)
@@ -661,19 +802,57 @@ size_t FormattingSignature::DetectFractPattern(size_t ind)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
+Utf8CP FormattingSignature::ReverseString(Utf8CP str, Utf8P revStr, size_t bufSize)
+    {
+    size_t len = Utils::TextLength(str);
+    if (nullptr == revStr || bufSize == 0)
+        return nullptr;
+    if (bufSize < len + 1)
+        {
+        *revStr = 0;
+        return revStr;
+        }
+    while (len > 0)
+        {
+        *revStr = str[--len];
+        revStr++;
+        }
+    *revStr = 0;
+    return revStr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Utf8String FormattingSignature::ReversedSignature()
+    {
+    size_t sigL = Utils::TextLength(m_signature);
+    if (sigL == 0)
+        return nullptr;
+    Utf8P temp = (Utf8P)alloca(sigL + 2);
+    ReverseString(m_signature, temp, sigL + 2);
+
+    return Utf8String(temp);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385)
+PUSH_MSVC_IGNORE(6386)
 size_t FormattingSignature::CompressPattern()
     {
     if (FormatConstant::EndOfLine() == m_pattern[0])
         return 0;
     Utf8P temp = (Utf8P)alloca(m_size + 2);
     size_t i = 0, j = 0, n;
-    while (i < m_patIndx)
+    while (i < m_patIndx && j <= m_size)
         {
         n = DetectUOMPattern(i);
         if (n > 0)  // pattern is detected
             {
-            temp[j++] = FormatConstant::DigitSymbol();
-            temp[j++] = FormatConstant::LetterSymbol();
+            temp[j++] = FormatConstant::NumberSymbol();
+            temp[j++] = FormatConstant::WordSymbol();
             i += n;
             }
         else
@@ -686,6 +865,222 @@ size_t FormattingSignature::CompressPattern()
     m_pattern[i] = FormatConstant::EndOfLine();
     return i;
     }
+POP_MSVC_IGNORE
+POP_MSVC_IGNORE
+//===================================================
+//
+// NumericAccumulator Methods
+//
+//===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+AccumulatorState NumericAccumulator::SetSign(int sig)
+    {
+    if (m_stat == AccumulatorState::Init && m_sign == 0)
+        {
+        m_sign = sig;
+        return m_stat = AccumulatorState::Integer;
+        }
+    else if(m_stat == AccumulatorState::Exponent && m_expSign == 0)
+        {
+        m_expSign = sig;
+        return m_stat;
+        }
+    else
+        m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSign);
+    return m_stat = AccumulatorState::Failure;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+AccumulatorState NumericAccumulator::SetDecimalPoint()
+    {
+    if((m_stat == AccumulatorState::Init || m_stat == AccumulatorState::Integer) && m_point == false)
+        {
+        m_point = true;
+        return m_stat = AccumulatorState::Fraction;
+        }
+    m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidPoint);
+    return m_stat = AccumulatorState::Failure;
+    }
+
+AccumulatorState NumericAccumulator::SetExponentMark()
+    {
+    if((m_stat == AccumulatorState::Integer|| m_stat == AccumulatorState::Fraction) && (m_count[0] + m_count[1] > 0) && m_expMark == false)
+        {
+        m_expMark = true;
+        return m_stat = AccumulatorState::Exponent;
+        }      
+    m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidExponent);
+    return m_stat = AccumulatorState::Failure;
+    }
+
+AccumulatorState NumericAccumulator::AddSymbol(size_t symb)
+    {
+    if (FormatConstant::IsASCII(symb)) // symbol must be ASCII
+        {
+        Utf8Char c = FormatConstant::ASCIIcode(symb);
+        if (isdigit(c))
+            {
+            AddDigitValue(c);
+            m_bytes++;
+            return m_stat;
+            }
+
+        switch (c)
+            {
+            case '+':
+                SetSign(1);
+                break;
+            case '-':
+                SetSign(-1);
+                break;
+            case '.':
+                SetDecimalPoint();
+                break;
+            case 'E':
+            case 'e':
+                SetExponentMark();
+                break;
+            default:
+                m_stat = AccumulatorState::RejectedSymbol;
+            }
+        }
+        else
+            m_stat = AccumulatorState::RejectedSymbol;
+
+        if(m_stat != AccumulatorState::RejectedSymbol)
+            m_bytes++;
+        return m_stat;
+    }
+
+AccumulatorState NumericAccumulator::SetComplete() 
+    { 
+    if (HasFailed() || IsComplete())
+        return m_stat;
+    if (m_expMark && m_count[2] == 0)
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidExponent);
+        return m_stat = AccumulatorState::Failure;
+        }
+    if (m_point && (m_count[0] + m_count[1]) == 0)
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+        return m_stat = AccumulatorState::Failure;
+        }
+    if (0 != m_sign && (m_count[0] + m_count[1]) == 0)
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+        return m_stat = AccumulatorState::Failure;
+        }
+    m_ival = (m_sign >=0)?  m_part[0] : -m_part[0];
+    m_dval = (double)m_part[0];
+    if (m_point)
+        {
+        if (m_count[1] > 0) // there is a fractional part
+            {
+            double f = (double)m_part[1];
+            for (int i = 0; i < m_count[1]; ++i) { f *= 0.1; }
+            m_dval += f;
+            }
+        m_real = true;
+        }
+    if (m_expMark && m_count[2] > 0)
+        {
+        double f = 1.0;
+        double mult = (m_expSign < 0) ? 0.1 : 10.0;
+  
+        for (int i = 0; i < m_count[1]; ++i) { f *= mult; }
+        m_dval *= f;
+        m_real = true;
+        }
+    if (m_sign < 0)
+        m_dval = -m_dval;
+
+    return m_stat = AccumulatorState::Complete; 
+    }
+
+Utf8String NumericAccumulator::ToText()
+    {
+    Utf8String str;
+    str.Sprintf("Sign %d int %d(%d) fract  %d(%d) exp  %d(%d) point[%s] exp[%s] expSign %d real[%s] |%d| |%f|", m_sign, m_part[0], m_count[0], 
+                m_part[1], m_count[1], m_part[2], m_count[2], FormatConstant::BoolText(m_point), FormatConstant::BoolText(m_expMark), 
+                m_expSign, FormatConstant::BoolText(m_real), m_ival, m_dval);
+    return str;
+    }
+
+//===================================================
+//
+// FormattingCursorSection Methods
+//
+//===================================================
+//CursorSectionState FormattingCursorSection::AddSymbol(size_t symb, size_t byteLen)
+//    {
+//    if (byteLen == 0)
+//        byteLen = Utils::NumberOfUtf8Bytes(symb);
+//
+//    AccumulatorState stat = m_numAcc.AddSymbol(symb);
+//    switch (m_type)
+//        {
+//        case CursorSectionType::Numeric:
+//            break;
+//        case CursorSectionType::Word:
+//            break;
+//        case CursorSectionType::Undefined:
+//        default:
+//            if(stat != AccumulatorState::)
+//            m_type = CursorSectionType::Numeric;
+//            break;
+//
+//        }
+//    if (AccumulatorState::RejectedSymbol == stat)  // process non-numeric symbol
+//        {
+//        if(0 == m_numAcc.GetByteCount())  //
+//        }
+//
+//    return CursorSectionState::Success;
+//    }
+
+//===================================================
+//
+// CursorSectionSet Methods
+//
+//===================================================
+//CursorSectionState CursorSectionSet::AddSymbol(size_t symb, size_t byteLen)
+//    {
+//    if (c == FormatConstant::EndOfLine())
+//        return CursorSectionState::Failure;
+//
+//        if (byteLen == 1)
+//            {
+//            Utf8Char cc = FormatConstant::ASCIIcode(c);
+//            if (isspace(cc))
+//                m_traits.AppendSignature(FormatConstant::SpaceSymbol());
+//            else if (isdigit(cc))
+//                m_traits.AppendSignature(FormatConstant::NumberSymbol());
+//            else if (cc == '+' || cc == '-')
+//                m_traits.AppendSignature(FormatConstant::SignSymbol());
+//            else if (cc == '.' || cc == ',' || cc == '/')
+//                m_traits.AppendSignature(cc);
+//            else
+//                m_traits.AppendSignature(symb[1]); // symb[m_lastScannedCount & 0x7];
+//            m_traits.AppendPattern();
+//            }
+//        else
+//            {
+//            m_traits.AppendSignature(symb[m_lastScannedCount & 0x7]);
+//            if (FormatConstant::IsFractionSymbol(c))
+//                m_traits.AppendPattern(FormatConstant::FractionSymbol());
+//            else
+//                m_traits.AppendPattern(FormatConstant::WordSymbol());
+//            }
+//        c = GetNextSymbol();
+//
+//    return CursorSectionState::Success;
+//    }
 
 //===================================================
 //

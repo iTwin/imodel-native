@@ -85,6 +85,14 @@ bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
     return false;
     }
 
+size_t  FormatConstant::ExtractTrailingBits(unsigned char c, size_t shift) 
+    { 
+    size_t cod = c & UTF_TrailingBitsMask();
+    if (shift > 0)
+        cod <<= shift;
+    return cod; 
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -121,6 +129,21 @@ Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
         case ShowSignOption::SignAlways: return "SignAlways";
         case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
         default: return "NoSign";
+        }
+    }
+
+Utf8String Utils::AccumulatorStateName(AccumulatorState state)
+    {
+    switch (state)
+        {
+        case AccumulatorState::Init: return "init";
+        case AccumulatorState::Complete: return "complete";
+        case AccumulatorState::RejectedSymbol: return "rejectSymbol";
+        case AccumulatorState::Exponent: return "exponent";
+        case AccumulatorState::Fraction: return "fraction";
+        case AccumulatorState::Integer: return "integer";
+        case AccumulatorState::Failure: return "failure";
+        default: return "???";
         }
     }
 
@@ -294,6 +317,9 @@ const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
         }
     }
 
+
+
+
 //Utf8String Utils::FormatProblemDescription(FormatProblemCode code)
 //    {
 //    switch (code)
@@ -377,6 +403,16 @@ Utf8CP Utils::HexByte(Utf8Char c, Utf8P buf, size_t bufLen)
     else if (nullptr != buf)
         buf[0] = FormatConstant::EndOfLine();
     return buf;
+    }
+
+size_t Utils::NumberOfUtf8Bytes(size_t code)
+    {
+    if (code < 0x80) return 1;
+    if (code <  0x800) return 2;
+    if (code < 0x10000) return 3;
+    if (code < 0x200000) return 4;
+    if (code < 0x4000000) return 5;
+    return 6;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1249,11 +1285,29 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
         case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
         case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
+        case FormatProblemCode::NFS_InvalidSpecName: return "Invalid Numeric Format name";
+        case FormatProblemCode::NFS_DuplicateSpecName: return "Duplicate Numeric Format name";
+        case FormatProblemCode::DIV_UnknownDivider: return "Unknown Divider";
+        case FormatProblemCode::NA_InvalidSign: return "Invalid or duplicate sign in numeric definition";         // Numeric Accumulator problems
+        case FormatProblemCode::NA_InvalidPoint: return "Invalid or duplicate decimal point in numeric definition";
+        case FormatProblemCode::NA_InvalidExponent: return "Invalid or duplicate exponent in numeric definition";
+        case FormatProblemCode::NA_InvalidSyntax: return "Invalid symtax of numeric expression";
         case FormatProblemCode::NoProblems:
         default: return "No problems";
         }
     }
+/*
 
+FUS_InvalidSyntax = 20151,
+NFS_InvalidSpecName = 20161,
+NFS_DuplicateSpecName = 20162,
+DIV_UnknownDivider = 25001,
+NA_InvalidSign = 25101,             // Numeric Accumulator problems
+NA_InvalidPoint = 25102,
+NA_InvalidExponent = 25103
+};
+
+*/
 
 bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
     {
@@ -1267,68 +1321,68 @@ bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
 // QuantityFraction
 //
 //===================================================
-void QuantityFraction::SetSigned(bool set)
-    {
-    size_t temp = static_cast<int>(m_traits);
-    if (set)
-        temp |= static_cast<int>(NumSequenceTraits::Signed);
-    else
-        temp &= ~static_cast<int>(NumSequenceTraits::Signed);
-    m_traits = static_cast<NumSequenceTraits>(temp);
-    }
-
-void QuantityFraction::SetDecPoint(bool set)
-    {
-    size_t temp = static_cast<int>(m_traits);
-    if (set)
-        temp |= static_cast<int>(NumSequenceTraits::DecPoint);
-    else
-        temp &= ~static_cast<int>(NumSequenceTraits::DecPoint);
-    m_traits = static_cast<NumSequenceTraits>(temp);
-    }
-void QuantityFraction::SetExponent(bool set)
-    {
-    size_t temp = static_cast<int>(m_traits);
-    if (set)
-        temp |= static_cast<int>(NumSequenceTraits::Exponent);
-    else
-        temp &= ~static_cast<int>(NumSequenceTraits::Exponent);
-    m_traits = static_cast<NumSequenceTraits>(temp);
-    }
-
-void QuantityFraction::SetUom(bool set)
-    {
-    size_t temp = static_cast<int>(m_traits);
-    if (set)
-        temp |= static_cast<int>(NumSequenceTraits::Uom);
-    else
-        temp &= ~static_cast<int>(NumSequenceTraits::Uom);
-    m_traits = static_cast<NumSequenceTraits>(temp);
-    }
-
-void QuantityFraction::Detect(Utf8CP txt)
-    {
-    Init();
-    int phase = 0;
-    while (m_problem.NoProblem())
-        {
-        switch (phase)
-            {
-            case 0:
-                break;
-            case 1:
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            case 4:
-                break;
-            default:
-                break;
-            }
-        }
-    }
+//void QuantityFraction::SetSigned(bool set)
+//    {
+//    size_t temp = static_cast<int>(m_traits);
+//    if (set)
+//        temp |= static_cast<int>(NumSequenceTraits::Signed);
+//    else
+//        temp &= ~static_cast<int>(NumSequenceTraits::Signed);
+//    m_traits = static_cast<NumSequenceTraits>(temp);
+//    }
+//
+//void QuantityFraction::SetDecPoint(bool set)
+//    {
+//    size_t temp = static_cast<int>(m_traits);
+//    if (set)
+//        temp |= static_cast<int>(NumSequenceTraits::DecPoint);
+//    else
+//        temp &= ~static_cast<int>(NumSequenceTraits::DecPoint);
+//    m_traits = static_cast<NumSequenceTraits>(temp);
+//    }
+//void QuantityFraction::SetExponent(bool set)
+//    {
+//    size_t temp = static_cast<int>(m_traits);
+//    if (set)
+//        temp |= static_cast<int>(NumSequenceTraits::Exponent);
+//    else
+//        temp &= ~static_cast<int>(NumSequenceTraits::Exponent);
+//    m_traits = static_cast<NumSequenceTraits>(temp);
+//    }
+//
+//void QuantityFraction::SetUom(bool set)
+//    {
+//    size_t temp = static_cast<int>(m_traits);
+//    if (set)
+//        temp |= static_cast<int>(NumSequenceTraits::Uom);
+//    else
+//        temp &= ~static_cast<int>(NumSequenceTraits::Uom);
+//    m_traits = static_cast<NumSequenceTraits>(temp);
+//    }
+//
+//void QuantityFraction::Detect(Utf8CP txt)
+//    {
+//    Init();
+//    int phase = 0;
+//    while (m_problem.NoProblem())
+//        {
+//        switch (phase)
+//            {
+//            case 0:
+//                break;
+//            case 1:
+//                break;
+//            case 2:
+//                break;
+//            case 3:
+//                break;
+//            case 4:
+//                break;
+//            default:
+//                break;
+//            }
+//        }
+//    }
 
 
 END_BENTLEY_FORMATTING_NAMESPACE
