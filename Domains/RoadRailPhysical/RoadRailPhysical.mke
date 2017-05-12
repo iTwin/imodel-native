@@ -86,7 +86,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)LinearReferencing$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)RoadRailAlignment$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)Costing$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 
