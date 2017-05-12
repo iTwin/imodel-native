@@ -2266,13 +2266,12 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus Desktop::FileSystem::BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
     {
-#if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     BeFileName pathToUse(pathToUseIn);
     if (!*pathToUse.GetName())
         BeGetTempPath(pathToUse);
 
+#if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     WChar      tempName[4096];
-
     wcscpy(tempName, tempFileName);
 
     if (0 == ::GetTempFileNameW (pathToUse, prefixString, 0, tempName))
@@ -2281,7 +2280,20 @@ BeFileNameStatus Desktop::FileSystem::BeGetTempFileName(BeFileName& tempFileName
     tempFileName.SetName(tempName);
     return BeFileNameStatus::Success;
 #else
-    return BeFileNameStatus::UnknownError;
+    pathToUse.AppendSeparator();
+
+#ifdef COMMENT_OUT // tempnam is strongly discoured by clang/Linux
+    char *tname = tempnam(Utf8String(pathToUse).c_str(), Utf8String(prefixString).c_str());
+    tempFileName = BeFileName(tname, BentleyCharEncoding::Utf8);
+#else
+    tempFileName = pathToUse;
+    if (nullptr == prefixString)
+        prefixString = L"tmp";
+    tempFileName.AppendToPath(prefixString);
+    while(tempFileName.DoesPathExist())
+        tempFileName.append(WPrintfString(L"%x", rand()));
+#endif
+    return BeFileNameStatus::Success;
 #endif
     }
 
@@ -2299,7 +2311,8 @@ BeFileNameStatus Desktop::FileSystem::BeGetTempPath(BeFileName& tempPath)
     tempPath = BeFileName(tempName);
     return BeFileNameStatus::Success;
 #else
-    return BeFileNameStatus::UnknownError;
+    tempPath.SetName(L"/tmp/");
+    return BeFileNameStatus::Success;
 #endif
     }
 
