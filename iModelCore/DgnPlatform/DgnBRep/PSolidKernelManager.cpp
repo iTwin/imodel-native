@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <Bentley\GlobalHandleContainer.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <Bentley/Desktop/FileSystem.h> // *** NEEDS WORK: Why are we using desktop-only functions?
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
@@ -129,7 +130,7 @@ WCharCP         fileNameInP    // => path/prefix to use or NULL
 
     BeFileName tempFileName;
 
-    if (BeFileNameStatus::Success != BeFileName::BeGetTempFileName(tempFileName, path,prefix.c_str())) // <- NEEDSWORK: This method is currently only implemented for windows...
+    if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempFileName(tempFileName, path,prefix.c_str())) // <- NEEDSWORK: This method is currently only implemented for desktop systems...
         return nullptr;
 
     return _wfsopen (tempFileName.GetName(), L"w+bD", _SH_DENYNO);

@@ -5,8 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <windows.h>
-
 #include "BimConsole.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -328,12 +326,14 @@ BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
 //static
 size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
     {
+#ifdef UNUSED_VARIABLE
     auto postProcessToken = [&token] (WStringR tokenW, size_t currentIndex)
         {
         tokenW.Trim();
         token.Assign(tokenW.c_str());
         return currentIndex + 1;
         };
+#endif
 
     enum class State
         {

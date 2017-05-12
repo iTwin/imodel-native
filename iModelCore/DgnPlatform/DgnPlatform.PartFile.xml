@@ -525,9 +525,16 @@
     <!-- ******************************************************************************************* -->
 
     <Part Name="DgnPlatformNoViewTested">
+      <!-- TOO BAD. None of this builds, because WSClient depends on DgnClientFx, and DgnClientFx won't build. That's too bad, because none of this actually uses DgnClientFx ... except its L10N function.
+      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubPart PartName="RunToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      -->
+      <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
       <SubPart PartName="NoView-Gtest-RunAggregator" />
-      <SubPart PartName="NoView-AndroidJUnit-RunAggregator"/>
-      <SubPart PartName="NoView-iOSXCTest-RunAggregator"/>
     </Part>
 
     <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
@@ -535,13 +542,20 @@
         <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest"/>
         <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest"/>
         <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest"/>
+        <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest"/> -->
+        <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest"/> -->
         <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest"/>
+        <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest"/>
+        <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest"/> -->
         <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest"/>
         <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest"/>
         <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest"/>
         <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest"/>
+        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest"/>
+        <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest"/>
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest"/>
-      <!-- Test that are too time-consuming to run every time:
+        <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests"/> -->
+        <!-- Test that are too time-consuming to run every time:
         <SubPart Repository="GeoCoord"              PartFile="GeoCoord"         PartName="RunGtest"/>
       -->
     </Part>
@@ -581,7 +595,7 @@
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64">
+    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64,MacOS*,Linux*">
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>

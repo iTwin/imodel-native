@@ -10,6 +10,7 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <DgnPlatform/DesktopTools/envvutil.h>
 #include "macro.h"
+#include <Bentley/Desktop/FileSystem.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -92,7 +93,7 @@ BeFileNameCR  _GetLocalTempDirectoryBaseName () override
 
     if (!s_checked)
         {
-        BeFileName::BeGetTempPath (s_tempPath);
+        Desktop::FileSystem::BeGetTempPath (s_tempPath);
         s_checked = true;
         }
 
@@ -309,7 +310,7 @@ BentleyStatus ConfigurationManager::GetNameForTempFile (BeFileNameR tempFileName
     if (status != BeFileNameStatus::Success && status != BeFileNameStatus::AlreadyExists)
         return ERROR;
 
-    if (BeFileName::BeGetTempFileName (tempFileName, BeFileName(pathToUse), prefixString) != BeFileNameStatus::Success)
+    if (Desktop::FileSystem::BeGetTempFileName (tempFileName, BeFileName(pathToUse), prefixString) != BeFileNameStatus::Success)
         return ERROR;
 
     return SUCCESS;
