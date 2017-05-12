@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/ECToSQLMap.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,8 @@ namespace IndexECPlugin.Source.Helpers
     {
     static internal class ECToSQLMap
         {
-        static public string ECRelationalOperatorToSQL (RelationalOperator op)
+
+        static internal string ECRelationalOperatorToSQL (RelationalOperator op)
             {
             switch ( op )
                 {
