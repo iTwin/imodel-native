@@ -18,7 +18,7 @@ TEST(FPoint3d,SumOf)
 
     double scale0 = -3.0;
     double scale1 = 17.0;
-    double scale2 = -13.0;
+    //double scale2 = -13.0;
     Check::Exact (
         DPoint3d::FromSumOf (originD, vector0, scale0, vector1, scale1),
         DPoint3d::From (
