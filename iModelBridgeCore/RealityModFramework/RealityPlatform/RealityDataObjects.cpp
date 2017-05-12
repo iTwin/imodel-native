@@ -710,8 +710,8 @@ void RealityData::SetStreamed(bool streamed) { m_streamed = streamed; }
 DateTimeCR RealityData::GetCreationDateTime() const { return m_creationDate; }
 void RealityData::SetCreationDateTime(DateTimeCR creationDate) { m_creationDate = creationDate; }
 
-Utf8StringCR RealityData::GetEnterpriseId() const { return m_enterpriseId; }
-void RealityData::SetEnterpriseId(Utf8CP enterpriseId) { m_enterpriseId = enterpriseId; }
+Utf8StringCR RealityData::GetOrganizationId() const { return m_organizationId; }
+void RealityData::SetOrganizationId(Utf8CP organizationId) { m_organizationId = organizationId; }
 
 Utf8StringCR RealityData::GetContainerName() const { return m_containerName; }
 void RealityData::SetContainerName(Utf8CP containerName) { m_containerName = containerName; }
@@ -766,6 +766,9 @@ void RealityDataEnterpriseStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSi
 
 uint64_t RealityDataEnterpriseStat::GetNbRealityData() const { return m_nbRealityData; }
 void RealityDataEnterpriseStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
+
+Utf8StringCR RealityDataEnterpriseStat::GetOrganizationId() const { return m_organizationId; }
+void RealityDataEnterpriseStat::SetOrganizationId(Utf8CP organizationId) { m_organizationId = organizationId; }
 
 Utf8StringCR RealityDataEnterpriseStat::GetUltimateId() const { return m_ultimateId; }
 void RealityDataEnterpriseStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId = ultimateId; }

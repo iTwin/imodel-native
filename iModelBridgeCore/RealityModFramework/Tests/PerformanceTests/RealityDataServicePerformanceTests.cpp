@@ -860,12 +860,12 @@ StatusInt RealityDataServicePerformanceTests::GetRealityData(timeStats& theTimeS
 StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter(timeStats& theTimeStats)
     {
 
-    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
-    enterpriseReq.SetQuery("ONLY");
+    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
+    organizationReq.SetQuery("ONLY");
 
-    RawServerResponse enterpriseResponse = RawServerResponse();
-    enterpriseResponse.status = RequestStatus::OK;
-    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    RawServerResponse organizationResponse = RawServerResponse();
+    organizationResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> organizationVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
 
@@ -875,10 +875,10 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter(timeStats
     // Start time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
-    while(enterpriseResponse.status == RequestStatus::OK)
+    while(organizationResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
-        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
-        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        partialVec = RealityDataService::Request(organizationReq, organizationResponse);
+        organizationVec.insert(organizationVec.end(), partialVec.begin(), partialVec.end());
         }
 
     // End time
@@ -913,22 +913,22 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon(timeStat
 
 
 
-    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
+    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
 
     bvector<RDSFilter> properties = bvector<RDSFilter>();
     properties.push_back(RealityDataFilterCreator::FilterSpatial(myFootprint, 4326));
 
-    enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+    organizationReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
 
-    RawServerResponse enterpriseResponse = RawServerResponse();
-    enterpriseResponse.status = RequestStatus::OK;
-    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    RawServerResponse organizationResponse = RawServerResponse();
+    organizationResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> organizationVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while(enterpriseResponse.status == RequestStatus::OK)
+    while(organizationResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
-        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
-        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        partialVec = RealityDataService::Request(organizationReq, organizationResponse);
+        organizationVec.insert(organizationVec.end(), partialVec.begin(), partialVec.end());
         }
 
     return SUCCESS;

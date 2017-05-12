@@ -108,7 +108,9 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
                             "\"properties\" : {"
                                 "\"TotalSize\": 235892929,"
                                 "\"NumberOfRealityData\" : 1425,"
-                                "\"EnterpriseId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\""
+                                "\"OrganizationId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
+                                "\"UltimateId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
+                                "\"UltimateSite\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\""
                                 "},"
                             "\"eTag\" : \"\\\"ifZwDzBbgEqb8b0Z62MNmrQTysQ=\\\"\""
                             "}"
@@ -120,6 +122,9 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
     ASSERT_EQ(SUCCESS, status);
     ASSERT_EQ(stat.GetNbRealityData(), 1425);
     ASSERT_EQ(stat.GetTotalSizeKB(), 235892929);
+    ASSERT_EQ(stat.GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(stat.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(stat.GetUltimateSite(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     }
 
 //-------------------------------------------------------------------------------------
@@ -135,7 +140,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
                             "\"className\" : \"RealityData\","
                             "\"properties\" : {"
                                 "\"Id\": \"af3c43a9-1797-4765-a7c3-6f1cd6706fa9\","
-                                "\"EnterpriseId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
+                                "\"OrganizationId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
                                 "\"ContainerName\" : \"af3c43a9-1797-4765-a7c3-6f1cd6706fa9\","
                                 "\"Name\" : \"Helsinki\","
                                 "\"Dataset\" : \"Geogratis\","
@@ -174,7 +179,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_TRUE(realityData.IsValid());
 
     ASSERT_EQ(realityData->GetIdentifier(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
-    ASSERT_EQ(realityData->GetEnterpriseId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(realityData->GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(realityData->GetContainerName(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
     ASSERT_EQ(realityData->GetName(), "Helsinki");
     ASSERT_EQ(realityData->GetDataset(), "Geogratis");

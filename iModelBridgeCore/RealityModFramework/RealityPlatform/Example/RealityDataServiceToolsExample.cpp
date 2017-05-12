@@ -308,7 +308,7 @@ void ListCmd()
                 RealityDataByIdRequest* idReq = new RealityDataByIdRequest(pData->GetIdentifier());
                 RealityDataPtr entity = RealityDataService::Request(*idReq, status2);
 
-                assert(entity->GetEnterpriseId() == pData->GetEnterpriseId());
+                assert(entity->GetOragnizationId() == pData->GetOragnizationId());
                 assert(entity->GetApproximateFileSize() == pData->GetApproximateFileSize());
                 assert(entity->GetOwner() == pData->GetOwner());
                 assert(entity->GetRootDocument() == pData->GetRootDocument());
@@ -331,7 +331,7 @@ void ListCmd()
                         " Modification   : " << pData->GetModifiedDateTime().ToString() << std::endl << "  " <<
                         " RootDocument   : " << pData->GetRootDocument() << std::endl << "  " <<
                         " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
-                        " Enterprise     : " << pData->GetEnterpriseId() << std::endl << "  " <<
+                        " Organization   : " << pData->GetOrganizationId() << std::endl << "  " <<
                         " Copyright      : " << pData->GetCopyright() << std::endl << "  " <<
                         " TermsOfUse     : " << pData->GetTermsOfUse() << std::endl << "  " <<
                         " Description    : " << pData->GetDescription() << std::endl;
@@ -434,11 +434,12 @@ int main(int argc, char* argv[])
         RealityDataEnterpriseStat stat;
         RealityDataService::Request(*ptt, stat, statResponse);
 
-        std::cout << "Enterprise statistics: " << std::endl;
-        std::cout << "   NbRealityData: %lu\n" << stat.GetNbRealityData() << std::endl;
-        std::cout << "   TotalSize(KB): %lu\n\n" << stat.GetTotalSizeKB() << std::endl;
-        std::cout << "   UltimateId   : %s\n" << stat.GetUltimateId().c_str() << std::endl;
-        std::cout << "   UltimateSite : %s\n\n" << stat.GetUltimateSite().c_str() << std::endl;
+        std::cout << "Organization statistics: " << std::endl;
+        std::cout << "   NbRealityData : %lu\n" << stat.GetNbRealityData() << std::endl;
+        std::cout << "   TotalSize(KB) : %lu\n\n" << stat.GetTotalSizeKB() << std::endl;
+        std::cout << "   OrganizationId: %s\n" << stat.GetOrganizationId().c_str() << std::endl;
+        std::cout << "   UltimateId    : %s\n" << stat.GetUltimateId().c_str() << std::endl;
+        std::cout << "   UltimateSite  : %s\n\n" << stat.GetUltimateSite().c_str() << std::endl;
         }
         
 

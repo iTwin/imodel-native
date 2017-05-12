@@ -655,7 +655,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(myRange.high.y == 0.0);
 
 
-    EXPECT_STREQ(myRealityData->GetEnterpriseId().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetOrganizationId().c_str(), "");
     EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "");
     EXPECT_STREQ(myRealityData->GetDescription().c_str(), "");
     EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "");
@@ -727,8 +727,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
 
 
 
-    myRealityData->SetEnterpriseId("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf"); 
-    EXPECT_STREQ(myRealityData->GetEnterpriseId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
+    myRealityData->SetOrganizationId("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
+    EXPECT_STREQ(myRealityData->GetOrganizationId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
     myRealityData->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29"); 
     EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "167b96ea-52eb-46c0-9865-8b7e5913bb29");
     myRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 

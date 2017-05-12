@@ -63,7 +63,7 @@ struct RealityDataEnterpriseStatRequest : public RealityDataUrl
 {
 public:
     // Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStatRequest(Utf8StringCR enterpriseId) { m_validRequestString = false; m_id = enterpriseId; }
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStatRequest(Utf8StringCR ultimateId) { m_validRequestString = false; m_id = ultimateId; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -451,17 +451,17 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A specialisation of a RealityDataPagedRequest that only obtains reality data
-//! for specific enterprise. Usually a CONENCT user only has access to its own enterprise 
-//! data only so the enterpriseId specified should be the identifeir of its enterprise.
-//! This request will not return public references to reality data from other enterprises
+//! for specific organization. Usually a CONENCT user only has access to its own organization 
+//! data only so the organizationId specified should be the identifeir of its organization.
+//! This request will not return public references to reality data from other organizations
 //! marked as public.
-//! Note that the present request will only return Reality Data part of an enterprise
+//! Note that the present request will only return Reality Data part of an organization
 //! for which the current CONNECT user has access to. 
 //=====================================================================================
-struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
+struct RealityDataListByOrganizationPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint16_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByOrganizationPagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint16_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -626,6 +626,7 @@ struct RealityDataRelationshipDelete : public RealityDataUrl
     {
         REALITYDATAPLATFORM_EXPORT RealityDataRelationshipDelete(Utf8String realityDataId, Utf8String projectId);
     protected:
+        Utf8String m_projectId;
         REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
@@ -719,6 +720,12 @@ struct RealityDataServiceTransfer : public CurlConstructor
 
     //! Validates that files have been found in the paths provided by the user
     REALITYDATAPLATFORM_EXPORT bool IsValidTransfer() { return m_filesToTransfer.size() > 0; }
+
+    //! Returns files being uploaded
+    REALITYDATAPLATFORM_EXPORT size_t GetFileCount() { return m_filesToTransfer.size(); }
+
+    //! Returns full size of upload
+    REALITYDATAPLATFORM_EXPORT uint64_t GetFullTransferSize() { return m_fullTransferSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
@@ -928,12 +935,12 @@ public:
     //! Returns a RealityDataFolder or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, RawServerResponse& rawResponse);
 
-    //! Returns a list of RealityData objects that belongs to the enterprise.
-    //! Notice that the enterprise is not usually provided and the enterprise of the currently
+    //! Returns a list of RealityData objects that belongs to the organization.
+    //! Notice that the organization is not usually provided and the organization of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByEnterprisePagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByOrganizationPagedRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse);
