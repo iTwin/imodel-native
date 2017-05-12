@@ -326,7 +326,7 @@ BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
 //static
 size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
     {
-#ifdef UNUSED_VARIABLE
+#ifdef COMMENT_OUT_UNUSED_VARIABLE
     auto postProcessToken = [&token] (WStringR tokenW, size_t currentIndex)
         {
         tokenW.Trim();

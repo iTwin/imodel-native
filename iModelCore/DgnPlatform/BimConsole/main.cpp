@@ -10,7 +10,9 @@
 #include "BimConsole.h"
 #include <Logging/bentleylogging.h>
 
+#ifdef COMMENT_OUT_UNUSED_VARIABLE
 static WCharCP s_configFileName = L"logging.config.xml";
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC

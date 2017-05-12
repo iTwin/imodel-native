@@ -2,7 +2,7 @@
 #
 #  $Source: BimConsole/BimConsole.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %if !defined (BuildContext)
@@ -47,23 +47,9 @@ EXE_NAME    = $(appName)
 EXE_OBJS    = $(MultiCompileObjectList)
 EXE_LOPT1   = -entry:wmainCRTStartup
 
-LINKER_LIBRARIES               =    $(SubpartLibs)Bentley.lib \
-                                    $(SubpartLibs)BeSQLite.lib          \
-                                    $(SubpartLibs)BeSQLiteEC.lib        \
-                                    $(SubpartLibs)BeLibXml2.lib         \
-                                    $(SubpartLibs)BentleyGeom.lib       \
-                                    $(SubpartLibs)DgnPlatform.lib       \
-                                    $(SubpartLibs)ECObjects.lib         \
-                                    $(SubpartLibs)Units.lib             \
-                                    $(SubpartLibs)BeJsonCpp.lib         \
-                                    gdi32.lib                           \
-                                    user32.lib                          \
-
-
-LINKER_LIBRARIES_DELAYLOADED   =  
+LINKER_LIBRARIES = $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)] $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
 
 %include $(SharedMki)linktool.mki
-
 
 $(BuildContext)Delivery/logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
