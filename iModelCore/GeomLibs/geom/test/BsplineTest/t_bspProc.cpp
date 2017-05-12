@@ -3,7 +3,7 @@
 #include "testHarness.h"
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
-static int s_noisy = 0;
+//static int s_noisy = 0;
 
 
 
