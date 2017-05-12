@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImageppLib.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,6 +15,7 @@
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
 #include <ImagePP/h/HmrMacro.h>
+#include <Bentley/Desktop/FileSystem.h> // *** NEEDS WORK: Why are we using desktop-only functions?
 
 //----------------------------------------------------------------------------------------
 //              File format availability
@@ -366,7 +367,7 @@ public:
 #endif
 
         // non-portable but work on some platform.
-        if(BeFileNameStatus::Success == BeFileName::BeGetTempPath(tempFileName))
+        if(BeFileNameStatus::Success == Desktop::FileSystem::BeGetTempPath(tempFileName))
             return BSISUCCESS;
             
         BeAssert(!"_GetDefaultTempDirectory must be implemented by Imagepp Host in ImageppLibAdmin implementation.");
