@@ -201,6 +201,8 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
+    RoadRailCategoryModel::SetUp(dgndb);
+
     DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());    
     if (DgnDbStatus::Success != status)
         {

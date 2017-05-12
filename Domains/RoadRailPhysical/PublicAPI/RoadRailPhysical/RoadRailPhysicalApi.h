@@ -10,7 +10,6 @@
 #include <DgnPlatform/DgnDb.h>
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
-#include <Costing/CostingApi.h>
 
 #ifdef __ROADRAILPHYSICAL_BUILD__
 #define ROADRAILPHYSICAL_EXPORT EXPORT_ATTRIBUTE
