@@ -64,54 +64,17 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-%if $(TARGET_PLATFORM)=="Android"
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)snappy$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)lzma$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeLibxml2$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeomSerialization$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeIcu4c$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeLibJpegTurbo$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BePng$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BaseGeoCoord$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)freetype2$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeJavaScript$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)UILayout$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCsmapStatic$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)BeCurl$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libbase$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libplatform$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_libsampler$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)v8_snapshot$(stlibext)
-    DLM_OBJECT_FILES + $(BuildContextLibsDirectory)$(libprefix)scz_compress$(stlibext)    
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
 
+%if $(TARGET_PLATFORM) != "WinRT"
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
-    %include dlmlink.mki
-%else
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
-
-    %if $(TARGET_PLATFORM) != "WinRT"
-        LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
-    %endif
-
-    %include $(sharedMki)LinkLibrary.mki
 %endif
+
+%include $(sharedMki)LinkLibrary.mki

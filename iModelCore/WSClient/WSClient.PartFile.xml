@@ -23,7 +23,7 @@
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesClient-Library"/>
-        <SubPart PartName="WebServicesClient-Library-Android"/>
+        <SubPart PartName="WebServicesClient-Library-Android" LibType="Static"/>
         <SubPart PartName="WSClient-Xliffs"/>
     </Part>
 
@@ -48,7 +48,7 @@
     </Part>
 
     <Part Name="WebServicesClient-Android" OnlyPlatforms="Android*">
-        <SubPart PartName="WebServicesClient-Library-Android" />
+        <SubPart PartName="WebServicesClient-Library-Android" LibType="Static" />
     </Part>
 
     <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
@@ -89,8 +89,8 @@
         <SubPart PartName="ECDbLibrary"                   PartFile="ECDb"        Repository="ECDb" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
-            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
+            <Libs>Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -101,7 +101,7 @@
     <Part Name="WebServicesCache">
         <SubPart PartName="WebServicesCache-PublicAPI" />
         <SubPart PartName="WebServicesCache-Library" />
-        <SubPart PartName="WebServicesCache-Library-Android" />
+        <SubPart PartName="WebServicesCache-Library-Android" LibType="Static" />
         <SubPart PartName="WebServicesCache-Schemas" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
@@ -127,8 +127,8 @@
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)WebServicesCache.so</Libs>
-            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+            <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -149,7 +149,7 @@
     <Part Name="iModelHubClient">
         <SubPart PartName="iModelHubClient-PublicAPI" />
         <SubPart PartName="iModelHubClient-Library" />
-        <SubPart PartName="iModelHubClient-Library-Android" />
+        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
         <SubPart PartName="WSClient-Xliffs" />
         <SubPart PartName="iModelHubClient-Xliffs" />
     </Part>
@@ -174,8 +174,8 @@
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)iModelHubClient.so</Libs>
-            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)iModelHubClient.so</Assemblies>
+            <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -210,7 +210,7 @@
 
     <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
-        <SubPart PartName="ConnectWebServicesClientC-Library-Android" />
+        <SubPart PartName="ConnectWebServicesClientC-Library-Android" LibType="Static" />
     </Part>
 
     <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
@@ -233,8 +233,8 @@
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC.so</Libs>
-            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
+            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -427,7 +427,7 @@
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="iModelHubClient-Library" />
-        <SubPart PartName="iModelHubClient-Library-Android" />
+        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
