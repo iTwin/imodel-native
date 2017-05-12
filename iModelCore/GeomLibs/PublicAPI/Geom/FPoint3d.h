@@ -569,11 +569,6 @@ static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFact
 //! @param [in] scaleFactor2 multiplier.
 static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1, DVec3dCR vector2, double scaleFactor2);
 
-//! @description Returns a scalar multiple of a FPoint3d
-//! @param [in] vector input vector
-//! @param [in] scale scale factor
-static FPoint3d FromScale (FPoint3d point, double scale);
-
 //! @description Returns a linear combination of points
 //! @param [in] point0 first point
 //! @param [in] scale0  first scale
