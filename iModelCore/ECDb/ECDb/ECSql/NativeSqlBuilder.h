@@ -20,7 +20,6 @@ struct ECSqlParameter;
 struct NativeSqlBuilder final
     {
     public:
-
         typedef std::vector<NativeSqlBuilder> List;
         typedef std::vector<List> ListOfLists;
 
@@ -50,10 +49,6 @@ struct NativeSqlBuilder final
         NativeSqlBuilder& Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
         NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
         NativeSqlBuilder& Append(Utf8CP classIdentifier, Utf8CP identifier);
-        NativeSqlBuilder& Append(BinarySqlOperator);
-        NativeSqlBuilder& Append(BooleanSqlOperator);
-        NativeSqlBuilder& Append(SqlSetQuantifier);
-        NativeSqlBuilder& Append(UnarySqlOperator);
 
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
 

@@ -273,7 +273,7 @@ void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& update
     if (classIdCol.GetPersistenceType() == PersistenceType::Physical)
         {
         //class id is persisted so append the class id literal to the SQL
-        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classMap.GetClass().GetId());
+        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(classMap.GetClass().GetId());
         }
 
     //add WHERE clause so that the right row in the end table is updated

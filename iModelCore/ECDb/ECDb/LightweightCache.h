@@ -30,7 +30,12 @@ struct LightweightCache final: NonCopyableClass
             Source = (int) MapStrategy::ForeignKeyRelationshipInSourceTable,
             Target = (int) MapStrategy::ForeignKeyRelationshipInTargetTable,
             };
-        struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
+
+        struct CompareDbTableById
+            {
+            bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }
+            };
+
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
         typedef bmap<DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;

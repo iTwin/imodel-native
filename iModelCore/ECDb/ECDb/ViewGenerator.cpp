@@ -576,7 +576,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         DbColumn const* fkKey = to->FindFirst(DbColumn::Kind::ECInstanceId);
         viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetName().c_str());
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
-        viewSql.Append(BooleanSqlOperator::EqualTo).AppendEscaped(to->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+        viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(to->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
         }
 
     return SUCCESS;
@@ -745,10 +745,10 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 if (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
                     classIdFilter.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(classIdStr).Append(")");
                 else
-                    classIdFilter.Append(BooleanSqlOperator::EqualTo).Append(classIdStr);
+                    classIdFilter.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(classIdStr);
 
                 //We always have a WHERE so always add AND operator
-                view.AppendSpace().Append(BooleanSqlOperator::And).AppendSpace().Append(classIdFilter);
+                view.AppendSpace().Append(ExpHelper::ToSql(BooleanSqlOperator::And)).AppendSpace().Append(classIdFilter);
                 }
             }
         unionList.push_back(view);
@@ -1295,7 +1295,7 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSql() const
         .AppendEscaped(GetSqlTableAlias())
         .AppendDot()
         .AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
-        .Append(BooleanSqlOperator::EqualTo)
+        .Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo))
         .AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
 
     return sql;

@@ -147,7 +147,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
             if (exp.HasParentheses())
                 nativeSqlBuilder.AppendParenLeft();
 
-            nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(exp.GetOperator()).AppendSpace().Append(rhsSqlTokens[i]);
+            nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(ExpHelper::ToSql(exp.GetOperator())).AppendSpace().Append(rhsSqlTokens[i]);
 
             if (exp.HasParentheses())
                 nativeSqlBuilder.AppendParenRight();
@@ -234,13 +234,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     for (size_t i = 0; i < nativeSqlSnippetCount; i++)
         {
         if (!isFirstSnippet)
-            sqlBuilder.AppendSpace().Append(logicalCompoundOp).AppendSpace();
+            sqlBuilder.AppendSpace().Append(ExpHelper::ToSql(logicalCompoundOp)).AppendSpace();
 
         sqlBuilder.Append(lhsNativeSqlSnippets[i]);
         if (wrapOpInSpaces)
             sqlBuilder.AppendSpace();
 
-        sqlBuilder.Append(op);
+        sqlBuilder.Append(ExpHelper::ToSql(op));
         if (wrapOpInSpaces)
             sqlBuilder.AppendSpace();
 
@@ -1176,7 +1176,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
-    sql.Append(BooleanSqlOperator::EqualTo);
+    sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
     }
 
     {
@@ -1224,7 +1224,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
-    sql.Append(BooleanSqlOperator::EqualTo);
+    sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
     }
 
     {
@@ -1277,7 +1277,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     nativeSql.AppendParenLeft();
 
     if (exp.GetSetQuantifier() != SqlSetQuantifier::NotSpecified)
-        nativeSql.Append(exp.GetSetQuantifier()).AppendSpace();
+        nativeSql.Append(ExpHelper::ToSql(exp.GetSetQuantifier())).AppendSpace();
 
     ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, exp);
     if (!stat.IsSuccess())
@@ -1431,14 +1431,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativ
 
     BeAssert(unaryOperandSqlBuilders.size() <= 1 && "UnaryExp with Points and non-primitive types not supported yet.");
 
-    const UnarySqlOperator unaryOp = exp.GetOperator();
     for (NativeSqlBuilder const& unaryOperandSqlBuilder : unaryOperandSqlBuilders)
         {
         NativeSqlBuilder unaryExpBuilder;
         if (exp.HasParentheses())
             unaryExpBuilder.AppendParenLeft();
 
-        unaryExpBuilder.Append(unaryOp).Append(unaryOperandSqlBuilder);
+        unaryExpBuilder.Append(ExpHelper::ToSql(exp.GetOperator())).Append(unaryOperandSqlBuilder);
 
         if (exp.HasParentheses())
             unaryExpBuilder.AppendParenRight();

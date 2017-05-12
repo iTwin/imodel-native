@@ -19,6 +19,60 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2013
+//+===============+===============+===============+===============+===============+======
+enum class SqlSetQuantifier
+    {
+    NotSpecified,
+    Distinct,
+    All,
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      04/2013
+//+===============+===============+===============+===============+===============+======
+enum class BinarySqlOperator
+    {
+    Plus,
+    Minus,
+    Divide,
+    Multiply,
+    Modulo,
+    ShiftLeft,
+    ShiftRight,
+    BitwiseOr,
+    BitwiseAnd,
+    BitwiseXOr,
+    Concat
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2013
+//+===============+===============+===============+===============+===============+======
+enum class BooleanSqlOperator
+    {
+    EqualTo,
+    NotEqualTo,
+    LessThan,
+    LessThanOrEqualTo,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+    Is,
+    IsNot,
+    In,
+    NotIn,
+    Between,
+    NotBetween,
+    Like,
+    NotLike,
+    Or,
+    And,
+    Match,
+    NotMatch
+    };
+
+
 //WIP_ECSQL: PropertyPath below should be replaced by ECSqlPropertyPath, PropertyNamePath, and ECSqlPropertyPathBuilder
 typedef bvector<bpair<Utf8String, int>> PropertyNamePath;
 
