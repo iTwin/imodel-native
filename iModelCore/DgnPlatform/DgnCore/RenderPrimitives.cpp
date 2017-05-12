@@ -46,6 +46,7 @@ static FPoint3d toFPoint3d(DPoint3dCR dpoint)
     return fpoint;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -55,6 +56,14 @@ static FPoint2d toFPoint2d(DPoint2dCR dpoint)
     fpoint.x = dpoint.x;
     fpoint.y = dpoint.y;
     return fpoint;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint3d fromFPoint3d(FPoint3d const& fPoint) 
+    { 
+    return DPoint3d::From ((double) fPoint.x, (double) fPoint.y, (double) fPoint.z); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,10 +521,16 @@ void Mesh::InitEdges() const
             {
             if (2 == edge.second.m_faceCount)
                 {
-                // Potential silhouettes.
-                m_invisibleEdges.push_back(thisEdge);
-                m_invisibleEdgeNormals0.push_back(triangleNormals.at(edge.second.m_faceIndices[0]));
-                m_invisibleEdgeNormals1.push_back(triangleNormals.at(edge.second.m_faceIndices[1]));
+                FPoint3d const&  normal0 = triangleNormals.at(edge.second.m_faceIndices[0]);
+                FPoint3d const&  normal1 = triangleNormals.at(edge.second.m_faceIndices[1]);
+
+                if (!fromFPoint3d(normal0).IsParallelTo(fromFPoint3d(normal1)))      // TBD.  Switch to doing in floats when FPoint3d API available.
+                    {
+                    // Potential silhouettes.
+                    m_invisibleEdges.push_back(thisEdge);
+                    m_invisibleEdgeNormals0.push_back(normal0);
+                    m_invisibleEdgeNormals1.push_back(normal1);
+                    }
                 }
             }
         }
@@ -545,13 +560,11 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
 
-#ifdef NOTNOW
         if (args.m_invisibleEdgesArgs.Init(*this) &&
             (thisGraphic = system._CreateInvisibleEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
-#endif
         }
-    else
+    else                           
         {
         if (args.m_polylineArgs.Init(*this) &&
             (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
@@ -1753,7 +1766,7 @@ void MeshArgs::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
+bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
     {
     if (mesh.VisibleEdges().empty())
         return false;
@@ -1772,9 +1785,9 @@ bool  RenderVisibleMeshEdgesArgs::Init(MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderInvisibleMeshEdgesArgs::Init(MeshCR mesh)
+bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
     {
-    if (mesh.VisibleEdges().empty())
+    if (mesh.InvisibleEdges().empty())
         return false;
 
     m_points = mesh.Points().data();

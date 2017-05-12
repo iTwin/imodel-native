@@ -833,7 +833,7 @@ struct PolylineArgs : IndexedPolylineArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderVisibleMeshEdgesArgs : VisibleMeshEdgesArgs
+struct RenderMeshEdgeArgs : MeshEdgeArgs
 {
     bvector<uint32_t>               m_colorTable;
 
@@ -844,7 +844,7 @@ struct RenderVisibleMeshEdgesArgs : VisibleMeshEdgesArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderInvisibleMeshEdgesArgs : InvisibleMeshEdgesArgs
+struct RenderSilhouetteEdgeArgs : SilhouetteEdgeArgs
 {
     bvector<uint32_t>               m_colorTable;
 
@@ -859,8 +859,8 @@ struct GetMeshGraphicsArgs
 {
     PolylineArgs                    m_polylineArgs;
     MeshArgs                        m_meshArgs;
-    RenderVisibleMeshEdgesArgs      m_visibleEdgesArgs;
-    RenderInvisibleMeshEdgesArgs    m_invisibleEdgesArgs;
+    RenderMeshEdgeArgs      m_visibleEdgesArgs;
+    RenderSilhouetteEdgeArgs       m_invisibleEdgesArgs;
 };
 
 //=======================================================================================
