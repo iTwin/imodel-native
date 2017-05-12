@@ -41,6 +41,7 @@ struct LightweightCache final: NonCopyableClass
         mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
+        mutable bmap<ECN::ECClassId, bset<ECN::ECClassId>> m_contraintClassDirectRelationships;
 
         ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
         bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
@@ -58,6 +59,7 @@ struct LightweightCache final: NonCopyableClass
         //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
+        bset<ECN::ECClassId> const& GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
 
         //For a end table relationship class map, the storage description provides horizontal partitions
         //For the end table's constraint classes - not for the relationship itself.

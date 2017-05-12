@@ -133,15 +133,15 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
  //------------------------------------------------------------------------------------------
  //@bsimethod                                                    Affan.Khan       05 / 2017
  //-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap)
+BentleyStatus ColumnMapContext::QueryDirectEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap)
     {
     std::vector<DbTable*> const& tables = classMap.GetTables();
     ECDbCR ecdb = classMap.GetDbMap().GetECDb();
     LightweightCache const& lwc = ecdb.Schemas().GetDbMap().GetLightweightCache();
     //This should include relationship that the mixin have added to current class
-    for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : lwc.GetRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
+    for (ECN::ECClassId constraintClassId : lwc.GetDirectRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
         {
-        ECClassCP relClass = ecdb.Schemas().GetClass(relKey.first);
+        ECClassCP relClass = ecdb.Schemas().GetClass(constraintClassId);
         BeAssert(relClass != nullptr);
         ClassMap const* relMap = ecdb.Schemas().GetDbMap().GetClassMap(*relClass);
         if (relMap == nullptr || relMap->GetTables().empty())
@@ -331,6 +331,10 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
             return ERROR;
 
+        //Following is need for multisession import where base class already persisted.
+        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+            return ERROR;
+
         if (base == nullptr)
             {
             size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().size();
@@ -347,7 +351,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -366,7 +370,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
                 return ERROR;
             }
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
+        if (QueryDirectEndTableRelationshipMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
         if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
@@ -766,8 +770,8 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
     :m_classMap(classMap), m_overflowTable(nullptr), m_primaryOrJoinedTable(&m_classMap.GetJoinedOrPrimaryTable()), m_maxSharedColumnCount(-1), m_columnResolutionScope(nullptr)
     {
     m_useSharedColumnStrategy = (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes);
-    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().IsValid())
-        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetSharedColumnCount().Value();
+    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
+        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().Value();
     }
 
 //------------------------------------------------------------------------------------------
@@ -848,7 +852,7 @@ ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
 //-----------------------------------------------------------------------------------------
 ClassMapColumnFactory::ColumnResolutionScope::~ColumnResolutionScope()
     {
-#ifndef NDEBUG
+#if 0
     if (m_init)
         {
         LOG.debugv("<<<<<<<<<<<<<<<<<<<< (%s <<<<<<<<<<<<<<<<<<<<)", m_classMap.GetClass().GetName().c_str());

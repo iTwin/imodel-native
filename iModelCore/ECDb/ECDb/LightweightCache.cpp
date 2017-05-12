@@ -106,6 +106,37 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
+bset<ECN::ECClassId> const& LightweightCache::GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const
+    {
+    if (m_contraintClassDirectRelationships.empty())
+        {
+        CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+            "SELECT RCC.ClassId, RC.RelationshipClassId  FROM ec_RelationshipConstraintClass RCC "
+            "INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
+            "GROUP BY RCC.ClassId, RC.RelationshipClassId ");
+        
+        ECClassId oldCurrentClassId;
+        bset<ECN::ECClassId>* relationships = nullptr;
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
+            ECClassId relationshipClassId = stmt->GetValueId<ECClassId>(1);
+            if (oldCurrentClassId != constraintClassId)
+                {
+                oldCurrentClassId = constraintClassId;
+                relationships = &m_contraintClassDirectRelationships[constraintClassId];
+                }
+        
+            relationships->insert(relationshipClassId);
+            }
+        }
+
+    return m_contraintClassDirectRelationships[constraintId];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
 bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::LoadRelationshipConstraintClasses(ECN::ECClassId constraintClassId) const
     {
     auto itor = m_relationshipClassIdsPerConstraintClassIds.find(constraintClassId);
@@ -294,6 +325,7 @@ void LightweightCache::Reset()
     m_storageDescriptions.clear();
     m_relationshipPerTable.clear();
     m_tablesPerClassId.clear();
+    m_contraintClassDirectRelationships.clear();
     }
 
 

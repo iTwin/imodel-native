@@ -69,7 +69,7 @@ struct ColumnMapContext
         static BentleyStatus QueryLocalColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryInheritedColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryDerivedColumnMaps(ColumnMaps&, ClassMap const&);
-        static BentleyStatus QueryEndTableRelationshipMaps(ColumnMaps&, ClassMap const&);
+        static BentleyStatus QueryDirectEndTableRelationshipMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryMixinColumnMaps(ColumnMaps&, ClassMap const&, std::vector<ECN::ECClassCP> const*);
         static BentleyStatus FindMixins(std::vector<ECN::ECClassCP>&, ECDbCR, ECN::ECClassId);
         static ClassMap const*  FindMixinImplementation(ECDbCR, ECN::ECClassCR, DbTableId, ECN::ECClassId);
