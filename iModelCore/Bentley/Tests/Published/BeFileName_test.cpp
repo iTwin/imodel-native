@@ -8,6 +8,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <vector>
+#include <Bentley/Desktop/FileSystem.h>
 
 #if defined (BENTLEY_WIN32)
     #include "Shlwapi.h"
@@ -1230,12 +1231,12 @@ TEST (BeFileNameTests, LongPaths)
     ASSERT_TRUE (fileName.IsDirectory());
 
     uint64_t freeBytes = 0;
-    fileNameStatus = BeFileName::BeGetDiskFreeSpace (freeBytes, fileName);
+    fileNameStatus = Desktop::FileSystem::BeGetDiskFreeSpace (freeBytes, fileName);
     ASSERT_TRUE (BeFileNameStatus::Success == fileNameStatus);
     ASSERT_TRUE (freeBytes > 0);
 
     freeBytes = 0;
-    fileNameStatus = BeFileName::BeGetDiskFreeSpace (freeBytes, fileName.GetName());
+    fileNameStatus = Desktop::FileSystem::BeGetDiskFreeSpace (freeBytes, fileName.GetName());
     ASSERT_TRUE (BeFileNameStatus::Success == fileNameStatus);
     ASSERT_TRUE (freeBytes > 0);
 
@@ -1830,7 +1831,7 @@ TEST (BeFileNameTests, BeFileNameCheckAccessReadWrite)
 // Desc: Testing of BeGetDiskFreeSpace method.
 // Expected Result: File name has no quotes so unicode should also not change
 //---------------------------------------------------------------------------------------
-TEST (BeFileNameTests, BeFileNameBeGetDiskFreeSpace)
+TEST (BeFileNameTests, FileSystemBeGetDiskFreeSpace)
     {
     BeFileNameStatus status;
     BeFileName outRoot;
@@ -1870,7 +1871,7 @@ TEST (BeFileNameTests, BeFileNameBeGetDiskFreeSpace)
     WCharCP fullPath = path;
     BeFileName completePath (fullPath);
 
-    BeFileNameStatus    diskSpaceStatus = BeFileName:: BeGetDiskFreeSpace(freeBytes, fullPath);
+    BeFileNameStatus    diskSpaceStatus = Desktop::FileSystem::BeGetDiskFreeSpace(freeBytes, fullPath);
 
     EXPECT_TRUE(BeFileNameStatus::Success ==diskSpaceStatus)<<(uint32_t)diskSpaceStatus;
 

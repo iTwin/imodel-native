@@ -2,11 +2,13 @@
 |
 |  $Source: Tests/NonPublished/FileNameTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeFileName.h>
+#include <Bentley/Desktop/FileSystem.h>
 #if defined(_WIN32) && !defined(BENTLEY_WINRT)
 #include <Windows.h>
 #endif
@@ -29,7 +31,7 @@ TEST(BeFileName_Tests, GetCurrentWorkingDirectory)
     // Get the current working directory
     GetCurrentDirectory(BUFFER_SIZE, currentDirectoryExpected);
     BeFileName bnew(currentDirectoryExpected);
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::GetCwd(currentDirectory));
+    ASSERT_EQ(BeFileNameStatus::Success, Desktop::FileSystem::GetCwd(currentDirectory));
     EXPECT_STREQ(bnew.GetName(), currentDirectory.c_str());
     }
 
@@ -44,7 +46,7 @@ TEST(BeFileName_Tests, BeGetTempPath)
     WChar wchPath[MAX_PATH];
     if (GetTempPathW(MAX_PATH, wchPath))
         strTempPath = wchPath;
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeGetTempPath(bf1));
+    ASSERT_EQ(BeFileNameStatus::Success, Desktop::FileSystem::BeGetTempPath(bf1));
     EXPECT_STREQ(strTempPath.c_str(), bf1.GetName()) << bf1.GetName();
     }
 
@@ -57,7 +59,7 @@ TEST(BeFileName_Tests, BeGetTempFileName)
     BeFileName befile(lpPathBuffer);
     BeFileName fileName(L"");
     WCharCP prefix = L"DEMO";
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeGetTempFileName(fileName, befile, prefix));
+    ASSERT_EQ(BeFileNameStatus::Success, Desktop::FileSystem::BeGetTempFileName(fileName, befile, prefix));
     WCharCP expectedFileName = fileName.GetName();
     EXPECT_TRUE(PathFileExistsW(expectedFileName));
     }
