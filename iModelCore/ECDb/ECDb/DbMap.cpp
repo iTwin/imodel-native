@@ -304,10 +304,6 @@ BentleyStatus DbMap::DoMapSchemas() const
             return ERROR;
         }
 
-    //need to add classid cols where necessary for classes before processing relationships
-    if (SUCCESS != FinishTableDefinitions())
-        return ERROR;
-
 
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
@@ -328,8 +324,7 @@ BentleyStatus DbMap::DoMapSchemas() const
             return ERROR;
         }
 
-    //now create class id cols for the relationship classes
-    return FinishTableDefinitions();
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -697,70 +692,6 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
         }
 
     return m_dbSchema.CreateOrUpdateIndexes();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DbMap::FinishTableDefinitions() const
-    {
-    AssertIfIsNotImportingSchema();
-
-    bmap<DbTable*, bset<ClassMap*>> classMapsByTable;
-    for (auto const& entry : m_classMapDictionary)
-        {
-        if (entry.second->GetType() == ClassMap::Type::RelationshipEndTable ||
-            entry.second->GetType() == ClassMap::Type::NotMapped)
-            continue;
-
-        DbTable* primaryTable = &entry.second->GetPrimaryTable();
-        DbTable* joinedTable = &entry.second->GetJoinedOrPrimaryTable();
-        classMapsByTable[primaryTable].insert(entry.second.get());
-        if (primaryTable != joinedTable)
-            classMapsByTable[joinedTable].insert(entry.second.get());
-        }
-
-    for (bpair<DbTable*, bset<ClassMap*>> const& kvPair : classMapsByTable)
-        {
-        DbTable& table = *kvPair.first;
-        bset<ClassMap*> const& classMaps = kvPair.second;
-        bool canEdit = table.GetEditHandleR().CanEdit();
-        if (!canEdit) 
-            table.GetEditHandleR().BeginEdit();
-
-        if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing ||
-            table.GetECClassIdColumn().GetPersistenceType() != PersistenceType::Virtual)
-            continue;
-
-        ClassMap const* firstClassMap = *classMaps.begin();
-        bool makeNonVirtual = false;
-        if (classMaps.size() == 1)
-            makeNonVirtual = firstClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy;
-        else
-            makeNonVirtual = classMaps.size() > 1;
-
-        if (!makeNonVirtual)
-            continue;
-
-        //if this assertion never fires, we can remove the method
-        BeAssert(false && "Violating assumption that updating ECClassId col virtuality should not be necessary anymore.");
-
-        if (const_cast<DbColumn*> (&table.GetECClassIdColumn())->MakeNonVirtual() != SUCCESS)
-            {
-            BeAssert(false && "Changing persistence type from virtual to persisted failed");
-            return ERROR;
-            }
-
-        Nullable<Utf8String> indexName("ix_");
-        indexName.ValueR().append(table.GetName()).append("_ecclassid");
-        if (GetDbSchemaR().CreateIndex(table, indexName, false, {&table.GetECClassIdColumn()}, false, true, ECClassId()) == nullptr)
-            return ERROR;
-
-        if (!canEdit) 
-            table.GetEditHandleR().EndEdit();
-        }
-
-    return SUCCESS;
     }
 
 

@@ -203,7 +203,6 @@ public:
     DbTable& GetTableR() const { return m_table; }
     Constraints& GetConstraintsR() { return m_constraints; };
     void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
-    BentleyStatus MakeNonVirtual();
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
 

@@ -1718,27 +1718,6 @@ BentleyStatus DbColumn::SetKind(Kind kind)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbColumn::MakeNonVirtual()
-    {
-    if (m_table.GetEditHandleR().AssertNotInEditMode())
-        return ERROR;
-
-    if (m_persistenceType == PersistenceType::Physical)
-        return SUCCESS;
-
-    if (m_table.GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual table cannot have persistence column");
-        return ERROR;
-        }
-
-    m_persistenceType = PersistenceType::Physical;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
 //--------------------------------------------------------------------------------------
 //static 
 bool DbColumn::IsCompatible(DbColumn::Type target, DbColumn::Type source)

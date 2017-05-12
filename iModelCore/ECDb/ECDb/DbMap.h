@@ -34,7 +34,6 @@ struct DbMap final : NonCopyableClass
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
         BentleyStatus PurgeOrphanTables() const;
-        BentleyStatus FinishTableDefinitions() const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
