@@ -19,9 +19,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct DbMap final : NonCopyableClass
     {
-    public:
-        typedef bmap<DbTable*, bset<ClassMap*>> ClassMapsByTable;
-
     private:
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
@@ -37,10 +34,8 @@ struct DbMap final : NonCopyableClass
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
         BentleyStatus PurgeOrphanTables() const;
-        BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
-        BentleyStatus UpdateECClassIdColumnIfRequired(DbTable&, bset<ClassMap*> const&) const;
+        BentleyStatus FinishTableDefinitions() const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
-        ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);

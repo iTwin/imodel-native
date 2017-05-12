@@ -2167,7 +2167,7 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, MapStrategyExtendedInfo const& mapStrat, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     BeAssert(!primaryKeyColumnName.empty() && "should always be set (either to user value or default value) by this time");
 
@@ -2205,17 +2205,34 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
         return table;
         }
 
-    if (tableType != DbTable::Type::Existing)
-        return CreateTableForOtherStrategies(dbSchema, tableName, tableType, isVirtual, primaryKeyColumnName, exclusiveRootClassId, primaryTable);
+    PersistenceType classIdColPersistenceType;
+    switch (mapStrat.GetStrategy())
+        {
+            case MapStrategy::OwnTable:
+            case MapStrategy::ExistingTable:
+                classIdColPersistenceType = PersistenceType::Virtual;
+                break;
 
-    return CreateTableForExistingTableStrategy(dbSchema, tableName, primaryKeyColumnName, exclusiveRootClassId);
+            case MapStrategy::TablePerHierarchy:
+                classIdColPersistenceType = PersistenceType::Physical;
+                break;
+
+            default:
+                BeAssert(false && "Should have been handled before");
+                return nullptr;
+        }
+
+    if (tableType != DbTable::Type::Existing)
+        return CreateTableForOtherStrategies(dbSchema, tableName, tableType, isVirtual, primaryKeyColumnName, classIdColPersistenceType, exclusiveRootClassId, primaryTable);
+
+    return CreateTableForExistingTableStrategy(dbSchema, tableName, primaryKeyColumnName, classIdColPersistenceType, exclusiveRootClassId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle       11/2016
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Physical, exclusiveRootClassId, primaryTable);
     
@@ -2227,16 +2244,8 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
             return nullptr;
         }
 
-    //! We always create a virtual ECClassId column and later change it persistenceType to Persisted if required to.
-    // Index is created on it later in FinishTableDefinition
-    DbColumn* classIdColumn = table->CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
-    if (classIdColumn == nullptr)
-        {
-        BeAssert(false);
+    if (SUCCESS != CreateClassIdColumn(dbSchema, *table, classIdColPersistenceType))
         return nullptr;
-        }
-
-    classIdColumn->GetConstraintsR().SetNotNullConstraint();
 
     return table;
     }
@@ -2245,7 +2254,7 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, ECClassId exclusiveRootClassId)
+DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECClassId exclusiveRootClassId)
     {
     BeAssert(!existingTableName.empty());
     DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, exclusiveRootClassId, nullptr);
@@ -2311,15 +2320,34 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         return nullptr;
         }
 
-    DbColumn* column = table->CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
-    if (column == nullptr)
-        {
-        BeAssert(false);
+    if (SUCCESS != CreateClassIdColumn(dbSchema, *table, classIdColPersistenceType))
         return nullptr;
-        }
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
     return table;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle       05/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus TableMapper::CreateClassIdColumn(DbSchema& dbSchema, DbTable& table, PersistenceType persType)
+    {
+    DbColumn* classIdColumn = table.CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, persType);
+    if (classIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    classIdColumn->GetConstraintsR().SetNotNullConstraint();
+
+    //create index on ECClassId col if it is not virtual
+    if (persType == PersistenceType::Virtual)
+        return SUCCESS;
+
+    Nullable<Utf8String> indexName("ix_");
+    indexName.ValueR().append(table.GetName()).append("_ecclassid");
+    return dbSchema.CreateIndex(table, indexName, false, {classIdColumn}, false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

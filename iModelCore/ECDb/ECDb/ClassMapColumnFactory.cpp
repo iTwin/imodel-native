@@ -341,10 +341,10 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMapColumnFactory::TryGetAvailableColumns(int& sharedColumnThatCanBeCreated, int& sharedColumnThatCanBeReused) const
     {
-    const int maxColumnInBaseTable = 63;
+    const int maxColumnInTable = 63;
     const std::vector<DbColumn const*> physicalColumns = GetTable().FindAll(PersistenceType::Physical);
     const std::vector<DbColumn const*> sharedColumns = GetTable().FindAll(DbColumn::Kind::SharedDataColumn);
-    const int nAvailablePhysicalColumns = maxColumnInBaseTable - (int) physicalColumns.size();
+    const int nAvailablePhysicalColumns = maxColumnInTable - (int) physicalColumns.size();
     sharedColumnThatCanBeReused = 0;
     for (DbColumn const* sharedColumn : sharedColumns)
         if (!IsColumnInUseByClassMap(*sharedColumn))
@@ -360,10 +360,11 @@ BentleyStatus ClassMapColumnFactory::TryGetAvailableColumns(int& sharedColumnTha
 
         sharedColumnThatCanBeCreated = (int) m_maxSharedColumnsBeforeOverflow.Value() - (int)sharedColumns.size();
         if (sharedColumnThatCanBeCreated > nAvailablePhysicalColumns)
-            sharedColumnThatCanBeCreated = nAvailablePhysicalColumns; //restrict avaliable shared columns to avaliable physical columsn
+            sharedColumnThatCanBeCreated = nAvailablePhysicalColumns; //restrict available shared columns to available physical columsn
         }
     else
         {
+        //MaxSharedColumnsBeforeOverflow was not specified in ShareColumns CA -> overflow once table has reached 63 columns
         sharedColumnThatCanBeCreated = nAvailablePhysicalColumns;
         }
 
