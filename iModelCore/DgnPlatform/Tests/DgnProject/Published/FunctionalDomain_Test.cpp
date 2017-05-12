@@ -184,11 +184,11 @@ void FunctionalDomainTests::SetupFunctionalTestDomain()
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
-    DbResult result = FunctionalDomain::GetDomain().ImportSchema(*m_db);
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    SchemaStatus status = FunctionalDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(SchemaStatus::Success, status);
 		
-    result = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    status = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(SchemaStatus::Success, status);
     }
 
 //---------------------------------------------------------------------------------------

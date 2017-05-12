@@ -118,6 +118,26 @@ public:
 };
 
 //=======================================================================================
+//! Status returned by schema validation, import or upgrade routines
+//=======================================================================================
+enum class SchemaStatus
+    {
+    Success = 0,
+    SchemaNotFound,
+    SchemaReadFailed,
+    SchemaTooNew,
+    SchemaTooOld,
+    SchemaUpgradeRequired,
+    SchemaLockFailed,
+    SchemaImportFailed,
+    SchemaDomainNamesMismatched,
+    SchemaInvalid,
+    MergeSchemaRevisionFailed,
+    DbHasLocalChanges,
+    DbIsReadonly
+    };
+
+//=======================================================================================
 //! Development phase of the host application, or of the DgnDb created by the host application
 //! @note These correspond with build environment settings setup by the Product Release Group. 
 //! @see DgnPlatformLib::Host::_SupplyDevelopmentPhase()
@@ -347,7 +367,7 @@ private:
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
     ECN::ECSchemaPtr ReadSchema(ECN::ECSchemaReadContextR schemaContext) const;
-    BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
+    SchemaStatus ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
 
 protected:
     int32_t         m_version;
@@ -410,8 +430,6 @@ public:
     //! Imports (or upgrades) the schema of this domain into the supplied DgnDb.
     //! @remarks 
     //! <ul>
-    //! <li> Use DgnDomains::ImportSchemas() to import or upgrade all domain schemas and
-    //! their references. 
     //! <li> Only used for cases where the schemas of an optional domain are to be imported in. In all other cases 
     //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
@@ -419,7 +437,7 @@ public:
     //! <li> It's recommended that there aren't any local changes (committed or uncommitted) before this call. These 
     //! can be flushed out by creating a revision. See @ref RevisionManager.
     //! </ul>
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb. 
     //! @remarks Only checks if the schema has been imported, and does not do any validation of 
@@ -474,16 +492,18 @@ private:
     void SyncWithSchemas();
     void DeleteHandlers();
 	
-    BeSQLite::DbResult ValidateSchemas();
-    BeSQLite::DbResult DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
-    static BeSQLite::DbResult DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
-    BeSQLite::DbResult DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
-    BeSQLite::DbResult DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
-    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
-
-    BeSQLite::DbResult ImportSchemas();
-    BeSQLite::DbResult UpgradeSchemas();
-    BeSQLite::DbResult InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions);
+    // Imports schemas of all required domains into the DgnDb. 
+    SchemaStatus ImportSchemas();
+    // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
+    SchemaStatus InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions);
+    // Upgrades schemas of all domains already imported into the DgnDb, and of any newly registered required domains. 
+    SchemaStatus UpgradeSchemas();
+    SchemaStatus ValidateSchemas();
+    SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
+    static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
+    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
 
     static Utf8CP ConvertDevelopmentPhaseToString(DevelopmentPhase developmentPhase);
     BeSQLite::DbResult SaveDevelopmentPhase();
