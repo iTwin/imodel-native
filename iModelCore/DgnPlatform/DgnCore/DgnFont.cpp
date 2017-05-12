@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFont.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -848,6 +848,8 @@ void DgnFont::ScaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint
     range.high.y = (range.high.y * scale.y) + offset.y;
     }
 
+static BeMutex s_fontDataSessionMutex;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
@@ -855,8 +857,12 @@ bool DgnFontDataSession::Start()
     {
     if (!m_hasStarted)
         {
-        m_hasStarted = true;
-        m_isValid = ((nullptr != m_data) && (SUCCESS == m_data->_AddDataRef()));
+        BeMutexHolder lock(s_fontDataSessionMutex);
+        if (!m_hasStarted)
+            {
+            m_isValid = ((nullptr != m_data) && (SUCCESS == m_data->_AddDataRef()));
+            m_hasStarted = true;
+            }
         }
     
     return m_isValid;
@@ -867,6 +873,8 @@ bool DgnFontDataSession::Start()
 //---------------------------------------------------------------------------------------
 void DgnFontDataSession::Stop()
     {
+    BeMutexHolder lock(s_fontDataSessionMutex);
+
     if (m_isValid)
         m_data->_ReleaseDataRef();
     

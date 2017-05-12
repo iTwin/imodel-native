@@ -1485,7 +1485,7 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
         State prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
         if (kInside == prevState)
             {
-            output.m_strokes.resize(1);
+            output.m_strokes.resize(output.m_strokes.size()+1);
             output.m_strokes.back().push_back(prevPt);
             }
 
