@@ -881,8 +881,8 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         {
         if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
             {
-            BeAssert(s_noAssert);
             LOG.errorv("Invalid ECSchemaXML: %s element must contain an alias attribute", EC_SCHEMA_ELEMENT);
+            BeAssert(s_noAssert);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }

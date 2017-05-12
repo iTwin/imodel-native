@@ -185,7 +185,7 @@ static int ConvertSchema
     ConversionOptions options
 )
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true, true);
 
     if (options.TargetECXmlVersionMajor == 3)
         context->SetPreserveElementOrder(true);
@@ -371,12 +371,12 @@ int main(int argc, char** argv)
 
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
-    workingDirectory.AppendToPath(L"Assets");
     BeFileName logFilePath(workingDirectory);
     logFilePath.AppendToPath(L"SchemaConverter.logging.config.xml");
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+    workingDirectory.AppendToPath(L"Assets");
 
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);

@@ -13,8 +13,11 @@ using namespace BentleyApi::ECN;
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaValidatorTests : ECTestFixture {};
+struct SchemaConverterTests : ECTestFixture {};
+
+// Test valdiation and conversion of schema validation rules
 Utf8CP oldStandardSchemaNames[] =
-{
+    {
     "Bentley_Standard_CustomAttributes",
     "Bentley_Standard_Classes",
     "Bentley_ECSchemaMap",
@@ -29,14 +32,106 @@ Utf8CP oldStandardSchemaNames[] =
     "Units_Schema",
     "USCustomaryUnitSystemDefaults",
     "ECDbMap"
-};
+    };
 
 Utf8CP newStandardSchemaNames[] =
-{
+    {
     "CoreClasses",
     "CoreCustomAttributes",
     "SchemaLocalizationCustomAttributes",
-};
+    };
+
+Utf8CP badSchemaRoleLabelXml0 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="NoRoleLabelTestSchemaFail0" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "label0 - base refers to" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "label0 - base is referenced by" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" polymorphic = "true">
+                    <Class class="TestClass"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true">
+                    <Class class="TestClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+Utf8CP badSchemaRoleLabelXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RoleLabelTestSchemaFail1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "label1 - base refers to" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "label1 - base is referenced by" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel = "label1 - derived refers to" polymorphic = "true">
+                    <Class class="TestClass"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true">
+                    <Class class="TestClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+Utf8CP badSchemaRoleLabelXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RoleLabelTestSchemaFail2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "label2 - base refers to" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "label2 - base is referenced by" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" polymorphic = "true">
+                    <Class class="TestClass"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel = "label2 - derived is referenced by" polymorphic="true">
+                    <Class class="TestClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+Utf8CP goodSchemaRoleLabelXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RoleLabelTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
+                <Source multiplicity = "(0..*)" roleLabel = "goodLabel - base label source" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Source>
+                <Target multiplicity = "(0..*)" roleLabel = "goodLabel - base label target" polymorphic = "true">
+                    <Class class = "TestClass"/>
+                </Target>
+           </ECRelationshipClass>
+
+           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
+                <BaseClass>Base</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel = "goodLabel - derived label source" polymorphic = "true">
+                    <Class class="TestClass"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel = "goodLabel - derived label target" polymorphic="true" >
+                    <Class class="TestClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
 
 void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaReadContextPtr context, bool shouldPassValidation, Utf8CP message)
     {
@@ -46,6 +141,38 @@ void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaRea
     schema->AddReferencedSchema(*refSchema.get());
     EXPECT_TRUE(shouldPassValidation == ECSchemaValidator::Validate(*schema)) << message;
     schema->RemoveReferencedSchema(*refSchema);
+    }
+
+void CheckRoleLabel(ECSchemaPtr schema, Utf8CP expectedSourceRoleLabel, Utf8CP expectedTargetRoleLabel, bool expectedValidSource, bool expectedValidTarget)
+    {
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassCP ecClass = schema->GetClassCP("TestRelationship"); // Derived class
+    ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+    ECRelationshipConstraintR source = relClass->GetSource();
+    ECRelationshipConstraintR target = relClass->GetTarget();
+
+    if (expectedValidSource && expectedValidTarget)
+        {
+        EXPECT_STREQ(expectedSourceRoleLabel, source.GetInvariantRoleLabel().c_str()) << "Expected a valid source and target, and the source is incorrect";
+        EXPECT_STREQ(expectedTargetRoleLabel, target.GetInvariantRoleLabel().c_str()) << "Expected a valid source and target, and the target is incorrect";
+        EXPECT_TRUE(source.IsRoleLabelDefinedLocally()) << "Expected source and target to be defined locally, but source is not";
+        EXPECT_TRUE(target.IsRoleLabelDefinedLocally()) << "Expected source and target to be defined locally, but target is not";
+        }
+    else if (expectedValidSource)
+        {
+        EXPECT_STREQ(expectedSourceRoleLabel, source.GetInvariantRoleLabel().c_str()) << "Expected a valid source only, and the source is incorrect";
+        EXPECT_STRNE(expectedTargetRoleLabel, target.GetInvariantRoleLabel().c_str()) << "Expected a valid source only. Target should not be correct";
+        EXPECT_TRUE(source.IsRoleLabelDefinedLocally()) << "Expected source to be defined locally";
+        EXPECT_FALSE(target.IsRoleLabelDefinedLocally()) << "Expected just the source to be defined locally, but the target is also defined";
+        }
+    else if (expectedValidTarget)
+        {
+        EXPECT_STREQ(expectedTargetRoleLabel, target.GetInvariantRoleLabel().c_str()) << "Expected a valid target only, and the source is incorrect";
+        EXPECT_STRNE(expectedTargetRoleLabel, source.GetInvariantRoleLabel().c_str()) << "Expected a valid target only. Source should not be correct";
+        EXPECT_TRUE(target.IsRoleLabelDefinedLocally()) << "Expected target to be defined locally";
+        EXPECT_FALSE(source.IsRoleLabelDefinedLocally()) << "Expected just the target to be defined locally, but the source is also defined";
+        }
     }
 
 TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
@@ -271,87 +398,22 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineRoleLabel)
     {
     // Relationship source and target role label must be defined locally
 
-    Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="RoleLabelTestSchemaFail1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="TestClass"/>
-            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
-                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Source>
-                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Target>
-           </ECRelationshipClass>
-
-           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
-                <BaseClass>Base</BaseClass>
-                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
-                    <Class class="TestClass"/>
-                </Source>
-                <Target multiplicity="(0..*)" polymorphic="true">
-                    <Class class="TestClass"/>
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml";
-
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
-    ASSERT_TRUE(schema.IsValid());
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml0, *context);
+    CheckRoleLabel(schema, "label0 - derived refers to", "label0 - derived is referenced by", false, false);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship target and source role label are not locally defined so validation should fail";
+   
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml1, *context);
+    CheckRoleLabel(schema, "label1 - derived refers to", "label1 - derived is referenced by", true, false);
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship target role label is not locally defined so validation should fail";
 
-    Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="RoleLabelTestSchemaFail2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="TestClass"/>
-            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
-                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Source>
-                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Target>
-           </ECRelationshipClass>
-
-           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
-                <BaseClass>Base</BaseClass>
-                <Source multiplicity="(0..1)"  polymorphic = "true">
-                    <Class class="TestClass"/>
-                </Source>
-                <Target multiplicity="(0..*)" roleLabel = "is referenced by" polymorphic="true">
-                    <Class class="TestClass"/>
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml";
-
-    ECSchema::ReadFromXmlString(schema, badSchemaXml2, *context);
-    ASSERT_TRUE(schema.IsValid());
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml2, *context);
+    CheckRoleLabel(schema, "label2 - derived refers to", "label2 - derived is referenced by", false, true);
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship source role label is not locally defined so validation should fail";
-
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="RoleLabelTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="TestClass"/>
-            <ECRelationshipClass typeName = "Base" strength = "referencing" modifier = "Abstract">
-                <Source multiplicity = "(0..*)" roleLabel = "refers to" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Source>
-                <Target multiplicity = "(0..*)" roleLabel = "is referenced by" polymorphic = "true">
-                    <Class class = "TestClass"/>
-                </Target>
-           </ECRelationshipClass>
-
-           <ECRelationshipClass typeName="TestRelationship" description="Test description" displayLabel="Test label" modifier="None" strength="referencing">
-                <BaseClass>Base</BaseClass>
-                <Source multiplicity="(0..1)" roleLabel = "refers to" polymorphic = "true">
-                    <Class class="TestClass"/>
-                </Source>
-                <Target multiplicity="(0..*)" roleLabel = "is referenced by" polymorphic="true" >
-                    <Class class="TestClass"/>
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml";
-
-    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
-    ASSERT_TRUE(schema.IsValid());
+    
+    ECSchema::ReadFromXmlString(schema, goodSchemaRoleLabelXml, *context);
+    CheckRoleLabel(schema, "goodLabel - derived label source", "goodLabel - derived label target", true, true);
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Relationship target and source role label is locally defined so validation should succeed";
     }
 
@@ -644,6 +706,53 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
     ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Abstract constraints are defined locally in source and target so validation should succeed";
+    }
+
+TEST_F(SchemaConverterTests, RelationshipClassMustLocallyDefineRoleLabelConversion)
+    {
+    // Relationship source and target role label must be defined locally. Conversion should fix this validation failure.
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    // Load bad schema 0
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml0, *context);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship target role label is not locally defined so validation should fail";
+    CheckRoleLabel(schema, "label0 - derived refers to", "label0 - derived is referenced by", false, false);
+
+    // Convert the schema
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    CheckRoleLabel(schema, "label0 - base refers to", "label0 - base is referenced by", true, true);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Schema is now converted so validation should succeed";
+
+    // Load bad schema 1
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml1, *context);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship target role label is not locally defined so validation should fail";
+    CheckRoleLabel(schema, "label1 - derived refers to", "label1 - derived is referenced by", true, false);
+
+    // Convert the schema
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    CheckRoleLabel(schema, "label1 - derived refers to", "label1 - base is referenced by", true, true);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Schema is now converted so validation should succeed";
+    
+    // Load bad schema 2
+    ECSchema::ReadFromXmlString(schema, badSchemaRoleLabelXml2, *context);
+    CheckRoleLabel(schema, "label2 - derived refers to", "label2 - derived is referenced by", false, true);
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Relationship source role label is not locally defined so validation should fail";
+    
+    // Convert the schema
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    CheckRoleLabel(schema, "label2 - base refers to", "label2 - derived is referenced by", true, true);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Schema is now converted so validation should succeed";
+
+    // Load good schema 1
+    ECSchema::ReadFromXmlString(schema, goodSchemaRoleLabelXml, *context);
+    CheckRoleLabel(schema, "goodLabel - derived label source", "goodLabel - derived label target", true, true);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Relationship target and source role label is locally defined so validation should succeed";
+
+    // Convert the schema 
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    CheckRoleLabel(schema, "goodLabel - derived label source", "goodLabel - derived label target", true, true);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Schema is now converted so validation should (still) succeed";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
