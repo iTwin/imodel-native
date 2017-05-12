@@ -33,7 +33,7 @@ public:
     static Utf8CP ToSql(SubqueryTestOperator);
     static Utf8CP ToSql(BinarySqlOperator);
     static Utf8CP ToSql(BooleanSqlOperator);
-    static Utf8CP ToSql(UnarySqlOperator);
+    static Utf8CP ToSql(UnaryValueExp::Operator);
     static Utf8CP ToSql(ECSqlType);
     };
 

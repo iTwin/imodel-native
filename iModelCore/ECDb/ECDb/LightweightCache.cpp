@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <vector>
-#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -20,6 +19,65 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
 LightweightCache::LightweightCache(ECDb const& ecdb) : m_ecdb(ecdb) { Reset(); }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintClassId) const
+    {
+    return LoadRelationshipConstraintClasses(constraintClassId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 08/2015
+//---------------------------------------------------------------------------------------
+bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const
+    {
+    return LoadConstraintClassesForRelationships(relClassId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+std::vector<ECClassId> const& LightweightCache::GetClassesForTable(DbTable const& table) const
+    {
+    return LoadClassIdsPerTable(table);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+bset<DbTable const*> const& LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
+    {
+    return LoadTablesForClassId(classId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      10/2015
+//---------------------------------------------------------------------------------------
+LightweightCache::ClassIdsPerTableMap const& LightweightCache::GetHorizontalPartitionsForClass(ECN::ECClassId classId) const
+    {
+    return LoadHorizontalPartitions(classId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const& classMap)  const
+    {
+    const ECClassId classId = classMap.GetClass().GetId();
+    auto it = m_storageDescriptions.find(classId);
+    if (it == m_storageDescriptions.end())
+        {
+        auto des = StorageDescription::Create(classMap, *this);
+        auto desP = des.get();
+        m_storageDescriptions[classId] = std::move(des);
+        return *desP;
+        }
+
+    return *(it->second.get());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -94,15 +152,6 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
 
     return subset;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintClassId) const
-    {
-    return LoadRelationshipConstraintClasses(constraintClassId);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -281,37 +330,6 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle 08/2015
-//---------------------------------------------------------------------------------------
-bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const
-    {
-    return LoadConstraintClassesForRelationships(relClassId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-std::vector<ECClassId> const& LightweightCache::GetClassesForTable(DbTable const& table) const
-    {
-    return LoadClassIdsPerTable(table);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-bset<DbTable const*> const& LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
-    {
-    return LoadTablesForClassId(classId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      10/2015
-//---------------------------------------------------------------------------------------
-LightweightCache::ClassIdsPerTableMap const& LightweightCache::GetHorizontalPartitionsForClass(ECN::ECClassId classId) const
-    {
-    return LoadHorizontalPartitions(classId);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -328,24 +346,6 @@ void LightweightCache::Reset()
     m_contraintClassDirectRelationships.clear();
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const& classMap)  const
-    {
-    const ECClassId classId = classMap.GetClass().GetId();
-    auto it = m_storageDescriptions.find(classId);
-    if (it == m_storageDescriptions.end())
-        {
-        auto des = StorageDescription::Create(classMap, *this);
-        auto desP = des.get();
-        m_storageDescriptions[classId] = std::move(des);
-        return *desP;
-        }
-
-    return *(it->second.get());
-    }
 
 
 //****************************************************************************************

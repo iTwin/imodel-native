@@ -11,23 +11,31 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct StorageDescription;
 
+//======================================================================================
+// @bsiclass                                                 Affan.Khan         09/2014
+//======================================================================================
 struct LightweightCache final: NonCopyableClass
     {
     public:
-        enum class RelationshipEnd : int
+        enum class RelationshipEnd
             {
-            None = 0,
             Source = 1,
             Target = 2,
             Both = Source | Target
             };
-        enum class RelationshipType : int
+
+        enum class RelationshipType
             {
             Link = 0,
             Source = (int) MapStrategy::ForeignKeyRelationshipInSourceTable,
             Target = (int) MapStrategy::ForeignKeyRelationshipInTargetTable,
             };
-        struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
+
+        struct CompareDbTableById
+            {
+            bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }
+            };
+
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
         typedef bmap<DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
@@ -58,7 +66,7 @@ struct LightweightCache final: NonCopyableClass
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
         //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
-        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintId) const;
         bset<ECN::ECClassId> const& GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
 
         //For a end table relationship class map, the storage description provides horizontal partitions

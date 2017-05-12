@@ -137,6 +137,152 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
+    {
+    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECEntityClass typeName="Base_Abstract_OwnTable" modifier="Abstract">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_Abstract_OwnTable">
+        <BaseClass>Base_Abstract_OwnTable</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_OwnTable">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_OwnTable">
+        <BaseClass>Base_OwnTable</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_NoSubclass_OwnTable" modifier="Abstract">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_NoSubclass_TPH" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_TPH" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_Abstract_TPH">
+        <BaseClass>Base_Abstract_TPH</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_NoSubclass_TPH">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_TPH">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_TPH">
+        <BaseClass>Base_TPH</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_OwnTable","Prop1")});
+
+    AssertColumnNames(ecdb, "ts_Sub_Of_Base_Abstract_OwnTable", {"Id","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_OwnTable", {"Id","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), {ColumnInfo("ts_Base_OwnTable","Prop1")});
+
+    AssertColumnNames(ecdb, "ts_Sub_Of_Base_OwnTable", {"Id","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2")});
+
+
+
+    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_Abstract_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_Abstract_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
+
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), {ColumnInfo("ts_Base_Abstract_TPH","Prop2")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_NoSubclass_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_NoSubclass_TPH","Prop1")});
+
+
+    AssertColumnNames(ecdb, "ts_Base_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
+
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), {ColumnInfo("ts_Base_TPH","Prop2")});
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                                   Krischan.Eberle   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
@@ -8757,6 +8903,149 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
     }
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
+    {
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="Prop7" typeName="string" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement">
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="ExpectedToBeInOverflowAsWell" typeName="double" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow1.ecdb");
+        ASSERT_FALSE(asserted);
+        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
+        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), {ColumnInfo("ts_Element_Overflow","os2")});
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" >
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="BaseProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement" >
+                    <BaseClass>Element</BaseClass>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                 </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow2.ecdb");
+        ASSERT_FALSE(asserted);
+        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
+        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), {ColumnInfo("ts_Element","BaseProp")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), {{"Prop1.P1.X", ColumnInfo("ts_Element","ps1") },
+                                                                                           {"Prop1.P1.Y", ColumnInfo("ts_Element","ps2")}});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), {{"Prop3.P2.X", ColumnInfo("ts_Element","ps21")},
+                                                                    {"Prop3.P2.Y", ColumnInfo("ts_Element","ps22")},
+                                                                    {"Prop3.P2.Z", ColumnInfo("ts_Element","ps22")}});
+
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" >
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="BaseProp1" typeName="int" />
+                    <ECStructProperty propertyName="BaseProp2" typeName="TenColumnStruct" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement" >
+                    <ECCustomAttributes>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <BaseClass>Element</BaseClass>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="Prop7" typeName="string" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow3.ecdb");
+        ASSERT_FALSE(asserted);
+        AssertColumnCount(ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
+        AssertColumnNames(ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_SubElement_Overflow","os1")});
+        }
+    }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13

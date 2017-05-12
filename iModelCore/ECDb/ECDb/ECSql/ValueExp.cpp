@@ -891,11 +891,11 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
         {
         switch (m_op)
             {
-                case UnarySqlOperator::Minus:
-                case UnarySqlOperator::Plus:
+                case Operator::Minus:
+                case Operator::Plus:
                     SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
                     break;
-                case UnarySqlOperator::BitwiseNot:
+                case Operator::BitwiseNot:
                     SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long));
                     break;
 
@@ -915,8 +915,8 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
     auto const& operandTypeInfo = operand->GetTypeInfo();
     switch (m_op)
         {
-            case UnarySqlOperator::Minus:
-            case UnarySqlOperator::Plus:
+            case Operator::Minus:
+            case Operator::Plus:
             {
             if (!operandTypeInfo.IsNumeric())
                 {
@@ -926,7 +926,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
 
             break;
             }
-            case UnarySqlOperator::BitwiseNot:
+            case Operator::BitwiseNot:
             {
             if (!operandTypeInfo.IsExactNumeric())
                 {

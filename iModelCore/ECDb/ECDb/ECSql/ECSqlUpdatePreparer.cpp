@@ -53,7 +53,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (i != 0)
             nativeSqlBuilder.AppendComma();
 
-        nativeSqlBuilder.Append(propertyListSnippets[i]).Append(BooleanSqlOperator::EqualTo).Append(valueListSnippets[i]);
+        nativeSqlBuilder.Append(propertyListSnippets[i]).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(valueListSnippets[i]);
         }
 
     if (sqlSnippets.m_propertyNamesNativeSqlSnippets.empty())
