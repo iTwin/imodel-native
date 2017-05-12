@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
+#if defined (__linux)
 // See pngconf.h
 #define PNG_SKIP_SETJMP_CHECK
 #endif

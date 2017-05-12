@@ -316,7 +316,7 @@ struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(PerformanceElementsTests, DISABLED_ElementsInsertStrategies)
+TEST_F(PerformanceElementsTests, ElementsInsertStrategies)
     {
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 0, false, 0); // null FederationGuid, sequential IDs
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 1, true, 0); // random FederationGuid, sequential IDs

@@ -65,7 +65,7 @@ enum class AnnotationRunType
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationRunBase : public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationRunBase : public RefCountedBase
 {
 private:
     DEFINE_T_SUPER(RefCountedBase)
@@ -116,7 +116,7 @@ enum class AnnotationTextRunSubSuperScript
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationTextRun : public AnnotationRunBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextRun : public AnnotationRunBase
 {
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
@@ -154,7 +154,7 @@ public:
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationFractionRun: public AnnotationRunBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationFractionRun: public AnnotationRunBase
 {
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
@@ -188,7 +188,7 @@ public:
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationLineBreakRun : public AnnotationRunBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationLineBreakRun : public AnnotationRunBase
 {
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
