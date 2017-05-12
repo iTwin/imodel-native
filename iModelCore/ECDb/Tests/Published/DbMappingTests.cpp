@@ -8946,7 +8946,8 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                 </ECStructClass>
                 </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow1.ecdb");
         ASSERT_FALSE(asserted);
-        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
+        ecdb.SaveChanges();
+        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
         AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
@@ -8988,14 +8989,15 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                  </ECStructClass>
                 </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow2.ecdb");
         ASSERT_FALSE(asserted);
+        ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
         AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), {ColumnInfo("ts_Element","BaseProp")});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), {{"Prop1.P1.X", ColumnInfo("ts_Element","ps1") },
                                                                                            {"Prop1.P1.Y", ColumnInfo("ts_Element","ps2")}});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), {{"Prop3.P2.X", ColumnInfo("ts_Element","ps21")},
-                                                                    {"Prop3.P2.Y", ColumnInfo("ts_Element","ps22")},
-                                                                    {"Prop3.P2.Z", ColumnInfo("ts_Element","ps22")}});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), {{"Prop3.P2.X", ColumnInfo("ts_Element","ps23")},
+                                                                    {"Prop3.P2.Y", ColumnInfo("ts_Element","ps24")},
+                                                                    {"Prop3.P2.Z", ColumnInfo("ts_Element","ps25")}});
 
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
         }
@@ -9040,6 +9042,7 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                 </ECStructClass>
                 </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow3.ecdb");
         ASSERT_FALSE(asserted);
+        ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
         AssertColumnNames(ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_SubElement_Overflow","os1")});

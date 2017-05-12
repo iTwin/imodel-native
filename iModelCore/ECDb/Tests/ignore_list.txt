@@ -20,5 +20,4 @@ SchemaUpdateTestFixture.UpdateECDbMapCA_DbIndexChanges
 SchemaUpdateTestFixture.RemoveKindOfQuantityFromECProperty
 SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 
-#TFS699093
-DbMappingTestFixture.DefaultMaxSharedColumnCountBeforeOverflow
+
