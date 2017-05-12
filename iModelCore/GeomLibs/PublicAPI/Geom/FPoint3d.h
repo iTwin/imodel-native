@@ -366,9 +366,9 @@ void SumOf (FPoint3dCR origin, DVec3dCR vector, double scale);
 //! @description Adds an origin and two scaled vectors.
 //!
 //! @param [in] origin  The origin.
-//! @param [in] point1  The first direction vector
+//! @param [in] vector1  The first direction vector
 //! @param [in] scale1  The first scale factor
-//! @param [in] point2  The second direction vector
+//! @param [in] vector2  The second direction vector
 //! @param [in] scale2  The second scale factor
 //!
 void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2, double scale2);
@@ -377,11 +377,11 @@ void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2
 //! @description Adds an origin and three scaled vectors.
 //!
 //! @param [in] origin  The origin.
-//! @param [in] point1  The first direction vector
+//! @param [in] vector1  The first direction vector
 //! @param [in] scale1  The first scale factor
-//! @param [in] point2  The second direction vector
+//! @param [in] vector2  The second direction vector
 //! @param [in] scale2  The second scale factor
-//! @param [in] point3  The third direction vector
+//! @param [in] vector3  The third direction vector
 //! @param [in] scale3  The third scale factor
 //!
 void SumOf (FPoint3dCR origin, DVec3dCR vector1, double scale1, DVec3dCR vector2, double scale2, DVec3dCR vector3, double scale3);
@@ -553,24 +553,24 @@ static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector, double scaleFacto
 
 //! Add scaled vectors from an origin.
 //! @param [in] origin start point
-//! @param [in] point0 vector to scale.
+//! @param [in] vector0 vector to scale.
 //! @param [in] scaleFactor0 multiplier.
-//! @param [in] point1 vector to scale.
+//! @param [in] vector1 vector to scale.
 //! @param [in] scaleFactor1 multiplier.
 static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1);
 
 //! Add scaled vectors from origin.
 //! @param [in] origin start point
-//! @param [in] point0 vector to scale.
+//! @param [in] vector0 vector to scale.
 //! @param [in] scaleFactor0 multiplier.
-//! @param [in] point1 vector to scale.
+//! @param [in] vector1 vector to scale.
 //! @param [in] scaleFactor1 multiplier.
-//! @param [in] point2 vector to scale.
+//! @param [in] vector2 vector to scale.
 //! @param [in] scaleFactor2 multiplier.
 static FPoint3d FromSumOf (FPoint3dCR origin, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1, DVec3dCR vector2, double scaleFactor2);
 
 //! @description Returns a scalar multiple of a FPoint3d
-//! @param [in] point input point
+//! @param [in] vector input vector
 //! @param [in] scale scale factor
 static FPoint3d FromScale (FPoint3d point, double scale);
 
