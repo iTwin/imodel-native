@@ -1094,6 +1094,9 @@ bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, dou
             if (SUCCESS != PSolidTopo::GetBodyFaces(faces1, body1) || SUCCESS != PSolidTopo::GetBodyFaces(faces2, body2) || faces1.size() != faces2.size())
                 return false;
 
+            if (SUCCESS != CheckBody(body1, true, true, false) || SUCCESS != CheckBody(body2, true, true, false))
+                return false;
+
             PK_VECTOR_t point;
             PK_FACE_coi_t result;
             PK_FACE_is_coincident_o_t options;
