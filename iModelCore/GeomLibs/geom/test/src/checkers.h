@@ -266,7 +266,10 @@ static double Tol (DPoint4dCR Q, DPoint4dCR R);
 static bool NearZero (double a, char const*pName = NULL, double refValue = 0.0);
 
 //! Test if {a} is exactly equal to b.
-static bool ExactDouble (double a, double b, char const*pName = NULL);
+static bool ExactDouble (double a, double b, char const*pName = nullptr);
+//! Test if {a} is exactly equal to be in all components xyz
+static bool Exact (DPoint3dCR a, DPoint3dCR b, char const*pString = nullptr);
+
 //! Test if {a} is near b.
 static bool Near (double a, double b, char const*pName = NULL, double refValue = 0.0);
 

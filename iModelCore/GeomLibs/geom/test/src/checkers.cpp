@@ -346,6 +346,20 @@ bool Check::ExactDouble (double a, double b, char const*pString)
     return false;
     }
 
+bool Check::Exact (DPoint3dCR a, DPoint3dCR b, char const*pString)
+    {
+    if (a.IsEqual (b))
+        return true;
+
+    PrintScope ();
+    PrintIndent (2);Print (a, "a");
+    PrintIndent (2);Print (b, "b");
+
+    Fail (pString);
+    return false;
+    }
+
+
 bool Check::Near (double a, double b, char const*pString, double refValue)
     {
     double tol = Tol (a,b, refValue);

@@ -1467,8 +1467,3 @@ TEST(DPoint3d,FromIntersectUnitPerpendicularsXY)
     Check::Near (basePoint, failureCase, "Parallel case returns base point");
     }
 
-TEST(FPoint3d,HelloWorld)
-    {
-    FPoint3d point0 = FPoint3d::From (1.0, 2.0, 3.0);
-    Check::Near (1.0, point0.x);
-    }
