@@ -227,6 +227,7 @@ public:
             m_dgndb(dgndb), m_id(id), m_name(name), m_scopeSpec(scopeSpec) {}
     };
 
+    BE_PROP_NAME(JsonProperties);
     BE_JSON_NAME(fragmentSpecs);
     BE_JSON_NAME(registrySuffix);
     BE_JSON_NAME(scopeSpec);

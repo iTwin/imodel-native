@@ -141,7 +141,7 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
 
     Utf8String propsStr = codeSpec.SerializeProperties();
 
-    Statement stmt(m_dgndb, "INSERT INTO " BIS_TABLE(BIS_CLASS_CodeSpec) " (Id,Name,Properties) VALUES(?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " BIS_TABLE(BIS_CLASS_CodeSpec) " (Id,Name,JsonProperties) VALUES(?,?,?)");
     stmt.BindId(1, newId);
     stmt.BindText(2, codeSpec.GetName(), Statement::MakeCopy::No);
     stmt.BindText(3, propsStr, Statement::MakeCopy::No);
@@ -171,7 +171,7 @@ CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
         }
 
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Properties FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT Name,JsonProperties FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Id=?");
     stmt->BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt->Step())
