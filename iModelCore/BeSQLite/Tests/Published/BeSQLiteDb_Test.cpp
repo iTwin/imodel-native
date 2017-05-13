@@ -987,3 +987,42 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
     changeSet.Free();
     m_db.CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, SchemaAndDataChanges)
+    {
+    /* Note: Tests that schema and data changes are not allowed in the same change set. 
+    * The purpose of the test is to validate this fundamental assumption of our revision 
+    * generation and merging strategy */
+    
+    SetupDb(L"RealTest.db");
+
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    // Add row
+    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1) values (1.1)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add column 
+    result = m_db.AddColumnToTable("TestTable", "Column2", "REAL");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add row
+    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1,Column2) values (3.3,4.4)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    MyChangeSet changeSet;
+    result = changeSet.FromChangeTrack(changeTracker);
+    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+
+    changeTracker.EndTracking();
+    changeSet.Free();
+    m_db.CloseDb();
+    }
+
