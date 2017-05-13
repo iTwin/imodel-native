@@ -434,8 +434,8 @@ public:
     //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> It's recommended that there aren't any local changes (committed or uncommitted) before this call. These 
-    //! can be flushed out by creating a revision. See @ref RevisionManager.
+    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
 

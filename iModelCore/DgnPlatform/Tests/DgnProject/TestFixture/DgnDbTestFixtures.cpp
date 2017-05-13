@@ -243,3 +243,13 @@ PhysicalModelPtr DgnDbTestFixture::GetDefaultPhysicalModel()
     BeAssert(model.IsValid());
     return model;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+void DgnDbTestFixture::FlushLocalChanges()
+    {
+    m_db->SaveChanges();
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
+    }

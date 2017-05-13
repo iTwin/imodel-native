@@ -386,12 +386,6 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 SchemaStatus DgnDomains::ImportSchemas()
     {
-    if (m_dgndb.Txns().HasLocalChanges())
-        {
-        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
-        return SchemaStatus::DbHasLocalChanges;
-        }
-
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
 
@@ -431,12 +425,6 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDomains::UpgradeSchemas()
     {
-    if (m_dgndb.Txns().HasLocalChanges())
-        {
-        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
-        return SchemaStatus::DbHasLocalChanges;
-        }
-
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
     SchemaStatus status = DoValidateSchemas(&schemasToImport, &domainsToImport);
@@ -652,6 +640,12 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchemas, SchemaManager::SchemaImportOptions importOptions)
     {
+    if (importSchemas.empty())
+        {
+        BeAssert(false);
+        return SchemaStatus::Success;
+        }
+
     DgnDbR dgndb = GetDgnDb();
     if (dgndb.IsReadonly())
         {
@@ -659,8 +653,11 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         return SchemaStatus::DbIsReadonly;
         }
 
-    if (importSchemas.empty())
-        return SchemaStatus::Success;
+    if (dgndb.Txns().HasLocalChanges())
+        {
+        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+        return SchemaStatus::DbHasLocalChanges;
+        }
 
     if (RepositoryStatus::Success != dgndb.BriefcaseManager().LockSchemas().Result())
         {
