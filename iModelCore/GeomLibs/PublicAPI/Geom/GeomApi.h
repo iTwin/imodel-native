@@ -27,6 +27,7 @@
 #endif
 
 #include <float.h>
+#include <cstring>
 #include <math.h>
 #include <string.h>
 #include <Bentley/bvector.h>
