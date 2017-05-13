@@ -1839,7 +1839,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         }
 #endif
 
-		/*WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
+/*		WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
 		dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
 		dtmFileName.append(L"_");
 		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
