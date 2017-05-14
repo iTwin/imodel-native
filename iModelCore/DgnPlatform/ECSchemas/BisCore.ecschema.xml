@@ -1364,10 +1364,6 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
         <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
-        <ECProperty propertyName="Details" typeName="string" />
-        <ECProperty propertyName="DisplayPriority" typeName="int" displayLabel="Display Priority"/>
-        <ECProperty propertyName="Scale" typeName="double" />
-        <ECProperty propertyName="Clip" typeName="string" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ViewIsAttached" strength="referencing" modifier="Sealed">
         <!-- @see ViewAttachment.View ECNavigationProperty -->
