@@ -37,33 +37,12 @@ static void copy2dTo3d(std::valarray<DPoint3d>& pts3d, DPoint2dCP pts2d, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static FPoint3d toFPoint3d(DPoint3dCR dpoint)
-    {
-    FPoint3d fpoint;
-    fpoint.x = dpoint.x;
-    fpoint.y = dpoint.y;
-    fpoint.z = dpoint.z;
-    return fpoint;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 static FPoint2d toFPoint2d(DPoint2dCR dpoint)
     {
     FPoint2d fpoint;
     fpoint.x = dpoint.x;
     fpoint.y = dpoint.y;
     return fpoint;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DPoint3d fromFPoint3d(FPoint3d const& fPoint) 
-    { 
-    return DPoint3d::From ((double) fPoint.x, (double) fPoint.y, (double) fPoint.z); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -506,7 +485,7 @@ MeshEdges::MeshEdges(MeshCR mesh)
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
             }
 
-        triangleNormals[triangleIndex] = toFPoint3d(mesh.GetTriangleNormal(triangle));
+        triangleNormals[triangleIndex] = FPoint3d::From(mesh.GetTriangleNormal(triangle));
         }
     
 
@@ -523,7 +502,7 @@ MeshEdges::MeshEdges(MeshCR mesh)
                 FPoint3d const&  normal0 = triangleNormals.at(edge.second.m_faceIndices[0]);
                 FPoint3d const&  normal1 = triangleNormals.at(edge.second.m_faceIndices[1]);
 
-                if (!fromFPoint3d(normal0).IsParallelTo(fromFPoint3d(normal1)))      // TBD.  Switch to doing in floats when FPoint3d API available.
+                if (!DPoint3d::From(normal0).IsParallelTo(DPoint3d::From(normal1)))
                     {
                     // Potential silhouettes.
                     m_silhouette.push_back(edge.second.m_edge);
@@ -615,11 +594,11 @@ uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, ui
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
-    m_points.push_back(toFPoint3d(point));
+    m_points.push_back(FPoint3d::From(point));
     m_features.Add(feature, m_points.size());
 
     if (nullptr != normal)
-        m_normals.push_back(toFPoint3d(*normal));
+        m_normals.push_back(FPoint3d::From(*normal));
                                                                                                                  
     if (nullptr != param)
         m_uvParams.push_back(toFPoint2d(*param));

@@ -228,14 +228,6 @@ constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
 static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-double fbox3d_diagonalDistanceSquared(FBox3d const& box)
-    {
-    return bsiFPoint3d_distanceSquared(&box.m_low, &box.m_high);
-    }
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
@@ -804,7 +796,7 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq = fbox3d_diagonalDistanceSquared(entry.m_range);
+        double sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
         if (sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
