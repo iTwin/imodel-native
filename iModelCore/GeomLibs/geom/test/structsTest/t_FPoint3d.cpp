@@ -135,3 +135,10 @@ TEST(FPoint3d, SumOf)
     Check::ExactDouble(fpoint.GetComponent(2), dpoint.GetComponent(2));
     }
 
+TEST(FPoint3d, Error)
+    {
+    Check::Exact(DPoint3d::From(FPoint3d::FromXY(DPoint3d::From(2, 3, 4))),
+                 DPoint3d::FromXY(DPoint3d::From(2, 3, 4)));
+    Check::Exact(DPoint3d::From(FPoint3d::FromXY(FPoint3d::From(2, 3, 4))),
+                 DPoint3d::FromXY(DPoint3d::From(2, 3, 4)));
+    }
