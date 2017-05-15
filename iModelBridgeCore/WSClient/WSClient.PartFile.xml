@@ -594,6 +594,8 @@
         <ProductDirectory Name="Assemblies" Path=""/>
         <ProductDirectory Name="Assets" Path="Assets"/>
         <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
@@ -601,9 +603,10 @@
   
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>        
+        <SubPart PartName="WSClientTestsL10N"/>
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
+        <SubPart PartName="WebServicesCache" />   
+        <SubPart PartName="ConnectWebServicesClientC" />      
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
