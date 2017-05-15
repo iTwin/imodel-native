@@ -120,7 +120,7 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 $(OUT_DIR)ddisk3d$(OUT_EXT)         : $(geomSrcStructs)ddisk3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)fpoint3d$(OUT_EXT)        : $(geomSrcStructs)fpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
