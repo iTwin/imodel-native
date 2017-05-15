@@ -57,8 +57,8 @@ double dz       //!< [in] shift to apply to z direction
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
-FPoint3d FPoint3d::FromXY (FPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
-FPoint3d FPoint3d::FromXY (DPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
+FPoint3d FPoint3d::FromXY (FPoint3dCR xy, double zz) {return from (xy.x, xy.z, zz);}
+FPoint3d FPoint3d::FromXY (DPoint3dCR xy, double zz) {return from (xy.x, xy.z, zz);}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      05/2017
