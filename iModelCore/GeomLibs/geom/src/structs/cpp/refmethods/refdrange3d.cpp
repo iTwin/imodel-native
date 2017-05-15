@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdrange3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -433,6 +433,22 @@ void DRange3d::InitFrom (DPoint3dCR point0, DPoint3dCR point1)
     Extend (point1);
     }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FRange3dCR fRange)
+    {
+    // ah, maybe you'd like to just copy the xyz values.
+    // but the NullRange values are different.
+    // Even when not null, do a careful Extend() to ensure validity
+    auto result = NullRange ();
+    if (!fRange.IsNull ())
+        {
+        result.Extend (DPoint3d::From (fRange.low));
+        result.Extend (DPoint3d::From (fRange.high));
+        }
+    return result;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @vbdescription Initializes the range to contain two points given as components.
@@ -1486,7 +1502,6 @@ DPoint3d DRange3d::LocalToGlobal (double xFraction, double yFraction, double zFr
         DoubleOps::Interpolate (low.y, yFraction, high.y),
         DoubleOps::Interpolate (low.z, zFraction, high.z));
     }
-
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -199,6 +199,8 @@ $(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d
 
 $(OUT_DIR)refdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
+$(OUT_DIR)reffrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/reffrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 $(OUT_DIR)refdrange3dArrays$(OUT_EXT)   : $(geomSrcStructsCpp)refmethods/refdrange3dArrays.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdrange2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

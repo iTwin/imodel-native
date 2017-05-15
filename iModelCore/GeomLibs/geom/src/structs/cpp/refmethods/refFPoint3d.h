@@ -9,7 +9,7 @@
 BEGIN_BENTLEY_NAMESPACE
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::From (double xx, double yy, double zz)
     {
@@ -17,7 +17,32 @@ FPoint3d FPoint3d::From (double xx, double yy, double zz)
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
++--------------------------------------------------------------------------------------*/
+FPoint3d FPoint3d::FromRoundLeft (DPoint3dCR xyz)
+    {
+    return from (
+        DoubleOps::DoubleToFloatRoundLeft (xyz.x),
+        DoubleOps::DoubleToFloatRoundLeft (xyz.y),
+        DoubleOps::DoubleToFloatRoundLeft (xyz.z)
+        );
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/2017
++--------------------------------------------------------------------------------------*/
+FPoint3d FPoint3d::FromRoundRight (DPoint3dCR xyz)
+    {
+    return from (
+        DoubleOps::DoubleToFloatRoundRight (xyz.x),
+        DoubleOps::DoubleToFloatRoundRight (xyz.y),
+        DoubleOps::DoubleToFloatRoundRight (xyz.z)
+        );
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromShift
 (
@@ -30,13 +55,13 @@ double dz       //!< [in] shift to apply to z direction
     return from (xyz0.x + dx, xyz0.y + dy, xyz0.z + dz);
     }
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromXY (FPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
 FPoint3d FPoint3d::FromXY (DPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::From (DPoint2dCR xy, double zz) {return from (xy.x, xy.y, zz);}
 
@@ -54,7 +79,7 @@ FPoint3d FPoint3d::FromOne (){return from (1.0, 1.0, 1.0);}
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 void FPoint3d::Swap (FPoint3dR other)
     {
@@ -1913,7 +1938,7 @@ FPoint3dCR point2
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2)
     {
@@ -1928,7 +1953,7 @@ void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2, FPoint3dCR point3, double a3)
     {
@@ -1942,7 +1967,7 @@ void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2
 
 #ifdef SKIP_IN_FPOINT3D
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 void FPoint3d::SumOf (FPoint3dCR point1, FPoint3dCR point2)
     {
@@ -2043,7 +2068,7 @@ double z
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromMultiply
 (
@@ -2071,7 +2096,7 @@ double z
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromMultiply
 (
@@ -2182,7 +2207,7 @@ double weightC      //!< [in] weight of third point
 #endif
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector)
     {
@@ -2195,7 +2220,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector)
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector, double scaleFactor)
     {
@@ -2210,7 +2235,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector, double scaleFa
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1)
     {
@@ -2225,7 +2250,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector0, double scaleF
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR  vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1, DVec3dCR vector2, double scaleFactor2)
     {
@@ -2241,7 +2266,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR  vector0, double scale
 #ifdef SKIP_IN_DPOINT3D
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromScale (FPoint3d point, double scale)
     {
@@ -2255,7 +2280,7 @@ FPoint3d FPoint3d::FromScale (FPoint3d point, double scale)
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR point1, double scaleFactor1)
     {
@@ -2268,7 +2293,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR point1, double scaleFactor1, FPoint3dCR point2, double scaleFactor2)
     {
@@ -2284,7 +2309,7 @@ FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 FPoint3d FPoint3d::FromInterpolateBilinear (FPoint3dCR data00, FPoint3dCR data10, FPoint3dCR data01, FPoint3dCR data11, double u, double v)
     {
@@ -2344,7 +2369,7 @@ DPoint3dCR point
 
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 bool FPoint3d::AlmostEqual (FPoint3d const & dataB) const
     {return almostEqual (x, y, z, dataB.x, dataB.y, dataB.z);}
@@ -2353,7 +2378,7 @@ bool FPoint3d::AlmostEqualXY (FPoint3d const & dataB) const
     {return almostEqual (x, y, dataB.x, dataB.y);}
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
 bool FPoint3d::AlmostEqual (FPoint3d const & dataB, double tolerance) const
     {
