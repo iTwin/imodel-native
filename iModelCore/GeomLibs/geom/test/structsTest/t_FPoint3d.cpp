@@ -149,6 +149,7 @@ TEST(FPoint3d, Error)
 	
 TEST(FPoint3d,ROUND_AWAY)
     {
+#ifdef _WIN32
     int one = 1;
     int a = one << 24;
     double ed = 1.0 / (double)a;
@@ -164,4 +165,5 @@ TEST(FPoint3d,ROUND_AWAY)
 
     GEOMAPI_PRINTF ("Single Precision roundTowards roundAway= %.10lg %.10lg\n",
                 (double)roundToward, (double)roundAway); // arg passing is always double.
+#endif
     }
