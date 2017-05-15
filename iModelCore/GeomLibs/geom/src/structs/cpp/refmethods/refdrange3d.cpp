@@ -670,6 +670,64 @@ void DRange3d::Extend (DPoint3dCR point)
 
 
 /*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (FPoint3dCR point)
+    {
+
+    FIX_MINMAX ((double)point.x, low.x, high.x);
+    FIX_MINMAX ((double)point.y, low.y, high.y);
+    FIX_MINMAX ((double)point.z, low.z, high.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    Extend (pointA);
+    Extend (pointB);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (bvector<FPoint3d> const &points)
+    {
+    for (auto &xyz : points)
+        Extend (xyz);
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FPoint3dCR point)
+    {
+    return From (point.x, point.y, point.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    return From (pointA.x, pointA.y, pointA.z, pointB.x, pointB.y, pointB.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (bvector<FPoint3d> const &points)
+    {
+    DRange3d range = NullRange ();
+    for (auto &xyz : points)
+        range.Extend (xyz.x, xyz.y, xyz.z);
+    return range;
+    }
+
+
+/*-----------------------------------------------------------------*//**
 * @description Extends the coordinates of the range cube points in pRange so as
 * to include the single additional weighted point.
 * @param [in] point  new point to be included in the range.

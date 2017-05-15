@@ -96,14 +96,14 @@ void Extend (FPoint3dCR point);
 //! Extend to include two new points
 void Extend (FPoint3dCR pointA, FPoint3dCR pointB);
 //! Extend to include new points.
-void Extend (bvector<FPoint3d> const pointA);
+void Extend (bvector<FPoint3d> const &pointA);
 
 //! Create as a single point.
-void From (FPoint3dCR point);
+static DRange3d From (FPoint3dCR point);
 //! Create to include two points.
-void From (FPoint3dCR pointA, FPoint3dCR pointB);
+static DRange3d From (FPoint3dCR pointA, FPoint3dCR pointB);
 //! Create to include a vector of points.
-void From (bvector<FPoint3d> const pointA);
+static DRange3d From (bvector<FPoint3d> const &points);
 
 //! initialize from a float range.
 static DRange3d From (FRange3dCR fRange);
