@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeNumerical.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -23,10 +23,12 @@ struct          BeNumerical
 {
 #if defined (_WIN32) // Windows && WinRT
     static double   BeNextafter (double x, double y)    {return _nextafter(x,y);}
+    static float   BeNextafterf (float x, float y)    {return _nextafterf(x,y);}
     static int      BeIsnan (double v)                  {return _isnan(v);}
     static int      BeFinite (double v)                 {return _finite(v);}
 #else
     static double   BeNextafter (double x, double y)    {return nextafter(x,y);}
+    static float   BeNextafterf (float x, float y)    {return nextafterf(x,y);}
 
     #if defined (__clang__)
         static int      BeIsnan (double v)                  {return isnan (v);}
