@@ -1363,7 +1363,7 @@ void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (strnicmp(sql.c_str(), "SELECT", 6) == 0)
+    if (BeStringUtilities::Strnicmp(sql.c_str(), "SELECT", 6) == 0)
         ExecuteSelect(stmt);
     else
         ExecuteNonSelect(session, stmt);

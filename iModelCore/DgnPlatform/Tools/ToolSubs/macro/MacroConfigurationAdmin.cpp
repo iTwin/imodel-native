@@ -11,6 +11,7 @@
 #include <DgnPlatform/DesktopTools/fileutil.h>
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 #include <Bentley/BeFileListIterator.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 #include "macro.h"
 #if defined (BENTLEY_WIN32)
@@ -2072,7 +2073,7 @@ BeFileNameCR MacroConfigurationAdmin::_GetLocalTempDirectoryBaseName ()
         if (!expansion.empty())
             s_tempPath.SetName (expansion.c_str());
         else
-            BeFileName::BeGetTempPath (s_tempPath);
+            Desktop::FileSystem::BeGetTempPath (s_tempPath);
 
         s_checked = true;
         }
@@ -2811,7 +2812,7 @@ void    DefineBuiltinRuntimeMacros ()
 
     // _USTN_LocalUserTempPath
     BeFileName  tempPath;
-    BeFileName::BeGetTempPath (tempPath);
+    Desktop::FileSystem::BeGetTempPath (tempPath);
     tempPath.AppendSeparator ();
     tempPath.append (bentleyProductInstall);
     tempPath.AppendSeparator ();
@@ -3032,7 +3033,7 @@ void    DefineBuiltinMacros ()
 
     // Define macro for current working directory when ustn was started.
     WString workDir;
-    BeFileName::GetCwd (workDir);
+    Desktop::FileSystem::GetCwd (workDir);
     BeFileName::AppendSeparator (workDir);
     m_macroCfgAdmin.DefineBuiltinMacro(L"_WORKDIR", workDir.c_str());
     }
@@ -3146,7 +3147,7 @@ void DefineBuiltinRuntimeMacros (WCharCP installDirectory)
     
     // _USTN_LocalUserTempPath
     BeFileName  tempPath;
-    BeFileName::BeGetTempPath (tempPath);
+    Desktop::FileSystem::BeGetTempPath (tempPath);
     tempPath.AppendSeparator ();
     tempPath.append (bentleyProductInstallWithHash);
     tempPath.AppendSeparator ();

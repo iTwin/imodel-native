@@ -160,11 +160,6 @@ PchCompiland        = $(baseDir)DgnPlatformInternal.cpp
 PchOutputDir        = $(DgnPlatformObj)
 PchExtraOptions     = -Zm170
 
-%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
-    # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
-    GCC_NO_PRE_COMPILED_HEADER = 1
-%endif
-
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts           = $(UsePrecompiledHeaderOptions)
@@ -173,7 +168,7 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(CoreObjs)GraphiteResourceURI$(oext) :             $(DgnCoreDir)GraphiteResourceURI.cpp ${MultiCompileDepends} 
+$(CoreObjs)GraphiteResourceUri$(oext) :             $(DgnCoreDir)GraphiteResourceUri.cpp ${MultiCompileDepends} 
 
 $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(PropertyDepends) $(toolsHeaders)
 

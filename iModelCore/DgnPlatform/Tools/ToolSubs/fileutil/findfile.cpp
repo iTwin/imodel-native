@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/fileutil/findfile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,6 +17,7 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <DgnPlatform/Tools/stringop.h>
 #include <Bentley/BeFileListIterator.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -484,7 +485,7 @@ int             option              /* => Open mode / search options           *
     WString     cwdDirectory, cwdDevice, cwdPath;
 
     // get the current path and make sure it ends with the directory separator.
-    BeFileName::GetCwd (cwdPath);
+    Desktop::FileSystem::GetCwd (cwdPath);
 
     if ( ( ! cwdPath.empty()) && (WCSDIR_SEPARATOR_CHAR != *(cwdPath.end() - 1)) )
         cwdPath.append (WCSDIR_SEPARATOR);
