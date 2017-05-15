@@ -135,10 +135,6 @@ always:
 PchCompiland = $(baseDir)ECDbPch.cpp
 PchOutputDir = $(o)
 PchExtraOptions = -Zm200
-%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
-    # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
-    GCC_NO_PRE_COMPILED_HEADER = 1
-%endif
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts  = $(UsePrecompiledHeaderOptions)
@@ -393,7 +389,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+%if ($(BUILD_TOOLSET) == "ANDROID_CLANG") || $(BUILD_TOOLSET) == "LINUX_CLANG"))
     OldClangCommonCompOpts =% $(ClangCommonCompOpts)
     ClangCommonCompOpts + -Wno-unknown-pragmas
     ClangCommonCompOpts + -Wno-unused-function
@@ -415,7 +411,7 @@ nonportObjs=%$(MultiCompileObjectList)
     LinuxGccCommonOptions = $(OldLinuxGccCommonOptions)
 %endif
 
-%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+%if ($(BUILD_TOOLSET) == "ANDROID_CLANG") || ($(BUILD_TOOLSET) == "LINUX_CLANG")
     ClangCommonCompOpts = $(OldClangCommonCompOpts)
 %endif
 
