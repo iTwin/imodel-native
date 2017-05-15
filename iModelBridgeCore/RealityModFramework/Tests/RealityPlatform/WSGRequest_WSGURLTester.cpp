@@ -6,11 +6,11 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //=====================================================================================
 //! @bsimethod                          Remi.Charbonneau                        05/2017
 //=====================================================================================
-TEST(WSGURLBase, DefaultConstructor)
+TEST(WSGURLBase, ConstructorWithURL)
     {
     auto wsgUrlToTest = WSGURL("https://myserver.com/watch?=uniqueID");
     EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
-    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com");
+    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://");
     EXPECT_TRUE(wsgUrlToTest.GetInterface() == WSGURL::WSGInterface::Repositories);
     EXPECT_STREQ(wsgUrlToTest.GetServerName().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "");
@@ -29,7 +29,7 @@ TEST(WSGURLBase, DefaultConstructor)
 //=====================================================================================
 //! @bsimethod                          Remi.Charbonneau                        05/2017
 //=====================================================================================
-TEST(WSGURLBase, ConstructorWithParameters)
+TEST(WSGURLBase, ConstructorWithFullDetails)
     {
     auto wsgUrlToTest = WSGURL("myserver.com", "Version1", "RepoID", "schema", WSGURL::WSGInterface::NavNode, "MyClassName", "MyID", true);
 
