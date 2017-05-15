@@ -657,11 +657,15 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     if (SUCCESS != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
         return ERROR;
 
+    Nullable<bool> createForeignKeyConstraints = false;
+    if (SUCCESS != linkTableRelationMap.TryGetCreateForeignKeyConstraints(createForeignKeyConstraints))
+        return ERROR;
+
     Nullable<bool> allowDuplicateRelationships = false;
     if (SUCCESS != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
         return ERROR;
 
-    m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
+    m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, createForeignKeyConstraints, allowDuplicateRelationships);
     return SUCCESS;
     }
 

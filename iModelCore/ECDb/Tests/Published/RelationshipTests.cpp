@@ -1887,6 +1887,77 @@ TEST_F(RelationshipMappingTestFixture, EnforceLinkTableMapping)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, FKConstraintsOnLinkTables)
+    {
+    ECDbCR ecdb = SetupECDb("fkconstraintsonlinktables.ecdb", SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                      <ECEntityClass typeName="A" >
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                      </ECEntityClass>
+                      <ECEntityClass typeName="B" >
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                      </ECEntityClass>
+                      <ECRelationshipClass typeName="LinkTableWithFk1" modifier="Sealed">
+                            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                      </ECRelationshipClass>
+                      <ECRelationshipClass typeName="LinkTableWithFk2" modifier="Sealed">
+                            <ECCustomAttributes>
+                                <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                      </ECRelationshipClass>
+                      <ECRelationshipClass typeName="LinkTableWithFk3" modifier="Sealed">
+                            <ECCustomAttributes>
+                                <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+                                    <CreateForeignKeyConstraints>True</CreateForeignKeyConstraints>
+                                </LinkTableRelationshipMap>
+                            </ECCustomAttributes>
+                            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                        </ECRelationshipClass>
+                        <ECRelationshipClass typeName="LinkTableWithoutFk" modifier="Sealed">
+                           <ECCustomAttributes>
+                                <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+                                    <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                                </LinkTableRelationshipMap>
+                            </ECCustomAttributes>
+                            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                       </ECRelationshipClass>
+                 </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk1", "SourceId");
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk1", "TargetId");
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk2", "SourceId");
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk2", "TargetId");
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk3", "SourceId");
+    AssertForeignKey(true, ecdb, "ts_LinkTableWithFk3", "TargetId");
+    AssertForeignKey(false, ecdb, "ts_LinkTableWithoutFk");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, AmbigousRelationshipProperty)
@@ -5703,9 +5774,9 @@ struct ReferentialIntegrityTestFixture : DbMappingTestFixture
         void ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const;
     };
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                              Muhammad Hassan                         04/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                              Muhammad Hassan                         04/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrity)
     {
     ECDbR ecdb = SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrity.ecdb");
@@ -5715,9 +5786,9 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasManyGoo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                              Muhammad Hassan                         04/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                              Muhammad Hassan                         04/15
+//--------------------------------------------------------------------------------------
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
     {
     ECDbR ecdb = SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
@@ -5727,9 +5798,9 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasManyGoo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                         02/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/15
+//--------------------------------------------------------------------------------------
 TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest.ecdb");
@@ -5741,9 +5812,9 @@ TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     ASSERT_TRUE(ecdb.TableExists("ts_ManyFooHasManyGoo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                         02/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/15
+//--------------------------------------------------------------------------------------
 TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
@@ -5755,9 +5826,9 @@ TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     ASSERT_TRUE(ecdb.TableExists("ts_ManyFooHasManyGoo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                         02/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/15
+//--------------------------------------------------------------------------------------
 void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
     {
     ECSqlStatement stmt;
@@ -5793,9 +5864,9 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                         02/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/15
+//--------------------------------------------------------------------------------------
 size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb, Utf8CP relationshipClass) const
     {
     ECSqlStatement stmt;
@@ -5809,9 +5880,9 @@ size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb
     return 0;
     }
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                         02/15
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/15
+//--------------------------------------------------------------------------------------
 void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const
     {
     ECSchemaPtr testSchema;

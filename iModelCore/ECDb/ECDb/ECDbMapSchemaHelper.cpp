@@ -586,6 +586,17 @@ BentleyStatus ECDbLinkTableRelationshipMap::TryGetTargetECInstanceIdColumn(Nulla
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbLinkTableRelationshipMap::TryGetCreateForeignKeyConstraints(Nullable<bool>& createForeignKeyConstraintsFlag) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetBooleanValue(createForeignKeyConstraintsFlag, *m_ca, "CreateForeignKeyConstraints");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbLinkTableRelationshipMap::TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationshipsFlag) const
     {
     if (m_ca == nullptr)

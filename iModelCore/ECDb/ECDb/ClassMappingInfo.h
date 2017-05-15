@@ -136,16 +136,24 @@ public:
     private:
         Nullable<Utf8String> m_sourceIdColumnName;
         Nullable<Utf8String> m_targetIdColumnName;
+        bool m_createForeignKeyConstraints = true;
         bool m_allowDuplicateRelationships = false;
     
     public:
         LinkTableMappingInfo() {}
-        LinkTableMappingInfo(Nullable<Utf8String> const& sourceIdColname, Nullable<Utf8String> const& targetIdColName, Nullable<bool> allowDuplicateRelationships)
-            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName), m_allowDuplicateRelationships(allowDuplicateRelationships.IsNull() ? false : allowDuplicateRelationships.Value())
-            {}
+        LinkTableMappingInfo(Nullable<Utf8String> const& sourceIdColname, Nullable<Utf8String> const& targetIdColName, Nullable<bool> createForeignKeyConstraints, Nullable<bool> allowDuplicateRelationships)
+            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName)
+            {
+            if (!createForeignKeyConstraints.IsNull())
+                m_createForeignKeyConstraints = createForeignKeyConstraints.Value();
+
+            if (!allowDuplicateRelationships.IsNull())
+                m_allowDuplicateRelationships = allowDuplicateRelationships.Value();
+            }
 
         Nullable<Utf8String> const& GetSourceIdColumnName() const { return m_sourceIdColumnName; }
         Nullable<Utf8String> const& GetTargetIdColumnName() const { return m_targetIdColumnName; }
+        bool GetCreateForeignKeyConstraintsFlag() const { return m_createForeignKeyConstraints; }
         bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
         };
 private:

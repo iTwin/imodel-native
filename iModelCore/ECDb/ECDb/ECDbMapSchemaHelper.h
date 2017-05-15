@@ -303,10 +303,16 @@ struct ECDbLinkTableRelationshipMap final
         //! @return ECOBJECTSTATUS_Success if TargetECInstanceId was set or unset in the LinkTableRelationshipMap, ERROR otherwise
         BentleyStatus TryGetTargetECInstanceIdColumn(Nullable<Utf8String>& targetECInstanceIdColumnName) const;
 
+        //! Tries to get the value of the CreateForeignKeyConstraints property from the LinkTableRelationshipMap.
+        //! @param[out] createForeignKeyConstraints CreateForeignKeyConstraints flag. IsNull() is true, if the CreateForeignKeyConstraints property wasn't set in the LinkTableRelationshipMap.
+        //! @return ECOBJECTSTATUS_Success if CreateForeignKeyConstraints was set or unset in the LinkTableRelationshipMap, ERROR otherwise
+        BentleyStatus TryGetCreateForeignKeyConstraints(Nullable<bool>& createForeignKeyConstraints) const;
+
         //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
         //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. IsNull() is true, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
         //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, ERROR otherwise
         BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
+
     };
 
 //=======================================================================================    

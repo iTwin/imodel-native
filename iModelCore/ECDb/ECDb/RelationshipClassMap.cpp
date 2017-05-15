@@ -1179,7 +1179,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         return stat;
 
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetType() != DbTable::Type::Existing &&
+    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && relationClassMapInfo.GetLinkTableMappingInfo()->GetCreateForeignKeyConstraintsFlag() &&
         (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId())) 
         {
         //Create FK from Source-Primary to LinkTable

@@ -441,7 +441,7 @@ TEST_F(SchemaRulesTestFixture, Instantiability)
                         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='roleLabel'>"
                         "      <Class class='DomainClass'/>"
                         "    </Source>"
-                        "    <Target multiplicity='(0..N)' polymorphic='True' roleLabel='roleLabel'>"
+                        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='roleLabel'>"
                         "      <Class class='DomainClass'/>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
