@@ -1466,3 +1466,4 @@ TEST(DPoint3d,FromIntersectUnitPerpendicularsXY)
     Check::False (failureCase.IsValid (), "Parallel lines do not intersect");
     Check::Near (basePoint, failureCase, "Parallel case returns base point");
     }
+

@@ -318,9 +318,9 @@ typedef RefCountedPtr<IGeometry> IGeometryPtr;
 //=======================================================================================
 template<typename T> struct ZeroInit
 {
-    ZeroInit()                           { std::memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit const&)            { std::memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit&&)                 { std::memset(this, 0, sizeof(T)); }
+    ZeroInit()                           { memset(this, 0, sizeof(T)); }
+    ZeroInit(ZeroInit const&)            { memset(this, 0, sizeof(T)); }
+    ZeroInit(ZeroInit&&)                 { memset(this, 0, sizeof(T)); }
     ZeroInit& operator=(ZeroInit const&) = default;
     ZeroInit& operator=(ZeroInit&&)      = default;
 };
@@ -545,6 +545,9 @@ typedef ValidatedValue <struct DRange3d> ValidatedDRange3d;
 typedef ValidatedValue <LocalRange> ValidatedLocalRange;
 typedef ValidatedValue <ClipPlane> ValidatedClipPlane;
 
+typedef ValidatedValue <FPoint3d> ValidatedFPoint3d;
+
+
 template<typename T>
 void CompressDuplicates (bvector<T> &data, bool (*SameMember)(T const &memberA, T const &memberB))
     {
@@ -702,6 +705,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include "dpoint2d.h"
 #include "dpoint3d.h"
+#include "FPoint3d.h"
 #include "dpoint4d.h"
 #include "GraphicsPoint.h"
 #include "GeoPoint.h"
@@ -933,13 +937,6 @@ size_t GetTotalFail () { return m_totalFail;}
     //! check and record a conditionw with index and tag that describe the condition.
     void Assert (bool condition, Utf8CP key, size_t index, int tag);
 };
-
-struct _fPoint3d
-    {
-    float x;
-    float y;
-    float z;
-    };
 
 struct _fPoint2d
     {

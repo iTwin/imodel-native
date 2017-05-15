@@ -184,14 +184,15 @@ $(OUT_DIR)catenary$(OUT_EXT) : $(geomSrcStructs)catenary.cpp    $(OTHER_DEPENDEN
 
 $(OUT_DIR)refdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)refdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)refdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint3d.cpp  $(geomSrcStructsCpp)refmethods/refFPoint3d.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 
 $(OUT_DIR)refOperatorOverload$(OUT_EXT) : $(geomSrcStructsCpp)refmethods/refOperatorOverload.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
-$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -909,7 +910,7 @@ $(OUT_DIR)MTGGraph$(OUT_EXT)      : $(geomSrcMTG)MTGGraph.cpp         $(OTHER_DE
 
 $(OUT_DIR)jmdl_mtgbase1$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgbase1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)MTGFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MTGFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 
 $(OUT_DIR)jmdl_mtgmask$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmask.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

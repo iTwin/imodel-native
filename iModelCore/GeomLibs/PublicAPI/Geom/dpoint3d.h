@@ -34,6 +34,8 @@ double z;
 static DPoint3d From (double x, double y, double z = 0.0);
 //! Return a DPoint3d with given xy, z = 0;
 static DPoint3d From (DPoint2dCR xy);
+//! Return a DPoint3d with given xyz
+static DPoint3d From (FPoint3dCR xyz);
 
 //! Return a DPoint3d with given 2d point and z
 static DPoint3d From (DPoint2dCR xy, double z);

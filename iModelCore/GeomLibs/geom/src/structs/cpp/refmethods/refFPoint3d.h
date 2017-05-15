@@ -1,289 +1,64 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/structs/cpp/refmethods/refdpoint3d.cpp $
+|     $Source: geom/src/structs/cpp/refmethods/refFPoint3d.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <bsibasegeomPCH.h>
+// refFPoint3d.h is #include'd into refDPoint3d.cpp (for template sharing) -- do NOT include PCH.
 BEGIN_BENTLEY_NAMESPACE
 
-/* VBSUB(Point3dDistanceSquared) */
-/* CSVFUNC(distanceSquared) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the points
-@group "DPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquared
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist, zdist;
-
-    xdist = (pPoint2->x - pPoint1->x);
-    ydist = (pPoint2->y - pPoint1->y);
-    zdist = (pPoint2->z - pPoint1->z);
-
-    return (xdist*xdist + ydist*ydist + zdist*zdist);
-    }
-
-/* VBSUB(Point3dDistanceSquaredXY) */
-/* CSVFUNC(distanceSquaredXY) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points, using only the xy parts.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the XY projections of the two points (i.e. any z difference is ignored)
-@group "DPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquaredXY
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist;
-
-    xdist = pPoint2->x - pPoint1->x;
-    ydist = pPoint2->y - pPoint1->y;
-
-    return (xdist*xdist + ydist*ydist);
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Sets all components of a point or vector to zero.
- @param pPoint <= zeroed point or vector
-@group "DPoint3d Initialization"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPoint3d_zero
-
-
-(
-DPoint3dP pPoint
-)
-    {
-    pPoint->x = 0.0;
-    pPoint->y = 0.0;
-    pPoint->z = 0.0;
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Sets the x,y, and z components of a point
- @param pPoint <= initialized point or vector
- @param ax => x component
- @param ay => y component
- @param az => z component
-@group "DPoint3d Initialization"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPoint3d_setXYZ
-
-
-(
-DPoint3dP pPoint,
-double       ax,
-double       ay,
-double       az
-)
-    {
-    pPoint->x = ax;
-    pPoint->y = ay;
-    pPoint->z = az;
-    }
-
-/*-----------------------------------------------------------------*//**
- @description Finds the largest absolute value among the components of a point or vector.
- @param pVector => point or vector
- @return largest absolute value among point coordinates
-@group "DPoint3d Queries"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_maxAbs
-
-
-(
-DPoint3dCP pVector
-)
-    {
-    double maxVal = fabs (pVector->x);
-
-    if (fabs (pVector->y) > maxVal)
-        maxVal = fabs (pVector->y);
-
-    if (fabs (pVector->z) > maxVal)
-        maxVal = fabs (pVector->z);
-
-    return maxVal;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Computes the magnitude of a vector.
-* @instance pVector => The vector
-* @return The length of the vector
-* @bsihdr                                                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_magnitude
-(
-DPoint3dCP pVector
-)
-    {
-    return  sqrt ( pVector->x*pVector->x
-                 + pVector->y*pVector->y
-                 + pVector->z*pVector->z);
-    }
-
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::From (double xx, double yy, double zz)
+FPoint3d FPoint3d::From (double xx, double yy, double zz)
     {
-    DPoint3d xyz;
-    xyz.x = xx;
-    xyz.y = yy;
-    xyz.z = zz;
-    return xyz;
+    return from (xx, yy, zz);        // inlined -- collapses to float
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::From (FPoint3dCR in)
-    {
-    DPoint3d xyz;
-    xyz.x = in.x;
-    xyz.y = in.y;
-    xyz.z = in.z;
-    return xyz;
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromShift
+FPoint3d FPoint3d::FromShift
 (
-DPoint3dCR xyz0,    //!< [in] reference point
+FPoint3dCR xyz0,    //!< [in] reference point
 double dx,      //!< [in] shift to apply to x direction
 double dy,      //!< [in] shift to apply to y direction
 double dz       //!< [in] shift to apply to z direction
 )
     {
-    DPoint3d xyz;
-    xyz.x = xyz0.x + dx;
-    xyz.y = xyz0.y + dy;
-    xyz.z = xyz0.z + dz;
-    return xyz;
+    return from (xyz0.x + dx, xyz0.y + dy, xyz0.z + dz);
     }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+FPoint3d FPoint3d::FromXY (FPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
+FPoint3d FPoint3d::FromXY (DPoint3dCR xy, double zz) {return from (xy.x, xy.z, xy.z);}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromXY (DPoint3dCR xy, double zz)
-    {
-    DPoint3d xyz;
-    xyz.x = xy.x;
-    xyz.y = xy.y;
-    xyz.z = zz;
-    return xyz;
-    }
+FPoint3d FPoint3d::From (DPoint2dCR xy, double zz) {return from (xy.x, xy.y, zz);}
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::From (DPoint2dCR xy, double zz)
-    {
-    DPoint3d xyz;
-    xyz.x = xy.x;
-    xyz.y = xy.y;
-    xyz.z = zz;
-    return xyz;
-    }
-
+FPoint3d FPoint3d::From (DPoint3dCR xyz) {return from (xyz.x, xyz.y, xyz.z);}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     08/13
+// @bsimethod                                                   EarlinLutz     08/13
 //---------------------------------------------------------------------------------------
-DPoint3d DPoint3d::FromZero ()
-    {
-    DPoint3d xyz;
-    xyz.Zero();
-    return xyz;
-    }
+FPoint3d FPoint3d::FromZero () { return from (0.0, 0.0, 0.0);}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     08/13
+// @bsimethod                                                   EarlinLutz     08/13
 //---------------------------------------------------------------------------------------
-DPoint3d DPoint3d::FromOne ()
-    {
-    DPoint3d xyz;
-    xyz.One();
-    return xyz;
-    }
-
-DPoint3d DPoint3d::From (DPoint2dCR xy)
-    {
-    DPoint3d xyz;
-    xyz.x = xy.x;
-    xyz.y = xy.y;
-    xyz.z = 0.0;
-    return xyz;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromXYZ (double xx, double yy, double zz)
-    {
-    DPoint3d xyz;
-    xyz.x = xx;
-    xyz.y = yy;
-    xyz.z = zz;
-    return xyz;
-    }
-
-/*-----------------------------------------------------------------*//**
-* @description Returns a DPoint3d with doubles from a 3 component array to the x,y, and z components
-* of a DPoint3d
-*
-* @param [in] pXyz x, y, z components
-+----------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromArray
-(
-const   double  *pXyz
-)
-    {
-    DPoint3d xyz;
-    xyz.x = pXyz[0];
-    xyz.y = pXyz[1];
-    xyz.z = pXyz[2];
-    return xyz;
-    }
-
-
+FPoint3d FPoint3d::FromOne (){return from (1.0, 1.0, 1.0);}
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void DPoint3d::Swap (DPoint3dR other)
+void FPoint3d::Swap (FPoint3dR other)
     {
-    DPoint3d temp = *this;
+    FPoint3d temp = *this;
     *this = other;
     other = temp;
     }
@@ -298,12 +73,10 @@ void DPoint3d::Swap (DPoint3dR other)
 * @param [in] target2 The target point for the second vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::CrossProductToPointsXY
+double FPoint3d::CrossProductToPointsXY
 (
-
-DPoint3dCR target1,
-DPoint3dCR target2
-
+FPoint3dCR target1,
+FPoint3dCR target2
 ) const
     {
     double x1 = target1.x - x;
@@ -323,11 +96,11 @@ DPoint3dCR target2
 * @param [in] target2 The target point for the second vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotProductToPoints
+double FPoint3d::DotProductToPoints
 (
 
-DPoint3dCR target1,
-DPoint3dCR target2
+FPoint3dCR target1,
+FPoint3dCR target2
 
 ) const
     {
@@ -350,11 +123,11 @@ DPoint3dCR target2
 * @param [in] target2 The target point for the second vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotProductToPointsXY
+double FPoint3d::DotProductToPointsXY
 (
 
-DPoint3dCR target1,
-DPoint3dCR target2
+FPoint3dCR target1,
+FPoint3dCR target2
 
 ) const
     {
@@ -368,6 +141,7 @@ DPoint3dCR target2
     }
 
 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns the (scalar) dot product of a two vectors.
 *  One vector is computed internally as the difference of the TargetPoint
@@ -378,10 +152,10 @@ DPoint3dCR target2
 * @param [in] vector  The second
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotDifference
+double FPoint3d::DotDifference
 (
 
-DPoint3dCR origin,
+FPoint3dCR origin,
 DVec3dCR vector
 
 ) const
@@ -401,12 +175,12 @@ DVec3dCR vector
 * @return The triple product
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::TripleProductToPoints
+double FPoint3d::TripleProductToPoints
 (
 
-DPoint3dCR target1,
-DPoint3dCR target2,
-DPoint3dCR target3
+FPoint3dCR target1,
+FPoint3dCR target2,
+FPoint3dCR target3
 
 ) const
     {
@@ -417,55 +191,18 @@ DPoint3dCR target3
     return vector1.TripleProduct (vector2, vector3);
     }
 
-
 /*-----------------------------------------------------------------*//**
 * @description Sets all components of a point or vector to zero.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Zero
-(
-
-)
-    {
-    x = 0.0;
-    y = 0.0;
-    z = 0.0;
-    }
+void FPoint3d::Zero () {x = y = z = 0.0;}
 
 
 /*-----------------------------------------------------------------*//**
 * @description Returns a point or vector with all components 1.0.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::One
-(
-
-)
-    {
-    x = 1.0;
-    y = 1.0;
-    z = 1.0;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Copies doubles from a 3 component array to the x,y, and z components
-* of a DPoint3d
-*
-* @param [in] pXyz x, y, z components
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::InitFromArray
-(
-
-const   double      *pXyz
-
-)
-    {
-    x = pXyz[0];
-    y = pXyz[1];
-    z = pXyz[2];
-    }
+void FPoint3d::One () {x = y = z = 1.0;}
 
 
 
@@ -475,13 +212,10 @@ const   double      *pXyz
 * @param [out] fPoint source point
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Init (DPoint2dCR source)
+void FPoint3d::Init (DPoint2dCR source, double zz)
     {
-    x = source.x;
-    y = source.y;
-    z = 0.0;
+    init (source.x, source.y, zz);
     }
-
 
 
 /*-----------------------------------------------------------------*//**
@@ -492,7 +226,7 @@ void DPoint3d::Init (DPoint2dCR source)
 * @param [in] az The z component.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Init
+void FPoint3d::Init
 (
 
 double       ax,
@@ -501,51 +235,25 @@ double       az
 
 )
     {
-    x = ax;
-    y = ay;
-    z = az;
+    init (ax, ay, az);
     }
 
 
 /*-----------------------------------------------------------------*//**
-* @description Sets the x, and y components of a point. Sets z to zero.
-*
-* @param [in] ax The x component.
-* @param [in] ax The x component.
-* @param [in] ay The y component
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::Init
-(
-
-double       ax,
-double       ay
-
-)
-    {
-    x = ax;
-    y = ay;
-    z = 0.0;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Sets the x,y, and z components of a DPoint3d structure from the
+* @description Sets the x,y, and z components of a FPoint3d structure from the
 * corresponding parts of a DPoint4d.  Weight part of DPoint4d is not used.
 *
 * @param [in] hPoint The homogeneous point
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::XyzOf
+void FPoint3d::XyzOf
 (
 
 DPoint4dCR hPoint
 
 )
     {
-    x = hPoint.x;
-    y = hPoint.y;
-    z = hPoint.z;
+    init (hPoint.x, hPoint.y, hPoint.z);
     }
 
 
@@ -556,7 +264,7 @@ DPoint4dCR hPoint
 * @param [in] index Selects the the axis: 0=x, 1=y, 2=z, others cyclic.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::SetComponent
+void FPoint3d::SetComponent
 (
 
 double       a,
@@ -568,15 +276,15 @@ int         index
         index = index % 3;
     if (index == 0)
         {
-        x = a;
+        x = (float)a;
         }
     else if (index == 1)
         {
-        y = a;
+        y = (float)a;
         }
     else if (index == 2)
         {
-        z = a;
+        z = (float)a;
         }
     else /* index < 0.*/
         {
@@ -594,7 +302,7 @@ int         index
 * @return The specified component of the point or vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::GetComponent
+double FPoint3d::GetComponent
 (
 
 int index
@@ -630,7 +338,7 @@ int index
 * @param [out] zCoord z component
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::GetComponents
+void FPoint3d::GetComponents
 (
 
 double      &xCoord,
@@ -655,27 +363,31 @@ double      &zCoord
 * @param [in] point1 The point corresponding to fractionParameter of 1.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Interpolate
+void FPoint3d::Interpolate
 (
 
-DPoint3dCR point0,
+FPoint3dCR point0,
 double fractionParameter,
-DPoint3dCR point1
+FPoint3dCR point1
 
 )
     {
     if (fractionParameter <= 0.5)
         {
-        x = point0.x + fractionParameter * (point1.x - point0.x);
-        y = point0.y + fractionParameter * (point1.y - point0.y);
-        z = point0.z + fractionParameter * (point1.z - point0.z);
+        init (
+            point0.x + fractionParameter * (point1.x - point0.x),
+            point0.y + fractionParameter * (point1.y - point0.y),
+            point0.z + fractionParameter * (point1.z - point0.z)
+            );
         }
     else
         {
         double t = fractionParameter - 1.0;
-        x = point1.x + t * (point1.x - point0.x);
-        y = point1.y + t * (point1.y - point0.y);
-        z = point1.z + t * (point1.z - point0.z);
+        init (
+            point1.x + t * (point1.x - point0.x),
+            point1.y + t * (point1.y - point0.y),
+            point1.z + t * (point1.z - point0.z)
+            );
         }
     }
 
@@ -689,12 +401,12 @@ DPoint3dCR point1
 * @return true if the test point is within the angle.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsPointInSmallerSector
+bool FPoint3d::IsPointInSmallerSector
 (
 
-DPoint3dCR origin,
-DPoint3dCR target1,
-DPoint3dCR target2
+FPoint3dCR origin,
+FPoint3dCR target1,
+FPoint3dCR target2
 
 ) const
     {
@@ -716,12 +428,12 @@ DPoint3dCR target2
 * @return true if the test point is within the angle.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsPointInCCWector
+bool FPoint3d::IsPointInCCWector
 (
 
-DPoint3dCR origin,
-DPoint3dCR target0,
-DPoint3dCR target1,
+FPoint3dCR origin,
+FPoint3dCR target0,
+FPoint3dCR target1,
 DVec3dCR upVector
 
 ) const
@@ -741,10 +453,10 @@ DVec3dCR upVector
 * @return The distance between points.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::Distance
+double FPoint3d::Distance
 (
 
-DPoint3dCR point2
+FPoint3dCR point2
 
 ) const
     {
@@ -765,10 +477,10 @@ DPoint3dCR point2
 * @return The squared distance between the points.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DistanceSquared
+double FPoint3d::DistanceSquared
 (
 
-DPoint3dCR point2
+FPoint3dCR point2
 
 ) const
     {
@@ -791,10 +503,10 @@ DPoint3dCR point2
 *               (i.e. any z difference is ignored)
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DistanceSquaredXY
+double FPoint3d::DistanceSquaredXY
 (
 
-DPoint3dCR point2
+FPoint3dCR point2
 
 ) const
     {
@@ -816,10 +528,10 @@ DPoint3dCR point2
 *               (i.e. any z difference is ignored)
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DistanceXY
+double FPoint3d::DistanceXY
 (
 
-DPoint3dCR point2
+FPoint3dCR point2
 
 ) const
     {
@@ -838,9 +550,9 @@ DPoint3dCR point2
 //! @param [in] matrix optional transfromation
 //! @param [out] distance computed distance.
 //! @return true if both points normalized properly after the transform.
-bool DPoint3d::DistanceXY
+bool FPoint3d::DistanceXY
 (
-DPoint3dCR otherPoint,
+FPoint3dCR otherPoint,
 DMatrix4dCP matrix,
 double &distance
 ) const
@@ -851,8 +563,8 @@ double &distance
         return true;
         }
     DPoint3d xyzA, xyzB;
-    DPoint4d xyzwA = DPoint4d::FromMultiply (matrix, *this);
-    DPoint4d xyzwB = DPoint4d::FromMultiply (matrix, otherPoint);
+    DPoint4d xyzwA = DPoint4d::FromMultiply (matrix, DPoint3d::From(*this));
+    DPoint4d xyzwB = DPoint4d::FromMultiply (matrix, DPoint3d::From (otherPoint));
     if (xyzwA.GetProjectedXYZ (xyzA) && xyzwB.GetProjectedXYZ (xyzB))
         {
         distance = xyzA.DistanceXY (xyzB);
@@ -865,7 +577,7 @@ double &distance
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::MaxAbs () const
+double FPoint3d::MaxAbs () const
     {
     double maxVal = fabs (x);
 
@@ -881,7 +593,7 @@ double DPoint3d::MaxAbs () const
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                EarlinLutz      08/15
 +----------------------------------------------------------------------*/
-double DPoint3d::MaxDiff (DPoint3dCR other) const
+double FPoint3d::MaxDiff (FPoint3dCR other) const
     {
     double maxVal = fabs (x - other.x);
 
@@ -901,7 +613,7 @@ double DPoint3d::MaxDiff (DPoint3dCR other) const
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                EarlinLutz      01/14
 +----------------------------------------------------------------------*/
-double DPoint3d::MinAbs () const
+double FPoint3d::MinAbs () const
     {
     double maxVal = fabs (x);
 
@@ -917,7 +629,7 @@ double DPoint3d::MinAbs () const
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                EarlinLutz      01/14
 +----------------------------------------------------------------------*/
-int DPoint3d::MaxAbsIndex () const
+int FPoint3d::MaxAbsIndex () const
     {
     double maxVal = fabs (x);
     int index = 0;
@@ -939,7 +651,7 @@ int DPoint3d::MaxAbsIndex () const
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                EarlinLutz      01/14
 +----------------------------------------------------------------------*/
-int DPoint3d::MinAbsIndex () const
+int FPoint3d::MinAbsIndex () const
     {
     double maxVal = fabs (x);
     int index = 0;
@@ -959,7 +671,7 @@ int DPoint3d::MinAbsIndex () const
     }
 
 //! @description Returns the range of components.
-DRange1d DPoint3d::ComponentRange () const {return DRange1d::From (x,y,z);}
+DRange1d FPoint3d::ComponentRange () const {return DRange1d::From (x,y,z);}
 
 
 /*-----------------------------------------------------------------*//**
@@ -968,10 +680,10 @@ DRange1d DPoint3d::ComponentRange () const {return DRange1d::From (x,y,z);}
 * @return true if the points are identical.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsEqual
+bool FPoint3d::IsEqual
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -996,10 +708,10 @@ DPoint3dCR vector2
 * @return true if all components are within given tolerance of each other.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsEqual
+bool FPoint3d::IsEqual
 (
 
-DPoint3dCR vector2,
+FPoint3dCR vector2,
 double                  tolerance
 
 ) const
@@ -1014,64 +726,6 @@ double                  tolerance
     }
 
 
-/*-----------------------------------------------------------------*//**
-* @description  Computes the coordinates of point under the translation
-* and scaling that puts 000 at cube>low and 111 at cube>high.
-*
-* @param [in] point Point whose NPC coordinates are to be computed
-* @param [in] cube Cube whose corners map to 000 and 111
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::NpcCoordinatesOf
-(
-
-DPoint3dCR point,
-DRange3dCR cube
-
-)
-    {
-    //int     result = 0;
-    double  a;
-
-    a = cube.high.x - cube.low.x;
-    x = (a != 0.0) ? (point.x - cube.low.x) / a : 0.0;
-
-    a = cube.high.y - cube.low.y;
-    y = (a != 0.0) ? (point.y - cube.low.y) / a : 0.0;
-
-    a = cube.high.z - cube.low.z;
-    z = (a != 0.0) ? (point.z - cube.low.z) / a : 0.0;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @return true if the point has coordinates which indicate it is
-*   a disconnect (separator) ponit.
-* @bsimethod                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-bool DPoint3d::IsDisconnect
-(
-
-) const
-    {
-    return x == DISCONNECT
-        || y == DISCONNECT
-        || z == DISCONNECT;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* Initialize a point with all coordinates as the disconnect value.
-* @bsimethod                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::InitDisconnect
-(
-
-)
-    {
-    x = y = z = DISCONNECT;
-    }
-
 
 /*-----------------------------------------------------------------*//**
 * @description Initialize a point by copying x,y,z from a vector.
@@ -1079,16 +733,14 @@ void DPoint3d::InitDisconnect
 * @param [in] vector  The vecotr
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Init
+void FPoint3d::Init
 (
 
 DVec3dCR vector
 
 )
     {
-    x = vector.x;
-    y = vector.y;
-    z = vector.z;
+    init (vector.x, vector.y, vector.z);
     }
 
 
@@ -1100,17 +752,15 @@ DVec3dCR vector
 * @param [in] vector  The second point or vector
 * @bsimethod                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Subtract
+void FPoint3d::Subtract
 (
 
-DPoint3dCR base,
+FPoint3dCR base,
 DVec3dCR vector
 
 )
     {
-    x = base.x - vector.x;
-    y = base.y - vector.y;
-    z = base.z - vector.z;
+    init (base.x - vector.x, base.y - vector.y, base.z - vector.z);
     }
 
 
@@ -1120,37 +770,14 @@ DVec3dCR vector
 * @param [in] vector  The vector to add.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Add
+void FPoint3d::Add
 (
 
 DVec3dCR vector
 
 )
     {
-    x += vector.x;
-    y += vector.y;
-    z += vector.z;
-    }
-
-/*-----------------------------------------------------------------*//**
-* @description Adds a vector to a pointer or vector, returns the result in place.
-*
-* @param [in] delta  The vector to add.
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::AddToArray
-(
-DPoint3dP points,
-int n,
-DPoint3dCR delta
-)
-    {
-    for (int i = 0; i < n; i++)
-        {
-        points[i].x += delta.x;
-        points[i].y += delta.y;
-        points[i].z += delta.z;
-        }
+    init(x + vector.x, y + vector.y, z + vector.z);
     }
 
 
@@ -1162,18 +789,16 @@ DPoint3dCR delta
 * @param [in] scale  The scale factor.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::SumOf
+void FPoint3d::SumOf
 (
 
-DPoint3dCR origin,
+FPoint3dCR origin,
 DVec3dCR vector,
 double   scale
 
 )
     {
-    x = origin.x + vector.x * scale;
-    y = origin.y + vector.y * scale;
-    z = origin.z + vector.z * scale;
+    init (origin.x + vector.x * scale, origin.y + vector.y * scale, origin.z + vector.z * scale);
     }
 
 
@@ -1187,10 +812,10 @@ double   scale
 * @param [in] scale2  The second scale factor
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::SumOf
+void FPoint3d::SumOf
 (
 
-DPoint3dCR origin,
+FPoint3dCR origin,
 DVec3dCR vector1,
         double           scale1,
 DVec3dCR vector2,
@@ -1198,9 +823,11 @@ DVec3dCR vector2,
 
 )
     {
-    x = origin.x + vector1.x * scale1 + vector2.x * scale2;
-    y = origin.y + vector1.y * scale1 + vector2.y * scale2;
-    z = origin.z + vector1.z * scale1 + vector2.z * scale2;
+    init (
+        origin.x + vector1.x * scale1 + vector2.x * scale2,
+        origin.y + vector1.y * scale1 + vector2.y * scale2,
+        origin.z + vector1.z * scale1 + vector2.z * scale2
+        );
     }
 
 
@@ -1216,10 +843,10 @@ DVec3dCR vector2,
 * @param [in] scale3  The third scale factor
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::SumOf
+void FPoint3d::SumOf
 (
 
-DPoint3dCR origin,
+FPoint3dCR origin,
 DVec3dCR vector1,
         double          scale1,
 DVec3dCR vector2,
@@ -1229,11 +856,14 @@ DVec3dCR vector3,
 
 )
     {
-    x = origin.x + vector1.x * scale1 + vector2.x * scale2 + vector3.x * scale3;
-    y = origin.y + vector1.y * scale1 + vector2.y * scale2 + vector3.y * scale3;
-    z = origin.z + vector1.z * scale1 + vector2.z * scale2 + vector3.z * scale3;
+    init (
+        origin.x + vector1.x * scale1 + vector2.x * scale2 + vector3.x * scale3,
+        origin.y + vector1.y * scale1 + vector2.y * scale2 + vector3.y * scale3,
+        origin.z + vector1.z * scale1 + vector2.z * scale2 + vector3.z * scale3
+        );
     }
 
+#ifdef SKIP_IN_FPOINT3D
 
 /*-----------------------------------------------------------------*//**
 * @vbdescription Returns the cross (vector) cross product of two vectors.
@@ -1241,11 +871,11 @@ DVec3dCR vector3,
 * @param [in] vector2 The second vector
 * @bsimethod                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::CrossProduct
+void FPoint3d::CrossProduct
 (
 
-DPoint3dCR vector1,
-DPoint3dCR vector2
+FPoint3dCR vector1,
+FPoint3dCR vector2
 
 )
     {
@@ -1266,12 +896,12 @@ DPoint3dCR vector2
 * @param [in] target2 The target point for the second vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::CrossProductToPoints
+void FPoint3d::CrossProductToPoints
 (
 
-DPoint3dCR origin,
-DPoint3dCR target1,
-DPoint3dCR target2
+FPoint3dCR origin,
+FPoint3dCR target1,
+FPoint3dCR target2
 
 )
     {
@@ -1296,10 +926,10 @@ DPoint3dCR target2
 * @return The 2d cross product.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::CrossProductXY
+double FPoint3d::CrossProductXY
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -1316,11 +946,11 @@ DPoint3dCR vector2
 * @return The length of the original (prenormalization) cross product vector
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::NormalizedCrossProduct
+double FPoint3d::NormalizedCrossProduct
 (
 
-DPoint3dCR vector1,
-DPoint3dCR vector2
+FPoint3dCR vector1,
+FPoint3dCR vector2
 
 )
     {
@@ -1340,11 +970,11 @@ DPoint3dCR vector2
 * @return The length of original vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::SizedCrossProduct
+double FPoint3d::SizedCrossProduct
 (
 
-DPoint3dCR vector1,
-DPoint3dCR vector2,
+FPoint3dCR vector1,
+FPoint3dCR vector2,
 double productLength
 
 )
@@ -1371,11 +1001,11 @@ double productLength
 * @return The length of original vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::GeometricMeanCrossProduct
+double FPoint3d::GeometricMeanCrossProduct
 (
 
-DPoint3dCR vector1,
-DPoint3dCR vector2
+FPoint3dCR vector1,
+FPoint3dCR vector2
 
 )
     {
@@ -1400,10 +1030,10 @@ DPoint3dCR vector2
 * @return The dot product of the two vectors
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotProduct
+double FPoint3d::DotProduct
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -1417,10 +1047,10 @@ DPoint3dCR vector2
 * @return The dot product of the xy parts of the two vectors
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotProductXY
+double FPoint3d::DotProductXY
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -1437,7 +1067,7 @@ DPoint3dCR vector2
 * @return The dot product of the vector with a vector with the given components
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::DotProduct
+double FPoint3d::DotProduct
 (
 
         double    ax,
@@ -1450,7 +1080,6 @@ double DPoint3d::DotProduct
     }
 
 
-
 /*-----------------------------------------------------------------*//**
 * @description Computes a unit vector  in the direction of the difference of the points
 * or vectors (Second parameter vector is subtracted from the first parameter vector,
@@ -1461,11 +1090,11 @@ double DPoint3d::DotProduct
 * @return The length of original difference vector.
 * @bsimethod                                            EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::NormalizedDifference
+double FPoint3d::NormalizedDifference
 (
 
-DPoint3dCR target,
-DPoint3dCR origin
+FPoint3dCR target,
+FPoint3dCR origin
 
 )
     {
@@ -1483,14 +1112,14 @@ DPoint3dCR origin
 * @return The angle between the vectors.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::AngleTo
+double FPoint3d::AngleTo
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
-    DPoint3d   crossProd;
+    FPoint3d   crossProd;
     double cross, dot;
     crossProd.CrossProduct (*this, vector2);
     cross   = crossProd.Magnitude ();
@@ -1500,7 +1129,7 @@ DPoint3dCR vector2
 /*-----------------------------------------------------------------*//**
 * @bsimethod                            EarlinLutz      09/12
 +----------------------------------------------------------------------*/
-double DPoint3d::AngleXY () const
+double FPoint3d::AngleXY () const
     {
     return  Angle::Atan2 (y, x);
     }
@@ -1516,14 +1145,14 @@ double DPoint3d::AngleXY () const
 * @return The angle between the vectors.
 * @bsimethod                              EarlinLutz    12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::SmallerUnorientedAngleTo
+double FPoint3d::SmallerUnorientedAngleTo
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
-    DPoint3d   crossProd;
+    FPoint3d   crossProd;
     double cross, dot;
     crossProd.CrossProduct (*this, vector2);
     cross   = crossProd.Magnitude ();
@@ -1553,15 +1182,15 @@ DPoint3dCR vector2
 * @return true if the test vector is within the angle.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsVectorInSmallerSector
+bool FPoint3d::IsVectorInSmallerSector
 (
 
-DPoint3dCR vector0,
-DPoint3dCR vector1
+FPoint3dCR vector0,
+FPoint3dCR vector1
 
 ) const
     {
-    DPoint3d   cross01;
+    FPoint3d   cross01;
     cross01.CrossProduct (vector0, vector1);
     return      vector0.TripleProduct (*this, cross01) > 0.0
             &&  this->TripleProduct (vector1, cross01) > 0.0;
@@ -1580,16 +1209,16 @@ DPoint3dCR vector1
 * @return true if test vector is within the angle.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsVectorInCCWSector
+bool FPoint3d::IsVectorInCCWSector
 (
 
-DPoint3dCR vector0,
-DPoint3dCR vector1,
-DPoint3dCR upVector
+FPoint3dCR vector0,
+FPoint3dCR vector1,
+FPoint3dCR upVector
 
 ) const
     {
-    DPoint3d    cross01;
+    FPoint3d    cross01;
     double      dot;
 
     cross01.CrossProduct (vector0, vector1);
@@ -1620,10 +1249,10 @@ DPoint3dCR upVector
 * @return The angle between vectors.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::AngleToXY
+double FPoint3d::AngleToXY
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -1643,10 +1272,10 @@ DPoint3dCR vector2
 * @return The angle between vectors.
 * @bsimethod                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::SmallerUnorientedAngleToXY
+double FPoint3d::SmallerUnorientedAngleToXY
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -1662,10 +1291,10 @@ DPoint3dCR vector2
 * @param [in] theta The rotation angle.
 * @bsimethod                            DavidAssaf      6/99
 +----------------------------------------------------------------------*/
-void DPoint3d::RotateXY
+void FPoint3d::RotateXY
 (
 
-DPoint3dCR vector,
+FPoint3dCR vector,
         double      theta
 
 )
@@ -1677,9 +1306,7 @@ DPoint3dCR vector,
     xx = vector.x;
     yy = vector.y;
 
-    x = xx * c - yy * s;
-    y = xx * s + yy * c;
-    z = vector.z;
+    init (xx * c - yy * s, xx * s + yy * c, vector.z);
     }
 
 
@@ -1688,7 +1315,7 @@ DPoint3dCR vector,
 * @param [in] theta The rotation angle.
 * @bsimethod                                                                    DavidAssaf      6/99
 +----------------------------------------------------------------------*/
-void DPoint3d::RotateXY
+void FPoint3d::RotateXY
 (
 
         double      theta
@@ -1702,11 +1329,11 @@ void DPoint3d::RotateXY
     xx = x;
     yy = y;
 
-    x = xx * c - yy * s;
-    y = xx * s + yy * c;
+    init (xx * c - yy * s, xx * s + yy * c, z);
     }
+#endif
 
-
+#ifdef SKIP_IN_FPOINT3D
 /*-----------------------------------------------------------------*//**
 * @description Computes the signed from one vector to another, in the plane
 *       of the two vectors.   Initial computation using only the two vectors
@@ -1720,15 +1347,15 @@ void DPoint3d::RotateXY
 * @return The signed angle
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::SignedAngleTo
+double FPoint3d::SignedAngleTo
 (
 
-DPoint3dCR vector2,
-DPoint3dCR orientationVector
+FPoint3dCR vector2,
+FPoint3dCR orientationVector
 
 ) const
     {
-    DPoint3d   crossProd;
+    FPoint3d   crossProd;
     double cross, dot, theta;
     crossProd.CrossProduct (*this, vector2);
     cross   = crossProd.Magnitude ();
@@ -1751,15 +1378,15 @@ DPoint3dCR orientationVector
 * @return The angle in plane
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::PlanarAngleTo
+double FPoint3d::PlanarAngleTo
 (
 
-DPoint3dCR vector2,
-DPoint3dCR planeNormal
+FPoint3dCR vector2,
+FPoint3dCR planeNormal
 
 ) const
     {
-    DPoint3d  projection1, projection2;
+    FPoint3d  projection1, projection2;
     double    square = planeNormal.DotProduct (planeNormal);
     double    projectionFactor1, projectionFactor2;
     double    factor;
@@ -1788,7 +1415,7 @@ DPoint3dCR planeNormal
 * @param [in] pTarget2 The second pont.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::WeightedDifferenceOf
+void FPoint3d::WeightedDifferenceOf
 (
 
 DPoint4dCR point1,
@@ -1812,7 +1439,7 @@ DPoint4dCR point2
 * @param [in] target2 The second target point.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::WeightedDifferenceCrossProduct
+void FPoint3d::WeightedDifferenceCrossProduct
 (
 
 DPoint4dCR basePoint,
@@ -1821,10 +1448,25 @@ DPoint4dCR target2
 
 )
     {
-    DPoint3d U, V;
+    FPoint3d U, V;
     U.WeightedDifferenceOf (target1, basePoint);
     V.WeightedDifferenceOf (target2, basePoint);
     this->CrossProduct (U, V);
+    }
+
+#endif
+
+/*-----------------------------------------------------------------*//**
+* @description Computes the magnitude of a vector.
+* @return The length of the vector
+* @bsimethod                                                                    EarlinLutz      12/97
++----------------------------------------------------------------------*/
+double FPoint3d::Magnitude
+(
+
+) const
+    {
+    return  sqrt (x * x + y * y + z * z);
     }
 
 
@@ -1834,7 +1476,7 @@ DPoint4dCR target2
 * @return The squared magnitude of the vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::MagnitudeSquared
+double FPoint3d::MagnitudeSquared
 (
 
 ) const
@@ -1848,7 +1490,7 @@ double DPoint3d::MagnitudeSquared
 * @return The magnitude of the xy parts of the given vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::MagnitudeXY
+double FPoint3d::MagnitudeXY
 (
 
 ) const
@@ -1862,25 +1504,24 @@ double DPoint3d::MagnitudeXY
 * @return The squared magnitude of the xy parts of the given vector.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::MagnitudeSquaredXY
+double FPoint3d::MagnitudeSquaredXY
 (
 
 ) const
     {
     return x * x + y * y;
     }
-
-
+#ifdef SKIP_IN_FPOINT3D
 /*-----------------------------------------------------------------*//**
 * @description Compute a unit vector perpendicular to the xy parts of given vector.
 * @param [in] vector The source vector
 * @return true if the input vector has nonzero length
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::UnitPerpendicularXY
+bool FPoint3d::UnitPerpendicularXY
 (
 
-DPoint3dCR vector
+FPoint3dCR vector
 
 )
     {
@@ -1897,31 +1538,16 @@ DPoint3dCR vector
     return true;
     }
 
-
-/*-----------------------------------------------------------------*//**
-* @description Computes the magnitude of a vector.
-* @return The length of the vector
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-double DPoint3d::Magnitude
-(
-
-) const
-    {
-    return  sqrt (x * x + y * y + z * z);
-    }
-
-
 /*-----------------------------------------------------------------*//**
 * @description Multiplies a vector by a scale factor.
 * @param [in] vector The vector to be scaled.
 * @param [in] scale The scale factor.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Scale
+void FPoint3d::Scale
 (
 
-DPoint3dCR vector,
+FPoint3dCR vector,
 double     scale
 
 )
@@ -1937,7 +1563,7 @@ double     scale
 * @param [in] scale The scale
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Scale
+void FPoint3d::Scale
 (
 
 double scale
@@ -1956,10 +1582,10 @@ double scale
 * @param [in] vector The vector to be negated.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Negate
+void FPoint3d::Negate
 (
 
-DPoint3dCR vector
+FPoint3dCR vector
 
 )
     {
@@ -1974,7 +1600,7 @@ DPoint3dCR vector
 *
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Negate
+void FPoint3d::Negate
 (
 
 )
@@ -1994,10 +1620,10 @@ void DPoint3d::Negate
 * @return The length prior to normalization
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::Normalize
+double FPoint3d::Normalize
 (
 
-DPoint3dCR vector
+FPoint3dCR vector
 
 )
     {
@@ -2035,10 +1661,10 @@ DPoint3dCR vector
 * @return The length prior to scaling.
 * @bsimethod                                                                    EarlinLutz      01/99
 +----------------------------------------------------------------------*/
-double DPoint3d::ScaleToLength
+double FPoint3d::ScaleToLength
 (
 
-DPoint3dCR vector,
+FPoint3dCR vector,
       double    length
 
 )
@@ -2076,7 +1702,7 @@ DPoint3dCR vector,
 * @return The length prior to scaling.
 * @bsimethod                                                                    EarlinLutz      01/99
 +----------------------------------------------------------------------*/
-double DPoint3d::ScaleToLength
+double FPoint3d::ScaleToLength
 (
 
 double length
@@ -2096,7 +1722,7 @@ double length
 * @return The length prior to normalization
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::Normalize
+double FPoint3d::Normalize
 (
 
 )
@@ -2122,14 +1748,14 @@ double DPoint3d::Normalize
 * @return true if the vectors are parallel within tolerance
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsParallelTo
+bool FPoint3d::IsParallelTo
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
-    DPoint3d    vecC;
+    FPoint3d    vecC;
     double      a2 = this->DotProduct (*this);
     double      b2 = vector2.DotProduct (vector2);
     double      cross;
@@ -2153,10 +1779,10 @@ DPoint3dCR vector2
 * @return true if vectors are perpendicular within tolerance
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::IsPerpendicularTo
+bool FPoint3d::IsPerpendicularTo
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 ) const
     {
@@ -2179,10 +1805,10 @@ DPoint3dCR vector2
 * @return true if division is numerically safe.
 * @bsimethod                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-bool DPoint3d::SafeDivide
+bool FPoint3d::SafeDivide
 (
 
-DPoint3dCR vector,
+FPoint3dCR vector,
 double  denominator
 
 )
@@ -2229,11 +1855,11 @@ double  denominator
 * @return The triple product
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-double DPoint3d::TripleProduct
+double FPoint3d::TripleProduct
 (
 
-DPoint3dCR vector2,
-DPoint3dCR vector3
+FPoint3dCR vector2,
+FPoint3dCR vector3
 
 ) const
     {
@@ -2251,10 +1877,10 @@ DPoint3dCR vector3
 * @param [in] vector2 The vector to subtract.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::Subtract
+void FPoint3d::Subtract
 (
 
-DPoint3dCR vector2
+FPoint3dCR vector2
 
 )
     {
@@ -2271,11 +1897,11 @@ DPoint3dCR vector2
 * @param [in] point2 The second (subtracted) point.
 * @bsimethod                                                                    EarlinLutz      12/97
 +----------------------------------------------------------------------*/
-void DPoint3d::DifferenceOf
+void FPoint3d::DifferenceOf
 (
 
-DPoint3dCR point1,
-DPoint3dCR point2
+FPoint3dCR point1,
+FPoint3dCR point2
 
 )
     {
@@ -2283,143 +1909,46 @@ DPoint3dCR point2
     y = point1.y - point2.y;
     z = point1.z - point2.z;
     }
+#endif
 
 
-/*-----------------------------------------------------------------*//**
-* @description Adds an origin and a scaled vector.
-*
-* @param [in] origin Origin for the sum.
-* @param [in] vector The vector to be added.
-* @param [in] scale The scale factor.
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::SumOf
-(
-
-DPoint3dCR origin,
-DPoint3dCR vector,
-double     scale
-
-)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2)
     {
-    x = origin.x + vector.x * scale;
-    y = origin.y + vector.y * scale;
-    z = origin.z + vector.z * scale;
+    init (
+        point1.x * a1 + point2.x * a2,
+        point1.y * a1 + point2.y * a2,
+        point1.z * a1 + point2.z * a2
+        );
     }
 
-
-/*-----------------------------------------------------------------*//**
-* @description Adds an origin and two scaled vectors.
-*
-* @param [in] origin The origin.  May be null.
-* @param [in] vector1 The first direction vector
-* @param [in] scale1 The first scale factor
-* @param [in] vector2 The second direction vector
-* @param [in] scale2 The second scale factor
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::SumOf
-(
-
-DPoint3dCR origin,
-DPoint3dCR vector1,
-        double           scale1,
-DPoint3dCR vector2,
-        double           scale2
-
-)
-    {
-    x = origin.x + vector1.x * scale1 + vector2.x * scale2;
-    y = origin.y + vector1.y * scale1 + vector2.y * scale2;
-    z = origin.z + vector1.z * scale1 + vector2.z * scale2;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Adds an origin and three scaled vectors.
-*
-* @param [in] origin The origin. May be null
-* @param [in] vector1 The first direction vector
-* @param [in] scale1 The first scale factor
-* @param [in] vector2 The second direction vector
-* @param [in] scale2 The second scale factor
-* @param [in] vector3 The third direction vector
-* @param [in] scale3 The third scale factor
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::SumOf
-(
-
-DPoint3dCR origin,
-DPoint3dCR vector1,
-        double          scale1,
-DPoint3dCR vector2,
-        double          scale2,
-DPoint3dCR vector3,
-        double          scale3
-
-)
-    {
-    x = origin.x + vector1.x * scale1 + vector2.x * scale2 + vector3.x * scale3;
-    y = origin.y + vector1.y * scale1 + vector2.y * scale2 + vector3.y * scale3;
-    z = origin.z + vector1.z * scale1 + vector2.z * scale2 + vector3.z * scale3;
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Adds a vector to a pointer or vector, returns the result in place.
-*
-* @param [in] vector The vector to add.
-* @bsimethod                                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DPoint3d::Add
-(
-
-DPoint3dCR vector
-
-)
-    {
-    x += vector.x;
-    y += vector.y;
-    z += vector.z;
-    }
 
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void DPoint3d::SumOf (DPoint3dCR point1, DPoint3dCR point2)
+void FPoint3d::SumOf (FPoint3dCR point1, double a1, FPoint3dCR point2, double a2, FPoint3dCR point3, double a3)
+    {
+    init (
+        point1.x * a1 + point2.x * a2 + point3.x * a3,
+        point1.y * a1 + point2.y * a2 + point3.y * a3,
+        point1.z * a1 + point2.z * a2 + point3.z * a3
+        );
+    }
+
+
+#ifdef SKIP_IN_FPOINT3D
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void FPoint3d::SumOf (FPoint3dCR point1, FPoint3dCR point2)
     {
     x = point1.x + point2.x;
     y = point1.y + point2.y;
     z = point1.z + point2.z;
-    }
-
-
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void DPoint3d::SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2)
-    {
-    x = point1.x * a1 + point2.x * a2;
-    y = point1.y * a1 + point2.y * a2;
-    z = point1.z * a1 + point2.z * a2;
-    }
-
-
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void DPoint3d::SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2, DPoint3dCR point3, double a3)
-    {
-    x = point1.x * a1 + point2.x * a2 + point3.x * a3;
-    y = point1.y * a1 + point2.y * a2 + point3.y * a3;
-    z = point1.z * a1 + point2.z * a2 + point3.z * a3;
     }
 
 
@@ -2432,7 +1961,7 @@ void DPoint3d::SumOf (DPoint3dCR point1, double a1, DPoint3dCR point2, double a2
 * @param n => number of points.
 * @bsimethod                                    EarlinLutz      08/07
 +----------------------------------------------------------------------*/
-void DPoint3d::MultiplyArrayByScales
+void FPoint3d::MultiplyArrayByScales
 (
 DPoint3dP pDest,
 DPoint3dCP pSource,
@@ -2459,7 +1988,7 @@ int        n
 * @param n => number of points.
 * @bsimethod                                     EarlinLutz      08/07
 +----------------------------------------------------------------------*/
-void DPoint3d::DivideArrayByScales
+void FPoint3d::DivideArrayByScales
 (
 DPoint3dP pDest,
 DPoint3dCP pSource,
@@ -2481,11 +2010,11 @@ int        n
         }
     }
 
-
+#endif
 //! return product of transform times point given as components
 //! @param [in] transform affine transform.
 //! @param [in] point point to transform.
-DPoint3d DPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
 TransformCR transform,
 double x,
@@ -2493,20 +2022,21 @@ double y,
 double z
 )
     {
-    DPoint3d result;
-    result.x = transform.form3d[0][3]
+    return from
+            (
+            transform.form3d[0][3]
                 + transform.form3d[0][0] * x
                 + transform.form3d[0][1] * y
-                + transform.form3d[0][2] * z;
-    result.y = transform.form3d[1][3]
+                + transform.form3d[0][2] * z,
+            transform.form3d[1][3]
                 + transform.form3d[1][0] * x
                 + transform.form3d[1][1] * y
-                + transform.form3d[1][2] * z;
-    result.z = transform.form3d[2][3]
+                + transform.form3d[1][2] * z,
+            transform.form3d[2][3]
                 + transform.form3d[2][0] * x
                 + transform.form3d[2][1] * y
-                + transform.form3d[2][2] * z;
-    return result;
+                + transform.form3d[2][2] * z
+            );
     }
 
 
@@ -2515,55 +2045,55 @@ double z
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
-DPoint3dCR  origin,
+FPoint3dCR  origin,
 RotMatrixCR matrix,
 double x,
 double y,
 double z
 )
     {
-    DPoint3d result;
-    result.x = origin.x
+    return from (
+            origin.x
                 + matrix.form3d[0][0] * x
                 + matrix.form3d[0][1] * y
-                + matrix.form3d[0][2] * z;
-    result.y = origin.y
+                + matrix.form3d[0][2] * z,
+            origin.y
                 + matrix.form3d[1][0] * x
                 + matrix.form3d[1][1] * y
-                + matrix.form3d[1][2] * z;
-    result.z = origin.z
+                + matrix.form3d[1][2] * z,
+            origin.z
                 + matrix.form3d[2][0] * x
                 + matrix.form3d[2][1] * y
-                + matrix.form3d[2][2] * z;
-    return result;
+                + matrix.form3d[2][2] * z
+                );
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
 (
-DPoint3dCR  origin,
+FPoint3dCR  origin,
 RotMatrixCR matrix,
 DVec3dCR vector
 )
     {
-    DPoint3d result;
-    result.x = origin.x
+    return from (
+            origin.x
                 + matrix.form3d[0][0] * vector.x
                 + matrix.form3d[0][1] * vector.y
-                + matrix.form3d[0][2] * vector.z;
-    result.y = origin.y
+                + matrix.form3d[0][2] * vector.z,
+            origin.y
                 + matrix.form3d[1][0] * vector.x
                 + matrix.form3d[1][1] * vector.y
-                + matrix.form3d[1][2] * vector.z;
-    result.z = origin.z
+                + matrix.form3d[1][2] * vector.z,
+            origin.z
                 + matrix.form3d[2][0] * vector.x
                 + matrix.form3d[2][1] * vector.y
-                + matrix.form3d[2][2] * vector.z;
-    return result;
+                + matrix.form3d[2][2] * vector.z
+            );
     }
 
 
@@ -2572,51 +2102,50 @@ DVec3dCR vector
 //! @param [in] pointA start point
 //! @param [in] fraction fractional parameter
 //! @param [in] pointB end point
-DPoint3d DPoint3d::FromInterpolate
+FPoint3d FPoint3d::FromInterpolate
 (
-DPoint3dCR pointA,
+FPoint3dCR pointA,
 double     fraction,
-DPoint3dCR pointB
+FPoint3dCR pointB
 )
     {
-    DPoint3d result;
+    FPoint3d result;
     result.Interpolate (pointA, fraction, pointB);
     return result;
     }
-
+#ifdef SKIP_IN_FPOINT3D
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2016
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromInterpolateAndPerpendicularXY
+FPoint3d FPoint3d::FromInterpolateAndPerpendicularXY
 (
-DPoint3dCR pointA,
+FPoint3dCR pointA,
 double     fraction,
-DPoint3dCR pointB,
+FPoint3dCR pointB,
 double fractionXYPerp
 )
     {
     DVec3d vector = pointB - pointA;
-    DPoint3d result;
+    FPoint3d result;
     result.Interpolate (pointA, fraction, pointB);
     result.x -= fractionXYPerp * vector.y;
     result.y += fractionXYPerp * vector.x;
     return result;
     }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2016
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromWeightedAverage
+FPoint3d FPoint3d::FromWeightedAverage
 (
-DPoint3dCR pointA,  //!< [in] first point
+FPoint3dCR pointA,  //!< [in] first point
 double weightA,     //!< [in] weight of first point.
-DPoint3dCR pointB,  //!< [in] second point
+FPoint3dCR pointB,  //!< [in] second point
 double weightB      //!< [in] weight of second point
 )
     {
     double f;
     DoubleOps::SafeDivide (f, weightB, weightA + weightB, 0.5);
-    DPoint3d result;
+    FPoint3d result;
     result.Interpolate (pointA, f, pointB);
     return result;
     }
@@ -2624,13 +2153,13 @@ double weightB      //!< [in] weight of second point
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2016
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromWeightedAverage
+FPoint3d FPoint3d::FromWeightedAverage
 (
-DPoint3dCR pointA,  //!< [in] first point
+FPoint3dCR pointA,  //!< [in] first point
 double weightA,     //!< [in] weight of first point.
-DPoint3dCR pointB,  //!< [in] second point
+FPoint3dCR pointB,  //!< [in] second point
 double weightB,     //!< [in] weight of second point.
-DPoint3dCR pointC,  //!< [in] third point
+FPoint3dCR pointC,  //!< [in] third point
 double weightC      //!< [in] weight of third point
 )
     {
@@ -2647,49 +2176,34 @@ double weightC      //!< [in] weight of third point
         {
         fA = fB = fC = 1.0/3.0;
         }
-    return DPoint3d::FromSumOf (pointA, fA, pointB, fB, pointC, fC);
+    return FPoint3d::FromSumOf (pointA, fA, pointB, fB, pointC, fC);
     }
 
+#endif
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector)
+    {
+    return from (
+        pointA.x + vector.x,
+        pointA.y + vector.y,
+        pointA.z + vector.z
+        );
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector)
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector, double scaleFactor)
     {
-    DPoint3d result;
-    result.x = pointA.x + vector.x;
-    result.y = pointA.y + vector.y;
-    result.z = pointA.z + vector.z;
-    return result;
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector, double scaleFactor)
-    {
-    DPoint3d result;
-    result.x = pointA.x + vector.x * scaleFactor;
-    result.y = pointA.y + vector.y * scaleFactor;
-    result.z = pointA.z + vector.z * scaleFactor;
-    return result;
-    }
-
-
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector0, double scaleFactor0, DPoint3dCR vector1, double scaleFactor1)
-    {
-    DPoint3d result;
-    result.x = pointA.x + vector0.x * scaleFactor0 + vector1.x * scaleFactor1;
-    result.y = pointA.y + vector0.y * scaleFactor0 + vector1.y * scaleFactor1;
-    result.z = pointA.z + vector0.z * scaleFactor0 + vector1.z * scaleFactor1;
-    return result;
+    return from (
+        pointA.x + vector.x * scaleFactor,
+        pointA.y + vector.y * scaleFactor,
+        pointA.z + vector.z * scaleFactor
+        );
     }
 
 
@@ -2698,13 +2212,13 @@ DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector0, double scal
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector0, double scaleFactor0, DPoint3dCR vector1, double scaleFactor1, DPoint3dCR vector2, double scaleFactor2)
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1)
     {
-    DPoint3d result;
-    result.x = pointA.x + vector0.x * scaleFactor0 + vector1.x * scaleFactor1 + vector2.x * scaleFactor2;
-    result.y = pointA.y + vector0.y * scaleFactor0 + vector1.y * scaleFactor1 + vector2.y * scaleFactor2;
-    result.z = pointA.z + vector0.z * scaleFactor0 + vector1.z * scaleFactor1 + vector2.z * scaleFactor2;
-    return result;
+    return from (
+        pointA.x + vector0.x * scaleFactor0 + vector1.x * scaleFactor1,
+        pointA.y + vector0.y * scaleFactor0 + vector1.y * scaleFactor1,
+        pointA.z + vector0.z * scaleFactor0 + vector1.z * scaleFactor1
+        );
     }
 
 
@@ -2713,39 +2227,56 @@ DPoint3d DPoint3d::FromSumOf (DPoint3dCR pointA, DPoint3dCR vector0, double scal
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromScale (DPoint3d point, double scale)
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR pointA, DVec3dCR  vector0, double scaleFactor0, DVec3dCR vector1, double scaleFactor1, DVec3dCR vector2, double scaleFactor2)
     {
-    DPoint3d result;
+    return from (
+        pointA.x + vector0.x * scaleFactor0 + vector1.x * scaleFactor1 + vector2.x * scaleFactor2,
+        pointA.y + vector0.y * scaleFactor0 + vector1.y * scaleFactor1 + vector2.y * scaleFactor2,
+        pointA.z + vector0.z * scaleFactor0 + vector1.z * scaleFactor1 + vector2.z * scaleFactor2
+        );
+    }
+
+
+
+#ifdef SKIP_IN_DPOINT3D
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+FPoint3d FPoint3d::FromScale (FPoint3d point, double scale)
+    {
+    FPoint3d result;
     result.x = point.x * scale;
     result.y = point.y * scale;
     result.z = point.z * scale;
     return result;
     }
+#endif
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR point0, double scaleFactor0, DPoint3dCR point1, double scaleFactor1)
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR point1, double scaleFactor1)
     {
-    DPoint3d result;
-    result.x = point0.x * scaleFactor0 + point1.x * scaleFactor1;
-    result.y = point0.y * scaleFactor0 + point1.y * scaleFactor1;
-    result.z = point0.z * scaleFactor0 + point1.z * scaleFactor1;
-    return result;
+    return from (
+        point0.x * scaleFactor0 + point1.x * scaleFactor1,
+        point0.y * scaleFactor0 + point1.y * scaleFactor1,
+        point0.z * scaleFactor0 + point1.z * scaleFactor1
+        );
     }
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromSumOf (DPoint3dCR point0, double scaleFactor0, DPoint3dCR point1, double scaleFactor1, DPoint3dCR point2, double scaleFactor2)
+FPoint3d FPoint3d::FromSumOf (FPoint3dCR point0, double scaleFactor0, FPoint3dCR point1, double scaleFactor1, FPoint3dCR point2, double scaleFactor2)
     {
-    DPoint3d result;
-    result.x = point0.x * scaleFactor0 + point1.x * scaleFactor1 + point2.x * scaleFactor2;
-    result.y = point0.y * scaleFactor0 + point1.y * scaleFactor1 + point2.y * scaleFactor2;
-    result.z = point0.z * scaleFactor0 + point1.z * scaleFactor1 + point2.z * scaleFactor2;
-    return result;
+    return from (
+        point0.x * scaleFactor0 + point1.x * scaleFactor1 + point2.x * scaleFactor2,
+        point0.y * scaleFactor0 + point1.y * scaleFactor1 + point2.y * scaleFactor2,
+        point0.z * scaleFactor0 + point1.z * scaleFactor1 + point2.z * scaleFactor2
+        );
     }
 
 
@@ -2755,17 +2286,17 @@ DPoint3d DPoint3d::FromSumOf (DPoint3dCR point0, double scaleFactor0, DPoint3dCR
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-DPoint3d DPoint3d::FromInterpolateBilinear (DPoint3dCR data00, DPoint3dCR data10, DPoint3dCR data01, DPoint3dCR data11, double u, double v)
+FPoint3d FPoint3d::FromInterpolateBilinear (FPoint3dCR data00, FPoint3dCR data10, FPoint3dCR data01, FPoint3dCR data11, double u, double v)
     {
     double a00 = (1.0 - u) * (1.0 - v);
     double a10 = u * (1.0 - v);
     double a01 = (1.0 - u) * v;
     double a11 = u * v;
-    DPoint3d result;
-    result.x = a00 * data00.x + a10 * data10.x + a01 * data01.x + a11 * data11.x;
-    result.y = a00 * data00.y + a10 * data10.y + a01 * data01.y + a11 * data11.y;
-    result.z = a00 * data00.z + a10 * data10.z + a01 * data01.z + a11 * data11.z;
-    return result;
+    return from (
+        a00 * data00.x + a10 * data10.x + a01 * data01.x + a11 * data11.x,
+        a00 * data00.y + a10 * data10.y + a01 * data01.y + a11 * data11.y,
+        a00 * data00.z + a10 * data10.z + a01 * data01.z + a11 * data11.z
+        );
     }
 
 
@@ -2775,134 +2306,73 @@ DPoint3d DPoint3d::FromInterpolateBilinear (DPoint3dCR data00, DPoint3dCR data10
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
-DPoint3d DPoint3d::FromProduct
+FPoint3d FPoint3d::FromMultiply
+(
+TransformCR transform,
+FPoint3dCR point
+)
+    {
+    return from (
+        transform.form3d[0][3]
+                + transform.form3d[0][0] * point.x
+                + transform.form3d[0][1] * point.y
+                + transform.form3d[0][2] * point.z,
+        transform.form3d[1][3]
+                + transform.form3d[1][0] * point.x
+                + transform.form3d[1][1] * point.y
+                + transform.form3d[1][2] * point.z,
+        transform.form3d[2][3]
+                + transform.form3d[2][0] * point.x
+                + transform.form3d[2][1] * point.y
+                + transform.form3d[2][2] * point.z
+                );
+    }
+
+//! return product of transform times point
+//! @param [in] transform affine transform.
+//! @param [in] x x component
+//! @param [in] y y component
+//! @param [in] z z component
+FPoint3d FPoint3d::FromMultiply
 (
 TransformCR transform,
 DPoint3dCR point
 )
     {
-    DPoint3d result;
-    result.x = transform.form3d[0][3]
-                + transform.form3d[0][0] * point.x
-                + transform.form3d[0][1] * point.y
-                + transform.form3d[0][2] * point.z;
-    result.y = transform.form3d[1][3]
-                + transform.form3d[1][0] * point.x
-                + transform.form3d[1][1] * point.y
-                + transform.form3d[1][2] * point.z;
-    result.z = transform.form3d[2][3]
-                + transform.form3d[2][0] * point.x
-                + transform.form3d[2][1] * point.y
-                + transform.form3d[2][2] * point.z;
-    return result;
+    return from (transform * point);
     }
-
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-static bool almostEqual(double ax, double ay, double az, double bx, double by, double bz)
-    {
-    double dx = ax - bx;
-    double dy = ay - by;
-    double dz = az - bz;
-    double aa = ax * ax + ay * ay + az * az
-             + bx * bx + by * by + bz * bz;
-    double e = DoubleOps::SmallCoordinateRelTol ();
-    double ee = e * e;
-    double bb = dx * dx + dy * dy + dz * dz;
-    return bb < ee * (1.0 + aa);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static bool almostEqual(double ax, double ay, double bx, double by)
-    {
-    double dx = ax - bx;
-    double dy = ay - by;
-    double aa = ax * ax + ay * ay
-             + bx * bx + by * by;
-    double e = DoubleOps::SmallCoordinateRelTol ();
-    double ee = e * e;
-    double bb = dx * dx + dy * dy;
-    return bb < ee * (1.0 + aa);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static bool almostEqual(double ax, double ay, double bx, double by, double abstol)
-    {
-    double dx = ax - bx;
-    double dy = ay - by;
-    return fabs (dx) <= abstol && fabs (dy) < abstol;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static bool almostEqual(double ax, double ay, double az, double bx, double by, double bz, double abstol)
-    {
-    double dx = ax - bx;
-    double dy = ay - by;
-    double dz = az - bz;
-    return fabs (dx) <= abstol && fabs (dy) < abstol && fabs (dz) < abstol;
-    }
-
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool DPoint3d::AlmostEqual (DPoint3d const & dataB) const
+bool FPoint3d::AlmostEqual (FPoint3d const & dataB) const
     {return almostEqual (x, y, z, dataB.x, dataB.y, dataB.z);}
 
-bool DPoint3d::AlmostEqualXY (DPoint3d const & dataB) const
+bool FPoint3d::AlmostEqualXY (FPoint3d const & dataB) const
     {return almostEqual (x, y, dataB.x, dataB.y);}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool DPoint3d::AlmostEqual (DPoint3d const & dataB, double tolerance) const
+bool FPoint3d::AlmostEqual (FPoint3d const & dataB, double tolerance) const
     {
     return tolerance > 0.0 ? almostEqual (x, y, z, dataB.x, dataB.y, dataB.z, tolerance)
                             : almostEqual (x, y, z, dataB.x, dataB.y, dataB.z);
     }
 
-bool DPoint3d::AlmostEqualXY (DPoint3d const & dataB, double tolerance) const
+bool FPoint3d::AlmostEqualXY (FPoint3d const & dataB, double tolerance) const
     {
     return tolerance > 0.0 ? almostEqual (x, y, dataB.x, dataB.y, tolerance)
                             : almostEqual (x, y, dataB.x, dataB.y);
     }
 
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool DVec3d::AlmostEqual (DVec3d const & dataB) const
-    {return almostEqual (x, y, z, dataB.x, dataB.y, dataB.z);}
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool DPoint2d::AlmostEqual (DPoint2d const & dataB) const
-    {return almostEqual (x, y, dataB.x, dataB.y);}
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool DVec2d::AlmostEqual (DVec2d const & dataB) const
-    {return almostEqual (x, y, dataB.x, dataB.y);}
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2015
 +--------------------------------------------------------------------------------------*/
-bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> const &right, double tolerance)
+bool FPoint3d::AlmostEqual (bvector<FPoint3d> const &left, bvector<FPoint3d> const &right, double tolerance)
     {
     size_t n = left.size ();
     if (n != right.size ())
@@ -2926,7 +2396,7 @@ bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> con
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2015
 +--------------------------------------------------------------------------------------*/
-bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> const &right, double tolerance)
+bool FPoint3d::AlmostEqualXY (bvector<FPoint3d> const &left, bvector<FPoint3d> const &right, double tolerance)
     {
     size_t n = left.size ();
     if (n == right.size ())
@@ -2946,16 +2416,16 @@ bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> c
         }
     return true;
     }
-
+#ifdef SKIP_IN_FPOINT3D
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2017
 +--------------------------------------------------------------------------------------*/
-ValidatedDPoint3d DPoint3d::FromIntersectPerpendicularsXY
+ValidatedDPoint3d FPoint3d::FromIntersectPerpendicularsXY
 (
-DPoint3dCR basePoint,   //!< [in] common point of rays
-DPoint3dCR targetA,     //!< [in] target point of first ray.
+FPoint3dCR basePoint,   //!< [in] common point of rays
+FPoint3dCR targetA,     //!< [in] target point of first ray.
 double fractionA,       //!< [in] fractional position for perpendicular to first ray
-DPoint3dCR targetB,     //!< [in] target point of second ray
+FPoint3dCR targetB,     //!< [in] target point of second ray
 double fractionB        //!< [in] fractional position for perpenedicular to second ray
 )
     {
@@ -2968,9 +2438,8 @@ double fractionB        //!< [in] fractional position for perpenedicular to seco
             V.x, V.y,
             fractionA * U.DotProductXY (U), fractionB * V.DotProductXY (V)
             ))
-        return ValidatedDPoint3d (DPoint3d::From (basePoint.x + dx, basePoint.y + dy, basePoint.z));
+        return ValidatedDPoint3d (from (basePoint.x + dx, basePoint.y + dy, basePoint.z));
     return ValidatedDPoint3d (basePoint, false);
     }
-
+#endif
 END_BENTLEY_NAMESPACE
-#include "refFPoint3d.h"

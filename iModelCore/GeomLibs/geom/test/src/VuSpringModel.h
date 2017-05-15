@@ -335,10 +335,10 @@ struct VuSpringModel : public _VuSet
 
 // Return nodes of two triangles sharing an edge.
 // * --------*
-//  \ A    C/D\
+//  \ C    B/D\
 //   \     /   \
 //    \   /     \
-//     \B/E     F\
+//     \A/E     F\
 //      *---------*
         static bool IsEdgeBetweenTriangles (VuP nodeA,
             VuP &nodeB,
@@ -578,6 +578,8 @@ struct VuSpringModel : public _VuSet
                 FlipTrianglesSoStationsFillCorners ();
                 Check::Shift (0, shiftY, 0);
                 SaveGraphEdgesInsideBarrier (Graph (), m_wallMask, false);
+                Check::SaveTransformed (*CreateStationVoronoi ());
+                Check::Shift (0, shiftY, 0);
                 Check::SaveTransformed (*CreateVoronoi ());
                 }
 
@@ -863,6 +865,97 @@ PolyfaceHeaderPtr CreateVoronoi ()
     return voronoi;
     }
 
+// create Voronoi-like regions around stations.
+PolyfaceHeaderPtr CreateStationVoronoi ()
+    {
+    VuSetP graph = this;
+    PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
+    _VuSet::TempMask visited (graph);
+    _VuSet::TempMask exteriorMask (graph);
+    vu_floodFromNegativeAreaFaces (graph, m_wallMask, exteriorMask.Mask ());
+
+    ConvexClipPlaneSet planes, outsidePlanes;
+    DRange3d range = graph->Range ();
+    static double s_rangeExpansionFactor = 1.0;
+    double dx = range.XLength () * s_rangeExpansionFactor;
+    double dy = range.YLength () * s_rangeExpansionFactor;
+    range.low.x -= dx;
+    range.high.x += dx;
+    range.low.y -= dy;
+    range.high.y += dy;
+    bvector<DPoint3d> extendedPolygon, clip1, clip2;
+    BVectorCache<DPoint3d> outsideClip;
+    static bool s_interior = false;
+    static double s_sign = -1.0;
+
+    VU_SET_LOOP (vertexSeed, graph)
+        {
+        if (!visited.IsSetAtNode (vertexSeed) && IsStationNode (vertexSeed))
+            {
+            vertexSeed->SetMaskAroundVertex (visited.Mask ());
+            //DPoint3d xyz0 = vertexSeed->GetXYZ ();
+            planes.clear ();
+            outsidePlanes.clear ();
+            ValidatedDVec3d exteriorVectorA;
+            ValidatedDVec3d exteriorVectorB;
+            // The extended polygon is the area of all indcident triangles, PLUS
+            // additional triangles "just beyond" any far edge that is incident to another IsStationNode 
+            // This is clipped to the (convex but maybe unbounded) region with planes at the midpoints of edges connecting to neighbors with IsStationNode (neighbor)
+            extendedPolygon.clear ();
+            VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+                {
+                VuP mate = outboundEdge->EdgeMate ();
+                bool exteriorEdge = outboundEdge->HasMask (exteriorMask.Mask ());
+                bool exteriorMate = mate->HasMask (exteriorMask.Mask ());
+                DPoint3d xyzA = outboundEdge->GetXYZ ();
+                DPoint3d xyzB = outboundEdge->FSucc ()->GetXYZ ();
+                extendedPolygon.push_back (xyzB);
+                if ( exteriorEdge && exteriorMate)
+                    {
+                    }
+                else
+                    {
+                    if (IsStationNode (mate))
+                        {
+                        double r = 0.5 * xyzA.DistanceXY (xyzB);
+                        auto plane  = DPlane3d::VoronoiSplitPlane (xyzA, r, xyzB, r, 0);
+                        if (plane.IsValid ())
+                            {
+                            DPlane3d plane1 = plane.Value ();
+                            plane1.normal = s_sign * plane1.normal;
+                            planes.push_back (ClipPlane (plane1, false, s_interior));
+                            }
+                        }
+                    VuP nodeA, nodeB, nodeC;   // remainder of this triangle.
+                    VuP nodeD, nodeE, nodeF;    // triangle on opposite side of nodeB..nodeC
+                    nodeA = outboundEdge->FSucc ();
+                    if (IsEdgeBetweenTriangles (nodeA, nodeB, nodeC, nodeD, nodeE, nodeF)
+                        && (IsStationNode (nodeA) || IsStationNode (nodeB))
+                        && !nodeA->HasMask (exteriorMask.Mask ())
+                        && !nodeD->HasMask (exteriorMask.Mask ())
+                        )
+                        {
+                        extendedPolygon.push_back (nodeF->GetXYZ ());
+                        }
+                    }
+                }
+            END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+            //Check::SaveTransformed (extendedPolygon);
+            if (planes.size () > 0)
+                {
+                planes.ConvexPolygonClip (extendedPolygon, clip1, clip2);
+                voronoi->AddPolygon (clip1);
+                }
+            else
+                {
+                voronoi->AddPolygon (extendedPolygon);
+                }
+            }
+        }
+    END_VU_SET_LOOP (vertexSeed, graph)
+    voronoi->Compress ();
+    return voronoi;
+    }
 
 };
 

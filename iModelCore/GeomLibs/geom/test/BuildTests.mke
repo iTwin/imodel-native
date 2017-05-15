@@ -31,7 +31,7 @@ dirToSearch = $(baseDir)src/
 %include cincapnd.mki
 BEGTEST_ADDITIONAL_HFILES = \
     $(_MakefilePath)src/FlightPlanner.h \
-    $(BuildContext)PublicApi/Mtg/MTGShortestPaths.h \
+    $(BuildContext)PublicAPI/Mtg/MTGShortestPaths.h \
     $(_MakefilePath)src/VuSpringModel.h
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
