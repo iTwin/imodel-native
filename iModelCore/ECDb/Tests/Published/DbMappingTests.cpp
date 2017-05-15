@@ -8949,6 +8949,7 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
         ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
         AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Prop7"), {ColumnInfo("ts_Element","ps61")});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
         AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), {ColumnInfo("ts_Element_Overflow","os2")});
