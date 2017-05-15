@@ -166,7 +166,7 @@ protected:
 //! This represents the most common GeoCoordination Service request.
 //! This request returns the list of SpatialEntityWithDetails objects that 
 //! are located within provided spatial area (usually the project area) for the 
-//! incdicated classification. Additional parameters can be provided after creation.
+//! indicated classification. Additional parameters can be provided after creation.
 //=====================================================================================
 struct SpatialEntityWithDetailsSpatialRequest : public GeoCoordinationServicePagedRequest
     {

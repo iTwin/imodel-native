@@ -8,7 +8,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //=====================================================================================
 TEST(WSGURLBase, DefaultConstructor)
     {
-    auto wsgUrlToTest = WSGURL("myserver.com");
+    auto wsgUrlToTest = WSGURL("https://myserver.com/watch?=uniqueID");
     EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
     EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com");
     EXPECT_TRUE(wsgUrlToTest.GetInterface() == WSGURL::WSGInterface::Repositories);

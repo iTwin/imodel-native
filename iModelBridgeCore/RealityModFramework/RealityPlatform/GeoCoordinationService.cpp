@@ -479,6 +479,8 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
     rawResponse = BasicPagedRequest(static_cast<const GeoCoordinationServicePagedRequest*>(&request));
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
+
     if (rawResponse.status == RequestStatus::BADREQ)
         {
         s_errorCallback("SpatialEntityWithDetailsSpatialRequest failed with response", rawResponse);
@@ -487,7 +489,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
     else if ((uint8_t)entities.size() < request.GetPageSize())
         rawResponse.status = RequestStatus::LASTPAGE;
 
-    RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
+    
     return entities;
     }
 
