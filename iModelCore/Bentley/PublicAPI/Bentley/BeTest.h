@@ -345,6 +345,7 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
     #define BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,fatal)     if (BeTest::EqTol(val1,val2,tol))    {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_NEAR_(val1, val2, fatal)        if (BeTest::EqNear(val1,val2))       {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_FAIL()                                                                  BeTest::ExpectedResult (false, "SUCCESS", "FAIL",       __FILE__ , __LINE__,true)
+    #define BE_TEST_EXPECTED_RESULT_ADDFAILURE(file, line)                                                  BeTest::ExpectedResult (false, "SUCCESS", "FAIL",       file , line, false)
 
     // These macro names match those defined in <gtest.h>
     #define ASSERT_EQ(expected,actual)   BE_TEST_EXPECTED_RESULT_EQ(expected,actual,true)
@@ -374,6 +375,8 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
     #define EXPECT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,false)
     #define ASSERT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,true)
     #define FAIL()                       BE_TEST_EXPECTED_RESULT_FAIL()
+    #define ADD_FAILURE()                BE_TEST_EXPECTED_RESULT_ADDFAILURE(__FILE__ , __LINE__)
+    #define ADD_FAILURE_AT(file,line)    BE_TEST_EXPECTED_RESULT_ADDFAILURE(file, line)
     #define SUCCEED()
 
     ///@name Test utilities
