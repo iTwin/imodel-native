@@ -491,24 +491,6 @@ Utf8String      DirectionFormatter::ToString(double value) const
 
     switch (m_mode)
         {
-        case DirectionMode::Azimuth:    /* azimuth angle readout */
-            {
-            if (m_clockwise)
-                value = m_baseDirection - value;
-            else
-                value = value - m_baseDirection;
-
-            if (m_angleFormatter->GetAllowNegative())
-                {
-                while (value <= - 180.0) value += 360.0;
-                while (value >    180.0) value -= 360.0;
-                }
-
-            directionString = m_angleFormatter->ToString(value);
-
-            break;
-            }
-
         case DirectionMode::Bearing:    /* bearing angle readout */
             {
             if (360.0 == value)
@@ -562,6 +544,25 @@ Utf8String      DirectionFormatter::ToString(double value) const
                 directionString.append(" ");
 
             directionString.append(suffixChar);
+
+            break;
+            }
+        
+        case DirectionMode::Azimuth:    /* azimuth angle readout */
+        default:
+            {
+            if (m_clockwise)
+                value = m_baseDirection - value;
+            else
+                value = value - m_baseDirection;
+
+            if (m_angleFormatter->GetAllowNegative())
+                {
+                while (value <= -180.0) value += 360.0;
+                while (value >    180.0) value -= 360.0;
+                }
+
+            directionString = m_angleFormatter->ToString(value);
 
             break;
             }

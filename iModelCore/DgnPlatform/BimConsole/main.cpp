@@ -5,13 +5,14 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Windows.h>
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include "BimConsole.h"
 #include <Logging/bentleylogging.h>
 
+#ifdef COMMENT_OUT_UNUSED_VARIABLE
 static WCharCP s_configFileName = L"logging.config.xml";
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -65,28 +66,16 @@ bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir)
 //---------------------------------------------------------------------------------------
 int wmain(int argc, WCharP argv[])
     {
+#ifdef _WIN32
 #if defined (UNICODE_OUTPUT_FOR_TESTING)
     // turning this on makes it so we can show unicode characters, but screws up piped output for programs like python.
     // Since BimConsole output is not a production concept anyway, is merely for testing.
     _setmode(_fileno(stdout), _O_U16TEXT);  // so we can output any and all unicode to the console
     _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
 #endif
+#endif
 
-    WChar exePathW[MAX_PATH];
-    if (0 == ::GetModuleFileNameW(nullptr, exePathW, MAX_PATH))
-        {
-        BeAssert(false);
-        return 1;
-        }
-
-    BeFileName exePath(BeFileName::DevAndDir, exePathW);
-    if (!exePath.DoesPathExist())
-        {
-        BeAssert(false && "argv[0] is expected to contain the exe path.");
-        return 1;
-        }
-
-    BeFileName exeDir = exePath.GetDirectoryName();
+    BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
     if (!exeDir.DoesPathExist())
         {
         BeAssert(false && "Exe path's directory should always exist.");
@@ -112,3 +101,7 @@ int wmain(int argc, WCharP argv[])
     Dgn::DgnPlatformLib::Initialize(app, false);
     return app.Run(argc, argv);
     }
+
+#ifdef __unix__
+UNIX_MAIN_CALLS_WMAIN
+#endif

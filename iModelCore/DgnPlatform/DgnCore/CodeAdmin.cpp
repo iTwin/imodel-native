@@ -7,6 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#if defined (__linux__)
+// clang on Linux will not take the *definition* of MAX_MaxChars from the declaration in the .h file
+const int CodeFragmentSpec::MAX_MaxChars;
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Shaun.Sewall    01/2017
 //---------------------------------------------------------------------------------------

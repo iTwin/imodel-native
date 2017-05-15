@@ -317,6 +317,8 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
     EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
     ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
+    // *** NEEDS WORK: In Linux the result of doc6->GetParagraphsR().at(0)->GetRunsR().at(0) is (BentleyB0200::RefCountedPtr<BentleyB0200::Dgn::AnnotationRunBase> &)
+    ASSERT_TRUE(nullptr !=  textRun);
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
 
     //.............................................................................................
@@ -368,6 +370,7 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
     ASSERT_EQ(1 , doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
+    ASSERT_TRUE(nullptr != textRun);
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
 }
 

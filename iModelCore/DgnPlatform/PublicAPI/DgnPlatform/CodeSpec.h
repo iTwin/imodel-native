@@ -69,7 +69,7 @@ private:
     void SetOrRemoveString(Utf8CP key, Utf8CP value) {if (value && *value) (*this)[key] = value; else removeMember(key);}
 
 public:
-    static constexpr int MAX_MaxChars = 256; //!< Maximum value for MaxChars
+    DGNPLATFORM_EXPORT static constexpr int MAX_MaxChars = 256; //!< Maximum value for MaxChars
 
     enum class Type
     {

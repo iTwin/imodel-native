@@ -316,7 +316,7 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(DgnChangeSummaryTestFixture, DISABLED_CreateSampleDataSet)
+TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
     {
     SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"CreateSampleDataSet.bim");
     CreateSampleBuilding();
@@ -327,7 +327,7 @@ TEST_F(DgnChangeSummaryTestFixture, DISABLED_CreateSampleDataSet)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(DgnChangeSummaryTestFixture, DISABLED_ValidateChangeSummaries)
+TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     {
     SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"ValidateChangeSummaries.bim");
     BeFileName fullFileName = BeFileName(m_db->GetDbFileName(), true);
