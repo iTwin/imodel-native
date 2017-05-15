@@ -29,7 +29,7 @@ private:
 
     static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Utf8CP coordinateKey);
 
-    static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
+    static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECSchemaRemapperCP remapper = nullptr);
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
 
 public:
@@ -40,7 +40,7 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
 
-    ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&);
+    ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, IECSchemaRemapperCP remapper = nullptr);
 
     //! Converts the specified Byte array to a Json value
     //! The Byte array is converted to a string using a Base64 encoding.

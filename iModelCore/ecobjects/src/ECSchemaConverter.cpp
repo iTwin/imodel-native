@@ -113,6 +113,11 @@ static Utf8CP const  UNIT_SPECIFICATION             = "UnitSpecificationAttr";
 static Utf8CP const  UNIT_SPECIFICATIONS            = "UnitSpecifications";
 //static Utf8CP const  UNIT_SPECIFICATION_LIST        = "UnitSpecificationList"; UNUSED
 static Utf8CP const  DISPLAY_UNIT_SPECIFICATION     = "DisplayUnitSpecificationAttr";
+static Utf8CP const IS_UNIT_SYSTEM                  = "IsUnitSystemSchema";
+static Utf8CP const MIXED_UNIT_SYSTEM               = "Mixed_UnitSystem";
+static Utf8CP const SI_UNIT_SYSTEM                  = "SI_UnitSystem";
+static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
+
 
 struct UnitSpecification
     {
@@ -172,6 +177,12 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 
         IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+
+        IECCustomAttributeConverterPtr unitSystemConv = new UnitSystemConverter();
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM, unitSystemConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, MIXED_UNIT_SYSTEM, unitSystemConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, SI_UNIT_SYSTEM, unitSystemConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, US_UNIT_SYSTEM, unitSystemConv);
 
         IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
@@ -309,12 +320,22 @@ void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     {
+    bvector<Utf8CP> reservedNames {"ECInstanceId", "Id", "ECClassId", "SourceECInstanceId", "SourceId", "SourceECClassId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId"};
+
     for (auto const& ecClass : classes)
         {
+        ECN::ECClassP nonConstClass = const_cast<ECClassP>(ecClass);
         for (auto const& ecProp : ecClass->GetProperties(false))
             {
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
             ProcessCustomAttributeInstance(ecProp->GetCustomAttributes(false), *ecProp, debugName);
+            // Need to make sure that property name does not conflict with one of the reserved system properties or aliases.
+            Utf8CP thisName = ecProp->GetName().c_str();
+            auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
+            if (found != reservedNames.end())
+                {
+                nonConstClass->RenameConflictProperty(ecProp, true);
+                }
             }
         }
     }
@@ -835,8 +856,11 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 newKOQ->SetDefaultPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newDisplayUnit->GetName()));
             }
         }
-
-    prop->SetKindOfQuantity(newKOQ);
+    
+    if (ECObjectsStatus::KindOfQuantityNotCompatible == prop->SetKindOfQuantity(newKOQ))
+        {
+        LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
+        }
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
     prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
@@ -858,6 +882,29 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
 
     container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
     container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus UnitSystemConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
+    if (containerAsSchema == nullptr)
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found a 'UnitSystem' custom attribute on a container which is not an ECSchema, removing.  Container is in schema %s", fullName.c_str());
+        }
+
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM);
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, MIXED_UNIT_SYSTEM);
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, SI_UNIT_SYSTEM);
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, US_UNIT_SYSTEM);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, MIXED_UNIT_SYSTEM);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, SI_UNIT_SYSTEM);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, US_UNIT_SYSTEM);
     return ECObjectsStatus::Success;
     }
 

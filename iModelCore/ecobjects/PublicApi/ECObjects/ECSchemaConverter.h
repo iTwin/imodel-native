@@ -196,6 +196,15 @@ struct UnitSpecificationsConverter : IECCustomAttributeConverter
     ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
     };
 
+//---------------------------------------------------------------------------------------
+// Removes UnitSystem custom attributes from the schema
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct UnitSystemConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
 //+===============+===============+===============+===============+===============+======
 //@bsiclass
 //+===============+===============+===============+===============+===============+======
