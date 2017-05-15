@@ -278,8 +278,10 @@ static GEOMDLLIMPEXP double MinAbs (double a1, double a2);
 static GEOMDLLIMPEXP double MinAbs (double a1, double a2, double a3);
 //! min absolute value of 4 candidates
 static GEOMDLLIMPEXP double MinAbs (double a1, double a2, double a3, double a4);
-
-
+//! Convert a double to a float, being sure the float is strictly less than the double.
+static float DoubleToFloatRoundLeft (double d);
+//! Convert a double to a float, being sure the float is strictly greater than the double.
+static float DoubleToFloatRoundRight (double d);
 //! min of 2 candidates
 static GEOMDLLIMPEXP double Max (double a1, double a2);
 //! min of 3 candidates

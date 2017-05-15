@@ -80,6 +80,11 @@ static FPoint3d FromZero();
 //! Return a FPoint3d with xyz = 1.
 static FPoint3d FromOne();
 
+//! Return FPoint3d with double rounded to left (algebraically down, to the negative direction)
+static FPoint3d FromRoundLeft (DPoint3dCR xyz);
+
+//! Return FPoint3d with double rounded to the right (algebraically up, to the positive direction)
+static FPoint3d FromRoundRight (DPoint3dCR xyz);
 
 //! @description Simple initialization from base point and shifts
 static FPoint3d FromShift

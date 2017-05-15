@@ -120,7 +120,7 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 $(OUT_DIR)ddisk3d$(OUT_EXT)         : $(geomSrcStructs)ddisk3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)fpoint3d$(OUT_EXT)        : $(geomSrcStructs)fpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -198,6 +198,8 @@ $(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d
 
 
 $(OUT_DIR)refdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reffrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/reffrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdrange3dArrays$(OUT_EXT)   : $(geomSrcStructsCpp)refmethods/refdrange3dArrays.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/drange3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,6 +90,23 @@ void InitFrom (DPoint3dCR point);
 //! @param [in] point  new point to be included in the range.
 //!
 void Extend (DPoint3dCR point);
+//! Extend to include a new point.
+
+void Extend (FPoint3dCR point);
+//! Extend to include two new points
+void Extend (FPoint3dCR pointA, FPoint3dCR pointB);
+//! Extend to include new points.
+void Extend (bvector<FPoint3d> const &pointA);
+
+//! Create as a single point.
+static DRange3d From (FPoint3dCR point);
+//! Create to include two points.
+static DRange3d From (FPoint3dCR pointA, FPoint3dCR pointB);
+//! Create to include a vector of points.
+static DRange3d From (bvector<FPoint3d> const &points);
+
+//! initialize from a float range.
+static DRange3d From (FRange3dCR fRange);
 
 //!
 //! @description Extends the coordinates of the range cube points in pRange so as

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdrange3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -433,6 +433,22 @@ void DRange3d::InitFrom (DPoint3dCR point0, DPoint3dCR point1)
     Extend (point1);
     }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FRange3dCR fRange)
+    {
+    // ah, maybe you'd like to just copy the xyz values.
+    // but the NullRange values are different.
+    // Even when not null, do a careful Extend() to ensure validity
+    auto result = NullRange ();
+    if (!fRange.IsNull ())
+        {
+        result.Extend (DPoint3d::From (fRange.low));
+        result.Extend (DPoint3d::From (fRange.high));
+        }
+    return result;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @vbdescription Initializes the range to contain two points given as components.
@@ -650,6 +666,64 @@ void DRange3d::Extend (DPoint3dCR point)
         FIX_MINMAX (point.y, low.y, high.y);
         FIX_MINMAX (point.z, low.z, high.z);
         }
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (FPoint3dCR point)
+    {
+
+    FIX_MINMAX ((double)point.x, low.x, high.x);
+    FIX_MINMAX ((double)point.y, low.y, high.y);
+    FIX_MINMAX ((double)point.z, low.z, high.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    Extend (pointA);
+    Extend (pointB);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void DRange3d::Extend (bvector<FPoint3d> const &points)
+    {
+    for (auto &xyz : points)
+        Extend (xyz);
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FPoint3dCR point)
+    {
+    return From (point.x, point.y, point.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    return From (pointA.x, pointA.y, pointA.z, pointB.x, pointB.y, pointB.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (bvector<FPoint3d> const &points)
+    {
+    DRange3d range = NullRange ();
+    for (auto &xyz : points)
+        range.Extend (xyz.x, xyz.y, xyz.z);
+    return range;
     }
 
 
@@ -1486,7 +1560,6 @@ DPoint3d DRange3d::LocalToGlobal (double xFraction, double yFraction, double zFr
         DoubleOps::Interpolate (low.y, yFraction, high.y),
         DoubleOps::Interpolate (low.z, zFraction, high.z));
     }
-
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -142,3 +142,23 @@ TEST(FPoint3d, Error)
     Check::Exact(DPoint3d::From(FPoint3d::FromXY(FPoint3d::From(2, 3, 4))),
                  DPoint3d::FromXY(DPoint3d::From(2, 3, 4)));
     }
+	
+	
+TEST(FPoint3d,ROUND_AWAY)
+    {
+    int one = 1;
+    int a = one << 24;
+    double ed = 1.0 / (double)a;
+    float  ef = (float)1.0 / (float)a;
+    float onePlus = 1.0F + 2.0F * ef;
+    float oneMinus = 1.0F - ef;
+    float roundAway = 1.000000119;
+    float roundToward = 0.9999999404;
+    GEOMAPI_PRINTF ("Single Precision Unit Roundoff = %.10lg %.10lg\n", ed, (double)ef); // arg passing is always double.
+    GEOMAPI_PRINTF ("Single Precision Rounders = %.10lg %.10lg\n", (double)onePlus, (double)oneMinus); // arg passing is always double.
+    GEOMAPI_PRINTF ("Single Precision nextAfter neighbors= %.10lg %.10lg\n",
+                (double)_nextafterf (1.0, 2.0), (double)_nextafterf (1.0, 0.0)); // arg passing is always double.
+
+    GEOMAPI_PRINTF ("Single Precision roundTowards roundAway= %.10lg %.10lg\n",
+                (double)roundToward, (double)roundAway); // arg passing is always double.
+    }

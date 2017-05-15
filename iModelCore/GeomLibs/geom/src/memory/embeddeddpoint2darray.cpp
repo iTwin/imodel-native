@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/memory/embeddeddpoint2darray.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1346,33 +1346,6 @@ const   EmbeddedDPoint2dArray   *pHeader,
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description Return the range of the points in the array.
-*
-* @param pHeader    IN      array to examine.
-* @param pRange     OUT     data range.
-* @return false if the array is empty (has no range).
-* @group        "DPoint2d Array"
-* @bsimethod                                    EarlinLutz      01/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public bool      jmdlEmbeddedDPoint2dArray_getFRange3d
-(
-const   EmbeddedDPoint2dArray   *pHeader,
-        FRange3d                *pRange
-)
-    {
-    DRange3d range;
-    if (jmdlEmbeddedDPoint2dArray_getDRange3d (pHeader, &range))
-        {
-        bsiFRange3d_initFromDRange3d (pRange, &range);
-        return true;
-        }
-    else
-        {
-        bsiFRange3d_init (pRange);
-        return false;
-        }
-    }
 
 
 
