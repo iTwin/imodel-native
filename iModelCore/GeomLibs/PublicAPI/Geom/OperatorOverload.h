@@ -92,6 +92,13 @@ GEOMDLLIMPEXP DVec3d operator*(DVec3d const &vector, RotMatrix const &rotmatrix)
 //! @return vector product {matrix*vector}
 GEOMDLLIMPEXP DVec3d operator*( RotMatrix const &matrix, DVec3d const &vector);
 
+
+//! operator overload for multiplication of a matrix and a point
+//! @param [in] matrix left operand (matrix)
+//! @param [in] point right operand (point)
+//! @return point product {matrix*point}
+GEOMDLLIMPEXP DPoint3d operator*( RotMatrix const &matrix, DPoint3d const &point);
+
 //----------------------------------------------------------------------
 
 //! operator overload for in-place multiplication of a vector times a scalar,
