@@ -32,7 +32,7 @@ CompatibilityTest2.ModifyPreservedBim
 DgnECNavigatorTest.GetElementInfo
 
 #TFS 665028
-GetSetCustomHandledProprty.Annotation
+# GetSetCustomHandledProprty.Annotation
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # bim0200, x86, NDEBUG
