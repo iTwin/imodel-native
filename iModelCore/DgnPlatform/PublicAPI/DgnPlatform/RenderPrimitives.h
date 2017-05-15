@@ -313,11 +313,7 @@ public:
 struct MeshEdges : RefCountedBase
 {
     bvector<MeshEdge>           m_visible;
-    bvector<FPoint3d>           m_visiblePoints;
-    bvector<uint16_t>           m_visibleColors;
     bvector<MeshEdge>           m_silhouette;
-    bvector<FPoint3d>           m_silhouettePoints;
-    bvector<uint16_t>           m_silhouetteColors;
     bvector<FPoint3d>           m_silhouetteNormals0;
     bvector<FPoint3d>           m_silhouetteNormals1;
 
@@ -362,8 +358,6 @@ private:
     Features                        m_features;
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
-
-    // The edges are computed from the parameters above... If tiles were persisted these could be omitted and recalculated...
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
 

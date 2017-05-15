@@ -1684,11 +1684,9 @@ struct MeshEdgeArgs
 {
     MeshEdgeCP                  m_edges;
     uint32_t                    m_numEdges;
-    FPoint3d const*             m_points;
-    uint32_t                    m_numPoints;
-    ColorIndex                  m_colors;
+    FPoint3d const*             m_points = nullptr;
     FeatureIndex                m_features;
-
+    ColorIndex                  m_colors;
 
 }; 
  

@@ -451,13 +451,13 @@ MeshEdges::MeshEdges(MeshCR mesh)
 
     struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
         {
-        bvector <FPoint3d>  m_points;
+        uint32_t    m_next = 0;
 
         uint32_t GetIndex(FPoint3d point)
             {
-            auto insertPair = Insert(point, (uint32_t) m_points.size());
+            auto insertPair = Insert(point, m_next);
             if (insertPair.second)
-                m_points.push_back(point);
+                m_next++;
 
             return insertPair.first->second;
             }
@@ -469,10 +469,10 @@ MeshEdges::MeshEdges(MeshCR mesh)
         bool        m_visible;
         uint32_t    m_faceCount;
         uint32_t    m_faceIndices[2];
-        uint32_t    m_edgeIndices[2];
+        MeshEdge    m_edge;
 
         EdgeInfo () { }
-        EdgeInfo(bool visible, uint32_t faceIndex, uint32_t edgeIndex0, uint32_t edgeIndex1) : m_visible(visible), m_faceCount(1) { m_faceIndices[0] = faceIndex; m_edgeIndices[0] = edgeIndex0; m_edgeIndices[1] = edgeIndex1; }
+        EdgeInfo(bool visible, uint32_t faceIndex, MeshEdgeCR edge) : m_visible(visible), m_faceCount(1), m_edge(edge) { m_faceIndices[0] = faceIndex; }
 
         void AddFace(bool visible, uint32_t faceIndex)
             {
@@ -495,11 +495,12 @@ MeshEdges::MeshEdges(MeshCR mesh)
         auto const&   triangle = triangles.at(triangleIndex);
         for (size_t j=0; j<3; j++)
             {
-            EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
-            MeshEdge        edgeIndices(pointMap.GetIndex(points.at(edgeInfo.m_edgeIndices[0])),
-                                        pointMap.GetIndex(points.at(edgeInfo.m_edgeIndices[1])));
+            MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
+            EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, meshEdge);
+            MeshEdge        pointMapEdge(pointMap.GetIndex(points.at(meshEdge.m_indices[0])), 
+                                         pointMap.GetIndex(points.at(meshEdge.m_indices[1])));
 
-            auto            insertPair = edgeMap.Insert(edgeIndices, edgeInfo);
+            auto            insertPair = edgeMap.Insert(pointMapEdge, edgeInfo);
 
             if (!insertPair.second)
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
@@ -513,13 +514,7 @@ MeshEdges::MeshEdges(MeshCR mesh)
         {
         if (edge.second.m_visible)    
             {
-            m_visible.push_back(MeshEdge(m_visiblePoints.size(), m_visiblePoints.size()+1));
-            for (size_t i=0; i<2; i++)
-                {
-                m_visiblePoints.push_back(pointMap.m_points[edge.first.m_indices[i]]);
-                if (!mesh.Colors().empty())
-                    m_visibleColors.push_back(mesh.Colors().at(edge.second.m_edgeIndices[i]));
-                }
+            m_visible.push_back(edge.second.m_edge);
             }
         else
             {
@@ -531,15 +526,9 @@ MeshEdges::MeshEdges(MeshCR mesh)
                 if (!fromFPoint3d(normal0).IsParallelTo(fromFPoint3d(normal1)))      // TBD.  Switch to doing in floats when FPoint3d API available.
                     {
                     // Potential silhouettes.
-                    m_silhouette.push_back(MeshEdge(m_silhouettePoints.size(), m_silhouettePoints.size()+1));
+                    m_silhouette.push_back(edge.second.m_edge);
                     m_silhouetteNormals0.push_back(normal0);
                     m_silhouetteNormals1.push_back(normal1);
-                    for (size_t i=0; i<2; i++)
-                        {
-                        m_silhouettePoints.push_back(pointMap.m_points[edge.first.m_indices[i]]);
-                        if (!mesh.Colors().empty())
-                            m_silhouetteColors.push_back(mesh.Colors().at(edge.second.m_edgeIndices[i]));
-                        }
                     }
                 }
             }
@@ -1793,15 +1782,12 @@ bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
     if (m_meshEdges->m_visible.empty())
         return false;
 
-    m_points    = m_meshEdges->m_visiblePoints.data();
-    m_numPoints = m_meshEdges->m_visiblePoints.size();
+    m_points    = mesh.Points().data();
     m_edges     = m_meshEdges->m_visible.data();
     m_numEdges  = m_meshEdges->m_visible.size();
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, m_meshEdges->m_visibleColors);
     
-#ifdef WIP
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
-#endif
 
     return true;
     }
@@ -1816,17 +1802,13 @@ bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
     if (m_meshEdges->m_silhouette.empty())
         return false;
 
-    m_points    = m_meshEdges->m_silhouettePoints.data();
+    m_points    = mesh.Points().data();
     m_normals0  = m_meshEdges->m_silhouetteNormals0.data();
     m_normals1  = m_meshEdges->m_silhouetteNormals1.data();
-    m_numPoints = m_meshEdges->m_silhouettePoints.size();
     m_edges     = m_meshEdges->m_silhouette.data();
     m_numEdges  = m_meshEdges->m_silhouette.size();
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, m_meshEdges->m_silhouetteColors);
-
-#ifdef WIP
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
-#endif
 
     return true;
     }
