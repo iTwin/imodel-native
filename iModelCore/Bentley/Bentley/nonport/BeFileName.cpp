@@ -2382,26 +2382,26 @@ BeFileName Desktop::FileSystem::GetExecutableDir()
 // source: http://www.ogre3d.org/tikiwiki/GetExecutablePath
 // I did not see anything on that website about copyrights
 /// This function will locate the path to our application on OS X
-std::string MacBundlePath()
+static std::string macBundlePath()
 {
     char path[1024];
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     if(!mainBundle)
         return "";
- 
+
     CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
     if(!mainBundleURL)
         return "";
- 
+
     CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
     if(!cfStringRef)
         return "";
- 
+
     CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
- 
+
     CFRelease(mainBundleURL);
     CFRelease(cfStringRef);
- 
+
     return std::string(path);
 }
 
@@ -2411,7 +2411,7 @@ std::string MacBundlePath()
 BeFileName Desktop::FileSystem::GetExecutableDir()
     {
     // *** TBD: Fix up argv0 using cwd, etc.
-    BeFileName exepath(MacBundlePath().c_str, BentleyCharEncoding::Utf8);
+    BeFileName exepath(macBundlePath().c_str(), BentleyCharEncoding::Utf8);
     exepath.BeGetFullPathName();
     return exepath.GetDirectoryName();
     }
