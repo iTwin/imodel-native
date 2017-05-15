@@ -7,31 +7,98 @@ TEST(FPoint3d,HelloWorld)
     Check::Near (1.0, point0.x);
     }
 
-TEST(FPoint3d,SumOf)
+TEST(FPoint3d, SumOf)
     {
     // THIS IS ALL THE INPUT VALUES NEEDED TO TEST ALL SUMOF METHODS ....
-    auto originF = FPoint3d::From (1,2,3);
-    auto originD = DPoint3d::From (originF);
-    auto vector0 = DVec3d::From (4,5,6);
-    auto vector1 = DVec3d::From (7,8,9);
-    auto vector2 = DVec3d::From (10,11,12);
+    auto originF0 = FPoint3d::From(1, 2, 3);
+    auto originD0 = DPoint3d::From(originF0);
+    auto originF1 = FPoint3d::From(5, 6, 7);
+    auto originD1 = DPoint3d::From(originF1);
+    auto originF2 = FPoint3d::From(9, 10, 11);
+    auto originD2 = DPoint3d::From(originF2);
+
+    auto vector0 = DVec3d::From(4, 5, 6);
+    auto vector1 = DVec3d::From(7, 8, 9);
+    auto vector2 = DVec3d::From(10, 11, 12);
 
     double scale0 = -3.0;
     double scale1 = 17.0;
-    //double scale2 = -13.0;
-    Check::Exact (
-        DPoint3d::FromSumOf (originD, vector0, scale0, vector1, scale1),
-        DPoint3d::From (
-                FPoint3d::FromSumOf (originF, vector0, scale0, vector1, scale1)
-                ),
-        "SumOf DPoint3d matches FPoint3d");
+    double scale2 = -13.0;
 
-    auto transform = Transform::FromOriginAndVectors (originD, vector0, vector1, vector2);
-    Check::Exact (
-        transform * DPoint3d::From (originF),
-        DPoint3d::From (FPoint3d::FromMultiply (transform, originD)),
-        "Transform * point");
+    //FromSumOf()
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, vector0),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, vector0)), "SumOf DPoint3d matches FPoint3d");
 
-    // Farahad -- you can test lots and lots of FPoint3d methods (SumOf, FromSumOf, FromMultiply) .. with just originD, vector0, vector1, vector2, and this transform
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, vector0, scale0),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, vector0, scale0)), "SumOf DPoint3d matches FPoint3d");
+
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, vector0, scale0, vector1, scale1),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, vector0, scale0, vector1, scale1)), "SumOf DPoint3d matches FPoint3d");
+
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, vector0, scale0, vector1, scale1, vector2, scale2),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, vector0, scale0, vector1, scale1, vector2, scale2)), "SumOf DPoint3d matches FPoint3d");
+
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, scale0, originD1, scale1),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, scale0, originF1, scale1)), "SumOf DPoint3d matches FPoint3d");
+
+    Check::Exact(
+        DPoint3d::FromSumOf(originD0, scale0, originD1, scale1, originD2, scale2),
+        DPoint3d::From(FPoint3d::FromSumOf(originF0, scale0, originF1, scale1, originF2, scale2)), "SumOf DPoint3d matches FPoint3d");
+
+    //SumOf
+    FPoint3d fpoint;
+    DPoint3d dpoint;
+    fpoint.SumOf(originF0, vector0, scale0);
+    dpoint.SumOf(originD0, vector0, scale0);
+    Check::Exact(DPoint3d::From(dpoint.x, dpoint.y, dpoint.z),
+                 DPoint3d::From(fpoint), "SumOf DPoint3d matches FPoint3d");
+
+    fpoint.SumOf(originF0, vector0, scale0, vector1, scale1);
+    dpoint.SumOf(originD0, vector0, scale0, vector1, scale1);
+    Check::Exact(DPoint3d::From(dpoint.x, dpoint.y, dpoint.z),
+                 DPoint3d::From(fpoint), "SumOf DPoint3d matches FPoint3d");
+
+    fpoint.SumOf(originF0, vector0, scale0, vector1, scale1, vector2, scale2);
+    dpoint.SumOf(originD0, vector0, scale0, vector1, scale1, vector2, scale2);
+    Check::Exact(DPoint3d::From(dpoint.x, dpoint.y, dpoint.z),
+                 DPoint3d::From(fpoint), "SumOf DPoint3d matches FPoint3d");
+
+    fpoint.SumOf(originF0, scale0, originF1, scale1);
+    dpoint.SumOf(originD0, scale0, originD1, scale1);
+    Check::Exact(DPoint3d::From(dpoint.x, dpoint.y, dpoint.z),
+                 DPoint3d::From(fpoint), "SumOf DPoint3d matches FPoint3d");
+
+    fpoint.SumOf(originF0, scale0, originF1, scale1, originF2, scale2);
+    dpoint.SumOf(originD0, scale0, originD1, scale1, originD2, scale2);
+    Check::Exact(DPoint3d::From(dpoint.x, dpoint.y, dpoint.z),
+                 DPoint3d::From(fpoint), "SumOf DPoint3d matches FPoint3d");
+
+
+    //transform
+    auto transform = Transform::FromOriginAndVectors(originD0, vector0, vector1, vector2);
+    Check::Exact(transform * DPoint3d::From(originF0),
+                 DPoint3d::From(FPoint3d::FromMultiply(transform, originD0)), "Transform * point");
+
+    Check::Exact(transform * DPoint3d::From(originF0),
+                 DPoint3d::From(FPoint3d::FromMultiply(transform, originF0)), "Transform * point");
+
+    Check::Exact(transform * DPoint3d::From(originF0),
+                 DPoint3d::From(FPoint3d::FromMultiply(transform, originD0.x, originD0.y, originD0.z)), "Transform * point");
+
+    auto rotation = RotMatrix::From(transform);
+    Check::Exact(DPoint3d::FromSumOf(originD0, (rotation * DPoint3d::From(originF1))),
+                 DPoint3d::From(FPoint3d::FromMultiply(originF0, rotation, originD1.x, originD1.y, originD1.z)), "Rotation * point");
+
+    Check::Exact(DPoint3d::FromSumOf(originD0, (rotation * DPoint3d::From(vector0.x, vector0.y, vector0.z))),
+                 DPoint3d::From(FPoint3d::FromMultiply(originF0, rotation, vector0)), "Rotation * point");
+
+    // Farhad -- you can test lots and lots of FPoint3d methods (SumOf, FromSumOf, FromMultiply) .. with just originD, vector0, vector1, vector2, and this transform
     // You'll need a few more points for Distance and others that have multiple FPoint3d inputs.
+
+
     }

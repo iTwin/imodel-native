@@ -341,5 +341,8 @@
     <ClCompile Include="structsTest\t_DMap4d.cpp">
       <Filter>Source Files\StructsTest</Filter>
     </ClCompile>
+    <ClCompile Include="structsTest\t_FPoint3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
