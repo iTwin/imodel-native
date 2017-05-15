@@ -104,11 +104,28 @@ void SpatialEntityWithDetailsSpatialRequest::_PrepareHttpRequestStringAndPayload
     m_httpRequestString.append(GetPolygonAsString(m_projectArea, false));
 
     m_httpRequestString.append("],coordinate_system:'4326'}&");
-    if (hasFilter)
+    if (hasFilter || m_informationSourceFilter > 0)
         {
         m_httpRequestString.append("$filter=");
-        m_httpRequestString.append(m_filter);
-        m_httpRequestString.append("&");
+        if(hasFilter)
+            {
+            m_httpRequestString.append(m_filter);
+            m_httpRequestString.append("&");
+            }
+        if(m_informationSourceFilter > 0)
+            {
+            m_httpRequestString.append("Classification+in+[");
+            if(m_informationSourceFilter & Classification::Imagery)
+                m_httpRequestString.append("'Imagery',");
+            if (m_informationSourceFilter & Classification::Terrain)
+                m_httpRequestString.append("'Terrain',");
+            if (m_informationSourceFilter & Classification::Model)
+                m_httpRequestString.append("'Model',");
+            if (m_informationSourceFilter & Classification::Pinned)
+                m_httpRequestString.append("'Pinned',");
+            m_httpRequestString = m_httpRequestString.substr(0, m_httpRequestString.size() - 1); //remove comma
+            m_httpRequestString.append("]&");
+            }
         }
     if (hasOrder)
         {

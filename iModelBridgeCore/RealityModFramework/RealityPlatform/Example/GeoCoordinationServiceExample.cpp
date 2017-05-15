@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     space.push_back(GeoPoint2d::From(116.53, 49.44));
     space.push_back(GeoPoint2d::From(115.73, 49.44));
 
-    SpatialEntityWithDetailsSpatialRequest spatialReq = SpatialEntityWithDetailsSpatialRequest(space, Classification::Imagery);
+    SpatialEntityWithDetailsSpatialRequest spatialReq = SpatialEntityWithDetailsSpatialRequest(space, Classification::Imagery | Classification::Terrain);
     RawServerResponse spatialResponse = RawServerResponse();
     bvector<SpatialEntityPtr> spatialEntities = GeoCoordinationService::Request(spatialReq, spatialResponse);
 
