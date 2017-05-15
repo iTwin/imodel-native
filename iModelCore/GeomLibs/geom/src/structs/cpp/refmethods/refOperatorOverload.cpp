@@ -88,22 +88,6 @@ DVec3d operator*( Transform const &transform, DVec3d const &vector)
     return result;
     }
 
-DPoint3d operator*( RotMatrix const &matrix, DPoint3d const &point)
-    {
-    DPoint3d result;
-    result.x = matrix.form3d[0][0] * point.x
-             + matrix.form3d[0][1] * point.y
-             + matrix.form3d[0][2] * point.z;
-
-    result.y = matrix.form3d[1][0] * point.x
-             + matrix.form3d[1][1] * point.y
-             + matrix.form3d[1][2] * point.z;
-
-    result.z = matrix.form3d[2][0] * point.x
-             + matrix.form3d[2][1] * point.y
-             + matrix.form3d[2][2] * point.z;
-    return result;
-    }
 
 DVec3d operator*( RotMatrix const &matrix, DVec3d const &vector)
     {
