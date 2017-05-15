@@ -711,6 +711,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "GeoPoint.h"
 #include "dvec2d.h"
 #include "dvec3d.h"
+#include "FVec3d.h"
 #include "DRange1d.h"
 #include "drange2d.h"
 #include "drange3d.h"

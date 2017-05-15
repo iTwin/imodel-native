@@ -9,7 +9,31 @@
 BEGIN_BENTLEY_NAMESPACE
 
 
+struct GeometryTemplates
+{
+template<typename ArgType, typename ResultType>
+static inline ResultType FromStartEnd (ArgType const &start, ArgType const &end)
+    {
+    return ResultType::From (end.x - start.x, end.y - start.y, end.z - start.z);
+    }
 
+template<typename ArgType, typename ResultType>
+static inline ResultType DotProduct(ArgType x0, ArgType y0, ArgType z0, ArgType x1, ArgType y1, ArgType z1)
+    {
+    return x0 * x1 + y0 * y1 + z0 * z1;
+    }
+
+template<typename ArgType, typename ResultType>
+static inline ResultType CrossProduct(ArgType x0, ArgType y0, ArgType z0, ArgType x1, ArgType y1, ArgType z1)
+    {
+    return ResultType::From (
+                y0 * z1 - z0 * y1,
+                z0 * x1 - x0 * z1,
+                x0 * y1 - y0 * x1
+                );
+    }
+
+};
 /*-----------------------------------------------------------------*//**
 * @description Returns a DVec3d with 3 component array of double.
 *
@@ -136,7 +160,10 @@ FPoint3dCR end
     return vector;
     }
 
-
+DVec3d DVec3d::From (FVec3dCR f)
+    {
+    return From (f.x, f.y, f.z);
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Returns a DVec3d between start and end, normalized if nonzero.
@@ -545,14 +572,9 @@ DVec3dCR vector2
 * @return dot product of the two vectors.
 * @bsimethod                            EarlinLutz      03/03
 +----------------------------------------------------------------------*/
-double DVec3d::DotProduct
-(
-
-DPoint3dCR point2
-
-) const
+double DVec3d::DotProduct (DPoint3dCR other) const
     {
-    return (this->x * point2.x + this->y * point2.y + this->z * point2.z);
+    return GeometryTemplates::DotProduct <double, double> (x, y, z, other.x, other.y, other.z);
     }
 
 
@@ -2901,4 +2923,4 @@ bool DVec3d::ProjectToPlane (DVec3dCR vectorU, DVec3dCR vectorV, DPoint2dR uv) c
 
 END_BENTLEY_NAMESPACE
 
-
+#include "refFVec3d.h"
