@@ -1027,6 +1027,7 @@ void RealityDataRelationshipCreateRequest::_PrepareHttpRequestStringAndPayload()
 //! @bsimethod                                   Alain.Robert              03/2017
 //=====================================================================================
 RealityDataRelationshipDelete::RealityDataRelationshipDelete(Utf8String realityDataId, Utf8String projectId)
+    :m_projectId(projectId)
     {
     m_id = realityDataId;
     m_validRequestString = false;
@@ -1042,7 +1043,8 @@ void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityDataProjectRelationship/");
     m_httpRequestString.append(m_encodedId);
-    m_httpRequestString.append("~2F1");
+    m_httpRequestString.append("~2F");
+    m_httpRequestString.append(m_projectId);
     m_requestHeader.push_back("Content-Type: application/json");
     }
 

@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#define NOMINMAX
+
 #include <Bentley/Bentley.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -19,6 +21,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -837,7 +840,8 @@ void RealityDataConsole::Upload()
     if (upload.IsValidTransfer())
         {
         upload.SetProgressCallBack(uploadProgressFunc);
-        upload.SetProgressStep(0.1);
+        upload.SetProgressStep(std::min(1.0, (double)(100000000.0 / upload.GetFullTransferSize()) * 0.1)); 
+        //anything under 100mb will update progress at 10% intervals. Largerfiles will have more frequent updates
         upload.OnlyReportErrors(true);
         const TransferReport& tReport = upload.Perform();
         Utf8String report;

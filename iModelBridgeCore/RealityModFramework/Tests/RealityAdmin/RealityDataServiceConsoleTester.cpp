@@ -308,8 +308,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")); //changeprops
     ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")); //FileAccess
     ASSERT_TRUE(consoleOutput.ContainsI("?sv=")); //AzureAddress
-    //ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
-    //ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
+    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
+    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
     Utf8String outRoot = dummyRoot.GetNameUtf8();
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot))));
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot))));//Download
