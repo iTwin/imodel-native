@@ -172,7 +172,7 @@ struct SpatialEntityWithDetailsSpatialRequest : public GeoCoordinationServicePag
     {
 public:
     //! Create a request for spatial entity with details in the area covered by given polygon for specific classification
-    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification = -1);
 
     REALITYDATAPLATFORM_EXPORT void FilterBySource(int informationSource) { m_informationSourceFilter = informationSource; }
     
