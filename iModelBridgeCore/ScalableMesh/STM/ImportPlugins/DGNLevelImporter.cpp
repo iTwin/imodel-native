@@ -404,9 +404,12 @@ struct DGNSourceRefVisitor// : SourceRefVisitor
 
 
     static bool                         IsActiveDgnFile        (const WChar*                          dgnFilePath)
-        {
-        DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
-                            
+        {        
+        DgnFileP activeDgnFile = nullptr; 
+
+        if (ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef() != nullptr)
+            activeDgnFile = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP();
+                                    
         return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());
         }
 

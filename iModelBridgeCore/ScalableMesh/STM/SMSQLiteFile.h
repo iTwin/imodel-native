@@ -221,6 +221,8 @@ public:
     virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
     virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
     
+	void Compact();
+
     bool m_autocommit = true;    
 
     static const SchemaVersion CURRENT_VERSION;

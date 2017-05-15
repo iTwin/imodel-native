@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -16,6 +16,7 @@ struct SMCesiumPublisher : virtual public IScalableMeshPublisher
     protected:
 
         void _Publish(IScalableMeshNodePtr node, const Transform& tranform, bvector<Byte>& outData) override;
+        void _Publish(IScalableMeshNodePtr nodePtr, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData) override;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

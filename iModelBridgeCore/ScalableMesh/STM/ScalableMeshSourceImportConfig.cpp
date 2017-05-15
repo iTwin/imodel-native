@@ -6,7 +6,7 @@
 |       $Date: 2012/01/30 17:24:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -248,7 +248,8 @@ ImportConfig* SourceImportConfig::GetConfig () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const ImportSequence& SourceImportConfig::GetSequence () const
     {
-    assert(!m_implP->m_sequence.IsEmpty());
+    //NEEDS_WORK_SM For raster source the sequence can be empty??
+    //assert(!m_implP->m_sequence.IsEmpty());
     return m_implP->m_sequence;
     }
 

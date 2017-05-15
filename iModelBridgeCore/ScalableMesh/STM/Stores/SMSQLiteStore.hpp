@@ -190,8 +190,16 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     __super::SaveSisterFiles();
     }
 
+template <class EXTENT> void SMSQLiteStore<EXTENT>::CompactProjectFiles()
+{
+	__super::Compact();
+}
+
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
     {        
+    if (m_raster == nullptr)
+        return; 
+
     DRange3d total3dRange(DRange3d::NullRange());
     
     for (auto& range : tileRanges)
@@ -400,9 +408,17 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         m_smSQLiteFile->StoreTexture(id, texData, 0); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
         return HPMBlockID(id);
         }
+    countData -= 3 * sizeof(int);
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-    pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int)); // The data block starts with 12 bytes of metadata, followed by pixel data
-    pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
+
+    // The static analyzer found a potential mismatch between sizeof and countof because of the statement 
+    // DataTypeArray + 3 * sizeof(int) but there are other places where the same code is used and it has not complained about it...
+    // However, I think the code is correct so I disable the warning here.
+    #pragma warning( push )
+    #pragma warning ( disable: 6305 )
+    pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData); // The data block starts with 12 bytes of metadata, followed by pixel data
+    #pragma warning ( pop )
+    pi_uncompressedPacket.SetDataSize(countData);
     // Retrieve width, height and number of channels from the first 12 bytes of the data block
     int w = ((int*)DataTypeArray)[0];
     int h = ((int*)DataTypeArray)[1];
@@ -434,7 +450,7 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
     void** serializedSet = new void*[countData];
     countAsPts = 0;
     size_t countAsBytes = 0;
-    size_t* ct = new size_t[countData];
+    uint64_t* ct = new uint64_t[countData];
 
     for (size_t i = 0; i < countData; i++)
         {
@@ -445,8 +461,10 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
     //countAsPts = (size_t)(ceil((float)countAsBytes / sizeof(int32_t)));
     size_t nOfInts = (size_t)(ceil(((float)sizeof(size_t) / sizeof(int32_t))));
     int32_t* ptArray = new int32_t[countAsPts + countData + nOfInts];
-    memcpy(ptArray, &countData, sizeof(size_t));
-    size_t offset = sizeof(size_t);
+
+	uint64_t newCountData = countData;
+    memcpy(ptArray, &newCountData, sizeof(uint64_t));
+    size_t offset = sizeof(uint64_t);
     for (size_t i = 0; i < countData; i++)
         {
         ptArray[(size_t)(ceil(((float)offset / sizeof(int32_t))))] = (int32_t)ct[i];
@@ -487,7 +505,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         size_t countAsPts;
         dataBuffer = SerializeDiffSet(countAsPts, (DifferenceSet*)DataTypeArray, countData);        
         dataSize = countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t);                
-        needCompression = false;
+        //needCompression = false;
         }
     else
     if (m_dataType == SMStoreDataType::CoverageName)
@@ -620,10 +638,22 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             size_t uncompressedSize = 0;  
             m_smSQLiteFile->GetDiffSet(blockID.m_integerID, nodeData, uncompressedSize);            
             
+			HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+			pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
+			pi_compressedPacket.SetDataSize(nodeData.size());
+			pi_uncompressedPacket.SetDataSize(uncompressedSize);
+			pi_uncompressedPacket.SetBuffer(new Byte[uncompressedSize], uncompressedSize);
+			pi_uncompressedPacket.SetBufferOwnership(true);
+
+			LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
             if (uncompressedSize == 0) 
                 blockDataCount = 0;
-            else
-                memcpy(&blockDataCount , &nodeData[0], sizeof(size_t)); //NEEDS_WORK_SM : never persist size_t, change that to uint64_t instead                
+			else
+			    {
+				uint64_t count;
+				memcpy(&count, pi_uncompressedPacket.GetBufferAddress(), sizeof(uint64_t));
+				blockDataCount = (size_t)count;
+			    }
             }
             break;
         case SMStoreDataType::Skirt : 
@@ -788,7 +818,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
         return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
-    else
+   /* else
     if (m_dataType == SMStoreDataType::DiffSet)
         {
         if (uncompressedSize == 0) return 1;
@@ -814,13 +844,13 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }        
 
         return nodeData.size();     
-        }        
+        }    */    
         
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
     pi_compressedPacket.SetDataSize(nodeData.size());
 
-    if (m_dataType == SMStoreDataType::Graph)
+    if (m_dataType == SMStoreDataType::Graph || m_dataType == SMStoreDataType::DiffSet)
         {
         pi_uncompressedPacket.SetDataSize(uncompressedSize);        
         pi_uncompressedPacket.SetBuffer(new Byte[uncompressedSize], uncompressedSize);
@@ -847,7 +877,36 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }
 
         return 1;       
-        }                
+        } 
+	else
+	{
+		if (m_dataType == SMStoreDataType::DiffSet)
+		{
+			if (uncompressedSize == 0) return 1;
+			uint64_t offset = (size_t)ceil(sizeof(uint64_t));
+			size_t ct = 0;
+
+			size_t dataCount = 0;
+			memcpy(&dataCount, pi_uncompressedPacket.GetBufferAddress(), sizeof(uint64_t));
+			assert(dataCount > 0);
+
+			while (offset + 1 < (uint64_t)uncompressedSize && *((int32_t*)&pi_uncompressedPacket.GetBufferAddress()[offset]) > 0 && ct < dataCount)
+			{
+				//The pooled vectors don't initialize the memory they allocate. For complex datatypes with some logic in the constructor (like bvector),
+				//this leads to undefined behavior when using the object. So we call the constructor on the allocated memory from the pool right here using placement new.
+				DifferenceSet * diffSet = new(DataTypeArray + ct)DifferenceSet();
+				uint64_t sizeOfCurrentSerializedSet = (uint64_t)*((int32_t*)&pi_uncompressedPacket.GetBufferAddress()[offset]);
+				diffSet->upToDate = true;
+				diffSet->LoadFromBinaryStream(&pi_uncompressedPacket.GetBufferAddress()[0] + offset + sizeof(int32_t), sizeOfCurrentSerializedSet);
+				offset += sizeof(int32_t);
+				offset += sizeOfCurrentSerializedSet;
+				offset = ceil(((float)offset / sizeof(int32_t))) * sizeof(int32_t);
+				++ct;
+			}
+
+			return uncompressedSize;
+		}
+	}
 
     return std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));        
     }
