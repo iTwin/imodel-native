@@ -91,6 +91,10 @@ static FVec3d FromStartEnd (DPoint3dCR start, DPoint3dCR end);
 //! @param [in] start start point
 //! @param [in] end   end point
 static FVec3d FromStartEnd (FPoint3dCR start, FPoint3dCR end);
+//! Unit vector from start towards end.  This is valid if the (pre normalized) length is at least DoubleOps::SmallMetricDistance
+static ValidatedFVec3d FromStartEndNormalized (FPoint3dCR start, FPoint3dCR end);
+//! Unit vector from start towards end.  This is valid if the (pre normalized) length is at least DoubleOps::SmallMetricDistance
+static ValidatedFVec3d FromStartEndNormalized (DPoint3dCR start, DPoint3dCR end);
 
 //! Swap contents of instance, other.
 //! @param [in,out] other second point.
@@ -101,8 +105,15 @@ float FDotProduct (FVec3dCR other) const;
 //! Cross prodcut, using FLOAT ONLY (no promotion to double for higher accuracy sums)
 FVec3d FCrossProduct (FVec3dCR other) const;
 
-//! Dot product, promoting to double
+//! Dot product, promoting components to double and accumulating as double
 double DotProduct (FVec3dCR other) const;
+//! Cross product, promoting components to double and accumulating as double
+FVec3d CrossProduct (FVec3dCR other) const;
+
+//! Vector magnitude, promoting components to double and accumulating as double
+double Magnitude () const;
+//! Squared vector magnitude, promoting components to double and accumulating as double
+double MagnitudeSquared () const;
 
 #endif // __cplusplus
 

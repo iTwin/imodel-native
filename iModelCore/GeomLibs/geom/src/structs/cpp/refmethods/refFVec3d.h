@@ -23,10 +23,17 @@ FVec3d FVec3d::FromOne (){return from (1.0, 1.0, 1.0);}
 FVec3d FVec3d::FromStartEnd (DPoint3dCR start, DPoint3dCR end){return GeometryTemplates::FromStartEnd <DPoint3d, FVec3d>(start, end);}
 FVec3d FVec3d::FromStartEnd (FPoint3dCR start, FPoint3dCR end){return GeometryTemplates::FromStartEnd <FPoint3d, FVec3d>(start, end);}
 
+ValidatedFVec3d FVec3d::FromStartEndNormalized (FPoint3dCR start, FPoint3dCR end){return GeometryTemplates::FromStartEndNormalized <FPoint3d, FVec3d>(start, end);}
+ValidatedFVec3d FVec3d::FromStartEndNormalized (DPoint3dCR start, DPoint3dCR end){return GeometryTemplates::FromStartEndNormalized <DPoint3d, FVec3d>(start, end);}
+
+
 float FVec3d::FDotProduct (FVec3dCR other)    const {return GeometryTemplates::DotProduct <float,float> (x,y,z,other.x, other.y, other.z);}
 FVec3d FVec3d::FCrossProduct (FVec3dCR other) const {return GeometryTemplates::CrossProduct <float, FVec3d> (x,y,z,other.x, other.y, other.z);}
 double FVec3d::DotProduct (FVec3dCR other)    const {return GeometryTemplates::DotProduct <double, double> (x,y,z,other.x, other.y, other.z);}
+FVec3d FVec3d::CrossProduct (FVec3dCR other) const {return GeometryTemplates::CrossProduct <double, FVec3d> (x,y,z,other.x, other.y, other.z);}
 
+double FVec3d::Magnitude () const { return sqrt (GeometryTemplates::DotProduct <double, double> (x,y,z, x,y,z));}
+double FVec3d::MagnitudeSquared () const { return GeometryTemplates::DotProduct <double, double> (x,y,z, x,y,z);}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      05/2017

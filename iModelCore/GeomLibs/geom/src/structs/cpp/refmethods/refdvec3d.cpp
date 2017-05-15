@@ -18,6 +18,16 @@ static inline ResultType FromStartEnd (ArgType const &start, ArgType const &end)
     }
 
 template<typename ArgType, typename ResultType>
+static inline ValidatedValue <ResultType> FromStartEndNormalized (ArgType const &start, ArgType const &end)
+    {
+    ResultType rawVector = FromStartEnd<ArgType, ResultType> (start, end);
+    double a = rawVector.Magnitude ();
+    if (a >= DoubleOps::SmallMetricDistance ())
+        return ValidatedValue<ResultType> (ResultType::From (rawVector.x / a, rawVector.y / a, rawVector.z / a), true);
+    return ValidatedValue<ResultType> (rawVector, false);
+    }
+
+template<typename ArgType, typename ResultType>
 static inline ResultType DotProduct(ArgType x0, ArgType y0, ArgType z0, ArgType x1, ArgType y1, ArgType z1)
     {
     return x0 * x1 + y0 * y1 + z0 * z1;

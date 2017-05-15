@@ -35,6 +35,7 @@
 #include <Vu/VuApi.h>
 #include <Mtg/MtgApi.h>
 #include <Logging/bentleylogging.h>
+#include <Bentley/BeNumerical.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"GeomLibs"))
 

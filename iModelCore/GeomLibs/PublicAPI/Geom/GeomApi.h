@@ -546,6 +546,7 @@ typedef ValidatedValue <LocalRange> ValidatedLocalRange;
 typedef ValidatedValue <ClipPlane> ValidatedClipPlane;
 
 typedef ValidatedValue <FPoint3d> ValidatedFPoint3d;
+typedef ValidatedValue <FVec3d> ValidatedFVec3d;
 
 
 template<typename T>
