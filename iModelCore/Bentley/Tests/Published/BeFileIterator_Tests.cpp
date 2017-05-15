@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileIterator_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -59,6 +59,8 @@ static void createFiles(BeFileNameCR root)
 //---------------------------------------------------------------------------------------
 TEST (BeFileListIterator, Test_Recursive)
     {
+    //sleep(10);
+
     BeFileName root;
     BeTest::GetHost().GetOutputRoot(root);
     root.AppendToPath(L"IteratorTest");
@@ -72,6 +74,8 @@ TEST (BeFileListIterator, Test_Recursive)
     bool foundFileName31 = false;
     while (it.GetNextFileName (name) == SUCCESS)
         {
+        printf("name='%s'\n", Utf8String(name.c_str()).c_str());
+
         BeFileName dir (BeFileName::DevAndDir, name);
         ASSERT_TRUE( 0 == BeStringUtilities::Wcsnicmp (root, dir, wcslen(root)) );
         BeFileName base (BeFileName::Basename, name);
@@ -81,7 +85,7 @@ TEST (BeFileListIterator, Test_Recursive)
             foundFileName31 = true;
         ++count;
         }
-    ASSERT_EQ( 7 , count);
+    ASSERT_EQ( 5 , count);
     ASSERT_TRUE(foundFileName1);
     ASSERT_TRUE(foundFileName31);
     }

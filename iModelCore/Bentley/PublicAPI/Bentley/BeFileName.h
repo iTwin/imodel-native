@@ -438,13 +438,6 @@ POP_MSVC_IGNORE
     //! @return BeFileNameStatus::Success if the directory was successfully cloned.
     BENTLEYDLL_EXPORT static BeFileNameStatus CloneDirectory(WCharCP sourceDir, WCharCP destDir, bool includeSubDirs=true);
 
-    //! @note Not portable, use DgnPlatformLib::Host::IKnownLocationsAdmin
-    //! @private
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath(BeFileNameR tempPath);
-
-    //! @note Not portable, use DgnPlatformLib::Host::IKnownLocationsAdmin
-    //! @private
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathName, WCharCP prefixString);
 /** @} */
 
 /** @name Copy, delete, move a file by name */
@@ -583,28 +576,6 @@ POP_MSVC_IGNORE
     BENTLEYDLL_EXPORT static BeFileNameStatus CheckAccess(WCharCP fileName, BeFileNameAccess accs);
 /** @} */
 
-/** @name Query the file system */
-/** @{ */
-    //! Get free space on disk
-    //! @param[out] freeBytes       The amount of free space on the storage device, in bytes
-    //! @param[in] dirName          The name of a file or directory on the device to check
-    //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameCR dirName);
-
-    //! Get free space on disk
-    //! @param[out] freeBytes       The amount of free space on the storage device, in bytes
-    //! @param[in] dirName          The name of a file or directory on the device to check
-    //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
-    //! @deprecated Use version of BeFileName::BeGetDiskFreeSpace that takes a BeFileNameCR parameter instead
-    //! @private
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName);
-
-    //! Get the current working directory
-    //! @param[out] currentDirectory The current directory;
-    //! @note Not portable
-    //! @private
-    BENTLEYDLL_EXPORT static BeFileNameStatus GetCwd (WStringR currentDirectory);
-/** @} */
 };
 
 END_BENTLEY_NAMESPACE

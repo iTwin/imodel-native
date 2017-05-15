@@ -149,9 +149,5 @@ LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(
     LINKER_LIBRARIES           + $(CLibs)
 %endif
 
-%if defined (DGN_DISPLAY_KERNEL_WX)
-    LINKER_LIBRARIES           + $(WX_LIBS)
-%endif
-
 %include $(sharedMki)linkLibrary.mki
 

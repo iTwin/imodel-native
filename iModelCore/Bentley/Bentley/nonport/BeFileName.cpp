@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileName.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
@@ -26,6 +26,7 @@
         #include <sys/vfs.h>
     #else
         #include <sys/mount.h>
+        #include <CoreFoundation/CoreFoundation.h>
     #endif 
     #include <utime.h>
     #include <dlfcn.h>
@@ -44,6 +45,7 @@
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeStringUtilities.h>
@@ -1821,9 +1823,9 @@ BeFileNameStatus BeFileName::GetFileSize(uint64_t& sz, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameCR dirName)
+BeFileNameStatus Desktop::FileSystem::BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameCR dirName)
     {
-    return BeFileName::BeGetDiskFreeSpace(freeBytes, dirName.GetName());
+    return BeGetDiskFreeSpace(freeBytes, dirName.GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1831,13 +1833,13 @@ BeFileNameStatus BeFileName::BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameC
 * be checked later.
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName)
+BeFileNameStatus Desktop::FileSystem::BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString dirNameFixed;
-    FixPathName(dirNameFixed, dirName, false);
+    BeFileName::FixPathName(dirNameFixed, dirName, false);
 
     if (0 == ::GetDiskFreeSpaceExW (dirNameFixed.c_str(), (PULARGE_INTEGER) &freeBytes, NULL, NULL))
         return BeFileNameStatus::UnknownError;     // couldn't determine disk space.
@@ -2262,7 +2264,7 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
 * Generates a temporary filename
 * @bsimethod                                                    BernMcCarty     06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
+BeFileNameStatus Desktop::FileSystem::BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
     {
 #if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     BeFileName pathToUse(pathToUseIn);
@@ -2286,7 +2288,7 @@ BeFileNameStatus BeFileName::BeGetTempFileName(BeFileName& tempFileName, BeFileN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetTempPath(BeFileName& tempPath)
+BeFileNameStatus Desktop::FileSystem::BeGetTempPath(BeFileName& tempPath)
     {
 #if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     WChar       tempName[MAX_PATH * 5];
@@ -2301,7 +2303,7 @@ BeFileNameStatus BeFileName::BeGetTempPath(BeFileName& tempPath)
 #endif
     }
 
-BeFileNameStatus BeFileName::GetCwd(WStringR currentDirectory)
+BeFileNameStatus Desktop::FileSystem::GetCwd(WStringR currentDirectory)
     {
 #if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     wchar_t cwdPath[MAX_PATH];
@@ -2330,3 +2332,74 @@ BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
 
     return fullPath;
     }
+
+#ifdef _WIN32
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetExecutableDir()
+    {
+    wchar_t moduleFileName[MAX_PATH];
+    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
+    BeFileName path(moduleFileName);
+    return path.GetDirectoryName();
+    }
+#elif defined(__linux)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetExecutableDir()
+    {
+    Utf8PrintfString exelink("/proc/%ld/exe", getpid());
+
+    char exepath[PATH_MAX + 1] = {0};
+    
+    ssize_t linklen = readlink(exelink.c_str(), exepath, _countof(exepath)-1);
+
+    if( linklen >= 0 )
+        exepath[linklen] = '\0';
+    else
+        exepath[0] = '\0';
+
+    BeFileName path(exepath, BentleyCharEncoding::Utf8);
+    return path.GetDirectoryName();
+    }
+#else
+
+// source: http://www.ogre3d.org/tikiwiki/GetExecutablePath
+// I did not see anything on that website about copyrights
+/// This function will locate the path to our application on OS X
+static std::string macBundlePath()
+{
+    char path[1024];
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    if(!mainBundle)
+        return "";
+
+    CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
+    if(!mainBundleURL)
+        return "";
+
+    CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
+    if(!cfStringRef)
+        return "";
+
+    CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
+
+    CFRelease(mainBundleURL);
+    CFRelease(cfStringRef);
+
+    return std::string(path);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetExecutableDir()
+    {
+    // *** TBD: Fix up argv0 using cwd, etc.
+    BeFileName exepath(macBundlePath().c_str(), BentleyCharEncoding::Utf8);
+    exepath.BeGetFullPathName();
+    return exepath.GetDirectoryName();
+    }
+#endif

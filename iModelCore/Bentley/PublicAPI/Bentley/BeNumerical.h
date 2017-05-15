@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeNumerical.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -27,14 +27,8 @@ struct          BeNumerical
     static int      BeFinite (double v)                 {return _finite(v);}
 #else
     static double   BeNextafter (double x, double y)    {return nextafter(x,y);}
-
-    #if defined (__clang__)
-        static int      BeIsnan (double v)                  {return isnan (v);}
-        static int      BeFinite (double v)                 {return isfinite(v);}
-    #else
-        static int      BeIsnan (double v)                  {return std::isnan (v);}
-        static int      BeFinite (double v)                 {return finite(v);}
-    #endif
+    static int      BeIsnan (double v)                  {return isnan (v);}
+    static int      BeFinite (double v)                 {return isfinite(v);}
 #endif
 
     //! A platform-specific function that clears any pending floating point exceptions.

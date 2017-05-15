@@ -958,6 +958,8 @@ TEST(Cpp, LanguageFeatures)
         ASSERT_TRUE( CLANG_VERSION >= 4010 ) << CLANG_VERSION;
     #elif defined(ANDROID) && defined (__clang__)
         ASSERT_TRUE( CLANG_VERSION >= 3080 ) << CLANG_VERSION;
+    #elif defined(__linux__) && defined (__clang__)
+        ASSERT_TRUE( CLANG_VERSION >= 3080 ) << CLANG_VERSION;
     #elif defined (__GNUC__)
         ASSERT_TRUE( GCC_VERSION >= 4060 ) << GCC_VERSION;
     #elif defined (BENTLEY_WIN32)

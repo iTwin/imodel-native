@@ -160,10 +160,15 @@ public:
 
         m__dp = (struct dirent*) malloc(len);
 
-        struct dirent* result;
-
-        if (0 != readdir_r (dir, m__dp, &result) || (result == NULL))
+        // We used to use the thread-safe readdir_r, but that was deprecated in glibc 2.24.
+        // While readdir is the recommended replacement, there is no guidance on how to make it thread-safe (as it "may" internally use a static buffer).
+        // I'm hoping we can just get away with the trivial recommended replacement...
+        struct dirent* result = readdir(dir);
+        if (nullptr == result)
             return ERROR;
+
+        memcpy (m__dp, result, len);
+
         return SUCCESS;
         }
 
@@ -340,6 +345,8 @@ public:
                 return  SUCCESS;
 
             DELETE_AND_CLEAR(m_subIter);
+            
+            MoveToNextValidFile();
             }
 
         if (m_finder.IsFinished ())
@@ -349,14 +356,13 @@ public:
         name = GetCurrentFileName();
         bool isDir = IsDirectory();
 
-        //  Move current to the next valid file or directory
-        MoveToNextValidFile();
-
         if (m_recursive && isDir)
             {
             StartSubIter(name.GetName());
             return  GetNextFileName(name);
             }
+
+        MoveToNextValidFile();
 
         return  SUCCESS;
         }
