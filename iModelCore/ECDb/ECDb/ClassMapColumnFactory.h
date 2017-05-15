@@ -114,10 +114,10 @@ struct ClassMapColumnFactory : NonCopyableClass
         struct SharedColumnReservation :NonCopyableClass
             {
             private:
-                ClassMapColumnFactory const& m_allocator;
+                // unused - ClassMapColumnFactory const& m_allocator;
             public:
                 SharedColumnReservation(ClassMapColumnFactory const& allocator)
-                    :m_allocator(allocator)
+                    // unused - :m_allocator(allocator)
                     {}
             };
     private:
