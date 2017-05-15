@@ -536,12 +536,6 @@ DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
-    if (Txns().HasLocalChanges())
-        {
-        BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
-        return SchemaStatus::DbHasLocalChanges;
-        }
-
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
     if (status != SchemaStatus::Success)

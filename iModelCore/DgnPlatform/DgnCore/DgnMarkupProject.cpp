@@ -533,6 +533,11 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
+    // Flush transaction table to be able to import markup schema
+    SaveChanges();
+    Revisions().StartCreateRevision();
+    Revisions().FinishCreateRevision();
+
     if (SchemaStatus::Success != MarkupDomain::GetDomain().ImportSchema(*this))
         return BE_SQLITE_ERROR;
 
