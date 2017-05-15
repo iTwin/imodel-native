@@ -272,6 +272,10 @@ void DgnRscFont::LoadGlyphs() const
     if (m_hasLoadedGlyphs)
         return;
 
+    BeMutexHolder lock(DgnFonts::GetMutex());
+    if (m_hasLoadedGlyphs)
+        return;
+
     m_hasLoadedGlyphs = true;
 
     if (!IsResolved())

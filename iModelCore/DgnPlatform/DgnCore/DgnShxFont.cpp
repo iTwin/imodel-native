@@ -1000,6 +1000,10 @@ void DgnShxGlyph::EnsureMetrics() const
     if (m_areMetricsValid)
         return;
 
+    BeMutexHolder lock(DgnFonts::GetMutex());
+    if (m_areMetricsValid)
+        return;
+
     m_areMetricsValid = true;
 
     memset(&m_range, 0, sizeof(m_range));
@@ -1076,6 +1080,8 @@ void DgnShxGlyph::EnsureMetrics() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnShxGlyph::_FillGpa(GPArrayR gpa) const
     {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
     if ((nullptr == m_data) || (0 == m_dataSize))
         return ERROR;
 
@@ -1107,6 +1113,8 @@ BentleyStatus DgnShxGlyph::_FillGpa(GPArrayR gpa) const
 //---------------------------------------------------------------------------------------
 DgnGlyphCP DgnShxFont::FindGlyphCP(DgnGlyph::T_Id id) const
     {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
     T_GlyphCache::const_iterator foundGlyph = m_glyphCache.find(id);
     if (m_glyphCache.end() != foundGlyph)
         return foundGlyph->second;

@@ -526,10 +526,14 @@ private:
     DbFaceDataDirect m_dbFaceData;
     BeSQLite::DbR m_db;
     Utf8String m_tableName;
-    bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
+    bool m_isFontMapLoaded;
 
 public:
+//__PUBLISH_SECTION_END__
+    static BeMutex& GetMutex();
+//__PUBLISH_SECTION_START__
+
     DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}

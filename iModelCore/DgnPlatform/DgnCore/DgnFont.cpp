@@ -734,6 +734,20 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Delete(FaceKeyCR key)
     return ERROR;
     }
 
+BEGIN_UNNAMED_NAMESPACE
+// NB: This is static, rather than being a member of DgnFonts, because DgnFont, DgnFontDataSession, IDgnFontData, et al have no backpointer to the DgnFonts or DgnDb to which they belong.
+// It is assumed that acquirers of this mutex will not need to acquire additional mutexes, or will order their locks appropriately.
+static BeMutex s_fontsMutex;
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& DgnFonts::GetMutex()
+    {
+    return s_fontsMutex;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
@@ -742,7 +756,9 @@ void DgnFonts::Update()
     if (m_isFontMapLoaded)
         return;
     
-    m_isFontMapLoaded = true;
+    BeMutexHolder lock(GetMutex());
+    if (m_isFontMapLoaded)
+        return;
 
     for (DbFontMapDirect::Iterator::Entry const& entry : DbFontMap().MakeIterator())
         {
@@ -753,6 +769,8 @@ void DgnFonts::Update()
         
         m_fontMap[id] = font;
         }
+
+    m_isFontMapLoaded = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -848,8 +866,6 @@ void DgnFont::ScaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint
     range.high.y = (range.high.y * scale.y) + offset.y;
     }
 
-static BeMutex s_fontDataSessionMutex;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
@@ -857,7 +873,7 @@ bool DgnFontDataSession::Start()
     {
     if (!m_hasStarted)
         {
-        BeMutexHolder lock(s_fontDataSessionMutex);
+        BeMutexHolder lock(DgnFonts::GetMutex());
         if (!m_hasStarted)
             {
             m_isValid = ((nullptr != m_data) && (SUCCESS == m_data->_AddDataRef()));
@@ -873,7 +889,7 @@ bool DgnFontDataSession::Start()
 //---------------------------------------------------------------------------------------
 void DgnFontDataSession::Stop()
     {
-    BeMutexHolder lock(s_fontDataSessionMutex);
+    BeMutexHolder lock(DgnFonts::GetMutex());
 
     if (m_isValid)
         m_data->_ReleaseDataRef();

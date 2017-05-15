@@ -1425,9 +1425,6 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     if (m_surfacesOnly)
         return true;
 
-    static BeMutex s_tempFontMutex;
-    BeMutexHolder lock(s_tempFontMutex);    // Temporary - until we resolve the font threading issues.
-
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
 
     DRange2d range2d = textString.GetRange();

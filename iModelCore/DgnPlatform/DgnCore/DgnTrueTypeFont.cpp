@@ -484,6 +484,8 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnTrueTypeGlyph::_FillGpa(GPArrayR gpa) const
     {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
     if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
         return ERROR;
 
@@ -530,6 +532,8 @@ static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, ID
 //---------------------------------------------------------------------------------------
 DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle style) const
     {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
     T_GlyphCacheMap::iterator foundCache = m_glyphCache.find(style);
     T_GlyphCache* glyphCache = nullptr;
     if (m_glyphCache.end() != foundCache)
