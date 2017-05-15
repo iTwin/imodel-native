@@ -18,30 +18,33 @@ namespace IndexECPlugin.Tests.Tests.Helpers
 
             }
 
-        [Test, Pairwise]
-        public void ECRelationalOperatorToSQLTest ()/*[Values(RelationalOperator.EQ, RelationalOperator.GT)] RelationalOperator relOp,
-            [Values("=", ">")] string expectedString)*/
+        [TearDown]
+        public void TearDown ()
             {
-            //TODO: Clean this up !
-            //Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(relOp), Is.EqualTo(expectedString));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.EQ), Is.EqualTo("="));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.GT), Is.EqualTo(">"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.GTEQ), Is.EqualTo(">="));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.IN), Is.EqualTo("IN"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.LIKE), Is.EqualTo("LIKE"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.LT), Is.EqualTo("<"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.LTEQ), Is.EqualTo("<="));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.NE), Is.EqualTo("<>"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.NOTIN), Is.EqualTo("NOT IN"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.NOTLIKE), Is.EqualTo("NOT LIKE"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.ISNULL), Is.EqualTo("IS NULL"));
-            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.ISNOTNULL), Is.EqualTo("IS NOT NULL"));
+            
+            }
+
+        [TestCase(RelationalOperator.EQ, "=")]
+        [TestCase(RelationalOperator.GT, ">")]
+        [TestCase(RelationalOperator.GTEQ, ">=")]
+        [TestCase(RelationalOperator.IN, "IN")]
+        [TestCase(RelationalOperator.LIKE, "LIKE")]
+        [TestCase(RelationalOperator.LT, "<")]
+        [TestCase(RelationalOperator.LTEQ, "<=")]
+        [TestCase(RelationalOperator.NE, "<>")]
+        [TestCase(RelationalOperator.NOTIN, "NOT IN")]
+        [TestCase(RelationalOperator.NOTLIKE, "NOT LIKE")]
+        [TestCase(RelationalOperator.ISNULL, "IS NULL")]
+        [TestCase(RelationalOperator.ISNOTNULL, "IS NOT NULL")]
+        public void ECRelationalOperatorToSQLTest (RelationalOperator relOp, string expectedString)
+            {
+            Assert.That(ECToSQLMap.ECRelationalOperatorToSQL(relOp), Is.EqualTo(expectedString));
             }
 
         [Test]
         public void ECRelationalOperatorToSQLExceptionTest ()
             {
-            Assert.That(() => ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.X), Throws.TypeOf<NotImplementedException>());
+            Assert.That(() => ECToSQLMap.ECRelationalOperatorToSQL(RelationalOperator.ISNOTNULL + 1), Throws.TypeOf<NotImplementedException>());
             }
 
         [Test]
