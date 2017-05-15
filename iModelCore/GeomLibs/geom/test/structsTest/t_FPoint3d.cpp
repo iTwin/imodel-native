@@ -100,5 +100,38 @@ TEST(FPoint3d, SumOf)
     // Farhad -- you can test lots and lots of FPoint3d methods (SumOf, FromSumOf, FromMultiply) .. with just originD, vector0, vector1, vector2, and this transform
     // You'll need a few more points for Distance and others that have multiple FPoint3d inputs.
 
+    Check::Exact(DPoint3d::From(FPoint3d::FromShift(originF0, scale0, scale1, scale2)),
+                 DPoint3d::FromShift(originD0, scale0, scale1, scale2));
 
+    fpoint.Subtract(originF0, vector0);
+    dpoint.Subtract(originD0, vector0);
+    Check::Exact(DPoint3d::From(fpoint), dpoint);
+    fpoint.Add(vector1);
+    dpoint.Add(vector1);
+    Check::Exact(DPoint3d::From(fpoint), dpoint);
+
+    Check::Exact(DPoint3d::From(FPoint3d::From(DPoint3d::From(2, 3, 4))),
+                 DPoint3d::From(2, 3, 4));
+    Check::Exact(DPoint3d::From(FPoint3d::From(DPoint2d::From(2, 3), 4)),
+                 DPoint3d::From(2, 3, 4));
+   
+    Check::Exact(DPoint3d::From(FPoint3d::FromOne()),
+                 DPoint3d::FromOne());
+    Check::Exact(DPoint3d::From(FPoint3d::FromZero()),
+                 DPoint3d::FromZero());
+
+    //SetGetComponent
+    fpoint = FPoint3d::From(originD0);
+    dpoint = DPoint3d::From(originF0);
+    double fpts[3], dpts[3];
+    fpoint.GetComponents(fpts[0], fpts[1], fpts[2]);
+    dpoint.GetComponents(dpts[0], dpts[1], dpts[2]);
+    Check::ExactDouble(fpts[0], dpts[0]);
+    Check::ExactDouble(fpts[1], dpts[1]);
+    Check::ExactDouble(fpts[2], dpts[2]);
+
+    fpoint.SetComponent(3, 2);
+    dpoint.SetComponent(3, 2);
+    Check::ExactDouble(fpoint.GetComponent(2), dpoint.GetComponent(2));
     }
+
