@@ -1694,7 +1694,7 @@ static BentleyStatus getECRelColIds(int& sourceInstanceIdCol, int& targetInstanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
+DgnDbStatus DgnModel::ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
     auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
         "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
@@ -1734,7 +1734,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
                 }
 
             EC::ECInstanceKey ekey;
-            destDb.InsertNonNavigationRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
+            destDb.InsertLinkTableRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
             }
         }
 
@@ -1744,7 +1744,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+DgnDbStatus DgnModel::_ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
@@ -1752,10 +1752,10 @@ DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceM
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     StopWatch timer(true);
-    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
+    ImportLinkTableECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
+    ImportLinkTableECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
@@ -1789,7 +1789,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     logPerformance(timer, "Import element aspects time");
 
     timer.Start();
-    if (DgnDbStatus::Success != (status = _ImportNonNavigationECRelationshipsFrom(sourceModel, importer)))
+    if (DgnDbStatus::Success != (status = _ImportLinkTableECRelationshipsFrom(sourceModel, importer)))
         return status;
     logPerformance(timer, "Import ECRelationships time");
 
