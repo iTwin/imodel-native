@@ -198,7 +198,7 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
 
     public:
         BimConsole() {}
-        int Run(int argc, WCharP argv[]);
+        int Run(int argc, WCharCP argv[]);
 
         static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');
 

@@ -121,23 +121,11 @@ void dgn_ElementHandler::TextAnnotationSeedHandler::_RegisterPropertyAccessors(E
     params.RegisterPropertyAccessors(layout, PROP_Data,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
-            bvector<Byte> data;
-            if (SUCCESS != TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, el, TextAnnotationSeedPersistence::FlatBufEncodeOptions::Default))
-                return DgnDbStatus::BadArg;
-            value.SetBinary(data.data(), data.size());
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             },
         [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsBinary())
-                return DgnDbStatus::BadArg;
-            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
-            size_t dataSize = 0;
-            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
-            if (SUCCESS != TextAnnotationSeedPersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
-                return DgnDbStatus::BadArg;
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             });
     }
 
