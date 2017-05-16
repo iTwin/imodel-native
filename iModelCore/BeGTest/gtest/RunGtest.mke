@@ -96,6 +96,9 @@ always:
         ~@putenv LD_LIBRARY_PATH=/usr/local/lib:$(copyToDirectory)${appDirectory}
         %endif
         -$(exeName) >> $(ResultsCapture) 2>&1
+        %if $(TARGET_PLATFORM) == "Linux"
+        ~@putenv LD_LIBRARY_PATH=/usr/local/lib
+        %endif
 
 %endif
 
