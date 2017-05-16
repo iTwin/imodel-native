@@ -1559,24 +1559,25 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         while (stmtSequence->Step() == BE_SQLITE_ROW)
             {
             ImportCommandData data;
-            if (!stmt->IsColumnNull(0))
+            
+            if (!stmtSequence->IsColumnNull(0))
                 {
-                data.sourceLayerID = stmt->GetValueInt(0);
+                data.sourceLayerID = stmtSequence->GetValueInt(0);
                 data.sourceLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(1))
+            if (!stmtSequence->IsColumnNull(1))
                 {
-                data.targetLayerID = stmt->GetValueInt(1);
+                data.targetLayerID = stmtSequence->GetValueInt(1);
                 data.targetLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(2))
+            if (!stmtSequence->IsColumnNull(2))
                 {
-                data.sourceTypeID = stmt->GetValueInt(2);
+                data.sourceTypeID = stmtSequence->GetValueInt(2);
                 data.sourceTypeSet = true;
                 }
-            if (!stmt->IsColumnNull(3))
+            if (!stmtSequence->IsColumnNull(3))
                 {
-                data.targetTypeID = stmt->GetValueInt(3);
+                data.targetTypeID = stmtSequence->GetValueInt(3);
                 data.targetTypeSet = true;
                 }
             sequenceData.push_back(data);
