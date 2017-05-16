@@ -432,9 +432,8 @@ TEST_F(ElementDependencyGraph, DeleteSource)
     ASSERT_EQ(DgnDbStatus::Success, e1->Delete());
     ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
 
-    ASSERT_EQ(0, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
-    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size());
-    ASSERT_EQ(r1, TestElementDrivesElementHandler::GetHandler().m_deletedRels[0].m_relKey);
+    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
+    ASSERT_EQ(0, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size());
     }
 
 /*---------------------------------------------------------------------------------**//**

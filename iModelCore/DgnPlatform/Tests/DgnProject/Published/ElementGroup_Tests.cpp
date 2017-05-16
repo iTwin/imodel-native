@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ElementGroup_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -249,7 +249,7 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
         {
         ++relationshipCount;
         }
-    ASSERT_TRUE(0 == relationshipCount);
+    ASSERT_EQ(1, relationshipCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,8 +282,8 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
         {
         ++relationshipCount;
         }
-    // relationshipt table should be empty
-    ASSERT_EQ(0, relationshipCount);
+    // relationship table is not cleaned up because the ECRel is set up with the mode to not create FK constraints on the link table
+    ASSERT_EQ(1, relationshipCount);
 
     EXPECT_TRUE(m_db->Elements().GetElement(member1->GetElementId()).IsValid());
     }

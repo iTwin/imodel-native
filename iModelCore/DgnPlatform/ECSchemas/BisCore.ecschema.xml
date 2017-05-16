@@ -1427,6 +1427,7 @@
             <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
                 <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
+                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
@@ -1561,7 +1562,9 @@
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
         <!-- Creates bis_ElementRefersToElements link table -->
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.2.0"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+            </LinkTableRelationshipMap>
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
@@ -1594,6 +1597,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
             <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
@@ -1920,7 +1924,9 @@
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <!-- Creates the bis_ModelSelectorRefersToModels link table -->
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+            </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
