@@ -169,6 +169,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
 		void InitializeTerrainRegions(Dgn::ViewContextR);
+		
+		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
       
 
     protected:
@@ -302,7 +304,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
 		SCALABLEMESH_SCHEMA_EXPORT void UnlinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId);
 
-		SCALABLEMESH_SCHEMA_EXPORT void LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const BentleyApi::Dgn::DgnCode& blanketCode);
+		SCALABLEMESH_SCHEMA_EXPORT void LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const Utf8String& blanketName);
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 

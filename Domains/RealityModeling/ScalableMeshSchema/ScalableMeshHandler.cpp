@@ -1714,11 +1714,41 @@ void ScalableMeshModel::RefreshClips()
     SetActiveClipSets(toActivate, toActivate);
     }
 
+bool ScalableMeshModel::HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID)
+{
+	bvector<DPoint3d> data;
+	SMNonDestructiveClipType type;
+	m_smPtr->GetClipType(clipID, type);
+	if (type != SMNonDestructiveClipType::Boundary)
+		return false;
+
+	if (!m_smPtr->GetClip(clipID, data))
+		return false;
+
+	CurveVectorPtr curveP = CurveVector::CreateLinear(data);
+	CurveVectorPtr testP = CurveVector::CreateLinear(clipBoundary);
+
+	return curveP->IsSameStructureAndGeometry(*testP, 1e-8);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
     {
+	bvector<uint64_t> allClips;
+
+
+	GetClipSetIds(allClips);
+	for (auto elem : allClips)
+	{
+		SMNonDestructiveClipType type;
+		m_smPtr->GetClipType(elem, type);
+
+		if(type == SMNonDestructiveClipType::Boundary)
+			m_smPtr->SetInvertClip(true);
+	}
+
     bvector<IMeshSpatialModelP> allScalableMeshes;
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel)
@@ -1736,16 +1766,15 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
 
         for (uint64_t coverageId : coverageIds)
             {
-            BeFileName terrainPath;
+           // BeFileName terrainPath;
 
-            GetPathForTerrainRegion(terrainPath, coverageId, m_basePath);
+           // GetPathForTerrainRegion(terrainPath, coverageId, m_basePath);
+			bvector<DPoint3d> regionData;
+			if (!m_smPtr->GetClip(coverageId, regionData)) continue;
 
-            if (nullptr != pScalableMesh->GetScalableMesh(false) && pScalableMesh->GetPath().CompareToI(terrainPath) == 0)
+            if (nullptr != pScalableMesh->GetScalableMesh(false) && pScalableMesh->HasClipBoundary(regionData, coverageId)/*&& pScalableMesh->GetPath().CompareToI(terrainPath) == 0*/)
                 {                                            
-                pScalableMesh->GetScalableMesh()->SetInvertClip(true);
-                bvector<DPoint3d> regionData;
-                if (m_smPtr->GetClip(coverageId, regionData))
-                    AddTerrainRegion(coverageId, pScalableMesh, regionData);
+                 AddTerrainRegion(coverageId, pScalableMesh, regionData);
                 break;
                 }
             }                      
@@ -2153,11 +2182,11 @@ void ScalableMeshModel::UnlinkTerrainRegion(const BentleyApi::Dgn::DgnElementId&
 	ReloadClipMask(blanketId, true);
     }
 
-void ScalableMeshModel::LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const BentleyApi::Dgn::DgnCode& blanketCode)
+void ScalableMeshModel::LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const Utf8String& blanketName)
     {
 	if (nullptr != GetScalableMesh())
 	    {
-		GetScalableMesh()->CreateCoverage(region, blanketId.GetValue(), blanketCode.GetValueCP());
+		GetScalableMesh()->CreateCoverage(region, blanketId.GetValue(), blanketName.c_str());
 	    }
 
 	ActivateClip(blanketId.GetValue());
