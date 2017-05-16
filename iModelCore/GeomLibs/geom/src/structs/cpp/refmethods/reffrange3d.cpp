@@ -7,11 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
-#define FIX_MIN(value, min)          if (value < min) min = value
-#define FIX_MAX(value, max)          if (value > max) max = value
-#define FIX_MINMAX(value, min, max)  FIX_MIN(value, min); FIX_MAX(value, max);
-
-#define MSVECTOR_
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 #define ROUND_FLOAT_AWAY_FROM_ZERO 1.000000119
@@ -60,5 +55,126 @@ FRange3d FRange3d::From (DRange3dCR dRange)
 
 FPoint3d FRange3d::Low  () const {return low;}
 FPoint3d FRange3d::High () const {return high;}
+// -- FROM with DPoint3d inputs
+FRange3d FRange3d::From (DPoint3dCR point)
+    {
+    auto range = NullRange ();
+    range.Extend (point);   // due to directional rounding, this is generally NOT a single point!!!
+    return range;
+    }
+
+FRange3d FRange3d::From (DPoint3dCR pointA, DPoint3dCR pointB)
+    {
+    auto range = NullRange ();
+    range.Extend (pointA);
+    range.Extend (pointB);
+    return range;
+    }
+FRange3d FRange3d::From (bvector<DPoint3d> const &points)
+    {
+    DRange3d rangeD = DRange3d::From (points);
+    return FRange3d::From (rangeD);
+    }
+
+// -- FROM with FPoint3d inputs
+FRange3d FRange3d::From (FPoint3dCR point)
+    {
+    return from (point, point);
+    }
+
+FRange3d FRange3d::From (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    auto range = from (pointA, pointA);
+    range.Extend (pointB);
+    return range;
+    }
+
+FRange3d FRange3d::From (bvector<FPoint3d> const &points)
+    {
+    auto range = NullRange ();
+    for (auto &p: points)
+        range.Extend (p);
+    return range;
+    }
+
+
+
+
+// extend low, high with a new double value, using directional double-to-float
+inline void FixLowHigh (float &low, float a, float &high)
+    {
+    if (a < low)
+        low = a;
+    if (a > high)
+        high = a;
+    }
+
+// extend low, high with a new double value, using directional double-to-float
+inline void FixLowHighD (float &low, double x, float &high)
+    {
+    float a = DoubleOps::DoubleToFloatRoundLeft (x);
+    if (a < low)
+        low = a;
+    float b = DoubleOps::DoubleToFloatRoundRight (x);
+    if (b > high)
+        high = b;
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (DPoint3dCR point)
+    {
+    FixLowHighD (low.x, point.x, high.x);
+    FixLowHighD (low.y, point.y, high.y);
+    FixLowHighD (low.z, point.z, high.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (DPoint3dCR pointA, DPoint3dCR pointB)
+    {
+    Extend (pointA);
+    Extend (pointB);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (bvector<DPoint3d> const &points)
+    {
+    for (auto &xyz : points)
+        Extend (xyz);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (FPoint3dCR point)
+    {
+    FixLowHigh (low.x, point.x, high.x);
+    FixLowHigh (low.y, point.y, high.y);
+    FixLowHigh (low.z, point.z, high.z);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (FPoint3dCR pointA, FPoint3dCR pointB)
+    {
+    Extend (pointA);
+    Extend (pointB);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+void FRange3d::Extend (bvector<FPoint3d> const &points)
+    {
+    for (auto &xyz : points)
+        Extend (xyz);
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

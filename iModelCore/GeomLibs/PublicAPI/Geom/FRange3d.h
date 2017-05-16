@@ -61,6 +61,25 @@ public:
     static FRange3d NullRange ();
     //! Convert a DRange3d to FRange3d, rounding to ensure the interior volume is not reduced by the double-to-float.
     static FRange3d From (DRange3dCR dRange);
-    };
+
+
+    static FRange3d From (DPoint3dCR point);
+    static FRange3d From (DPoint3dCR pointA, DPoint3dCR pointB);
+    static FRange3d From (bvector<DPoint3d> const &points);
+
+    static FRange3d From (FPoint3dCR point);
+    static FRange3d From (FPoint3dCR pointA, FPoint3dCR pointB);
+    static FRange3d From (bvector<FPoint3d> const &points);
+
+    void Extend (DPoint3dCR point);
+    void Extend (DPoint3dCR pointA, DPoint3dCR pointB);
+    void Extend (bvector<DPoint3d> const &points);
+
+    void Extend (FPoint3dCR point);
+    void Extend (FPoint3dCR pointA, FPoint3dCR pointB);
+    void Extend (bvector<FPoint3d> const &points);
+
+
+};
 
 END_BENTLEY_GEOMETRY_NAMESPACE
