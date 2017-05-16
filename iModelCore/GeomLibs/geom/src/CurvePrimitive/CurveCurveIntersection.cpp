@@ -734,6 +734,51 @@ DMatrix4dCP    pWorldToLocal
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
+void CurveCurve::SelfIntersectionsXY
+(
+CurveVectorR intersectionA,
+CurveVectorR intersectionB,
+CurveVectorR chain, 
+DMatrix4dCP    pWorldToLocal
+)
+    {
+    double tol = 0.0;
+    intersectionA.clear ();
+    intersectionB.clear ();
+    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol);
+    bvector<DRange3d> ranges;
+    CollectRanges (chain, ranges);
+    for (size_t iA = 0, n = chain.size (); iA < n; iA++)
+        for (size_t iB = iA + 1; iB < n; iB++)
+            {
+            if (ranges[iA].IntersectsWith (ranges[iB], 2))
+                {
+                size_t k0 = intersectionA.size ();
+                processor.Process (chain[iA].get (), chain[iB].get ());
+                if (iA + 1 == iB)
+                    {
+                    // purge "head to tail" intersection from consecutive curves
+                    for (size_t k = k0; k < intersectionA.size (); k++)
+                        {
+                        double fractionA, fractionB;
+                        DPoint3d pointA, pointB;
+                        if (CurveCurve::IsSinglePointPair (intersectionA, intersectionB, k, fractionA, pointA, fractionB, pointB)
+                            && DoubleOps::AlmostEqual (fractionA, 1.0)
+                            && DoubleOps::AlmostEqual (fractionB, 0.0)
+                            )
+                            {
+                            intersectionA.erase (intersectionA.begin () + k);
+                            intersectionB.erase (intersectionB.begin () + k);
+                            }
+                        }
+                    }
+                }
+            }
+    PurgeRedundantIntersections (intersectionA, intersectionB);
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 void CurveCurve::IntersectionsXY
 (
 CurveVectorR intersectionA,
