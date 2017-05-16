@@ -79,3 +79,31 @@ TEST(FVec3d,DotProductPrecison)
         }
     }
 #endif
+TEST(FVec3d,OperatorOverload)
+    {
+    auto point0F = FPoint3d::From (2,3,5);
+    auto point1F = FPoint3d::From (11,13,17);
+    auto point0D = DPoint3d::From (point0F);
+    auto point1D = DPoint3d::From (point1F);
+    auto vector01F = point1F - point0F;
+    auto vector01D = point1D - point0D;
+    double a = -23.0;
+    Check::Exact
+        (
+        vector01D,
+        DVec3d::From (vector01F),
+        "operator point-point"
+        );
+    Check::Exact
+        (
+        vector01D * a,
+        DVec3d::From (vector01F * a),
+        "operator vector * double"
+        );
+    Check::Exact
+        (
+        a * vector01D,
+        DVec3d::From (a * vector01F),
+        "operator double * vector"
+        );
+    }
