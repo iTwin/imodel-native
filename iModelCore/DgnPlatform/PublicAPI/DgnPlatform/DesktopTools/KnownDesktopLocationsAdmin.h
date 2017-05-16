@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
-#define UNIX_MAIN_CALLS_WMAIN                                                       \
+#define UNIX_MAIN_CALLS_WMAIN(ARGV_TYPE)                                            \
 extern "C" int main(int argc, char** argv)                                          \
     {                                                                               \
     BentleyApi::bvector<wchar_t*> argv_w_ptrs;                                      \
@@ -23,7 +23,7 @@ extern "C" int main(int argc, char** argv)                                      
         argv_w_ptrs.push_back(argp);                                                \
         }                                                                           \
                                                                                     \
-    return wmain(argc, argv_w_ptrs.data());                                         \
+    return wmain(argc, (ARGV_TYPE)argv_w_ptrs.data());                              \
     }
 
 BEGIN_BENTLEY_DGN_NAMESPACE

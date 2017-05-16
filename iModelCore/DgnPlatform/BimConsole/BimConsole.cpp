@@ -182,7 +182,7 @@ void BimConsole::Setup()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-int BimConsole::Run(int argc, WCharP argv[])
+int BimConsole::Run(int argc, WCharCP argv[])
     {
     //Initialize BimConsole and Print out banner 
     Setup();

@@ -64,7 +64,7 @@ bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2012
 //---------------------------------------------------------------------------------------
-int wmain(int argc, WCharP argv[])
+int wmain(int argc, WCharCP argv[])
     {
 #ifdef _WIN32
 #if defined (UNICODE_OUTPUT_FOR_TESTING)
@@ -103,5 +103,5 @@ int wmain(int argc, WCharP argv[])
     }
 
 #ifdef __unix__
-UNIX_MAIN_CALLS_WMAIN
+UNIX_MAIN_CALLS_WMAIN(WCharCP*)
 #endif
