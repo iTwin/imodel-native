@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 10:27:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -67,8 +67,8 @@ struct DifferenceSet
         return addedFaces.empty() && removedFaces.empty();
         }
 
-    size_t WriteToBinaryStream(void*& serialized);
-    void LoadFromBinaryStream(void* serialized, size_t ct);
+    uint64_t WriteToBinaryStream(void*& serialized);
+    void LoadFromBinaryStream(void* serialized, uint64_t ct);
     void ApplySet(DifferenceSet& d, int firstIndex);
     void ApplyMapped(DifferenceSet& d, const int* idxMap);
     bool ConflictsWith(DifferenceSet& d);
