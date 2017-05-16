@@ -40,7 +40,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, ECDb const&, ECN::ECClassCR);
+    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, SchemaImportContext&, ECDb const&, ECN::ECClassCR);
     };
 
 struct IndexMappingInfo;
@@ -53,31 +53,30 @@ typedef RefCountedPtr<IndexMappingInfo> IndexMappingInfoPtr;
 //+===============+===============+===============+===============+===============+======
 struct ClassMappingInfo : NonCopyableClass
 {
-private:
-    Utf8String m_tableName;
-    Utf8String m_ecInstanceIdColumnName;
-    std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    bool m_mapsToVirtualTable;
-    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
-
 protected:
     ECDb const& m_ecdb;
     ECN::ECClassCR m_ecClass;
     MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
-    ClassMap const* m_tphBaseClassMap;
+    ClassMap const* m_tphBaseClassMap = nullptr;
 
 private:
-    ClassMappingStatus EvaluateMapStrategy();
-    virtual ClassMappingStatus _EvaluateMapStrategy();
+    Utf8String m_tableName;
+    Utf8String m_ecInstanceIdColumnName;
+    std::vector<IndexMappingInfoPtr> m_dbIndexes;
+    bool m_mapsToVirtualTable = false;
+    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
+
+    ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
+    virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
 
     ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
-    virtual BentleyStatus _InitializeFromSchema();
+    virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
 
-    BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, ClassMappingCACache const&);
+    BentleyStatus EvaluateTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
     bool ValidateTablePerHierarchyChildStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
     BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
@@ -88,7 +87,7 @@ public:
     ClassMappingInfo(ECDb const&, ECN::ECClassCR);
     virtual ~ClassMappingInfo() {}
 
-    ClassMappingStatus Initialize();
+    ClassMappingStatus Initialize(SchemaImportContext&);
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
@@ -163,16 +162,13 @@ private:
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
-    BentleyStatus _InitializeFromSchema() override;
-    ClassMappingStatus _EvaluateMapStrategy() override;
+    BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
+    ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
-    BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
-    BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
 
-    bool RequiresLinkTable() const;
-    BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&) const;
-
-    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
+    std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
@@ -187,6 +183,11 @@ public:
     LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(IsRootClass() && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
     std::set<DbTable const*> const& GetSourceTables() const { BeAssert(IsRootClass()); return m_sourceTables; }
     std::set<DbTable const*> const& GetTargetTables() const { BeAssert(IsRootClass()); return m_targetTables;}
+
+    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
+    static bool RequiresLinkTableMapping(ECN::ECRelationshipClassCR, bool considerLinkTableRelationshipMapCA = true);
+    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
+
     };
 
 

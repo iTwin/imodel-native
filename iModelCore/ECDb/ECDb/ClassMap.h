@@ -197,13 +197,6 @@ struct ClassMap : RefCountedBase
         Type GetType() const { return m_type; }
         ClassMapColumnFactory const& GetColumnFactory() const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        bool IsMixin() const
-            {
-            if (ECN::ECEntityClassCP e = GetClass().GetEntityClassCP()) 
-                return e->IsEntityClass();
-
-            return false;
-            }
         DbTable& GetPrimaryTable() const 
             { 
             DbTable* nulltable = nullptr;

@@ -159,6 +159,7 @@ struct ViewGenerator final
         ~ViewGenerator();
 
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
+
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);

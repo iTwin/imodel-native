@@ -16,30 +16,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
-    if (m_schemaImportContext == nullptr)
+    ClassMapLoadContext ctx;
+    ClassMap const* classMap = nullptr;
+    if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
         {
-        ClassMapLoadContext ctx;
-        ClassMapPtr classMap = nullptr;
-        if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
-            {
-            BeAssert(false && "Error during TryGetClassMap");
-            return nullptr;
-            }
-
-        if (classMap == nullptr)
-            return nullptr;
-
-        if (SUCCESS != ctx.Postprocess(*this))
-            return nullptr;
-
-        return classMap.get();
+        BeAssert(false && "Error during TryGetClassMap");
+        return nullptr;
         }
 
-    ClassMapPtr classMap = nullptr;
-    if (SUCCESS != TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
+    if (classMap == nullptr)
         return nullptr;
 
-    return classMap.get();
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return classMap;
     }
 
 //---------------------------------------------------------------------------------------
@@ -130,56 +121,40 @@ BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx) const
+BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    if (m_schemaImportContext != nullptr)
-        {
-        BeAssert(false && "MapSchemas is expected to be called if no other schema import is running.");
-        return ERROR;
-        }
-
-    if (ctx.GetECSchemaCompareContext().HasNoSchemasToImport())
+    if (schemas.empty())
         return SUCCESS;
 
-    m_schemaImportContext = &ctx;
-
-    if (SUCCESS != DoMapSchemas())
-        {
-        m_schemaImportContext = nullptr;
+    if (SUCCESS != DoMapSchemas(ctx, schemas))
         return ERROR;
-        }
 
-    if (SUCCESS != SaveDbSchema())
+    if (SUCCESS != SaveDbSchema(ctx))
         {
         ClearCache();
-        m_schemaImportContext = nullptr;
         return ERROR;
         }
 
     if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
-        m_schemaImportContext = nullptr;
         return ERROR;
         }
 
-    if (SUCCESS != CreateOrUpdateIndexesInDb())
+    if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
         ClearCache();
-        m_schemaImportContext = nullptr;
         return ERROR;
         }
     
     if (SUCCESS != PurgeOrphanTables())
         {
         ClearCache();
-        m_schemaImportContext = nullptr;
         return ERROR;
         }
-
+    
     const BentleyStatus stat = ValidateDbMappings(m_ecdb, ctx.GetOptions() != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
     ClearCache();
-    m_schemaImportContext = nullptr;
     return stat;
     }
 
@@ -227,24 +202,16 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMap::DoMapSchemas() const
+BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    if (m_schemaImportContext == nullptr)
-        {
-        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
-        return ERROR;
-        }
-
     // Identify root classes/relationship-classes
-    SchemaCompareContext& ctx = GetSchemaImportContext()->GetECSchemaCompareContext();
-
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
     std::vector<ECClassCP> rootClassList;
-    std::vector<ECN::ECEntityClassCP> rootMixIns;
+    std::vector<ECN::ECEntityClassCP> rootMixins;
     std::vector<ECRelationshipClassCP> rootRelationshipList;
 
-    for (ECSchemaCP schema : ctx.GetImportingSchemas())
+    for (ECSchemaCP schema : schemas)
         {
         if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
@@ -254,7 +221,7 @@ BentleyStatus DbMap::DoMapSchemas() const
             if (doneList.find(ecClass) != doneList.end())
                 continue;
 
-            GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixIns);
+            GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
             }
         }
 
@@ -264,34 +231,34 @@ BentleyStatus DbMap::DoMapSchemas() const
         return ERROR;
         }
 
-    // Map mixin hiearchy before everything else. It does not map primary hiearchy and all classes map to virtual tables.
-    for (ECEntityClassCP mixIn : rootMixIns)
+    // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
+    for (ECEntityClassCP mixin : rootMixins)
         {
-        if (ClassMappingStatus::Error == MapClass(*mixIn))
+        if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
             return ERROR;
         }
 
     // Starting with the root, recursively map the entire class hierarchy. 
     for (ECClassCP rootClass : rootClassList)
         {
-        if (ClassMappingStatus::Error == MapClass(*rootClass))
+        if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
             return ERROR;
         }
 
 
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
-        if (ClassMappingStatus::Error == MapClass(*rootRelationshipClass))
+        if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }
 
     //NavigationPropertyMaps can only be finished after all relationships have been mapped
-    if (SUCCESS != GetSchemaImportContext()->GetClassMapLoadContext().Postprocess(*this))
+    if (SUCCESS != ctx.GetClassMapLoadContext().Postprocess(*this))
         return ERROR;
 
-    for (auto& kvpair : GetSchemaImportContext()->GetClassMappingInfoCache())
+    for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
-        if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
+        if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
             return ERROR;
         }
 
@@ -302,22 +269,16 @@ BentleyStatus DbMap::DoMapSchemas() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
- ClassMappingStatus DbMap::MapClass(ECClassCR ecClass) const
+ ClassMappingStatus DbMap::MapClass(SchemaImportContext& ctx, ECClassCR ecClass) const
      {
-     if (m_schemaImportContext == nullptr)
-         {
-         BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
-         return ClassMappingStatus::Error;
-         }
-
      ClassMapPtr existingClassMap = nullptr;
-     if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
+     if (SUCCESS != TryGetClassMap(existingClassMap, ctx.GetClassMapLoadContext(), ecClass))
          return ClassMappingStatus::Error;
 
      if (existingClassMap == nullptr)
          {
          ClassMappingStatus status = ClassMappingStatus::Success;
-         std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, m_ecdb, ecClass);
+         std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, ctx, m_ecdb, ecClass);
          if ((status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error))
              return status;
 
@@ -346,9 +307,9 @@ BentleyStatus DbMap::DoMapSchemas() const
          if (status == ClassMappingStatus::Error)
              return status;
 
-         GetSchemaImportContext()->AddClassMapForSaving(ecClass.GetId());
-         status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
-         GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
+         ctx.AddClassMapForSaving(ecClass.GetId());
+         status = classMap->Map(ctx, *classMapInfo);
+         ctx.CacheClassMapInfo(*classMap, classMapInfo);
 
          //error
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
@@ -369,7 +330,7 @@ BentleyStatus DbMap::DoMapSchemas() const
          if (isCurrentIsMixin && !isChildIsMixin)
              continue;
 
-         ClassMappingStatus status = MapClass(*childClass);
+         ClassMappingStatus status = MapClass(ctx, *childClass);
          if (status == ClassMappingStatus::Error)
              return status;
          }
@@ -400,12 +361,6 @@ ClassMappingStatus DbMap::AddClassMap(ClassMapPtr& classMap) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
     {
-    if (m_schemaImportContext == nullptr)
-        {
-        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
-        return ERROR;
-        }
-
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
@@ -447,21 +402,15 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
+BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
     {
-    if (m_schemaImportContext == nullptr)
-        {
-        BeAssert(m_schemaImportContext != nullptr && "DbMap::m_schemaImportContext is expected to be set during schema import");
-        return ERROR;
-        }
-
     std::vector<DbIndex const*> indexes;
     for (std::unique_ptr<DbIndex> const& indexPtr : m_dbSchema.GetIndexes())
         {
         indexes.push_back(indexPtr.get());
         }
 
-    IndexMappingInfoCache indexInfoCache(m_ecdb, *m_schemaImportContext);
+    IndexMappingInfoCache indexInfoCache(m_ecdb, ctx);
     for (DbIndex const* index : indexes)
         {
         const ECClassId classId = index->GetClassId();
@@ -475,8 +424,8 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
             return ERROR;
             }
 
-        ClassMap const* classMap = GetClassMap(*ecClass);
-        if (classMap == nullptr)
+        ClassMap const* classMap = nullptr;
+        if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), *ecClass))
             {
             BeAssert(false);
             return ERROR;
@@ -528,8 +477,8 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
                 if (!needsSeparateIndex)
                     continue;
 
-                ClassMap const* derivedClassMap = GetClassMap(*derivedClass);
-                if (derivedClassMap == nullptr)
+                ClassMap const* derivedClassMap = nullptr;
+                if (SUCCESS != TryGetClassMap(derivedClassMap, ctx.GetClassMapLoadContext(), *derivedClass))
                     {
                     BeAssert(false);
                     return ERROR;
@@ -549,7 +498,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb() const
                     indexMappingInfos.push_back(IndexMappingInfo::Clone(Nullable<Utf8String>(indexName), *indexMappingInfo));
                     }
 
-                if (SUCCESS != derivedClassMap->CreateUserProvidedIndexes(*m_schemaImportContext, indexMappingInfos))
+                if (SUCCESS != derivedClassMap->CreateUserProvidedIndexes(ctx, indexMappingInfos))
                     return ERROR;
 
                 alreadyProcessedTables.insert(&joinedOrSingleTable);
@@ -661,10 +610,10 @@ BentleyStatus DbMap::PurgeOrphanTables() const
 *         UINT_MAX if the end is AnyClass.
 * @bsimethod                                 Ramanujam.Raman                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd) const
     {
     bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return SIZE_MAX;
@@ -691,7 +640,7 @@ size_t DbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(ECRelationshipConstraintCR constraint, bool* hasAnyClass) const
+std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR constraint, bool* hasAnyClass) const
     {
     if (hasAnyClass != nullptr)
         *hasAnyClass = false;
@@ -708,8 +657,8 @@ std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(ECRelationshipC
             return classMaps;
             }
 
-        ClassMap const* classMap = GetClassMap(*ecClass);
-        if (classMap == nullptr)
+        ClassMap const* classMap = nullptr;
+        if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), *ecClass))
             {
             BeAssert(false);
             classMaps.clear();
@@ -717,7 +666,7 @@ std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(ECRelationshipC
             }
 
         const bool recursive = classMap->GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && constraint.GetIsPolymorphic();
-        if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *ecClass, recursive))
+        if (SUCCESS != GetClassMapsFromRelationshipEnd(ctx, classMaps, *ecClass, recursive))
             {
             BeAssert(false);
             classMaps.clear();
@@ -731,10 +680,10 @@ std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(ECRelationshipC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMaps, ECClassCR ecClass, bool recursive) const
+BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, std::set<ClassMap const*>& classMaps, ECClassCR ecClass, bool recursive) const
     {
-    ClassMap const* classMap = GetClassMap(ecClass);
-    if (classMap == nullptr)
+    ClassMap const* classMap = nullptr;
+    if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), ecClass))
         {
         BeAssert(classMap != nullptr && "ClassMap should not be null");
         return ERROR;
@@ -750,7 +699,7 @@ BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& 
 
     for (ECClassCP subclass : m_ecdb.Schemas().GetDerivedClasses(ecClass))
         {
-        if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *subclass, recursive))
+        if (SUCCESS != GetClassMapsFromRelationshipEnd(ctx, classMaps, *subclass, recursive))
             return ERROR;
         }
 
@@ -760,14 +709,8 @@ BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMap::SaveDbSchema() const
+BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
     {
-    if (m_schemaImportContext == nullptr)
-        {
-        BeAssert(false && "ECDbMap::SaveDbSchema must only be called during schema import");
-        return ERROR;
-        }
-
     StopWatch stopWatch(true);
     if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
         {
@@ -775,14 +718,14 @@ BentleyStatus DbMap::SaveDbSchema() const
         return ERROR;
         }
 
-    DbMapSaveContext ctx(GetECDb());
+    DbMapSaveContext saveCtx(GetECDb());
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMap& classMap = *kvPair.second;
         if (classMap.GetState() == ObjectState::Persisted)
             continue;
 
-        if (SUCCESS != classMap.Save(*m_schemaImportContext, ctx))
+        if (SUCCESS != classMap.Save(ctx, saveCtx))
             {
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;

@@ -12,17 +12,69 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::Import(SchemaCompareContext& ctx, ECN::ECSchemaCR ecSchema)
+BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
+    {
+    if (SUCCESS != ValidateSchemasPreImport(primarySchemasOrderedByDependencies))
+        return ERROR;
+
+    SchemaCompareContext compareCtx;
+    if (SUCCESS != compareCtx.Prepare(m_ecdb.Schemas(), primarySchemasOrderedByDependencies))
+        return ERROR;
+
+    for (ECSchemaCP schema : compareCtx.GetSchemasToImport())
+        {
+        if (SUCCESS != ImportSchema(compareCtx, *schema))
+            return ERROR;
+        }
+
+    //WIP shouldn't this only be necessary if !compareCtx.GetSchemasToImport().empty() ?
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
+        return ERROR;
+
+    if (SUCCESS != ValidateSchemasPostImport())
+        return ERROR;
+
+    if (!compareCtx.GetSchemasToImport().empty())
+        {
+        if (SUCCESS != compareCtx.ReloadContextECSchemas(m_ecdb.Schemas()))
+            return ERROR;
+        }
+
+    schemasToMap.insert(schemasToMap.begin(), compareCtx.GetSchemasToImport().begin(), compareCtx.GetSchemasToImport().end());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                     05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ValidateSchemasPreImport(bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies) const
+    {
+    const bool isValid = SchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), primarySchemasOrderedByDependencies, m_ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
+    return isValid ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                     05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ValidateSchemasPostImport() const
+    {
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaWriter::ImportSchema(SchemaCompareContext& compareCtx, ECN::ECSchemaCR ecSchema)
     {
     m_majorChangesAllowedForSchemas.clear();
-    if (SchemaChange* schemaChange = ctx.GetChanges().Find(ecSchema.GetName().c_str()))
+    if (SchemaChange* schemaChange = compareCtx.GetChanges().Find(ecSchema.GetName().c_str()))
         {
         if (schemaChange->GetState() == ChangeState::Modified)
             {
             if (schemaChange->GetStatus() == ECChange::Status::Done)
                 return SUCCESS;
 
-            ECSchemaCP existingSchema = ctx.FindExistingSchema(schemaChange->GetId());
+            ECSchemaCP existingSchema = compareCtx.FindExistingSchema(schemaChange->GetId());
             BeAssert(existingSchema != nullptr);
             if (existingSchema == nullptr)
                 return ERROR;
@@ -486,7 +538,7 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int32_t ordinal)
+BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, uint32_t ordinal)
     {
     //Local properties are expected to not be imported at this point as they get imported along with their class.
     BeAssert(!m_ecdb.Schemas().GetReader().GetPropertyId(ecProperty).IsValid());
@@ -1518,7 +1570,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateProperties(ECPropertyChanges& propertyChanges, ECClassCR oldClass, ECClassCR newClass)
     {
-    int ordinal = (int) oldClass.GetPropertyCount(false);
+    uint32_t ordinal = (uint32_t) oldClass.GetPropertyCount(false);
     for (size_t i = 0; i < propertyChanges.Count(); i++)
         {
         auto& change = propertyChanges.At(i);
@@ -1709,7 +1761,7 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) c
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR deletedClass)
     {
-    if (!IsMajorChangeAllowedForSchema(deletedClass.GetSchema().GetId()) && m_importOptions != SchemaManager::SchemaImportOptions::Poisoning)
+    if (!IsMajorChangeAllowedForSchema(deletedClass.GetSchema().GetId()) && m_ctx.GetOptions() != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change which requires the 'Read' version number of the ECSchema to be incremented.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -1847,7 +1899,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
     {
     ECClassCR ecClass = deletedProperty.GetClass();
 
-    if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_importOptions != SchemaManager::SchemaImportOptions::Poisoning)
+    if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_ctx.GetOptions() != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECProperty '%s.%s' means a major schema change, but the schema's MajorVersion is not incremented. Bump up the major version and try again.",
                         ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());

@@ -633,7 +633,7 @@ std::vector<DbTable const*> DbSchema::GetCachedTables() const
 
     cachedTables.insert(end(cachedTables), begin(cachedTablesJoined), end(cachedTablesJoined));
     cachedTables.insert(end(cachedTables), begin(cachedTablesOverflow), end(cachedTablesOverflow));
-        return cachedTables;
+    return cachedTables;
     }
 
 //---------------------------------------------------------------------------------------

@@ -166,7 +166,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         1 / 16
 //---------------------------------------------------------------------------------------
-RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod() const
+RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod(ClassMappingContext&) const
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
         || GetRelationshipClass().GetSource().GetConstraintClasses().empty() || GetRelationshipClass().GetTarget().GetConstraintClasses().empty())
@@ -1170,7 +1170,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
     bool addTargetECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addTargetECClassIdColumnToTable, targetConstraint);
-    stat = CreateConstraintPropMaps(relationClassMapInfo, addSourceECClassIdColumnToTable, addTargetECClassIdColumnToTable);
+    stat = CreateConstraintPropMaps(ctx, relationClassMapInfo, addSourceECClassIdColumnToTable, addTargetECClassIdColumnToTable);
     if (stat != ClassMappingStatus::Success)
         return stat;
 
@@ -1260,7 +1260,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         04 / 15
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(RelationshipMappingInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
+DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappingContext& ctx, RelationshipMappingInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
     {
     DbColumn* endECClassIdColumn = nullptr;
     ECRelationshipClassCP relationship = mapInfo.GetClass().GetRelationshipClassCP();
@@ -1268,7 +1268,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
     ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
-    size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(foreignEndConstraint);
+    size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), foreignEndConstraint);
 
     Utf8String columnName = DetermineConstraintECClassIdColumnName(*mapInfo.GetLinkTableMappingInfo(), relationshipEnd);
     if (GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr &&
@@ -1302,13 +1302,13 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         1 / 16
 //---------------------------------------------------------------------------------------
-RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::_GetDataIntegrityEnforcementMethod() const
+RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::_GetDataIntegrityEnforcementMethod(ClassMappingContext& ctx) const
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
         return ReferentialIntegrityMethod::None;
 
-    size_t nSourceTables = GetDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetSource());
-    size_t nTargetTables = GetDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetTarget());
+    size_t nSourceTables = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), GetRelationshipClass().GetSource());
+    size_t nTargetTables = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), GetRelationshipClass().GetTarget());
 
     if (GetRelationshipClass().GetStrength() == StrengthType::Referencing ||
         GetRelationshipClass().GetStrength() == StrengthType::Holding)
@@ -1326,7 +1326,7 @@ RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(RelationshipMappingInfo const& mapInfo, bool addSourceECClassIdColumnToTable,
+ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(ClassMappingContext& ctx, RelationshipMappingInfo const& mapInfo, bool addSourceECClassIdColumnToTable,
     bool addTargetECClassIdColumnToTable)
     {
     //**** SourceECInstanceId prop map 
@@ -1350,7 +1350,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
     m_sourceConstraintMap.SetECInstanceIdPropMap(sourceECInstanceIdPropMap.get());
 
     //**** SourceECClassId prop map
-    DbColumn const* sourceECClassIdColumn = ConfigureForeignECClassIdKey(mapInfo, ECRelationshipEnd_Source);
+    DbColumn const* sourceECClassIdColumn = ConfigureForeignECClassIdKey(ctx, mapInfo, ECRelationshipEnd_Source);
     auto sourceECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECClassIdColumn} );
     PRECONDITION(sourceECClassIdPropMap.IsValid(), ClassMappingStatus::Error);
     if (GetPropertyMapsR().Insert(sourceECClassIdPropMap) != SUCCESS)
@@ -1381,7 +1381,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
 
 
     //**** TargetECClassId prop map
-    DbColumn const* targetECClassIdColumn = ConfigureForeignECClassIdKey(mapInfo, ECRelationshipEnd_Target);
+    DbColumn const* targetECClassIdColumn = ConfigureForeignECClassIdKey(ctx, mapInfo, ECRelationshipEnd_Target);
     auto targetECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this , ECRelationshipEnd_Target, {targetECClassIdColumn});
     if (targetECClassIdPropMap == nullptr)
         {

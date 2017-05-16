@@ -66,14 +66,15 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
         ClassMap const* baseClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
             {
-            BeAssert(false && "Expecting class map for priamry base class to exist and never null");
+            BeAssert(false && "Expecting class map for primary base class to exist and never null");
             return ERROR;
             }
 
         if (baseClassMap->GetJoinedOrPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
             {
-            if (baseClassMap->IsMixin())
-                mixins.push_back(&baseClassMap->GetClass());
+            ECClassCR baseClass = baseClassMap->GetClass();
+            if (baseClass.IsEntityClass() && baseClass.GetEntityClassCP()->IsMixin())
+                mixins.push_back(&baseClass);
 
             continue;
             }

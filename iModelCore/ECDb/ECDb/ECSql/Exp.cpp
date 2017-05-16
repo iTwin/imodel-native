@@ -332,7 +332,7 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
         resolvedPropertyPath.Push(propertyName);
         }
 
-    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, className, ResolveSchema::AutoDetect);
+    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, className);
     if (targetClass == nullptr)
         {
         BeAssert(false && "Failed to find ECClass");

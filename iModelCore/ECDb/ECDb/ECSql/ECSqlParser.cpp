@@ -2679,7 +2679,7 @@ void ECSqlParseContext::PopFinalizeParseArg() { m_finalizeParseArgs.pop_back(); 
 BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className)
     {
     BeAssert(!schemaNameOrAlias.empty());
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className, ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className);
 
     if (resolvedClass == nullptr)
         {
