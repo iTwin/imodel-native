@@ -105,6 +105,54 @@ BeSQLite::L10N::SqlangFiles ArchPhysCreator::_SupplySqlangFiles()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::DefinitionModelR model)
+    {
+    // A CategorySelector is a definition element that is normally shared by many ViewDefinitions.
+    // To start off, we'll create a default selector that includes the one category that we use.
+    // We have to give the selector a unique name of its own. Since we are set up up a new bim, 
+    // we know that we can safely choose any name.
+    auto categorySelector = new Dgn::CategorySelector(model, "Default");
+    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(model.GetDgnDb()));
+    return categorySelector;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+Dgn::ModelSelectorPtr ArchPhysCreator::CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::PhysicalModelR modelToSelect)
+    {
+    // A ModelSelector is a definition element that is normally shared by many ViewDefinitions.
+    // To start off, we'll create a default selector that includes the one model that we use.
+    // We have to give the selector a unique name of its own. Since we are set up up a new 
+    // bim, we know that we can safely choose any name.
+    auto modelSelector = new Dgn::ModelSelector(definitionModel, "Default");
+    modelSelector->AddModel(modelToSelect.GetModelId());
+    return modelSelector;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+Dgn::DisplayStyle3dPtr ArchPhysCreator::CreateDisplayStyle3d(Dgn::DefinitionModelR model)
+    {
+    // DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
+    // To start off, we'll create a style that can be used as a good default for 3D views.
+    // We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    auto displayStyle = new Dgn::DisplayStyle3d(model, "Default");
+    displayStyle->SetBackgroundColor(Dgn::ColorDef::White());
+    displayStyle->SetSkyBoxEnabled(false);
+    displayStyle->SetGroundPlaneEnabled(false);
+    Dgn::Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
+    viewFlags.SetRenderMode(Dgn::Render::RenderMode::SmoothShade);
+    displayStyle->SetViewFlags(viewFlags);
+    return displayStyle;
+    }
+
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
@@ -167,34 +215,50 @@ BentleyStatus ArchPhysCreator::DoCreate()
 
     CreateBuilding( *physicalModel, *typeDefinitionModel);
 
-#ifdef NOTYET
-
-
-    //  BuildingTypeDefinitionModelPtr typeDefinitionModel = CreateBuildingTypeDefinitionModel(*db);
-    //  if (!typeDefinitionModel.IsValid())
-    //      return BentleyStatus::ERROR;
-
-
-    if (BentleyStatus::SUCCESS != CreatePhysicalElements(*physicalModel, *typeDefinitionModel))
-        return BentleyStatus::ERROR;
 
     // Set the project extents to include the elements in the physicalModel, plus a margin
-    AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
+    Dgn::AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
     projectExtents.Extend(0.5);
     db->GeoLocation().SetProjectExtents(projectExtents);
 
     // Create the initial view
-    DefinitionModelR dictionary = db->GetDictionaryModel();
-    CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
-    ModelSelectorPtr modelSelector = CreateModelSelector(dictionary, *physicalModel);
-    DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
+    Dgn::DefinitionModelR dictionary = db->GetDictionaryModel();
+    Dgn::CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
+    Dgn::ModelSelectorPtr modelSelector = CreateModelSelector(dictionary, *physicalModel);
+    Dgn::DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
 
-    Dgn::DgnViewId viewId = CreateView(dictionary, TOYTILECREATOR_ViewName, *categorySelector, *modelSelector, *displayStyle);
+    Dgn::DgnViewId viewId = CreateView(dictionary, "Building View", *categorySelector, *modelSelector, *displayStyle);
+
     if (!viewId.IsValid())
         return BentleyStatus::ERROR;
-#endif
+
     return BentleyStatus::SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::ModelSelectorR modelSelector, Dgn::DisplayStyle3dR displayStyle)
+    {
+    // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
+    // That is why they are inputs to this function. 
+    Dgn::OrthographicViewDefinition view(model, name, categorySelector, displayStyle, modelSelector);
+
+    // Define the view direction and volume.
+    Dgn::DgnDbR db = model.GetDgnDb();
+    view.SetStandardViewRotation(Dgn::StandardView::Iso); // Default to a rotated view
+    view.LookAtVolume(db.GeoLocation().GetProjectExtents()); // A good default for a new view is to "fit" it to the contents of the bim.
+
+                                                             // Write the ViewDefinition to the bim
+    if (!view.Insert().IsValid())
+        return Dgn::DgnViewId();
+
+    // Set the DefaultView property of the bim
+    Dgn::DgnViewId viewId = view.GetViewId();
+    db.SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+    return viewId;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -204,15 +268,43 @@ BentleyStatus ArchPhysCreator::DoCreate()
 BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
     {
 
-    ArchitecturalPhysical::DoorPtr door = DoorTools::CreateDoor ( physicalModel );
-    GeometricTools::CreateDoorGeometry( door, physicalModel);
+    for (int i = 0; i < 100; i++)
+        {
 
-    Dgn::DgnDbStatus status;
+        ArchitecturalPhysical::DoorPtr door = DoorTools::CreateDoor ( physicalModel, i + 1 );
+        ECN::ECValue doubleValue;
 
-    door->Insert( &status );
+        Dgn::DgnDbStatus status = door->SetPropertyValue("OverallWidth", 250.0);
+        status = door->SetPropertyValue("OverallHeight", 250.0);
 
-    if ( Dgn::DgnDbStatus::Success != status )
-        return BentleyStatus::ERROR;
+        Dgn::Placement3d placement;
+
+        placement.GetOriginR() = DPoint3d::From(5.0 * i, 0.0, 0.0);
+
+        status = door->SetPlacement(placement);
+
+        GeometricTools::CreateDoorGeometry(door, physicalModel);
+
+        door->Insert( &status );
+
+        if ( Dgn::DgnDbStatus::Success != status )
+            return BentleyStatus::ERROR;
+
+        ArchitecturalPhysical::WindowPtr window = DoorTools::CreateWindow1(physicalModel, i + 1);
+
+        Dgn::Placement3d windowPlacement;
+
+        windowPlacement.GetOriginR() = DPoint3d::From(5.0 * i, 4.0, 4.0);
+
+        status = window->SetPlacement(windowPlacement);
+
+        GeometricTools::CreateWindowGeometry(window, physicalModel);
+
+        window->Insert(&status);
+
+        if (Dgn::DgnDbStatus::Success != status)
+            return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }

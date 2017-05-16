@@ -52,6 +52,7 @@
 #define AP_CLASS_Door                                       "Door"
 #define AP_CLASS_DoorType                                   "DoorType"
 #define AP_CLASS_Window                                     "Window"
+#define AP_CLASS_WindowType                                 "WindowType"
 #define AP_CLASS_ArchitecturalBaseElement                   "ArchitecturalBaseElement"
 
 //-----------------------------------------------------------------------------------------
@@ -71,6 +72,7 @@
 //-----------------------------------------------------------------------------------------
 #define ARCHITECTURAL_PHYSICAL_CATEGORY_Doors        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME " Doors"
 #define ARCHITECTURAL_PHYSICAL_CATEGORY_Walls        BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME " Walls"
+#define ARCHITECTURAL_PHYSICAL_CATEGORY_Windows      BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME " Windows"
 #define ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame     "Frame"
 #define ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel     "Panel"
 
@@ -90,6 +92,8 @@ ARCHITECTURAL_PHYSICAL_TYPEDEFS(DoorType)
 ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(DoorType)
 ARCHITECTURAL_PHYSICAL_TYPEDEFS(Window)
 ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(Window)
+ARCHITECTURAL_PHYSICAL_TYPEDEFS(WindowType)
+ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(WindowType)
 
 /*PLANNING_TYPEDEFS(Calendar)
 PLANNING_TYPEDEFS(Activity)

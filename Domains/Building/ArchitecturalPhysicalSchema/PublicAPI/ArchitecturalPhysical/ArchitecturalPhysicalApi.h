@@ -12,3 +12,4 @@
 #include "ArchitecturalPhysicalDefinitions.h"
 #include "ArchitecturalPhysicalDomain.h"
 #include "Door.h"
+#include "Window.h"

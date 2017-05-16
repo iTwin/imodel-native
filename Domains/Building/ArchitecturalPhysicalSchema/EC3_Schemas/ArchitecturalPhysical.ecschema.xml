@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
@@ -258,6 +258,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="Door" description="(From IFC) Class : IfcDoor">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height" kindOfQuantity="LENGTH">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
@@ -309,15 +312,6 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FrameThickness" typeName="double" description="This is thickness of the material inside the frame" displayLabel="Frame Thickness">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameMaterisl" typeName="string" displayLabel="Frame Materisl">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.03">
                     <Standard>100</Standard>
@@ -406,16 +400,26 @@
         <ECProperty propertyName="Function" typeName="string"/>
         <ECProperty propertyName="GlazingMaterial" typeName="string" displayLabel="Glazing Material"/>
         <ECProperty propertyName="Keynote" typeName="string"/>
-        <ECProperty propertyName="LeafThickness" typeName="double" displayLabel="Leaf Thickness" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="LeafWidth" typeName="double" displayLabel="Leaf Width" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Material" typeName="string"/>
         <ECProperty propertyName="Phase" typeName="string"/>
         <ECProperty propertyName="RoughOpeningHeight" typeName="double" description="This is the height of the rough opening" displayLabel="Rough Opening Height" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="RoughOpeningWidth" typeName="double" description="This is the width of the rough opening" displayLabel="Rough Opening Width" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="TypeID" typeName="string" displayLabel="Type ID"/>
+        <ECProperty propertyName="FrameMaterial" typeName="string" displayLabel="Frame Material">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.03">
+                    <Standard>100</Standard>
+                    <Name>Door Frame Properties (Door Type)</Name>
+                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
+                </Category>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="DoorType" description="(From IFC) Class : IfcDoorStyle. Replaced by IfcDoorType since IFC2x4" displayLabel="Door Type">
         <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="OperationType" typeName="DoorType_OperationType" description="(From IFC) Enumeration : IfcDoorStyleOperationEnum" displayLabel="Operation Type"/>
         <ECProperty propertyName="ConstructionType" typeName="DoorType_ConstructionType" description="(From IFC) Enumeration : IfcDoorStyleConstructionEnum" displayLabel="Construction Type"/>
         <ECProperty propertyName="ParameterTakesPrecedence" typeName="boolean" description="(From IFC)" displayLabel="Parameter Takes Precedence"/>
@@ -635,6 +639,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="Window" description="(From IFC) Class : IfcWindow">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height" kindOfQuantity="LENGTH_MM">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
@@ -683,6 +690,12 @@
         </ECProperty>
         <ECProperty propertyName="FrontOffset" typeName="double" description="Offset into the wall for the window frame" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="TypeDescription" typeName="string" displayLabel="Type Description"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="WindowType" displayLabel="Window Type">
+        <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.MM(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>

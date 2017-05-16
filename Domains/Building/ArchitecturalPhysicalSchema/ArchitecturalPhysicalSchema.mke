@@ -47,7 +47,7 @@ $(o)ArchitecturalPhysicalDomain$(oext) : $(_MakeFilePath)ArchitecturalPhysicalDo
 
 $(o)Door$(oext) : $(_MakeFilePath)Door.cpp ${MultiCompileDepends} $(appPublicApi)Door.h
 
-#$(o)Pose$(oext) : $(_MakeFilePath)Pose.cpp ${MultiCompileDepends} $(appPublicApi)Pose.h
+$(o)Window$(oext) : $(_MakeFilePath)Window.cpp ${MultiCompileDepends} $(appPublicApi)Window.h
 
 #$(o)Shot$(oext) : $(_MakeFilePath)Shot.cpp ${MultiCompileDepends} $(appPublicApi)Shot.h
 

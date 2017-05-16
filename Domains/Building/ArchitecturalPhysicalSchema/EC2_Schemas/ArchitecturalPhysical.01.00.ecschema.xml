@@ -321,6 +321,11 @@
     </ECClass>
     <ECClass typeName="Door" description="(From IFC) Class : IfcDoor" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
         <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.00">
@@ -420,18 +425,6 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FrameThickness" typeName="double" description="This is thickness of the material inside the frame" displayLabel="Frame Thickness">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameMaterisl" typeName="string" displayLabel="Frame Materisl">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.00">
                     <Standard>100</Standard>
@@ -577,26 +570,6 @@
         <ECProperty propertyName="Function" typeName="string" />
         <ECProperty propertyName="GlazingMaterial" typeName="string" displayLabel="Glazing Material" />
         <ECProperty propertyName="Keynote" typeName="string" />
-        <ECProperty propertyName="LeafThickness" typeName="double" displayLabel="Leaf Thickness">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <DimensionName>L</DimensionName>
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <UnitName>METRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LeafWidth" typeName="double" displayLabel="Leaf Width">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <DimensionName>L</DimensionName>
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <UnitName>METRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Material" typeName="string" />
         <ECProperty propertyName="Phase" typeName="string" />
         <ECProperty propertyName="RoughOpeningHeight" typeName="double" description="This is the height of the rough opening" displayLabel="Rough Opening Height">
@@ -620,9 +593,26 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TypeID" typeName="string" displayLabel="Type ID" />
+        <ECProperty propertyName="FrameMaterial" typeName="string" displayLabel="Frame Material">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>100</Standard>
+                    <Name>Door Frame Properties (Door Type)</Name>
+                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
+                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                </Category>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
     <ECClass typeName="DoorType" description="(From IFC) Class : IfcDoorStyle. Replaced by IfcDoorType since IFC2x4" displayLabel="Door Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
         <ECProperty propertyName="OperationType" typeName="int" description="(From IFC) Enumeration : IfcDoorStyleOperationEnum" displayLabel="Operation Type">
             <ECCustomAttributes>
                 <StandardValues xmlns="EditorCustomAttributes.01.00">
@@ -1648,8 +1638,13 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="Window" description="(From IFC) Class : IfcWindow" isDomainClass="True">
+    <ECClass typeName="Window" description="Window" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
         <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height">
             <ECCustomAttributes>
                 <UnitSpecification xmlns="Unit_Attributes.01.00">
@@ -1679,20 +1674,20 @@
         <ECProperty propertyName="Description" typeName="string" />
         <ECProperty propertyName="Height" typeName="double" description="Standard height of the door">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
-                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                </Category>
                 <UnitSpecification xmlns="Unit_Attributes.01.00">
                     <DimensionName>L</DimensionName>
                     <KindOfQuantityName>LENGTH</KindOfQuantityName>
                     <UnitName>METRE</UnitName>
                     <AllowableUnits />
                 </UnitSpecification>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>100</Standard>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
+                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                </Category>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Keynote" typeName="string" />
@@ -1718,20 +1713,20 @@
         </ECProperty>
         <ECProperty propertyName="Width" typeName="double" description="Standard Width of the door">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
-                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
-                </Category>
                 <UnitSpecification xmlns="Unit_Attributes.01.00">
                     <DimensionName>L</DimensionName>
                     <KindOfQuantityName>LENGTH</KindOfQuantityName>
                     <UnitName>METRE</UnitName>
                     <AllowableUnits />
                 </UnitSpecification>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>100</Standard>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
+                    <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                    <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                </Category>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TypeID" typeName="string" displayLabel="Type ID" />
@@ -1739,8 +1734,8 @@
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.00">
                     <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
                     <Description xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
                     <Priority xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
                     <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
@@ -1758,5 +1753,13 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TypeDescription" typeName="string" displayLabel="Type Description" />
+    </ECClass>
+    <ECClass typeName="WindowType" displayLabel="Window Type" isDomainClass="True">
+        <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
     </ECClass>
 </ECSchema>

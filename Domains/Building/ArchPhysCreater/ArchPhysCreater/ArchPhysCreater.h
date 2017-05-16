@@ -28,9 +28,9 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
-  //      Dgn::CategorySelectorPtr CreateCategorySelector(Dgn::DefinitionModelR);
-  //      Dgn::ModelSelectorPtr CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::PhysicalModelR modelToSelect);
- //       Dgn::DisplayStyle3dPtr CreateDisplayStyle3d(Dgn::DefinitionModelR model);
+        Dgn::CategorySelectorPtr CreateCategorySelector(Dgn::DefinitionModelR);
+        Dgn::ModelSelectorPtr CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::PhysicalModelR modelToSelect);
+        Dgn::DisplayStyle3dPtr CreateDisplayStyle3d(Dgn::DefinitionModelR model);
 
     public:
         ArchPhysCreator() {}
@@ -47,6 +47,6 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
 //        BentleyStatus CreateGroupElements(ToyTileGroupModelR);
 //        ToyTilePhysicalModelPtr CreatePhysicalModel(Dgn::DgnDbR);
         //  BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel(Dgn::DgnDbR db);
-//        Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
+        Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
         BentleyStatus DoCreate();
     };
