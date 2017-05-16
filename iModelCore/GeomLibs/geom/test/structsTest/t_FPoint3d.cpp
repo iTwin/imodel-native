@@ -160,8 +160,11 @@ TEST(FPoint3d,ROUND_AWAY)
     GEOMAPI_PRINTF ("Single Precision Unit Roundoff = %.10lg %.10lg\n", ed, (double)ef); // arg passing is always double.
     GEOMAPI_PRINTF ("Single Precision Rounders = %.10lg %.10lg\n", (double)onePlus, (double)oneMinus); // arg passing is always double.
     GEOMAPI_PRINTF ("Single Precision nextAfter neighbors= %.10lg %.10lg\n",
+#if defined(_MSC_VER)
                 (double)_nextafterf (1.0, 2.0), (double)_nextafterf (1.0, 0.0)); // arg passing is always double.
-
+#else
+                (double)nextafterf (1.0, 2.0), (double)nextafterf (1.0, 0.0)); // arg passing is always double.
+#endif
     GEOMAPI_PRINTF ("Single Precision roundTowards roundAway= %.10lg %.10lg\n",
                 (double)roundToward, (double)roundAway); // arg passing is always double.
     }
