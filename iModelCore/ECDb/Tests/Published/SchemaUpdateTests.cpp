@@ -102,7 +102,7 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
     Utf8String schemaName = classQualifiedName.substr(0, n);
     Utf8String className = classQualifiedName.substr(n + 1);
 
-    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className, ResolveSchema::AutoDetect);
+    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className);
     ASSERT_TRUE(ecClass != nullptr) << "Failed to find class " << classQualifiedName;
 
     bvector<Utf8String> properties;

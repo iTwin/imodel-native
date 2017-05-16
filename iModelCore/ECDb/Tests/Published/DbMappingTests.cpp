@@ -5662,7 +5662,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
         "</ECSchema>"), 3);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", ResolveSchema::BySchemaAlias);
+    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(myClassId.IsValid());
 
     {

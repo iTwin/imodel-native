@@ -1238,8 +1238,8 @@ TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     stmt.Finalize();
 
     //Using GetClassId in Nested Select statement
-    ECClassId supplierClassId = ecdb.Schemas().GetClassId("ECST", "Supplier", ResolveSchema::BySchemaAlias);
-    ECClassId customerClassId = ecdb.Schemas().GetClassId("ECST", "Customer", ResolveSchema::BySchemaAlias);
+    ECClassId supplierClassId = ecdb.Schemas().GetClassId("ECST", "Supplier", SchemaLookupMode::ByAlias);
+    ECClassId customerClassId = ecdb.Schemas().GetClassId("ECST", "Customer", SchemaLookupMode::ByAlias);
     ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId FROM ECST.Supplier UNION ALL SELECT ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));

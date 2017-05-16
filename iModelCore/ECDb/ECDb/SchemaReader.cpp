@@ -156,7 +156,7 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
     if (prop.GetClass().HasId())
         {
         //If the ECClass already has an id, we can run a faster SQL to get the property id
-        BeAssert(prop.GetClass().GetId() == SchemaPersistenceHelper::GetClassId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), ResolveSchema::BySchemaName));
+        BeAssert(prop.GetClass().GetId() == SchemaPersistenceHelper::GetClassId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), SchemaLookupMode::ByName));
 
         propId = SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetId(), prop.GetName().c_str());
         }
@@ -814,17 +814,17 @@ BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR
         return ERROR;
         }
 
-    ResolveSchema resolveSchemaName = ResolveSchema::AutoDetect;
+    SchemaLookupMode schemaLookupMode = SchemaLookupMode::AutoDetect;
     Utf8StringCP effectiveSchemaName = &appliesToSchemaAlias;
     if (appliesToSchemaAlias.empty())
         {
         effectiveSchemaName = &mixinClass.GetSchema().GetName();
-        resolveSchemaName = ResolveSchema::BySchemaName;
+        schemaLookupMode = SchemaLookupMode::ByName;
         }
 
     BeAssert(effectiveSchemaName != nullptr);
 
-    ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, resolveSchemaName);
+    ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, schemaLookupMode);
     if (!appliesToClassId.IsValid() || 
         //this is the important step and the mere purpose of the routine. We need to load the applies to class into memory
         //so that ECObjects can validate the mixin.
@@ -1328,7 +1328,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
     {
     if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
         {
-        BeAssert(ecClass.GetId() == GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName));
+        BeAssert(ecClass.GetId() == GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), SchemaLookupMode::ByName));
         return ecClass.GetId();
         }
 
@@ -1340,7 +1340,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
         classId = SchemaPersistenceHelper::GetClassId(m_ecdb, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
         }
     else
-        classId = GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
+        classId = GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), SchemaLookupMode::ByName);
 
     if (classId.IsValid())
         {
@@ -1356,7 +1356,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, ResolveSchema resolveSchema) const
+ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const
     {
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     auto outerIt = m_classIdCache.find(schemaName);
@@ -1368,7 +1368,7 @@ ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR classNa
             return innerIt->second;
         }
 
-    ECClassId ecClassId = SchemaPersistenceHelper::GetClassId(m_ecdb, schemaName.c_str(), className.c_str(), resolveSchema);
+    ECClassId ecClassId = SchemaPersistenceHelper::GetClassId(m_ecdb, schemaName.c_str(), className.c_str(), lookupMode);
     
     //add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())
