@@ -135,3 +135,68 @@ TEST (CurveCurve, TransverseIntersection)
             }
         }
     }
+
+void AddSelfIntersectingCurves (bvector<CurveVectorPtr> &curves)
+    {
+    DPoint3d pointA = DPoint3d::From (0,0,0);
+    DPoint3d pointAB = DPoint3d::From (10,0,0);
+    DPoint3d pointC = DPoint3d::From (5,10,0);
+    DPoint3d pointQ = DPoint3d::From (3,-2,0);
+    auto cv0 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    cv0->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointAB)));
+    cv0->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointAB, pointC)));
+    cv0->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointC, pointQ)));
+    curves.push_back (cv0);
+
+    auto cv1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    cv1->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointAB)));
+    cv1->push_back (ICurvePrimitive::CreateArc (
+            DEllipse3d::FromPointsOnArc (
+                    pointAB,
+                    DPoint3d::FromInterpolateAndPerpendicularXY (pointAB, 0.3, pointQ, -0.3),
+                    pointQ
+                    )));
+    cv1->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointQ, pointC)));
+    curves.push_back (cv1);
+
+    }
+void SavePartialCurveMarkers (CurveVectorR curves, double markerSize = 0.2)
+    {
+    bvector<DPoint3d> markers;
+    for (auto cp : curves)
+        {
+        double fractionA, fractionB;
+        ICurvePrimitivePtr parent;
+        int64_t tag;
+        DPoint3d xyzA, xyzB;
+        if (cp->TryGetPartialCurveData (fractionA, fractionB, parent, tag))
+            {
+            cp->FractionToPoint (0.0, xyzA);
+            cp->FractionToPoint (1.0, xyzB);
+            if (fractionA == fractionB)
+                markers.push_back (xyzA);
+            else
+                {
+                auto cp1 = cp->CloneDereferenced ();
+                if (cp1.IsValid ())
+                    Check::SaveTransformed (*cp1);
+                }
+            }
+        }
+    Check::SaveTransformedMarkers (markers, markerSize);
+    }
+TEST (CurveCurve, SelfIntersecton)
+    {
+    bvector<CurveVectorPtr> curves;
+    AddSelfIntersectingCurves (curves);
+    for (auto curve : curves)
+        {
+        SaveAndRestoreCheckTransform shifter (20,0,0);
+        CurveVectorPtr intersectionsA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        CurveVectorPtr intersectionsB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        CurveCurve::SelfIntersectionsXY (*intersectionsA, *intersectionsB, *curve, nullptr);
+        Check::SaveTransformed (*curve);
+        SavePartialCurveMarkers (*intersectionsA);
+        }
+    Check::ClearGeometry ("CurveCurve.SelfIntersection");
+    }

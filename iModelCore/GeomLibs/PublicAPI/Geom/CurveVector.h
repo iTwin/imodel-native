@@ -1096,6 +1096,24 @@ CurveVectorR curveA,
 CurveVectorR curveB,
 DMatrix4dCP    pWorldToLocal
 );
+
+public:
+//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//!   transform.
+//! Each intersection is recorded as a "partial curve" that has fraction data indicating
+//!   its position on the parent curve.
+//! If the intersection is a single point, the "partial curve" has (bitwise) identical start
+//!   and end fractions.
+//! If the intersection is a coincident portion of the curves, the "partial curve" indicates the
+//!   fractional range of the intersection.
+static GEOMDLLIMPEXP void SelfIntersectionsXY
+(
+CurveVectorR intersectionA,
+CurveVectorR intersectionB,
+CurveVectorR curve, 
+DMatrix4dCP    pWorldToLocal
+);
+
 //! Collect apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
