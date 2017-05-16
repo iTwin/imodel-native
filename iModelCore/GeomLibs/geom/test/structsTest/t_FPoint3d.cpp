@@ -133,12 +133,34 @@ TEST(FPoint3d, SumOf)
     fpoint.SetComponent(3, 2);
     dpoint.SetComponent(3, 2);
     Check::ExactDouble(fpoint.GetComponent(2), dpoint.GetComponent(2));
+    fpoint.Zero(); dpoint.Zero();
+    Check::Exact(DPoint3d::From(fpoint), dpoint);
+    fpoint.One(); dpoint.One();
+    Check::Exact(DPoint3d::From(fpoint), dpoint);
+
+    //Scalar queries
+    Check::ExactDouble(originF0.MaxAbs(), originD0.MaxAbs());
+    Check::ExactDouble(originF0.MaxAbsIndex(), originD0.MaxAbsIndex());
+    Check::ExactDouble(originF0.MaxDiff(originF1), originD0.MaxDiff(originD1));
+    Check::ExactDouble(originF0.MinAbs(), originD0.MinAbs());
+    Check::ExactDouble(originF0.MinAbsIndex(), originD0.MinAbsIndex());
+    Check::True(originF0.ComponentRange().low == originD0.ComponentRange().low);
+    Check::True(originF0.ComponentRange().high == originD0.ComponentRange().high);
+
+    //Interpolation 
+    Check::Exact(DPoint3d::From(FPoint3d::FromInterpolate(originF0, scale0, originF1)),
+                 DPoint3d::FromInterpolate(originD0, scale0, originD1));
+    Check::Exact(DPoint3d::From(FPoint3d::FromInterpolateBilinear(originF0, originF1, originF2, fpoint, scale0, scale1)),
+                 DPoint3d::FromInterpolateBilinear(originD0, originD1, originD2, dpoint, scale0, scale1));
+    fpoint.Interpolate(originF0, 2, originF1);
+    dpoint.Interpolate(originD0, 2, originD1);
+    Check::Exact(DPoint3d::From(fpoint), dpoint);
+
+    //Equal AlmostEqual
+    bvector<FPoint3d> left = { originF0, originF1, originF2 };
+    bvector<FPoint3d> right = { FPoint3d::From(originD0), FPoint3d::From(originD1), FPoint3d::From(originD2) };
+    Check::True(FPoint3d::AlmostEqual(left, right));
+    Check::True(FPoint3d::AlmostEqualXY(left, right));
+
     }
 
-TEST(FPoint3d, Error)
-    {
-    Check::Exact(DPoint3d::From(FPoint3d::FromXY(DPoint3d::From(2, 3, 4))),
-                 DPoint3d::FromXY(DPoint3d::From(2, 3, 4)));
-    Check::Exact(DPoint3d::From(FPoint3d::FromXY(FPoint3d::From(2, 3, 4))),
-                 DPoint3d::FromXY(DPoint3d::From(2, 3, 4)));
-    }
