@@ -185,7 +185,7 @@ bool SMSQLiteFile::UpdateDatabase()
         }
     #endif
     assert(!"ERROR - Unknown database schema version");
-    return false;
+    return true; //for now, allow opening more recent versions
     }
 
 

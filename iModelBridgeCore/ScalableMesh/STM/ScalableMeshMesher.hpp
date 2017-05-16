@@ -64,7 +64,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
-
+		//LOG_SET_PATH("c:\\work\\2017q2\\tmp\\")
+		//LOG_SET_PATH_W("c:\\work\\2017q2\\tmp\\")
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
@@ -147,10 +148,16 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 namePoly.append(L".p");
                 LOG_POLY_FROM_FILENAME_AND_BUFFERS_W(namePoly,feature.size(),&feature[0])
 #endif
-                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)defs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+					//"drape" type features are tricky on sub resolutions because the underlying terrain may no longer be there.
+					//For now, only apply the "drape" modifier on the best resolution (the "true" one)
+				if((DTMFeatureType) defs[i][0] == DTMFeatureType::DrapeVoid && !node->m_nodeHeader.m_IsLeaf)  
+					status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::BreakVoid, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+				else
+					status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)defs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
-            status = bcdtmObject_triangulateDtmObject(dtmObjP);
 
+
+            status = bcdtmObject_triangulateDtmObject(dtmObjP);
 #if SM_TRACE_FEATURE_DEFINITIONS
             bool dbg = false;
             if(dbg)
@@ -332,7 +339,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                             }
 
                     {
-/*                    WString namePoly = L"e:\\output\\scmesh\\2016-06-14\\postfeaturepoly_";
+ /*                  WString namePoly = L"c:\\work\\2017q2\\tmp\\postfeaturepoly_";
                     namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
                     namePoly.append(L"_");
                     namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
@@ -441,7 +448,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     LOGSTRING_NODE_INFO_W(node, nameBefore)
                         nameBefore.append(L".m");
                     auto indPtr = node->GetPtsIndicePtr();
-                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &faceIndexes[0]);
+                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), faceIndexes.size(), &pts[0], &faceIndexes[0]);
                   //  }
 #endif
                 isMeshingDone = true;
@@ -1344,6 +1351,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
 
+		//LOG_SET_PATH("c:\\work\\2017q2\\tmp\\")
+		//LOG_SET_PATH_W("c:\\work\\2017q2\\tmp\\")
+
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
     //bool hasPtsToTrack = false;
    /* DPoint3d pts[3] = { DPoint3d::From(431508.19, 4500522, 0),
@@ -1806,8 +1816,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             clipShape = clipShape->IntersectShape(*newShape);
             AddClipToDTM(dtmPtr, *clipShape);
             }
-        else
-           status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
+		else
+		{
+			status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
+		}
 
     status = AddPolygonsToDTMObject(stitchedNeighborsBoundary, DTMFeatureType::Breakline, dtmObjP);
 
@@ -1826,6 +1838,15 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
         }
 #endif
+
+/*		WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
+		dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
+		dtmFileName.append(L"_");
+		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+		dtmFileName.append(L"_");
+		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+		dtmFileName.append(L".tin");
+		bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());*/
 
     status = bcdtmObject_triangulateDtmObject(dtmObjP);
    // assert(status == SUCCESS || ((*dtmObjP).numPoints < 4));
@@ -1964,7 +1985,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             }
         }
 #if SM_OUTPUT_MESHES_STITCHING
-        if (node->m_nodeHeader.m_level <= 6)
+        //if (node->m_nodeHeader.m_level <= 6)
             {
             WString nameStitched = LOG_PATH_STR_W + L"poststitchmesh_";
             LOGSTRING_NODE_INFO_W(node, nameStitched)

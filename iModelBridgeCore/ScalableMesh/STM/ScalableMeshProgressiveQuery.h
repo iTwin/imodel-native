@@ -133,6 +133,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
     public : 
 
+        static void PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload);
+
         ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
 
         virtual ~ScalableMeshProgressiveQueryEngine();

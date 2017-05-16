@@ -95,7 +95,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
             path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
-            m_raster = RasterUtilities::LoadRaster(path, m_cs, extent2d);
+            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
             }
         }
 
@@ -198,8 +198,49 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CompactProjectFiles()
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
     {        
     if (m_raster == nullptr)
-        return; 
+        return;     
 
+    for (auto& tileRange : tileRanges)
+        {         
+        HFCMatrix<3, 3> transfoMatrix;
+        transfoMatrix[0][0] = (tileRange.high.x - tileRange.low.x) / 256;
+        transfoMatrix[0][1] = 0;
+        transfoMatrix[0][2] = tileRange.low.x;
+        transfoMatrix[1][0] = 0;
+        transfoMatrix[1][1] = -(tileRange.high.y - tileRange.low.y) / 256;
+        transfoMatrix[1][2] = tileRange.high.y;
+        transfoMatrix[2][0] = 0;
+        transfoMatrix[2][1] = 0;
+        transfoMatrix[2][2] = 1;
+
+        HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
+
+        HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
+
+        if (pSimplifiedModel != 0)
+        {
+            pTransfoModel = pSimplifiedModel;
+        }
+
+        DPoint2d lowInPixels;
+        DPoint2d highInPixels;
+
+        pTransfoModel->ConvertInverse(tileRange.low.x, tileRange.low.y, &lowInPixels.x, &lowInPixels.y);
+        pTransfoModel->ConvertInverse(tileRange.high.x, tileRange.high.y, &highInPixels.x, &highInPixels.y);
+
+        HFCPtr<HGF2DCoordSys> coordSys(new HGF2DCoordSys(*pTransfoModel, m_raster->GetCoordSys()));
+
+        HVEShape shape(lowInPixels.x, highInPixels.y, highInPixels.x, lowInPixels.y, coordSys);
+
+        //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
+
+        //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
+
+        uint32_t consumerID = 1;
+        m_raster->SetLookAhead(shape, consumerID);
+        }
+
+#if 0 
     DRange3d total3dRange(DRange3d::NullRange());
     
     for (auto& range : tileRanges)
@@ -240,12 +281,25 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
     //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
             
     //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
+
+
+    
+
     uint32_t consumerID = 1;
     m_raster->SetLookAhead(shape, consumerID);
+#endif
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
     {    
+    if (m_streamingRasterFile != nullptr)
+        { 
+        HGFTileIDList blocks;
+
+        m_streamingRasterFile->SetLookAhead(0, blocks, 0, false);
+
+ //       m_streamingRasterFile->RequestLookAhead(99, blocks, false);
+        }
 /*
     uint32_t consumerID = 1;
     m_raster->SetLookAhead(shape, consumerID);
