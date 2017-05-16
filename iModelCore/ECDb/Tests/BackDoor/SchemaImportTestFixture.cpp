@@ -298,7 +298,7 @@ void DbMappingTestFixture::AssertPropertyMapping(ECDbCR ecdb, PropertyAccessStri
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DbMappingTestFixture::TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& colInfosPerAccessString, ECDbCR ecdb, PropertyAccessString const& accessString) const
     {
-    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className);
+    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className, SchemaLookupMode::AutoDetect);
     EXPECT_TRUE(classId.IsValid());
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
@@ -334,7 +334,7 @@ bool DbMappingTestFixture::TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& co
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, PropertyAccessString const& accessString) const
     {
-    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className);
+    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className, SchemaLookupMode::AutoDetect);
     EXPECT_TRUE(classId.IsValid());
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(

@@ -213,7 +213,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             }
         else
             {
-            ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName());
+            ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName(), SchemaLookupMode::AutoDetect);
             if (targetType == nullptr)
                 {
                 ctx.Issues().Report("Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());

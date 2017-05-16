@@ -21,24 +21,23 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
     if (SUCCESS != compareCtx.Prepare(m_ecdb.Schemas(), primarySchemasOrderedByDependencies))
         return ERROR;
 
+    if (compareCtx.GetSchemasToImport().empty())
+        return SUCCESS;
+
     for (ECSchemaCP schema : compareCtx.GetSchemasToImport())
         {
         if (SUCCESS != ImportSchema(compareCtx, *schema))
             return ERROR;
         }
 
-    //WIP shouldn't this only be necessary if !compareCtx.GetSchemasToImport().empty() ?
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
         return ERROR;
 
     if (SUCCESS != ValidateSchemasPostImport())
         return ERROR;
 
-    if (!compareCtx.GetSchemasToImport().empty())
-        {
-        if (SUCCESS != compareCtx.ReloadContextECSchemas(m_ecdb.Schemas()))
-            return ERROR;
-        }
+    if (SUCCESS != compareCtx.ReloadContextECSchemas(m_ecdb.Schemas()))
+        return ERROR;
 
     schemasToMap.insert(schemasToMap.begin(), compareCtx.GetSchemasToImport().begin(), compareCtx.GetSchemasToImport().end());
     return SUCCESS;

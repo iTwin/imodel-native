@@ -57,8 +57,6 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& schemaManager)
     {
-    BeAssert(!m_existingSchemas.empty() || !m_schemasToImport.empty());
-
     //save names
     std::vector<Utf8String> existingSchemaNames, importingSchemaNames;
     for (ECSchemaCP schema : m_existingSchemas)
@@ -175,7 +173,6 @@ BentleyStatus SchemaCompareContext::Prepare(SchemaManager const& schemaManager, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP SchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
     {
-    BeAssert(!m_existingSchemas.empty() || !m_schemasToImport.empty());
     for (ECSchemaCP schema : m_existingSchemas)
         {
         if (schema->GetName().Equals(schemaName))
