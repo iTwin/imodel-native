@@ -1736,7 +1736,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         }
 
     ECDbCR ecdb = *session.GetFile().GetECDbHandle();
-    ECClassCP rootClass = ecdb.Schemas().GetClass(parsedRootClassName[0], parsedRootClassName[1]);
+    ECClassCP rootClass = ecdb.Schemas().GetClass(parsedRootClassName[0], parsedRootClassName[1], SchemaLookupMode::AutoDetect);
     if (rootClass == nullptr || !rootClass->IsEntityClass())
         {
         BimConsole::WriteErrorLine("Root class %s is not an entity class or does not exist in the current file.", rootClass->GetFullName());
