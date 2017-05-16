@@ -101,21 +101,32 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     if (nullptr == el)
         return;
 
-    PersistentState elementIdData;
-    TransientState elementData;
+    PersistentState elementIdData = m_comparisonData->GetPersistentState(el->GetElementId());
+    TransientState elementData = m_comparisonData->GetTransientState(el->GetElementId());
 
     // Get the override for element IDs
-    if (WantShowCurrent() && !m_visitingTransientElements && (elementIdData = m_comparisonData->GetPersistentState(el->GetElementId())).IsValid())
+    if (WantShowCurrent() && !m_visitingTransientElements && elementIdData.IsValid())
         {
         m_symbology.GetCurrentRevisionOverrides(elementIdData.m_opcode, symbologyOverrides);
         return;
         }
 
     // Get the override from the temporary elements
-    if (WantShowTarget() && (elementData = m_comparisonData->GetTransientState(el->GetElementId())).IsValid())
+    if (WantShowTarget())
         {
-        m_symbology.GetTargetRevisionOverrides(elementData.m_opcode, symbologyOverrides);
-        return;
+        if (elementData.IsValid() && m_visitingTransientElements)
+            {
+            m_symbology.GetTargetRevisionOverrides(elementData.m_opcode, symbologyOverrides);
+            return;
+            }
+
+        // Elements that are modified need to be transparent if we are in "Target-only" view
+        if (!WantShowBoth() && elementIdData.IsValid())
+            {
+            symbologyOverrides.SetLineTransparency(255);
+            symbologyOverrides.SetFillTransparency(255);
+            return;
+            }
         }
 
     // Provide an "untouched" override
@@ -129,6 +140,10 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
 void    RevisionComparisonViewController::_CreateTerrain(TerrainContextR context)
     {
     T_Super::_CreateTerrain(context);
+
+    // No need to draw transient elements if we are only showing current elements
+    if (WantShowCurrent() && !WantShowTarget())
+        return;
 
     m_visitingTransientElements = true;
 
