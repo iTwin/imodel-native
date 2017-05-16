@@ -576,7 +576,7 @@ public:
 TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params)
     : GeometryListBuilder(params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
     {
-    //
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -586,6 +586,7 @@ TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
     : GeometryListBuilder(CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,7 +710,7 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& o
 TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part)
     : TileBuilder(context, nullptr != part ? part->GetBoundingBox() : DRange3d::NullRange()), m_input(part)
     {
-    //
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

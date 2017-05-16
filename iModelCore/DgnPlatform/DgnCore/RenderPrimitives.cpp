@@ -117,9 +117,10 @@ struct TextStringGeometry : Geometry
 private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
+    bool                            m_checkGlyphBoxes;
 
-    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(transform, range, elemId, params, true, db), m_text(&text) 
+    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
+        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes)
         { 
         InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
         }
@@ -127,9 +128,9 @@ private:
     bool _DoVertexCluster() const override { return false; }
 
 public:
-    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
         {
-        return new TextStringGeometry(textString, transform, range, elemId, params, db);
+        return new TextStringGeometry(textString, transform, range, elemId, params, db, checkGlyphBoxes);
         }
     
     bool DoGlyphBoxes (IFacetOptionsR facetOptions);
@@ -1263,9 +1264,9 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db)
+GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
     {
-    return TextStringGeometry::Create(textString, transform, range, entityId, params, db);
+    return TextStringGeometry::Create(textString, transform, range, entityId, params, db, checkGlyphBoxes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1431,7 +1432,7 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
     Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
-    m_geometries.push_back(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    m_geometries.push_back(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb(), m_checkGlyphBoxes));
     return true;
     }
 
@@ -1567,6 +1568,9 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvec
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
     {
+    if (!m_checkGlyphBoxes)
+        return false;
+
     DRange2d            textRange = m_text->GetRange();
     double              minDimension = std::min (textRange.high.x - textRange.low.x, textRange.high.y - textRange.low.y) * GetTransform().ColumnXMagnitude();
     static const double s_minGlyphRatio = 1.0; 
