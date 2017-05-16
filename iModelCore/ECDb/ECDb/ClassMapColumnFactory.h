@@ -98,97 +98,96 @@ struct ClassMapColumnFactory : NonCopyableClass
     public:
         struct ColumnResolutionScope
             {
+            protected:
+                ClassMap const& m_classMap;
+
             private:
                 ColumnMaps m_columnMaps;
-                ClassMap const& m_classMap;
-                bool m_init;
-            private:
-                virtual void Fill(ColumnMaps& columnMaps, ClassMap const& classMap) = 0;
+                bool m_init = false;
+
+                virtual void _Fill(ColumnMaps&) = 0;
 
             public:
+                explicit ColumnResolutionScope(ClassMap const&);
+                virtual ~ColumnResolutionScope();
+
                 ClassMap const& GetClassMap() const { return m_classMap; }
                 ColumnMaps& GetColumnMaps();
-                ColumnResolutionScope(ClassMap const& classMap);
-                ~ColumnResolutionScope();
             };
-        struct SharedColumnReservation :NonCopyableClass
-            {
-            private:
-                // unused - ClassMapColumnFactory const& m_allocator;
-            public:
-                SharedColumnReservation(ClassMapColumnFactory const& allocator)
-                    // unused - :m_allocator(allocator)
-                    {}
-            };
+        
     private:
         ClassMap const& m_classMap;
-        mutable DbTable* m_primaryOrJoinedTable;
-        mutable DbTable* m_overflowTable;
-        mutable std::shared_ptr<SharedColumnReservation> m_sharedColumnReservation;
-        bool m_useSharedColumnStrategy;
-        int m_maxSharedColumnCount;
-        mutable ColumnResolutionScope* m_columnResolutionScope;
+        mutable DbTable* m_primaryOrJoinedTable = nullptr;
+        mutable DbTable* m_overflowTable = nullptr;
+        bool m_useSharedColumnStrategy = false;
+        Nullable<uint32_t> m_maxSharedColumnCount;
+        mutable bool m_areSharedColumnsReserved = false;
+        mutable ColumnResolutionScope* m_columnResolutionScope = nullptr;
 
-    private:
         DbTable* GetEffectiveTable() const;
         DbTable* GetOrCreateOverflowTable() const;
         DbColumn* ReuseOrCreateSharedColumn() const;
         bool IsColumnInUse(DbColumn const& column) const;
-        ColumnMaps* GetColumMaps() const;
+        ColumnMaps* GetColumnMaps() const;
         ECDbCR GetECDb() const;
         DbColumn* RegisterColumnMap(Utf8CP accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
         DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8CP) const;
         DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8CP) const;
-        static int MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
+
+        static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
     public:
-        ClassMapColumnFactory(ClassMap const& classMap);
+        explicit ClassMapColumnFactory(ClassMap const& classMap);
         ~ClassMapColumnFactory() {};
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
-        std::weak_ptr <SharedColumnReservation> GetSharedColumnReservation() const { return std::weak_ptr <SharedColumnReservation>(m_sharedColumnReservation); }
-        std::weak_ptr <SharedColumnReservation> CreateSharedColumnReservation(Utf8CP, int = 0) const;
-        void  ReleaseSharedColumnReservation() const { m_sharedColumnReservation = nullptr; }
+        void ReserveSharedColumns(Utf8StringCR propertyName) const;
+        void ReserveSharedColumns(uint32_t columnsRequired) const;
+        void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
         DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const;
     };
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct ImportColumnResolutionScope : ClassMapColumnFactory::ColumnResolutionScope
+struct ImportColumnResolutionScope final : ClassMapColumnFactory::ColumnResolutionScope
     {
     private:
-        virtual void Fill(ColumnMaps& columnMaps, ClassMap const& classMap) override;
+        void _Fill(ColumnMaps&) override;
 
     public:
-        ImportColumnResolutionScope(ClassMap const& classMap)
-            : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        explicit ImportColumnResolutionScope(ClassMap const& classMap) : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        ~ImportColumnResolutionScope() {}
 
     };
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct UpdateColumnResolutionScope : public  ClassMapColumnFactory::ColumnResolutionScope
+struct UpdateColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
     {
     private:
-        virtual void Fill(ColumnMaps& columnMaps, ClassMap const& classMap) override;
+        void _Fill(ColumnMaps&) override;
 
     public:
-        UpdateColumnResolutionScope(ClassMap const& classMap)
-            :ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        explicit UpdateColumnResolutionScope(ClassMap const& classMap) : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        ~UpdateColumnResolutionScope() {}
     };
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct EndTableRelationshipColumnResolutionScope : public  ClassMapColumnFactory::ColumnResolutionScope
+struct EndTableRelationshipColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
     {
     private:
-        virtual void Fill(ColumnMaps& columnMaps, ClassMap const& classMap) override;
-        std::vector<ClassMap const*> m_releventMaps;
+        std::vector<ClassMap const*> m_relevantMaps;
+
+        void _Fill(ColumnMaps&) override;
+
     public:
         EndTableRelationshipColumnResolutionScope(ClassMap const& classMap, std::vector<ClassMap const*> classMaps)
-            : ClassMapColumnFactory::ColumnResolutionScope(classMap), m_releventMaps(classMaps) {}
+            : ClassMapColumnFactory::ColumnResolutionScope(classMap), m_relevantMaps(classMaps) {}
+
+        ~EndTableRelationshipColumnResolutionScope() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

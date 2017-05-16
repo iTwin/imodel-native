@@ -36,17 +36,17 @@ PropertyMap* ClassMapper::LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR 
 //+===============+===============+===============+===============+===============+======
 PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     {
-    RefCountedPtr<PropertyMap> propertyMap;
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
         {
         BeAssert(false && "PropertyMap already exist. This should have been caught before");
         return nullptr;
         }
 
-    bool useColumnReservation = (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext);
+    const bool useColumnReservation = (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext);
     if (useColumnReservation)
-        m_classMap.GetColumnFactory().CreateSharedColumnReservation(property.GetName().c_str());
+        m_classMap.GetColumnFactory().ReserveSharedColumns(property.GetName());
 
+    RefCountedPtr<PropertyMap> propertyMap = nullptr;
     if (auto typedProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsPrimitiveArrayProperty())

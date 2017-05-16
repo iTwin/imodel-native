@@ -1797,7 +1797,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
         auto itor = m_sharedBlock.find(rootClassMap);
         if (itor == m_sharedBlock.end())
             {
-            rootClassMap->GetColumnFactory().CreateSharedColumnReservation(nullptr, 2);
+            rootClassMap->GetColumnFactory().ReserveSharedColumns(2);
             m_sharedBlock.insert(rootClassMap);
             itor = m_sharedBlock.end();
             }
@@ -1852,7 +1852,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
         auto itor = m_sharedBlock.find(rootClassMap);
         if (itor == m_sharedBlock.end())
             {
-            rootClassMap->GetColumnFactory().CreateSharedColumnReservation(nullptr, 2);
+            rootClassMap->GetColumnFactory().ReserveSharedColumns(2);
             m_sharedBlock.insert(rootClassMap);
             itor = m_sharedBlock.end();
             }
