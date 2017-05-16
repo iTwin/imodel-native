@@ -546,6 +546,7 @@ typedef ValidatedValue <LocalRange> ValidatedLocalRange;
 typedef ValidatedValue <ClipPlane> ValidatedClipPlane;
 
 typedef ValidatedValue <FPoint3d> ValidatedFPoint3d;
+typedef ValidatedValue <FVec3d> ValidatedFVec3d;
 
 
 template<typename T>
@@ -711,9 +712,11 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "GeoPoint.h"
 #include "dvec2d.h"
 #include "dvec3d.h"
+#include "FVec3d.h"
 #include "DRange1d.h"
 #include "drange2d.h"
 #include "drange3d.h"
+#include "FRange3d.h"
 #include "dmatrix4d.h"
 #include "dmap4d.h"
 #include "dplane3d.h"
@@ -942,12 +945,6 @@ struct _fPoint2d
     {
     float x;
     float y;
-    };
-
-struct _fRange3d
-    {
-    FPoint3d low;
-    FPoint3d high;
     };
 
 struct _fRange2d
