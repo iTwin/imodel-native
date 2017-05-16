@@ -57,7 +57,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
-
+#include "ScalableMeshMesher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -402,6 +402,11 @@ void                        IScalableMesh::GetClipType(uint64_t id, SMNonDestruc
     return _GetClipType(id, type);
     }
 
+void IScalableMesh::CompactExtraFiles()
+{
+	return _CompactExtraFiles();
+}
+
 void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
     return _GetCurrentlyViewedNodes(nodes);
@@ -640,7 +645,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             return 0; // Error opening file
             }
         }
-    else if (/*BeFileName::IsUrl(filePath) &&*/ BeFileName(filePath).ContainsI(L"json"))
+    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
         { // Open json streaming format
         auto directory = BeFileName::GetDirectoryName(filePath);
         isLocal = BeFileName::DoesPathExist(directory.c_str());
@@ -1011,7 +1016,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
                 else
                     {
-                    m_isCesium3DTiles = true;
                     config["data_type"] = "3DTiles";
                     auto& config_server = config["server"];
                     auto utf8Path = Utf8String(m_path.c_str());
@@ -1056,6 +1060,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     }
                 SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(config);
+                m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
 
                 if (stream_settings->IsLocal() && stream_settings->GetURL().empty())
                     { // Provide default cloud data directory for streaming from local disk when url is not specified
@@ -1660,20 +1665,14 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
 
     DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {   
-#ifndef VANCOUVER_API
-    TerrainModel::BcDTMP dtm(_GetBcDTM());
+    BcDTMP dtm(_GetBcDTM());
 
     if (dtm == nullptr)
         {
         return DTM_ERROR;
         }
-
-    Transform totalTrans = Transform::FromProduct(*transformation, m_transformToUors);
-    return dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);    
-#else
-        assert(0 && "Not Implemented !!!");
-        return DTM_ERROR;
-#endif
+    
+    return dtm->ExportToGeopakTinFile(fileNameP, transformation);
     }
 
 bool ScalableMeshDTM::_GetTransformation(TransformR transformation)
@@ -1826,6 +1825,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     if (returnedNodes.size() == 0) return ERROR;
     bvector<DPoint3d> current;
     DRange3d rangeCurrent = DRange3d::From(current);
+	//PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+	//bmap<DPoint3d, DPoint3d, DPoint3dZYXTolerancedSortComparison> ptsWithTolerance(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+	bvector<bvector<DPoint3d>> bounds;
     for (auto& node : returnedNodes)
         {
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
@@ -1834,7 +1836,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
-            if (current.empty()) current = bound;
+           /* if (current.empty()) current = bound;
             else
                 {
                 VuPolygonClassifier vu(1e-8, 0);
@@ -1849,9 +1851,54 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
                         rangeCurrent = rangeXYZ;
                         }
                     }
-                }
+                }*/
+			/*for (auto& pt : bound)
+			    {
+				if (ptsWithTolerance.count(pt) == 0) ptsWithTolerance[pt] = pt;
+				pt = ptsWithTolerance[pt];
+			    }*/
+			bound.push_back(bound[0]);
+			if (bsiGeom_getXYPolygonArea(&bound[0], (int)bound.size()) > 0)
+				std::reverse(bound.begin(), bound.end());
+			bounds.push_back(bound);
+			//polyface->AddPolygon(bound);
             }
         }
+	MergePolygonSets(bounds);
+	current = bounds[0];
+	//polyface->Compress();
+	//size_t numOpen = 0, numClosed = 0;
+/*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
+	int n = 0;
+	for (visitor->Reset(); visitor->AdvanceToNextFace();)
+	{
+		{
+			WString namePoly = WString(L"C:\\work\\2017q2\\cs\\") + L"newpoly_";
+			namePoly.append(to_wstring(n).c_str());
+			namePoly.append(L".p");
+			FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+			size_t polySize = visitor->Point().size();
+			fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
+			fwrite(&visitor->Point()[0], sizeof(DPoint3d), polySize, polyCliPFile);
+			fclose(polyCliPFile);
+		}
+		++n;
+	}*/
+
+	/*CurveVectorPtr boundCurve = polyface->ExtractBoundaryStrings(numOpen, numClosed);
+	for (auto& curve : *boundCurve)
+	    {
+		if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType() && curve->GetChildCurveVectorCP()->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
+ 		    {
+			bvector<bvector<DPoint3d>> loops;
+			curve->GetChildCurveVectorCP()->CollectLinearGeometry(loops);
+			if (loops.empty())
+			    {
+				current = loops.front();
+				break;
+			    }
+		    }
+	    }*/
     if (current.size() == 0) return ERROR;
 
     boundary = current;
@@ -2444,6 +2491,16 @@ template <class POINT>  void                    ScalableMesh<POINT>::_GetClipTyp
     m_scmIndexPtr->GetClipRegistry()->GetClipType(id, type);
     }
 
+template <class POINT>  void                    ScalableMesh<POINT>::_CompactExtraFiles()
+   {
+	assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+	if (m_scmIndexPtr->m_isInsertingClips == true)
+		return;
+
+	m_scmIndexPtr->GetDataStore()->CompactProjectFiles();
+   }
+
 template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
     nodes = m_viewedNodes;
@@ -2738,7 +2795,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     //s_stream_from_grouped_store = false;
 
     //return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
-    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, true);
+    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
@@ -2901,9 +2958,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             computedTransform = Transform::FromProduct(approxTransform, computedTransform);
             }
         }
-    globalOrigin.scale(-1.0);
-    Transform translation = Transform::From(globalOrigin);
-    computedTransform = Transform::FromProduct(translation, computedTransform);
 
     return _SetReprojection(targetCS, computedTransform);
     }

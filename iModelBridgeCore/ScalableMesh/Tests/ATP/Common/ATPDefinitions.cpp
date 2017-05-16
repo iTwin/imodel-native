@@ -10,7 +10,9 @@
 #include <queue>
 #include <thread>
 
+#ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
+#endif
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -4735,10 +4737,10 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         changeGeometricError = true;
         }
 
-    // remove trailing slashes if any
+    // ensure trailing slashes
     size_t position;
-    if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
-    if ((position = cloudContainer.find_last_of(L"/")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
+    if (((position = cloudContainer.find_last_of(L"\\")) != cloudContainer.size()-1) && position != WString::npos) cloudContainer.append(L"\\");
+    if (((position = cloudContainer.find_last_of(L"/")) != cloudContainer.size()-1) && position != WString::npos) cloudContainer.append(L"\\");
 
     bool allTestPass = true;
     double t = 0;

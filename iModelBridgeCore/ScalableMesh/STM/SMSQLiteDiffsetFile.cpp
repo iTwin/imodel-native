@@ -1,5 +1,6 @@
 #include <ScalableMeshPCH.h>
 #include "SMSQLiteDiffsetFile.h"
+#include "Stores\SMStoreUtils.h"
 
 
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
@@ -13,12 +14,12 @@
 
 #define AUTO_COMMIT_FREQUENCY 20
 
-const SchemaVersion SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const SchemaVersion SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
 
-const SchemaVersion s_listOfReleasedSchemasDiffset[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
-const size_t s_numberOfReleasedSchemasDiffset = 2;
-double s_expectedTimeUpdateDiffset[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[1] = {
+const SchemaVersion s_listOfReleasedSchemasDiffset[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
+const size_t s_numberOfReleasedSchemasDiffset = 3;
+double s_expectedTimeUpdateDiffset[2] = { 1.2*1e-5, 1.2*1e-5 };
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[2] = {
     [](BeSQLite::Db* database)
         {
         database->DropTable("SMNodeHeader");
@@ -31,7 +32,60 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[1] = {
         database->DropTable("SMSkirts");
         database->DropTable("SMClipDefinitions");
 
-        }
+        },
+	[](BeSQLite::Db* database)
+		{
+			const int maxSize = 2000;
+
+			int offset = 0;
+			bool rowsToProcess = true;
+			while (rowsToProcess)
+			{
+				bvector<bvector<uint8_t>> toEnterResults;
+				bvector<int64_t> toEnterIds;
+				CachedStatementPtr stmt;
+				database->GetCachedStatement(stmt, "SELECT Data, length(Data), Size, DiffsetId FROM SMDiffSets LIMIT ? OFFSET ?");
+				stmt->BindInt(1, maxSize);
+				stmt->BindInt(2, offset);
+				DbResult status = stmt->Step();
+				int64_t diffsetID;
+				bvector<uint8_t> diffsetData;
+				size_t uncompressedSize;
+				while (status == BE_SQLITE_ROW)
+				    {
+					++offset;
+					diffsetData.resize(stmt->GetValueInt64(1));
+					uncompressedSize = stmt->GetValueInt64(2);
+					diffsetID = stmt->GetValueInt64(3);
+					memcpy(&diffsetData[0], stmt->GetValueBlob(0), diffsetData.size());
+
+					HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+
+					pi_uncompressedPacket.SetBuffer(diffsetData.data(), diffsetData.size() * sizeof(uint8_t));
+					pi_uncompressedPacket.SetDataSize(uncompressedSize);
+					WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+
+					bvector<uint8_t> data;
+					data.resize(pi_compressedPacket.GetDataSize());
+					memcpy(&data[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+					toEnterResults.push_back(data);
+					toEnterIds.push_back(diffsetID);
+
+					status = stmt->Step();
+				    }
+				if (offset < maxSize) rowsToProcess = false;
+
+				for (size_t i = 0; i < toEnterIds.size(); ++i)
+				   {
+					CachedStatementPtr stmt2;
+					database->GetCachedStatement(stmt2, "UPDATE SMDiffSets SET Data=? WHERE DiffsetId=?");
+					stmt2->BindBlob(1, &toEnterResults[i][0], (int)toEnterResults[i].size(), MAKE_COPY_NO);
+					stmt2->BindInt64(2, toEnterIds[i]);
+					DbResult statusInsert = stmt2->Step();
+					assert(statusInsert == BE_SQLITE_DONE);
+				   }
+			}
+		}
     };
 
 

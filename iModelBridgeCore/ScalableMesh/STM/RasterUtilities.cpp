@@ -59,7 +59,7 @@ HGFHMRStdWorldCluster* RasterUtilities::GetWorldCluster()
 HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     {
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
@@ -83,7 +83,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
     {
 
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HRSObjectStore> pObjectStore;
@@ -208,10 +208,11 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
 StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
     {
     HFCMatrix<3, 3> transfoMatrix;
-
+/*
     if (textureResolution != nullptr)
         transfoMatrix[0][0] = *textureResolution;
     else
+*/
         transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
 
 
@@ -220,10 +221,11 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = area.low.x;
     transfoMatrix[1][0] = 0;
-
+/*
     if (textureResolution != nullptr)
         transfoMatrix[1][1] = -*textureResolution;
     else
+*/
         transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
 
     transfoMatrix[1][2] = area.high.y;
