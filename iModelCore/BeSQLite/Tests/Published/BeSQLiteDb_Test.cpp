@@ -991,11 +991,10 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                   05/17
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQLiteDbTests, SchemaAndDataChanges)
+TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     {
-    /* Note: Tests that schema and data changes are not allowed in the same change set. 
-    * The purpose of the test is to validate this fundamental assumption of our revision 
-    * generation and merging strategy */
+    /* Tests that schema and data changes are not allowed in the same change set. 
+     * This validates our assumptions in storing transactions and creating revisions */
     
     SetupDb(L"RealTest.db");
 
@@ -1025,4 +1024,59 @@ TEST_F(BeSQLiteDbTests, SchemaAndDataChanges)
     changeSet.Free();
     m_db.CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
+    {
+    /* Tests that you can create a change set, make a schema change, and then apply that change 
+     * set to the Db. This validates our assumption that we can merge a schema revision when
+     * there are local changes */
+
+    SetupDb(L"RealTest.db");
+
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable ([Id] INTEGER PRIMARY KEY, [Column1] REAL, [Column2] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    // Add row
+    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1,Column2) values (1.1,2.2)");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set
+    MyChangeSet changeSet;
+    result = changeSet.FromChangeTrack(changeTracker);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    changeTracker.EndTracking();
+
+    changeSet.Dump("ChangeSet", m_db);
+
+    // Delete all rows
+    result = m_db.ExecuteSql("DELETE FROM TestTable");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Add column 
+    result = m_db.AddColumnToTable("TestTable", "Column3", "REAL");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Apply change set
+    result = changeSet.ApplyChanges(m_db);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Validate
+    Statement stmt;
+    result = stmt.Prepare(m_db, "SELECT Column1 FROM TestTable WHERE Column2=2.2");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    result = stmt.Step();
+    EXPECT_TRUE(result == BE_SQLITE_ROW);
+    EXPECT_EQ(1.1, stmt.GetValueDouble(0));
+
+    changeSet.Free();
+    stmt.Finalize();
+    m_db.CloseDb();
+    }
+
 
