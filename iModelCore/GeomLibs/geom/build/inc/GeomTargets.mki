@@ -192,7 +192,7 @@ $(OUT_DIR)refOperatorOverload$(OUT_EXT) : $(geomSrcStructsCpp)refmethods/refOper
 $(OUT_DIR)refdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
-$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp  $(geomSrcStructsCpp)refmethods/refFPoint3d.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

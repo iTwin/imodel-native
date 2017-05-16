@@ -179,6 +179,8 @@ static DVec3d FromStartEnd (DPoint3dCR start, DPoint3dCR end);
 //! @param [in] end   end point
 static DVec3d FromStartEnd (FPoint3dCR start, FPoint3dCR end);
 
+//! promote FVec3d components to double
+static DVec3d From (FVec3dCR);
 
 //! @description Returns the unnormalized (full length) DVec3d from the frame origin to the target point.
 //! @param [in] start start point
